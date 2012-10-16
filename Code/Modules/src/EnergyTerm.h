@@ -58,9 +58,6 @@ public:
 
 	itkTypeMacro( EnergyTerm, itk::Object );
 
-
-
-
 	itkSetConstObjectMacro( DisplacementField, DisplacementFieldType);
 	itkGetObjectMacro( DisplacementField, DisplacementFieldType);
 
