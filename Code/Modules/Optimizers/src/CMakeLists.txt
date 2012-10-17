@@ -7,6 +7,5 @@ set(RSTKOptimizers_SRC
 add_library(RSTKOptimizers ${RSTKOptimizers_SRC})
 target_link_libraries(RSTKOptimizers
   ${RSTKEnergy_LIBRARIES}
-  ${ITKOptimizers_LIBRARIES}
   )
-itk_module_target(RSTKOptimizers)
+#itk_module_target(RSTKOptimizers)
