@@ -38,92 +38,95 @@
 #ifndef Energy_h
 #define Energy_h
 
+
+#include "EnergyBase.h"
 #include <vector>
-#include "EnergyTerm.h"
 #include <itkObject.h>
 
 namespace rstk
 {
 
-template< class TDisplacementField, class TEnergyValue = float >
-class Energy: public EnergyTerm< TDisplacementField, TEnergyValue > {
+class Energy: public EnergyBase {
 public:
 	typedef Energy                                    Self;
-	typedef itk::rstk::EnergyTerm
-			< TDisplacementField, TEnergyValue >      Superclass;
-	typedef SmartPointer<Self>                        Pointer;
-	typedef SmartPointer< const Self >                ConstPointer;
+	typedef EnergyBase                                Superclass;
+	typedef itk::SmartPointer<Self>                   Pointer;
+	typedef itk::SmartPointer< const Self >           ConstPointer;
 
-	itkTypeMacro( Energy, EnergyTerm );
+	itkTypeMacro( Energy, EnergyBase );
 	itkNewMacro( Self );
 
-	typedef TDisplacementField                        DisplacementFieldType;
-	typedef DisplacementFieldType::Pointer            DisplacementFieldPointer;
-	typedef DisplacementFieldType::ConstPointer       DisplacementFieldConstPointer;
+	typedef Superclass::MeasureType                   MeasureType;
+	typedef std::vector< const Superclass* >          EnergyTermsContainer;
 
-	typedef TEnergyValue                              EnergyValueType;
+	void SetEnergyTerm( Superclass* term);
 
-	typedef std::vector< const Self* >                EnergyComponentsContainer;
+	/** Initialize the Energy by making sure that all the components
+	 *  are present and plugged together correctly, and initializing
+	 *  internal variables as required. This is for one-time initialization,
+	 *  e.g. before starting an optimization process. */
+	virtual void Initialize(void) throw ( itk::ExceptionObject ) = 0;
 
-	EnergyValueType ComputeEnergy() {
-		EnergyValueType result = 0.0;
-		EnergyComponentsContainer::iterator end = this->m_EnergyComponentsContainer.end();
+	/** Type to represent the number of parameters that are being optimized at
+	 * any given iteration of the optimizer. */
+	typedef unsigned int NumberOfParametersType;
 
-		for(EnergyComponentsContainer::iterator it = this->m_EnergyComponentsContainer.begin();
-				it != end; it++ ) {
-			result+= (*it)->ComputeEnergy();
-		}
-		return result;
-	}
+	/** Calculate and return the value for the metric based on the current
+	 * transformation(s). The result is both returned, and stored in the
+	 * m_Value member variable. */
+	MeasureType GetValue() const;
 
-	EnergyValueType GetGradient() {
-		float result = 0.0;
-		EnergyComponentsContainer::iterator end = this->m_EnergyComponentsContainer.end();
+	/**
+	 * This method returns the derivative based on the current
+	 * transformation(s). */
+	virtual void GetDerivative( DerivativeType & ) const = 0;
 
-		for(EnergyComponentsContainer::iterator it = this->m_EnergyComponentsContainer.begin();
-				it != end; it++ ) {
-			result+= (*it)->GetGradient();
-		}
-		return result;
-	}
+	/** This method returns the derivative and value based on the current
+	 * transformation(s). */
+	virtual void GetValueAndDerivative( MeasureType & value, DerivativeType & derivative ) const = 0;
 
+	/** Methods for working with the metric's 'active' transform, e.g. the
+	 * transform being optimized in the case of registration. Some of these are
+	 * used in non-metric classes, e.g. optimizers. */
+	virtual NumberOfParametersType GetNumberOfParameters() const = 0;
+	virtual NumberOfParametersType GetNumberOfLocalParameters() const = 0;
 
-	void SetEnergyTerm( Superclass* energyTerm ) {
-		energyTerm->SetDisplacementField( this->m_DisplacementField );
-		this->m_EnergyComponentsContainer.push_back( static_cast< const Self* >( energyTerm ) );
-	}
+	/** Set the active transform's parameters */
+	virtual void SetParameters( ParametersType & params ) = 0;
+
+	/** Get a const reference to the active transform's parameters */
+	virtual const ParametersType & GetParameters() const = 0;
+
+	/** Return whether the metric's active transform has local support,
+	 * e.g. whether it is dense/high-dimensional. */
+	virtual bool HasLocalSupport() const = 0;
+
+	/** Update the parameters of the metric's active transform.
+	 * Typically this call is passed through directly to the transform.
+	 * \c factor is a scalar multiplier for each value in update, and
+	 * defaults to 1.0 .
+	 * \c derivative must be the proper size, as retrieved
+	 * from GetNumberOfParameters. */
+	virtual void UpdateTransformParameters( const DerivativeType & derivative,
+			ParametersValueType factor = itk::NumericTraits<ParametersValueType>::One) = 0;
 
 
 protected:
 	Energy();
 	virtual ~Energy() {}
 
-	void PrintSelf( std::ostream &os, Indent indent ) const {
-		Superclass::PrintSelf( os, indent );
+	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 
-		os << std::endl << "Energy Terms: " << std::flush;
-
-		EnergyComponentsContainer::const_iterator end = this->m_EnergyComponentsContainer.end();
-		for(EnergyComponentsContainer::const_iterator it = this->m_EnergyComponentsContainer.begin();
-				it != end; it++ ) {
-			os << std::endl << (*it)->PrintSelf(os, indent );
-		}
-
-		os << std::endl;
-	}
+	ParametersType m_Parameters;
 
 private:
-	EnergyComponentsContainer     m_EnergyComponentsContainer;
+	EnergyTermsContainer     m_EnergyTermsContainer;
 
 	Energy( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
 }; // End of Class
 
 } // End of namespace rstk
-
-#ifndef ITK_MANUAL_INSTANTIATION
-#include "Energy.txx"
-#endif
 
 
 #endif /* Energy_h */

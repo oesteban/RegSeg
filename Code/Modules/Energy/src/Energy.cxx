@@ -1,6 +1,6 @@
 // --------------------------------------------------------------------------
-// File:             EnergyBase.cxx
-// Date:             16/10/2012
+// File:             Energy.cxx
+// Date:             17/10/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
 // License:          BSD
@@ -35,22 +35,69 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-#include "EnergyBase.h"
+#include "Energy.h"
 
 namespace rstk {
 
-EnergyBase::EnergyBase() {
-  this->m_Value = itk::NumericTraits<MeasureType>::infinity();
-}
-
-EnergyBase::~EnergyBase(){}
-
-
-void EnergyBase::PrintSelf(std::ostream & os, itk::Indent indent) const {
-  Superclass::PrintSelf(os, indent);
-  os << indent << "Value: " << m_Value << std::endl;
-  os << std::endl;
-}
+Energy::Energy() {
 
 }
+
+Energy::~Energy() {}
+
+
+void Energy::PrintSelf( std::ostream &os, itk::Indent indent ) const {
+	Superclass::PrintSelf( os, indent );
+
+	os << std::endl << "Energy Terms: " << std::flush;
+
+	EnergyTermsContainer::const_iterator end = this->m_EnergyTermsContainer.end();
+	for(EnergyTermsContainer::const_iterator it = this->m_EnergyTermsContainer.begin();
+			it != end; it++ ) {
+		os << std::endl << (*it)->PrintSelf(os, indent );
+	}
+
+	os << std::endl;
+}
+
+Energy::MeasureType Energy::GetValue() const {
+	MeasureType result = itk::NumericTraits<MeasureType>::Zero;
+	EnergyTermsContainer::iterator end = this->m_EnergyTermsContainer.end();
+
+	for(EnergyTermsContainer::iterator it = this->m_EnergyTermsContainer.begin();
+			it != end; it++ ) {
+		result+= (*it)->GetValue();
+	}
+	this->m_Value = result;
+	return this->m_Value;
+}
+
+void Energy::GetValueAndDerivative( Energy::MeasureType & value, Energy::DerivativeType & derivative ) const {
+
+	// if parameters changed
+	value = itk::NumericTraits<MeasureType>::Zero;
+	derivative.Fill( itk::NumericTraits<DerivativeValueType>::Zero );
+
+	EnergyTermsContainer::iterator end = this->m_EnergyTermsContainer.end();
+	for(EnergyTermsContainer::iterator it = this->m_EnergyTermsContainer.begin(); it != end; it++ ) {
+		Energy::MeasureType termEnergy;
+		Energy::DerivativeType termDerivative;
+		(*it)->GetValueAndDerivative( termEnergy, termDerivative);
+		value+= termEnergy;
+		derivative+= termDerivative;
+	}
+
+	// TODO else
+}
+
+
+void Energy::SetEnergyTerm( Energy::Superclass* term ) {
+	term->SetParameters( this->m_Parameters );
+	this->m_EnergyTermsContainer.push_back( term );
+}
+
+
+
+
+}
+

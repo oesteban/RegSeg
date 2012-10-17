@@ -117,13 +117,6 @@ namespace rstk {
 		virtual void UpdateTransformParameters( const DerivativeType & derivative,
 				ParametersValueType factor = itk::NumericTraits<ParametersValueType>::One) = 0;
 
-		/** Get the current metric value stored in m_Value. This is only
-		 * meaningful after a call to GetValue() or GetValueAndDerivative().
-		 * Note that this would normally be called GetValue, but that name is
-		 * used for historical reasons by GetValue() to compute the current
-		 * metric value and store it in m_Value. */
-		MeasureType GetCurrentValue() const;
-
 	protected:
 			EnergyBase();
 			virtual ~EnergyBase();
