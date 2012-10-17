@@ -40,12 +40,10 @@
 
 #include <itkObject.h>
 #include <itkOptimizerParameters.h>
-// TODO EnergyBase
-//#include <itkObjectToObjectMetricBase.h>
+#include "EnergyBase.h"
 #include <itkIntTypes.h>
 
-namespace rstk
-{
+namespace rstk {
 /** \class EnergyOptimizerBase
  * \brief Abstract base for energy minimizers.
  */
@@ -109,7 +107,7 @@ public:
   /** Run the optimization.
    * \note Derived classes must override and call this superclass method, then
    * perform any additional initialization before performing optimization. */
-  virtual void StartOptimization();
+  virtual void Start();
 
 protected:
 
@@ -137,7 +135,7 @@ private:
   void operator=( const Self& );  //purposely not implemented
 };
 
-} // end namespace itk
+} // end namespace rstk
 
 
 #endif /* ENERGYOPTIMIZERBASE_H_ */

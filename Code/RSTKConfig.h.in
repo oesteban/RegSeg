@@ -1,4 +1,4 @@
-// CMake variables configured for MBIS
+// CMake variables configured for RSTK
 // do not modify this file
 #define RSTK_VERSION_MAJOR @RSTK_VERSION_MAJOR@
 #define RSTK_VERSION_MINOR @RSTK_VERSION_MINOR@
