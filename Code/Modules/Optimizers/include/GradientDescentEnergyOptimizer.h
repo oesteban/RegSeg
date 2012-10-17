@@ -46,26 +46,18 @@
 namespace rstk
 {
 
-template< class TEnergy >
-class GradientDescentEnergyOptimizer: public EnergyOptimizer< TEnergy > {
+
+class GradientDescentEnergyOptimizer: public EnergyOptimizer {
 public:
 	/** Standard class typedefs and macros */
 	typedef GradientDescentEnergyOptimizer             Self;
-	typedef EnergyOptimizer< TEnergy >                 Superclass;
-	typedef SmartPointer<Self>                         Pointer;
-	typedef SmartPointer< const Self >                 ConstPointer;
+	typedef EnergyOptimizer                            Superclass;
+	typedef itk::SmartPointer<Self>                    Pointer;
+	typedef itk::SmartPointer< const Self >            ConstPointer;
 	itkTypeMacro( GradientDescentEnergyOptimizer, EnergyOptimizer ); // Run-time type information (and related methods)
 	itkNewMacro( Self );                                             // New macro for creation of through a Smart Pointer
 
-	/** Energy-related typedefs */
-	typedef typename Superclass::EnergyType            EnergyType;
-	typedef typename EnergyType::Pointer               EnergyPointer;
-	typedef typename EnergyType::EnergyValueType       EnergyValueType;
-	typedef typename EnergyType::DisplacementFieldType DisplacementFieldType;
-	typedef typename DisplacementFieldType::Pointer    DisplacementFieldPointer;
 
-	/** Derivative type */
-	typedef Superclass::DerivativeType      DerivativeType;
 
 	/** Metric type over which this class is templated */
 	typedef Superclass::MeasureType                  MeasureType;
@@ -112,18 +104,54 @@ public:
 	 *  parameters, which can be large when working with high-dimensional
 	 *  transforms such as DisplacementFieldTransform.
 	 */
-	itkSetMacro(ReturnBestParametersAndValue, bool);
-	itkGetConstReferenceMacro(ReturnBestParametersAndValue, bool);
-	itkBooleanMacro(ReturnBestParametersAndValue);
+//	itkSetMacro(ReturnBestParametersAndValue, bool);
+//	itkGetConstReferenceMacro(ReturnBestParametersAndValue, bool);
+//	itkBooleanMacro(ReturnBestParametersAndValue);
 
 	/** Start and run the optimization */
-	virtual void StartOptimization();
+	virtual void Start();
 
-	virtual void StopOptimization(void);
+	virtual void Stop(void);
 
-	virtual void ResumeOptimization();
+	virtual void Resume();
 
 protected:
+	/** Manual learning rate to apply. It is overridden by
+	 * automatic learning rate estimation if enabled. See main documentation.
+	 */
+	InternalComputationValueType  m_LearningRate;
+
+	/** The maximum step size in physical units, to restrict learning rates.
+	 * Only used with automatic learning rate estimation. See main documentation.
+	 */
+	InternalComputationValueType  m_MaximumStepSizeInPhysicalUnits;
+	/** Minimum convergence value for convergence checking.
+	 *  The convergence checker calculates convergence value by fitting to
+	 *  a window of the energy profile. When the convergence value reaches
+	 *  a small value, such as 1e-8, it would be treated as converged.
+	 */
+	InternalComputationValueType m_MinimumConvergenceValue;
+
+	/** Window size for the convergence checker.
+	 *  The convergence checker calculates convergence value by fitting to
+	 *  a window of the energy (metric value) profile.
+	 */
+	SizeValueType m_ConvergenceWindowSize;
+
+	/** Current convergence value. */
+	InternalComputationValueType m_ConvergenceValue;
+
+	/** The convergence checker. */
+	ConvergenceMonitoringType::Pointer m_ConvergenceMonitoring;
+
+//	/** Store the best value and related paramters */
+//	MeasureType                  m_CurrentBestValue;
+//	ParametersType               m_BestParameters;
+//
+//	/** Flag to control returning of best value and parameters. */
+//	bool m_ReturnBestParametersAndValue;
+
+
 	GradientDescentEnergyOptimizer();
 	virtual ~GradientDescentEnergyOptimizer() {}
 
@@ -131,18 +159,13 @@ protected:
 		Superclass::PrintSelf( os, indent );
 	}
 
+	virtual void Iterate(void);
 private:
-	EnergyPointer m_Energy;
-
 	GradientDescentEnergyOptimizer( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
 }; // End of Class
 
 } // End of namespace rstk
-
-#ifndef ITK_MANUAL_INSTANTIATION
-#include "GradientDescentEnergyOptimizer.txx"
-#endif
 
 
 #endif /* GradientDescentEnergyOptimizer_h */

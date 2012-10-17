@@ -39,8 +39,8 @@
 #define EnergyOptimizer_h
 
 #include <itkObject.h>
-#include <itkObjectToObjectOptimizerBase.h>
 #include "Energy.h"
+#include "EnergyOptimizerBase.h"
 #include <vector>
 
 namespace rstk
@@ -50,15 +50,14 @@ namespace rstk
  *
  *  \ingroup RSTK
  */
-template< class TEnergy >
-class EnergyOptimizer: public itk::ObjectToObjectOptimizerBase {
+class EnergyOptimizer: public EnergyOptimizerBase {
 public:
 	typedef EnergyOptimizer                            Self;
-	typedef itk::ObjectToObjectOptimizerBase           Superclass;
+	typedef EnergyOptimizerBase                        Superclass;
 	typedef itk::SmartPointer<Self>                    Pointer;
 	typedef itk::SmartPointer< const Self >            ConstPointer;
 
-	itkTypeMacro( EnergyOptimizer, itk::ObjectToObjectOptimizerBase );
+	itkTypeMacro( EnergyOptimizer, EnergyOptimizerBase );
 
 	/** Codes of stopping conditions. */
 	typedef enum {
@@ -73,14 +72,6 @@ public:
 
 	itkNewMacro( Self );
 
-	typedef TEnergy                                    EnergyType;
-	typedef typename EnergyType::Pointer               EnergyPointer;
-	typedef typename EnergyType::EnergyValueType       EnergyValueType;
-
-	/** Derivative type */
-//	typedef EnergyType::DerivativeType DerivativeType;
-	typedef typename EnergyType::DisplacementFieldType DisplacementFieldType;
-	typedef typename DisplacementFieldType::Pointer    DisplacementFieldPointer;
 
 	/** Stop condition return string type */
 	typedef std::string StopConditionReturnStringType;
@@ -113,11 +104,11 @@ public:
 	/** Resume optimization.
 	 * This runs the optimization loop, and allows continuation
 	 * of stopped optimization */
-	virtual void ResumeOptimization() = 0;
+	virtual void Resume() = 0;
 
 	/** Stop optimization. The object is left in a state so the
 	 * optimization can be resumed by calling ResumeOptimization. */
-	virtual void StopOptimization(void);
+	virtual void Stop(void);
 
 	/** Get the reason for termination */
 	virtual const StopConditionReturnStringType GetStopConditionDescription() const;
@@ -137,6 +128,7 @@ protected:
 	/** Current gradient */
 	EnergyPointer m_Energy;
 	DerivativeType     m_Gradient;
+
 	virtual void PrintSelf(std::ostream & os, itk::Indent indent) const;
 
 private:
