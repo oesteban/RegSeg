@@ -1,4 +1,6 @@
 project(RSTKOptimizers)
 set(RSTKOptimizers_LIBRARIES RSTKOptimizers)
-itk_module_impl()
+
+ADD_SUBDIRECTORY( src/ )
+#itk_module_impl()
 
