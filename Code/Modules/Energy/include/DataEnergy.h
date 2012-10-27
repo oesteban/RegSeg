@@ -49,7 +49,7 @@
 namespace rstk
 {
 
-template< class TFixedImage, class TMovingSurface, class TEnergyValue = float >
+template< class TFixedImage, class TMovingSurface, class TDeformationField, class TEnergyValue = float >
 class DataEnergy:public EnergyTerm< TEnergyValue > {
 public:
 	typedef DataEnergy                                         Self;

@@ -50,8 +50,8 @@ public:
 	/** Standard class typedefs */
 	typedef DenseDeformationField                      Self;
 	typedef itk::Object                                Superclass;
-	typedef SmartPointer<Self>                         Pointer;
-	typedef SmartPointer<const Self>                   ConstPointer;
+	typedef itk::SmartPointer<Self>                    Pointer;
+	typedef itk::SmartPointer<const Self>              ConstPointer;
 
 	typedef TRealType                                  ScalarType;
 

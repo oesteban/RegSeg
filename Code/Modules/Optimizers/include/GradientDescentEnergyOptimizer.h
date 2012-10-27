@@ -45,7 +45,16 @@
 
 namespace rstk
 {
-
+/**
+ * \class GradientDescentEnergyOptimizer
+ *  \brief Gradient descent optimizer.
+ *
+ * GradientDescentOptimizer implements a simple gradient descent optimizer.
+ * At each iteration the current deformation field is updated according:
+ * \f[
+ *        u^{t+1} = \mathcal{FT^{-1}}
+ * \f]
+ */
 
 class GradientDescentEnergyOptimizer: public EnergyOptimizer {
 public:
@@ -65,6 +74,7 @@ public:
 
 	/** Type for the convergence checker */
 	typedef itk::Function::WindowConvergenceMonitoringFunction<double>	ConvergenceMonitoringType;
+	typedef ConvergenceMonitoringType::EnergyValueContainerSizeType     SizeValueType;
 
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
@@ -150,6 +160,9 @@ protected:
 //
 //	/** Flag to control returning of best value and parameters. */
 //	bool m_ReturnBestParametersAndValue;
+
+	/** Particular parameter definitions from our method */
+	InternalComputationValueType m_StepSize; // Step-size is tau in the formulations
 
 
 	GradientDescentEnergyOptimizer();
