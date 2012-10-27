@@ -103,14 +103,13 @@ void GradientDescentEnergyOptimizer::Resume() {
 		try	{
 			/* m_Gradient will be sized as needed by metric. If it's already
 			 * proper size, no new allocation is done. */
-			this->m_Energy->GetValueAndDerivative( this->m_CurrentEnergyValue, this->m_Gradient );
+			this->m_Energy->GetLevelSetMap( this->CurrentSurfaces, this->m_LevelSetMap );
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = COSTFUNCTION_ERROR;
 			this->m_StopConditionDescription << "Energy error during optimization";
 			this->Stop();
-			// Pass exception to caller
-			throw err;
+			throw err;  // Pass exception to caller
 		}
 
 		/* Check if optimization has been stopped externally.
@@ -161,21 +160,13 @@ void GradientDescentEnergyOptimizer::Resume() {
 	} //while (!m_Stop)
 }
 
+
 void GradientDescentEnergyOptimizer::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
-
-	/* Begin threaded gradient modification.
-	 * Scale by gradient scales, then estimate the learning
-	 * rate if options are set to (using the scaled gradient),
-	 * then modify by learning rate. The m_Gradient variable
-	 * is modified in-place. */
-	this->ModifyGradientByScales();
-	this->EstimateLearningRate();
-	this->ModifyGradientByLearningRate();
-
 	try {
-		/* Pass gradient to transform and let it do its own updating */
-		this->m_Energy->UpdateTransformParameters( this->m_Gradient );
+		DeformationFieldType numerator = ( this->m_DeformationField / this->m_StepSize ) - this->m_LevelSetMap;
+
+		this->m_NextDeformationField = InvFFT( FFT( numerator ) / FFT( denominator )); // denominator is pre-computed
 	}
 	catch ( itk::ExceptionObject & err ) {
 		this->m_StopCondition = UPDATE_PARAMETERS_ERROR;
@@ -184,6 +175,9 @@ void GradientDescentEnergyOptimizer::Iterate() {
 		// Pass exception to caller
 		throw err;
 	}
+
+	this->m_EnergyValue = this->m_Energy->GetValue( this->m_NextDeformationField );
+	// TODO best parameters stuff
 
 	this->InvokeEvent( itk::IterationEvent() );
 }
