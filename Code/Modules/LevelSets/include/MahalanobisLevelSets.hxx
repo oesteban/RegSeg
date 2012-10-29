@@ -70,11 +70,14 @@ void
 MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>
 ::GetLevelSetsMap( MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>::ContourDeformationType & contourDeformation,
 		           MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>::DeformationFieldType & targetDeformation) const {
+	// Compute mesh of normals
+	NormalFilterPointer normals = NormalFilterType::New();
+	normals->SetInput( contourDeformation );
+	normals->Update();
+
 	// for all node in contourDeformation
 
 		// compute mahalanobis distance in position
-
-		// compute normal
 
 	    // project to normal
 

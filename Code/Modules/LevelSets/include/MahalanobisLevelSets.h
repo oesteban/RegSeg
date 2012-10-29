@@ -41,6 +41,7 @@
 // Include headers
 #include <itkObject.h>
 #include <itkArray.h>
+#include <itkNormalQuadEdgeMeshFilter.h>
 #include "LevelSetsBase.h"
 
 // Namespace declaration
@@ -72,6 +73,10 @@ public:
 	typedef typename Superclass::DeformationFieldPointer   DeformationFieldPointer;
 	typedef typename Superclass::ContourDeformationType    ContourDeformationType;
 	typedef typename Superclass::ContourDeformationPointer ContourDeformationPointer;
+
+	typedef itk::NormalQuadEdgeMeshFilter
+	    < ContourDeformationType, ContourDeformationType > NormalFilterType;
+	typedef typename NormalFilterType::Pointer             NormalFilterPointer;
 
 	typedef TTargetImage                                   ImageType;
 	typedef typename ImageType::Pointer                    ImagePointer;
