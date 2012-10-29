@@ -56,16 +56,16 @@ namespace rstk {
  *  \ingroup
  */
 template <class TTargetImage, class TDeformationField, class TContourDeformation, int NCONTOURS=2 >
-class MahalanobisLevelSets: public LevelSetsBase< TDeformationField, TContourDeformation > {
+class MahalanobisLevelSets: public rstk::LevelSetsBase< TDeformationField, TContourDeformation > {
 public:
 	typedef MahalanobisLevelSets                         Self;
-	typedef LevelSetsBase
+	typedef rstk::LevelSetsBase
 			< TDeformationField, TContourDeformation >   Superclass;
 	typedef itk::SmartPointer<Self>                      Pointer;
 	typedef itk::SmartPointer<const Self>                ConstPointer;
 
 	/** Run-time type information (and related methods). */
-	itkTypeMacro( MahalanobisLevelSets, LevelSetsBase );
+	itkTypeMacro( MahalanobisLevelSets, rstk::LevelSetsBase );
 	itkNewMacro( Self );
 
 	typedef typename Superclass::ValueType                 ValueType;
