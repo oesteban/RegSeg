@@ -44,6 +44,8 @@
 #endif
 
 #include <itkVector.h>
+#include <itkVectorImage.h>
+#include <itkImage.h>
 #include <itkQuadEdgeMesh.h>
 #include <itkVTKPolyDataReader.h>
 #include <itkVTKPolyDataWriter.h>
@@ -52,11 +54,15 @@
 using namespace rstk;
 
 int main(int argc, char *argv[]) {
-	typedef itk::QuadEdgeMesh< itk::Vector< double, 3u >, 3u > ContourDisplacementFieldType;
-	typedef typename ContourDisplacementFieldType::Pointer     ContourDisplacementFieldPointer;
 
-	typedef itk::VTKPolyDataReader< ContourDisplacementFieldType >     ReaderType;
-	typedef itk::VTKPolyDataWriter< ContourDisplacementFieldType >     WriterType;
+	typedef MahalanobisLevelSets<itk::Image<itk::Vector<float,2u>, 3u > >      LevelSetsType;
+
+	typedef typename LevelSetsType::ContourDeformationType     ContourDeformationType;
+	typedef typename ContourDeformationType::Pointer           ContourDisplacementFieldPointer;
+
+	typedef itk::VTKPolyDataReader< ContourDeformationType >     ReaderType;
+	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
+
 
 
 	ReaderType::Pointer polyDataReader = ReaderType::New();
@@ -66,6 +72,7 @@ int main(int argc, char *argv[]) {
 	mesh->Initialize();
 
 
+	typename LevelSetsType::Pointer ls = LevelSetsType::New();
 
 		WriterType::Pointer polyDataWriter = WriterType::New();
 		polyDataWriter->SetInput( mesh );

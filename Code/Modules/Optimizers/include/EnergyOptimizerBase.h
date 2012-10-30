@@ -40,7 +40,7 @@
 
 #include <itkObject.h>
 #include <itkOptimizerParameters.h>
-#include "EnergyBase.h"
+#include "LevelSetsBase.h"
 #include <itkIntTypes.h>
 
 namespace rstk {
@@ -61,7 +61,7 @@ public:
   typedef itk::OptimizerParameters< double >               ParametersType; //  Parameters type.
 
   /** Metric function type */
-  typedef EnergyBase                                       EnergyType;
+  typedef LevelSetsBase                                       EnergyType;
   typedef EnergyType::Pointer                              EnergyPointer;
 
   /** Number of parameters type */
