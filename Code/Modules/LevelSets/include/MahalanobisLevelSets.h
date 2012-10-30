@@ -40,9 +40,11 @@
 
 // Include headers
 #include <itkObject.h>
-#include <itkArray.h>
+#include <itkVector.h>
+#include <itkVariableSizeMatrix.h>
 #include <itkNormalQuadEdgeMeshFilter.h>
 #include "LevelSetsBase.h"
+#include "SparseToDenseFieldResampleFilter.h"
 
 // Namespace declaration
 namespace rstk {
@@ -55,7 +57,7 @@ namespace rstk {
  *
  *  \ingroup
  */
-template <class TTargetImage, class TDeformationField, class TContourDeformation, int NCONTOURS=2 >
+template <class TTargetImage, class TDeformationField, class TContourDeformation>
 class MahalanobisLevelSets: public rstk::LevelSetsBase< TDeformationField, TContourDeformation > {
 public:
 	typedef MahalanobisLevelSets                         Self;
@@ -73,6 +75,7 @@ public:
 	typedef typename Superclass::DeformationFieldPointer   DeformationFieldPointer;
 	typedef typename Superclass::ContourDeformationType    ContourDeformationType;
 	typedef typename Superclass::ContourDeformationPointer ContourDeformationPointer;
+	typedef typename Superclass::PixelType::ValueType      VectorValueType;
 
 	typedef itk::NormalQuadEdgeMeshFilter
 	    < ContourDeformationType, ContourDeformationType > NormalFilterType;
@@ -82,15 +85,25 @@ public:
 	typedef typename ImageType::Pointer                    ImagePointer;
 	typedef typename ImageType::ConstPointer               ImageConstPointer;
 
-	typedef itk::Array< double >                           MeansType;
-	typedef itk::Matrix< double >                          CovarianceType;
+
+	typedef SparseToDenseFieldResampleFilter<ContourDeformationType, DeformationFieldType>  ResamplerType;
+
+	typedef typename ImageType::PixelType                  MeanType;
+	typedef itk::VariableSizeMatrix< double >              CovarianceType;
 
 	ValueType GetValue() const;
-	void GetLevelSetsMap( ContourDeformationType & contourDeformation, DeformationFieldType & targetDeformation) const;
+	void GetLevelSetsMap( DeformationFieldType & levelSetMap) const;
+
+	void SetParameters( MeanType& mean, CovarianceType& cov, bool inside);
 
 	itkSetObjectMacro(Image, ImageType);
 	itkGetConstObjectMacro(Image, ImageType);
 
+	itkSetObjectMacro(ContourDeformation, ContourDeformationType);
+	itkGetConstObjectMacro(ContourDeformation, ContourDeformationType);
+
+	itkSetObjectMacro(DeformationField, DeformationFieldType);
+	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
 protected:
 	MahalanobisLevelSets();
 	~MahalanobisLevelSets() {}
@@ -98,6 +111,11 @@ protected:
 	void PrintSelf( std::ostream& os, itk::Indent indent) const;
 
 	ImageConstPointer m_Image;
+	ContourDeformationPointer m_ContourDeformation;
+	DeformationFieldPointer m_DeformationField;
+	MeanType m_Mean[2];
+	CovarianceType m_InverseCovariance[2];
+
 
 private:
 	MahalanobisLevelSets( const Self &); // purposely not implemented
