@@ -70,16 +70,19 @@ public:
 	itkTypeMacro( ContourDisplacementField, itk::Object );
 	itkNewMacro( Self );
 
-	typedef typename Superclass::PixelType                      PixelType;
+	typedef typename Superclass::PixelType                      VectorType;
 	typedef itk::Mesh<TCoordPrecision, VDimension >             InternalMeshType;
 	typedef typename InternalMeshType::Pointer                  InternalMeshPointer;
 
-	itkSetObjectMacro( ReferenceMesh, InternalMeshType );
-	itkGetConstObjectMacro( ReferenceMesh, InternalMeshType );
+	//itkSetObjectMacro( ReferenceMesh, InternalMeshType );
+	//itkGetConstObjectMacro( ReferenceMesh, InternalMeshType );
+
+	//void SetReferenceMesh( InternalMeshType* mesh );
+	void Initialize();
 
 protected:
 	ContourDisplacementField();
-	virtual ~ContourDisplacementField() {}
+	~ContourDisplacementField() {}
 
 	void PrintSelf( std::ostream& os, itk::Indent indent) const;
 
@@ -87,10 +90,13 @@ private:
 	ContourDisplacementField( const Self &); // purposely not implemented
 	void operator=(const Self &); // purposely not implemented
 
-	InternalMeshPointer m_ReferenceMesh;
+	//InternalMeshPointer m_ReferenceMesh;
 
 }; // End of class ContourDisplacementField
 } // End of namespace
 
+#ifndef ITK_MANUAL_INSTANTIATION
+#include "ContourDisplacementField.hxx"
+#endif
 
 #endif /* CONTOURDISPLACEMENTFIELD_H_ */
