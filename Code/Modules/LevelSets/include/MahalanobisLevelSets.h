@@ -57,12 +57,12 @@ namespace rstk {
  *
  *  \ingroup
  */
-template <class TTargetImage, class TDeformationField, class TContourDeformation>
-class MahalanobisLevelSets: public rstk::LevelSetsBase< TDeformationField, TContourDeformation > {
+template <typename TReferenceImageType, typename TCoordRepType = double, unsigned int VDimension = 3u>
+class MahalanobisLevelSets: public rstk::LevelSetsBase< TReferenceImageType, TCoordRepType, VDimension> {
 public:
 	typedef MahalanobisLevelSets                         Self;
 	typedef rstk::LevelSetsBase
-			< TDeformationField, TContourDeformation >   Superclass;
+		< TReferenceImageType, TCoordRepType, VDimension>     Superclass;
 	typedef itk::SmartPointer<Self>                      Pointer;
 	typedef itk::SmartPointer<const Self>                ConstPointer;
 
@@ -71,33 +71,38 @@ public:
 	itkNewMacro( Self );
 
 	typedef typename Superclass::ValueType                 ValueType;
+	typedef typename Superclass::PointType                 PointType;
+	typedef typename Superclass::VectorType                VectorType;
+	typedef typename Superclass::PixelType                 PixelType;
+	typedef typename Superclass::PixelValueType            PixelValueType;
 	typedef typename Superclass::DeformationFieldType      DeformationFieldType;
 	typedef typename Superclass::DeformationFieldPointer   DeformationFieldPointer;
 	typedef typename Superclass::ContourDeformationType    ContourDeformationType;
 	typedef typename Superclass::ContourDeformationPointer ContourDeformationPointer;
-	typedef typename Superclass::PixelType::ValueType      VectorValueType;
 
 	typedef itk::NormalQuadEdgeMeshFilter
 	    < ContourDeformationType, ContourDeformationType > NormalFilterType;
 	typedef typename NormalFilterType::Pointer             NormalFilterPointer;
 
-	typedef TTargetImage                                   ImageType;
-	typedef typename ImageType::Pointer                    ImagePointer;
-	typedef typename ImageType::ConstPointer               ImageConstPointer;
+	typedef typename Superclass::ReferenceImageType        ReferenceImageType;
+	typedef typename ReferenceImageType::Pointer           ReferenceImagePointer;
+	typedef typename ReferenceImageType::ConstPointer      ReferenceImageConstPointer;
+	typedef typename Superclass::InterpolatorType          InterpolatorType;
+	typedef typename Superclass::InterpolatorPointer          InterpolatorPointer;
 
 
 	typedef SparseToDenseFieldResampleFilter<ContourDeformationType, DeformationFieldType>  ResamplerType;
 
-	typedef typename ImageType::PixelType                  MeanType;
-	typedef itk::VariableSizeMatrix< double >              CovarianceType;
+	typedef PixelValueType                                 MeanType;
+	typedef itk::VariableSizeMatrix< PixelValueType >      CovarianceType;
 
 	ValueType GetValue() const;
 	void GetLevelSetsMap( DeformationFieldType & levelSetMap) const;
 
 	void SetParameters( MeanType& mean, CovarianceType& cov, bool inside);
 
-	itkSetObjectMacro(Image, ImageType);
-	itkGetConstObjectMacro(Image, ImageType);
+	itkSetObjectMacro(ReferenceImage, ReferenceImageType);
+	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
 
 	itkSetObjectMacro(ContourDeformation, ContourDeformationType);
 	itkGetConstObjectMacro(ContourDeformation, ContourDeformationType);
@@ -110,7 +115,7 @@ protected:
 
 	void PrintSelf( std::ostream& os, itk::Indent indent) const;
 
-	ImageConstPointer m_Image;
+	ReferenceImageConstPointer m_ReferenceImage;
 	ContourDeformationPointer m_ContourDeformation;
 	DeformationFieldPointer m_DeformationField;
 	MeanType m_Mean[2];

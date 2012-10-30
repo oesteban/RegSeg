@@ -38,8 +38,13 @@
 #ifndef LEVELSETSBASE_H_
 #define LEVELSETSBASE_H_
 
-#include "itkObject.h"
-#include "itkNumericTraits.h"
+#include <itkObject.h>
+#include <itkNumericTraits.h>
+#include <itkVector.h>
+#include <itkImage.h>
+#include <itkVectorImage.h>
+#include <itkVectorLinearInterpolateImageFunction.h>
+#include <itkQuadEdgeMesh.h>
 
 namespace rstk {
 /** \class LevelSetsBase
@@ -63,7 +68,7 @@ namespace rstk {
  */
 
 
-template <class TDeformationField, class TContourDeformation>
+template <typename TReferenceImageType, typename TCoordRepType = double, unsigned int VDimension = 3u>
 class LevelSetsBase: public itk::Object {
 public:
 	typedef LevelSetsBase                    Self;
@@ -75,15 +80,29 @@ public:
 	itkTypeMacro(LevelSetsBase, itk::Object);
 
 	typedef double ValueType;
+	typedef TCoordRepType                                    PointValueType;
+	typedef itk::Vector< PointValueType, VDimension >        VectorType;
 
-	typedef TDeformationField                             DeformationFieldType;
-	typedef typename DeformationFieldType::Pointer        DeformationFieldPointer;
-	typedef typename DeformationFieldType::ConstPointer   DeformationFieldConstPointer;
-	typedef TContourDeformation                           ContourDeformationType;
-	typedef typename ContourDeformationType::Pointer      ContourDeformationPointer;
+	typedef TReferenceImageType                              ReferenceImageType;
+	typedef typename ReferenceImageType::PixelType           PixelType;
+	typedef typename PixelType::ValueType                    PixelValueType;
+
+	typedef itk::VectorLinearInterpolateImageFunction
+			< ReferenceImageType >                           InterpolatorType;
+	typedef typename InterpolatorType::Pointer               InterpolatorPointer;
+
+	typedef itk::QuadEdgeMesh< VectorType, VDimension >      ContourDeformationType;
+	typedef typename ContourDeformationType::PointType       PointType;
+	typedef typename ContourDeformationType::Pointer         ContourDeformationPointer;
+	typedef typename ContourDeformationType
+			                     ::PointDataContainerPointer PointDataContainerPointer;
+
+	typedef itk::Image< VectorType, VDimension >             DeformationFieldType;
+	typedef typename DeformationFieldType::Pointer           DeformationFieldPointer;
+	typedef typename DeformationFieldType::ConstPointer      DeformationFieldConstPointer;
 
 	virtual ValueType GetValue() const = 0;
-	virtual void GetLevelSetsMap( ContourDeformationType & contourDeformation, DeformationFieldType & targetDeformation) const = 0;
+	virtual void GetLevelSetsMap( DeformationFieldType & levelSetMap) const = 0;
 protected:
 	LevelSetsBase() { this->m_Value = itk::NumericTraits<ValueType>::infinity(); }
 	virtual ~LevelSetsBase() {}

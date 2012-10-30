@@ -45,16 +45,16 @@
 #include <vnl/algo/vnl_ldl_cholesky.h>
 
 namespace rstk {
-template <class TTargetImage, class TDeformationField, class TContourDeformation>
-MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>
+template <typename TReferenceImageType, typename TCoordRepType, unsigned int VDimension>
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>
 ::MahalanobisLevelSets() {
 
 
 }
 
-template <class TTargetImage, class TDeformationField, class TContourDeformation>
-typename MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>::ValueType
-MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>
+template <typename TReferenceImageType, typename TCoordRepType, unsigned int VDimension>
+typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>::ValueType
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>
 ::GetValue() const {
 	// for all classes
 
@@ -68,11 +68,11 @@ MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>
 	return this->m_Value;
 }
 
-template <class TTargetImage, class TDeformationField, class TContourDeformation>
+template <typename TReferenceImageType, typename TCoordRepType, unsigned int VDimension>
 void
-MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>
-::SetParameters( typename MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>::MeanType& mean,
-		         typename MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>::CovarianceType& cov,
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>
+::SetParameters( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>::MeanType& mean,
+		         typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>::CovarianceType& cov,
 		         bool inside ) {
 	unsigned int idx = (unsigned int ) (!inside);
 
@@ -143,12 +143,12 @@ MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>
 	}
 }
 
-template <class TTargetImage, class TDeformationField, class TContourDeformation>
+template <typename TReferenceImageType, typename TCoordRepType, unsigned int VDimension>
 void
-MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>
-::GetLevelSetsMap( MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>::DeformationFieldType & levelSetMap) const {
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>
+::GetLevelSetsMap( MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>::DeformationFieldType & levelSetMap) const {
 	// Copy deformation map
-	ContourDeformationPointer speedMap = this->m_ContourDeformation->Copy();
+	ContourDeformationPointer speedMap = this->m_ContourDeformation->Clone();
 
 	// Compute mesh of normals
 	NormalFilterPointer normFilter = NormalFilterType::New();
@@ -156,8 +156,8 @@ MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>
 	normFilter->Update();
 	ContourDeformationPointer normals = normFilter->GetOutput();
 
-	typename ContourDeformationType::PointDataContainerPointer points = this->m_ContourDeformation->GetPoints();
-	typename ContourDeformationType::PointDataContainerIterator p_it = points->Begin();
+	typename ContourDeformationType::PointsContainerPointer points = this->m_ContourDeformation->GetPoints();
+	typename ContourDeformationType::PointsContainerIterator p_it = points->Begin();
 	typename ContourDeformationType::PointDataContainerPointer container = this->m_ContourDeformation->GetPointData();
 	typename ContourDeformationType::PointDataContainerIterator u_it = container->Begin();
 	typename ContourDeformationType::PointDataContainerPointer normContainer = normals->GetPointData();
@@ -165,15 +165,21 @@ MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>
 	//typename ContourDeformationType::PointDataContainerPointer speeds = speedMap->GetPointData();
 	//typename ContourDeformationType::PointDataContainerIterator s_it = speeds->Begin();
 
+	typename ReferenceImageType::IndexType idx;
+
+	//typename ReferenceImageType::ContinuousIndexType cidx;
 	// for all node in mesh
-	while (p_it != container->End()) {
-		VectorValueType levelSet = 0;
-		ValueType uk = u_it.Value();
-		ValueType currentPoint = p_it.Value() + uk;
-		ValueType Ik = this->m_Image->GetValue( currentPoint );
+	while (p_it != points->End()) {
+		ValueType levelSet = 0;
+		VectorType uk = u_it.Value();
+		PointType currentPoint = p_it.Value() + uk;
+		//this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex( currentPoint, cidx );
+		//PixelType Ik = interpolator->GetPixel( cidx );
+		this->m_ReferenceImage->TransformPhysicalPointToIndex( currentPoint, idx );
+		PixelType Ik = this->m_ReferenceImage->GetPixel(idx);
 		// compute on both segments
 		for( size_t i = 0; i<2; i++) {
-			ValueType Dk = Ik - m_Mean[i];
+			vnl_vector<PixelValueType> Dk = (Ik - m_Mean[i]).GetVnlVector();
 			// compute mahalanobis distance in position
 			levelSet-= dot_product(Dk, m_InverseCovariance[i].GetVnlMatrix() * Dk);
 		}
@@ -190,7 +196,7 @@ MahalanobisLevelSets<TTargetImage,TDeformationField,TContourDeformation>
 	res->SetInput( speedMap );
 	res->Update();
 
-	levelSetMap = res->GetOutput()->Copy();
+	levelSetMap = DeformationFieldType(res->GetOutput()->Clone().GetPointer());
 }
 
 }
