@@ -57,12 +57,12 @@ namespace rstk {
  *
  *  \ingroup
  */
-template <typename TReferenceImageType, typename TCoordRepType = double, unsigned int VDimension = 3u>
-class MahalanobisLevelSets: public rstk::LevelSetsBase< TReferenceImageType, TCoordRepType, VDimension> {
+template <typename TReferenceImageType, typename TCoordRepType = double>
+class MahalanobisLevelSets: public rstk::LevelSetsBase< TReferenceImageType, TCoordRepType> {
 public:
 	typedef MahalanobisLevelSets                         Self;
 	typedef rstk::LevelSetsBase
-		< TReferenceImageType, TCoordRepType, VDimension>     Superclass;
+		< TReferenceImageType, TCoordRepType>            Superclass;
 	typedef itk::SmartPointer<Self>                      Pointer;
 	typedef itk::SmartPointer<const Self>                ConstPointer;
 
@@ -72,6 +72,7 @@ public:
 
 	typedef typename Superclass::ValueType                 ValueType;
 	typedef typename Superclass::PointType                 PointType;
+	typedef typename Superclass::PointValueType            PointValueType;
 	typedef typename Superclass::VectorType                VectorType;
 	typedef typename Superclass::PixelType                 PixelType;
 	typedef typename Superclass::PixelValueType            PixelValueType;
@@ -88,13 +89,17 @@ public:
 	typedef typename ReferenceImageType::Pointer           ReferenceImagePointer;
 	typedef typename ReferenceImageType::ConstPointer      ReferenceImageConstPointer;
 	typedef typename Superclass::InterpolatorType          InterpolatorType;
-	typedef typename Superclass::InterpolatorPointer          InterpolatorPointer;
+	typedef typename Superclass::InterpolatorPointer       InterpolatorPointer;
+
+
+	itkStaticConstMacro( Components, unsigned int, itkGetStaticConstMacro(PixelType::Dimension) );
 
 
 	typedef SparseToDenseFieldResampleFilter<ContourDeformationType, DeformationFieldType>  ResamplerType;
 
-	typedef PixelValueType                                 MeanType;
-	typedef itk::VariableSizeMatrix< PixelValueType >      CovarianceType;
+	typedef PixelType                                      MeanType;
+	typedef itk::Matrix
+			< PixelValueType, Components, Components >     CovarianceType;
 
 	ValueType GetValue() const;
 	void GetLevelSetsMap( DeformationFieldType & levelSetMap) const;

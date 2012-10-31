@@ -45,16 +45,25 @@
 #include <vnl/algo/vnl_ldl_cholesky.h>
 
 namespace rstk {
-template <typename TReferenceImageType, typename TCoordRepType, unsigned int VDimension>
-MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>
+template <typename TReferenceImageType, typename TCoordRepType>
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::MahalanobisLevelSets() {
 
 
 }
 
-template <typename TReferenceImageType, typename TCoordRepType, unsigned int VDimension>
-typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>::ValueType
-MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>
+template <typename TReferenceImageType, typename TCoordRepType>
+void
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+::PrintSelf( std::ostream& os, itk::Indent indent) const {
+	Superclass::PrintSelf(os, indent);
+
+	// TODO PrintSelf parameters
+}
+
+template <typename TReferenceImageType, typename TCoordRepType>
+typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ValueType
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::GetValue() const {
 	// for all classes
 
@@ -68,11 +77,11 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>
 	return this->m_Value;
 }
 
-template <typename TReferenceImageType, typename TCoordRepType, unsigned int VDimension>
+template <typename TReferenceImageType, typename TCoordRepType>
 void
-MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>
-::SetParameters( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>::MeanType& mean,
-		         typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>::CovarianceType& cov,
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+::SetParameters( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::MeanType& mean,
+		         typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::CovarianceType& cov,
 		         bool inside ) {
 	unsigned int idx = (unsigned int ) (!inside);
 
@@ -98,57 +107,63 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>
 	}
 */
 
-	// Compute diagonal and check that eigenvectors >= 0.0
-	typedef vnl_diag_matrix<double>::iterator DiagonalIterator;
-	typedef vnl_symmetric_eigensystem<double> Eigensystem;
-	vnl_matrix< double > S = cov.GetVnlMatrix();
-	Eigensystem* e = new Eigensystem( S );
+	if( Components > 1 ) {
+		// Compute diagonal and check that eigenvectors >= 0.0
+		typedef typename vnl_diag_matrix<PixelValueType>::iterator DiagonalIterator;
+		typedef vnl_symmetric_eigensystem<PixelValueType> Eigensystem;
+		vnl_matrix< PixelValueType > S = cov.GetVnlMatrix();
+		Eigensystem* e = new Eigensystem( S );
 
-	bool modified = false;
-	DiagonalIterator itD = e->D.begin();
-	while ( itD!= e->D.end() ) {
-		if (*itD < 0) {
-			*itD = 0.;
-			modified = true;
+		bool modified = false;
+		DiagonalIterator itD = e->D.begin();
+		while ( itD!= e->D.end() ) {
+			if (*itD < 0) {
+				*itD = 0.;
+				modified = true;
+			}
+			itD++;
 		}
-		itD++;
-	}
 
-	if (modified) this->m_InverseCovariance[idx] = e->recompose();
-	else this->m_InverseCovariance[idx] = cov;
-	delete e;
+		if (modified) this->m_InverseCovariance[idx] = e->recompose();
+		else this->m_InverseCovariance[idx] = cov;
+		delete e;
 
-	// the inverse of the covariance matrix is first computed by SVD
-	vnl_matrix_inverse< double > inv_cov( this->m_InverseCovariance[idx].GetVnlMatrix() );
+		// the inverse of the covariance matrix is first computed by SVD
+		vnl_matrix_inverse< PixelValueType > inv_cov( this->m_InverseCovariance[idx].GetVnlMatrix() );
 
-	// the determinant is then costless this way
-	double det = inv_cov.determinant_magnitude();
+		// the determinant is then costless this way
+		double det = inv_cov.determinant_magnitude();
 
-	if( det < 0.) {
-		itkExceptionMacro( << "det( m_InverseCovariance ) < 0" );
-	}
+		if( det < 0.) {
+			itkExceptionMacro( << "det( m_InverseCovariance ) < 0" );
+		}
 
-	// FIXME Singurality Threshold for Covariance matrix: 1e-6 is an arbitrary value!!!
-	const double singularThreshold = 1.0e-6;
-	if( det > singularThreshold ) {
-		// allocate the memory for m_InverseCovariance matrix
-		this->m_InverseCovariance[idx].GetVnlMatrix() = inv_cov.inverse();
+		// FIXME Singurality Threshold for Covariance matrix: 1e-6 is an arbitrary value!!!
+		const PixelValueType singularThreshold = 1.0e-6;
+		if( det > singularThreshold ) {
+			// allocate the memory for m_InverseCovariance matrix
+			this->m_InverseCovariance[idx].GetVnlMatrix() = inv_cov.inverse();
+		} else {
+			// TODO Perform cholesky diagonalization and select the semi-positive aproximation
+			//vnl_ldl_cholesky* chol = new vnl_ldl_cholesky( this->m_InverseCovariance[idx].GetVnlMatrix() );
+			//vnl_vector< PixelValueType > D( chol->diagonal() );
+			//det = dot_product( D, D );
+			//vnl_matrix_inverse< PixelValueType > R (chol->upper_triangle());
+			//this->m_InverseCovariance[idx].GetVnlMatrix() = R.inverse();
+		}
 	} else {
-		// Perform cholesky diagonalization and select the semi-positive aproximation
-		vnl_ldl_cholesky* chol = new vnl_ldl_cholesky( this->m_InverseCovariance[idx].GetVnlMatrix() );
-		vnl_vector< double > D( chol->diagonal() );
-		det = dot_product( D, D );
-		vnl_matrix_inverse< double > R (chol->upper_triangle());
-		this->m_InverseCovariance[idx].GetVnlMatrix() = R.inverse();
+		this->m_InverseCovariance[idx](0,0)=1.0/cov(0,0);
 	}
 }
 
-template <typename TReferenceImageType, typename TCoordRepType, unsigned int VDimension>
+template <typename TReferenceImageType, typename TCoordRepType>
 void
-MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>
-::GetLevelSetsMap( MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>::DeformationFieldType & levelSetMap) const {
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+::GetLevelSetsMap( MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldType & levelSetMap) const {
 	// Copy deformation map
 	ContourDeformationPointer speedMap = this->m_ContourDeformation->Clone();
+	InterpolatorPointer interp = InterpolatorType::New();
+	interp->SetInputImage( this->m_ReferenceImage );
 
 	// Compute mesh of normals
 	NormalFilterPointer normFilter = NormalFilterType::New();
@@ -162,21 +177,13 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>
 	typename ContourDeformationType::PointDataContainerIterator u_it = container->Begin();
 	typename ContourDeformationType::PointDataContainerPointer normContainer = normals->GetPointData();
 	typename ContourDeformationType::PointDataContainerIterator n_it = normContainer->Begin();
-	//typename ContourDeformationType::PointDataContainerPointer speeds = speedMap->GetPointData();
-	//typename ContourDeformationType::PointDataContainerIterator s_it = speeds->Begin();
 
-	typename ReferenceImageType::IndexType idx;
-
-	//typename ReferenceImageType::ContinuousIndexType cidx;
 	// for all node in mesh
 	while (p_it != points->End()) {
 		ValueType levelSet = 0;
 		VectorType uk = u_it.Value();
 		PointType currentPoint = p_it.Value() + uk;
-		//this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex( currentPoint, cidx );
-		//PixelType Ik = interpolator->GetPixel( cidx );
-		this->m_ReferenceImage->TransformPhysicalPointToIndex( currentPoint, idx );
-		PixelType Ik = this->m_ReferenceImage->GetPixel(idx);
+		PixelType Ik = interp->Evaluate( currentPoint );
 		// compute on both segments
 		for( size_t i = 0; i<2; i++) {
 			vnl_vector<PixelValueType> Dk = (Ik - m_Mean[i]).GetVnlVector();
@@ -192,11 +199,19 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType,VDimension>
 
 	// Interpolate sparse velocity field to targetDeformation
 	typename ResamplerType::Pointer res = ResamplerType::New();
-	res->SetReferenceImage( this->m_DeformationField );
+//	res->SetReferenceImage( this->m_DeformationField );
 	res->SetInput( speedMap );
 	res->Update();
+	DeformationFieldPointer speedsfield = res->GetOutput();
 
-	levelSetMap = DeformationFieldType(res->GetOutput()->Clone().GetPointer());
+	typedef typename DeformationFieldType::SizeValueType SizeValueType;
+	VectorType* destBuffer = levelSetMap.GetBufferPointer();
+	VectorType* origBuffer = speedsfield->GetBufferPointer();
+	const SizeValueType numberOfPixels = speedsfield->GetBufferedRegion().GetNumberOfPixels();
+
+	for ( SizeValueType i = 0; i < numberOfPixels; i++ ) {
+	    (*destBuffer)[i] = (*origBuffer)[i];
+	}
 }
 
 }

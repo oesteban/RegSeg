@@ -68,7 +68,7 @@ namespace rstk {
  */
 
 
-template <typename TReferenceImageType, typename TCoordRepType = double, unsigned int VDimension = 3u>
+template <typename TReferenceImageType, typename TCoordRepType = double>
 class LevelSetsBase: public itk::Object {
 public:
 	typedef LevelSetsBase                    Self;
@@ -79,9 +79,11 @@ public:
 	/** Run-time type information (and related methods). */
 	itkTypeMacro(LevelSetsBase, itk::Object);
 
+	itkStaticConstMacro( Dimension, unsigned int, TReferenceImageType::ImageDimension );
+
 	typedef double ValueType;
 	typedef TCoordRepType                                    PointValueType;
-	typedef itk::Vector< PointValueType, VDimension >        VectorType;
+	typedef itk::Vector< PointValueType, Dimension >         VectorType;
 
 	typedef TReferenceImageType                              ReferenceImageType;
 	typedef typename ReferenceImageType::PixelType           PixelType;
@@ -91,13 +93,13 @@ public:
 			< ReferenceImageType >                           InterpolatorType;
 	typedef typename InterpolatorType::Pointer               InterpolatorPointer;
 
-	typedef itk::QuadEdgeMesh< VectorType, VDimension >      ContourDeformationType;
+	typedef itk::QuadEdgeMesh< VectorType, Dimension >       ContourDeformationType;
 	typedef typename ContourDeformationType::PointType       PointType;
 	typedef typename ContourDeformationType::Pointer         ContourDeformationPointer;
 	typedef typename ContourDeformationType
 			                     ::PointDataContainerPointer PointDataContainerPointer;
 
-	typedef itk::Image< VectorType, VDimension >             DeformationFieldType;
+	typedef itk::Image< VectorType, Dimension >              DeformationFieldType;
 	typedef typename DeformationFieldType::Pointer           DeformationFieldPointer;
 	typedef typename DeformationFieldType::ConstPointer      DeformationFieldConstPointer;
 

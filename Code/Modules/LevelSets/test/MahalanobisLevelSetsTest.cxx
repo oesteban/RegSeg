@@ -37,7 +37,6 @@
 
 
 
-
 #ifndef TEST_DATA_DIR
 #define TEST_DATA_DIR "./"
 // data source http://code.google.com/p/v3dsolver/source/browse/data/
@@ -46,6 +45,8 @@
 #include <itkVector.h>
 #include <itkVectorImage.h>
 #include <itkImage.h>
+#include <itkImageFileReader.h>
+#include <itkImageFileWriter.h>
 #include <itkQuadEdgeMesh.h>
 #include <itkVTKPolyDataReader.h>
 #include <itkVTKPolyDataWriter.h>
@@ -54,29 +55,54 @@
 using namespace rstk;
 
 int main(int argc, char *argv[]) {
+	typedef itk::Vector<float, 1u>               VectorPixelType;
+	typedef itk::Image<VectorPixelType, 3u>      ImageType;
+	typedef MahalanobisLevelSets<ImageType>      LevelSetsType;
 
-	typedef MahalanobisLevelSets<itk::Image<itk::Vector<float,2u>, 3u > >      LevelSetsType;
-
-	typedef typename LevelSetsType::ContourDeformationType     ContourDeformationType;
-	typedef typename ContourDeformationType::Pointer           ContourDisplacementFieldPointer;
+	typedef LevelSetsType::ContourDeformationType     ContourDeformationType;
+	typedef ContourDeformationType::Pointer           ContourDisplacementFieldPointer;
+	typedef LevelSetsType::VectorType                 VectorType;
+	typedef LevelSetsType::MeanType                   MeanType;
+	typedef LevelSetsType::CovarianceType             CovarianceType;
+	typedef LevelSetsType::DeformationFieldType       DeformationFieldType;
 
 	typedef itk::VTKPolyDataReader< ContourDeformationType >     ReaderType;
 	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
+	typedef itk::ImageFileReader<ImageType>                      ImageReader;
+	typedef itk::ImageFileWriter<ImageType>                      ImageWriter;
 
-
+	ImageReader::Pointer r = ImageReader::New();
+	r->SetFileName( std::string( TEST_DATA_DIR ) + "ellipse.nii.gz" );
+	r->Update();
+	ImageType::Pointer im = r->GetOutput();
 
 	ReaderType::Pointer polyDataReader = ReaderType::New();
-	polyDataReader->SetFileName( std::string( TEST_DATA_DIR ) + "sphere.vtk" );
+	polyDataReader->SetFileName( std::string( TEST_DATA_DIR ) + "ellipse.vtk" );
 	polyDataReader->Update();
-	ContourDisplacementFieldPointer mesh = polyDataReader->GetOutput();
-	mesh->Initialize();
+	ContourDisplacementFieldPointer ellipse = polyDataReader->GetOutput();
 
+	typename ContourDeformationType::PointDataContainerPointer container = ellipse->GetPointData();
+	typename ContourDeformationType::PointDataContainerIterator u_it = container->Begin();
 
-	typename LevelSetsType::Pointer ls = LevelSetsType::New();
+	while( u_it != container->End() ) {
+		ellipse->SetPointData( u_it.Index(), itk::NumericTraits<VectorType>::Zero );
+		++u_it;
+	}
 
-		WriterType::Pointer polyDataWriter = WriterType::New();
-		polyDataWriter->SetInput( mesh );
-		polyDataWriter->SetFileName( std::string( TEST_DATA_DIR ) + "sphere-field.vtp" );
-		polyDataWriter->Update();
+	MeanType mean1; mean1.Fill(127);
+	MeanType mean2; mean2.Fill(255);
+	CovarianceType cov; cov.SetIdentity();
 
+	DeformationFieldType::Pointer df = DeformationFieldType::New();
+	df->CopyInformation( im );
+	df->Allocate();
+	df->FillBuffer( itk::NumericTraits<DeformationFieldType::PixelType>::Zero );
+
+	LevelSetsType::Pointer ls = LevelSetsType::New();
+	ls->SetReferenceImage( im );
+	ls->SetParameters(mean2,cov, true);
+	ls->SetParameters(mean1,cov, false);
+	ls->GetLevelSetsMap(df);
 }
+
+
