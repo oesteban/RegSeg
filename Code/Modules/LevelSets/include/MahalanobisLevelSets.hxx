@@ -196,40 +196,6 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	res->Update();
 	DeformationFieldPointer speedsfield = res->GetOutput();
 
-/*
-	typedef itk::Image<float,4u> FieldType;
-	FieldType::Pointer out = FieldType::New();
-	FieldType::SizeType size;
-	size[0] = speedsfield->GetLargestPossibleRegion().GetSize()[0];
-	size[1] = speedsfield->GetLargestPossibleRegion().GetSize()[1];
-	size[2] = speedsfield->GetLargestPossibleRegion().GetSize()[2];
-	size[3] = 3;
-	out->SetRegions( size );
-	FieldType::SpacingType spacing;
-	spacing[0] = speedsfield->GetSpacing()[0];
-	spacing[1] = speedsfield->GetSpacing()[1];
-	spacing[2] = speedsfield->GetSpacing()[2];
-	spacing[3] = 1.0;
-	out->SetSpacing( spacing );
-	out->Allocate();
-	out->FillBuffer(0.0);
-
-	float* buffer = out->GetBufferPointer();
-	VectorType* vectBuffer = speedsfield->GetBufferPointer();
-	size_t nPix = speedsfield->GetLargestPossibleRegion().GetNumberOfPixels();
-
-	for(size_t pix = 0; pix< nPix; pix++) {
-		VectorType val = (*vectBuffer)[pix];
-		for( size_t i=0; i<3; i++) {
-			unsigned int idx = (i*nPix)+pix;
-			buffer[idx] = (float) val[i];
-		}
-	}
-	itk::ImageFileWriter<FieldType>::Pointer w = itk::ImageFileWriter<FieldType>::New();
-	w->SetInput( out );
-	w->SetFileName( std::string( TEST_DATA_DIR ) + "speed_internal.nii.gz" );
-	w->Update();*/
-
 	typedef typename DeformationFieldType::SizeValueType SizeValueType;
 	VectorType* destBuffer = levelSetMap->GetBufferPointer();
 	VectorType* origBuffer = speedsfield->GetBufferPointer();
