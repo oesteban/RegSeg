@@ -81,10 +81,10 @@ public:
 
 
 	/** Measure type */
-	typedef Superclass::MeasureType MeasureType;
+	typedef typename Superclass::MeasureType MeasureType;
 
 	/** Internal computation type, for maintaining a desired precision */
-	typedef Superclass::InternalComputationValueType InternalComputationValueType;
+	typedef typename Superclass::InternalComputationValueType InternalComputationValueType;
 
 	/** Get the most recent gradient values. */
 	itkGetConstReferenceMacro( Gradient, DerivativeType );
@@ -126,7 +126,7 @@ protected:
 	SizeValueType                 m_CurrentIteration;
 
 	/** Current gradient */
-	EnergyPointer m_Energy;
+	LevelSetsPointer m_LevelSets;
 	DerivativeType     m_Gradient;
 
 	virtual void PrintSelf(std::ostream & os, itk::Indent indent) const;
