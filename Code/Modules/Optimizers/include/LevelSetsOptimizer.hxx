@@ -1,6 +1,6 @@
 // --------------------------------------------------------------------------
-// File:             LevelSetsOptimizer.txx
-// Date:             15/10/2012
+// File:             LevelSetsOptimizer.hxx
+// Date:             01/11/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
 // License:          BSD
@@ -11,7 +11,7 @@
 // and Biomedical Image Technology, UPM (BIT-UPM)
 // All rights reserved.
 // 
-// This file is part of ACWE-Registration
+// This file is part of ACWEReg
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -35,11 +35,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef LEVELSETSOPTIMIZER_HXX_
+#define LEVELSETSOPTIMIZER_HXX_
+
 #include "LevelSetsOptimizer.h"
 
 namespace rstk {
 
-LevelSetsOptimizer::LevelSetsOptimizer() {
+template< typename TLevelSetsFunction >
+LevelSetsOptimizer<TLevelSetsFunction>::LevelSetsOptimizer() {
 	/* Initialize state tracking variables */
 	this->m_NumberOfIterations = 100;
 	this->m_CurrentIteration   = 0;
@@ -48,9 +52,8 @@ LevelSetsOptimizer::LevelSetsOptimizer() {
 
 }
 
-LevelSetsOptimizer::~LevelSetsOptimizer() { }
-
-void LevelSetsOptimizer::PrintSelf( std::ostream &os, itk::Indent indent) const {
+template< typename TLevelSetsFunction >
+void LevelSetsOptimizer<TLevelSetsFunction>::PrintSelf( std::ostream &os, itk::Indent indent) const {
 	Superclass::PrintSelf(os, indent);
 	os << indent << "Number of iterations: " << this->m_NumberOfIterations << std::endl;
 	os << indent << "Current iteration: " << this->m_CurrentIteration << std::endl;
@@ -58,12 +61,14 @@ void LevelSetsOptimizer::PrintSelf( std::ostream &os, itk::Indent indent) const 
 	os << indent << "Stop condition description: " << this->m_StopConditionDescription.str() << std::endl;
 }
 
-const LevelSetsOptimizer::StopConditionReturnStringType
-LevelSetsOptimizer::GetStopConditionDescription() const {
+template< typename TLevelSetsFunction >
+const typename LevelSetsOptimizer<TLevelSetsFunction>::StopConditionReturnStringType
+LevelSetsOptimizer<TLevelSetsFunction>::GetStopConditionDescription() const {
   return this->m_StopConditionDescription.str();
 }
 
-void LevelSetsOptimizer::Stop(void) {
+template< typename TLevelSetsFunction >
+void LevelSetsOptimizer<TLevelSetsFunction>::Stop(void) {
   itkDebugMacro( "StopOptimization called with a description - "
     << this->GetStopConditionDescription() );
   this->m_Stop = true;
@@ -73,3 +78,4 @@ void LevelSetsOptimizer::Stop(void) {
 } // End of namespace rstk
 
 
+#endif /* LEVELSETSOPTIMIZER_HXX_ */

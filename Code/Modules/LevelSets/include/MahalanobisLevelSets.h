@@ -70,7 +70,7 @@ public:
 	itkTypeMacro( MahalanobisLevelSets, rstk::LevelSetsBase );
 	itkNewMacro( Self );
 
-	typedef typename Superclass::ValueType                 ValueType;
+	typedef typename Superclass::MeasureType                 MeasureType;
 	typedef typename Superclass::PointType                 PointType;
 	typedef typename Superclass::PointValueType            PointValueType;
 	typedef typename Superclass::VectorType                VectorType;
@@ -101,7 +101,7 @@ public:
 	typedef itk::Matrix
 			< PixelValueType, Components, Components >     CovarianceType;
 
-	ValueType GetValue() const;
+	MeasureType GetValue() const;
 	void GetLevelSetsMap( DeformationFieldType* levelSetMap) const;
 
 	void SetParameters( MeanType& mean, CovarianceType& cov, bool inside);

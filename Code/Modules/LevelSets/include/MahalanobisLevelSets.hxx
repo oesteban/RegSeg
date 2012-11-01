@@ -62,7 +62,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
-typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ValueType
+typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::MeasureType
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::GetValue() const {
 	// for all classes
@@ -171,16 +171,15 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 	// for all node in mesh
 	while (p_it != points->End()) {
-		ValueType levelSet = 0;
+		MeasureType levelSet = 0;
 		VectorType uk = u_it.Value();
 		PointType currentPoint = p_it.Value() + uk;
 		PixelType Ik = interp->Evaluate( currentPoint );
 		// compute on both segments
 		for( size_t i = 0; i<2; i++) {
 			PixelType Dk = Ik - m_Mean[i];
-			ValueType tmp = sign[i] * dot_product(Dk.GetVnlVector(), m_InverseCovariance[i].GetVnlMatrix() * Dk.GetVnlVector() );
 			// compute mahalanobis distance in position
-			levelSet+= tmp;
+			levelSet+= sign[i] * dot_product(Dk.GetVnlVector(), m_InverseCovariance[i].GetVnlMatrix() * Dk.GetVnlVector() );
 		}
 	    // project to normal, updating transform
 		speedMap->SetPointData( speedMap->AddPoint( p_it.Value() ), levelSet * n_it.Value() );

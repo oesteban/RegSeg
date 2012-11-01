@@ -81,7 +81,7 @@ public:
 
 	itkStaticConstMacro( Dimension, unsigned int, TReferenceImageType::ImageDimension );
 
-	typedef double ValueType;
+	typedef double                                           MeasureType;
 	typedef TCoordRepType                                    PointValueType;
 	typedef itk::Vector< PointValueType, Dimension >         VectorType;
 
@@ -103,10 +103,10 @@ public:
 	typedef typename DeformationFieldType::Pointer           DeformationFieldPointer;
 	typedef typename DeformationFieldType::ConstPointer      DeformationFieldConstPointer;
 
-	virtual ValueType GetValue() const = 0;
+	virtual MeasureType GetValue() const = 0;
 	virtual void GetLevelSetsMap( DeformationFieldType* levelSetMap) const = 0;
 protected:
-	LevelSetsBase() { this->m_Value = itk::NumericTraits<ValueType>::infinity(); }
+	LevelSetsBase() { this->m_Value = itk::NumericTraits<MeasureType>::infinity(); }
 	virtual ~LevelSetsBase() {}
 
 	void PrintSelf(std::ostream & os, itk::Indent indent) const {
@@ -115,7 +115,7 @@ protected:
 		os << std::endl;
 	}
 
-	mutable ValueType m_Value;
+	mutable MeasureType m_Value;
 	mutable DeformationFieldConstPointer m_DeformationField;
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented
