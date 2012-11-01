@@ -104,7 +104,7 @@ public:
 	typedef typename DeformationFieldType::ConstPointer      DeformationFieldConstPointer;
 
 	virtual ValueType GetValue() const = 0;
-	virtual void GetLevelSetsMap( DeformationFieldType & levelSetMap) const = 0;
+	virtual void GetLevelSetsMap( DeformationFieldType* levelSetMap) const = 0;
 protected:
 	LevelSetsBase() { this->m_Value = itk::NumericTraits<ValueType>::infinity(); }
 	virtual ~LevelSetsBase() {}

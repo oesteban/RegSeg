@@ -159,7 +159,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 void
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::GetLevelSetsMap( MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldType & levelSetMap) const {
+::GetLevelSetsMap( MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldType* levelSetMap) const {
 	// Copy deformation map
 	ContourDeformationPointer speedMap = this->m_ContourDeformation->Clone();
 	InterpolatorPointer interp = InterpolatorType::New();
@@ -205,7 +205,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	DeformationFieldPointer speedsfield = res->GetOutput();
 
 	typedef typename DeformationFieldType::SizeValueType SizeValueType;
-	VectorType* destBuffer = levelSetMap.GetBufferPointer();
+	VectorType* destBuffer = levelSetMap->GetBufferPointer();
 	VectorType* origBuffer = speedsfield->GetBufferPointer();
 	const SizeValueType numberOfPixels = speedsfield->GetBufferedRegion().GetNumberOfPixels();
 
