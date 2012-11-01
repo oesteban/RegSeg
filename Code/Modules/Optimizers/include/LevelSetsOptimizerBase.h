@@ -47,6 +47,7 @@ namespace rstk {
 /** \class LevelSetsOptimizerBase
  * \brief Abstract base for LevelSets minimizers.
  */
+template< typename TLevelSetsFunction>
 class LevelSetsOptimizerBase : public itk::Object {
 public:
   /** Standard class typedefs. */
@@ -61,21 +62,21 @@ public:
   typedef itk::OptimizerParameters< double >               ParametersType; //  Parameters type.
 
   /** Metric function type */
-  typedef LevelSetsBase                                       LevelSetsType;
-  typedef LevelSetsType::Pointer                              LevelSetsPointer;
+  typedef TLevelSetsFunction                                                   LevelSetsFunctionType;
+  typedef typename LevelSetsFunctionType::Pointer                              LevelSetsPointer;
 
   /** Number of parameters type */
-  typedef LevelSetsType::NumberOfParametersType               NumberOfParametersType;
+  typedef typename LevelSetsFunctionType::NumberOfParametersType               NumberOfParametersType;
 
   /** Measure type */
-  typedef LevelSetsType::MeasureType                          MeasureType;
+  typedef typename LevelSetsFunctionType::MeasureType                          MeasureType;
 
   /** Internal computation value type */
-  typedef LevelSetsType::InternalComputationValueType         InternalComputationValueType;
+  typedef typename LevelSetsFunctionType::InternalComputationValueType         InternalComputationValueType;
 
   /** Accessors for LevelSets */
-  itkGetObjectMacro( LevelSets, LevelSetsType );
-  itkSetObjectMacro( LevelSets, LevelSetsType );
+  itkGetObjectMacro( LevelSets, LevelSetsFunctionType );
+  itkSetObjectMacro( LevelSets, LevelSetsFunctionType );
 
   /** Accessor for LevelSets value. Returns the value
    *  stored in m_CurrentLevelSetsValue from the most recent
@@ -109,13 +110,14 @@ public:
    * perform any additional initialization before performing optimization. */
   virtual void Start();
 
-protected:
+  const MeasureType & GetValue();
 
+protected:
   /** Default constructor */
   LevelSetsOptimizerBase();
-  virtual ~LevelSetsOptimizerBase();
+  ~LevelSetsOptimizerBase(){};
 
-  LevelSetsPointer                 m_LevelSets;
+  LevelSetsPointer              m_LevelSets;
   itk::ThreadIdType             m_NumberOfThreads;
 
   /** LevelSets measure value at a given iteration, as most recently evaluated. */
@@ -138,4 +140,7 @@ private:
 } // end namespace rstk
 
 
+#ifndef ITK_MANUAL_INSTANTIATION
+#include "LevelSetsOptimizerBase.hxx"
+#endif
 #endif /* LevelSetsOptimizerBASE_H_ */

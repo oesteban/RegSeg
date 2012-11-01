@@ -1,6 +1,6 @@
 // --------------------------------------------------------------------------
-// File:             LevelSetsOptimizerBase.cxx
-// Date:             17/10/2012
+// File:             LevelSetsOptimizerBase.hxx
+// Date:             01/11/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
 // License:          BSD
@@ -11,7 +11,7 @@
 // and Biomedical Image Technology, UPM (BIT-UPM)
 // All rights reserved.
 // 
-// This file is part of ACWERegistration-Debug@Debug
+// This file is part of ACWEReg
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -35,6 +35,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef LEVELSETSOPTIMIZERBASE_HXX_
+#define LEVELSETSOPTIMIZERBASE_HXX_
+
 #include "LevelSetsOptimizerBase.h"
 #include "itkMultiThreader.h"
 
@@ -42,18 +45,15 @@
 
 namespace rstk {
 
-LevelSetsOptimizerBase::LevelSetsOptimizerBase() {
+template< typename TLevelSetsFunction >
+LevelSetsOptimizerBase<TLevelSetsFunction>::LevelSetsOptimizerBase() {
 	this->m_LevelSets = NULL;
 	this->m_CurrentLevelSetsValue = itk::NumericTraits<MeasureType>::infinity();
 	this->m_ScalesAreIdentity = false;
 }
 
-LevelSetsOptimizerBase::~LevelSetsOptimizerBase() {
-
-}
-
-
-void LevelSetsOptimizerBase::PrintSelf( std::ostream &os, itk::Indent indent) const {
+template< typename TLevelSetsFunction >
+void LevelSetsOptimizerBase<TLevelSetsFunction>::PrintSelf( std::ostream &os, itk::Indent indent) const {
 	Superclass::PrintSelf(os,indent);
 
 	os << indent << "Number of threads: " << this->m_NumberOfThreads << std::endl;
@@ -66,8 +66,8 @@ void LevelSetsOptimizerBase::PrintSelf( std::ostream &os, itk::Indent indent) co
 	m_LevelSets->Print( os, indent.GetNextIndent() );
 }
 
-
-void LevelSetsOptimizerBase::Start() {
+template< typename TLevelSetsFunction >
+void LevelSetsOptimizerBase<TLevelSetsFunction>::Start() {
 	/* Validate some settings */
 	if( this->m_LevelSets.IsNull() )	{
 		itkExceptionMacro("LevelSets object must be set.");
@@ -110,8 +110,9 @@ void LevelSetsOptimizerBase::Start() {
 	}
 }
 
-const LevelSetsOptimizerBase::ParametersType &
-LevelSetsOptimizerBase::GetCurrentPosition()
+template< typename TLevelSetsFunction >
+const typename LevelSetsOptimizerBase<TLevelSetsFunction>::ParametersType &
+LevelSetsOptimizerBase<TLevelSetsFunction>::GetCurrentPosition()
 {
 	if( this->m_LevelSets.IsNull() )
 	{
@@ -121,9 +122,13 @@ LevelSetsOptimizerBase::GetCurrentPosition()
 }
 
 //-------------------------------------------------------------------
-const LevelSetsOptimizerBase::MeasureType &
-LevelSetsOptimizerBase::GetValue(){
+template< typename TLevelSetsFunction >
+const typename LevelSetsOptimizerBase<TLevelSetsFunction>::MeasureType &
+LevelSetsOptimizerBase<TLevelSetsFunction>::GetValue(){
 	return this->GetCurrentLevelSetsValue();
 }
 
 }
+
+
+#endif /* LEVELSETSOPTIMIZERBASE_HXX_ */

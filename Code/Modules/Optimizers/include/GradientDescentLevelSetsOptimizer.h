@@ -56,11 +56,12 @@ namespace rstk
  * \f]
  */
 
-class GradientDescentLevelSetsOptimizer: public LevelSetsOptimizer {
+template< typename TLevelSetsFunction >
+class GradientDescentLevelSetsOptimizer: public LevelSetsOptimizer<TLevelSetsFunction> {
 public:
 	/** Standard class typedefs and macros */
-	typedef GradientDescentLevelSetsOptimizer             Self;
-	typedef LevelSetsOptimizer                            Superclass;
+	typedef GradientDescentLevelSetsOptimizer          Self;
+	typedef LevelSetsOptimizer<TLevelSetsFunction>     Superclass;
 	typedef itk::SmartPointer<Self>                    Pointer;
 	typedef itk::SmartPointer< const Self >            ConstPointer;
 	itkTypeMacro( GradientDescentLevelSetsOptimizer, LevelSetsOptimizer ); // Run-time type information (and related methods)
@@ -166,7 +167,7 @@ protected:
 
 
 	GradientDescentLevelSetsOptimizer();
-	virtual ~GradientDescentLevelSetsOptimizer() {}
+	~GradientDescentLevelSetsOptimizer() {}
 
 	void PrintSelf( std::ostream &os, itk::Indent indent ) const {
 		Superclass::PrintSelf( os, indent );
@@ -180,5 +181,8 @@ private:
 
 } // End of namespace rstk
 
+#ifndef ITK_MANUAL_INSTANTIATION
+#include "GradientDescentLevelSetsOptimizer.hxx"
+#endif
 
 #endif /* GradientDescentLevelSetsOptimizer_h */

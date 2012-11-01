@@ -39,7 +39,6 @@
 #define LevelSetsOptimizer_h
 
 #include <itkObject.h>
-#include "Energy.h"
 #include "LevelSetsOptimizerBase.h"
 #include <vector>
 
@@ -50,12 +49,13 @@ namespace rstk
  *
  *  \ingroup RSTK
  */
-class LevelSetsOptimizer: public LevelSetsOptimizerBase {
+template< typename TLevelSetsFunction >
+class LevelSetsOptimizer: public LevelSetsOptimizerBase<TLevelSetsFunction> {
 public:
-	typedef LevelSetsOptimizer                            Self;
-	typedef LevelSetsOptimizerBase                        Superclass;
-	typedef itk::SmartPointer<Self>                    Pointer;
-	typedef itk::SmartPointer< const Self >            ConstPointer;
+	typedef LevelSetsOptimizer                                   Self;
+	typedef LevelSetsOptimizerBase<TLevelSetsFunction>           Superclass;
+	typedef itk::SmartPointer<Self>                              Pointer;
+	typedef itk::SmartPointer< const Self >                      ConstPointer;
 
 	itkTypeMacro( LevelSetsOptimizer, LevelSetsOptimizerBase );
 
@@ -116,7 +116,7 @@ public:
 
 protected:
 	LevelSetsOptimizer();
-	virtual ~LevelSetsOptimizer() {}
+	~LevelSetsOptimizer() {}
 
 	/* Common variables for optimization control and reporting */
 	bool                          m_Stop;
@@ -139,7 +139,7 @@ private:
 } // End of namespace rstk
 
 #ifndef ITK_MANUAL_INSTANTIATION
-#include "LevelSetsOptimizer.txx"
+#include "LevelSetsOptimizer.hxx"
 #endif
 
 

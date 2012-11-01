@@ -1,6 +1,6 @@
 // --------------------------------------------------------------------------
-// File:             GradientDescentEnergyOptimizer.cxx
-// Date:             17/10/2012
+// File:             GradientDescentLevelSetsOptimizer.hxx
+// Date:             01/11/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
 // License:          BSD
@@ -11,7 +11,7 @@
 // and Biomedical Image Technology, UPM (BIT-UPM)
 // All rights reserved.
 // 
-// This file is part of ACWERegistration-Debug@Debug
+// This file is part of ACWEReg
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -35,24 +35,27 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef GRADIENTDESCENTLEVELSETSOPTIMIZER_HXX_
+#define GRADIENTDESCENTLEVELSETSOPTIMIZER_HXX_
 
-#include "GradientDescentEnergyOptimizer.h"
+
+#include "GradientDescentLevelSetsOptimizer.h"
 
 namespace rstk {
 
 /**
  * Default constructor
  */
-GradientDescentEnergyOptimizer::GradientDescentEnergyOptimizer() {
+template< typename TLevelSetsFunction >
+GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsOptimizer() {
 	this->m_LearningRate = itk::NumericTraits<InternalComputationValueType>::One;
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 50;
 }
 
-GradientDescentEnergyOptimizer::~GradientDescentEnergyOptimizer() {}
-
-void GradientDescentEnergyOptimizer
+template< typename TLevelSetsFunction >
+void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 ::PrintSelf(std::ostream &os, itk::Indent indent) const {
 	Superclass::PrintSelf(os,indent);
 	os << indent << "Learning rate:" << this->m_LearningRate << std::endl;
@@ -60,8 +63,9 @@ void GradientDescentEnergyOptimizer
              << this->m_MaximumStepSizeInPhysicalUnits << std::endl;
 }
 
-void GradientDescentEnergyOptimizer::Start() {
-	itkDebugMacro("GradientDescentEnergyOptimizer::Start()");
+template< typename TLevelSetsFunction >
+void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
+	itkDebugMacro("GradientDescentLevelSetsOptimizer::Start()");
 
 	/* Validate some settings */
 
@@ -83,16 +87,18 @@ void GradientDescentEnergyOptimizer::Start() {
 	this->Resume();
 }
 
-void GradientDescentEnergyOptimizer::Stop() {
+template< typename TLevelSetsFunction >
+void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Stop() {
 
 //	if( this->m_ReturnBestParametersAndValue )	{
 //		this->GetMetric()->SetParameters( this->m_BestParameters );
-//		this->m_CurrentEnergyValue = this->m_CurrentBestValue;
+//		this->m_CurrentLevelSetsValue = this->m_CurrentBestValue;
 //	}
 	Superclass::Stop();
 }
 
-void GradientDescentEnergyOptimizer::Resume() {
+template< typename TLevelSetsFunction >
+void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 	this->m_StopConditionDescription.str("");
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->InvokeEvent( itk::StartEvent() );
@@ -103,11 +109,11 @@ void GradientDescentEnergyOptimizer::Resume() {
 		try	{
 			/* m_Gradient will be sized as needed by metric. If it's already
 			 * proper size, no new allocation is done. */
-			this->m_Energy->GetLevelSetMap( this->CurrentSurfaces, this->m_LevelSetMap );
+			this->m_LevelSets->GetLevelSetMap( this->CurrentSurfaces, this->m_LevelSetMap );
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = COSTFUNCTION_ERROR;
-			this->m_StopConditionDescription << "Energy error during optimization";
+			this->m_StopConditionDescription << "LevelSets error during optimization";
 			this->Stop();
 			throw err;  // Pass exception to caller
 		}
@@ -121,7 +127,7 @@ void GradientDescentEnergyOptimizer::Resume() {
 
 		/* Check the convergence by WindowConvergenceMonitoringFunction.
 		 */
-		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentEnergyValue );
+		this->m_ConvergenceMonitoring->AddLevelSetsValue( this->m_CurrentLevelSetsValue );
 		try
 		{
 			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
@@ -142,9 +148,9 @@ void GradientDescentEnergyOptimizer::Resume() {
 		this->Iterate();
 
 		/* Store best value and position */
-		//if ( this->m_ReturnBestParametersAndValue && this->m_CurrentEnergyValue < this->m_CurrentBestValue )
+		//if ( this->m_ReturnBestParametersAndValue && this->m_CurrentLevelSetsValue < this->m_CurrentBestValue )
 		//{
-		//	this->m_CurrentBestValue = this->m_CurrentEnergyValue;
+		//	this->m_CurrentBestValue = this->m_CurrentLevelSetsValue;
 		//	this->m_BestParameters = this->GetCurrentPosition( );
 		//}
 
@@ -161,7 +167,8 @@ void GradientDescentEnergyOptimizer::Resume() {
 }
 
 
-void GradientDescentEnergyOptimizer::Iterate() {
+template< typename TLevelSetsFunction >
+void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
 	try {
 		DeformationFieldType numerator = ( this->m_DeformationField / this->m_StepSize ) - this->m_LevelSetMap;
@@ -176,10 +183,13 @@ void GradientDescentEnergyOptimizer::Iterate() {
 		throw err;
 	}
 
-	this->m_EnergyValue = this->m_Energy->GetValue( this->m_NextDeformationField );
+	this->m_LevelSetsValue = this->m_LevelSets->GetValue( this->m_NextDeformationField );
 	// TODO best parameters stuff
 
 	this->InvokeEvent( itk::IterationEvent() );
 }
 
 }
+
+
+#endif /* GRADIENTDESCENTLEVELSETSOPTIMIZER_HXX_ */
