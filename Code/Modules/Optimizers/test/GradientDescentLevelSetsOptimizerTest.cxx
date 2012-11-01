@@ -52,20 +52,23 @@
 #include <itkVTKPolyDataWriter.h>
 #include <itkVectorImageToImageAdaptor.h>
 #include "MahalanobisLevelSets.h"
+#include "GradientDescentLevelSetsOptimizer.h"
 
 using namespace rstk;
 
 int main(int argc, char *argv[]) {
-	typedef itk::Vector<float, 1u>               VectorPixelType;
-	typedef itk::Image<VectorPixelType, 3u>      ImageType;
-	typedef MahalanobisLevelSets<ImageType>      LevelSetsType;
+	typedef itk::Vector<float, 1u>                               VectorPixelType;
+	typedef itk::Image<VectorPixelType, 3u>                      ImageType;
+	typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
 
-	typedef LevelSetsType::ContourDeformationType     ContourDeformationType;
-	typedef ContourDeformationType::Pointer           ContourDisplacementFieldPointer;
-	typedef LevelSetsType::VectorType                 VectorType;
-	typedef LevelSetsType::MeanType                   MeanType;
-	typedef LevelSetsType::CovarianceType             CovarianceType;
-	typedef LevelSetsType::DeformationFieldType       DeformationFieldType;
+	typedef LevelSetsType::ContourDeformationType                ContourDeformationType;
+	typedef ContourDeformationType::Pointer                      ContourDisplacementFieldPointer;
+	typedef LevelSetsType::VectorType                            VectorType;
+	typedef LevelSetsType::MeanType                              MeanType;
+	typedef LevelSetsType::CovarianceType                        CovarianceType;
+	typedef LevelSetsType::DeformationFieldType                  DeformationFieldType;
+
+	typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
 
 	typedef itk::VTKPolyDataReader< ContourDeformationType >     ReaderType;
 	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
