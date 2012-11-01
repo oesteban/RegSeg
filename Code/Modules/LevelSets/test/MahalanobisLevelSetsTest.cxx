@@ -50,6 +50,7 @@
 #include <itkQuadEdgeMesh.h>
 #include <itkVTKPolyDataReader.h>
 #include <itkVTKPolyDataWriter.h>
+#include <itkVectorImageToImageAdaptor.h>
 #include "MahalanobisLevelSets.h"
 
 using namespace rstk;
@@ -71,6 +72,8 @@ int main(int argc, char *argv[]) {
 	typedef itk::ImageFileReader<ImageType>                      ImageReader;
 	typedef itk::ImageFileWriter<ImageType>                      ImageWriter;
 
+	typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
+
 	ImageReader::Pointer r = ImageReader::New();
 	r->SetFileName( std::string( TEST_DATA_DIR ) + "ellipse.nii.gz" );
 	r->Update();
@@ -81,11 +84,12 @@ int main(int argc, char *argv[]) {
 	polyDataReader->Update();
 	ContourDisplacementFieldPointer ellipse = polyDataReader->GetOutput();
 
-	typename ContourDeformationType::PointDataContainerPointer container = ellipse->GetPointData();
-	typename ContourDeformationType::PointDataContainerIterator u_it = container->Begin();
+	typename ContourDeformationType::PointsContainerPointer points = ellipse->GetPoints();
+	typename ContourDeformationType::PointsContainerIterator u_it = points->Begin();
 
-	while( u_it != container->End() ) {
-		ellipse->SetPointData( u_it.Index(), itk::NumericTraits<VectorType>::Zero );
+	VectorType zero = itk::NumericTraits<VectorType>::Zero;
+	while( u_it != points->End() ) {
+		ellipse->SetPointData( u_it.Index(),zero);
 		++u_it;
 	}
 
@@ -94,15 +98,47 @@ int main(int argc, char *argv[]) {
 	CovarianceType cov; cov.SetIdentity();
 
 	DeformationFieldType::Pointer df = DeformationFieldType::New();
-	df->CopyInformation( im );
+	df->SetRegions( im->GetLargestPossibleRegion() );
+	df->SetSpacing( im->GetSpacing() );
+	df->SetDirection( im->GetDirection() );
 	df->Allocate();
 	df->FillBuffer( itk::NumericTraits<DeformationFieldType::PixelType>::Zero );
 
+
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( im );
+	ls->SetContourDeformation( ellipse );
 	ls->SetParameters(mean2,cov, true);
 	ls->SetParameters(mean1,cov, false);
 	ls->GetLevelSetsMap(df);
+
+	typedef itk::Image<float,4u> FieldType;
+	FieldType::Pointer out = FieldType::New();
+	FieldType::SizeType size;
+	size[0] = df->GetLargestPossibleRegion().GetSize()[0];
+	size[1] = df->GetLargestPossibleRegion().GetSize()[1];
+	size[2] = df->GetLargestPossibleRegion().GetSize()[2];
+	size[3] = 3;
+	out->SetRegions( size );
+	out->SetSpacing( 1.0 );
+	out->Allocate();
+	out->FillBuffer(0.0);
+
+	float* buffer = out->GetBufferPointer();
+	DeformationFieldType::PixelType* vectBuffer = df->GetBufferPointer();
+	size_t nPix = df->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	for(size_t pix = 0; pix< nPix; pix++) {
+		DeformationFieldType::PixelType val = (*vectBuffer)[pix];
+		for( size_t i=0; i<3; i++) {
+			unsigned int idx = (i*nPix)+pix;
+			buffer[idx] = (float) val[i];
+		}
+	}
+	itk::ImageFileWriter<FieldType>::Pointer w = itk::ImageFileWriter<FieldType>::New();
+	w->SetInput( out );
+	w->SetFileName( std::string( TEST_DATA_DIR ) + "speed.nii.gz" );
+	w->Update();
 }
 
 
