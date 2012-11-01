@@ -98,11 +98,16 @@ int main(int argc, char *argv[]) {
 	CovarianceType cov; cov.SetIdentity();
 
 	DeformationFieldType::Pointer df = DeformationFieldType::New();
-	df->SetRegions( im->GetLargestPossibleRegion() );
-	df->SetSpacing( im->GetSpacing() );
+	DeformationFieldType::SizeType size = im->GetLargestPossibleRegion().GetSize();
+	for( size_t i=0;i<3;i++) size[i]=(unsigned int) (size[i] * 0.25);
+	DeformationFieldType::SpacingType spacing = im->GetSpacing();
+	spacing*=4;
+	df->SetRegions( size );
+	df->SetSpacing( spacing );
 	df->SetDirection( im->GetDirection() );
 	df->Allocate();
 	df->FillBuffer( itk::NumericTraits<DeformationFieldType::PixelType>::Zero );
+	std::cout << "Number Of Parameters=" << df->GetLargestPossibleRegion().GetNumberOfPixels() << std::endl;
 
 
 	LevelSetsType::Pointer ls = LevelSetsType::New();
@@ -112,33 +117,33 @@ int main(int argc, char *argv[]) {
 	ls->SetParameters(mean1,cov, false);
 	ls->GetLevelSetsMap(df);
 
-	typedef itk::Image<float,4u> FieldType;
-	FieldType::Pointer out = FieldType::New();
-	FieldType::SizeType size;
-	size[0] = df->GetLargestPossibleRegion().GetSize()[0];
-	size[1] = df->GetLargestPossibleRegion().GetSize()[1];
-	size[2] = df->GetLargestPossibleRegion().GetSize()[2];
-	size[3] = 3;
-	out->SetRegions( size );
-	out->SetSpacing( 1.0 );
-	out->Allocate();
-	out->FillBuffer(0.0);
-
-	float* buffer = out->GetBufferPointer();
-	DeformationFieldType::PixelType* vectBuffer = df->GetBufferPointer();
-	size_t nPix = df->GetLargestPossibleRegion().GetNumberOfPixels();
-
-	for(size_t pix = 0; pix< nPix; pix++) {
-		DeformationFieldType::PixelType val = (*vectBuffer)[pix];
-		for( size_t i=0; i<3; i++) {
-			unsigned int idx = (i*nPix)+pix;
-			buffer[idx] = (float) val[i];
-		}
-	}
-	itk::ImageFileWriter<FieldType>::Pointer w = itk::ImageFileWriter<FieldType>::New();
-	w->SetInput( out );
-	w->SetFileName( std::string( TEST_DATA_DIR ) + "speed.nii.gz" );
-	w->Update();
+//	typedef itk::Image<float,4u> FieldType;
+//	FieldType::Pointer out = FieldType::New();
+//	FieldType::SizeType size;
+//	size[0] = df->GetLargestPossibleRegion().GetSize()[0];
+//	size[1] = df->GetLargestPossibleRegion().GetSize()[1];
+//	size[2] = df->GetLargestPossibleRegion().GetSize()[2];
+//	size[3] = 3;
+//	out->SetRegions( size );
+//	out->SetSpacing( 1.0 );
+//	out->Allocate();
+//	out->FillBuffer(0.0);
+//
+//	float* buffer = out->GetBufferPointer();
+//	DeformationFieldType::PixelType* vectBuffer = df->GetBufferPointer();
+//	size_t nPix = df->GetLargestPossibleRegion().GetNumberOfPixels();
+//
+//	for(size_t pix = 0; pix< nPix; pix++) {
+//		DeformationFieldType::PixelType val = (*vectBuffer)[pix];
+//		for( size_t i=0; i<3; i++) {
+//			unsigned int idx = (i*nPix)+pix;
+//			buffer[idx] = (float) val[i];
+//		}
+//	}
+//	itk::ImageFileWriter<FieldType>::Pointer w = itk::ImageFileWriter<FieldType>::New();
+//	w->SetInput( out );
+//	w->SetFileName( std::string( TEST_DATA_DIR ) + "speed.nii.gz" );
+//	w->Update();
 }
 
 
