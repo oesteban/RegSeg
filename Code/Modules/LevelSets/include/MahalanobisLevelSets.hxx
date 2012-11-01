@@ -161,7 +161,8 @@ void
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::GetLevelSetsMap( MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldType* levelSetMap) const {
 	// Copy deformation map
-	ContourDeformationPointer speedMap = this->m_ContourDeformation->Clone();
+	ContourDeformationPointer speedMap = ContourDeformationType::New();
+
 	InterpolatorPointer interp = InterpolatorType::New();
 	interp->SetInputImage( this->m_ReferenceImage );
 
@@ -191,7 +192,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 			levelSet-= dot_product(Dk, m_InverseCovariance[i].GetVnlMatrix() * Dk);
 		}
 	    // project to normal, updating transform
-		speedMap->SetPointData( p_it.Index(), levelSet * n_it.Value() );
+		speedMap->SetPointData( speedMap->AddPoint( p_it.Value() ), levelSet * n_it.Value() );
 		++p_it;
 		++u_it;
 		++n_it;
@@ -199,10 +200,39 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 	// Interpolate sparse velocity field to targetDeformation
 	typename ResamplerType::Pointer res = ResamplerType::New();
-//	res->SetReferenceImage( this->m_DeformationField );
+	res->CopyImageInformation( levelSetMap );
 	res->SetInput( speedMap );
 	res->Update();
 	DeformationFieldPointer speedsfield = res->GetOutput();
+
+
+	typedef itk::Image<float,4u> FieldType;
+	FieldType::Pointer out = FieldType::New();
+	FieldType::SizeType size;
+	size[0] = speedsfield->GetLargestPossibleRegion().GetSize()[0];
+	size[1] = speedsfield->GetLargestPossibleRegion().GetSize()[1];
+	size[2] = speedsfield->GetLargestPossibleRegion().GetSize()[2];
+	size[3] = 3;
+	out->SetRegions( size );
+	out->SetSpacing( 1.0 );
+	out->Allocate();
+	out->FillBuffer(0.0);
+
+	float* buffer = out->GetBufferPointer();
+	VectorType* vectBuffer = speedsfield->GetBufferPointer();
+	size_t nPix = speedsfield->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	for(size_t pix = 0; pix< nPix; pix++) {
+		VectorType val = (*vectBuffer)[pix];
+		for( size_t i=0; i<3; i++) {
+			unsigned int idx = (i*nPix)+pix;
+			buffer[idx] = (float) val[i];
+		}
+	}
+	itk::ImageFileWriter<FieldType>::Pointer w = itk::ImageFileWriter<FieldType>::New();
+	w->SetInput( out );
+	w->SetFileName( std::string( TEST_DATA_DIR ) + "speed_internal.nii.gz" );
+	w->Update();
 
 	typedef typename DeformationFieldType::SizeValueType SizeValueType;
 	VectorType* destBuffer = levelSetMap->GetBufferPointer();
