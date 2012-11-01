@@ -87,25 +87,13 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 	this->m_Mean[idx] = mean;
 
-	// TODO Check covariance size
 	if (cov.GetVnlMatrix().rows() != cov.GetVnlMatrix().cols()) {
 		itkExceptionMacro(<< "Covariance matrix must be square");
 	}
 
-/*	if ( this->GetMeasurementVectorSize() ){
-		if ( cov.GetVnlMatrix().rows() != this->GetMeasurementVectorSize() ) {
+	if ( cov.GetVnlMatrix().rows() != Components ) {
 		itkExceptionMacro(<< "Length of measurement vectors must be the same as the size of the covariance.");
-		}
-	} else {
-		// not already set, cache the size
-		this->SetMeasurementVectorSize( cov.GetVnlMatrix().rows() );
 	}
-
-	// TODO
-	if (m_InverseCovariance == cov) { // no need to copy the matrix, compute the inverse, or the normalization
-		return;
-	}
-*/
 
 	if( Components > 1 ) {
 		// Compute diagonal and check that eigenvectors >= 0.0
@@ -179,6 +167,8 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	typename ContourDeformationType::PointDataContainerPointer normContainer = normals->GetPointData();
 	typename ContourDeformationType::PointDataContainerIterator n_it = normContainer->Begin();
 
+	double sign[2] = { -1.0, 1.0 };
+
 	// for all node in mesh
 	while (p_it != points->End()) {
 		ValueType levelSet = 0;
@@ -187,9 +177,10 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 		PixelType Ik = interp->Evaluate( currentPoint );
 		// compute on both segments
 		for( size_t i = 0; i<2; i++) {
-			vnl_vector<PixelValueType> Dk = (Ik - m_Mean[i]).GetVnlVector();
+			PixelType Dk = Ik - m_Mean[i];
+			ValueType tmp = sign[i] * dot_product(Dk.GetVnlVector(), m_InverseCovariance[i].GetVnlMatrix() * Dk.GetVnlVector() );
 			// compute mahalanobis distance in position
-			levelSet-= dot_product(Dk, m_InverseCovariance[i].GetVnlMatrix() * Dk);
+			levelSet+= tmp;
 		}
 	    // project to normal, updating transform
 		speedMap->SetPointData( speedMap->AddPoint( p_it.Value() ), levelSet * n_it.Value() );
@@ -205,7 +196,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	res->Update();
 	DeformationFieldPointer speedsfield = res->GetOutput();
 
-
+/*
 	typedef itk::Image<float,4u> FieldType;
 	FieldType::Pointer out = FieldType::New();
 	FieldType::SizeType size;
@@ -214,7 +205,12 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	size[2] = speedsfield->GetLargestPossibleRegion().GetSize()[2];
 	size[3] = 3;
 	out->SetRegions( size );
-	out->SetSpacing( 1.0 );
+	FieldType::SpacingType spacing;
+	spacing[0] = speedsfield->GetSpacing()[0];
+	spacing[1] = speedsfield->GetSpacing()[1];
+	spacing[2] = speedsfield->GetSpacing()[2];
+	spacing[3] = 1.0;
+	out->SetSpacing( spacing );
 	out->Allocate();
 	out->FillBuffer(0.0);
 
@@ -232,7 +228,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	itk::ImageFileWriter<FieldType>::Pointer w = itk::ImageFileWriter<FieldType>::New();
 	w->SetInput( out );
 	w->SetFileName( std::string( TEST_DATA_DIR ) + "speed_internal.nii.gz" );
-	w->Update();
+	w->Update();*/
 
 	typedef typename DeformationFieldType::SizeValueType SizeValueType;
 	VectorType* destBuffer = levelSetMap->GetBufferPointer();
