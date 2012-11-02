@@ -52,6 +52,7 @@
 #include <itkVTKPolyDataWriter.h>
 #include <itkVectorImageToImageAdaptor.h>
 #include "MahalanobisLevelSets.h"
+#include "DisplacementFieldFileWriter.h"
 
 using namespace rstk;
 
@@ -71,6 +72,7 @@ int main(int argc, char *argv[]) {
 	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
 	typedef itk::ImageFileReader<ImageType>                      ImageReader;
 	typedef itk::ImageFileWriter<ImageType>                      ImageWriter;
+	typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
 
 	typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
 
@@ -99,10 +101,10 @@ int main(int argc, char *argv[]) {
 
 	DeformationFieldType::Pointer df = DeformationFieldType::New();
 	DeformationFieldType::SizeType size = im->GetLargestPossibleRegion().GetSize();
-	double factor = 1/3.2;
+	double factor = 0.25;
 	for( size_t i=0;i<3;i++) size[i]=(unsigned int) (size[i] * factor);
 	DeformationFieldType::SpacingType spacing = im->GetSpacing();
-	spacing/=factor;
+	spacing=spacing/factor;
 	df->SetRegions( size );
 	df->SetSpacing( spacing );
 	df->SetDirection( im->GetDirection() );
@@ -118,6 +120,12 @@ int main(int argc, char *argv[]) {
 	ls->SetParameters(mean1,cov, false);
 	ls->GetLevelSetsMap(df);
 
+	Writer::Pointer writer = Writer::New();
+	writer->SetFileName( std::string( TEST_DATA_DIR ) + "speed.nii.gz" );
+	writer->SetInput( df );
+	writer->Update();
+
+	/*
 	typedef itk::Image<float,4u> FieldType;
 	FieldType::Pointer out = FieldType::New();
 	FieldType::SizeType outSize;
@@ -149,7 +157,7 @@ int main(int argc, char *argv[]) {
 	itk::ImageFileWriter<FieldType>::Pointer w = itk::ImageFileWriter<FieldType>::New();
 	w->SetInput( out );
 	w->SetFileName( std::string( TEST_DATA_DIR ) + "speed.nii.gz" );
-	w->Update();
+	w->Update();*/
 }
 
 

@@ -68,7 +68,7 @@ namespace rstk {
  */
 
 
-template <typename TReferenceImageType, typename TCoordRepType = double>
+template <typename TReferenceImageType, typename TCoordRepType = float>
 class LevelSetsBase: public itk::Object {
 public:
 	typedef LevelSetsBase                    Self;
