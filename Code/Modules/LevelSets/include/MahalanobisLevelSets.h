@@ -57,7 +57,7 @@ namespace rstk {
  *
  *  \ingroup
  */
-template <typename TReferenceImageType, typename TCoordRepType = double>
+template <typename TReferenceImageType, typename TCoordRepType = float>
 class MahalanobisLevelSets: public rstk::LevelSetsBase< TReferenceImageType, TCoordRepType> {
 public:
 	typedef MahalanobisLevelSets                         Self;
@@ -70,7 +70,7 @@ public:
 	itkTypeMacro( MahalanobisLevelSets, rstk::LevelSetsBase );
 	itkNewMacro( Self );
 
-	typedef typename Superclass::MeasureType                 MeasureType;
+	typedef typename Superclass::MeasureType               MeasureType;
 	typedef typename Superclass::PointType                 PointType;
 	typedef typename Superclass::PointValueType            PointValueType;
 	typedef typename Superclass::VectorType                VectorType;

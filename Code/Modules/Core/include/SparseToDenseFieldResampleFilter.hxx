@@ -172,8 +172,12 @@ SparseToDenseFieldResampleFilter< TInputMesh, TOutputImage >
   OutputPointType outputPoint;         // Coordinates of current output pixel
   OutputPointType inputPoint;          // Coordinates of current input pixel
 
+  typedef typename InterpolatorType::OutputType OutputType;
+
+
   typedef ContinuousIndex< double, OutputImageDimension > ContinuousIndexType; // FIXME remove this double
   ContinuousIndexType inputIndex;
+
 
   // Doc says this only works for VectorImage, but Image implementation says otherwise...
   const unsigned int numberOfComponents = outputPtr->GetNumberOfComponentsPerPixel();
@@ -182,14 +186,14 @@ SparseToDenseFieldResampleFilter< TInputMesh, TOutputImage >
   // FIXME
   //ProgressReporter progress( this, threadId, outputRegionForThread.GetNumberOfPixels() );
 
-  typedef typename InterpolatorType::OutputType OutputType;
-
+/*
   // Walk the output region
   outIt.GoToBegin();
 
 
   OutputPixelType        pixval;
   NumericTraits< OutputPixelType >::SetLength( pixval, numberOfComponents );
+
 
   while ( !outIt.IsAtEnd() ) {
     outputPtr->TransformIndexToPhysicalPoint(outIt.GetIndex(), outputPoint);
@@ -203,6 +207,18 @@ SparseToDenseFieldResampleFilter< TInputMesh, TOutputImage >
 
     //progress.CompletedPixel();
     ++outIt;
+  }*/
+
+
+  OutputPixelType* buffer = outputPtr->GetBufferPointer();
+  size_t idx = outputPtr->ComputeOffset( outputRegionForThread.GetIndex() );
+  size_t last_idx = outputPtr->ComputeOffset( outputRegionForThread.GetUpperIndex() ) +1;
+
+  while( idx<last_idx){
+	  outputPtr->TransformIndexToPhysicalPoint( outputPtr->ComputeIndex(idx), outputPoint );
+	  *(buffer + idx) = m_Interpolator->Evaluate(outputPoint);
+	  //progress.CompletedPixel();
+	  idx++;
   }
   return;
 }

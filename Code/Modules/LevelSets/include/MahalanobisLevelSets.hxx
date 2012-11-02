@@ -120,7 +120,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 		vnl_matrix_inverse< PixelValueType > inv_cov( this->m_InverseCovariance[idx].GetVnlMatrix() );
 
 		// the determinant is then costless this way
-		double det = inv_cov.determinant_magnitude();
+		PixelValueType det = inv_cov.determinant_magnitude();
 
 		if( det < 0.) {
 			itkExceptionMacro( << "det( m_InverseCovariance ) < 0" );
@@ -167,11 +167,11 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	typename ContourDeformationType::PointDataContainerPointer normContainer = normals->GetPointData();
 	typename ContourDeformationType::PointDataContainerIterator n_it = normContainer->Begin();
 
-	double sign[2] = { -1.0, 1.0 };
+	PointValueType sign[2] = { -1.0, 1.0 };
 
 	// for all node in mesh
 	while (p_it != points->End()) {
-		MeasureType levelSet = 0;
+		PointValueType levelSet = 0;
 		VectorType uk = u_it.Value();
 		PointType currentPoint = p_it.Value() + uk;
 		PixelType Ik = interp->Evaluate( currentPoint );
@@ -182,7 +182,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 			levelSet+= sign[i] * dot_product(Dk.GetVnlVector(), m_InverseCovariance[i].GetVnlMatrix() * Dk.GetVnlVector() );
 		}
 	    // project to normal, updating transform
-		speedMap->SetPointData( speedMap->AddPoint( p_it.Value() ), levelSet * n_it.Value() );
+		speedMap->SetPointData( speedMap->AddPoint( p_it.Value() ), levelSet*n_it.Value() );
 		++p_it;
 		++u_it;
 		++n_it;
@@ -195,14 +195,28 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	res->Update();
 	DeformationFieldPointer speedsfield = res->GetOutput();
 
-	typedef typename DeformationFieldType::SizeValueType SizeValueType;
+	/*
+	itk::ImageRegionConstIterator<DeformationFieldType> it( speedsfield, speedsfield->GetLargestPossibleRegion() );
+	itk::ImageRegionIterator<DeformationFieldType> dest( levelSetMap, levelSetMap->GetLargestPossibleRegion() );
+
+	it.GoToBegin();
+	dest.GoToBegin();
+	while( !it.IsAtEnd() ) {
+		dest.Set( it.Get() );
+		++it;
+		++dest;
+	}*/
 	VectorType* destBuffer = levelSetMap->GetBufferPointer();
 	VectorType* origBuffer = speedsfield->GetBufferPointer();
-	const SizeValueType numberOfPixels = speedsfield->GetBufferedRegion().GetNumberOfPixels();
-
+	size_t numberOfPixels = speedsfield->GetBufferedRegion().GetNumberOfPixels();
+/*
 	for ( SizeValueType i = 0; i < numberOfPixels; i++ ) {
-	    (*destBuffer)[i] = (*origBuffer)[i];
-	}
+	    *(destBuffer+i) = *(origBuffer+i);
+	}*/
+
+
+	memcpy( destBuffer, origBuffer, numberOfPixels*sizeof(*origBuffer) );
+
 }
 
 }

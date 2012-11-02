@@ -83,11 +83,11 @@ public:
 	/** Measure type */
 	typedef typename Superclass::MeasureType MeasureType;
 
+	typedef typename Superclass::LevelSetsFunctionType LevelSetsFunctionType;
+	typedef typename Superclass::LevelSetsPointer      LevelSetsPointer;
+
 	/** Internal computation type, for maintaining a desired precision */
 	typedef typename Superclass::InternalComputationValueType InternalComputationValueType;
-
-	/** Get the most recent gradient values. */
-	itkGetConstReferenceMacro( Gradient, DerivativeType );
 
 	/** Get stop condition enum */
 	itkGetConstReferenceMacro(StopCondition, StopConditionType);
@@ -127,7 +127,6 @@ protected:
 
 	/** Current gradient */
 	LevelSetsPointer m_LevelSets;
-	DerivativeType     m_Gradient;
 
 	virtual void PrintSelf(std::ostream & os, itk::Indent indent) const;
 

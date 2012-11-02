@@ -59,6 +59,7 @@
 #include <itkMesh.h>
 #include <itkMeshFileReader.h>
 #include <itkImageToVectorImageFilter.h>
+#include "DisplacementFieldFileWriter.h"
 
 
 namespace bpo = boost::program_options;
@@ -69,7 +70,8 @@ typedef itk::Vector< PixelType, 3 >                 VectorType;
 typedef itk::Image< VectorType, Dimension >         DenseVectorFieldType;
 typedef itk::PointSet< VectorType, Dimension >      SparseVectorFieldType;
 typedef rstk::SparseToDenseFieldResampleFilter<SparseVectorFieldType, DenseVectorFieldType>  ResamplerType;
-typedef itk::ImageFileWriter< DenseVectorFieldType > Writer;
+//typedef itk::ImageFileWriter< DenseVectorFieldType > Writer;
+typedef rstk::DisplacementFieldFileWriter<DenseVectorFieldType> Writer;
 
 int main(int argc, char *argv[]) {
 	// Create PointSet
@@ -113,18 +115,19 @@ int main(int argc, char *argv[]) {
 
 	// Resample
 	ResamplerType::OutputImageSizeType size;
-	size.Fill( 100 );
+	size.Fill( 50 );
 	ResamplerType::Pointer res = ResamplerType::New();
 	res->SetInput( svf );
 	res->SetOutputSize( size );
+	res->SetOutputSpacing( 2.0 );
 	res->Update();
-
+	DenseVectorFieldType::Pointer df = res->GetOutput();
 
 	// Write result
-	Writer::Pointer w = Writer::New();
-	w->SetInput( res->GetOutput() );
-	w->SetFileName( "IDWMultivariateInterpolatorTest.nii.gz");
-	w->Update();
+	Writer::Pointer p = Writer::New();
+	p->SetFileName( "IDWMultivariateInterpolatorTest.nii.gz" );
+	p->SetInput( df );
+	p->Update();
 
 	return EXIT_SUCCESS;
 }

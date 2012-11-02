@@ -112,7 +112,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			this->m_LevelSets->GetLevelSetMap( this->CurrentSurfaces, this->m_LevelSetMap );
 		}
 		catch ( itk::ExceptionObject & err ) {
-			this->m_StopCondition = COSTFUNCTION_ERROR;
+			this->m_StopCondition = Superclass::COSTFUNCTION_ERROR;
 			this->m_StopConditionDescription << "LevelSets error during optimization";
 			this->Stop();
 			throw err;  // Pass exception to caller
@@ -133,8 +133,8 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
 			if (this->m_ConvergenceValue <= this->m_MinimumConvergenceValue)
 			{
-				this->m_StopConditionDescription << "Convergence checker passed at iteration " << m_CurrentIteration << ".";
-				this->m_StopCondition = CONVERGENCE_CHECKER_PASSED;
+				this->m_StopConditionDescription << "Convergence checker passed at iteration " << this->m_CurrentIteration << ".";
+				this->m_StopCondition = Superclass::CONVERGENCE_CHECKER_PASSED;
 				this->Stop();
 				break;
 			}
@@ -159,7 +159,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 
 		if ( this->m_CurrentIteration >= this->m_NumberOfIterations ) {
 			this->m_StopConditionDescription << "Maximum number of iterations (" << this->m_NumberOfIterations << ") exceeded.";
-			this->m_StopCondition = MAXIMUM_NUMBER_OF_ITERATIONS;
+			this->m_StopCondition = Superclass::MAXIMUM_NUMBER_OF_ITERATIONS;
 			this->Stop();
 			break;
 		}
@@ -170,18 +170,31 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 template< typename TLevelSetsFunction >
 void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
-	try {
-		DeformationFieldType numerator = ( this->m_DeformationField / this->m_StepSize ) - this->m_LevelSetMap;
 
-		this->m_NextDeformationField = InvFFT( FFT( numerator ) / FFT( denominator )); // denominator is pre-computed
+	FFTPointer fft = FFTType::New();
+	DeformationFieldPointer numerator = ( this->m_DeformationField / this->m_StepSize ) - this->m_LevelSetMap;
+	fft->SetInput( numerator );
+	DeformationSpectraPointer sp = fft->GetOutput();
+
+
+	// DivideFilter
+	DeformationSpectraPointer p = numerator/denominator;
+
+	IFFTPointer ifft = IFFTType::New();
+	ifft->SetInput( p )
+
+	try {
+		ifft->Update();
 	}
 	catch ( itk::ExceptionObject & err ) {
-		this->m_StopCondition = UPDATE_PARAMETERS_ERROR;
-		this->m_StopConditionDescription << "UpdateTransformParameters error";
+		this->m_StopCondition = Superclass::UPDATE_PARAMETERS_ERROR;
+		this->m_StopConditionDescription << "UpdateDeformationField error";
 		this->Stop();
 		// Pass exception to caller
 		throw err;
 	}
+
+	this->m_NextDeformationField = ifft->GetOutput();
 
 	this->m_LevelSetsValue = this->m_LevelSets->GetValue( this->m_NextDeformationField );
 	// TODO best parameters stuff

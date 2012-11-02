@@ -42,6 +42,8 @@
 #include "LevelSetsOptimizer.h"
 #include <itkWindowConvergenceMonitoringFunction.h>
 #include <vector>
+#include <itkForwardFFTImageFilter.h>
+#include <itkInverseFFTImageFilter.h>
 
 namespace rstk
 {
@@ -64,18 +66,47 @@ public:
 	typedef LevelSetsOptimizer<TLevelSetsFunction>     Superclass;
 	typedef itk::SmartPointer<Self>                    Pointer;
 	typedef itk::SmartPointer< const Self >            ConstPointer;
+
 	itkTypeMacro( GradientDescentLevelSetsOptimizer, LevelSetsOptimizer ); // Run-time type information (and related methods)
 	itkNewMacro( Self );                                             // New macro for creation of through a Smart Pointer
 
 
 
 	/** Metric type over which this class is templated */
-	typedef Superclass::MeasureType                  MeasureType;
-	typedef Superclass::InternalComputationValueType InternalComputationValueType;
+	typedef typename Superclass::MeasureType                  MeasureType;
+	typedef typename Superclass::InternalComputationValueType InternalComputationValueType;
+	typedef typename Superclass::StopConditionType            StopConditionType;
+	typedef typename Superclass::LevelSetsFunctionType        LevelSetsFunctionType;
+	typedef typename Superclass::LevelSetsPointer             LevelSetsPointer;
+	typedef typename LevelSetsFunctionType::
+			                             DeformationFieldType DeformationFieldType;
+
+	itkStaticConstMacro( Dimension, unsigned int, DeformationFieldType::ImageDimension );
+
+	typedef typename DeformationFieldType::Pointer            DeformationFieldPointer;
+	typedef typename DeformationFieldType::PointValueType     PointValueType;
+	typedef typename DeformationFieldType::VectorType         VectorType;
+	typedef typename itk::Image<PointValueType, Dimension >   DeformationComponentType;
+	typedef typename DeformationComponentType::Pointer        DeformationComponentPointer;
+	typedef typename DeformationFieldType::
+			                           ContourDeformationType ContourDeformationType;
+	typedef typename DeformationFieldType::
+			                        ContourDeformationPointer ContourDeformationPointer;
+	typedef typename DeformationFieldType::PointType          ContourPointType;
+
+	typedef itk::ForwardFFTImageFilter
+			<DeformationComponentType>                        FFTType;
+	typedef typename FFTType::Pointer                         FFTPointer;
+	typedef typename FFTType::OutputImageType                 DeformationSpectraType;
+	typedef typename DeformationSpectraType::Pointer          DeformationSpectraPointer;
+
+	typedef itk::InverseFFTImageFilter
+			<DeformationSpectraType,DeformationComponentType> IFFTType;
+	typedef typename IFFTType::Pointer                        IFFTPointer;
 
 	/** Type for the convergence checker */
-	typedef itk::Function::WindowConvergenceMonitoringFunction<double>	ConvergenceMonitoringType;
-	typedef ConvergenceMonitoringType::LevelSetsValueContainerSizeType     SizeValueType;
+	typedef itk::Function::WindowConvergenceMonitoringFunction<MeasureType>	         ConvergenceMonitoringType;
+	typedef typename ConvergenceMonitoringType::EnergyValueContainerSizeType         SizeValueType;
 
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
@@ -149,11 +180,12 @@ protected:
 	 */
 	SizeValueType m_ConvergenceWindowSize;
 
+
 	/** Current convergence value. */
 	InternalComputationValueType m_ConvergenceValue;
 
 	/** The convergence checker. */
-	ConvergenceMonitoringType::Pointer m_ConvergenceMonitoring;
+	typename ConvergenceMonitoringType::Pointer m_ConvergenceMonitoring;
 
 //	/** Store the best value and related paramters */
 //	MeasureType                  m_CurrentBestValue;
@@ -169,11 +201,9 @@ protected:
 	GradientDescentLevelSetsOptimizer();
 	~GradientDescentLevelSetsOptimizer() {}
 
-	void PrintSelf( std::ostream &os, itk::Indent indent ) const {
-		Superclass::PrintSelf( os, indent );
-	}
+	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 
-	virtual void Iterate(void);
+	void Iterate(void);
 private:
 	GradientDescentLevelSetsOptimizer( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
