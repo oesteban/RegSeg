@@ -40,6 +40,7 @@
 
 
 #include "GradientDescentLevelSetsOptimizer.h"
+#include <vector>
 
 namespace rstk {
 
@@ -67,9 +68,24 @@ template< typename TLevelSetsFunction >
 void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 	itkDebugMacro("GradientDescentLevelSetsOptimizer::Start()");
 
-	/* Validate some settings */
+	VectorType zerov = itk::NumericTraits<VectorType>::Zero;
+	/* Settings validation */
+	if (this->m_DeformationField.IsNull()) {
+		/* TODO Initialize default deformation field */
+	}
 
-	/* Estimate parameter scales, if needed */
+	if ( this->m_SpeedsField.IsNull() ) {
+		this->m_SpeedsField = DeformationFieldType::New();
+		this->m_SpeedsField->CopyInformation( this->m_DeformationField );
+		this->m_SpeedsField->Allocate();
+		this->m_SpeedsField->FillBuffer( zerov );
+	}
+
+	/* Initialize next deformationfield */
+	this->m_NextDeformationField = DeformationFieldType::New();
+	this->m_NextDeformationField->CopyInformation( this->m_DeformationField );
+	this->m_NextDeformationField->Allocate();
+	this->m_NextDeformationField->FillBuffer( zerov );
 
 	/* Initialize convergence checker */
 	this->m_ConvergenceMonitoring = ConvergenceMonitoringType::New();
@@ -107,9 +123,8 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 	while( ! this->m_Stop )	{
 		/* Compute metric value/derivative. */
 		try	{
-			/* m_Gradient will be sized as needed by metric. If it's already
-			 * proper size, no new allocation is done. */
-			this->m_LevelSets->GetLevelSetMap( this->CurrentSurfaces, this->m_LevelSetMap );
+
+			this->m_LevelSets->GetLevelSetsMap( this->m_SpeedsField );
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = Superclass::COSTFUNCTION_ERROR;
@@ -127,7 +142,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 
 		/* Check the convergence by WindowConvergenceMonitoringFunction.
 		 */
-		this->m_ConvergenceMonitoring->AddLevelSetsValue( this->m_CurrentLevelSetsValue );
+		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentLevelSetsValue );
 		try
 		{
 			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
@@ -171,40 +186,65 @@ template< typename TLevelSetsFunction >
 void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
 
-	DeformationFieldDividerPointer div = DeformationFieldDivider::New();
-	div->SetInput1( this->m_LevelSets->GetDeformationField() );
-	div->SetConstant2( this->m_StepSize );
-	DeformationFieldSubtracterPointer sub = DeformationFieldSubtracter::New();
-	sub->SetInput1( div->GetOutput() );
-	sub->SetInput2( this->m_LevelSets->GetSpeedsField() );
+	DeformationComponentPointer fieldComponents[Dimension];
+	DeformationComponentPointer speedComponents[Dimension];
 
-	FFTPointer fft = FFTType::New();
-	fft->SetInput( sub->GetOutput() );
+	for( size_t d = 0; d < Dimension; d++ ) {
+		fieldComponents[d] = DeformationComponentType::New();
+		speedComponents[d] = DeformationComponentType::New();
 
-	SpectrumDividerPointer ft_div = SpectrumDivider::New();
-	ft_div->SetInput1( fft->GetOutput() );
-	ft_div->SetInput2( this->m_Denominator );
+		// Get component from vector image
 
-	IFFTPointer ifft = IFFTType::New();
-	ifft->SetInput( ft_div->GetOutput() );
 
-	try {
-		ifft->Update();
+		DeformationFieldDividerPointer div = DeformationFieldDivider::New();
+		div->SetInput1( fieldComponents[d] );
+		div->SetConstant2( this->m_StepSize );
+		DeformationFieldSubtracterPointer sub = DeformationFieldSubtracter::New();
+		sub->SetInput1( div->GetOutput() );
+		sub->SetInput2( speedComponents[d] );
+
+		FFTPointer fft = FFTType::New();
+		fft->SetInput( sub->GetOutput() );
+
+		SpectrumDividerPointer ft_div = SpectrumDivider::New();
+		ft_div->SetInput1( fft->GetOutput() );
+
+		if( this->m_Denominator.IsNull() ) this->ComputeDenominator( fft->GetOutput() );
+		ft_div->SetInput2( this->m_Denominator );
+
+		IFFTPointer ifft = IFFTType::New();
+		ifft->SetInput( ft_div->GetOutput() );
+
+		try {
+			ifft->Update();
+		}
+		catch ( itk::ExceptionObject & err ) {
+			this->m_StopCondition = Superclass::UPDATE_PARAMETERS_ERROR;
+			this->m_StopConditionDescription << "UpdateDeformationField error";
+			this->Stop();
+			// Pass exception to caller
+			throw err;
+		}
+
+		ifft->GetOutput();
+
+		// Set component on this->m_NextDeformationField
 	}
-	catch ( itk::ExceptionObject & err ) {
-		this->m_StopCondition = Superclass::UPDATE_PARAMETERS_ERROR;
-		this->m_StopConditionDescription << "UpdateDeformationField error";
-		this->Stop();
-		// Pass exception to caller
-		throw err;
-	}
 
-	this->m_NextDeformationField = ifft->GetOutput();
-
-	this->m_LevelSetsValue = this->m_LevelSets->GetValue( this->m_NextDeformationField );
+	this->m_CurrentLevelSetsValue = this->m_LevelSets->GetValue( ); // TODO this should operate on this->m_NextDeformationField
 	// TODO best parameters stuff
 
 	this->InvokeEvent( itk::IterationEvent() );
+}
+
+template< typename TLevelSetsFunction >
+void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
+::ComputeDenominator( const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::DeformationSpectraType* reference ){
+	this->m_Denominator = DeformationSpectraType::New();
+	this->m_Denominator->CopyInformation( reference );
+	this->m_Denominator->Allocate();
+
+	// TODO: Fill Buffer with denominator data
 }
 
 }

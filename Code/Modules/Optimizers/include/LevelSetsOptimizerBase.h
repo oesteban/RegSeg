@@ -93,10 +93,10 @@ public:
   /** Get whether scales are identity. Cannot be set */
   itkGetConstReferenceMacro( ScalesAreIdentity, bool );
 
-  /** Set the number of threads to use when threading.
+  /** TODO Set the number of threads to use when threading.
    * The default is the global default number of threads
    * returned from itkMultiThreader. */
-  virtual void SetNumberOfThreads( itk::ThreadIdType number );
+  //virtual void SetNumberOfThreads( itk::ThreadIdType number );
 
   /** Get the number of threads set to be used. */
   itkGetConstReferenceMacro( NumberOfThreads, itk::ThreadIdType );

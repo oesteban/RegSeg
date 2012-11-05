@@ -117,6 +117,9 @@ public:
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
 
+	itkSetObjectMacro(DeformationField, DeformationFieldType);
+	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
+
 	/** Minimum convergence value for convergence checking.
 	 *  The convergence checker calculates convergence value by fitting to
 	 *  a window of the LevelSets profile. When the convergence value reaches
@@ -204,12 +207,21 @@ protected:
 	InternalComputationValueType m_StepSize; // Step-size is tau in the formulations
 
 
+	DeformationFieldPointer m_DeformationField;
+	DeformationFieldPointer m_NextDeformationField;
+	DeformationFieldPointer m_SpeedsField;
+	DeformationSpectraPointer m_Denominator;
+	MeasureType m_CurrentLevelSetsValue;
+
+
 	GradientDescentLevelSetsOptimizer();
 	~GradientDescentLevelSetsOptimizer() {}
 
 	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 
 	void Iterate(void);
+	void ComputeDenominator( const DeformationSpectraType* reference );
+
 private:
 	GradientDescentLevelSetsOptimizer( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
