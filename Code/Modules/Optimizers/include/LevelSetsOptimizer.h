@@ -41,6 +41,8 @@
 #include <itkObject.h>
 #include "LevelSetsOptimizerBase.h"
 #include <vector>
+#include <itkForwardFFTImageFilter.h>
+#include <itkInverseFFTImageFilter.h>
 
 namespace rstk
 {
@@ -70,9 +72,6 @@ public:
 		OTHER_ERROR
 	} StopConditionType;
 
-	itkNewMacro( Self );
-
-
 	/** Stop condition return string type */
 	typedef std::string StopConditionReturnStringType;
 
@@ -83,8 +82,30 @@ public:
 	/** Measure type */
 	typedef typename Superclass::MeasureType MeasureType;
 
-	typedef typename Superclass::LevelSetsFunctionType LevelSetsFunctionType;
-	typedef typename Superclass::LevelSetsPointer      LevelSetsPointer;
+	typedef TLevelSetsFunction                                    LevelSetsFunctionType;
+	typedef typename LevelSetsFunctionType::Pointer               LevelSetsPointer;
+	typedef typename LevelSetsFunctionType::DeformationFieldType  DeformationFieldType;
+	typedef typename LevelSetsFunctionType::VectorType            VectorType;
+	typedef typename LevelSetsFunctionType::PointValueType        PointValueType;
+
+	itkStaticConstMacro( Dimension, unsigned int, DeformationFieldType::ImageDimension );
+
+	typedef typename DeformationFieldType::Pointer            DeformationFieldPointer;
+	typedef typename itk::Image<PointValueType, Dimension >   DeformationComponentType;
+	typedef typename DeformationComponentType::Pointer        DeformationComponentPointer;
+	typedef typename LevelSetsFunctionType::
+			                           ContourDeformationType ContourDeformationType;
+	typedef typename LevelSetsFunctionType::
+			                        ContourDeformationPointer ContourDeformationPointer;
+	typedef typename ContourDeformationType::PointType        ContourPointType;
+
+	typedef itk::ForwardFFTImageFilter<DeformationComponentType>  FFTType;
+	typedef typename FFTType::Pointer                         FFTPointer;
+	typedef typename FFTType::OutputImageType                 DeformationSpectraType;
+	typedef typename DeformationSpectraType::Pointer          DeformationSpectraPointer;
+	typedef itk::InverseFFTImageFilter<DeformationSpectraType,
+			                       DeformationComponentType>  IFFTType;
+	typedef typename IFFTType::Pointer                        IFFTPointer;
 
 	/** Internal computation type, for maintaining a desired precision */
 	typedef typename Superclass::InternalComputationValueType InternalComputationValueType;
@@ -124,9 +145,7 @@ protected:
 	StopConditionDescriptionType  m_StopConditionDescription;
 	SizeValueType                 m_NumberOfIterations;
 	SizeValueType                 m_CurrentIteration;
-
-	/** Current gradient */
-	LevelSetsPointer m_LevelSets;
+	LevelSetsPointer              m_LevelSets;
 
 	virtual void PrintSelf(std::ostream & os, itk::Indent indent) const;
 

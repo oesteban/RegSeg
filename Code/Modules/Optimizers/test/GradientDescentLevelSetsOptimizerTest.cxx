@@ -69,6 +69,7 @@ int main(int argc, char *argv[]) {
 	typedef LevelSetsType::DeformationFieldType                  DeformationFieldType;
 
 	typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
+	typedef typename Optimizer::Pointer                          OptimizerPointer;
 
 	typedef itk::VTKPolyDataReader< ContourDeformationType >     ReaderType;
 	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
@@ -120,6 +121,12 @@ int main(int argc, char *argv[]) {
 	ls->SetParameters(mean2,cov, true);
 	ls->SetParameters(mean1,cov, false);
 	ls->GetLevelSetsMap(df);
+
+	OptimizerPointer opt = Optimizer::New();
+	opt->SetLevelSets( ls );
+	opt->Start();
+
+
 
 	typedef itk::Image<float,4u> FieldType;
 	FieldType::Pointer out = FieldType::New();
