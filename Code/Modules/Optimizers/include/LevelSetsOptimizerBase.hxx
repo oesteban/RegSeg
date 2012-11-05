@@ -74,40 +74,8 @@ void LevelSetsOptimizerBase<TLevelSetsFunction>::Start() {
 		return;
 	}
 
-	/* Verify m_Scales. If m_Scales hasn't been set, initialize to all 1's. */
-	typedef ScalesType::ValueType     ValueType;
-	if( this->m_Scales.Size() > 0 ) {
-		if( this->m_Scales.Size() != this->m_LevelSets->GetNumberOfLocalParameters() ) {
-			itkExceptionMacro("Size of scales (" << this->m_Scales.Size()
-					<< ") must equal number of local parameters (" <<
-					this->m_LevelSets->GetNumberOfLocalParameters() << ").");
-		}
-		/* Check that all values in m_Scales are > machine epsilon, to avoid
-		 * division by zero/epsilon.
-		 * Also check if scales are identity. */
-		typedef ScalesType::size_type     SizeType;
-		this->m_ScalesAreIdentity = true;
-		for( SizeType i=0; i < this->m_Scales.Size(); i++ ) {
-			if( this->m_Scales[i] <= itk::NumericTraits<ValueType>::epsilon() ) {
-				itkExceptionMacro("m_Scales values must be > epsilon.");
-			}
-			/* Check if the scales are identity. Consider to be identity if
-			 * within a tolerance, to allow for automatically estimated scales
-			 * that may not be exactly 1.0 when in priciniple they should be. */
-			ValueType difference =
-					vcl_fabs( itk::NumericTraits<ValueType>::OneValue() - this->m_Scales[i] );
-			ValueType tolerance = static_cast<ValueType>( 0.01 );
-			if( difference > tolerance  ) {
-				this->m_ScalesAreIdentity = false;
-				break;
-			}
-		}
-	}
-	else {
-		m_Scales.SetSize( this->m_LevelSets->GetNumberOfLocalParameters() );
-		m_Scales.Fill( itk::NumericTraits<ValueType>::OneValue() );
-		this->m_ScalesAreIdentity = true;
-	}
+	/* TODO Check A and B matrices */
+
 }
 
 template< typename TLevelSetsFunction >

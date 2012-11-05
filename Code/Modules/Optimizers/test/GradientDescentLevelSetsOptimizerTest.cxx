@@ -120,7 +120,6 @@ int main(int argc, char *argv[]) {
 	ls->SetContourDeformation( ellipse );
 	ls->SetParameters(mean2,cov, true);
 	ls->SetParameters(mean1,cov, false);
-	ls->GetLevelSetsMap(df);
 
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSets( ls );
