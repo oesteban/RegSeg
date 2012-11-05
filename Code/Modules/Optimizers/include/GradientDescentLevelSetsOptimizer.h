@@ -93,7 +93,7 @@ public:
 	typedef typename Superclass::FFTPointer                   FFTPointer;
 	typedef typename Superclass::DeformationSpectraType       DeformationSpectraType;
 	typedef typename Superclass::DeformationSpectraPointer    DeformationSpectraPointer;
-	typedef typename Superclass::DeformationSpectraPointType  DeformationSpectraPointType;
+	typedef typename Superclass::DeformationSpectraPixelType  DeformationSpectraPixelType;
 	typedef typename Superclass::IFFTType                     IFFTType;
 	typedef typename Superclass::IFFTPointer                  IFFTPointer;
 
