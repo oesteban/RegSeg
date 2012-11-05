@@ -53,6 +53,7 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 50;
+	this->m_StepSize = 1.0;
 }
 
 template< typename TLevelSetsFunction >
@@ -186,22 +187,39 @@ template< typename TLevelSetsFunction >
 void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
 
-	DeformationComponentPointer fieldComponents[Dimension];
-	DeformationComponentPointer speedComponents[Dimension];
+	// Get deformation fields pointers
+	const VectorType* dFieldBuffer = this->m_DeformationField->GetBufferPointer();
+	const VectorType* sFieldBuffer = this->m_SpeedsField->GetBufferPointer();
+	VectorType* nextFieldBuffer = this->m_NextDeformationField->GetBufferPointer();
 
+	// Create container for deformation field components
+	DeformationComponentPointer fieldComponent = DeformationComponentType::New();
+	fieldComponent->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
+	fieldComponent->SetSpacing( this->m_DeformationField->GetSpacing() );
+	fieldComponent->Allocate();
+	PointValueType* dCompBuffer = fieldComponent->GetBufferPointer();
+
+	// Create container for speed field components
+	DeformationComponentPointer speedComponent = DeformationComponentType::New();
+	speedComponent->CopyInformation( fieldComponent );
+	speedComponent->Allocate();
+	PointValueType* sCompBuffer = speedComponent->GetBufferPointer();
+
+	size_t nPix = fieldComponent->GetLargestPossibleRegion().GetNumberOfPixels();
 	for( size_t d = 0; d < Dimension; d++ ) {
-		fieldComponents[d] = DeformationComponentType::New();
-		speedComponents[d] = DeformationComponentType::New();
-
 		// Get component from vector image
-
+		size_t comp, idx2;
+		for(size_t pix = 0; pix< nPix; pix++) {
+			*(dCompBuffer+pix) = (*(dFieldBuffer+pix))[d];
+			*(sCompBuffer+pix) = (*(sFieldBuffer+pix))[d];
+		}
 
 		DeformationFieldDividerPointer div = DeformationFieldDivider::New();
-		div->SetInput1( fieldComponents[d] );
+		div->SetInput1( fieldComponent );
 		div->SetConstant2( this->m_StepSize );
 		DeformationFieldSubtracterPointer sub = DeformationFieldSubtracter::New();
 		sub->SetInput1( div->GetOutput() );
-		sub->SetInput2( speedComponents[d] );
+		sub->SetInput2( speedComponent );
 
 		FFTPointer fft = FFTType::New();
 		fft->SetInput( sub->GetOutput() );
@@ -226,9 +244,12 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 			throw err;
 		}
 
-		ifft->GetOutput();
+		const PointValueType* resultBuffer = ifft->GetOutput()->GetBufferPointer();
 
 		// Set component on this->m_NextDeformationField
+		for(size_t pix = 0; pix< nPix; pix++) {
+			(*(nextFieldBuffer+pix))[d] = *(resultBuffer+pix);
+		}
 	}
 
 	this->m_CurrentLevelSetsValue = this->m_LevelSets->GetValue( ); // TODO this should operate on this->m_NextDeformationField
