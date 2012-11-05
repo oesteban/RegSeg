@@ -42,8 +42,9 @@
 #include "LevelSetsOptimizer.h"
 #include <itkWindowConvergenceMonitoringFunction.h>
 #include <vector>
-#include <itkForwardFFTImageFilter.h>
-#include <itkInverseFFTImageFilter.h>
+#include <itkAddImageFilter.h>
+#include <itkDivideImageFilter.h>
+#include <itkSubtractImageFilter.h>
 
 namespace rstk
 {
@@ -71,6 +72,7 @@ public:
 	itkNewMacro( Self );                                             // New macro for creation of through a Smart Pointer
 
 
+	itkStaticConstMacro( Dimension, unsigned int, Superclass::Dimension );
 
 	/** Metric type over which this class is templated */
 	typedef typename Superclass::MeasureType                  MeasureType;
@@ -78,35 +80,39 @@ public:
 	typedef typename Superclass::StopConditionType            StopConditionType;
 	typedef typename Superclass::LevelSetsFunctionType        LevelSetsFunctionType;
 	typedef typename Superclass::LevelSetsPointer             LevelSetsPointer;
-	typedef typename LevelSetsFunctionType::
-			                             DeformationFieldType DeformationFieldType;
-
-	itkStaticConstMacro( Dimension, unsigned int, DeformationFieldType::ImageDimension );
-
-	typedef typename DeformationFieldType::Pointer            DeformationFieldPointer;
-	typedef typename DeformationFieldType::PointValueType     PointValueType;
-	typedef typename DeformationFieldType::VectorType         VectorType;
-	typedef typename itk::Image<PointValueType, Dimension >   DeformationComponentType;
-	typedef typename DeformationComponentType::Pointer        DeformationComponentPointer;
-	typedef typename DeformationFieldType::
-			                           ContourDeformationType ContourDeformationType;
-	typedef typename DeformationFieldType::
-			                        ContourDeformationPointer ContourDeformationPointer;
-	typedef typename DeformationFieldType::PointType          ContourPointType;
-
-	typedef itk::ForwardFFTImageFilter
-			<DeformationComponentType>                        FFTType;
-	typedef typename FFTType::Pointer                         FFTPointer;
-	typedef typename FFTType::OutputImageType                 DeformationSpectraType;
-	typedef typename DeformationSpectraType::Pointer          DeformationSpectraPointer;
-
-	typedef itk::InverseFFTImageFilter
-			<DeformationSpectraType,DeformationComponentType> IFFTType;
-	typedef typename IFFTType::Pointer                        IFFTPointer;
+	typedef typename Superclass::DeformationFieldType         DeformationFieldType;
+	typedef typename Superclass::DeformationFieldPointer      DeformationFieldPointer;
+	typedef typename Superclass::PointValueType               PointValueType;
+	typedef typename Superclass::VectorType                   VectorType;
+	typedef typename Superclass::DeformationComponentType     DeformationComponentType;
+	typedef typename Superclass::DeformationComponentPointer  DeformationComponentPointer;
+	typedef typename Superclass::ContourDeformationType       ContourDeformationType;
+	typedef typename Superclass::ContourDeformationPointer    ContourDeformationPointer;
+	typedef typename Superclass::ContourPointType             ContourPointType;
+	typedef typename Superclass::FFTType                      FFTType;
+	typedef typename Superclass::FFTPointer                   FFTPointer;
+	typedef typename Superclass::DeformationSpectraType       DeformationSpectraType;
+	typedef typename Superclass::DeformationSpectraPointer    DeformationSpectraPointer;
+	typedef typename Superclass::IFFTType                     IFFTType;
+	typedef typename Superclass::IFFTPointer                  IFFTPointer;
 
 	/** Type for the convergence checker */
 	typedef itk::Function::WindowConvergenceMonitoringFunction<MeasureType>	         ConvergenceMonitoringType;
 	typedef typename ConvergenceMonitoringType::EnergyValueContainerSizeType         SizeValueType;
+
+	typedef typename itk::AddImageFilter<DeformationComponentType,
+			DeformationComponentType,DeformationComponentType> DeformationFieldAdder;
+	typedef typename DeformationFieldAdder::Pointer            DeformationFieldAdderPointer;
+	typedef typename itk::SubtractImageFilter<DeformationComponentType,
+			DeformationComponentType,DeformationComponentType> DeformationFieldSubtracter;
+	typedef typename DeformationFieldSubtracter::Pointer            DeformationFieldSubtracterPointer;
+	typedef typename itk::DivideImageFilter<DeformationComponentType,
+			DeformationComponentType,DeformationComponentType> DeformationFieldDivider;
+	typedef typename DeformationFieldDivider::Pointer          DeformationFieldDividerPointer;
+
+	typedef typename itk::DivideImageFilter<DeformationSpectraType,
+			DeformationSpectraType,DeformationSpectraType>     SpectrumDivider;
+	typedef typename SpectrumDivider::Pointer                  SpectrumDividerPointer;
 
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate

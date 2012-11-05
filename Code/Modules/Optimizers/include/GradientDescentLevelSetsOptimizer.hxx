@@ -171,17 +171,22 @@ template< typename TLevelSetsFunction >
 void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
 
+	DeformationFieldDividerPointer div = DeformationFieldDivider::New();
+	div->SetInput1( this->m_LevelSets->GetDeformationField() );
+	div->SetConstant2( this->m_StepSize );
+	DeformationFieldSubtracterPointer sub = DeformationFieldSubtracter::New();
+	sub->SetInput1( div->GetOutput() );
+	sub->SetInput2( this->m_LevelSets->GetSpeedsField() );
+
 	FFTPointer fft = FFTType::New();
-	DeformationFieldPointer numerator = ( this->m_DeformationField / this->m_StepSize ) - this->m_LevelSetMap;
-	fft->SetInput( numerator );
-	DeformationSpectraPointer sp = fft->GetOutput();
+	fft->SetInput( sub->GetOutput() );
 
-
-	// DivideFilter
-	DeformationSpectraPointer p = numerator/denominator;
+	SpectrumDividerPointer ft_div = SpectrumDivider::New();
+	ft_div->SetInput1( fft->GetOutput() );
+	ft_div->SetInput2( this->m_Denominator );
 
 	IFFTPointer ifft = IFFTType::New();
-	ifft->SetInput( p )
+	ifft->SetInput( ft_div->GetOutput() );
 
 	try {
 		ifft->Update();

@@ -64,15 +64,16 @@ public:
   /** Metric function type */
   typedef TLevelSetsFunction                                                   LevelSetsFunctionType;
   typedef typename LevelSetsFunctionType::Pointer                              LevelSetsPointer;
+  typedef typename LevelSetsFunctionType::DeformationFieldType                 DeformationFieldType;
 
   /** Number of parameters type */
-  typedef typename LevelSetsFunctionType::NumberOfParametersType               NumberOfParametersType;
+  //typedef typename LevelSetsFunctionType::NumberOfParametersType               NumberOfParametersType;
 
   /** Measure type */
   typedef typename LevelSetsFunctionType::MeasureType                          MeasureType;
 
   /** Internal computation value type */
-  typedef typename LevelSetsFunctionType::InternalComputationValueType         InternalComputationValueType;
+  typedef double                                                               InternalComputationValueType;
 
   /** Accessors for LevelSets */
   itkGetObjectMacro( LevelSets, LevelSetsFunctionType );
