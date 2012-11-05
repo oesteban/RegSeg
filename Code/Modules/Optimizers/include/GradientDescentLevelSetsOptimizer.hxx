@@ -41,6 +41,8 @@
 
 #include "GradientDescentLevelSetsOptimizer.h"
 #include <vector>
+#include <vnl/vnl_math.h>
+#include <cmath>
 
 namespace rstk {
 
@@ -271,13 +273,16 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 	InternalComputationValueType constant = (1.0/this->m_StepSize) + m_Alpha;
 	InternalComputationValueType lag_el;
 
-	DeformationSpectraPointType* buffer = this->m_Denominator->GetBufferPointer();
+	double pi2 = 2* vnl_math::pi;
+
+	DeformationSpectraPixelType* buffer = this->m_Denominator->GetBufferPointer();
 	typename DeformationSpectraType::IndexType idx;
+	typename DeformationSpectraType::SizeType size = this->m_Denominator->GetLargestPossibleRegion().GetSize();
 	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
-	for (size_t pix = 0; pix < nPix; i++ ) {
+	for (size_t pix = 0; pix < nPix; pix++ ) {
 		lag_el = 0.0;
-		idx = this->m_Deformation->ComputeIndex( pix );
-		for(size_t d = 0; d < Dimension; d++ ) lag_el = cos(idx[d])-2; // TODO: Set frequency
+		idx = this->m_Denominator->ComputeIndex( pix );
+		for(size_t d = 0; d < Dimension; d++ ) lag_el = cos( pi2* idx[d]/(1.0*(size[d]-1)))-2;
 		*(buffer+pix) = constant - m_Beta* lag_el;
 	}
 

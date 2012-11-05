@@ -103,7 +103,7 @@ public:
 	typedef typename FFTType::Pointer                         FFTPointer;
 	typedef typename FFTType::OutputImageType                 DeformationSpectraType;
 	typedef typename DeformationSpectraType::Pointer          DeformationSpectraPointer;
-	typedef typename DeformationSpectraType::PointType        DeformationSpectraPointType;
+	typedef typename DeformationSpectraType::PixelType        DeformationSpectraPixelType;
 	typedef itk::InverseFFTImageFilter<DeformationSpectraType,
 			                       DeformationComponentType>  IFFTType;
 	typedef typename IFFTType::Pointer                        IFFTPointer;
