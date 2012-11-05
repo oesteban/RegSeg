@@ -54,6 +54,8 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 50;
 	this->m_StepSize = 1.0;
+	this->m_Alpha = 1.0;
+	this->m_Beta = 1.0;
 }
 
 template< typename TLevelSetsFunction >
@@ -265,7 +267,20 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 	this->m_Denominator->CopyInformation( reference );
 	this->m_Denominator->Allocate();
 
-	// TODO: Fill Buffer with denominator data
+	// Fill Buffer with denominator data
+	InternalComputationValueType constant = (1.0/this->m_StepSize) + m_Alpha;
+	InternalComputationValueType lag_el;
+
+	DeformationSpectraPointType* buffer = this->m_Denominator->GetBufferPointer();
+	typename DeformationSpectraType::IndexType idx;
+	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
+	for (size_t pix = 0; pix < nPix; i++ ) {
+		lag_el = 0.0;
+		idx = this->m_Deformation->ComputeIndex( pix );
+		for(size_t d = 0; d < Dimension; d++ ) lag_el = cos(idx[d])-2; // TODO: Set frequency
+		*(buffer+pix) = constant - m_Beta* lag_el;
+	}
+
 }
 
 }

@@ -93,6 +93,7 @@ public:
 	typedef typename Superclass::FFTPointer                   FFTPointer;
 	typedef typename Superclass::DeformationSpectraType       DeformationSpectraType;
 	typedef typename Superclass::DeformationSpectraPointer    DeformationSpectraPointer;
+	typedef typename Superclass::DeformationSpectraPointType  DeformationSpectraPointType;
 	typedef typename Superclass::IFFTType                     IFFTType;
 	typedef typename Superclass::IFFTPointer                  IFFTPointer;
 
@@ -205,6 +206,8 @@ protected:
 
 	/** Particular parameter definitions from our method */
 	InternalComputationValueType m_StepSize; // Step-size is tau in the formulations
+	InternalComputationValueType m_Alpha;
+	InternalComputationValueType m_Beta;
 
 
 	DeformationFieldPointer m_DeformationField;
