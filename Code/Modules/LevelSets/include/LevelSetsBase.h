@@ -105,6 +105,7 @@ public:
 
 	virtual MeasureType GetValue() const = 0;
 	virtual void GetLevelSetsMap( DeformationFieldType* levelSetMap) const = 0;
+
 protected:
 	LevelSetsBase() { this->m_Value = itk::NumericTraits<MeasureType>::infinity(); }
 	virtual ~LevelSetsBase() {}

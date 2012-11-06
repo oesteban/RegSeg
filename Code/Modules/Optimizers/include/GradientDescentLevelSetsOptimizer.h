@@ -42,9 +42,7 @@
 #include "LevelSetsOptimizer.h"
 #include <itkWindowConvergenceMonitoringFunction.h>
 #include <vector>
-#include <itkAddImageFilter.h>
-#include <itkDivideImageFilter.h>
-#include <itkSubtractImageFilter.h>
+#include <itkImageIteratorWithIndex.h>
 
 namespace rstk
 {
@@ -91,29 +89,18 @@ public:
 	typedef typename Superclass::ContourPointType             ContourPointType;
 	typedef typename Superclass::FFTType                      FFTType;
 	typedef typename Superclass::FFTPointer                   FFTPointer;
-	typedef typename Superclass::DeformationSpectraType       DeformationSpectraType;
-	typedef typename Superclass::DeformationSpectraPointer    DeformationSpectraPointer;
-	typedef typename Superclass::DeformationSpectraPixelType  DeformationSpectraPixelType;
+	typedef typename Superclass::FTDomainType                 FTDomainType;
+	typedef typename Superclass::FTDomainPointer              FTDomainPointer;
+	typedef typename Superclass::ComplexType                  ComplexType;
+	typedef typename Superclass::ComplexValueType             ComplexValueType;
+	typedef typename Superclass::RealPartType                 RealPartType;
+	typedef typename RealPartType::Pointer                    RealPartPointer;
 	typedef typename Superclass::IFFTType                     IFFTType;
 	typedef typename Superclass::IFFTPointer                  IFFTPointer;
 
 	/** Type for the convergence checker */
 	typedef itk::Function::WindowConvergenceMonitoringFunction<MeasureType>	         ConvergenceMonitoringType;
 	typedef typename ConvergenceMonitoringType::EnergyValueContainerSizeType         SizeValueType;
-
-	typedef typename itk::AddImageFilter<DeformationComponentType,
-			DeformationComponentType,DeformationComponentType> DeformationFieldAdder;
-	typedef typename DeformationFieldAdder::Pointer            DeformationFieldAdderPointer;
-	typedef typename itk::SubtractImageFilter<DeformationComponentType,
-			DeformationComponentType,DeformationComponentType> DeformationFieldSubtracter;
-	typedef typename DeformationFieldSubtracter::Pointer            DeformationFieldSubtracterPointer;
-	typedef typename itk::DivideImageFilter<DeformationComponentType,
-			DeformationComponentType,DeformationComponentType> DeformationFieldDivider;
-	typedef typename DeformationFieldDivider::Pointer          DeformationFieldDividerPointer;
-
-	typedef typename itk::DivideImageFilter<DeformationSpectraType,
-			DeformationSpectraType,DeformationSpectraType>     SpectrumDivider;
-	typedef typename SpectrumDivider::Pointer                  SpectrumDividerPointer;
 
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
@@ -213,7 +200,7 @@ protected:
 	DeformationFieldPointer m_DeformationField;
 	DeformationFieldPointer m_NextDeformationField;
 	DeformationFieldPointer m_SpeedsField;
-	DeformationSpectraPointer m_Denominator;
+	RealPartPointer m_Denominator;
 	MeasureType m_CurrentLevelSetsValue;
 
 
@@ -223,7 +210,7 @@ protected:
 	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 
 	void Iterate(void);
-	void ComputeDenominator( const DeformationSpectraType* reference );
+	void ApplyRegularizationTerm( FTDomainType* reference );
 
 private:
 	GradientDescentLevelSetsOptimizer( const Self & ); // purposely not implemented

@@ -43,6 +43,9 @@
 #include <vector>
 #include <vnl/vnl_math.h>
 #include <cmath>
+#include <itkComplexToRealImageFilter.h>
+#include "DisplacementFieldFileWriter.h"
+
 
 namespace rstk {
 
@@ -75,20 +78,29 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 
 	VectorType zerov = itk::NumericTraits<VectorType>::Zero;
 	/* Settings validation */
+	if ( this->m_LevelSetsFunction.IsNull() ) {
+		itkExceptionMacro("LevelSets Object must be set");
+	}
+
 	if (this->m_DeformationField.IsNull()) {
 		/* TODO Initialize default deformation field */
+		itkExceptionMacro("DeformationField Object must be set");
 	}
 
 	if ( this->m_SpeedsField.IsNull() ) {
 		this->m_SpeedsField = DeformationFieldType::New();
-		this->m_SpeedsField->CopyInformation( this->m_DeformationField );
+		this->m_SpeedsField->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
+		this->m_SpeedsField->SetSpacing( this->m_DeformationField->GetSpacing() );
+		this->m_SpeedsField->SetDirection( this->m_DeformationField->GetDirection() );
 		this->m_SpeedsField->Allocate();
 		this->m_SpeedsField->FillBuffer( zerov );
 	}
 
 	/* Initialize next deformationfield */
 	this->m_NextDeformationField = DeformationFieldType::New();
-	this->m_NextDeformationField->CopyInformation( this->m_DeformationField );
+	this->m_NextDeformationField->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
+	this->m_NextDeformationField->SetSpacing( this->m_DeformationField->GetSpacing() );
+	this->m_NextDeformationField->SetDirection( this->m_DeformationField->GetDirection() );
 	this->m_NextDeformationField->Allocate();
 	this->m_NextDeformationField->FillBuffer( zerov );
 
@@ -128,8 +140,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 	while( ! this->m_Stop )	{
 		/* Compute metric value/derivative. */
 		try	{
-
-			this->m_LevelSets->GetLevelSetsMap( this->m_SpeedsField );
+			this->m_LevelSetsFunction->GetLevelSetsMap( this->m_SpeedsField );
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = Superclass::COSTFUNCTION_ERROR;
@@ -203,39 +214,22 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	fieldComponent->Allocate();
 	PointValueType* dCompBuffer = fieldComponent->GetBufferPointer();
 
-	// Create container for speed field components
-	DeformationComponentPointer speedComponent = DeformationComponentType::New();
-	speedComponent->CopyInformation( fieldComponent );
-	speedComponent->Allocate();
-	PointValueType* sCompBuffer = speedComponent->GetBufferPointer();
-
 	size_t nPix = fieldComponent->GetLargestPossibleRegion().GetNumberOfPixels();
 	for( size_t d = 0; d < Dimension; d++ ) {
 		// Get component from vector image
 		size_t comp, idx2;
 		for(size_t pix = 0; pix< nPix; pix++) {
-			*(dCompBuffer+pix) = (*(dFieldBuffer+pix))[d];
-			*(sCompBuffer+pix) = (*(sFieldBuffer+pix))[d];
+			*(dCompBuffer+pix) = (PointValueType) (*(dFieldBuffer+pix))[d] / this->m_StepSize - (*(sFieldBuffer+pix))[d];
 		}
 
-		DeformationFieldDividerPointer div = DeformationFieldDivider::New();
-		div->SetInput1( fieldComponent );
-		div->SetConstant2( this->m_StepSize );
-		DeformationFieldSubtracterPointer sub = DeformationFieldSubtracter::New();
-		sub->SetInput1( div->GetOutput() );
-		sub->SetInput2( speedComponent );
-
 		FFTPointer fft = FFTType::New();
-		fft->SetInput( sub->GetOutput() );
-
-		SpectrumDividerPointer ft_div = SpectrumDivider::New();
-		ft_div->SetInput1( fft->GetOutput() );
-
-		if( this->m_Denominator.IsNull() ) this->ComputeDenominator( fft->GetOutput() );
-		ft_div->SetInput2( this->m_Denominator );
+		fft->SetInput( fieldComponent );
+		fft->Update();  // This is required for computing the denominator for first time
+		FTDomainPointer num = fft->GetOutput();
+		this->ApplyRegularizationTerm( num );
 
 		IFFTPointer ifft = IFFTType::New();
-		ifft->SetInput( ft_div->GetOutput() );
+		ifft->SetInput( num );
 
 		try {
 			ifft->Update();
@@ -248,6 +242,13 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 			throw err;
 		}
 
+		typename itk::ImageFileWriter<typename IFFTType::OutputImageType>::Pointer w =
+				itk::ImageFileWriter<typename IFFTType::OutputImageType>::New();
+		w->SetInput( ifft->GetOutput() );
+		std::stringstream ss; ss << "utt_" << d <<".nii.gz";
+		w->SetFileName( ss.str() );
+		w->Update();
+
 		const PointValueType* resultBuffer = ifft->GetOutput()->GetBufferPointer();
 
 		// Set component on this->m_NextDeformationField
@@ -256,7 +257,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 		}
 	}
 
-	this->m_CurrentLevelSetsValue = this->m_LevelSets->GetValue( ); // TODO this should operate on this->m_NextDeformationField
+	this->m_CurrentLevelSetsValue = this->m_LevelSetsFunction->GetValue( ); // TODO this should operate on this->m_NextDeformationField
 	// TODO best parameters stuff
 
 	this->InvokeEvent( itk::IterationEvent() );
@@ -264,30 +265,41 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 
 template< typename TLevelSetsFunction >
 void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
-::ComputeDenominator( const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::DeformationSpectraType* reference ){
-	this->m_Denominator = DeformationSpectraType::New();
-	this->m_Denominator->CopyInformation( reference );
-	this->m_Denominator->Allocate();
-
-	// Fill Buffer with denominator data
-	InternalComputationValueType constant = (1.0/this->m_StepSize) + m_Alpha;
-	InternalComputationValueType lag_el;
-
+::ApplyRegularizationTerm( typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::FTDomainType* reference ){
 	double pi2 = 2* vnl_math::pi;
+	ComplexValueType constant = (1.0/this->m_StepSize) + m_Alpha;
 
-	DeformationSpectraPixelType* buffer = this->m_Denominator->GetBufferPointer();
-	typename DeformationSpectraType::IndexType idx;
-	typename DeformationSpectraType::SizeType size = this->m_Denominator->GetLargestPossibleRegion().GetSize();
-	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
-	for (size_t pix = 0; pix < nPix; pix++ ) {
-		lag_el = 0.0;
-		idx = this->m_Denominator->ComputeIndex( pix );
-		for(size_t d = 0; d < Dimension; d++ ) lag_el = cos( pi2* idx[d]/(1.0*(size[d]-1)))-2;
-		*(buffer+pix) = constant - m_Beta* lag_el;
+	if( this->m_Denominator.IsNull() ) {
+		this->m_Denominator = RealPartType::New();
+		this->m_Denominator->SetRegions( reference->GetLargestPossibleRegion() );
+		this->m_Denominator->SetSpacing( reference->GetSpacing() );
+		this->m_Denominator->SetDirection( reference->GetDirection() );
+		this->m_Denominator->Allocate();
+		this->m_Denominator->FillBuffer( itk::NumericTraits<ComplexValueType>::Zero );
+
+		// Fill Buffer with denominator data
+		ComplexValueType lag_el;
+		typename RealPartType::IndexType idx;
+		typename RealPartType::SizeType size = this->m_Denominator->GetLargestPossibleRegion().GetSize();
+
+		ComplexValueType* buffer = this->m_Denominator->GetBufferPointer();
+		size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
+		for (size_t pix = 0; pix < nPix; pix++ ) {
+			lag_el = 0.0;
+			idx = this->m_Denominator->ComputeIndex( pix );
+			for(size_t d = 0; d < Dimension; d++ ) lag_el+= cos( pi2* idx[d]/(1.0*(size[d]-1)))-2;
+			*(buffer+pix) = constant - m_Beta* lag_el;
+		}
 	}
 
+	ComplexType* nBuffer = reference->GetBufferPointer();
+	ComplexValueType* dBuffer = this->m_Denominator->GetBufferPointer();
+	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
+	for (size_t pix = 0; pix < nPix; pix++ ) {
+		ComplexType cur = *(nBuffer+pix);
+		*(nBuffer+pix) = cur / *(dBuffer+pix);
+	}
 }
-
 }
 
 

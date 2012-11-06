@@ -44,6 +44,8 @@
 #include <vnl/algo/vnl_symmetric_eigensystem.h>
 #include <vnl/algo/vnl_ldl_cholesky.h>
 
+#include "DisplacementFieldFileWriter.h"
+
 namespace rstk {
 template <typename TReferenceImageType, typename TCoordRepType>
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
@@ -194,29 +196,10 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	res->SetInput( speedMap );
 	res->Update();
 	DeformationFieldPointer speedsfield = res->GetOutput();
-
-	/*
-	itk::ImageRegionConstIterator<DeformationFieldType> it( speedsfield, speedsfield->GetLargestPossibleRegion() );
-	itk::ImageRegionIterator<DeformationFieldType> dest( levelSetMap, levelSetMap->GetLargestPossibleRegion() );
-
-	it.GoToBegin();
-	dest.GoToBegin();
-	while( !it.IsAtEnd() ) {
-		dest.Set( it.Get() );
-		++it;
-		++dest;
-	}*/
 	VectorType* destBuffer = levelSetMap->GetBufferPointer();
 	VectorType* origBuffer = speedsfield->GetBufferPointer();
 	size_t numberOfPixels = speedsfield->GetBufferedRegion().GetNumberOfPixels();
-/*
-	for ( SizeValueType i = 0; i < numberOfPixels; i++ ) {
-	    *(destBuffer+i) = *(origBuffer+i);
-	}*/
-
-
 	memcpy( destBuffer, origBuffer, numberOfPixels*sizeof(*origBuffer) );
-
 }
 
 }
