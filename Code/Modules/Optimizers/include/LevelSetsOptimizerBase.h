@@ -76,8 +76,8 @@ public:
   typedef double                                                               InternalComputationValueType;
 
   /** Accessors for LevelSets */
-  itkGetObjectMacro( LevelSets, LevelSetsFunctionType );
-  itkSetObjectMacro( LevelSets, LevelSetsFunctionType );
+  itkGetObjectMacro( LevelSetsFunction, LevelSetsFunctionType );
+  itkSetObjectMacro( LevelSetsFunction, LevelSetsFunctionType );
 
   /** Accessor for LevelSets value. Returns the value
    *  stored in m_CurrentLevelSetsValue from the most recent
@@ -118,7 +118,7 @@ protected:
   LevelSetsOptimizerBase();
   ~LevelSetsOptimizerBase(){};
 
-  LevelSetsPointer              m_LevelSets;
+  LevelSetsPointer              m_LevelSetsFunction;
   itk::ThreadIdType             m_NumberOfThreads;
 
   /** LevelSets measure value at a given iteration, as most recently evaluated. */

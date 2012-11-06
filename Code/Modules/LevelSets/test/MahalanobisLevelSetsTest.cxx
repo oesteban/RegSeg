@@ -124,40 +124,6 @@ int main(int argc, char *argv[]) {
 	writer->SetFileName( std::string( TEST_DATA_DIR ) + "speed.nii.gz" );
 	writer->SetInput( df );
 	writer->Update();
-
-	/*
-	typedef itk::Image<float,4u> FieldType;
-	FieldType::Pointer out = FieldType::New();
-	FieldType::SizeType outSize;
-	outSize[0] = df->GetLargestPossibleRegion().GetSize()[0];
-	outSize[1] = df->GetLargestPossibleRegion().GetSize()[1];
-	outSize[2] = df->GetLargestPossibleRegion().GetSize()[2];
-	outSize[3] = 3;
-	out->SetRegions( outSize );
-	FieldType::SpacingType outSpacing;
-	outSpacing[0] = df->GetSpacing()[0];
-	outSpacing[1] = df->GetSpacing()[1];
-	outSpacing[2] = df->GetSpacing()[2];
-	outSpacing[3] = 1.0;
-	out->SetSpacing( outSpacing );
-	out->Allocate();
-	out->FillBuffer(0.0);
-
-	float* buffer = out->GetBufferPointer();
-	DeformationFieldType::PixelType* vectBuffer = df->GetBufferPointer();
-	size_t nPix = df->GetLargestPossibleRegion().GetNumberOfPixels();
-
-	for(size_t pix = 0; pix< nPix; pix++) {
-		DeformationFieldType::PixelType val = (*vectBuffer)[pix];
-		for( size_t i=0; i<3; i++) {
-			unsigned int idx = (i*nPix)+pix;
-			buffer[idx] = (float) val[i];
-		}
-	}
-	itk::ImageFileWriter<FieldType>::Pointer w = itk::ImageFileWriter<FieldType>::New();
-	w->SetInput( out );
-	w->SetFileName( std::string( TEST_DATA_DIR ) + "speed.nii.gz" );
-	w->Update();*/
 }
 
 

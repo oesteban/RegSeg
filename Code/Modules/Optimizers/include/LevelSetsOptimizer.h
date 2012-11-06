@@ -90,23 +90,28 @@ public:
 
 	itkStaticConstMacro( Dimension, unsigned int, DeformationFieldType::ImageDimension );
 
-	typedef typename DeformationFieldType::Pointer            DeformationFieldPointer;
-	typedef typename itk::Image<PointValueType, Dimension >   DeformationComponentType;
-	typedef typename DeformationComponentType::Pointer        DeformationComponentPointer;
+	typedef typename DeformationFieldType::Pointer                        DeformationFieldPointer;
+	typedef typename itk::Image<PointValueType, Dimension >               DeformationComponentType;
+	typedef typename DeformationComponentType::Pointer                    DeformationComponentPointer;
 	typedef typename LevelSetsFunctionType::
-			                           ContourDeformationType ContourDeformationType;
+			                           ContourDeformationType             ContourDeformationType;
 	typedef typename LevelSetsFunctionType::
-			                        ContourDeformationPointer ContourDeformationPointer;
-	typedef typename ContourDeformationType::PointType        ContourPointType;
+			                        ContourDeformationPointer             ContourDeformationPointer;
+	typedef typename ContourDeformationType::PointType                    ContourPointType;
 
-	typedef itk::ForwardFFTImageFilter<DeformationComponentType>  FFTType;
-	typedef typename FFTType::Pointer                         FFTPointer;
-	typedef typename FFTType::OutputImageType                 DeformationSpectraType;
-	typedef typename DeformationSpectraType::Pointer          DeformationSpectraPointer;
-	typedef typename DeformationSpectraType::PixelType        DeformationSpectraPixelType;
-	typedef itk::InverseFFTImageFilter<DeformationSpectraType,
-			                       DeformationComponentType>  IFFTType;
-	typedef typename IFFTType::Pointer                        IFFTPointer;
+	typedef itk::ForwardFFTImageFilter<DeformationComponentType>          FFTType;
+	typedef typename FFTType::Pointer                                     FFTPointer;
+	typedef typename FFTType::OutputImageType                             FTDomainType;
+	typedef typename FTDomainType::Pointer                                FTDomainPointer;
+	typedef typename FTDomainType::PixelType                              ComplexType;
+	typedef typename ComplexType::value_type                              ComplexValueType;
+	typedef itk::Image< ComplexValueType, Dimension >                     RealPartType;
+
+	typedef itk::InverseFFTImageFilter
+			        <FTDomainType, DeformationComponentType>              IFFTType;
+	typedef typename IFFTType::Pointer                                    IFFTPointer;
+
+	//typedef itk::ComplexToRealImageFilter< FTDomainType, RealPartType > RealFilterType;
 
 	/** Internal computation type, for maintaining a desired precision */
 	typedef typename Superclass::InternalComputationValueType InternalComputationValueType;
@@ -146,7 +151,6 @@ protected:
 	StopConditionDescriptionType  m_StopConditionDescription;
 	SizeValueType                 m_NumberOfIterations;
 	SizeValueType                 m_CurrentIteration;
-	LevelSetsPointer              m_LevelSets;
 
 	virtual void PrintSelf(std::ostream & os, itk::Indent indent) const;
 

@@ -102,11 +102,10 @@ int main(int argc, char *argv[]) {
 	CovarianceType cov; cov.SetIdentity();
 
 	DeformationFieldType::Pointer df = DeformationFieldType::New();
-	DeformationFieldType::SizeType size = im->GetLargestPossibleRegion().GetSize();
-	double factor = 1/3.2;
-	for( size_t i=0;i<3;i++) size[i]=(unsigned int) (size[i] * factor);
+	DeformationFieldType::SizeType imSize = im->GetLargestPossibleRegion().GetSize();
+	DeformationFieldType::SizeType size; size.Fill(16);
 	DeformationFieldType::SpacingType spacing = im->GetSpacing();
-	spacing/=factor;
+	for( size_t i = 0; i<3; i++) spacing[i] = 1.0*imSize[i]/size[i];
 	df->SetRegions( size );
 	df->SetSpacing( spacing );
 	df->SetDirection( im->GetDirection() );
@@ -122,7 +121,8 @@ int main(int argc, char *argv[]) {
 	ls->SetParameters(mean1,cov, false);
 
 	OptimizerPointer opt = Optimizer::New();
-	opt->SetLevelSets( ls );
+	opt->SetLevelSetsFunction( ls );
+	opt->SetDeformationField( df );
 	opt->Start();
 
 

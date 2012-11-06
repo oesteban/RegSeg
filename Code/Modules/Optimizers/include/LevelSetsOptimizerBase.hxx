@@ -47,7 +47,7 @@ namespace rstk {
 
 template< typename TLevelSetsFunction >
 LevelSetsOptimizerBase<TLevelSetsFunction>::LevelSetsOptimizerBase() {
-	this->m_LevelSets = NULL;
+	this->m_LevelSetsFunction = NULL;
 	this->m_CurrentLevelSetsValue = itk::NumericTraits<MeasureType>::infinity();
 	this->m_ScalesAreIdentity = false;
 }
@@ -63,13 +63,13 @@ void LevelSetsOptimizerBase<TLevelSetsFunction>::PrintSelf( std::ostream &os, it
 //	}
 //	os << indent << "m_ScalesAreIdentity: " << this->GetScalesAreIdentity() << std::endl;
 	os << indent << "LevelSets: " << std::endl;
-	m_LevelSets->Print( os, indent.GetNextIndent() );
+	m_LevelSetsFunction->Print( os, indent.GetNextIndent() );
 }
 
 template< typename TLevelSetsFunction >
 void LevelSetsOptimizerBase<TLevelSetsFunction>::Start() {
 	/* Validate some settings */
-	if( this->m_LevelSets.IsNull() )	{
+	if( this->m_LevelSetsFunction.IsNull() )	{
 		itkExceptionMacro("LevelSets object must be set.");
 		return;
 	}
@@ -82,11 +82,11 @@ template< typename TLevelSetsFunction >
 const typename LevelSetsOptimizerBase<TLevelSetsFunction>::ParametersType &
 LevelSetsOptimizerBase<TLevelSetsFunction>::GetCurrentPosition()
 {
-	if( this->m_LevelSets.IsNull() )
+	if( this->m_LevelSetsFunction.IsNull() )
 	{
 		itkExceptionMacro("LevelSets has not been assigned. Cannot get parameters.");
 	}
-	return this->m_LevelSets->GetParameters();
+	return this->m_LevelSetsFunction->GetParameters();
 }
 
 //-------------------------------------------------------------------
