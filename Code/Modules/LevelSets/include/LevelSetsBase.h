@@ -93,6 +93,7 @@ public:
 			< ReferenceImageType >                           InterpolatorType;
 	typedef typename InterpolatorType::Pointer               InterpolatorPointer;
 
+
 	typedef itk::QuadEdgeMesh< VectorType, Dimension >       ContourDeformationType;
 	typedef typename ContourDeformationType::PointType       PointType;
 	typedef typename ContourDeformationType::Pointer         ContourDeformationPointer;
@@ -102,9 +103,20 @@ public:
 	typedef itk::Image< VectorType, Dimension >              DeformationFieldType;
 	typedef typename DeformationFieldType::Pointer           DeformationFieldPointer;
 	typedef typename DeformationFieldType::ConstPointer      DeformationFieldConstPointer;
+	typedef itk::VectorLinearInterpolateImageFunction
+			< DeformationFieldType >                         VectorInterpolatorType;
+	typedef typename VectorInterpolatorType::Pointer         VectorInterpolatorPointer;
 
 	virtual MeasureType GetValue() const = 0;
 	virtual void GetLevelSetsMap( DeformationFieldType* levelSetMap) const = 0;
+
+	void UpdateDeformationField( const DeformationFieldType* newField );
+
+	itkSetObjectMacro(ContourDeformation, ContourDeformationType);
+	itkGetConstObjectMacro(ContourDeformation, ContourDeformationType);
+
+	itkSetObjectMacro(DeformationField, DeformationFieldType);
+	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
 
 protected:
 	LevelSetsBase() { this->m_Value = itk::NumericTraits<MeasureType>::infinity(); }
@@ -117,11 +129,17 @@ protected:
 	}
 
 	mutable MeasureType m_Value;
-	mutable DeformationFieldConstPointer m_DeformationField;
+	DeformationFieldPointer m_DeformationField;
+	ContourDeformationPointer m_ContourDeformation;
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented
 
 }; // end LevelSetsBase Class
 } // end namespace rstk
+
+#ifndef ITK_MANUAL_INSTANTIATION
+#include "LevelSetsBase.hxx"
+#endif
+
 #endif /* LEVELSETSBASE_H_ */

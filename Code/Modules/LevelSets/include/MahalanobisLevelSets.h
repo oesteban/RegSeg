@@ -109,11 +109,6 @@ public:
 	itkSetObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
 
-	itkSetObjectMacro(ContourDeformation, ContourDeformationType);
-	itkGetConstObjectMacro(ContourDeformation, ContourDeformationType);
-
-	itkSetObjectMacro(DeformationField, DeformationFieldType);
-	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
 protected:
 	MahalanobisLevelSets();
 	~MahalanobisLevelSets() {}
@@ -121,8 +116,6 @@ protected:
 	void PrintSelf( std::ostream& os, itk::Indent indent) const;
 
 	ReferenceImageConstPointer m_ReferenceImage;
-	ContourDeformationPointer m_ContourDeformation;
-	DeformationFieldPointer m_DeformationField;
 	MeanType m_Mean[2];
 	CovarianceType m_InverseCovariance[2];
 
