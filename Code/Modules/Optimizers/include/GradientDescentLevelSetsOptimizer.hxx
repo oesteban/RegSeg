@@ -178,12 +178,19 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		 * This will modify the gradient and update the transform. */
 		this->Iterate();
 
-		/* Store best value and position */
+		/* Update the level sets contour */
+		this->m_LevelSetsFunction->UpdateDeformationField( this->m_NextDeformationField );
+
+		this->m_CurrentLevelSetsValue = this->m_LevelSetsFunction->GetValue( ); // TODO this should operate on this->m_NextDeformationField
+
+		/* TODO Store best value and position */
 		//if ( this->m_ReturnBestParametersAndValue && this->m_CurrentLevelSetsValue < this->m_CurrentBestValue )
 		//{
 		//	this->m_CurrentBestValue = this->m_CurrentLevelSetsValue;
 		//	this->m_BestParameters = this->GetCurrentPosition( );
 		//}
+
+		std::cout << "Iteration " << this->m_CurrentIteration << std::endl;
 
 		/* Update and check iteration count */
 		this->m_CurrentIteration++;
@@ -242,23 +249,12 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 			throw err;
 		}
 
-		typename itk::ImageFileWriter<typename IFFTType::OutputImageType>::Pointer w =
-				itk::ImageFileWriter<typename IFFTType::OutputImageType>::New();
-		w->SetInput( ifft->GetOutput() );
-		std::stringstream ss; ss << "utt_" << d <<".nii.gz";
-		w->SetFileName( ss.str() );
-		w->Update();
-
-		const PointValueType* resultBuffer = ifft->GetOutput()->GetBufferPointer();
-
 		// Set component on this->m_NextDeformationField
+		const PointValueType* resultBuffer = ifft->GetOutput()->GetBufferPointer();
 		for(size_t pix = 0; pix< nPix; pix++) {
 			(*(nextFieldBuffer+pix))[d] = *(resultBuffer+pix);
 		}
 	}
-
-	this->m_CurrentLevelSetsValue = this->m_LevelSetsFunction->GetValue( ); // TODO this should operate on this->m_NextDeformationField
-	// TODO best parameters stuff
 
 	this->InvokeEvent( itk::IterationEvent() );
 }
@@ -269,7 +265,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 	double pi2 = 2* vnl_math::pi;
 	ComplexValueType constant = (1.0/this->m_StepSize) + m_Alpha;
 
-	if( this->m_Denominator.IsNull() ) {
+	if( this->m_Denominator.IsNull() ) { // If executed for first time, cache the map
 		this->m_Denominator = RealPartType::New();
 		this->m_Denominator->SetRegions( reference->GetLargestPossibleRegion() );
 		this->m_Denominator->SetSpacing( reference->GetSpacing() );
@@ -278,10 +274,9 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 		this->m_Denominator->FillBuffer( itk::NumericTraits<ComplexValueType>::Zero );
 
 		// Fill Buffer with denominator data
-		ComplexValueType lag_el;
+		ComplexValueType lag_el; // accumulates the FT{lagrange operator}.
 		typename RealPartType::IndexType idx;
 		typename RealPartType::SizeType size = this->m_Denominator->GetLargestPossibleRegion().GetSize();
-
 		ComplexValueType* buffer = this->m_Denominator->GetBufferPointer();
 		size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
 		for (size_t pix = 0; pix < nPix; pix++ ) {
@@ -292,6 +287,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 		}
 	}
 
+	// Fill reference buffer with elements updated with the filter
 	ComplexType* nBuffer = reference->GetBufferPointer();
 	ComplexValueType* dBuffer = this->m_Denominator->GetBufferPointer();
 	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();

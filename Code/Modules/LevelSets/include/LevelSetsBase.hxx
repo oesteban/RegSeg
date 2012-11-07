@@ -1,6 +1,6 @@
 // --------------------------------------------------------------------------
-// File:             LevelSetsOptimizer.hxx
-// Date:             01/11/2012
+// File:             LevelSetsBase.hxx
+// Date:             06/11/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
 // License:          BSD
@@ -35,47 +35,34 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef LEVELSETSOPTIMIZER_HXX_
-#define LEVELSETSOPTIMIZER_HXX_
-
-#include "LevelSetsOptimizer.h"
+#ifndef LEVELSETSBASE_HXX_
+#define LEVELSETSBASE_HXX_
 
 namespace rstk {
 
-template< typename TLevelSetsFunction >
-LevelSetsOptimizer<TLevelSetsFunction>::LevelSetsOptimizer() {
-	/* Initialize state tracking variables */
-	this->m_NumberOfIterations = 10;
-	this->m_CurrentIteration   = 0;
-	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
-	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::UpdateDeformationField(const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldType* newField ) {
+	// Set-up a linear interpolator for the vector field
+	VectorInterpolatorPointer interp = VectorInterpolatorType::New();
+	interp->SetInputImage( newField );
+
+	typename ContourDeformationType::PointsContainerPointer points = this->m_ContourDeformation->GetPoints();
+	typename ContourDeformationType::PointsContainerIterator p_end = points->End();
+	// For all the points in the mesh
+	for(typename ContourDeformationType::PointsContainerIterator p_it = points->Begin(); p_it != p_end; ++p_it) {
+		PointType currentPoint = p_it.Value();
+		// Interpolate the value of the field in the point
+		VectorType desp = interp->Evaluate( currentPoint );
+		// Add vector to the point
+		this->m_ContourDeformation->SetPoint( p_it.Index(), currentPoint+desp );
+	}
+	// TODO this->m_DeformationField = newField;
+}
 
 }
 
-template< typename TLevelSetsFunction >
-void LevelSetsOptimizer<TLevelSetsFunction>::PrintSelf( std::ostream &os, itk::Indent indent) const {
-	Superclass::PrintSelf(os, indent);
-	os << indent << "Number of iterations: " << this->m_NumberOfIterations << std::endl;
-	os << indent << "Current iteration: " << this->m_CurrentIteration << std::endl;
-	os << indent << "Stop condition:" << this->m_StopCondition << std::endl;
-	os << indent << "Stop condition description: " << this->m_StopConditionDescription.str() << std::endl;
-}
 
-template< typename TLevelSetsFunction >
-const typename LevelSetsOptimizer<TLevelSetsFunction>::StopConditionReturnStringType
-LevelSetsOptimizer<TLevelSetsFunction>::GetStopConditionDescription() const {
-  return this->m_StopConditionDescription.str();
-}
-
-template< typename TLevelSetsFunction >
-void LevelSetsOptimizer<TLevelSetsFunction>::Stop(void) {
-  itkDebugMacro( "StopOptimization called with a description - "
-    << this->GetStopConditionDescription() );
-  this->m_Stop = true;
-  this->InvokeEvent( itk::EndEvent() );
-}
-
-} // End of namespace rstk
-
-
-#endif /* LEVELSETSOPTIMIZER_HXX_ */
+#endif /* LEVELSETSBASE_HXX_ */

@@ -123,10 +123,16 @@ int main(int argc, char *argv[]) {
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetDeformationField( df );
+	opt->SetNumberOfIterations(1);
 	opt->Start();
 
 
+	WriterType::Pointer polyDataWriter = WriterType::New();
+	polyDataWriter->SetInput( ls->GetContourDeformation() );
+	polyDataWriter->SetFileName( "result-registered.vtk" );
+	polyDataWriter->Update();
 
+/*
 	typedef itk::Image<float,4u> FieldType;
 	FieldType::Pointer out = FieldType::New();
 	FieldType::SizeType outSize;
@@ -158,5 +164,5 @@ int main(int argc, char *argv[]) {
 	itk::ImageFileWriter<FieldType>::Pointer w = itk::ImageFileWriter<FieldType>::New();
 	w->SetInput( out );
 	w->SetFileName( std::string( TEST_DATA_DIR ) + "speed.nii.gz" );
-	w->Update();
+	w->Update();*/
 }
