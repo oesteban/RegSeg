@@ -58,9 +58,9 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 50;
-	this->m_StepSize = 1.0;
-	this->m_Alpha = 1.0;
-	this->m_Beta = 1.0;
+	this->m_StepSize = 1e-3;
+	this->m_Alpha = 1e5;
+	this->m_Beta = 1e5;
 }
 
 template< typename TLevelSetsFunction >
