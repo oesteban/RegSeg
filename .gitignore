@@ -1,3 +1,5 @@
 Debug/
 Release/
 .fuse*
+result*.vtk
+result*.nii.gz}
