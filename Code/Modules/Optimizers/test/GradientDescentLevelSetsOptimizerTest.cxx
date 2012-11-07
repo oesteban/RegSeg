@@ -79,23 +79,38 @@ int main(int argc, char *argv[]) {
 	typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
 
 	ImageReader::Pointer r = ImageReader::New();
-	r->SetFileName( std::string( TEST_DATA_DIR ) + "ellipse.nii.gz" );
+	r->SetFileName( std::string( TEST_DATA_DIR ) + "ellipse3D.nii.gz" );
 	r->Update();
 	ImageType::Pointer im = r->GetOutput();
 
 	ReaderType::Pointer polyDataReader = ReaderType::New();
-	polyDataReader->SetFileName( std::string( TEST_DATA_DIR ) + "ellipse.vtk" );
+	polyDataReader->SetFileName( std::string( TEST_DATA_DIR ) + "ellipse3D-small.vtk" );
 	polyDataReader->Update();
-	ContourDisplacementFieldPointer ellipse = polyDataReader->GetOutput();
+	ContourDisplacementFieldPointer initialContour = polyDataReader->GetOutput();
 
-	typename ContourDeformationType::PointsContainerPointer points = ellipse->GetPoints();
+	ReaderType::Pointer polyDataReader2 = ReaderType::New();
+	polyDataReader2->SetFileName( std::string( TEST_DATA_DIR ) + "ellipse3D.vtk" );
+	polyDataReader2->Update();
+	ContourDisplacementFieldPointer refContour = polyDataReader2->GetOutput();
+
+	typename ContourDeformationType::PointsContainerPointer points = initialContour->GetPoints();
+	typename ContourDeformationType::PointsContainerPointer points2 = refContour->GetPoints();
 	typename ContourDeformationType::PointsContainerIterator u_it = points->Begin();
+	typename ContourDeformationType::PointsContainerIterator u_it2 = points2->Begin();
 
 	VectorType zero = itk::NumericTraits<VectorType>::Zero;
+	double initialDistance = 0;
 	while( u_it != points->End() ) {
-		ellipse->SetPointData( u_it.Index(),zero);
+		initialContour->SetPointData( u_it.Index(),zero);
+		VectorType dist = u_it.Value() - u_it2.Value();
+		initialDistance+= dist.GetSquaredNorm();
 		++u_it;
+		++u_it2;
 	}
+
+	std::cout << "Initial MSE="<< initialDistance / initialContour->GetNumberOfPoints() << std::endl;
+	assert( initialContour->GetNumberOfPoints() == refContour->GetNumberOfPoints() );
+
 
 	MeanType mean1; mean1.Fill(127);
 	MeanType mean2; mean2.Fill(255);
@@ -116,53 +131,37 @@ int main(int argc, char *argv[]) {
 
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( im );
-	ls->SetContourDeformation( ellipse );
+	ls->SetContourDeformation( initialContour );
 	ls->SetParameters(mean2,cov, true);
 	ls->SetParameters(mean1,cov, false);
 
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetDeformationField( df );
-	opt->SetNumberOfIterations(3);
+	opt->SetNumberOfIterations(10);
 	opt->Start();
 
+	typename ContourDeformationType::ConstPointer resultContour = ls->GetContourDeformation();
+	typename ContourDeformationType::PointsContainerConstPointer points3 = resultContour->GetPoints();
+	typename ContourDeformationType::PointsContainerConstIterator u_it3 = points3->Begin();
+	u_it2 = points2->Begin();
+
+	double finalDistance = 0;
+	while( u_it3 != points3->End() ) {
+		VectorType dist = u_it3.Value() - u_it2.Value();
+		finalDistance+= dist.GetSquaredNorm();
+		++u_it2;
+		++u_it3;
+	}
+
+	std::cout << "Final MSE=" << finalDistance / refContour->GetNumberOfPoints() << std::endl;
 
 	WriterType::Pointer polyDataWriter = WriterType::New();
 	polyDataWriter->SetInput( ls->GetContourDeformation() );
 	polyDataWriter->SetFileName( "result-registered.vtk" );
 	polyDataWriter->Update();
 
-/*
-	typedef itk::Image<float,4u> FieldType;
-	FieldType::Pointer out = FieldType::New();
-	FieldType::SizeType outSize;
-	outSize[0] = df->GetLargestPossibleRegion().GetSize()[0];
-	outSize[1] = df->GetLargestPossibleRegion().GetSize()[1];
-	outSize[2] = df->GetLargestPossibleRegion().GetSize()[2];
-	outSize[3] = 3;
-	out->SetRegions( outSize );
-	FieldType::SpacingType outSpacing;
-	outSpacing[0] = df->GetSpacing()[0];
-	outSpacing[1] = df->GetSpacing()[1];
-	outSpacing[2] = df->GetSpacing()[2];
-	outSpacing[3] = 1.0;
-	out->SetSpacing( outSpacing );
-	out->Allocate();
-	out->FillBuffer(0.0);
 
-	float* buffer = out->GetBufferPointer();
-	DeformationFieldType::PixelType* vectBuffer = df->GetBufferPointer();
-	size_t nPix = df->GetLargestPossibleRegion().GetNumberOfPixels();
 
-	for(size_t pix = 0; pix< nPix; pix++) {
-		DeformationFieldType::PixelType val = (*vectBuffer)[pix];
-		for( size_t i=0; i<3; i++) {
-			unsigned int idx = (i*nPix)+pix;
-			buffer[idx] = (float) val[i];
-		}
-	}
-	itk::ImageFileWriter<FieldType>::Pointer w = itk::ImageFileWriter<FieldType>::New();
-	w->SetInput( out );
-	w->SetFileName( std::string( TEST_DATA_DIR ) + "speed.nii.gz" );
-	w->Update();*/
+
 }

@@ -59,17 +59,20 @@
 
 using namespace rstk;
 
-int main(int argc, char *argv[]) {
 
+const unsigned int Dimension = 3;
+
+int main(int argc, char *argv[]) {
 	typedef float                                PixelType;
 	typedef itk::Vector<float, 2u>               VectorPixelType;
-	typedef itk::Image<PixelType, 3u>            ImageType;
-	typedef MahalanobisLevelSets<itk::Image<VectorPixelType, 3u> >      LevelSetsType;
+	typedef itk::Image<PixelType, Dimension>            ImageType;
+	typedef MahalanobisLevelSets<itk::Image<VectorPixelType, Dimension> >      LevelSetsType;
 
 	typedef typename LevelSetsType::ContourDeformationType     ContourDeformationType;
-//	typedef typename ContourDeformationType::Pointer           ContourDisplacementFieldPointer;
+	typedef typename ContourDeformationType::Pointer           ContourDeformationPointer;
+	typedef typename LevelSetsType::VectorType                 VectorType;
 
-	typedef itk::BinaryMask3DMeshSource< ImageType, ContourDeformationType > MeshSource;
+	typedef itk::BinaryMask3DMeshSource< itk::Image<PixelType, 3u>, ContourDeformationType > MeshSource;
 	typedef itk::AddImageFilter<ImageType, ImageType, ImageType > Add;
 
 
@@ -77,8 +80,12 @@ int main(int argc, char *argv[]) {
 	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
 	typedef itk::ImageFileWriter<ImageType>                      ImageWriter;
 
-	typedef itk::EllipseSpatialObject< 3u >   EllipseType;
+	typedef itk::EllipseSpatialObject< Dimension >   EllipseType;
 	typedef itk::SpatialObjectToImageFilter< EllipseType, ImageType >   SpatialObjectToImageFilterType;
+
+	typedef itk::NormalQuadEdgeMeshFilter
+		    < ContourDeformationType, ContourDeformationType > NormalFilterType;
+		typedef typename NormalFilterType::Pointer             NormalFilterPointer;
 
 
 	SpatialObjectToImageFilterType::Pointer imageFilter1 = SpatialObjectToImageFilterType::New();
@@ -89,10 +96,9 @@ int main(int argc, char *argv[]) {
 	imageFilter1->SetSpacing( spacing );
 
 	EllipseType::Pointer ellipse1 = EllipseType::New();
-	EllipseType::ArrayType radius;
+	EllipseType::ArrayType radius; radius.Fill( 20 );
 	radius[0] = 10;
 	radius[1] = 30;
-	radius[2] = 20;
 	ellipse1->SetRadius( radius );
 
 	typedef EllipseType::TransformType TransformType;
@@ -101,7 +107,7 @@ int main(int argc, char *argv[]) {
 	TransformType::OutputVectorType traslation;
 	TransformType::CenterType center;
 
-	for(size_t i = 0; i<3; i++) traslation[i] = size[i] * 0.5;
+	for(size_t i = 0; i<Dimension; i++) traslation[i] = size[i] * 0.5;
 	tf->Translate( traslation, false );
 	ellipse1->SetObjectToParentTransform( tf );
 	ellipse1->SetDefaultOutsideValue( 0.0 );
@@ -118,7 +124,7 @@ int main(int argc, char *argv[]) {
 
 	EllipseType::Pointer ellipse2 = EllipseType::New();
 	EllipseType::ArrayType radius2;
-	for(size_t i = 0; i<3; i++) radius2[i] = radius[i] +10;
+	for(size_t i = 0; i<Dimension; i++) radius2[i] = radius[i] +10;
     ellipse2->SetRadius( radius2 );
     ellipse2->SetObjectToParentTransform( tf );
     ellipse2->SetDefaultInsideValue(255.0);
@@ -141,7 +147,8 @@ int main(int argc, char *argv[]) {
 
 
 	ImageWriter::Pointer w = ImageWriter::New();
-	w->SetFileName( std::string( TEST_DATA_DIR ) + "ellipse.nii.gz" );
+	std::stringstream ss; ss << TEST_DATA_DIR << "ellipse" << Dimension << "D";
+	w->SetFileName( ss.str() + ".nii.gz" );
 	w->SetInput(add->GetOutput());
 	w->Update();
 
@@ -150,16 +157,38 @@ int main(int argc, char *argv[]) {
 	p->SetObjectValue( inside );
 	p->SetRegionOfInterest( imageFilter1->GetOutput()->GetLargestPossibleRegion( ));
 	p->Update();
+	ContourDeformationPointer result = p->GetOutput();
 
+	// Compute mesh of normals
+	NormalFilterPointer normFilter = NormalFilterType::New();
+	normFilter->SetInput( result );
+	normFilter->Update();
+	ContourDeformationPointer normals = normFilter->GetOutput();
 
-
-/*
-	typename LevelSetsType::Pointer ls = LevelSetsType::New();
-	ls->SetReferenceImage( p->GetOutput() );
-*/
 	WriterType::Pointer polyDataWriter = WriterType::New();
-	polyDataWriter->SetInput( p->GetOutput() );
-	polyDataWriter->SetFileName( std::string( TEST_DATA_DIR ) + "ellipse.vtk" );
+	polyDataWriter->SetInput( result );
+	polyDataWriter->SetFileName( ss.str()+".vtk" );
 	polyDataWriter->Update();
+
+
+	typename ContourDeformationType::PointDataContainerPointer points = normals->GetPointData();
+	typename ContourDeformationType::PointDataContainerIterator u_it = points->Begin();
+
+	typename ContourDeformationType::PointType position;
+	VectorType norm;
+	VectorType zero = itk::NumericTraits<VectorType>::Zero;
+	while( u_it != points->End() ) {
+		position = normals->GetPoint( u_it.Index() );
+		norm = (VectorType) u_it.Value();
+		for (size_t i =0; i < norm.Size(); i++) norm[i]*=2.0;
+		typename ContourDeformationType::PointType newP = position - norm;
+		result->SetPoint( u_it.Index(), newP );
+		++u_it;
+	}
+
+	WriterType::Pointer polyDataWriter2 = WriterType::New();
+	polyDataWriter2->SetInput( result );
+	polyDataWriter2->SetFileName( ss.str()+"-small.vtk" );
+	polyDataWriter2->Update();
 
 }
