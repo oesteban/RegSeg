@@ -282,8 +282,8 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 		for (size_t pix = 0; pix < nPix; pix++ ) {
 			lag_el = 0.0;
 			idx = this->m_Denominator->ComputeIndex( pix );
-			for(size_t d = 0; d < Dimension; d++ ) lag_el+= cos( pi2* idx[d]/(1.0*(size[d]-1)))-2;
-			*(buffer+pix) = constant - m_Beta* lag_el;
+			for(size_t d = 0; d < Dimension; d++ ) lag_el+= 2.0*cos( pi2* idx[d]/(1.0*size[d]))-2;
+			*(buffer+pix) = 1.0 / (constant - m_Beta* lag_el);
 		}
 	}
 
@@ -293,7 +293,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
 	for (size_t pix = 0; pix < nPix; pix++ ) {
 		ComplexType cur = *(nBuffer+pix);
-		*(nBuffer+pix) = cur / *(dBuffer+pix);
+		*(nBuffer+pix) = cur * (*(dBuffer+pix));
 	}
 }
 }
