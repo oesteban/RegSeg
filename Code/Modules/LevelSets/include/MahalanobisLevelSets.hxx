@@ -169,7 +169,8 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	typename ContourDeformationType::PointDataContainerPointer normContainer = normals->GetPointData();
 	typename ContourDeformationType::PointDataContainerIterator n_it = normContainer->Begin();
 
-	PointValueType sign[2] = { -1.0, 1.0 };
+	PointValueType sign[2] = { 1.0, -1.0 };  // IMPORTANT: signs are reversed, normal should be inwards but filter
+	                                         // gives outwards.
 
 	// for all node in mesh
 	while (p_it != points->End()) {
