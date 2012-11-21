@@ -1,0 +1,50 @@
+\section{Introduction}
+\label{sec:introduction}
+%
+\ac{dwi} is a widely used family of \ac{mr} techniques
+\citep{sundgren_diffusion_2004} which recently has accounted for a growing
+interest in its application to whole-brain structural connectivity analysis.
+This emerging field, coined in 2005 as \emph{\ac{mr} Connectomics}
+\citep{hagmann_diffusion_2005,sporns_human_2005}, currently includes a
+large amount of imaging techniques for acquisition, processing and analysis
+specifically tuned for the \ac{dwi} data \citep{hagmann_mr_2012}.\\
+
+The whole-brain connectivity analysis has arisen some challenges
+that should be overcome in order to get reliable structural information
+about the neuronal tracts from \ac{dwi}. The earlier stages of this
+processing tools generally include two necessary steps, brain tissue
+segmentation on the diffusion space and the correction of geometrical
+distortions produced by the imaging techniques.\\
+
+In this work, we will refer as brain tissue segmentation to the precise
+delineation of the \ac{csf}-\ac{gm} and \ac{gm}-\ac{wm} interface surfaces.
+This segmentation is an important step on which strongly rely further
+tasks. In tractography, a high-standard \ac{wm} mask is required. Otherwise,
+there is an important risk for the algorithm to lose fiber bundles. This
+requirement is usually satisfied by plainly thresholding the \ac{fa}, a
+well-know scalar map derived from \ac{dwi} which depicts the isotropy of
+water diffusion inside the brain. Additionally, a precise location of the
+\ac{gm}-\ac{wm} surface is required in the final steps to
+achieve a consistent parcellisation of the cortex to represent the nodes 
+of the output network. This parcellisation is generally defined in a 
+high-resolution and better understood structural \ac{mri} of the same 
+subject (eg. T1 and/or T2 weighted acquisitions). Conversely, this 
+problem is resolved with non-linear registration of a structural \ac{mri}
+of the subject to the \ac{dwi} data.\\
+
+On the other hand, the \ac{dwi} data is usually obtained with \ac{epi}
+acquisition techniques, that often suffer from severe distortions due to 
+local field inhomogeneities. Generally, it is easily appreciated in the anterior
+part of the brain, along the phase-encoded direction. Some methodologies have
+been developed [CITATIONS] and named as \emph{\ac{epi}-unwarp} techniques,
+and they require the extra acquisition of the magnitude and phase of
+the field (field-mapping), condition which is not always met. Some other 
+methodologies do not make use the field-mapping, compensating the distortion
+with non-linear registration from structural \ac{mri}.\\
+
+In this paper we propose a novel registration framework to simultaneously
+solve the segmentation and distortion challenges, by exploiting as strong 
+shape-prior the detailed anatomy extracted from anatomical \ac{mri}. 
+We reformulate the segmentation problem as an inverse problem, where
+we seek for an underlying deformation field (the distortion) mapping 
+from the structural space into the diffusion space.
