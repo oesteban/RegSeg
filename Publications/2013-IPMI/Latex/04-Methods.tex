@@ -1,3 +1,53 @@
 \section{Methods}
 \label{sec:methods}
 %
+\subsection{Simulated datasets}
+%
+As suggested in \autoref{sec:introduction}, the general situation 
+consists of having reliable segmentations on the \ac{t1} reference
+space, obtained with 
+\emph{FreeSurfer\footnote{\url{http://surfer.nmr.mgh.harvard.edu/}}}.
+Therefore, regarding the proposed solution, we will have a precise
+location of the tissue interfaces of interest in a reference space.
+On the other hand, we have a \ac{dwi} volume, characterized by its
+low resolution (typically around $2.2x2.2x3mm^3$). Depending on the
+posterior reconstruction methodology and the angular resolution
+intended, the \ac{dwi} raw data has to be processed in order to
+extract the information in a manageable manner. Particularly, we
+will use the \ac{fa} and \ac{md} maps. Whereas \ac{fa} describes
+the \emph{shape} of diffusion, the \ac{md} depicts the
+\emph{intensity} of the process. There exist to main reasons to 
+justify their choice. First, they are well-understood and
+standardized in clinical routine. Second, they are statistically 
+orthogonal and together contain most of the information that is
+usually extracted from the \ac{dwi}-derived scalar maps. \\
+In order that demonstrating the functionality of the proposed
+methodology and characterize its possibilities, we developed two
+synthetic model, generating the \ac{dwi} data as described in
+ \citep{tuch_q-ball_2004}. We selected 30 directions, for being
+a very common protocol for \ac{dti} reconstruction. The first model
+is a set of spherical shapes representing the different brain
+tissues. The second model is based on the BrainWeb dataset. We
+reconstructed the \ac{dwi} data with standard to approximate the
+environment to the real one at maximum. There is no interest on the
+anatomical reference, given that with the models we hold \emph{a priori}
+precisely located surface of the interfaces of interest. \\
+
+FIGURE OF THE MODELS AND EXTRACTED FA, MD
+
+\subsection{\acl{acwe}-like variational segmentation model}
+
+I will summarize here your mathematical formulation, but with simplifications:
+- only gradient descent
+- no mention to anisotropic and inhomogeneous regularization.
+
+\subsection{Experiment}
+%
+For both models, we created manually a sound distortion visually similar
+to real \ac{epi} distortions. We interpolated the distortion to a 
+dense deformation field, necessary for warping the raw \ac{dwi} simulated
+data. Once the signal was deformed, we proceeded to reconstruct the
+\ac{dti} and subsequently obtained the scalars of interest (\ac{fa}, \ac{md}).\\
+
+We evaluate the performance of our methodology to estimate the deformation
+field, obtaining a precise segmentation on the diffusion space.
