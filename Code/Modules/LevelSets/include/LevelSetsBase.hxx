@@ -57,7 +57,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		// Interpolate the value of the field in the point
 		VectorType desp = interp->Evaluate( currentPoint );
 		// Add vector to the point
-		this->m_ContourDeformation->SetPoint( p_it.Index(), currentPoint+desp );
+		this->m_CurrentContourPosition->SetPoint( p_it.Index(), currentPoint+desp );
 	}
 	// TODO this->m_DeformationField = newField;
 }
