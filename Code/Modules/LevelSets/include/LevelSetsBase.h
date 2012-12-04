@@ -131,6 +131,7 @@ protected:
 	mutable MeasureType m_Value;
 	DeformationFieldPointer m_DeformationField;
 	ContourDeformationPointer m_ContourDeformation;
+	ContourDeformationPointer m_CurrentContourPosition;
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented

@@ -158,11 +158,11 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 	// Compute mesh of normals
 	NormalFilterPointer normFilter = NormalFilterType::New();
-	normFilter->SetInput( this->m_ContourDeformation );
+	normFilter->SetInput( this->m_CurrentContourPosition );
 	normFilter->Update();
 	ContourDeformationPointer normals = normFilter->GetOutput();
 
-	typename ContourDeformationType::PointsContainerPointer points = this->m_ContourDeformation->GetPoints();
+	typename ContourDeformationType::PointsContainerPointer points = this->m_CurrentContourPosition->GetPoints();
 	typename ContourDeformationType::PointsContainerIterator p_it = points->Begin();
 	typename ContourDeformationType::PointDataContainerPointer container = this->m_ContourDeformation->GetPointData();
 	typename ContourDeformationType::PointDataContainerIterator u_it = container->Begin();
