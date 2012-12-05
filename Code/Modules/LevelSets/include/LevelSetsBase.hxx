@@ -59,6 +59,17 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 				this->m_ContourDeformation->AddPoint( u_it.Value() ),zero);
 		++u_it;
 	}
+
+	typename ContourDeformationType::CellsContainerPointer cells = prior->GetCells();
+	typename ContourDeformationType::CellsContainerConstIterator c_it = cells->Begin();
+
+	size_t i = 0;
+	while( c_it!=cells->End() ) {
+		typename ContourDeformationType::CellType::CellAutoPointer cellCopy;
+		c_it.Value()->MakeCopy( cellCopy );
+		this->m_ContourDeformation->SetCell( i++ ,cellCopy );
+		++c_it;
+	}
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
