@@ -41,6 +41,26 @@
 namespace rstk {
 
 
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::SetShapePrior( typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourDeformationType* prior ) {
+	this->m_CurrentContourPosition = prior;
+
+	this->m_ContourDeformation = ContourDeformationType::New();
+
+	typename ContourDeformationType::PointsContainerPointer points = prior->GetPoints();
+	typename ContourDeformationType::PointsContainerIterator u_it = points->Begin();
+	VectorType zero = itk::NumericTraits<VectorType>::Zero;
+
+	while( u_it != points->End() ) {
+		this->m_ContourDeformation->SetPointData(
+				this->m_ContourDeformation->AddPoint( u_it.Value() ),zero);
+		++u_it;
+	}
+}
+
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
