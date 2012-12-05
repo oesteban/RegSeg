@@ -38,7 +38,7 @@
 
 
 #ifndef DATA_DIR
-#define DATA_DIR "./Data/ModelGeneration/Model1/"
+#define DATA_DIR "../Data/ModelGeneration/Model1/"
 #endif
 
 #include <itkVector.h>
@@ -83,38 +83,25 @@ int main(int argc, char *argv[]) {
 	ImageType::Pointer im = r->GetOutput();
 
 	ReaderType::Pointer polyDataReader = ReaderType::New();
-	polyDataReader->SetFileName( std::string( DATA_DIR ) + "ellipse3D-small.vtk" );
+	polyDataReader->SetFileName( std::string( DATA_DIR ) + "wm_prior.vtk" );
 	polyDataReader->Update();
 	ContourDisplacementFieldPointer initialContour = polyDataReader->GetOutput();
 
-	ReaderType::Pointer polyDataReader2 = ReaderType::New();
-	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "wm_prior.vtk" );
-	polyDataReader2->Update();
-	ContourDisplacementFieldPointer refContour = polyDataReader2->GetOutput();
-
 	typename ContourDeformationType::PointsContainerPointer points = initialContour->GetPoints();
-	typename ContourDeformationType::PointsContainerPointer points2 = refContour->GetPoints();
 	typename ContourDeformationType::PointsContainerIterator u_it = points->Begin();
-	typename ContourDeformationType::PointsContainerIterator u_it2 = points2->Begin();
 
 	VectorType zero = itk::NumericTraits<VectorType>::Zero;
-	double initialDistance = 0;
 	while( u_it != points->End() ) {
 		initialContour->SetPointData( u_it.Index(),zero);
-		VectorType dist = u_it.Value() - u_it2.Value();
-		initialDistance+= dist.GetSquaredNorm();
 		++u_it;
-		++u_it2;
 	}
 
-	std::cout << "Initial MSE="<< initialDistance / initialContour->GetNumberOfPoints() << std::endl;
-	assert( initialContour->GetNumberOfPoints() == refContour->GetNumberOfPoints() );
-
-
-	MeanType mean1; mean1.Fill(127);
-	MeanType mean2; mean2.Fill(255);
+	// Initialize tissue signatures
+	MeanType mean1; mean1.Fill(0.1);
+	MeanType mean2; mean2.Fill(0.8);
 	CovarianceType cov; cov.SetIdentity();
 
+	// Initialize deformation field
 	DeformationFieldType::Pointer df = DeformationFieldType::New();
 	DeformationFieldType::SizeType imSize = im->GetLargestPossibleRegion().GetSize();
 	DeformationFieldType::SizeType size; size.Fill(16);
@@ -127,40 +114,26 @@ int main(int argc, char *argv[]) {
 	df->FillBuffer( itk::NumericTraits<DeformationFieldType::PixelType>::Zero );
 	std::cout << "Number Of Parameters=" << df->GetLargestPossibleRegion().GetNumberOfPixels() << std::endl;
 
-
+	// Initialize LevelSet function
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( im );
-	ls->SetContourDeformation( initialContour );
-	ls->SetParameters(mean2,cov, true);
-	ls->SetParameters(mean1,cov, false);
+	ls->SetShapePrior( initialContour );
+	ls->SetParameters(mean2,cov, true);    // mean2 is INSIDE
+	ls->SetParameters(mean1,cov, false);   // mean2 is OUTSIDE
 
+	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetDeformationField( df );
-	opt->SetNumberOfIterations(10);
+	opt->SetNumberOfIterations(1);
+
+	// Start
 	opt->Start();
 
-	typename ContourDeformationType::ConstPointer resultContour = ls->GetContourDeformation();
-	typename ContourDeformationType::PointsContainerConstPointer points3 = resultContour->GetPoints();
-	typename ContourDeformationType::PointsContainerConstIterator u_it3 = points3->Begin();
-	u_it2 = points2->Begin();
-
-	double finalDistance = 0;
-	while( u_it3 != points3->End() ) {
-		VectorType dist = u_it3.Value() - u_it2.Value();
-		finalDistance+= dist.GetSquaredNorm();
-		++u_it2;
-		++u_it3;
-	}
-
-	std::cout << "Final MSE=" << finalDistance / refContour->GetNumberOfPoints() << std::endl;
-
+	// Write final result out
 	WriterType::Pointer polyDataWriter = WriterType::New();
 	polyDataWriter->SetInput( ls->GetContourDeformation() );
 	polyDataWriter->SetFileName( "result-registered.vtk" );
 	polyDataWriter->Update();
-
-
-
 
 }

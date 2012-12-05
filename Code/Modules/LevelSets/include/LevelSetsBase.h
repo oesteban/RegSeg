@@ -112,8 +112,11 @@ public:
 
 	void UpdateDeformationField( const DeformationFieldType* newField );
 
-	itkSetObjectMacro(ContourDeformation, ContourDeformationType);
+	void SetShapePrior( ContourDeformationType* prior );
+	itkGetConstObjectMacro(CurrentContourPosition, ContourDeformationType);
+
 	itkGetConstObjectMacro(ContourDeformation, ContourDeformationType);
+	itkSetObjectMacro(ContourDeformation, ContourDeformationType);
 
 	itkSetObjectMacro(DeformationField, DeformationFieldType);
 	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
