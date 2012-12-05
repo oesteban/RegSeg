@@ -3,21 +3,38 @@
 \usepackage{makeidx}  % allows for indexgeneration
 \usepackage{acronym}
 \usepackage[numbers]{natbib}
-\bibliographystyle{splncsnat}
+\bibliographystyle{splncs03} 
+%\bibliographystyle{splncsnat} 
 %\bibliographystyle{IEEEtran}
+
+
 \usepackage[hyphens]{url}
 \usepackage{nameref}
 \usepackage{hyperref}
+\usepackage[USenglish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{pslatex}
 %
 
-\begin{document}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\argmax}{argmax}
+\DeclareMathOperator{\argmin}{argmin}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\dist}{dist}
+\DeclareMathOperator{\const}{Const.}
+
 %
 %\tableofcontents
 %
 \mainmatter              % start of the contributions
 %
+
+\begin{document}
+
 \title{Simultaneous segmentation and distortion correction on diffusion weighted MR using structural priors}
-%
+%%
 \titlerunning{Segmentation & EPI correction on DWI}  % abbreviated title (for running head)
 %                                     also used for the TOC unless
 %                                     \toctitle is used
@@ -28,11 +45,6 @@
         Dominique Zosso \inst{2,3}}
 %
 \authorrunning{Oscar Esteban et al.} % abbreviated author list (for running head)
-%
-%%%% list of authors for the TOC (use if author list has to be modified)
-%\tocauthor{Ivar Ekeland, Roger Temam, Jeffrey Dean, David Grove,
-%Craig Chambers, Kim B. Bruce, and Elisa Bertino}
-%
 
 \institute{Biomedical Image Technologies (BIT),
 ETSI Telecomunicaci\'on - Universidad Polit\'ecnica de Madrid
@@ -50,6 +62,7 @@ Department of Mathematics, ...
 University of California Los Angeles (UCLA),
 Los Angeles,..
 }
+
 
 \maketitle              % typeset the title of the contribution
 
