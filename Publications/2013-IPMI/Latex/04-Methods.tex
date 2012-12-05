@@ -16,7 +16,7 @@ intended, the \ac{dwi} raw data has to be processed in order to
 extract the information in a manageable manner. Particularly, we
 will use the \ac{fa} and \ac{md} maps. Whereas \ac{fa} describes
 the \emph{shape} of diffusion, the \ac{md} depicts the
-\emph{intensity} of the process. There exist to main reasons to 
+\emph{manitude} of the process. There exist to main reasons to 
 justify their choice. First, they are well-understood and
 standardized in clinical routine. Second, they are statistically 
 orthogonal and together contain most of the information that is
@@ -36,10 +36,128 @@ precisely located surface of the interfaces of interest. \\
 FIGURE OF THE MODELS AND EXTRACTED FA, MD
 
 \subsection{\acl{acwe}-like variational segmentation model}
+%
+Let us denote $\{c_i\}_{i=1..N_c}$ the nodes of the \ac{wm}-\ac{gm}
+interface, and $\{d_i\}_{i=1..N_d}$ the nodes of the pial surface. 
+Within the respective volumes, we have sets of sample points, denoted 
+$\{w_j\}_{j=1..N_w}$, $\{g_j\}_{j=1..N_g}$, and $\{o_j\}_{j=1..N_o}$ 
+for the white matter, grey matter and CSF, respectively. All those 
+are given in high-resolution T1 reference coordinates.\\
+%
+On the other hand, we have low resolution \ac{dwi}. At each voxel 
+we have a sampled ODF (or some extracted features).
+Let us denote by $x$ the voxel and $f(x) = [ f_1, f_2, \ldots, f_N]^T(x)$ 
+its associated feature vector.
+%
+The transformation from T1 into DW reference coordinate space is 
+achieved through a dense deformation field $u(x)$, such that for example
+the nodes of the w/g-interface are located in DW-space as follows:
+%
+\begin{equation}
+c_i' = T\{c_i\} = c_i + u(c_i)
+\end{equation}
+% 
+Since the nodes of the anatomical surfaces might lay off-grid, it is 
+required to derive $u(x)$ from a discrete set of parameters $\{u_k\}_{k=1..K}$.
+Densification is achieved through a set of associated basis functions 
+$\psi_k$ (e.g. rbf, interpolation splines):
+%
+\begin{equation}
+u(x) = \sum_k \psi_k(x) u_k
+\end{equation}
+%
+Consequently, the transformation writes
+%
+\begin{equation}
+c_i' = T\{c_i\} = c_i + u(c_i) = c_i + \sum_k \psi_k(c_i)u_k
+\end{equation} 
+%
+Note that, since $c_i$ remains constant in the DW segmentation process,
+the values of $\psi_k(c_i)$ can be precomputed. Also, provided compact 
+support of the basis functions, the system remains relatively sparse.
+%
+Based on the region-wise samples $\{w_j\}$, $\{g_j\}$, and $\{o_j\}$, 
+and the current estimate of the distortion $u$, we can compute 
+``expected samples'' of the respective regions in DW space, written
+$\{w_j'\}$, $\{g_j'\}$, and $\{o_j'\}$. Based on those samples, we may 
+now estimate region descriptors of the DW features $f(x)$ of the three 
+respective regions in DW space. In the simplest case, estimate the 
+parameters $\mu_R$ and $\Sigma_R$, i.e. the regions' mean feature 
+vector and covariance matrix, for each region $R\in \{w,g,o\}$.
+%
+Based on these Gaussian region descriptors, we propose an \ac{acwe}-like, 
+piece-wise constant, variational image segmentation model (where the 
+unknown is the deformation field)\cite{chan_active_2001}:
+\begin{align}
+E(u) &= \int_{w'(u)} (f-\mu_w)^T\Sigma_w^{-1}(f-\mu_w) dx\nonumber\\
+&\quad +\int_{g'(u)} (f-\mu_g)^T\Sigma_g^{-1}(f-\mu_g) dx\\
+&\quad +\int_{o'(u)} (f-\mu_o)^T\Sigma_o^{-1}(f-\mu_o) dx\nonumber
+\end{align}
+where the integral domains depend on the deformation field u. Note that 
+minimizing this energy, $\argmin_u\{E\}$, yields the MAP estimate of a 
+piece-wise smooth image model affected by Gaussian additive noise. This 
+inverse problem is ill-posed \cite{hadamard_sur_1902,bertero_ill-posed_1988}.
+In order to account for deformation field regularity and to render the 
+problem well-posed, we include limiting and regularization terms into 
+the energy functional 
+\cite{tichonov_solution_1963,morozov_linear_1975}:
+\begin{align}
+E(u) &= \int_{w'(u)} (f-\mu_w)^T\Sigma_w^{-1}(f-\mu_w) dx\nonumber\\
+&\quad +\int_{g'(u)} (f-\mu_g)^T\Sigma_g^{-1}(f-\mu_g) dx\\
+&\quad +\int_{o'(u)} (f-\mu_o)^T\Sigma_o^{-1}(f-\mu_o) dx\nonumber\\
+&\quad +\int u^T A u dx + \int \tr\{(\nabla u^T)^T B (\nabla u^T)\} dx\nonumber
+\end{align}
+These regularity terms ensure, that the segmenting contours in DW space 
+are still close to their native shape in T1. In the simplest case, both 
+$A=\alpha$ and $B=\beta$ are constant scalars, and the terms rewrite 
+$\alpha \int  \|u\|^2 dx + \beta \int \left( \|\nabla u_x\|^2 +
+\|\nabla u_y\|^2 + \|\nabla u_z\|^2\right) dx$, which are familiar. 
+Later, $A$ and $B$ might be spatially varying and/or $3\times 3$ 
+matrices, therefore allowing to incorporate inhomogeneous and 
+anisotropic regularization \cite{nagel_investigation_1986}.
+%
+At each iteration, we update the distortion along the steepest energy descent:
+%
+\begin{equation}
+\frac{\partial u_k^t}{\partial t} = -\frac{\partial E(u)}{\partial u_k^t}
+\end{equation}
+%
+At this point, we interpret the parameter field $u_k$ to be a 
+continuous function $u(x)$, sampled at the locations $x_k$, and 
+determine the gradient-descent equation\footnote{The same assumption 
+was being made above in the minimization of the regularity terms}:
+%
+\begin{align}
+\frac{\partial u^t}{\partial t} &= - \sum_{i=1}^{N_c} \left[(f(c_i')-\mu_g)^T\Sigma_g^{-1}(f(c_i')-\mu_g) - (f(c_i')-\mu_w)^T\Sigma_w^{-1}(f(c_i')-\mu_w)\right]\psi_{c_i'}(x)N_{c_i'}\nonumber\\
+&\quad -\sum_{i=1}^{N_d} \left[(f(d_i')-\mu_o)^T\Sigma_o^{-1}(f(d_i')-\mu_o) - (f(d_i')-\mu_g)^T\Sigma_g^{-1}(f(d_i')-\mu_g)\right]\psi_{d_i'}(x)N_{d_i'}\\
+&\quad -\alpha u + \beta\Delta u\nonumber
+\end{align}
+%
+where we have swapped $\psi_k(c_i')$ into $\psi_{c_i'}(x)$.
+%
+This gradient descent step can be efficiently tackled by discretizing 
+the time in a forward Euler scheme, and making the right hand side 
+semi-implicit in the regularization terms:
+%
+\begin{align}
+\frac{u^{t+1}-u^t}{\tau} &= - \sum_{i=1}^{N_c} \left[(f(c_i')-\mu_g)^T\Sigma_g^{-1}(f(c_i')-\mu_g) - (f(c_i')-\mu_w)^T\Sigma_w^{-1}(f(c_i')-\mu_w)\right]\psi_{c_i'}(x)N_{c_i'}\nonumber\\
+&\quad -\sum_{i=1}^{N_d} \left[(f(d_i')-\mu_o)^T\Sigma_o^{-1}(f(d_i')-\mu_o) - (f(d_i')-\mu_g)^T\Sigma_g^{-1}(f(d_i')-\mu_g)\right]\psi_{d_i'}(x)N_{d_i'}\nonumber\\
+&\quad -\alpha u^{t+1} + \beta\Delta u^{t+1}
+\end{align}
+%
+where the data terms remain functions of the current estimate $u^t$, i.e. 
+all $c_i' = c_i'(u^t)$ and $d_i' = d_i'(u^t)$. Again, we propose a spectral 
+approach to solve this implicit scheme:
+%
+\begin{equation}
+u^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{u^t/\delta - \sum_{i=1}^{N_c}(\ldots) - \sum_{i=1}^{N_d}(\ldots)  \}}{\mathcal{F}\{(1/\delta+\alpha)\mathcal{I}-\beta\Delta\}} \right\}
+\end{equation}
+%
+It is easily verified, that the same update can be obtained by plugging the 
+AL-update w.r.t. $u$ into the AL-update w.r.t. $v$, and by identifying 
+$r = 1/\delta$ (the only exception is the distortion on which the data-term 
+is being evaluated).
 
-I will summarize here your mathematical formulation, but with simplifications:
-- only gradient descent
-- no mention to anisotropic and inhomogeneous regularization.
 
 \subsection{Experiment}
 %
