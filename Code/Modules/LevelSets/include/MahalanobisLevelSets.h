@@ -44,7 +44,6 @@
 #include <itkVariableSizeMatrix.h>
 #include <itkNormalQuadEdgeMeshFilter.h>
 #include "LevelSetsBase.h"
-#include "SparseToDenseFieldResampleFilter.h"
 
 // Namespace declaration
 namespace rstk {
@@ -80,6 +79,8 @@ public:
 	typedef typename Superclass::DeformationFieldPointer   DeformationFieldPointer;
 	typedef typename Superclass::ContourDeformationType    ContourDeformationType;
 	typedef typename Superclass::ContourDeformationPointer ContourDeformationPointer;
+	typedef typename Superclass::ContourCopyType           ContourCopyType;
+	typedef typename Superclass::ContourCopyPointer        ContourCopyPointer;
 
 	typedef itk::NormalQuadEdgeMeshFilter
 	    < ContourDeformationType, ContourDeformationType > NormalFilterType;
@@ -94,15 +95,12 @@ public:
 
 	itkStaticConstMacro( Components, unsigned int, itkGetStaticConstMacro(PixelType::Dimension) );
 
-
-	typedef SparseToDenseFieldResampleFilter<ContourDeformationType, DeformationFieldType>  ResamplerType;
-
 	typedef PixelType                                      MeanType;
 	typedef itk::Matrix
 			< PixelValueType, Components, Components >     CovarianceType;
 
 	MeasureType GetValue() const;
-	void GetLevelSetsMap( DeformationFieldType* levelSetMap) const;
+	void GetLevelSetsMap( DeformationFieldType* levelSetMap);
 
 	void SetParameters( MeanType& mean, CovarianceType& cov, bool inside);
 

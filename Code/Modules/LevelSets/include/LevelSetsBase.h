@@ -45,6 +45,11 @@
 #include <itkVectorImage.h>
 #include <itkVectorLinearInterpolateImageFunction.h>
 #include <itkQuadEdgeMesh.h>
+#include <itkQuadEdgeMeshToQuadEdgeMeshFilter.h>
+#include <itkWarpMeshFilter.h>
+
+
+#include "SparseToDenseFieldResampleFilter.h"
 
 namespace rstk {
 /** \class LevelSetsBase
@@ -97,8 +102,12 @@ public:
 	typedef itk::QuadEdgeMesh< VectorType, Dimension >       ContourDeformationType;
 	typedef typename ContourDeformationType::PointType       PointType;
 	typedef typename ContourDeformationType::Pointer         ContourDeformationPointer;
+	typedef typename ContourDeformationType::ConstPointer    ContourDeformationConstPointer;
 	typedef typename ContourDeformationType
 			                     ::PointDataContainerPointer PointDataContainerPointer;
+	typedef typename itk::QuadEdgeMeshToQuadEdgeMeshFilter
+			<ContourDeformationType,ContourDeformationType>  ContourCopyType;
+	typedef typename ContourCopyType::Pointer                ContourCopyPointer;
 
 	typedef itk::Image< VectorType, Dimension >              DeformationFieldType;
 	typedef typename DeformationFieldType::Pointer           DeformationFieldPointer;
@@ -107,22 +116,32 @@ public:
 			< DeformationFieldType >                         VectorInterpolatorType;
 	typedef typename VectorInterpolatorType::Pointer         VectorInterpolatorPointer;
 
+
+	typedef SparseToDenseFieldResampleFilter
+			<ContourDeformationType, DeformationFieldType>   SparseToDenseFieldResampleType;
+	typedef typename  SparseToDenseFieldResampleType::Pointer  SparseToDenseFieldResamplePointer;
+
+	typedef typename itk::WarpMeshFilter
+			< ContourDeformationType,
+			  ContourDeformationType,
+			  DeformationFieldType>                          WarpContourType;
+	typedef typename WarpContourType::Pointer                WarpContourPointer;
+
 	virtual MeasureType GetValue() const = 0;
-	virtual void GetLevelSetsMap( DeformationFieldType* levelSetMap) const = 0;
+	virtual void GetLevelSetsMap( DeformationFieldType* levelSetMap) = 0;
 
 	void UpdateDeformationField( const DeformationFieldType* newField );
 
 	void SetShapePrior( ContourDeformationType* prior );
-	itkGetConstObjectMacro(CurrentContourPosition, ContourDeformationType);
+	itkGetConstObjectMacro(ShapePrior, ContourDeformationType);
 
-	itkGetConstObjectMacro(ContourDeformation, ContourDeformationType);
-	itkSetObjectMacro(ContourDeformation, ContourDeformationType);
+	itkGetConstObjectMacro(CurrentContourPosition, ContourDeformationType);
 
 	itkSetObjectMacro(DeformationField, DeformationFieldType);
 	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
 
 protected:
-	LevelSetsBase() { this->m_Value = itk::NumericTraits<MeasureType>::infinity(); }
+	LevelSetsBase();
 	virtual ~LevelSetsBase() {}
 
 	void PrintSelf(std::ostream & os, itk::Indent indent) const {
@@ -133,8 +152,11 @@ protected:
 
 	mutable MeasureType m_Value;
 	DeformationFieldPointer m_DeformationField;
-	ContourDeformationPointer m_ContourDeformation;
+	ContourDeformationPointer m_ShapePrior;
 	ContourDeformationPointer m_CurrentContourPosition;
+	ContourCopyPointer m_ContourCopier;
+	WarpContourPointer m_ContourUpdater;
+	SparseToDenseFieldResamplePointer m_SparseToDenseResampler;
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented

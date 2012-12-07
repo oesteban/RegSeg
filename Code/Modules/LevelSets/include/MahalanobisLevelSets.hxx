@@ -149,10 +149,8 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 void
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::GetLevelSetsMap( MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldType* levelSetMap) const {
-	// Copy deformation map
-	ContourDeformationPointer speedMap = ContourDeformationType::New();
-
+::GetLevelSetsMap( MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldType* levelSetMap) {
+	// Initialize interpolator
 	InterpolatorPointer interp = InterpolatorType::New();
 	interp->SetInputImage( this->m_ReferenceImage );
 
@@ -162,45 +160,63 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	normFilter->Update();
 	ContourDeformationPointer normals = normFilter->GetOutput();
 
-	typename ContourDeformationType::PointsContainerPointer points = this->m_CurrentContourPosition->GetPoints();
-	typename ContourDeformationType::PointsContainerIterator p_it = points->Begin();
-	typename ContourDeformationType::PointDataContainerPointer container = this->m_ContourDeformation->GetPointData();
-	typename ContourDeformationType::PointDataContainerIterator u_it = container->Begin();
-	typename ContourDeformationType::PointDataContainerPointer normContainer = normals->GetPointData();
-	typename ContourDeformationType::PointDataContainerIterator n_it = normContainer->Begin();
+	typename ContourDeformationType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
+	typename ContourDeformationType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
 	PointValueType sign[2] = { 1.0, -1.0 };  // IMPORTANT: signs are reversed, normal should be inwards but filter
 	                                         // gives outwards.
+	PointValueType levelSet;
+	PointType  ci;          //
+	PointType  ci_prime;
+	PixelType  fi;          // Feature on ci_prime
+	typename ContourDeformationType::PixelType ni;
+	typename ContourDeformationType::PointIdentifier idx;
+
+	// TODO: for all existing contours
 
 	// for all node in mesh
-	while (p_it != points->End()) {
-		PointValueType levelSet = 0;
-		VectorType uk = u_it.Value();
-		PointType currentPoint = p_it.Value() + uk;
-		PixelType Ik = interp->Evaluate( currentPoint );
-		// compute on both segments
-		for( size_t i = 0; i<2; i++) {
-			PixelType Dk = Ik - m_Mean[i];
+	while (c_it!=c_end) {
+		levelSet = 0;
+		idx = c_it.Index();
+		ci_prime = c_it.Value();
+		fi = interp->Evaluate( ci_prime );    // Feature in c'_{i}
+		for( size_t i = 0; i<2; i++) {                 // Compute on both sides of the levelset
+			PixelType dist = fi - m_Mean[i];
 			// compute mahalanobis distance in position
-			levelSet+= sign[i] * dot_product(Dk.GetVnlVector(), m_InverseCovariance[i].GetVnlMatrix() * Dk.GetVnlVector() );
+			levelSet+= sign[i] * dot_product(dist.GetVnlVector(), m_InverseCovariance[i].GetVnlMatrix() * dist.GetVnlVector() );
 		}
 	    // project to normal, updating transform
-		speedMap->SetPointData( speedMap->AddPoint( p_it.Value() ), levelSet*n_it.Value() );
-		++p_it;
-		++u_it;
-		++n_it;
+		assert( !std::isnan(levelSet) );
+
+		//ci = this->m_ShapePrior->GetPoint(index); // Prior point i
+		normals->GetPointData( idx, &ni );         // Normal ni in point c'_i
+		ni*=levelSet;
+		normals->SetPointData( idx, ni );
+		//speedMap->SetPoint( idx, ci_prime );        // Set ci_prime
+		//speedMap->SetPointData( idx, ni ); // Set speed value
+		++c_it;
 	}
 
+	/*
+	// Write final result out
+	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
+	typename WriterType::Pointer polyDataWriter = WriterType::New();
+	polyDataWriter->SetInput( normals );
+	polyDataWriter->SetFileName( "speedmap.vtk" );
+	polyDataWriter->Update();*/
+
 	// Interpolate sparse velocity field to targetDeformation
-	typename ResamplerType::Pointer res = ResamplerType::New();
-	res->CopyImageInformation( levelSetMap );
-	res->SetInput( speedMap );
-	res->Update();
-	DeformationFieldPointer speedsfield = res->GetOutput();
-	VectorType* destBuffer = levelSetMap->GetBufferPointer();
-	VectorType* origBuffer = speedsfield->GetBufferPointer();
-	size_t numberOfPixels = speedsfield->GetBufferedRegion().GetNumberOfPixels();
-	memcpy( destBuffer, origBuffer, numberOfPixels*sizeof(*origBuffer) );
+	this->m_SparseToDenseResampler->CopyImageInformation( levelSetMap );
+	this->m_SparseToDenseResampler->SetInput( normals );
+	this->m_SparseToDenseResampler->Update();
+	levelSetMap = this->m_SparseToDenseResampler->GetOutput();
+
+	// Output map (testing purposes)
+	typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
+	typename Writer::Pointer writer = Writer::New();
+	writer->SetFileName( "speedtest.nii.gz" );
+	writer->SetInput( levelSetMap );
+	writer->Update();
 }
 
 }
