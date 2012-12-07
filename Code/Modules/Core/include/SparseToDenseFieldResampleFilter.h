@@ -40,6 +40,9 @@
 
 #include "MeshToImageFilter.h"
 #include "SparseMultivariateInterpolator.h"
+#include <vnl/vnl_sparse_matrix.h>
+#include <vnl/vnl_vector.h>
+#include <vnl/vnl_matrix.h>
 
 
 namespace rstk {
@@ -82,6 +85,10 @@ public:
 	typedef typename OutputImageType::RegionType           OutputRegionType;
 	typedef typename OutputPixelType::ValueType            OutputVectorValueType;
 
+	typedef vnl_sparse_matrix< double >                    WeightsMatrix;
+	typedef vnl_vector< double >                           SpeedsVector;
+	typedef vnl_matrix< OutputPixelType >                  DenseFieldMatrix;
+
 	typedef SparseMultivariateInterpolator
 			< TInputMesh, TOutputImage >                   InterpolatorType;
 	typedef typename InterpolatorType::Pointer             InterpolatorPointerType;
@@ -100,6 +107,9 @@ public:
 	const InputMeshType*   GetInput(void) { return this->GetInput(0); }
 	const InputMeshType*   GetInput(unsigned int idx) { return this->m_Mesh; }
 	//const OutputImageType* GetOutput( void ) { return this->GetOutput(0); }
+
+	itkSetConstObjectMacro( ShapePrior, InputMeshType );
+	itkGetConstObjectMacro( ShapePrior, InputMeshType );
 
 	/** Set the interpolator function.  The default is
 	 * itk::VectorLinearInterpolateImageFunction<InputImageType, TInterpolatorPrecisionType>.  */
@@ -155,18 +165,6 @@ public:
 	 * below. \sa ProcessObject::GenerateOutputInformaton() */
 	virtual void GenerateOutputInformation();
 
-	/** VectorResampleImageFilter needs a different input requested region than
-	 * the output requested region.  As such, VectorResampleImageFilter needs
-	 * to provide an implementation for GenerateInputRequestedRegion()
-	 * in order to inform the pipeline execution model.
-	 * \sa ProcessObject::GenerateInputRequestedRegion() */
-	virtual void GenerateInputRequestedRegion();
-
-	/** This method is used to set the state of the filter before
-	 * multi-threading. */
-	virtual void BeforeThreadedGenerateData();
-	virtual void AfterThreadedGenerateData();
-
 	/** Method Compute the Modified Time based on changed to the components. */
 	size_t GetMTime(void) const;
 
@@ -174,14 +172,9 @@ protected:
 	SparseToDenseFieldResampleFilter();
 	~SparseToDenseFieldResampleFilter(){};
 
-	//virtual void GenerateData();
-	//virtual void BeforeThreadedGenerateData();
-	//virtual void AfterThreadedGenerateData();
+	virtual void GenerateData();
 
 	virtual void PrintSelf( std::ostream &os, Indent indent) const;
-
-    void ThreadedGenerateData(const OutputRegionType & outputRegionForThread, ThreadIdType threadId);
-
 private:
 	SparseToDenseFieldResampleFilter( const Self& ); // purposely not implemented
 	void operator=( const Self& );                 // purposely not implemented
@@ -194,6 +187,14 @@ private:
 	OutputIndexType                 m_OutputStartIndex;
 	OutputImageSizeType             m_OutputSize;
 
+	InputMeshConstPointer           m_ShapePrior;
+
+	WeightsMatrix                   m_Phi;
+	SpeedsVector                    m_LevelSetVector[OutputImageDimension];
+	SpeedsVector                    m_OutputMatrix;
+	size_t                          m_N;
+	size_t                          m_k;
+	bool                            m_IsPhiInitialized;
 
 };
 

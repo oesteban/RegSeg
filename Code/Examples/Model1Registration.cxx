@@ -125,14 +125,14 @@ int main(int argc, char *argv[]) {
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetDeformationField( df );
-	opt->SetNumberOfIterations(10);
+	opt->SetNumberOfIterations(3);
 
 	// Start
 	opt->Start();
 
 	// Write final result out
 	WriterType::Pointer polyDataWriter = WriterType::New();
-	polyDataWriter->SetInput( ls->GetContourDeformation() );
+	polyDataWriter->SetInput( ls->GetCurrentContourPosition() );
 	polyDataWriter->SetFileName( "result-registered.vtk" );
 	polyDataWriter->Update();
 

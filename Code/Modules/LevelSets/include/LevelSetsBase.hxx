@@ -38,8 +38,17 @@
 #ifndef LEVELSETSBASE_HXX_
 #define LEVELSETSBASE_HXX_
 
+#include "LevelSetsBase.h"
+
 namespace rstk {
 
+
+template< typename TReferenceImageType, typename TCoordRepType >
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::LevelSetsBase() {
+	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
+	this->m_SparseToDenseResampler = SparseToDenseFieldResampleType::New();
+}
 
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -47,50 +56,77 @@ void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::SetShapePrior( typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourDeformationType* prior ) {
 	this->m_CurrentContourPosition = prior;
+	/*
+	this->m_ContourCopier = ContourCopyType::New();
+	m_ContourCopier->SetInput( prior );
+	this->m_ContourCopier->Update();
+	this->m_ShapePrior = m_ContourCopier->GetOutput();*/
 
-	this->m_ContourDeformation = ContourDeformationType::New();
-
-	typename ContourDeformationType::PointsContainerPointer points = prior->GetPoints();
-	typename ContourDeformationType::PointsContainerIterator u_it = points->Begin();
+    this->m_ShapePrior = ContourDeformationType::New();
+	typename ContourDeformationType::PointsContainerConstIterator u_it = prior->GetPoints()->Begin();
+    typename ContourDeformationType::PointsContainerConstIterator u_end = prior->GetPoints()->End();
 	VectorType zero = itk::NumericTraits<VectorType>::Zero;
 
-	while( u_it != points->End() ) {
-		this->m_ContourDeformation->SetPointData(
-				this->m_ContourDeformation->AddPoint( u_it.Value() ),zero);
+	PointType p, newP;
+	while( u_it != u_end ) {
+		p = u_it.Value();
+		newP.SetPoint( p );
+		newP.SetEdge( p.GetEdge() );
+		this->m_ShapePrior->SetPointData(
+				this->m_ShapePrior->AddPoint( newP ), zero);
 		++u_it;
 	}
 
-	typename ContourDeformationType::CellsContainerPointer cells = prior->GetCells();
-	typename ContourDeformationType::CellsContainerConstIterator c_it = cells->Begin();
+	typename ContourDeformationType::CellsContainerConstIterator c_it  = prior->GetCells()->Begin();
+	typename ContourDeformationType::CellsContainerConstIterator c_end = prior->GetCells()->End();
 
 	size_t i = 0;
-	while( c_it!=cells->End() ) {
+	while( c_it!=c_end ) {
 		typename ContourDeformationType::CellType::CellAutoPointer cellCopy;
 		c_it.Value()->MakeCopy( cellCopy );
-		this->m_ContourDeformation->SetCell( i++ ,cellCopy );
+		this->m_ShapePrior->SetCell( i++ ,cellCopy );
 		++c_it;
 	}
+
+	this->m_SparseToDenseResampler->SetShapePrior( this->m_ShapePrior );
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::UpdateDeformationField(const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldType* newField ) {
+	/*
+	if ( this->m_ContourUpdater.IsNull() ) {
+		this->m_ContourUpdater = WarpContourType::New();
+		this->m_ContourUpdater->SetInput(this->m_ShapePrior);
+		this->m_CurrentContourPosition = this->m_ContourUpdater->GetOutput();
+	}
+
+	this->m_ContourUpdater->SetDisplacementField( newField );
+	this->m_ContourUpdater->Update();
+	*/
+
 	// Set-up a linear interpolator for the vector field
 	VectorInterpolatorPointer interp = VectorInterpolatorType::New();
 	interp->SetInputImage( newField );
 
-	typename ContourDeformationType::PointsContainerPointer points = this->m_ContourDeformation->GetPoints();
-	typename ContourDeformationType::PointsContainerIterator p_end = points->End();
+	//typename ContourDeformationType::PointsContainerPointer points = this->m_ShapePriors->GetPoints();
+	//typename ContourDeformationType::PointsContainerIterator c_it = points->Begin();
+
+	typename ContourDeformationType::PointsContainerPointer curr_points = this->m_CurrentContourPosition->GetPoints();
+	typename ContourDeformationType::PointsContainerIterator p_end = curr_points->End();
+
 	// For all the points in the mesh
-	for(typename ContourDeformationType::PointsContainerIterator p_it = points->Begin(); p_it != p_end; ++p_it) {
-		PointType currentPoint = p_it.Value();
+	PointType currentPoint,newPoint;
+	for(typename ContourDeformationType::PointsContainerIterator p_it = curr_points->Begin(); p_it != p_end; ++p_it) {
+		currentPoint = p_it.Value();
 		// Interpolate the value of the field in the point
 		VectorType desp = interp->Evaluate( currentPoint );
 		// Add vector to the point
-		this->m_CurrentContourPosition->SetPoint( p_it.Index(), currentPoint+desp );
+		newPoint.SetPoint( currentPoint + desp );
+		newPoint.SetEdge( currentPoint.GetEdge() );
+		this->m_CurrentContourPosition->SetPoint( p_it.Index(), newPoint );
 	}
-	// TODO this->m_DeformationField = newField;
 }
 
 }

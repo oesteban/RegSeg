@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( im );
-	ls->SetContourDeformation( ellipse );
+	ls->SetShapePrior( ellipse );
 	ls->SetParameters(mean2,cov, true);
 	ls->SetParameters(mean1,cov, false);
 	ls->GetLevelSetsMap(df);
