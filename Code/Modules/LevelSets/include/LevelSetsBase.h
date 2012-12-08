@@ -112,6 +112,7 @@ public:
 	typedef itk::Image< VectorType, Dimension >              DeformationFieldType;
 	typedef typename DeformationFieldType::Pointer           DeformationFieldPointer;
 	typedef typename DeformationFieldType::ConstPointer      DeformationFieldConstPointer;
+	typedef typename DeformationFieldType::PointType         DeformationFieldPointType;
 	typedef itk::VectorLinearInterpolateImageFunction
 			< DeformationFieldType >                         VectorInterpolatorType;
 	typedef typename VectorInterpolatorType::Pointer         VectorInterpolatorPointer;

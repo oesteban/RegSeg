@@ -110,6 +110,13 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	VectorInterpolatorPointer interp = VectorInterpolatorType::New();
 	interp->SetInputImage( newField );
 
+	const DeformationFieldPointType origin = newField->GetOrigin();
+	DeformationFieldPointType end;
+	typename DeformationFieldType::IndexType end_idx;
+	end_idx.Fill(-1);
+	end_idx+=newField->GetLargestPossibleRegion().GetSize();
+	newField->TransformIndexToPhysicalPoint( end_idx, end);
+
 	//typename ContourDeformationType::PointsContainerPointer points = this->m_ShapePriors->GetPoints();
 	//typename ContourDeformationType::PointsContainerIterator c_it = points->Begin();
 
@@ -126,6 +133,13 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		if( desp.GetNorm()>0 ) {
 			newPoint.SetPoint( currentPoint + desp );
 			newPoint.SetEdge( currentPoint.GetEdge() );
+
+			for ( size_t i = 0; i< Dimension; i++ ) {
+				if( newPoint[i] < origin[i] || newPoint[i]> end[i] ) {
+					itkExceptionMacro( << "Contour is outside image regions after update" );
+				}
+			}
+
 			this->m_CurrentContourPosition->SetPoint( p_it.Index(), newPoint );
 		}
 	}
