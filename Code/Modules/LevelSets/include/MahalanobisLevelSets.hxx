@@ -147,7 +147,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
-void
+typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldPointer
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::GetLevelSetsMap( MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldType* levelSetMap) {
 	// Initialize interpolator
@@ -163,7 +163,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	typename ContourDeformationType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
 	typename ContourDeformationType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
-	PointValueType sign[2] = { 1.0, -1.0 };  // IMPORTANT: signs are reversed, normal should be inwards but filter
+	PointValueType sign[2] = { -1.0, 1.0 };  // IMPORTANT: signs are reversed, normal should be inwards but filter
 	                                         // gives outwards.
 	PointValueType levelSet;
 	PointType  ci;          //
@@ -185,17 +185,27 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 			// compute mahalanobis distance in position
 			levelSet+= sign[i] * dot_product(dist.GetVnlVector(), m_InverseCovariance[i].GetVnlMatrix() * dist.GetVnlVector() );
 		}
-	    // project to normal, updating transform
 		assert( !std::isnan(levelSet) );
-
-		//ci = this->m_ShapePrior->GetPoint(index); // Prior point i
+	    // project to normal, updating transform
 		normals->GetPointData( idx, &ni );         // Normal ni in point c'_i
 		ni*=levelSet;
 		normals->SetPointData( idx, ni );
-		//speedMap->SetPoint( idx, ci_prime );        // Set ci_prime
-		//speedMap->SetPointData( idx, ni ); // Set speed value
 		++c_it;
 	}
+
+	// Interpolate sparse velocity field to targetDeformation
+	this->m_SparseToDenseResampler->CopyImageInformation( levelSetMap );
+	this->m_SparseToDenseResampler->SetInput( normals );
+	this->m_SparseToDenseResampler->Update();
+	return this->m_SparseToDenseResampler->GetOutput();
+
+	/*
+	// Output map (testing purposes)
+	typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
+	typename Writer::Pointer writer = Writer::New();
+	writer->SetFileName( "speedtest.nii.gz" );
+	writer->SetInput( levelSetMap );
+	writer->Update();*/
 
 	/*
 	// Write final result out
@@ -205,18 +215,6 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	polyDataWriter->SetFileName( "speedmap.vtk" );
 	polyDataWriter->Update();*/
 
-	// Interpolate sparse velocity field to targetDeformation
-	this->m_SparseToDenseResampler->CopyImageInformation( levelSetMap );
-	this->m_SparseToDenseResampler->SetInput( normals );
-	this->m_SparseToDenseResampler->Update();
-	levelSetMap = this->m_SparseToDenseResampler->GetOutput();
-
-	// Output map (testing purposes)
-	typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
-	typename Writer::Pointer writer = Writer::New();
-	writer->SetFileName( "speedtest.nii.gz" );
-	writer->SetInput( levelSetMap );
-	writer->Update();
 }
 
 }

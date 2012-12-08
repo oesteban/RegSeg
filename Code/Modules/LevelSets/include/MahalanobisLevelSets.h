@@ -100,7 +100,7 @@ public:
 			< PixelValueType, Components, Components >     CovarianceType;
 
 	MeasureType GetValue() const;
-	void GetLevelSetsMap( DeformationFieldType* levelSetMap);
+	DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap);
 
 	void SetParameters( MeanType& mean, CovarianceType& cov, bool inside);
 
