@@ -154,6 +154,8 @@ public:
 
 	virtual void Resume();
 
+	virtual void ComputeIterationEnergy();
+
 protected:
 	/** Manual learning rate to apply. It is overridden by
 	 * automatic learning rate estimation if enabled. See main documentation.
