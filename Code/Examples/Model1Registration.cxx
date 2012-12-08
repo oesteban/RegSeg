@@ -112,7 +112,6 @@ int main(int argc, char *argv[]) {
 	df->SetDirection( im->GetDirection() );
 	df->Allocate();
 	df->FillBuffer( itk::NumericTraits<DeformationFieldType::PixelType>::Zero );
-	std::cout << "Number Of Parameters=" << df->GetLargestPossibleRegion().GetNumberOfPixels() << std::endl;
 
 	// Initialize LevelSet function
 	LevelSetsType::Pointer ls = LevelSetsType::New();
@@ -125,7 +124,7 @@ int main(int argc, char *argv[]) {
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetDeformationField( df );
-	opt->SetNumberOfIterations(3);
+	opt->SetNumberOfIterations(20);
 
 	// Start
 	opt->Start();

@@ -57,7 +57,7 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_LearningRate = itk::NumericTraits<InternalComputationValueType>::One;
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
-	this->m_ConvergenceWindowSize = 50;
+	this->m_ConvergenceWindowSize = 2;
 	this->m_StepSize = 1.0;
 	this->m_Alpha = 1.0;
 	this->m_Beta = 1.0;
@@ -156,7 +156,17 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			break;
 		}
 
-		/* Check the convergence by WindowConvergenceMonitoringFunction.
+		/* Advance one step along the gradient.
+		 * This will modify the gradient and update the transform. */
+		this->Iterate();
+
+		/* Update the level sets contour */
+		this->m_LevelSetsFunction->UpdateDeformationField( this->m_NextDeformationField );
+
+		this->ComputeIterationEnergy(); // TODO this should operate on this->m_NextDeformationField
+
+		/*
+		 * Check the convergence by WindowConvergenceMonitoringFunction.
 		 */
 		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentLevelSetsValue );
 		try
@@ -173,15 +183,6 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		catch(std::exception & e) {
 			std::cerr << "GetConvergenceValue() failed with exception: " << e.what() << std::endl;
 		}
-
-		/* Advance one step along the gradient.
-		 * This will modify the gradient and update the transform. */
-		this->Iterate();
-
-		/* Update the level sets contour */
-		this->m_LevelSetsFunction->UpdateDeformationField( this->m_NextDeformationField );
-
-		this->m_CurrentLevelSetsValue = this->m_LevelSetsFunction->GetValue( ); // TODO this should operate on this->m_NextDeformationField
 
 		/* TODO Store best value and position */
 		//if ( this->m_ReturnBestParametersAndValue && this->m_CurrentLevelSetsValue < this->m_CurrentBestValue )
@@ -296,6 +297,19 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 		*(nBuffer+pix) = cur * (*(dBuffer+pix));
 	}
 }
+
+template< typename TLevelSetsFunction >
+void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComputeIterationEnergy() {
+	VectorType* fBuffer = this->m_NextDeformationField->GetBufferPointer();
+	size_t nPix = this->m_NextDeformationField->GetLargestPossibleRegion().GetNumberOfPixels();
+	double totalNorm = 0;
+	for (size_t pix = 0; pix < nPix; pix++ ) {
+		totalNorm += (*(fBuffer+pix)).GetNorm();
+	}
+
+	this->m_CurrentLevelSetsValue = totalNorm/nPix;
+}
+
 }
 
 
