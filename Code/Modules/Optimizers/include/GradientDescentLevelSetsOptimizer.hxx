@@ -58,9 +58,9 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-3;
 	this->m_ConvergenceWindowSize = 4;
-	this->m_StepSize = 1.0;
-	this->m_Alpha = 1.0;
-	this->m_Beta = 1.0;
+	this->m_StepSize = 1e-2;
+	this->m_Alpha = 1e4;
+	this->m_Beta = 1e4;
 }
 
 template< typename TLevelSetsFunction >
@@ -141,6 +141,14 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		/* Compute metric value/derivative. */
 		try	{
 			this->m_SpeedsField = this->m_LevelSetsFunction->GetLevelSetsMap(this->m_DeformationField);
+
+			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
+			typename Writer::Pointer p = Writer::New();
+			std::stringstream ss;
+			ss << "speedsfield" << this->m_CurrentIteration << ".nii.gz";
+			p->SetFileName( ss.str().c_str() );
+			p->SetInput( this->m_SpeedsField );
+			p->Update();
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = Superclass::COSTFUNCTION_ERROR;

@@ -116,12 +116,14 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateData() 
 		m_DefaultPixelValue.Fill(0);
 	}
 
+	this->GetOutput()->FillBuffer( this->m_DefaultPixelValue );
+
 	m_k = this->GetOutput()->GetLargestPossibleRegion().GetNumberOfPixels();
 	m_N = this->m_ShapePrior->GetNumberOfPoints();
-	m_Phi = WeightsMatrix(m_k, m_N);
 	for (size_t i = 0; i < OutputImageDimension; i++ ) m_LevelSetVector[i] = SpeedsVector( m_N );
 
 	if (!m_IsPhiInitialized) {
+		m_Phi = WeightsMatrix(m_k, m_N);
 		// Walk the output region
 		typedef ImageRegionIteratorWithIndex<TOutputImage> OutputIterator;
 		OutputIterator outIt(this->GetOutput(),
@@ -153,24 +155,43 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateData() 
 	OutputPixelType ni;
 	for (size_t el = 0; el < this->m_N; el++) {
 		this->GetInput(0)->GetPointData( el, &ni );
-		for ( size_t i = 0; i < OutputImageDimension; i++ )
-			m_LevelSetVector[i].put( el, ni[i] );
-	}
-
-	SpeedsVector outvector[3];
-	for ( size_t i = 0; i < OutputImageDimension; i++ ) {
-		m_Phi.mult(m_LevelSetVector[i], outvector[i] );
-	}
-
-	OutputPixelType* buffer = this->GetOutput()->GetBufferPointer();
-	for( size_t k = 0; k<m_k; k++ ) {
-		ni = m_DefaultPixelValue;
 		for ( size_t i = 0; i < OutputImageDimension; i++ ) {
-			ni[i] = outvector[i].get(k);
+			if( std::isnan( ni[i] ))
+				ni[i] = 0;
+			m_LevelSetVector[i].put( el, ni[i] );
 		}
-		if ( ni!= m_DefaultPixelValue )
-			*( buffer + k ) = ni;
 	}
+
+	double norms = 0.0;
+	for (size_t i = 0; i < OutputImageDimension; i++ ) {
+		norms+= m_LevelSetVector[i].one_norm();
+	}
+
+
+	if( norms==0 ) return;
+
+    SpeedsVector outvector[3];
+    norms=0;
+    for ( size_t i = 0; i < OutputImageDimension; i++ ) {
+    	m_Phi.mult(m_LevelSetVector[i], outvector[i] );
+    	norms+= outvector[i].one_norm();
+    }
+
+    if( norms==0 ) return;
+
+    bool isZero;
+    OutputPixelType* buffer = this->GetOutput()->GetBufferPointer();
+    for( size_t k = 0; k<m_k; k++ ) {
+    	ni = m_DefaultPixelValue;
+    	isZero = true;
+    	for ( size_t i = 0; i < OutputImageDimension; i++ ) {
+    		ni[i] = outvector[i].get(k);
+    		isZero = isZero && (ni[i]==0.0);
+    	}
+    	if ( isZero ) continue;
+    	*( buffer + k ) = ni;
+    }
+
 }
 
 template<class TInputMesh, class TOutputImage>
