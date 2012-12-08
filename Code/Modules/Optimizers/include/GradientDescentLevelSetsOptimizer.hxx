@@ -58,9 +58,9 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 50;
-	this->m_StepSize = 1e-3;
-	this->m_Alpha = 1e4;
-	this->m_Beta = 1e4;
+	this->m_StepSize = 1.0;
+	this->m_Alpha = 1.0;
+	this->m_Beta = 1.0;
 }
 
 template< typename TLevelSetsFunction >
@@ -140,7 +140,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 	while( ! this->m_Stop )	{
 		/* Compute metric value/derivative. */
 		try	{
-			this->m_LevelSetsFunction->GetLevelSetsMap( this->m_SpeedsField );
+			this->m_SpeedsField = this->m_LevelSetsFunction->GetLevelSetsMap(this->m_DeformationField);
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = Superclass::COSTFUNCTION_ERROR;

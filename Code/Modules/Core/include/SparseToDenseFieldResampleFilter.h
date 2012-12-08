@@ -164,6 +164,7 @@ public:
 	 * execution model.  The original documentation of this method is
 	 * below. \sa ProcessObject::GenerateOutputInformaton() */
 	virtual void GenerateOutputInformation();
+	virtual void UpdateOutputInformation();
 
 	/** Method Compute the Modified Time based on changed to the components. */
 	size_t GetMTime(void) const;

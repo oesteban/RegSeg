@@ -123,9 +123,11 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		// Interpolate the value of the field in the point
 		VectorType desp = interp->Evaluate( currentPoint );
 		// Add vector to the point
-		newPoint.SetPoint( currentPoint + desp );
-		newPoint.SetEdge( currentPoint.GetEdge() );
-		this->m_CurrentContourPosition->SetPoint( p_it.Index(), newPoint );
+		if( desp.GetNorm()>0 ) {
+			newPoint.SetPoint( currentPoint + desp );
+			newPoint.SetEdge( currentPoint.GetEdge() );
+			this->m_CurrentContourPosition->SetPoint( p_it.Index(), newPoint );
+		}
 	}
 }
 

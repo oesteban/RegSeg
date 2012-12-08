@@ -110,13 +110,6 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateData() 
 		itkExceptionMacro(<< "Shape priors not set");
 	}
 
-	if (!m_Interpolator) {
-		itkExceptionMacro(<< "Interpolator not set");
-	}
-
-	// Connect input image to interpolator
-	m_Interpolator->SetInputMesh(this->GetInput());
-
 	if (m_DefaultPixelValue.Size() == 0) {
 		NumericTraits<OutputPixelType>::SetLength(m_DefaultPixelValue,
 				this->GetOutput()->GetNumberOfComponentsPerPixel());
@@ -194,6 +187,15 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::CopyImageInform
  * Inform pipeline of required output region
  */
 template<class TInputMesh, class TOutputImage>
+void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::UpdateOutputInformation() {
+	this->Modified();
+	this->Superclass::UpdateOutputInformation();
+}
+
+/**
+ * Inform pipeline of required output region
+ */
+template<class TInputMesh, class TOutputImage>
 void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateOutputInformation() {
 	// call the superclass' implementation of this method
 	this->Superclass::GenerateOutputInformation();
@@ -228,13 +230,12 @@ template<class TInputMesh, class TOutputImage>
 unsigned long SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GetMTime(
 		void) const {
 	unsigned long latestTime = Object::GetMTime();
-
-	if (m_Interpolator) {
-		if (latestTime < m_Interpolator->GetMTime()) {
-			latestTime = m_Interpolator->GetMTime();
+/*
+	if (this->GetInput().IsNotNull()) {
+		if (latestTime < this->GetInput()->GetMTime()) {
+			latestTime = this->GetInput()->GetMTime();
 		}
-	}
-
+	}*/
 	return latestTime;
 }
 

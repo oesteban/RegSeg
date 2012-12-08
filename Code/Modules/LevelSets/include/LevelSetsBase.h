@@ -128,7 +128,7 @@ public:
 	typedef typename WarpContourType::Pointer                WarpContourPointer;
 
 	virtual MeasureType GetValue() const = 0;
-	virtual void GetLevelSetsMap( DeformationFieldType* levelSetMap) = 0;
+	virtual DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap) = 0;
 
 	void UpdateDeformationField( const DeformationFieldType* newField );
 
