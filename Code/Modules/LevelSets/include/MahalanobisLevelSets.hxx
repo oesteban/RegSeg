@@ -213,7 +213,8 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	typename WriterType::Pointer polyDataWriter = WriterType::New();
 	polyDataWriter->SetInput( normals );
 	polyDataWriter->SetFileName( "speedmap.vtk" );
-	polyDataWriter->Update();*/
+	polyDataWriter->Update();
+	*/
 
 }
 

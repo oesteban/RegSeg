@@ -117,9 +117,13 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	end_idx+=newField->GetLargestPossibleRegion().GetSize();
 	newField->TransformIndexToPhysicalPoint( end_idx, end);
 
-	//typename ContourDeformationType::PointsContainerPointer points = this->m_ShapePriors->GetPoints();
-	//typename ContourDeformationType::PointsContainerIterator c_it = points->Begin();
-
+	/*
+	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
+	typename WriterType::Pointer polyDataWriter = WriterType::New();
+	polyDataWriter->SetInput( this->m_CurrentContourPosition );
+	polyDataWriter->SetFileName( "contour_pre.vtk" );
+	polyDataWriter->Update();
+	*/
 	typename ContourDeformationType::PointsContainerPointer curr_points = this->m_CurrentContourPosition->GetPoints();
 	typename ContourDeformationType::PointsContainerIterator p_end = curr_points->End();
 

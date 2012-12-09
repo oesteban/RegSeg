@@ -58,9 +58,9 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-3;
 	this->m_ConvergenceWindowSize = 4;
-	this->m_StepSize = 1e-2;
-	this->m_Alpha = 1e4;
-	this->m_Beta = 1e4;
+	this->m_StepSize = 0.1;
+	this->m_Alpha = 1.0;
+	this->m_Beta = 1.0;
 }
 
 template< typename TLevelSetsFunction >
@@ -141,7 +141,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		/* Compute metric value/derivative. */
 		try	{
 			this->m_SpeedsField = this->m_LevelSetsFunction->GetLevelSetsMap(this->m_DeformationField);
-
+			/*
 			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
 			typename Writer::Pointer p = Writer::New();
 			std::stringstream ss;
@@ -149,6 +149,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			p->SetFileName( ss.str().c_str() );
 			p->SetInput( this->m_SpeedsField );
 			p->Update();
+			*/
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = Superclass::COSTFUNCTION_ERROR;
@@ -168,10 +169,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		 * This will modify the gradient and update the transform. */
 		this->Iterate();
 
-		/* Update the level sets contour */
-		this->m_LevelSetsFunction->UpdateDeformationField( this->m_NextDeformationField );
-
-		this->ComputeIterationEnergy(); // TODO this should operate on this->m_NextDeformationField
+		this->ComputeIterationEnergy();
 
 		/*
 		 * Check the convergence by WindowConvergenceMonitoringFunction.
@@ -191,6 +189,14 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		catch(std::exception & e) {
 			std::cerr << "GetConvergenceValue() failed with exception: " << e.what() << std::endl;
 		}
+
+		/* Update the level sets contour and deformation field */
+		this->m_LevelSetsFunction->UpdateDeformationField( this->m_NextDeformationField );
+		itk::ImageAlgorithm::Copy<DeformationFieldType,DeformationFieldType>(
+				this->m_NextDeformationField, this->m_DeformationField,
+				this->m_NextDeformationField->GetLargestPossibleRegion(),
+				this->m_DeformationField->GetLargestPossibleRegion());
+
 
 		/* TODO Store best value and position */
 		//if ( this->m_ReturnBestParametersAndValue && this->m_CurrentLevelSetsValue < this->m_CurrentBestValue )
