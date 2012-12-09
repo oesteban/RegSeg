@@ -43,6 +43,7 @@
 #include <itkWindowConvergenceMonitoringFunction.h>
 #include <vector>
 #include <itkImageIteratorWithIndex.h>
+#include <itkImageAlgorithm.h>
 
 namespace rstk
 {

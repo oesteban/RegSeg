@@ -50,16 +50,19 @@
 #include <itkVTKPolyDataReader.h>
 #include <itkVTKPolyDataWriter.h>
 #include <itkVectorImageToImageAdaptor.h>
+#include <itkComposeImageFilter.h>
 #include "MahalanobisLevelSets.h"
 #include "GradientDescentLevelSetsOptimizer.h"
 
 using namespace rstk;
 
 int main(int argc, char *argv[]) {
-	typedef itk::Vector<float, 1u>                               VectorPixelType;
+	typedef itk::Image<float, 3u>                                ChannelType;
+	typedef itk::Vector<float, 2u>                               VectorPixelType;
 	typedef itk::Image<VectorPixelType, 3u>                      ImageType;
-	typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
+	typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
+	typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
 	typedef LevelSetsType::ContourDeformationType                ContourDeformationType;
 	typedef ContourDeformationType::Pointer                      ContourDisplacementFieldPointer;
 	typedef LevelSetsType::VectorType                            VectorType;
@@ -72,15 +75,29 @@ int main(int argc, char *argv[]) {
 
 	typedef itk::VTKPolyDataReader< ContourDeformationType >     ReaderType;
 	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
-	typedef itk::ImageFileReader<ImageType>                      ImageReader;
-	typedef itk::ImageFileWriter<ImageType>                      ImageWriter;
+	typedef itk::ImageFileReader<ChannelType>                      ImageReader;
+	typedef itk::ImageFileWriter<ChannelType>                      ImageWriter;
+	typedef itk::ImageFileWriter<DeformationFieldType>           DeformationWriter;
 
 	typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
+
+
+
+	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
 
 	ImageReader::Pointer r = ImageReader::New();
 	r->SetFileName( std::string( DATA_DIR ) + "dtifit__FA.nii.gz" );
 	r->Update();
-	ImageType::Pointer im = r->GetOutput();
+	comb->SetInput(0,r->GetOutput());
+
+	ImageReader::Pointer r2 = ImageReader::New();
+	r2->SetFileName( std::string( DATA_DIR ) + "dtifit__MD.nii.gz" );
+	r2->Update();
+	comb->SetInput(1,r2->GetOutput());
+	comb->Update();
+
+	ChannelType::Pointer im = r->GetOutput();
+
 
 	ReaderType::Pointer polyDataReader = ReaderType::New();
 	polyDataReader->SetFileName( std::string( DATA_DIR ) + "wm_prior.vtk" );
@@ -97,8 +114,12 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Initialize tissue signatures
-	MeanType mean1; mean1.Fill(0.1);
-	MeanType mean2; mean2.Fill(0.8);
+	MeanType mean1;
+	mean1[0] = 0.1;
+	mean1[1] = 0.00095;
+	MeanType mean2;
+	mean2[0] = 0.8;
+	mean2[1] = 0.00055;
 	CovarianceType cov; cov.SetIdentity();
 
 	// Initialize deformation field
@@ -115,7 +136,7 @@ int main(int argc, char *argv[]) {
 
 	// Initialize LevelSet function
 	LevelSetsType::Pointer ls = LevelSetsType::New();
-	ls->SetReferenceImage( im );
+	ls->SetReferenceImage( comb->GetOutput() );
 	ls->SetShapePrior( initialContour );
 	ls->SetParameters(mean2,cov, true);    // mean2 is INSIDE
 	ls->SetParameters(mean1,cov, false);   // mean2 is OUTSIDE
@@ -134,5 +155,10 @@ int main(int argc, char *argv[]) {
 	polyDataWriter->SetInput( ls->GetCurrentContourPosition() );
 	polyDataWriter->SetFileName( "result-registered.vtk" );
 	polyDataWriter->Update();
+
+	DeformationWriter::Pointer w = DeformationWriter::New();
+	w->SetInput( opt->GetDeformationField() );
+	w->SetFileName( "outfield.nii.gz" );
+	w->Update();
 
 }
