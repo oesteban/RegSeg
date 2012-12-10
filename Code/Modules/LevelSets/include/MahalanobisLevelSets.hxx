@@ -163,8 +163,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	typename ContourDeformationType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
 	typename ContourDeformationType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
-	PointValueType sign[2] = { -1.0, 1.0 };  // IMPORTANT: signs are reversed, normal should be inwards but filter
-	                                         // gives outwards.
+	PointValueType sign[2] = { -1.0, 1.0 };
 	PointValueType levelSet;
 	PointType  ci;          //
 	PointType  ci_prime;
@@ -183,7 +182,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 		for( size_t i = 0; i<2; i++) {                 // Compute on both sides of the levelset
 			PixelType dist = fi - m_Mean[i];
 			// compute mahalanobis distance in position
-			levelSet+= sign[i] * dot_product(dist.GetVnlVector(), m_InverseCovariance[i].GetVnlMatrix() * dist.GetVnlVector() );
+			levelSet+= sign[i] * sqrt(dot_product(dist.GetVnlVector(), m_InverseCovariance[i].GetVnlMatrix() * dist.GetVnlVector() ));
 		}
 		assert( !std::isnan(levelSet) );
 	    // project to normal, updating transform

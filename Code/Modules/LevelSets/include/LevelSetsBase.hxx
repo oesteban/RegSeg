@@ -126,16 +126,19 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	*/
 	typename ContourDeformationType::PointsContainerPointer curr_points = this->m_CurrentContourPosition->GetPoints();
 	typename ContourDeformationType::PointsContainerIterator p_end = curr_points->End();
+	typename ContourDeformationType::PointsContainerPointer shape_points = this->m_ShapePrior->GetPoints();
+	typename ContourDeformationType::PointsContainerIterator shape_it = shape_points->Begin();
 
 	// For all the points in the mesh
 	PointType currentPoint,newPoint;
-	for(typename ContourDeformationType::PointsContainerIterator p_it = curr_points->Begin(); p_it != p_end; ++p_it) {
+	for(typename ContourDeformationType::PointsContainerIterator p_it = curr_points->Begin(); p_it != p_end; ++p_it, ++shape_it) {
 		currentPoint = p_it.Value();
 		// Interpolate the value of the field in the point
 		VectorType desp = interp->Evaluate( currentPoint );
 		// Add vector to the point
 		if( desp.GetNorm()>0 ) {
-			newPoint.SetPoint( currentPoint + desp );
+			//newPoint.SetPoint( currentPoint + desp );
+			newPoint.SetPoint( shape_it.Value() + desp );
 			newPoint.SetEdge( currentPoint.GetEdge() );
 
 			for ( size_t i = 0; i< Dimension; i++ ) {
