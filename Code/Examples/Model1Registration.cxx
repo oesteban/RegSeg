@@ -114,13 +114,22 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Initialize tissue signatures
-	MeanType mean1;
-	mean1[0] = 0.1;
-	mean1[1] = 0.00095;
-	MeanType mean2;
-	mean2[0] = 0.8;
-	mean2[1] = 0.00055;
-	CovarianceType cov; cov.SetIdentity();
+	MeanType mean1; // This is GM
+	mean1[0] = 0.12627581;
+	mean1[1] = 0.00087993;
+	CovarianceType cov1;
+	cov1(0,0) = 6.35763907e-03;
+	cov1(0,1) = -1.41017707e-06;
+	cov1(1,0) = -1.41017707e-06;
+	cov1(1,1) = 2.29480355e-08;
+	MeanType mean2; // This is WM
+	mean2[0] = 7.66597807e-01;
+	mean2[1] = 7.04538717e-04;
+	CovarianceType cov2;
+	cov2(0,0) = 1.10631538e-02;
+	cov2(0,1) = -1.24550716e-05;
+	cov2(1,0) = -1.24550716e-05;
+	cov2(1,1) = 2.90223001e-08;
 
 	// Initialize deformation field
 	DeformationFieldType::Pointer df = DeformationFieldType::New();
@@ -138,14 +147,14 @@ int main(int argc, char *argv[]) {
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
 	ls->SetShapePrior( initialContour );
-	ls->SetParameters(mean2,cov, true);    // mean2 is INSIDE
-	ls->SetParameters(mean1,cov, false);   // mean2 is OUTSIDE
+	ls->SetParameters(mean2,cov2, true);    // mean2 is INSIDE
+	ls->SetParameters(mean1,cov2, false);   // mean2 is OUTSIDE
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetDeformationField( df );
-	opt->SetNumberOfIterations(20);
+	opt->SetNumberOfIterations(500);
 
 	// Start
 	opt->Start();
