@@ -51,6 +51,10 @@
 #include <itkVTKPolyDataWriter.h>
 #include <itkVectorImageToImageAdaptor.h>
 #include <itkComposeImageFilter.h>
+#include <itkVectorResampleImageFilter.h>
+#include <itkBSplineInterpolateImageFunction.h>
+#include <itkDisplacementFieldTransform.h>
+#include <itkResampleImageFilter.h>
 #include "MahalanobisLevelSets.h"
 #include "GradientDescentLevelSetsOptimizer.h"
 
@@ -80,6 +84,14 @@ int main(int argc, char *argv[]) {
 	typedef itk::ImageFileWriter<DeformationFieldType>           DeformationWriter;
 
 	typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
+	typedef itk::VectorResampleImageFilter
+			<DeformationFieldType,DeformationFieldType,double>   DisplacementResamplerType;
+	typedef itk::BSplineInterpolateImageFunction
+			                <DeformationFieldType>               InterpolatorFunction;
+	typedef itk::DisplacementFieldTransform<float, 3u>           TransformType;
+
+	typedef itk::ResampleImageFilter<ChannelType,ChannelType,float>    ResamplerType;
+
 
 
 
@@ -154,7 +166,7 @@ int main(int argc, char *argv[]) {
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetDeformationField( df );
-	opt->SetNumberOfIterations(500);
+	opt->SetNumberOfIterations(200);
 
 	// Start
 	opt->Start();
@@ -170,4 +182,32 @@ int main(int argc, char *argv[]) {
 	w->SetFileName( "outfield.nii.gz" );
 	w->Update();
 
+	DisplacementResamplerType::Pointer p = DisplacementResamplerType::New();
+	p->SetInput( opt->GetDeformationField() );
+	p->SetOutputOrigin( im->GetOrigin() );
+	p->SetOutputSpacing( im->GetSpacing() );
+	p->SetOutputDirection( im->GetDirection() );
+	p->SetSize( im->GetLargestPossibleRegion().GetSize() );
+	//p->SetInterpolator( InterpolatorFunction::New() );
+	p->Update();
+	DeformationWriter::Pointer w2 = DeformationWriter::New();
+	w2->SetInput( p->GetOutput() );
+	w2->SetFileName( "outfield-HD.nii.gz" );
+	w2->Update();
+/*
+	DeformationFieldType::Pointer dfield = DeformationFieldType::New();
+	TransformType::Pointer tf = TransformType::New();
+	tf->SetDisplacementField( dfield );
+
+	ResamplerType::Pointer res = ResamplerType::New();
+	res->SetInput( im );
+	res->SetReferenceImage( im );
+	res->SetTransform( tf );
+	res->UseReferenceImageOn();
+	res->Update();
+
+	ImageWriter::Pointer w3 = ImageWriter::New();
+	w3->SetInput( res->GetOutput() );
+	w3->SetFileName( "FAunwarped.nii.gz" );
+	w3->Update();*/
 }

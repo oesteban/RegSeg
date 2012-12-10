@@ -57,10 +57,10 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_LearningRate = itk::NumericTraits<InternalComputationValueType>::One;
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
-	this->m_ConvergenceWindowSize = 100;
+	this->m_ConvergenceWindowSize = 10;
 	this->m_StepSize = 0.1;
-	this->m_Alpha = 1.0;
-	this->m_Beta = 1.0;
+	this->m_Alpha = 1e-4;
+	this->m_Beta = 1e-3;
 }
 
 template< typename TLevelSetsFunction >
@@ -169,26 +169,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		 * This will modify the gradient and update the transform. */
 		this->Iterate();
 
-		this->ComputeIterationEnergy();
-
-		/*
-		 * Check the convergence by WindowConvergenceMonitoringFunction.
-		 */
-		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentLevelSetsValue );
-		try
-		{
-			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
-			if (this->m_ConvergenceValue <= this->m_MinimumConvergenceValue)
-			{
-				this->m_StopConditionDescription << "Convergence checker passed at iteration " << this->m_CurrentIteration << ".";
-				this->m_StopCondition = Superclass::CONVERGENCE_CHECKER_PASSED;
-				this->Stop();
-				break;
-			}
-		}
-		catch(std::exception & e) {
-			std::cerr << "GetConvergenceValue() failed with exception: " << e.what() << std::endl;
-		}
+		this->ComputeIterationChange();
 
 		/* Update the level sets contour and deformation field */
 		this->m_LevelSetsFunction->UpdateDeformationField( this->m_NextDeformationField );
@@ -206,6 +187,31 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		//}
 
 		std::cout << "Iteration " << this->m_CurrentIteration << std::endl;
+
+
+		/*
+		 * Check the convergence by WindowConvergenceMonitoringFunction.
+		 */
+		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentLevelSetsValue );
+		try {
+			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
+			if (this->m_ConvergenceValue <= this->m_MinimumConvergenceValue) {
+				this->m_StopConditionDescription << "Convergence checker passed at iteration " << this->m_CurrentIteration << ".";
+				this->m_StopCondition = Superclass::CONVERGENCE_CHECKER_PASSED;
+				this->Stop();
+				break;
+			}
+		}
+		catch(std::exception & e) {
+			std::cerr << "GetConvergenceValue() failed with exception: " << e.what() << std::endl;
+		}
+		/*
+		if( this->m_CurrentLevelSetsValue < this->m_ConvergenceValue ) {
+			this->m_StopConditionDescription << "Deformation field changed below the minimum threshold.";
+			this->m_StopCondition = Superclass::STEP_TOO_SMALL;
+			this->Stop();
+			break;
+		}*/
 
 		/* Update and check iteration count */
 		this->m_CurrentIteration++;
@@ -241,8 +247,8 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 		// Get component from vector image
 		size_t comp, idx2;
 		for(size_t pix = 0; pix< nPix; pix++) {
-			*(dCompBuffer+pix) = (PointValueType) (*(dFieldBuffer+pix))[d] / this->m_StepSize - (*(sFieldBuffer+pix))[d];
-		}
+			*(dCompBuffer+pix) = (PointValueType) (*(dFieldBuffer+pix))[d] / this->m_StepSize + (*(sFieldBuffer+pix))[d]; // ATTENTION: the + symbol depends on the definition of the normal
+		}                                                                                                                 // OUTWARDS-> + ; INWARDS-> -.
 
 		FFTPointer fft = FFTType::New();
 		fft->SetInput( fieldComponent );
@@ -313,12 +319,13 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 }
 
 template< typename TLevelSetsFunction >
-void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComputeIterationEnergy() {
-	VectorType* fBuffer = this->m_NextDeformationField->GetBufferPointer();
+void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComputeIterationChange() {
+	VectorType* fnextBuffer = this->m_NextDeformationField->GetBufferPointer();
+	VectorType* fBuffer = this->m_DeformationField->GetBufferPointer();
 	size_t nPix = this->m_NextDeformationField->GetLargestPossibleRegion().GetNumberOfPixels();
 	double totalNorm = 0;
 	for (size_t pix = 0; pix < nPix; pix++ ) {
-		totalNorm += (*(fBuffer+pix)).GetNorm();
+		totalNorm += (*(fnextBuffer+pix) - *(fBuffer+pix)).GetNorm();
 	}
 
 	this->m_CurrentLevelSetsValue = totalNorm/nPix;
