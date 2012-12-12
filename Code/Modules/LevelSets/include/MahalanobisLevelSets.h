@@ -99,10 +99,15 @@ public:
 	typedef itk::Matrix
 			< PixelValueType, Components, Components >     CovarianceType;
 
+	struct ParametersType {
+		MeanType mean[2];
+		CovarianceType iCovariance[2];
+	};
+
 	MeasureType GetValue() const;
 	DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap);
 
-	void SetParameters( MeanType& mean, CovarianceType& cov, bool inside);
+	void SetParameters( ParametersType& params );
 
 	itkSetObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
@@ -113,9 +118,8 @@ protected:
 
 	void PrintSelf( std::ostream& os, itk::Indent indent) const;
 
+	ParametersType m_Parameters;
 	ReferenceImageConstPointer m_ReferenceImage;
-	MeanType m_Mean[2];
-	CovarianceType m_InverseCovariance[2];
 
 
 private:

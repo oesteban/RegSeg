@@ -82,67 +82,66 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 void
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::SetParameters( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::MeanType& mean,
-		         typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::CovarianceType& cov,
-		         bool inside ) {
-	unsigned int idx = (unsigned int ) (!inside);
+::SetParameters( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType& params ) {
+	for ( size_t idx=0; idx<2; idx++ ) {
+		this->m_Parameters.mean[idx] = params.mean[idx];
+		CovarianceType cov = params.iCovariance[idx];
 
-	this->m_Mean[idx] = mean;
+		if (cov.GetVnlMatrix().rows() != cov.GetVnlMatrix().cols()) {
+			itkExceptionMacro(<< "Covariance matrix must be square");
+		}
 
-	if (cov.GetVnlMatrix().rows() != cov.GetVnlMatrix().cols()) {
-		itkExceptionMacro(<< "Covariance matrix must be square");
-	}
+		if ( cov.GetVnlMatrix().rows() != Components ) {
+			itkExceptionMacro(<< "Length of measurement vectors must be the same as the size of the covariance.");
+		}
 
-	if ( cov.GetVnlMatrix().rows() != Components ) {
-		itkExceptionMacro(<< "Length of measurement vectors must be the same as the size of the covariance.");
-	}
+		if( Components > 1 ) {
+			// Compute diagonal and check that eigenvectors >= 0.0
+			typedef typename vnl_diag_matrix<PixelValueType>::iterator DiagonalIterator;
+			typedef vnl_symmetric_eigensystem<PixelValueType> Eigensystem;
+			vnl_matrix< PixelValueType > S = cov.GetVnlMatrix();
+			Eigensystem* e = new Eigensystem( S );
 
-	if( Components > 1 ) {
-		// Compute diagonal and check that eigenvectors >= 0.0
-		typedef typename vnl_diag_matrix<PixelValueType>::iterator DiagonalIterator;
-		typedef vnl_symmetric_eigensystem<PixelValueType> Eigensystem;
-		vnl_matrix< PixelValueType > S = cov.GetVnlMatrix();
-		Eigensystem* e = new Eigensystem( S );
-
-		bool modified = false;
-		DiagonalIterator itD = e->D.begin();
-		while ( itD!= e->D.end() ) {
-			if (*itD < 0) {
-				*itD = 0.;
-				modified = true;
+			bool modified = false;
+			DiagonalIterator itD = e->D.begin();
+			while ( itD!= e->D.end() ) {
+				if (*itD < 0) {
+					*itD = 0.;
+					modified = true;
+				}
+				itD++;
 			}
-			itD++;
-		}
 
-		if (modified) this->m_InverseCovariance[idx] = e->recompose();
-		else this->m_InverseCovariance[idx] = cov;
-		delete e;
+			if (modified) this->m_Parameters.iCovariance[idx] = e->recompose();
+			else this->m_Parameters.iCovariance[idx] = cov;
+			delete e;
 
-		// the inverse of the covariance matrix is first computed by SVD
-		vnl_matrix_inverse< PixelValueType > inv_cov( this->m_InverseCovariance[idx].GetVnlMatrix() );
+			// the inverse of the covariance matrix is first computed by SVD
+			vnl_matrix_inverse< PixelValueType > inv_cov( this->m_Parameters.iCovariance[idx].GetVnlMatrix() );
 
-		// the determinant is then costless this way
-		PixelValueType det = inv_cov.determinant_magnitude();
+			// the determinant is then costless this way
+			PixelValueType det = inv_cov.determinant_magnitude();
 
-		if( det < 0.) {
-			itkExceptionMacro( << "det( m_InverseCovariance ) < 0" );
-		}
+			if( det < 0.) {
+				itkExceptionMacro( << "det( m_Parameters.iCovariance ) < 0" );
+			}
 
-		// FIXME Singurality Threshold for Covariance matrix: 1e-6 is an arbitrary value!!!
-		const PixelValueType singularThreshold = 1.0e-6;
-		if( det > singularThreshold ) {
-			// allocate the memory for m_InverseCovariance matrix
-			this->m_InverseCovariance[idx].GetVnlMatrix() = inv_cov.inverse();
+			// FIXME Singurality Threshold for Covariance matrix: 1e-6 is an arbitrary value!!!
+			const PixelValueType singularThreshold = 1.0e-6;
+			if( det > singularThreshold ) {
+				// allocate the memory for inverse covariance matrix
+				this->m_Parameters.iCovariance[idx].GetVnlMatrix() = inv_cov.inverse();
+			} else {
+				// TODO Perform cholesky diagonalization and select the semi-positive aproximation
+				//vnl_ldl_cholesky* chol = new vnl_ldl_cholesky( this->m_Parameters.iCovariance[idx].GetVnlMatrix() );
+				//vnl_vector< PixelValueType > D( chol->diagonal() );
+				//det = dot_product( D, D );
+				//vnl_matrix_inverse< PixelValueType > R (chol->upper_triangle());
+				//this->m_Parameters.iCovariance[idx].GetVnlMatrix() = R.inverse();
+			}
 		} else {
-			// TODO Perform cholesky diagonalization and select the semi-positive aproximation
-			//vnl_ldl_cholesky* chol = new vnl_ldl_cholesky( this->m_InverseCovariance[idx].GetVnlMatrix() );
-			//vnl_vector< PixelValueType > D( chol->diagonal() );
-			//det = dot_product( D, D );
-			//vnl_matrix_inverse< PixelValueType > R (chol->upper_triangle());
-			//this->m_InverseCovariance[idx].GetVnlMatrix() = R.inverse();
+			this->m_Parameters.iCovariance[idx](0,0)=1.0/cov(0,0);
 		}
-	} else {
-		this->m_InverseCovariance[idx](0,0)=1.0/cov(0,0);
 	}
 }
 
@@ -180,9 +179,9 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 		ci_prime = c_it.Value();
 		fi = interp->Evaluate( ci_prime );    // Feature in c'_{i}
 		for( size_t i = 0; i<2; i++) {                 // Compute on both sides of the levelset
-			PixelType dist = fi - m_Mean[i];
+			PixelType dist = fi - this->m_Parameters.mean[i];
 			// compute mahalanobis distance in position
-			levelSet+= sign[i] * sqrt(dot_product(dist.GetVnlVector(), m_InverseCovariance[i].GetVnlMatrix() * dist.GetVnlVector() ));
+			levelSet+= sign[i] * sqrt(dot_product(dist.GetVnlVector(), this->m_Parameters.iCovariance[i].GetVnlMatrix() * dist.GetVnlVector() ));
 		}
 		assert( !std::isnan(levelSet) );
 	    // project to normal, updating transform
