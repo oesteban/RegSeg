@@ -1,0 +1,9 @@
+# PCTeX Project File, Version 1.1
+	name: 00-Main
+	texformat: latex
+	typesetmode: DVI
+	spellwordlist: american
+00-Main.tex
+	wndpos: 1 -1 -1 -1 -1 0 0 805 614
+	zorder: 0
+	edit: 1880
