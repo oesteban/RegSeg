@@ -10,7 +10,7 @@
 
 \usepackage[hyphens]{url}
 \usepackage{nameref}
-\usepackage{hyperref}
+\usepackage[breaklinks]{hyperref}
 \usepackage[USenglish]{babel}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
@@ -25,11 +25,14 @@
 \DeclareMathOperator{\dist}{dist}
 \DeclareMathOperator{\const}{Const.}
 
+\usepackage{graphicx}
+
 %
 %\tableofcontents
 %
 \mainmatter              % start of the contributions
 %
+\graphicspath{{../Figures/}}
 
 \begin{document}
 
@@ -40,7 +43,8 @@
 %                                     \toctitle is used
 %
 \author{Oscar Esteban\inst{1,2} \and Alessandro Daducci \inst{2} \and
-        Virginia Estellers \inst{2} \and Luminita Vese \inst{3} \and 
+		Meritxell Bach-Cuadra \inst{2} \and Virginia Estellers \inst{2}
+		\and Mar\'ia-Jes\'us Ledesma-Carbayo \and Luminita Vese \inst{3} \and 
         Jean-Philippe Thiran \inst{2} \and Andr\'es Santos \inst{1} \and
         Dominique Zosso \inst{2,3}}
 %

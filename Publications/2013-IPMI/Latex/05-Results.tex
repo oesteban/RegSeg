@@ -1,3 +1,32 @@
 \section{Results and discussion}
 \label{sec:results}
 %
+The proposed method successfully reverted the synthetic distortion
+field we applied to the data. With 16x16x16 control points, the
+displacements field is dense enough to correctly represent the
+synthetic field. (INCLUDE FIGURE). Figure XX shows the restored
+image and a difference map with the original model (we can also
+compute Dice indexes and that stuff).\\
+%
+
+\begin{figure}
+\begin{tabular}{ccccc}
+\includegraphics[width=0.19\textwidth]{fig_modelFA_00} &
+\includegraphics[width=0.19\textwidth]{fig_modelFA_01} &
+\includegraphics[width=0.19\textwidth]{fig_modelFA_02} &
+\includegraphics[width=0.19\textwidth]{fig_modelFA_03} &
+\includegraphics[width=0.19\textwidth]{fig_modelFA_04} \\
+\includegraphics[width=0.19\textwidth]{fig_contours_00} &
+\includegraphics[width=0.19\textwidth]{fig_contours_01} &
+\includegraphics[width=0.19\textwidth]{fig_contours_02} &
+\includegraphics[width=0.19\textwidth]{fig_contours_03} &
+\includegraphics[width=0.19\textwidth]{fig_contours_04}
+\end{tabular}
+\caption{First row presents several slices along Z axis of the \ac{fa} map obtained 
+after \ac{dti} fitting (using the original signal without simulated distortion) and
+the corresponding \ac{wm}-\ac{gm} contour. Second row contains the warped \ac{fa}
+map (using the distorted signal). The red contour corresponds to the interface
+detected after registration. In blue color, the initial \ac{wm}-\ac{gm} contour
+(the same as in previous row).}
+\label{fig:fa}
+\end{figure}
