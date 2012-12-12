@@ -105,6 +105,10 @@ public:
 	typedef typename ContourDeformationType::ConstPointer    ContourDeformationConstPointer;
 	typedef typename ContourDeformationType
 			                     ::PointDataContainerPointer PointDataContainerPointer;
+
+
+	typedef typename std::vector<ContourDeformationPointer>  ContourDeformationList;
+
 	typedef typename itk::QuadEdgeMeshToQuadEdgeMeshFilter
 			<ContourDeformationType,ContourDeformationType>  ContourCopyType;
 	typedef typename ContourCopyType::Pointer                ContourCopyPointer;
@@ -133,10 +137,10 @@ public:
 
 	void UpdateDeformationField( const DeformationFieldType* newField );
 
-	void SetShapePrior( ContourDeformationType* prior );
-	itkGetConstObjectMacro(ShapePrior, ContourDeformationType);
+	void AddShapePrior( ContourDeformationType* prior );
+	itkGetMacro(ShapePrior, ContourDeformationList);
 
-	itkGetConstObjectMacro(CurrentContourPosition, ContourDeformationType);
+	itkGetMacro(CurrentContourPosition, ContourDeformationList);
 
 	itkSetObjectMacro(DeformationField, DeformationFieldType);
 	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
@@ -153,8 +157,8 @@ protected:
 
 	mutable MeasureType m_Value;
 	DeformationFieldPointer m_DeformationField;
-	ContourDeformationPointer m_ShapePrior;
-	ContourDeformationPointer m_CurrentContourPosition;
+	ContourDeformationList m_ShapePrior;
+	ContourDeformationList m_CurrentContourPosition;
 	ContourCopyPointer m_ContourCopier;
 	WarpContourPointer m_ContourUpdater;
 	SparseToDenseFieldResamplePointer m_SparseToDenseResampler;

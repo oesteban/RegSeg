@@ -104,10 +104,14 @@ public:
 		CovarianceType iCovariance[2];
 	};
 
+	typedef typename std::vector< ParametersType >         ParametersList;
+
 	MeasureType GetValue() const;
 	DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap);
 
-	void SetParameters( ParametersType& params );
+	void SetParameters( size_t contour_id, ParametersType& params );
+
+	void AddShapePrior( ContourDeformationType* prior, ParametersType&params );
 
 	itkSetObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
@@ -118,9 +122,8 @@ protected:
 
 	void PrintSelf( std::ostream& os, itk::Indent indent) const;
 
-	ParametersType m_Parameters;
+	ParametersList m_Parameters;
 	ReferenceImageConstPointer m_ReferenceImage;
-
 
 private:
 	MahalanobisLevelSets( const Self &); // purposely not implemented

@@ -82,9 +82,22 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 void
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::SetParameters( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType& params ) {
+::AddShapePrior( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ContourDeformationType* prior,
+		         typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType& params){
+	this->Superclass::AddShapePrior( prior );
+
+	size_t id = this->m_Parameters.size();
+	this->m_Parameters.resize( id + 1 );
+	this->SetParameters( id, params );
+}
+
+template <typename TReferenceImageType, typename TCoordRepType>
+void
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+::SetParameters( size_t contour_id,
+		         typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType& params ) {
 	for ( size_t idx=0; idx<2; idx++ ) {
-		this->m_Parameters.mean[idx] = params.mean[idx];
+		this->m_Parameters[contour_id].mean[idx] = params.mean[idx];
 		CovarianceType cov = params.iCovariance[idx];
 
 		if (cov.GetVnlMatrix().rows() != cov.GetVnlMatrix().cols()) {
@@ -112,35 +125,35 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 				itD++;
 			}
 
-			if (modified) this->m_Parameters.iCovariance[idx] = e->recompose();
-			else this->m_Parameters.iCovariance[idx] = cov;
+			if (modified) this->m_Parameters[contour_id].iCovariance[idx] = e->recompose();
+			else this->m_Parameters[contour_id].iCovariance[idx] = cov;
 			delete e;
 
 			// the inverse of the covariance matrix is first computed by SVD
-			vnl_matrix_inverse< PixelValueType > inv_cov( this->m_Parameters.iCovariance[idx].GetVnlMatrix() );
+			vnl_matrix_inverse< PixelValueType > inv_cov( this->m_Parameters[contour_id].iCovariance[idx].GetVnlMatrix() );
 
 			// the determinant is then costless this way
 			PixelValueType det = inv_cov.determinant_magnitude();
 
 			if( det < 0.) {
-				itkExceptionMacro( << "det( m_Parameters.iCovariance ) < 0" );
+				itkExceptionMacro( << "det( m_Parameters[contour_id].iCovariance ) < 0" );
 			}
 
 			// FIXME Singurality Threshold for Covariance matrix: 1e-6 is an arbitrary value!!!
 			const PixelValueType singularThreshold = 1.0e-6;
 			if( det > singularThreshold ) {
 				// allocate the memory for inverse covariance matrix
-				this->m_Parameters.iCovariance[idx].GetVnlMatrix() = inv_cov.inverse();
+				this->m_Parameters[contour_id].iCovariance[idx].GetVnlMatrix() = inv_cov.inverse();
 			} else {
 				// TODO Perform cholesky diagonalization and select the semi-positive aproximation
-				//vnl_ldl_cholesky* chol = new vnl_ldl_cholesky( this->m_Parameters.iCovariance[idx].GetVnlMatrix() );
+				//vnl_ldl_cholesky* chol = new vnl_ldl_cholesky( this->m_Parameters[contour_id].iCovariance[idx].GetVnlMatrix() );
 				//vnl_vector< PixelValueType > D( chol->diagonal() );
 				//det = dot_product( D, D );
 				//vnl_matrix_inverse< PixelValueType > R (chol->upper_triangle());
-				//this->m_Parameters.iCovariance[idx].GetVnlMatrix() = R.inverse();
+				//this->m_Parameters[contour_id].iCovariance[idx].GetVnlMatrix() = R.inverse();
 			}
 		} else {
-			this->m_Parameters.iCovariance[idx](0,0)=1.0/cov(0,0);
+			this->m_Parameters[contour_id].iCovariance[idx](0,0)=1.0/cov(0,0);
 		}
 	}
 }
@@ -149,51 +162,53 @@ template <typename TReferenceImageType, typename TCoordRepType>
 typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldPointer
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::GetLevelSetsMap( MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldType* levelSetMap) {
-	// Initialize interpolator
+	// Initialize interpolators
 	InterpolatorPointer interp = InterpolatorType::New();
 	interp->SetInputImage( this->m_ReferenceImage );
+	this->m_SparseToDenseResampler->CopyImageInformation( levelSetMap );
 
-	// Compute mesh of normals
-	NormalFilterPointer normFilter = NormalFilterType::New();
-	normFilter->SetInput( this->m_CurrentContourPosition );
-	normFilter->Update();
-	ContourDeformationPointer normals = normFilter->GetOutput();
+	for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++) {
+		// Compute mesh of normals
+		NormalFilterPointer normFilter = NormalFilterType::New();
+		normFilter->SetInput( this->m_CurrentContourPosition[cont] );
+		normFilter->Update();
+		ContourDeformationPointer normals = normFilter->GetOutput();
 
-	typename ContourDeformationType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
-	typename ContourDeformationType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
+		typename ContourDeformationType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
+		typename ContourDeformationType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
-	PointValueType sign[2] = { -1.0, 1.0 };
-	PointValueType levelSet;
-	PointType  ci;          //
-	PointType  ci_prime;
-	PixelType  fi;          // Feature on ci_prime
-	typename ContourDeformationType::PixelType ni;
-	typename ContourDeformationType::PointIdentifier idx;
+		PointValueType sign[2] = { -1.0, 1.0 };
+		PointValueType levelSet;
+		PointType  ci;          //
+		PointType  ci_prime;
+		PixelType  fi;          // Feature on ci_prime
+		typename ContourDeformationType::PixelType ni;
+		typename ContourDeformationType::PointIdentifier idx;
 
-	// TODO: for all existing contours
 
-	// for all node in mesh
-	while (c_it!=c_end) {
-		levelSet = 0;
-		idx = c_it.Index();
-		ci_prime = c_it.Value();
-		fi = interp->Evaluate( ci_prime );    // Feature in c'_{i}
-		for( size_t i = 0; i<2; i++) {                 // Compute on both sides of the levelset
-			PixelType dist = fi - this->m_Parameters.mean[i];
-			// compute mahalanobis distance in position
-			levelSet+= sign[i] * sqrt(dot_product(dist.GetVnlVector(), this->m_Parameters.iCovariance[i].GetVnlMatrix() * dist.GetVnlVector() ));
+		// for all node in mesh
+		while (c_it!=c_end) {
+			levelSet = 0;
+			idx = c_it.Index();
+			ci_prime = c_it.Value();
+			fi = interp->Evaluate( ci_prime );    // Feature in c'_{i}
+			for( size_t i = 0; i<2; i++) {                 // Compute on both sides of the levelset
+				PixelType dist = fi - this->m_Parameters[cont].mean[i];
+				// compute mahalanobis distance in position
+				levelSet+= sign[i] * sqrt(dot_product(dist.GetVnlVector(), this->m_Parameters[cont].iCovariance[i].GetVnlMatrix() * dist.GetVnlVector() ));
+			}
+			assert( !std::isnan(levelSet) );
+			// project to normal, updating transform
+			normals->GetPointData( idx, &ni );         // Normal ni in point c'_i
+			ni*=levelSet;
+			normals->SetPointData( idx, ni );
+			++c_it;
 		}
-		assert( !std::isnan(levelSet) );
-	    // project to normal, updating transform
-		normals->GetPointData( idx, &ni );         // Normal ni in point c'_i
-		ni*=levelSet;
-		normals->SetPointData( idx, ni );
-		++c_it;
+
+		this->m_SparseToDenseResampler->SetInput( cont, normals );
 	}
 
 	// Interpolate sparse velocity field to targetDeformation
-	this->m_SparseToDenseResampler->CopyImageInformation( levelSetMap );
-	this->m_SparseToDenseResampler->SetInput( normals );
 	this->m_SparseToDenseResampler->Update();
 	return this->m_SparseToDenseResampler->GetOutput();
 

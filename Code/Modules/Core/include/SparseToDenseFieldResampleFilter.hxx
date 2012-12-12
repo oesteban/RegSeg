@@ -57,8 +57,18 @@ SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::SparseToDenseFieldRe
 	m_DefaultPixelValue = NumericTraits<ValueType>::ZeroValue(
 			m_DefaultPixelValue);
 	m_IsPhiInitialized = false;
+	m_N = 0;
+	m_k = 0;
+};
+
+template<class TInputMesh, class TOutputImage>
+void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::
+AddControlPoints( const typename SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::InputMeshType* prior) {
+	for( size_t i = 0; i<prior->GetNumberOfPoints();i++ ) {
+		this->m_ControlPoints.push_back( prior->GetPoint(i));
+	}
+	this->m_N = this->m_ControlPoints.size();
 }
-;
 
 template<class TInputMesh, class TOutputImage>
 void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::PrintSelf(
@@ -106,7 +116,7 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::SetOutputOrigin
  */
 template<class TInputMesh, class TOutputImage>
 void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateData() {
-	if ( m_ShapePrior.IsNull() ) {
+	if ( m_N == 0 ) {
 		itkExceptionMacro(<< "Shape priors not set");
 	}
 
@@ -116,50 +126,51 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateData() 
 		m_DefaultPixelValue.Fill(0);
 	}
 
-	this->GetOutput()->FillBuffer( this->m_DefaultPixelValue );
+//	this->GetOutput()->FillBuffer( this->m_DefaultPixelValue );
 
 	m_k = this->GetOutput()->GetLargestPossibleRegion().GetNumberOfPixels();
-	m_N = this->m_ShapePrior->GetNumberOfPoints();
+
 	for (size_t i = 0; i < OutputImageDimension; i++ ) m_LevelSetVector[i] = SpeedsVector( m_N );
+	size_t nConts = this->GetNumberOfIndexedInputs();
 
 	if (!m_IsPhiInitialized) {
-		m_Phi = WeightsMatrix(m_k, m_N);
-		// Walk the output region
-		typedef ImageRegionIteratorWithIndex<TOutputImage> OutputIterator;
-		OutputIterator outIt(this->GetOutput(),
-				this->GetOutput()->GetLargestPossibleRegion());
+		for( size_t cont = 0; cont< nConts; cont++ ) {
+			m_Phi = WeightsMatrix(m_k, m_N);
+			// Walk the output region
+			size_t row, col;
+			double dist, wi;
+			OutputPointType ci, pi;
 
-		size_t row, col;
-		double dist, wi;
-		OutputPointType ci, pi;
+			for( row = 0; row < this->m_k; row++ ) {
+				this->GetOutput()->TransformIndexToPhysicalPoint(this->GetOutput()->ComputeIndex(row), pi);
 
-		for( row = 0; row < this->m_k; row++ ) {
-			this->GetOutput()->TransformIndexToPhysicalPoint(this->GetOutput()->ComputeIndex(row), pi);
-
-			for (col = 0; col < this->m_N; col++) {
-				// Get point
-				ci = this->m_ShapePrior->GetPoint(col); // this->m_Mesh
-
-				// TODO Extract RBF from here (use a functor?)
-				// Compute weight i: wi(x) (inverse distance)
-				dist = (ci - pi).GetNorm();
-				wi = (dist < vnl_math::eps) ? 1.0 : (1.0 / vcl_pow(dist, 2));
-				if (wi > 1e-3) {
-					m_Phi.put(row, col, wi);
+				for (col = 0; col < this->m_N; col++) {
+					// TODO Extract RBF from here (use a functor?)
+					// Compute weight i: wi(x) (inverse distance)
+					dist = (this->m_ControlPoints[col] - pi).GetNorm();
+					wi = (dist < vnl_math::eps) ? 1.0 : (1.0 / vcl_pow(dist, 2));
+					if (wi > 1e-3) {
+						m_Phi.put(row, col, wi);
+					}
 				}
 			}
 		}
 		m_IsPhiInitialized = true;
 	}
 
-	OutputPixelType ni;
-	for (size_t el = 0; el < this->m_N; el++) {
-		this->GetInput(0)->GetPointData( el, &ni );
-		for ( size_t i = 0; i < OutputImageDimension; i++ ) {
-			if( std::isnan( ni[i] ))
-				ni[i] = 0;
-			m_LevelSetVector[i].put( el, ni[i] );
+	size_t contsOffset = 0;
+	for( size_t cont = 0; cont< nConts; cont++ ) {
+		OutputPixelType ni;
+		size_t nPoints = this->GetInput(cont)->GetNumberOfPoints();
+		for (size_t el = 0; el < nPoints; el++) {
+			this->GetInput(cont)->GetPointData( el, &ni );
+
+			for ( size_t i = 0; i < OutputImageDimension; i++ ) {
+				if( std::isnan( ni[i] )) ni[i] = 0;
+				m_LevelSetVector[i].put( contsOffset + el, ni[i] );
+			}
 		}
+		contsOffset += nPoints;
 	}
 
 	double norms = 0.0;
@@ -181,6 +192,7 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateData() 
 
     bool isZero;
     OutputPixelType* buffer = this->GetOutput()->GetBufferPointer();
+    OutputPixelType ni;
     for( size_t k = 0; k<m_k; k++ ) {
     	ni = m_DefaultPixelValue;
     	isZero = true;

@@ -54,15 +54,17 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
-::SetShapePrior( typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourDeformationType* prior ) {
-	this->m_CurrentContourPosition = prior;
+::AddShapePrior( typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourDeformationType* prior ) {
+	this->m_CurrentContourPosition.push_back( prior );
 	/*
 	this->m_ContourCopier = ContourCopyType::New();
 	m_ContourCopier->SetInput( prior );
 	this->m_ContourCopier->Update();
 	this->m_ShapePrior = m_ContourCopier->GetOutput();*/
 
-    this->m_ShapePrior = ContourDeformationType::New();
+    this->m_ShapePrior.push_back( ContourDeformationType::New() );
+    ContourDeformationPointer shapePrior = this->m_ShapePrior.back();
+
 	typename ContourDeformationType::PointsContainerConstIterator u_it = prior->GetPoints()->Begin();
     typename ContourDeformationType::PointsContainerConstIterator u_end = prior->GetPoints()->End();
 	VectorType zero = itk::NumericTraits<VectorType>::Zero;
@@ -72,8 +74,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		p = u_it.Value();
 		newP.SetPoint( p );
 		newP.SetEdge( p.GetEdge() );
-		this->m_ShapePrior->SetPointData(
-				this->m_ShapePrior->AddPoint( newP ), zero);
+		shapePrior->SetPointData( shapePrior->AddPoint( newP ), zero);
 		++u_it;
 	}
 
@@ -84,11 +85,11 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	while( c_it!=c_end ) {
 		typename ContourDeformationType::CellType::CellAutoPointer cellCopy;
 		c_it.Value()->MakeCopy( cellCopy );
-		this->m_ShapePrior->SetCell( i++ ,cellCopy );
+		shapePrior->SetCell( i++ ,cellCopy );
 		++c_it;
 	}
 
-	this->m_SparseToDenseResampler->SetShapePrior( this->m_ShapePrior );
+	this->m_SparseToDenseResampler->AddControlPoints( shapePrior );
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -124,30 +125,33 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	polyDataWriter->SetFileName( "contour_pre.vtk" );
 	polyDataWriter->Update();
 	*/
-	typename ContourDeformationType::PointsContainerPointer curr_points = this->m_CurrentContourPosition->GetPoints();
-	typename ContourDeformationType::PointsContainerIterator p_end = curr_points->End();
-	typename ContourDeformationType::PointsContainerPointer shape_points = this->m_ShapePrior->GetPoints();
-	typename ContourDeformationType::PointsContainerIterator shape_it = shape_points->Begin();
 
-	// For all the points in the mesh
-	PointType currentPoint,newPoint;
-	for(typename ContourDeformationType::PointsContainerIterator p_it = curr_points->Begin(); p_it != p_end; ++p_it, ++shape_it) {
-		currentPoint = p_it.Value();
-		// Interpolate the value of the field in the point
-		VectorType desp = interp->Evaluate( currentPoint );
-		// Add vector to the point
-		if( desp.GetNorm()>0 ) {
-			//newPoint.SetPoint( currentPoint + desp );
-			newPoint.SetPoint( shape_it.Value() + desp );
-			newPoint.SetEdge( currentPoint.GetEdge() );
+	for( size_t cont = 0; cont < this->m_ShapePrior.size(); cont++ ) {
+		typename ContourDeformationType::PointsContainerPointer curr_points = this->m_CurrentContourPosition[cont]->GetPoints();
+		typename ContourDeformationType::PointsContainerIterator p_end = curr_points->End();
+		typename ContourDeformationType::PointsContainerPointer shape_points = this->m_ShapePrior[cont]->GetPoints();
+		typename ContourDeformationType::PointsContainerIterator shape_it = shape_points->Begin();
 
-			for ( size_t i = 0; i< Dimension; i++ ) {
-				if( newPoint[i] < origin[i] || newPoint[i]> end[i] ) {
-					itkExceptionMacro( << "Contour is outside image regions after update" );
+		// For all the points in the mesh
+		PointType currentPoint,newPoint;
+		for(typename ContourDeformationType::PointsContainerIterator p_it = curr_points->Begin(); p_it != p_end; ++p_it, ++shape_it) {
+			currentPoint = p_it.Value();
+			// Interpolate the value of the field in the point
+			VectorType desp = interp->Evaluate( currentPoint );
+			// Add vector to the point
+			if( desp.GetNorm()>0 ) {
+				//newPoint.SetPoint( currentPoint + desp );
+				newPoint.SetPoint( shape_it.Value() + desp );
+				newPoint.SetEdge( currentPoint.GetEdge() );
+
+				for ( size_t i = 0; i< Dimension; i++ ) {
+					if( newPoint[i] < origin[i] || newPoint[i]> end[i] ) {
+						itkExceptionMacro( << "Contour is outside image regions after update" );
+					}
 				}
-			}
 
-			this->m_CurrentContourPosition->SetPoint( p_it.Index(), newPoint );
+				this->m_CurrentContourPosition[cont]->SetPoint( p_it.Index(), newPoint );
+			}
 		}
 	}
 }

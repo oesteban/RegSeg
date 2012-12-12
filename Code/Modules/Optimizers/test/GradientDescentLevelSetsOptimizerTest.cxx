@@ -133,8 +133,7 @@ int main(int argc, char *argv[]) {
 
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( im );
-	ls->SetShapePrior( initialContour );
-	ls->SetParameters(params);
+	ls->AddShapePrior( initialContour, params );
 
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
@@ -142,7 +141,8 @@ int main(int argc, char *argv[]) {
 	opt->SetNumberOfIterations(10);
 	opt->Start();
 
-	typename ContourDeformationType::ConstPointer resultContour = ls->GetCurrentContourPosition();
+
+	typename ContourDeformationType::Pointer resultContour = ls->GetCurrentContourPosition()[0];
 	typename ContourDeformationType::PointsContainerConstPointer points3 = resultContour->GetPoints();
 	typename ContourDeformationType::PointsContainerConstIterator u_it3 = points3->Begin();
 	u_it2 = points2->Begin();
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
 	std::cout << "Final MSE=" << finalDistance / refContour->GetNumberOfPoints() << std::endl;
 
 	WriterType::Pointer polyDataWriter = WriterType::New();
-	polyDataWriter->SetInput( ls->GetCurrentContourPosition() );
+	polyDataWriter->SetInput( ls->GetCurrentContourPosition()[0] );
 	polyDataWriter->SetFileName( "result-registered.vtk" );
 	polyDataWriter->Update();
 

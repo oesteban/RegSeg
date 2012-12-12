@@ -115,14 +115,13 @@ int main(int argc, char *argv[]) {
 
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( im );
-	ls->SetShapePrior( ellipse );
 
 	typename LevelSetsType::ParametersType params;
 	params.mean[0] = 255;
 	params.mean[1] = 127;
 	params.iCovariance[0] = cov;
 	params.iCovariance[2] = cov;
-	ls->SetParameters(params);
+	ls->AddShapePrior( ellipse, params );
 	ls->GetLevelSetsMap(df);
 
 	Writer::Pointer writer = Writer::New();

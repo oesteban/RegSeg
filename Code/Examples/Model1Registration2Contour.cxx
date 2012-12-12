@@ -1,6 +1,6 @@
 // --------------------------------------------------------------------------
-// File:             Model1Registration.cxx
-// Date:             12/04/2012
+// File:             Model1Registration2Contour.cxx
+// Date:             12/12/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
 // License:          BSD
@@ -111,24 +111,38 @@ int main(int argc, char *argv[]) {
 	ChannelType::Pointer im = r->GetOutput();
 
 
-	ReaderType::Pointer polyDataReader = ReaderType::New();
-	polyDataReader->SetFileName( std::string( DATA_DIR ) + "wm_prior.vtk" );
-	polyDataReader->Update();
-	ContourDisplacementFieldPointer initialContour = polyDataReader->GetOutput();
-
-	typename ContourDeformationType::PointsContainerPointer points = initialContour->GetPoints();
-	typename ContourDeformationType::PointsContainerIterator u_it = points->Begin();
-
 	VectorType zero = itk::NumericTraits<VectorType>::Zero;
-	while( u_it != points->End() ) {
-		initialContour->SetPointData( u_it.Index(),zero);
-		++u_it;
+
+	ReaderType::Pointer polyDataReader1 = ReaderType::New();
+	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "wm_prior.vtk" );
+	polyDataReader1->Update();
+	ContourDisplacementFieldPointer initialContour1 = polyDataReader1->GetOutput();
+
+	typename ContourDeformationType::PointsContainerPointer points1 = initialContour1->GetPoints();
+	typename ContourDeformationType::PointsContainerIterator u_it1 = points1->Begin();
+
+	while( u_it1 != points1->End() ) {
+		initialContour1->SetPointData( u_it1.Index(),zero);
+		++u_it1;
+	}
+
+	ReaderType::Pointer polyDataReader2 = ReaderType::New();
+	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "csf_prior.vtk" );
+	polyDataReader2->Update();
+	ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
+
+	typename ContourDeformationType::PointsContainerPointer points2 = initialContour2->GetPoints();
+	typename ContourDeformationType::PointsContainerIterator u_it2 = points2->Begin();
+
+	while( u_it2 != points2->End() ) {
+		initialContour2->SetPointData( u_it2.Index(),zero);
+		++u_it2;
 	}
 
 	// Initialize tissue signatures
 	MeanType mean1; // This is GM
 	mean1[0] = 0.11941234;
-	mean1[1] = 0.00089523;
+	mean1[2] = 0.00089523;
 	CovarianceType cov1;
 	cov1(0,0) =  5.90117156e-04;
 	cov1(0,1) = -1.43226633e-06;
@@ -143,11 +157,26 @@ int main(int argc, char *argv[]) {
 	cov2(1,0) = -6.89610616e-06;
 	cov2(1,1) =  1.02706528e-08;
 
-	typename LevelSetsType::ParametersType params;
-	params.mean[0] = mean2;
-	params.mean[1] = mean1;
-	params.iCovariance[0] = cov2;
-	params.iCovariance[2] = cov1;
+	MeanType mean3; // This is CSF
+	mean3[0] = 0.10283652;
+	mean3[1] = 0.00298646;
+	CovarianceType cov3;
+	cov3(0,0) =  1.19084185e-03;
+	cov3(0,1) =  2.22414814e-07;
+	cov3(1,0) =  2.22414814e-07;
+	cov3(1,1) =  1.56537816e-08;
+
+	typename LevelSetsType::ParametersType params1;
+	params1.mean[0] = mean2;
+	params1.mean[1] = mean1;
+	params1.iCovariance[0] = cov2;
+	params1.iCovariance[2] = cov1;
+
+	typename LevelSetsType::ParametersType params2;
+	params2.mean[0] = mean3;
+	params2.mean[1] = mean2;
+	params2.iCovariance[0] = cov3;
+	params2.iCovariance[2] = cov2;
 
 	// Initialize deformation field
 	DeformationFieldType::Pointer df = DeformationFieldType::New();
@@ -164,7 +193,8 @@ int main(int argc, char *argv[]) {
 	// Initialize LevelSet function
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
-	ls->AddShapePrior( initialContour, params );
+	ls->AddShapePrior( initialContour1, params1 );
+	ls->AddShapePrior( initialContour2, params2 );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
@@ -180,6 +210,12 @@ int main(int argc, char *argv[]) {
 	polyDataWriter->SetInput( ls->GetCurrentContourPosition()[0] );
 	polyDataWriter->SetFileName( "deformed2-wm.vtk" );
 	polyDataWriter->Update();
+
+	// Write final result out
+	WriterType::Pointer polyDataWriter2 = WriterType::New();
+	polyDataWriter2->SetInput( ls->GetCurrentContourPosition()[1] );
+	polyDataWriter2->SetFileName( "deformed2-csf.vtk" );
+	polyDataWriter2->Update();
 
 	DeformationWriter::Pointer w = DeformationWriter::New();
 	w->SetInput( opt->GetDeformationField() );
@@ -215,3 +251,6 @@ int main(int argc, char *argv[]) {
 	w3->SetFileName( "FAunwarped.nii.gz" );
 	w3->Update();*/
 }
+
+
+

@@ -71,6 +71,7 @@ public:
 	typedef typename Superclass::InputMeshType             InputMeshType;
 	typedef typename Superclass::InputMeshPointer          InputMeshPointer;
 	typedef typename Superclass::InputMeshConstPointer     InputMeshConstPointer;
+	typedef typename Superclass::MeshPointType             MeshPointType;
 	typedef typename Superclass::OutputImageType           OutputImageType;
 	typedef typename Superclass::OutputImagePointer        OutputImagePointer;
 	typedef typename Superclass::OutputImageConstPointer   OutputImageConstPointer;
@@ -93,23 +94,17 @@ public:
 			< TInputMesh, TOutputImage >                   InterpolatorType;
 	typedef typename InterpolatorType::Pointer             InterpolatorPointerType;
 
+	typedef typename std::vector<MeshPointType>      ControlPointList;
+
 
 	itkStaticConstMacro( OutputImageDimension, unsigned int, TOutputImage::ImageDimension );
 
-
-	virtual void SetInput( const InputMeshType *input ) {
-		this->SetInput( 0, input );
-	}
-	virtual void SetInput( unsigned int, const InputMeshType *input) {
-		this->m_Mesh = input;
-	}
-
-	const InputMeshType*   GetInput(void) { return this->GetInput(0); }
-	const InputMeshType*   GetInput(unsigned int idx) { return this->m_Mesh; }
 	//const OutputImageType* GetOutput( void ) { return this->GetOutput(0); }
 
-	itkSetConstObjectMacro( ShapePrior, InputMeshType );
-	itkGetConstObjectMacro( ShapePrior, InputMeshType );
+	void AddControlPoints( const InputMeshType* prior );
+	itkGetMacro( ControlPoints, ControlPointList );
+	//itkSetConstObjectMacro( ShapePrior, InputMeshType );
+	//itkGetConstObjectMacro( ShapePrior, InputMeshType );
 
 	/** Set the interpolator function.  The default is
 	 * itk::VectorLinearInterpolateImageFunction<InputImageType, TInterpolatorPrecisionType>.  */
@@ -188,7 +183,8 @@ private:
 	OutputIndexType                 m_OutputStartIndex;
 	OutputImageSizeType             m_OutputSize;
 
-	InputMeshConstPointer           m_ShapePrior;
+	//InputMeshConstPointer           m_ShapePrior;
+	ControlPointList                m_ControlPoints;
 
 	WeightsMatrix                   m_Phi;
 	SpeedsVector                    m_LevelSetVector[OutputImageDimension];
