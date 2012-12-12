@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 	size.Fill( 50 );
 	ResamplerType::Pointer res = ResamplerType::New();
 	res->SetInput( svf );
-	res->SetShapePrior( svf );
+	res->AddControlPoints( svf );
 	res->SetOutputSize( size );
 	res->SetOutputSpacing( 2.0 );
 	res->Update();

@@ -71,17 +71,31 @@ public:
 	typedef          TInputMesh                            InputMeshType;
 	typedef typename InputMeshType::Pointer                InputMeshPointer;
 	typedef typename InputMeshType::ConstPointer           InputMeshConstPointer;
+	typedef typename InputMeshType::PointType              MeshPointType;
 	typedef          TOutputImage                          OutputImageType;
 	typedef typename OutputImageType::Pointer              OutputImagePointer;
 	typedef typename OutputImageType::ConstPointer         OutputImageConstPointer;
 	typedef typename OutputImageType::SizeType             OutputImageSizeType;
 	typedef typename OutputImageType::PixelType            ValueType;
 
+	typedef typename std::vector< InputMeshConstPointer >  InputMeshList;
+
 	itkStaticConstMacro( OutputImageDimension, unsigned int, TOutputImage::ImageDimension );
 
 
-	void SetInput( const InputMeshType *input ) { m_Mesh = input; }
-	const InputMeshType* GetInput(void) { return m_Mesh; }
+	virtual void SetInput( const InputMeshType *input ) {
+		this->SetInput( 0, input );
+	}
+	virtual void SetInput( size_t idx, const InputMeshType *input) {
+		if ( idx >= m_Mesh.size() ) m_Mesh.resize( idx+1 );
+
+		this->m_Mesh[idx] = input;
+	}
+
+	const InputMeshType*   GetInput(void) { return this->GetInput(0); }
+	const InputMeshType*   GetInput(unsigned int idx) { return this->m_Mesh[idx]; }
+
+	size_t GetNumberOfIndexedInputs() { return m_Mesh.size(); }
 
 protected:
 	MeshToImageFilter(){};
@@ -90,7 +104,7 @@ protected:
 	//virtual void GenerateData();
 	//virtual void PrintSelf( std::ostream &os, Indent indent) const;
 
-	InputMeshConstPointer m_Mesh;
+	InputMeshList m_Mesh;
 
 private:
 	MeshToImageFilter( const Self& ); // purposely not implemented
