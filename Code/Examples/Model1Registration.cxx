@@ -98,12 +98,12 @@ int main(int argc, char *argv[]) {
 	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
 
 	ImageReader::Pointer r = ImageReader::New();
-	r->SetFileName( std::string( DATA_DIR ) + "dtifit__FA.nii.gz" );
+	r->SetFileName( std::string( DATA_DIR ) + "deformed2_FA.nii.gz" );
 	r->Update();
 	comb->SetInput(0,r->GetOutput());
 
 	ImageReader::Pointer r2 = ImageReader::New();
-	r2->SetFileName( std::string( DATA_DIR ) + "dtifit__MD.nii.gz" );
+	r2->SetFileName( std::string( DATA_DIR ) + "deformed2_MD.nii.gz" );
 	r2->Update();
 	comb->SetInput(1,r2->GetOutput());
 	comb->Update();
@@ -127,21 +127,27 @@ int main(int argc, char *argv[]) {
 
 	// Initialize tissue signatures
 	MeanType mean1; // This is GM
-	mean1[0] = 0.12627581;
-	mean1[1] = 0.00087993;
+	mean1[0] = 0.11941234;
+	mean1[1] = 0.00089523;
 	CovarianceType cov1;
-	cov1(0,0) = 6.35763907e-03;
-	cov1(0,1) = -1.41017707e-06;
-	cov1(1,0) = -1.41017707e-06;
-	cov1(1,1) = 2.29480355e-08;
+	cov1(0,0) =  5.90117156e-04;
+	cov1(0,1) = -1.43226633e-06;
+	cov1(1,0) = -1.43226633e-06;
+	cov1(1,1) =  1.03718252e-08;
 	MeanType mean2; // This is WM
-	mean2[0] = 7.66597807e-01;
-	mean2[1] = 7.04538717e-04;
+	mean2[0] = 7.77335644e-01;
+	mean2[1] = 6.94673450e-04;
 	CovarianceType cov2;
-	cov2(0,0) = 1.10631538e-02;
-	cov2(0,1) = -1.24550716e-05;
-	cov2(1,0) = -1.24550716e-05;
-	cov2(1,1) = 2.90223001e-08;
+	cov2(0,0) =  4.85065832e-03;
+	cov2(0,1) = -6.89610616e-06;
+	cov2(1,0) = -6.89610616e-06;
+	cov2(1,1) =  1.02706528e-08;
+
+	typename LevelSetsType::ParametersType params;
+	params.mean[0] = mean2;
+	params.mean[1] = mean1;
+	params.iCovariance[0] = cov2;
+	params.iCovariance[2] = cov1;
 
 	// Initialize deformation field
 	DeformationFieldType::Pointer df = DeformationFieldType::New();
@@ -159,8 +165,7 @@ int main(int argc, char *argv[]) {
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
 	ls->SetShapePrior( initialContour );
-	ls->SetParameters(mean2,cov2, true);    // mean2 is INSIDE
-	ls->SetParameters(mean1,cov2, false);   // mean2 is OUTSIDE
+	ls->SetParameters( params );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
@@ -174,12 +179,12 @@ int main(int argc, char *argv[]) {
 	// Write final result out
 	WriterType::Pointer polyDataWriter = WriterType::New();
 	polyDataWriter->SetInput( ls->GetCurrentContourPosition() );
-	polyDataWriter->SetFileName( "result-registered.vtk" );
+	polyDataWriter->SetFileName( "deformed2-wm.vtk" );
 	polyDataWriter->Update();
 
 	DeformationWriter::Pointer w = DeformationWriter::New();
 	w->SetInput( opt->GetDeformationField() );
-	w->SetFileName( "outfield.nii.gz" );
+	w->SetFileName( "deformed2_field.nii.gz" );
 	w->Update();
 
 	DisplacementResamplerType::Pointer p = DisplacementResamplerType::New();
@@ -192,7 +197,7 @@ int main(int argc, char *argv[]) {
 	p->Update();
 	DeformationWriter::Pointer w2 = DeformationWriter::New();
 	w2->SetInput( p->GetOutput() );
-	w2->SetFileName( "outfield-HD.nii.gz" );
+	w2->SetFileName( "deformed2_fieldHD.nii.gz" );
 	w2->Update();
 /*
 	DeformationFieldType::Pointer dfield = DeformationFieldType::New();
