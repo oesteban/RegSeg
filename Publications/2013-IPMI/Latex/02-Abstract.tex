@@ -1,6 +1,14 @@
-
-\begin{abstract}
-Connectomics is the study of fiber connections in the brain. High-quality reconstructions of the connectome from diffusion weighted MR acquisitions require a precise delineation of pial and grey-matter-white-matter interfaces. Furthermore, to enable significant group studies, these surfaces must be located and parcellated consistently across subjects. Precise segmentation and parcellation are readily available on anatomical images, such as T1-weighted MRI. Diffusion weighted images (DWI), however, typically have drastically lower resolution and exhibit more important distortions. Here, we propose a joint segmentation-registration framework that exploits the detailed and consistent anatomy extracted from anatomical MRI as strong shape-prior for DW segmentation. We use the Mumford-Shah (or active contours without edges) model to look for a regular deformation field that optimally maps the shape prior on the multivariate features in diffusion space. Preliminary results on synthetic images and simluated DWI confirm the effectiveness of our approach.
-%\dots
-\keywords{diffusion weighted imaging, connectomics, echo planar imaging, magnetic resonance, segmentation, registration, distortion correction}
-\end{abstract}
+Whole-brain connectivity analysis on diffusion weighted MR images (DWI) involves
+a large set of processing techniques. Particularly, an accurate white matter (WM)
+segmentation is required, with precise location of the interface with grey matter.
+High-standard segmentation and surface parcellations are readily available on 
+anatomical images, such as T1-weighted MRI. However DWI typically have drastically 
+lower resolution, and generally exhibit important distortions. Here, we propose a 
+segmentation-registration framework that exploits the detailed anatomy extracted 
+from anatomical MRI as reference shape-prior for DWI segmentation. We use the 
+active contours without edges model to look for a deformation field that optimally 
+maps the shape prior on the multivariate features in diffusion space. This joint
+approach attends the intrinsic coupling of segmentation, parcellation, and distortion 
+correction problems to finally obtain reliable connectivity networks. Preliminary
+results on synthetic datasets and simulated DWI confirm the effectiveness of our 
+approach.
