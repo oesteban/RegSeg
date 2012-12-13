@@ -195,7 +195,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 			for( size_t i = 0; i<2; i++) {                 // Compute on both sides of the levelset
 				PixelType dist = fi - this->m_Parameters[cont].mean[i];
 				// compute mahalanobis distance in position
-				levelSet+= sign[i] * sqrt(dot_product(dist.GetVnlVector(), this->m_Parameters[cont].iCovariance[i].GetVnlMatrix() * dist.GetVnlVector() ));
+				levelSet+= sign[i] * dot_product(dist.GetVnlVector(), this->m_Parameters[cont].iCovariance[i].GetVnlMatrix() * dist.GetVnlVector() );
 			}
 			assert( !std::isnan(levelSet) );
 			// project to normal, updating transform

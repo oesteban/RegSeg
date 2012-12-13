@@ -148,6 +148,15 @@ public:
 //	itkGetConstReferenceMacro(ReturnBestParametersAndValue, bool);
 //	itkBooleanMacro(ReturnBestParametersAndValue);
 
+	itkSetMacro( Alpha, InternalComputationValueType );
+	itkGetConstMacro( Alpha, InternalComputationValueType );
+
+	itkSetMacro( Beta, InternalComputationValueType );
+	itkGetConstMacro( Beta, InternalComputationValueType );
+
+	itkSetMacro( StepSize, InternalComputationValueType );
+	itkGetConstMacro( StepSize, InternalComputationValueType );
+
 	/** Start and run the optimization */
 	virtual void Start();
 
