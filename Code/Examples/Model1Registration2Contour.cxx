@@ -170,18 +170,18 @@ int main(int argc, char *argv[]) {
 	params1.mean[0] = mean2;
 	params1.mean[1] = mean1;
 	params1.iCovariance[0] = cov2;
-	params1.iCovariance[2] = cov1;
+	params1.iCovariance[1] = cov1;
 
 	typename LevelSetsType::ParametersType params2;
 	params2.mean[0] = mean3;
 	params2.mean[1] = mean2;
 	params2.iCovariance[0] = cov3;
-	params2.iCovariance[2] = cov2;
+	params2.iCovariance[1] = cov2;
 
 	// Initialize deformation field
 	DeformationFieldType::Pointer df = DeformationFieldType::New();
 	DeformationFieldType::SizeType imSize = im->GetLargestPossibleRegion().GetSize();
-	DeformationFieldType::SizeType size; size.Fill(16);
+	DeformationFieldType::SizeType size; size.Fill(32);
 	DeformationFieldType::SpacingType spacing = im->GetSpacing();
 	for( size_t i = 0; i<3; i++) spacing[i] = 1.0*imSize[i]/size[i];
 	df->SetRegions( size );
@@ -200,7 +200,10 @@ int main(int argc, char *argv[]) {
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetDeformationField( df );
-	opt->SetNumberOfIterations(200);
+	opt->SetNumberOfIterations(1000);
+	opt->SetAlpha( 1e-4 );
+	opt->SetBeta( 1e-5 );
+	opt->SetStepSize( 1.0 );
 
 	// Start
 	opt->Start();
