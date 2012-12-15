@@ -1,0 +1,4 @@
+[ 0.2363 ] # CSF
+[ 0.3452 ] # GM
+[ 0.7806 ] # WM
+# Uniform noise level 5.4%
