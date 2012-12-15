@@ -1,40 +1,6 @@
 \section{Methods}
 \label{sec:methods}
 %
-\subsection{Simulated datasets}
-%
-As described in \autoref{sec:introduction}, the general situation in
-the connectivity pipelines consists on having 
-a reliable segmentation obtained from the high resolution \ac{t1} 
-reference image. Therefore, a precise location of the tissue interfaces
-of interest is available in a reference space. Given that there is no 
-interest on the anatomical reference segmentation,
-we directly obtained the shape priors from the models. \\
-
-On the other hand, the target \ac{dwi} data is characterized by its
-low resolution (typically around $2.2x2.2x3mm^3$). Depending on the
-posterior reconstruction methodology and the angular resolution
-intended, the \ac{dwi} raw data has to be processed in order to
-extract the information in a manageable manner. Particularly, we
-will use the \ac{fa} and \ac{md} maps for convenience.
-Whereas \ac{fa} describes the \emph{shape} of diffusion, 
-the \ac{md} depicts the \emph{manitude} of the process. 
-There exist two main reasons to justify their choice. 
-First, they are well-understood and standardized in clinical routine.
-Second, together they contain most of the information that is
-usually extracted from the \ac{dwi}-derived scalar maps. \\
-
-In order that demonstrating the functionality of the proposed
-methodology and characterize its possibilities, we developed two
-synthetic models and simulated their corresponding \ac{dwi}
-raw signal as described in \citep{tuch_q-ball_2004}. 
-(HERE WE NEED A GOOD DESCRIPTION OF THE DATA, directions, resolution, etc)
-. The first model consists of several spherical shapes emulating
-the different brain tissues (see \autoref{fig:fa}, first row). 
-The second model is based on the BrainWeb dataset.
-We reconstructed the \ac{dwi} signal with standard procedures to approximate the
-environment to the real one at maximum. \\
-
 \subsection{\acl{acwe}-like variational segmentation model}
 %
 Let us denote $\{c_i\}_{i=1..N_c}$ the nodes of a shape prior surface. In
@@ -131,14 +97,3 @@ u^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{u^t/\tau
 - \sum_{i=1}^{N_c} \left[ \Delta E(f(c_i')) \hat{n}_{c_i'} \Psi_{c_i}(x) \right]  \}}{\mathcal{F}\{(1/\tau+\alpha)\mathcal{I}-\beta\Delta\}} \right\}
 \end{equation}
 %
-
-\subsection{Experiment}
-%
-For both models, we created manually a sound distortion visually similar
-to real \ac{epi} distortions. We interpolated the distortion to a 
-dense deformation field, necessary for warping the raw \ac{dwi} simulated
-data. Once the signal was deformed, we proceeded to reconstruct the
-\ac{dti} and subsequently obtained the scalars of interest (\ac{fa}, \ac{md}) and estimated their parameters on the model.\\
-
-We evaluate the performance of our methodology to estimate the deformation
-field and compare it to the original synthetic deformation field applied to the data.
