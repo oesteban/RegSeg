@@ -1,14 +1,14 @@
-Whole-brain connectivity analysis on diffusion weighted MR images (DWI) involves
-a large set of processing techniques. Particularly, an accurate white matter (WM)
-segmentation is required, with precise location of the interface with grey matter.
-High-standard segmentation and surface parcellations are readily available on 
-anatomical images, such as T1-weighted MRI. However DWI typically have drastically 
-lower resolution, and generally exhibit important distortions. Here, we propose a 
-segmentation-registration framework that exploits the detailed anatomy extracted 
-from anatomical MRI as reference shape-prior for DWI segmentation. We use the 
-active contours without edges model to look for a deformation field that optimally 
-maps the shape prior on the multivariate features in diffusion space. This joint
-approach attends the intrinsic coupling of segmentation, parcellation, and distortion 
-correction problems to finally obtain reliable connectivity networks. Preliminary
-results on synthetic datasets and simulated DWI confirm the effectiveness of our 
-approach.
+In whole-brain connectivity analysis of diffusion weighted MR images (DWI),
+an accurate delineation of the white-matter and grey-matter surfaces is required.
+While high-standard segmentation is readily available for anatomical MRI, such 
+as T1-weighted, DWI typically have drastically lower resolution and strong 
+geometrical distortions. We propose a DWI segmentation-registration framework 
+that exploits the detailed anatomy extracted from anatomical MRI as shape-prior.
+We use an ``active contours without edges''-like model to look for a deformation
+field that optimally maps the shape prior on the multivariate features 
+in diffusion space. This joint approach reflects the intrinsic coupling of 
+segmentation and distortion correction. Complementary, a precise and consistent
+cortical parcellation on DWI is straightforward by projection from T1 space. Thus,
+we expect to improve the reliability and robustness of the resulting connectivity 
+networks and their comparability within and across subjects. Preliminary results 
+on synthetic datasets and simulated DWI confirm the effectiveness of our approach.
