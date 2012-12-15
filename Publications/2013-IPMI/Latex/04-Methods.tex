@@ -82,18 +82,18 @@ and making the right hand side semi-implicit in the
 regularization terms:
 %
 \begin{align}
-\frac{u^{t+1}-u^t}{\tau} &= - \sum_{i=1}^{N_c} \left[ \Delta E(f(c_i'))  \hat{n}_{c_i'} \Psi_{c_i}(x) \right] -\alpha u^{t+1} + \beta\Delta u^{t+1}
+\frac{u^{t+1}-u^t}{\tau} &= - \sum_{i=1}^{N_c} \left[ e(f(c_i'))  \hat{n}_{c_i'} \Psi_{c_i}(x) \right] -\alpha u^{t+1} + \beta\Delta u^{t+1}
 \end{align}
 %
 where the data terms remain functions of the current estimate 
 $u^t$, thus $c_i' = c_i'(u^t)$. For simplicity on notation, we 
 restricted the number of priors to only 1. We also defined 
-$\Delta E(f(c_i')) = E_{out}(f(c_i')) - E_{in}(f(c_i'))$, 
-and $E_R(f) = \sqrt{(f-\mu_R)^T\Sigma_R^{-1}(f-\mu_R)}$.
+$e(f(c_i')) = E_{out}(f(c_i')) - E_{in}(f(c_i'))$, 
+and $E_R(f) = {(f-\mu_R)^T\Sigma_R^{-1}(f-\mu_R)}$.
 We applied a spectral approach to solve this implicit scheme:
 %
 \begin{equation}
 u^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{u^t/\tau
-- \sum_{i=1}^{N_c} \left[ \Delta E(f(c_i')) \hat{n}_{c_i'} \Psi_{c_i}(x) \right]  \}}{\mathcal{F}\{(1/\tau+\alpha)\mathcal{I}-\beta\Delta\}} \right\}
+- \sum_{i=1}^{N_c} \left[e(f(c_i')) \hat{n}_{c_i'} \Psi_{c_i}(x) \right]  \}}{\mathcal{F}\{(1/\tau+\alpha)\mathcal{I}-\beta\Delta\}} \right\}
 \end{equation}
 %
