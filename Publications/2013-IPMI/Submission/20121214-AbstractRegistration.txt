@@ -35,7 +35,7 @@ ADDITIONAL QUESTIONS
 1. Elegibility for Erbsmann prize: yes
 2. Primary contribution: New technique
 3. Optional: other contributions
-* The whole-brain connectivity analysis currently integrate by large sets of processing techniques to build complete and readily available software pipelines. This complexity and chaining compromises the consistence among the intermediate results, hindering the reliability and stability of the resulting connectivity network. Our approach combines some highly coupled processing steps upon a unique underlying model. Therefore, we expect as a subsequent contribution of our work the impact on simplifying those pipelines and the improvement of reliability and stability of the whole analysis process. 
+* The whole-brain connectivity analysis currently integrate by large sets of processing techniques to build complete and readily available software pipelines. This complexity and chaining compromises the consistence among the intermediate results, hindering the reliability and stability of the resulting connectivity network. Our approach combines some highly coupled processing steps upon a unique underlying model. We exploit in all these steps the highly detailed information obtained from the T1 reference (usually obtained with the FreeSurfer's reconstruction process). Therefore, we expect as a subsequent contribution of our work the impact on simplifying the connectivity pipelines and the improvement of reliability and stability of the whole DWI analysis process. 
 * We are developing the methodology based on ITK, for future contribution on the mainstream code and dissemination.
 
 4. Details of contribution
@@ -50,10 +50,8 @@ L. Zöllei, , A. Stevens, K. Huber, S. Kakunoori, B. Fischl, Improved tractograp
 J.L.R. Andersson, S. Skare, A Model-Based Method for Retrospective Correction of Geometric Distortions in Diffusion-Weighted EPI, NeuroImage 16-1(2002) 177-199
 L.J. O'Donnell, C.-F. Westin, Automatic Tractography Segmentation Using a High-Dimensional White Matter Atlas, Medical Imaging IEEE Transactions 26-11(2007) 1562-1575.
 
-
-
 6. Suggested reviewers
-- Stephen Alyward (if you mention ITK)
+- Stephen Alyward
 - Lilla Zöllei
 - Baba Vemuri
 - Betrand Thirion
