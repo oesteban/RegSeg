@@ -6,8 +6,8 @@
 
 \usepackage{nameref}
 \usepackage{hyperref}
-\usepackage[hyphens]{url}
-\usepackage[hyphenbreaks]{breakurl}
+%\usepackage[hyphens]{url}
+%\usepackage[hyphenbreaks]{breakurl}
 \usepackage[USenglish]{babel}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
@@ -33,16 +33,16 @@
 
 \title{Simultaneous segmentation and distortion correction on diffusion weighted MR using shape priors}
 %%
-\titlerunning{Segmentation & EPI correction on DWI}  % abbreviated title (for running head)
+\titlerunning{Simultaneous segmentation and distortion correction on DWI}  % abbreviated title (for running head)
 %                                     also used for the TOC unless
 %                                     \toctitle is used
 %
 \author{Oscar Esteban\inst{1,2} \and
         Alessandro Daducci \inst{2} \and
-		Meritxell Bach-Cuadra \inst{2,4} \and
-        Jean-Philippe Thiran \inst{2,4} \and
+		Meritxell Bach-Cuadra \inst{2,3} \and
+        Jean-Philippe Thiran \inst{2,3} \and
         Andr\'es Santos \inst{1} \and
-        Dominique Zosso \inst{3,2}}
+        Dominique Zosso \inst{2,4}}
 %
 \authorrunning{Oscar Esteban et al.} % abbreviated author list (for running head)
 
@@ -56,14 +56,14 @@ Av. Complutense 30, E-28040 Madrid, Spain\\
 \and
 Signal Processing Laboratory (LTS5),
 \'Ecole Polytechnique F\'ed\'erale de Lausanne (EPFL)\\
-EPFL-STI-IEL-LTS5, Station 11, CH-1015 Lausanne, Switzerland
+EPFL STI IEL LTS5, Station 11, CH-1015 Lausanne, Switzerland
+\and
+Dept. of Radiology, University Hospital Center (CHUV) and University of Lausanne (UNIL) \\
+Rue du Bugnon 46, CH-1011 Lausanne, Switzerland
 \and
 Department of Mathematics, 
 University of California, Los Angeles (UCLA) \\
 520 Portola Plaza, Box 951555, Los Angeles, CA 90095-1555, USA
-\and
-Department of Radiology, University Hospital Center (CHUV) and University of Lausanne (UNIL) \\
-Rue du Bugnon 46, CH-1011 Lausanne, Switzerland
 }
 
 
@@ -73,15 +73,16 @@ Rue du Bugnon 46, CH-1011 Lausanne, Switzerland
 
 \begin{abstract}
 \input{02-Abstract}
-\keywords{ diffusion weighted imaging, connectomics,
-           echo planar imaging, magnetic resonance, 
-           segmentation, registration, distortion correction}
+\keywords{ magnetic resonance, diffusion weighted imaging, distortion correction, segmentation, registration, shape priors, connectomics, echo planar imaging
+           }
 \end{abstract}
 
 
 \input{03-Introduction}
 
 \input{04-Methods}
+
+\input{045-Experiments}
 
 \input{05-Results}
 
