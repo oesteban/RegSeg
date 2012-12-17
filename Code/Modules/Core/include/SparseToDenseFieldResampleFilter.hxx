@@ -134,27 +134,26 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateData() 
 	size_t nConts = this->GetNumberOfIndexedInputs();
 
 	if (!m_IsPhiInitialized) {
-		for( size_t cont = 0; cont< nConts; cont++ ) {
-			m_Phi = WeightsMatrix(m_k, m_N);
-			// Walk the output region
-			size_t row, col;
-			double dist, wi;
-			OutputPointType ci, pi;
+		m_Phi = WeightsMatrix(m_k, m_N);
+		double dist, wi;
+		OutputPointType ci, pi;
+		size_t row, col;
 
-			for( row = 0; row < this->m_k; row++ ) {
-				this->GetOutput()->TransformIndexToPhysicalPoint(this->GetOutput()->ComputeIndex(row), pi);
+		// Walk the output region
+		for( row = 0; row < this->m_k; row++ ) {
+			this->GetOutput()->TransformIndexToPhysicalPoint(this->GetOutput()->ComputeIndex(row), pi);
 
-				for (col = 0; col < this->m_N; col++) {
-					// TODO Extract RBF from here (use a functor?)
-					// Compute weight i: wi(x) (inverse distance)
-					dist = (this->m_ControlPoints[col] - pi).GetNorm();
-					wi = (dist < vnl_math::eps) ? 1.0 : (1.0 / vcl_pow(dist, 2));
-					if (wi > 1e-3) {
-						m_Phi.put(row, col, wi);
-					}
+			for ( col=0; col < this->m_N; col++) {
+				// TODO Extract RBF from here (use a functor?)
+				// Compute weight i: wi(x) (inverse distance)
+				dist = (this->m_ControlPoints[col] - pi).GetNorm();
+				wi = (dist < vnl_math::eps) ? 1.0 : (1.0 / vcl_pow(dist, 2));
+				if (wi > 1e-3) {
+					m_Phi.put(row, col, wi);
 				}
 			}
 		}
+
 		m_IsPhiInitialized = true;
 	}
 
