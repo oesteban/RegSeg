@@ -1,48 +1,49 @@
 \section{Data and experiments}
 \label{sec:experiments}
 %
-\subsection{Simulated datasets}
+\subsection{Shape prior}
 %
 As described in \autoref{sec:introduction}, the general situation in
 the connectivity pipelines consists on having 
 a reliable segmentation obtained from the high resolution \ac{t1} 
 reference image. Therefore, a precise location of the tissue interfaces
-of interest is available in a reference space. Given that there is no 
-interest on the anatomical reference segmentation,
-we directly obtained the shape priors from the models. \\
+of interest is available in a reference space. Given that the anatomical reference segmentation is beyond the scope of this manuscript, we simply rely on the shape priors obtained from the models. \\
 
-On the other hand, the target \ac{dwi} data is characterized by its
+%
+\subsection{Synthetic gray-scale data}
+%
+The first, toy example is inspired by a problem shown for coupled CSF/GM and GM/WM segmentation in \cite{MacDonald2000}. \textbf{FIXME description of the model, expected difficulties (PVE -- lack of contour in sulcus), and how proposed model is expected to cope with this}.
+
+%
+\subsection{Simulated diffusion data}
+%
+In order to demonstrate the specific functionality of the proposed
+methodology and characterize its possibilities with diffusion data, we developed a
+synthetic model and simulated its corresponding \ac{dwi}
+raw signal as described in \citep{tuch_q-ball_2004}. 
+
+This second model consists of several spherical shapes emulating
+the different brain tissues (see \autoref{fig:fa}, first row). 
+We reconstructed the \ac{dwi} signal with standard procedures to approximate the
+environment to the real one at maximum. \\
+
+The target \ac{dwi} data is characterized by its
 low resolution (typically around $2.2x2.2x3mm^3$). Depending on the
 posterior reconstruction methodology and the angular resolution
 intended, the \ac{dwi} raw data has to be processed in order to
-extract the information in a manageable manner. Particularly, we
+extract the information in a manageable manner. Here, we
 will use the \ac{fa} and \ac{md} maps for convenience.
 Whereas \ac{fa} describes the \emph{shape} of diffusion, 
-the \ac{md} depicts the \emph{manitude} of the process. 
+the \ac{md} depicts the \emph{magnitude} of the process. 
 There exist two main reasons to justify their choice. 
 First, they are well-understood and standardized in clinical routine.
 Second, together they contain most of the information that is
 usually extracted from the \ac{dwi}-derived scalar maps. \\
 
-In order that demonstrating the functionality of the proposed
-methodology and characterize its possibilities, we developed two
-synthetic models and simulated their corresponding \ac{dwi}
-raw signal as described in \citep{tuch_q-ball_2004}. 
-(HERE WE NEED A GOOD DESCRIPTION OF THE DATA, directions, resolution, etc)
-. The first model consists of several spherical shapes emulating
-the different brain tissues (see \autoref{fig:fa}, first row). 
-The second model is based on the BrainWeb dataset.
-We reconstructed the \ac{dwi} signal with standard procedures to approximate the
-environment to the real one at maximum. \\
-
-%
-\subsection{Experiment}
-%
-For both models, we created manually a sound distortion visually similar
+For this model, we created manually a sound distortion visually similar
 to real \ac{epi} distortions. We interpolated the distortion to a 
 dense deformation field, necessary for warping the raw \ac{dwi} simulated
 data. Once the signal was deformed, we proceeded to reconstruct the
-\ac{dti} and subsequently obtained the scalars of interest (\ac{fa}, \ac{md}) and estimated their parameters on the model.\\
+\ac{dti} \textbf{FIXME is it really DTI, here, not rather DSI?} and subsequently obtained the scalars of interest (\ac{fa}, \ac{md}) and estimated their parameters on the model.
 
-We evaluate the performance of our methodology to estimate the deformation
-field and compare it to the original synthetic deformation field applied to the data.
+\textbf{FIXME Give parameters here?}\\
