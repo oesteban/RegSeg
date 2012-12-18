@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
 	ls->AddShapePrior( initialContour1, params1 );
-	//ls->AddShapePrior( initialContour2, params2 );
+	ls->AddShapePrior( initialContour2, params2 );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
