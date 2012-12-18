@@ -10,14 +10,22 @@ reference image. Therefore, a precise location of the tissue interfaces
 of interest is available in a reference space. Given that the anatomical 
 reference segmentation is beyond the scope of this manuscript, we simply 
 rely on the shape priors obtained from the models.
-
 %
 \subsection{Synthetic gray-scale data}
 %
-The first, toy example is inspired by a problem shown for coupled CSF/GM 
-and GM/WM segmentation in \cite{macdonald_automated_2000}. 
-\textbf{FIXME description of the model, expected difficulties (PVE -- lack of contour in sulcus), and how proposed model is expected to cope with this}.
-
+The first, toy example is inspired by a problem shown for coupled CSF/GM and GM/WM 
+segmentation in \cite{macdonald_automated_2000}. The authors note that ``partial 
+volume effects blur the distinction between closely adjacent surfaces in deep sulci,
+leading to a well-known segmentation error in which the deeper reaches of sulci are 
+not penetrated by the putative surface model.'' This problem is aggravated in DWI, 
+since the resolution tends to be worse compared to the anatomical images considered 
+in \cite{macdonald_automated_2000}. They test their coupled segmentation algorithm 
+on an image, ``representing a sulcus in which the distinction between opposing banks 
+of the sulcus has been obscured by partial volume.''  As illustrated, conventional 
+single surface segmentation of the CSF/GM boundary misses to capture the sulcus in 
+its full depth. With our proposed model, we expect the joint segmentation-registration 
+to be driven largely by the inner, GM/WM contour that exhibits sufficient contrast 
+and lesser partial volume effects.
 %
 \subsection{Simulated diffusion data}
 %
