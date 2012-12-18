@@ -146,17 +146,17 @@ int main(int argc, char *argv[]) {
 
 	// Initialize tissue signatures
 	MeanType mean0; // This is WM
-	mean0[0] = 0.7806;
+	mean0[0] = 0.8;
 	CovarianceType cov0;
-	cov0(0,0) =  0.09;
+	cov0(0,0) =  0.003;
 	MeanType mean1; // This is GM
-	mean1[0] = 0.3452;
+	mean1[0] = 0.5;
 	CovarianceType cov1;
-	cov1(0,0) =  0.09;
+	cov1(0,0) =  0.004;
 	MeanType mean3; // This is CSF
-	mean3[0] = 0.2363;
+	mean3[0] = 0.21;
 	CovarianceType cov3;
-	cov3(0,0) =  0.09;
+	cov3(0,0) =  0.0022;
 
 	typename LevelSetsType::ParametersType params1;
 	params1.mean[0] = mean0;
