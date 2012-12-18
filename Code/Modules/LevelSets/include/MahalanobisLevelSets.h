@@ -102,6 +102,7 @@ public:
 	struct ParametersType {
 		MeanType mean[2];
 		CovarianceType iCovariance[2];
+		double bias[2];
 	};
 
 	typedef typename std::vector< ParametersType >         ParametersList;
