@@ -13,7 +13,7 @@ rely on the shape priors obtained from the models.
 %
 \subsection{Synthetic gray-scale data}
 %
-The first, toy example is inspired by a problem shown for coupled CSF/GM and GM/WM segmentation in \citep{MacDonald2000}. These authors note that ``partial volume effects blur the distinction between closely adjacent surfaces in deep sulci, leading to a well-known segmentation error in which the deeper reaches of sulci are not penetrated by the putative surface model.'' This problem is aggravated in DWI, since the resolution tends to be worse compared to the anatomical images considered in \citep{MacDonald2000}. They test their coupled segmentation algorithm on an image, ``representing a sulcus in which the distinction between opposing banks of the sulcus has been obscured by partial volume.''  Here, we have reproduced a very similar model. As illustrated in \autoref{fig:sulcusmodel}, conventional single surface segmentation of the CSF/GM boundary misses to capture the sulcus in its full depth. With our proposed model, we expect the joint segmentation-registration to be driven largely by the inner, GM/WM contour that exhibits sufficient contrast and lesser partial volume effects. The shape prior of the outer, difficult contour will then be co-aligned through the regularity of the estimated deformation field.
+The first, toy example is inspired by a problem shown for coupled CSF/GM and GM/WM segmentation in \citep{macdonald_automated_2000}. These authors note that ``partial volume effects blur the distinction between closely adjacent surfaces in deep sulci, leading to a well-known segmentation error in which the deeper reaches of sulci are not penetrated by the putative surface model.'' This problem is aggravated in DWI, since the resolution tends to be worse compared to the anatomical images considered in \citep{macdonald_automated_2000}. They test their coupled segmentation algorithm on an image, ``representing a sulcus in which the distinction between opposing banks of the sulcus has been obscured by partial volume.''  Here, we have reproduced a very similar model. As illustrated in \autoref{fig:sulcusmodel}, conventional single surface segmentation of the CSF/GM boundary misses to capture the sulcus in its full depth. With our proposed model, we expect the joint segmentation-registration to be driven largely by the inner, GM/WM contour that exhibits sufficient contrast and lesser partial volume effects. The shape prior of the outer, difficult contour will then be co-aligned through the regularity of the estimated deformation field.
 
 \begin{figure}
 \begin{tabular}{ccccc}
@@ -26,6 +26,7 @@ The first, toy example is inspired by a problem shown for coupled CSF/GM and GM/
 \caption{balbal}
 \label{fig:sulcusmodel}
 \end{figure}
+
 %
 \subsection{Simulated diffusion data}
 %
@@ -66,9 +67,13 @@ distribution maps from the original model (\autoref{table:parameters}).
 \begin{table}
 \begin{tabular}{cccc}
          & $\mathbf{\mu}_{FA}$ & $\mathbf{\mu}_{MD}$ & $\mathbf{\Sigma}$ \\
-\ac{wm}  & & & \\
-\ac{gm}  & & & \\
-\ac{csf} & & & \\
+\ac{wm}  & 0.778 & 6.94\e{-4} & 
+   $\begin{pmatrix}
+   	4.85\e{-3} & -6.90\e{-6} \\ -6.90\e{-6} & 1.03\e{-8}
+   \end{pmatrix}$
+\\
+\ac{gm}  & 0.119 & 8.95\e{-4} &  \\
+\ac{csf} & 0.103 & 2.99\e{-3} & \\
 \end{tabular}
 \caption{Model parameters}
 \label{table:parameters}
