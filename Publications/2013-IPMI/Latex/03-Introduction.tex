@@ -23,8 +23,8 @@ This segmentation is an important step on which strongly rely further
 tasks. In tractography, a high-standard \ac{wm} mask is required. Otherwise,
 there is an important risk for the algorithm to lose fiber bundles. This
 requirement is usually solved in practice by plainly thresholding the 
-\ac{fa} (a well-know scalar map derived from \ac{dwi} which depicts 
-the isotropy of water diffusion inside the brain). 
+\ac{fa}, a well-know scalar map derived from \ac{dwi} which depicts 
+the isotropy of water diffusion inside the brain. 
 Additionally, a precise location of the
 \ac{gm}-\ac{wm} surface is required in the final steps to
 achieve a consistent parcellisation of the cortex to represent the nodes 
@@ -40,7 +40,7 @@ and precise segmentation methods are required in the whole-brain application. \\
 
 On the other hand, the \ac{dwi} data is usually obtained with \ac{epi}
 acquisition techniques, that often suffer from severe distortions due to 
-local field inhomogeneities. Generally, it is easily appreciated in the anterior
+local field inhomogeneities. Generally, it is appreciated in the anterior
 part of the brain, along the phase-encoded direction. Some methodologies have
 been developed and generically named as \emph{\ac{epi}-unwarp} techniques
 \cite{holland_efficient_2010,hsu_correction_2009,jezzard_characterization_2005,
@@ -55,10 +55,13 @@ results. \\
 
 In this paper we propose a novel registration framework to simultaneously
 solve the segmentation and distortion challenges, by exploiting as strong 
-shape-prior the detailed anatomy extracted from anatomical \ac{mri}. This
-is justified by the strong relationship between both problems, and the
-advantage of a significant increase of coherence among these steps in
-the complete processing pipeline.
+shape-prior the detailed anatomy extracted from anatomical \ac{mri}. On
+one hand, the significant benefits of exploiting the anatomical \ac{mri}
+have been demonstrated \cite{zollei_improved_2010}, justifying the use
+of the shape prior information. On the other, the
+significant coupling between both problems demands for consistent
+segmentation, parcellation, and distortion. This need is satisfied by
+the use of a unique underlying model of our joint approach.
 We reformulate the segmentation problem as an inverse problem, where
 we seek for an underlying deformation field (the distortion) mapping 
 from the structural space into the diffusion space.
