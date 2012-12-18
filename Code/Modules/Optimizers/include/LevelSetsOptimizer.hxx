@@ -45,7 +45,7 @@ namespace rstk {
 template< typename TLevelSetsFunction >
 LevelSetsOptimizer<TLevelSetsFunction>::LevelSetsOptimizer() {
 	/* Initialize state tracking variables */
-	this->m_NumberOfIterations = 10;
+	this->m_NumberOfIterations = 100;
 	this->m_CurrentIteration   = 0;
 	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
