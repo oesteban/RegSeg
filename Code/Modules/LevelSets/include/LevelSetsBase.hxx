@@ -111,20 +111,15 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	VectorInterpolatorPointer interp = VectorInterpolatorType::New();
 	interp->SetInputImage( newField );
 
-	const DeformationFieldPointType origin = newField->GetOrigin();
-	DeformationFieldPointType end;
-	typename DeformationFieldType::IndexType end_idx;
-	end_idx.Fill(-1);
-	end_idx+=newField->GetLargestPossibleRegion().GetSize();
-	newField->TransformIndexToPhysicalPoint( end_idx, end);
 
-	/*
-	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
-	typename WriterType::Pointer polyDataWriter = WriterType::New();
-	polyDataWriter->SetInput( this->m_CurrentContourPosition );
-	polyDataWriter->SetFileName( "contour_pre.vtk" );
-	polyDataWriter->Update();
-	*/
+	typename DeformationFieldType::DirectionType dir = newField->GetDirection();
+	typename itk::ContinuousIndex<PointValueType,Dimension> point_idx;
+	typename DeformationFieldType::IndexType end_idx;
+	end_idx.Fill(0);
+	end_idx+=newField->GetLargestPossibleRegion().GetSize();
+	typename DeformationFieldType::PointType origin = newField->GetOrigin();
+	typename DeformationFieldType::PointType end;
+	newField->TransformIndexToPhysicalPoint( end_idx, end);
 
 	for( size_t cont = 0; cont < this->m_ShapePrior.size(); cont++ ) {
 		typename ContourDeformationType::PointsContainerPointer curr_points = this->m_CurrentContourPosition[cont]->GetPoints();
@@ -144,8 +139,10 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 				newPoint.SetPoint( shape_it.Value() + desp );
 				newPoint.SetEdge( currentPoint.GetEdge() );
 
+				//newField->TransformPhysicalPointToContinuousIndex( newPoint, point_idx );
 				for ( size_t i = 0; i< Dimension; i++ ) {
-					if( newPoint[i] < origin[i] || newPoint[i]> end[i] ) {
+					if( newPoint[i] < origin[i] || newPoint[i]> end[i] ){
+						//itkWarningMacro( << "Contour is outside image regions after update" );
 						itkExceptionMacro( << "Contour is outside image regions after update" );
 					}
 				}
