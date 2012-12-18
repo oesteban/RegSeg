@@ -17,13 +17,13 @@ The first, toy example is inspired by a problem shown for coupled CSF/GM and GM/
 
 \begin{figure}
 \begin{tabular}{ccccc}
-\includegraphics[width=0.19\textwidth]{contours_inner} &
-\includegraphics[width=0.19\textwidth]{contours_wrong} &
+\includegraphics[width=0.19\textwidth]{contours_wrong} & \includegraphics[width=0.19\textwidth]{contours_inner} &
 \includegraphics[width=0.19\textwidth]{contours_both} &
 \includegraphics[width=0.19\textwidth]{pialsurf} &
-\includegraphics[width=0.19\textwidth]{gmwmsurf}
+\includegraphics[width=0.19\textwidth]{gmwmsurf}\\
+a)&b)&c)&d)&e)
 \end{tabular}
-\caption{balbal}
+\caption{The gray-scale sulcus model. a) The apparent CSF/GM boundary is affected by partial volume in the sulcal cavity, and conventional segmentation is likely to miss it. b) The GM/WM interface here has consistently good contrast. c) Registering the two shape priors coupled through deformation field regularity is expected to guide the CSF/GM contour. d\&e) 3D view of the two shape priors.}
 \label{fig:sulcusmodel}
 \end{figure}
 
@@ -40,6 +40,33 @@ the different brain tissues (see \autoref{fig:fa}, first row).
 We reconstructed the \ac{dwi} signal with standard procedures to 
 approximate the environment to the real one at maximum. \\
 
+\subsubsection{Signal simulation}
+
+To numerically simulate the MRI signal attenuation when applying a diffusion gradient in a voxel with $N$ fiber populations we made use of the standard \emph{Multi-Tensor Model}~\cite{Tuch:2002aa}:
+%
+\begin{equation} \label{eqn:MultiTensor}
+S(\vec{q}) / S_{0} = \sum_{i=1}^{N} f_{i} \, \exp{ \left( -b \, \vec{q}^{T} \, \mathbf{D}_i \, \vec{q}\right) } + f_{iso} \, \exp{ \left( -b \, \mathbf{D}_{iso} \right) } ,
+\end{equation}
+%
+where $\vec{q} \in \mathbb{S}^2$ is the direction of the diffusion gradient applied, $b$ is the b-value accounting for its strength, $S_0 \equiv S(\vec{0})$ is the signal with no diffusion weighting, $f_i$ and $\mathbf{D}_i$ are respectively the volume fraction and the diffusion tensor characterizing the $i$-th fiber population.
+The diffusion tensors $\mathbf{D}_i$ and $\mathbf{D}_{iso}$ describe the diffusion processes of each fiber compartment and of contaminations from the CSF. In this work, these quantities have been taken from standard ranges typically observed in the human brain~\cite{Canales-Rodriguez:2009aa}.
+
+
+
+
+\subsubsection{Noise simulation}
+
+The diffusion MRI signal $S$ has been corrupted with \textit{Rician noise}~\cite{Gudbjartsson:1995aa} as follows:
+%
+\begin{equation}
+	\tilde{S} = \sqrt{ (S + \varepsilon_1)^2 + \varepsilon_2^2 }
+\end{equation}
+%
+where $\varepsilon_{1,2}$ are Gaussian distributed with zero mean and standard deviation $\sigma = S_0 / \mathit{SNR}$ and SNR is the signal-to-noise ratio (SNR) on the $S_0$ image.
+
+
+\subsubsection{Derived features}
+
 The target \ac{dwi} data is characterized by its distortions and its
 low resolution (typically around $2.2x2.2x3mm^3$). Depending on the
 posterior reconstruction methodology and the angular resolution
@@ -51,10 +78,16 @@ findings, the proposed energy model adapts to the \ac{fa} and \ac{md}
 for their properties.
 Whereas \ac{fa} describes the \emph{shape} of diffusion, 
 the \ac{md} depicts the \emph{magnitude} of the process. 
+
+\textbf{FIXME: can you give the respective formula, how you get from the above signal to FA/MD?}
+
+
 There exist two main reasons to justify their choice. 
 First, they are well-understood and standardized in clinical routine.
 Second, together they contain most of the information that is
 usually extracted from the \ac{dwi}-derived scalar maps. \\
+
+\subsubsection{Simulated distortions}
 
 For this model, we created manually a sound distortion visually similar
 to real \ac{epi} distortions. We interpolated the distortion to a 
