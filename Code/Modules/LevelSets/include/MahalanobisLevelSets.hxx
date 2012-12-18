@@ -152,9 +152,13 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 				//vnl_matrix_inverse< PixelValueType > R (chol->upper_triangle());
 				//this->m_Parameters[contour_id].iCovariance[idx].GetVnlMatrix() = R.inverse();
 			}
+			//this->m_Parameters[contour_id].bias[idx] = Components * log( 2*vnl_math::pi ) + log( det );
+
 		} else {
 			this->m_Parameters[contour_id].iCovariance[idx](0,0)=1.0/cov(0,0);
+			//this->m_Parameters[contour_id].bias[idx] = Components * log( 2*vnl_math::pi ) + log( cov(0,0) );
 		}
+		this->m_Parameters[contour_id].bias[idx] = 1.0;
 	}
 }
 
@@ -166,6 +170,11 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	InterpolatorPointer interp = InterpolatorType::New();
 	interp->SetInputImage( this->m_ReferenceImage );
 	this->m_SparseToDenseResampler->CopyImageInformation( levelSetMap );
+
+
+#ifndef NDEBUG
+	double maxLS = 0.0;
+#endif
 
 	for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++) {
 		// Compute mesh of normals
@@ -185,7 +194,6 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 		typename ContourDeformationType::PixelType ni;
 		typename ContourDeformationType::PointIdentifier idx;
 
-
 		// for all node in mesh
 		while (c_it!=c_end) {
 			levelSet = 0;
@@ -195,7 +203,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 			for( size_t i = 0; i<2; i++) {                 // Compute on both sides of the levelset
 				PixelType dist = fi - this->m_Parameters[cont].mean[i];
 				// compute mahalanobis distance in position
-				levelSet+= sign[i] * dot_product(dist.GetVnlVector(), this->m_Parameters[cont].iCovariance[i].GetVnlMatrix() * dist.GetVnlVector() );
+				levelSet+= sign[i] *( this->m_Parameters[cont].bias[i] + dot_product(dist.GetVnlVector(), this->m_Parameters[cont].iCovariance[i].GetVnlMatrix() * dist.GetVnlVector() ) );
 			}
 			assert( !std::isnan(levelSet) );
 			// project to normal, updating transform
@@ -203,10 +211,18 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 			ni*=levelSet;
 			normals->SetPointData( idx, ni );
 			++c_it;
+#ifndef NDEBUG
+			if ( abs( levelSet ) > abs( maxLS ) )
+				maxLS = levelSet;
+#endif
 		}
-
 		this->m_SparseToDenseResampler->SetInput( cont, normals );
 	}
+
+
+#ifndef NDEBUG
+	std::cout << "Maximum levelset update = " << maxLS << "." << std::endl;
+#endif
 
 	// Interpolate sparse velocity field to targetDeformation
 	this->m_SparseToDenseResampler->Update();

@@ -1,6 +1,6 @@
 // --------------------------------------------------------------------------
-// File:             Model1Registration2Contour.cxx
-// Date:             12/12/2012
+// File:             Model2Registration.cxx
+// Date:             14/12/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
 // License:          BSD
@@ -37,8 +37,10 @@
 
 
 
+
+
 #ifndef DATA_DIR
-#define DATA_DIR "../Data/ModelGeneration/Model1/"
+#define DATA_DIR "../Data/ModelGeneration/Model2/"
 #endif
 
 #include <itkVector.h>
@@ -55,18 +57,16 @@
 #include <itkBSplineInterpolateImageFunction.h>
 #include <itkDisplacementFieldTransform.h>
 #include <itkResampleImageFilter.h>
+#include <itkOrientImageFilter.h>
 #include "MahalanobisLevelSets.h"
 #include "GradientDescentLevelSetsOptimizer.h"
 
 using namespace rstk;
 
 int main(int argc, char *argv[]) {
-	typedef itk::Image<float, 3u>                                ChannelType;
-	typedef itk::Vector<float, 2u>                               VectorPixelType;
-	typedef itk::Image<VectorPixelType, 3u>                      ImageType;
-	typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
-
-	typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
+	typedef itk::Image<itk::Vector<float,1u>, 3u>                ChannelType;
+	typedef itk::OrientImageFilter< ChannelType, ChannelType >   OrientFilter;
+	typedef MahalanobisLevelSets<ChannelType>                    LevelSetsType;
 	typedef LevelSetsType::ContourDeformationType                ContourDeformationType;
 	typedef ContourDeformationType::Pointer                      ContourDisplacementFieldPointer;
 	typedef LevelSetsType::VectorType                            VectorType;
@@ -94,27 +94,32 @@ int main(int argc, char *argv[]) {
 
 
 
-
-	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
-
 	ImageReader::Pointer r = ImageReader::New();
-	r->SetFileName( std::string( DATA_DIR ) + "deformed2_FA.nii.gz" );
+	r->SetFileName( std::string( DATA_DIR ) + "deformed.nii" );
 	r->Update();
-	comb->SetInput(0,r->GetOutput());
-
-	ImageReader::Pointer r2 = ImageReader::New();
-	r2->SetFileName( std::string( DATA_DIR ) + "deformed2_MD.nii.gz" );
-	r2->Update();
-	comb->SetInput(1,r2->GetOutput());
-	comb->Update();
-
 	ChannelType::Pointer im = r->GetOutput();
+	ChannelType::DirectionType dir = im->GetDirection();
+
+	ChannelType::DirectionType ident; ident.SetIdentity();
+	OrientFilter::Pointer orient = OrientFilter::New();
+	orient->UseImageDirectionOn();
+	orient->SetDesiredCoordinateDirection( ident );
+	orient->SetInput( im );
+	orient->Update();
+	im = orient->GetOutput();
+	ChannelType::PointType newOrig; newOrig.Fill(0.0);
+	im->SetOrigin( newOrig );
+
+	ImageWriter::Pointer ww = ImageWriter::New();
+	ww->SetInput( im );
+	ww->SetFileName( "refImage.nii" );
+	ww->Update();
 
 
 	VectorType zero = itk::NumericTraits<VectorType>::Zero;
 
 	ReaderType::Pointer polyDataReader1 = ReaderType::New();
-	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "wm_prior.vtk" );
+	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "gmwm_surface.vtk" );
 	polyDataReader1->Update();
 	ContourDisplacementFieldPointer initialContour1 = polyDataReader1->GetOutput();
 
@@ -127,7 +132,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	ReaderType::Pointer polyDataReader2 = ReaderType::New();
-	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "csf_prior.vtk" );
+	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "pial_surface.vtk" );
 	polyDataReader2->Update();
 	ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
 
@@ -140,48 +145,35 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Initialize tissue signatures
+	MeanType mean0; // This is WM
+	mean0[0] = 0.7806;
+	CovarianceType cov0;
+	cov0(0,0) =  0.09;
 	MeanType mean1; // This is GM
-	mean1[0] = 0.11941234;
-	mean1[2] = 0.00089523;
+	mean1[0] = 0.3452;
 	CovarianceType cov1;
-	cov1(0,0) =  5.90117156e-04;
-	cov1(0,1) = -1.43226633e-06;
-	cov1(1,0) = -1.43226633e-06;
-	cov1(1,1) =  1.03718252e-08;
-	MeanType mean2; // This is WM
-	mean2[0] = 7.77335644e-01;
-	mean2[1] = 6.94673450e-04;
-	CovarianceType cov2;
-	cov2(0,0) =  4.85065832e-03;
-	cov2(0,1) = -6.89610616e-06;
-	cov2(1,0) = -6.89610616e-06;
-	cov2(1,1) =  1.02706528e-08;
-
+	cov1(0,0) =  0.09;
 	MeanType mean3; // This is CSF
-	mean3[0] = 0.10283652;
-	mean3[1] = 0.00298646;
+	mean3[0] = 0.2363;
 	CovarianceType cov3;
-	cov3(0,0) =  1.19084185e-03;
-	cov3(0,1) =  2.22414814e-07;
-	cov3(1,0) =  2.22414814e-07;
-	cov3(1,1) =  1.56537816e-08;
+	cov3(0,0) =  0.09;
 
 	typename LevelSetsType::ParametersType params1;
-	params1.mean[0] = mean2;
+	params1.mean[0] = mean0;
 	params1.mean[1] = mean1;
-	params1.iCovariance[0] = cov2;
+	params1.iCovariance[0] = cov0;
 	params1.iCovariance[1] = cov1;
 
 	typename LevelSetsType::ParametersType params2;
-	params2.mean[0] = mean3;
-	params2.mean[1] = mean2;
-	params2.iCovariance[0] = cov3;
-	params2.iCovariance[1] = cov2;
+	params2.mean[0] = mean1;
+	params2.mean[1] = mean3;
+	params2.iCovariance[0] = cov1;
+	params2.iCovariance[1] = cov3;
 
 	// Initialize deformation field
 	DeformationFieldType::Pointer df = DeformationFieldType::New();
 	DeformationFieldType::SizeType imSize = im->GetLargestPossibleRegion().GetSize();
-	DeformationFieldType::SizeType size; size.Fill(32);
+	DeformationFieldType::SizeType size; size.Fill(16);
 	DeformationFieldType::SpacingType spacing = im->GetSpacing();
 	for( size_t i = 0; i<3; i++) spacing[i] = 1.0*imSize[i]/size[i];
 	df->SetRegions( size );
@@ -192,18 +184,18 @@ int main(int argc, char *argv[]) {
 
 	// Initialize LevelSet function
 	LevelSetsType::Pointer ls = LevelSetsType::New();
-	ls->SetReferenceImage( comb->GetOutput() );
+	ls->SetReferenceImage( im );
 	ls->AddShapePrior( initialContour1, params1 );
-	//ls->AddShapePrior( initialContour2, params2 );
+	ls->AddShapePrior( initialContour2, params2 );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetDeformationField( df );
-	opt->SetNumberOfIterations(1000);
-	opt->SetAlpha( 1e-4 );
-	opt->SetBeta( 1e-5 );
-	opt->SetStepSize( 1.0 );
+	opt->SetNumberOfIterations(500);
+	opt->SetAlpha( 50 );
+	opt->SetBeta( 100 );
+	opt->SetStepSize( 0.001 );
 
 	// Start
 	opt->Start();
@@ -211,18 +203,18 @@ int main(int argc, char *argv[]) {
 	// Write final result out
 	WriterType::Pointer polyDataWriter = WriterType::New();
 	polyDataWriter->SetInput( ls->GetCurrentContourPosition()[0] );
-	polyDataWriter->SetFileName( "deformed2-wm.vtk" );
+	polyDataWriter->SetFileName( "Model2-wm.vtk" );
 	polyDataWriter->Update();
 
 	// Write final result out
 	WriterType::Pointer polyDataWriter2 = WriterType::New();
 	polyDataWriter2->SetInput( ls->GetCurrentContourPosition()[1] );
-	polyDataWriter2->SetFileName( "deformed2-csf.vtk" );
+	polyDataWriter2->SetFileName( "Model2-pial.vtk" );
 	polyDataWriter2->Update();
 
 	DeformationWriter::Pointer w = DeformationWriter::New();
 	w->SetInput( opt->GetDeformationField() );
-	w->SetFileName( "deformed2_field.nii.gz" );
+	w->SetFileName( "Model2_field.nii.gz" );
 	w->Update();
 
 	DisplacementResamplerType::Pointer p = DisplacementResamplerType::New();
@@ -235,7 +227,7 @@ int main(int argc, char *argv[]) {
 	p->Update();
 	DeformationWriter::Pointer w2 = DeformationWriter::New();
 	w2->SetInput( p->GetOutput() );
-	w2->SetFileName( "deformed2_fieldHD.nii.gz" );
+	w2->SetFileName( "Model2_fieldHD.nii.gz" );
 	w2->Update();
 /*
 	DeformationFieldType::Pointer dfield = DeformationFieldType::New();
@@ -254,6 +246,5 @@ int main(int argc, char *argv[]) {
 	w3->SetFileName( "FAunwarped.nii.gz" );
 	w3->Update();*/
 }
-
 
 

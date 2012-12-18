@@ -57,7 +57,7 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_LearningRate = itk::NumericTraits<InternalComputationValueType>::One;
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
-	this->m_ConvergenceWindowSize = 10;
+	this->m_ConvergenceWindowSize = 20;
 	this->m_StepSize = 0.1;
 	this->m_Alpha = 1e-4;
 	this->m_Beta = 1e-3;
@@ -186,7 +186,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		//	this->m_BestParameters = this->GetCurrentPosition( );
 		//}
 
-		std::cout << "Iteration " << this->m_CurrentIteration << std::endl;
+		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentLevelSetsValue << std::endl;
 
 
 		/*
