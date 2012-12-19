@@ -9,11 +9,15 @@ a reliable segmentation obtained from the high resolution \ac{t1}
 reference image. Therefore, a precise location of the tissue interfaces
 of interest is available in a reference space. Given that the anatomical 
 reference segmentation is beyond the scope of this manuscript, we simply 
-rely on the shape priors obtained from the models.
+rely on the true contours known from the underlying models, and do not seek to establish them in a separate segmentation step on ``anatomical'' images.
 %
 \subsection{Synthetic gray-scale data}
 %
-The first, toy example is inspired by a problem shown for coupled CSF/GM and GM/WM segmentation in \citep{macdonald_automated_2000}. These authors note that ``partial volume effects blur the distinction between closely adjacent surfaces in deep sulci, leading to a well-known segmentation error in which the deeper reaches of sulci are not penetrated by the putative surface model.'' This problem is aggravated in DWI, since the resolution tends to be worse compared to the anatomical images considered in \citep{macdonald_automated_2000}. They test their coupled segmentation algorithm on an image, ``representing a sulcus in which the distinction between opposing banks of the sulcus has been obscured by partial volume.''  Here, we have reproduced a very similar model. As illustrated in \autoref{fig:sulcusmodel}, conventional single surface segmentation of the CSF/GM boundary misses to capture the sulcus in its full depth. With our proposed model, we expect the joint segmentation-registration to be driven largely by the inner, GM/WM contour that exhibits sufficient contrast and lesser partial volume effects. The shape prior of the outer, difficult contour will then be co-aligned through the regularity of the estimated deformation field.
+The first, toy example is inspired by a problem shown for coupled CSF/GM and GM/WM segmentation in \citep{macdonald_automated_2000}. These authors note that ``partial volume effects blur the distinction between closely adjacent surfaces in deep sulci, leading to a well-known segmentation error in which the deeper reaches of sulci are not penetrated by the putative surface model.'' This problem is aggravated in DWI, since the resolution tends to be worse compared to the anatomical images considered in \citep{macdonald_automated_2000}. They test their coupled segmentation algorithm on an image, ``representing a sulcus in which the distinction between opposing banks of the sulcus has been obscured by partial volume.''  
+
+Here, we have reproduced a very similar model. A volume consists of three piecewise-constant parts: a notched ball representing the white matter with a single sulcus ($\mu_{WM} = 0.8$), a cortical sheet of grey-matter obtained through dilation of the WM ($\mu_{GM} = 0.5$), and the surrounding background representing CSF ($\mu_{CSF} = 0.2$). The volume is then affected by additive Gaussian noise, effectively creating uniform standard deviation of $\sigma = 0.045$ per region.
+
+As illustrated in \autoref{fig:sulcusmodel}, conventional single surface segmentation of the CSF/GM boundary misses to capture the sulcus in its full depth. With our proposed model, we expect the joint segmentation-registration to be driven largely by the inner, GM/WM contour that exhibits sufficient contrast and lesser partial volume effects. The shape prior of the outer, difficult contour will then be co-aligned through the regularity of the estimated deformation field.
 
 \begin{figure}
 \begin{tabular}{ccccc}
@@ -26,6 +30,8 @@ a)&b)&c)&d)&e)
 \caption{The gray-scale sulcus model. a) The apparent CSF/GM boundary is affected by partial volume in the sulcal cavity, and conventional segmentation is likely to miss it. b) The GM/WM interface here has consistently good contrast. c) Registering the two shape priors coupled through deformation field regularity is expected to guide the CSF/GM contour. d\&e) 3D view of the two shape priors.}
 \label{fig:sulcusmodel}
 \end{figure}
+
+
 
 %
 \subsection{Simulated diffusion data}
