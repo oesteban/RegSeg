@@ -79,14 +79,15 @@ intended, the \ac{dwi} raw data has to be processed in order to
 extract the information in a manageable manner. The properties of
 the reconstructed tensors and derived scalar maps have been
 studied by \cite{ennis_orthogonal_2006}. Based on their
-findings, the proposed energy model adapts to the \ac{fa} and \ac{md}
-for their properties. Whereas \ac{fa} describes the \emph{shape} of diffusion, 
+findings, the proposed energy model adapts to the \ac{fa}~\eqref{eq:fa} 
+and \ac{md}~\eqref{eq:md} for their properties. 
+Whereas \ac{fa} \ describes the \emph{shape} of diffusion, 
 the \ac{md} depicts the \emph{magnitude} of the process. 
 
-\textbf{FIXME: can you give the respective formula, how you get from the above signal to FA/MD?}
-\begin{equation}
-FA = \sqrt{ \frac{3}{2}},\frac{\sqrt{ (\lambda_1 - \hat{\lamda})^2 + (\lambda_2 - \hat{\lamda})^2 + (\lambda_3 - \hat{\lamda})^2}}{\sqrt{ {\lambda_1}^2 + {\lambda_2}^2 + {\lambda_3}^2}}
-\end{equation}
+\begin{align}
+\mathrm{FA} &= \sqrt{ \frac{1}{2}}\,\frac{\sqrt{ (\lambda_1 - \lambda_2)^2 + (\lambda_2 - \lambda_3)^2 + (\lambda_3 - \lambda_1)^2}}{\sqrt{ {\lambda_1}^2 + {\lambda_2}^2 + {\lambda_3}^2}} \label{eq:fa} \\
+\mathrm{MD} &= ( \lambda_1 + \lambda_2 + \lambda_3 ) / 3 \label{eq:md}
+\end{align}
 
 There exist two main reasons to justify their choice. 
 First, they are well-understood and standardized in clinical routine.
