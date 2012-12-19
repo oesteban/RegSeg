@@ -53,15 +53,25 @@ with non-linear registration from structural \ac{mri} or other means
 of the impact of the \ac{epi} distortion on the variability of tractography
 results. \\
 
+
+\textbf{FIXME: talk about inherent coupling}
+The significant benefits of exploiting the anatomical \ac{mri}
+have been demonstrated \cite{zollei_improved_2010}, justifying the use
+of the shape prior information. This need is satisfied by
+the use of a unique underlying model of our joint approach.
+
+\textbf{FIXME: talk about SOA in joint reg-seg, shape-prior registration, atlas-based registration in more general}
+\citep{Chan2005,Bresson2006a,Cremers2006,Rousson2002,Schmid2008,Vemuri2003a,Gastaud2004,McInerney1996,Chan,Paragios2003,Ayvaci2007,Pohl2005,Wyatt2003,Yezzi2003,Wang2006,Soatto2002,Yezzi2001,Pohl2006,Chen2002,le_guyader_combined_2011}
+
+
+
+
+\textbf{FIXME: now introduce our own approach}
 In this paper we propose a novel registration framework to simultaneously
 solve the segmentation and distortion challenges, by exploiting as strong 
-shape-prior the detailed anatomy extracted from anatomical \ac{mri}. On
-one hand, the significant benefits of exploiting the anatomical \ac{mri}
-have been demonstrated \cite{zollei_improved_2010}, justifying the use
-of the shape prior information. On the other, the
-significant coupling between both problems demands for consistent
-segmentation, parcellation, and distortion. This need is satisfied by
-the use of a unique underlying model of our joint approach.
+shape-prior the detailed anatomy extracted from anatomical \ac{mri}. 
 We reformulate the segmentation problem as an inverse problem, where
 we seek for an underlying deformation field (the distortion) mapping 
 from the structural space into the diffusion space.
+
+\textbf{Now quickly summarize structure of the paper}
