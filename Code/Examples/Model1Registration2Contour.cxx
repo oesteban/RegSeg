@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
 	VectorType zero = itk::NumericTraits<VectorType>::Zero;
 
 	ReaderType::Pointer polyDataReader1 = ReaderType::New();
-	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "wm_prior.vtk" );
+	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "wm_moved.vtk" );
 	polyDataReader1->Update();
 	ContourDisplacementFieldPointer initialContour1 = polyDataReader1->GetOutput();
 
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	ReaderType::Pointer polyDataReader2 = ReaderType::New();
-	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "csf_prior.vtk" );
+	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "csf_moved.vtk" );
 	polyDataReader2->Update();
 	ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
 
@@ -200,10 +200,10 @@ int main(int argc, char *argv[]) {
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetDeformationField( df );
-	opt->SetNumberOfIterations(1000);
-	opt->SetAlpha( 1e-4 );
-	opt->SetBeta( 1e-5 );
-	opt->SetStepSize( 1.0 );
+	opt->SetNumberOfIterations(5000);
+	opt->SetAlpha( 1e-5 );
+	opt->SetBeta( 1e-2 );
+	opt->SetStepSize( 10.0 );
 
 	// Start
 	opt->Start();
