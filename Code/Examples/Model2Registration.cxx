@@ -192,10 +192,15 @@ int main(int argc, char *argv[]) {
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetDeformationField( df );
-	opt->SetNumberOfIterations(500);
-	opt->SetAlpha( 50 );
-	opt->SetBeta( 100 );
-	opt->SetStepSize( 0.001 );
+	//opt->SetNumberOfIterations(500);
+	//opt->SetAlpha( 50 );
+	//opt->SetBeta( 100 );
+	//opt->SetStepSize( 0.001 );
+	opt->SetNumberOfIterations(5000);
+	opt->SetAlpha( 1e-5 );
+	opt->SetBeta( 1e-2 );
+	opt->SetStepSize( 10.0 );
+
 
 	// Start
 	opt->Start();
