@@ -1,10 +1,27 @@
 \section{Results and discussion}
 \label{sec:results}
 
-
-
 \subsection{Synthetic gray-scale data}
-
+The proposed method solved precisely the specific challenge
+created by the model. A severe distortion of the model is
+artificially created adding complexity to the problem of
+partial voluming in the outer contour of the sulcus.
+\autoref{fig:sulcusmodel_result} provides visual assessment
+for this result. With 16x16x16 control points, 
+computation time for this model was around
+10 minutes in a {\color{red}{(specific machine details)}}.
+\begin{figure}
+\includegraphics[width=1.0\textwidth]{model2result}
+\caption{Result of the segmentation performance on the first
+model. In red and blue colors the obtained \ac{wm}/\ac{gm} 
+and \ac{gm}/\ac{csf} contours for the deformed image, respectively.
+In white color, the initial shape priors for the \ac{wm}/\ac{gm}
+interface.
+{\color{red}{This figure is to be replaced by the real result,
+this is a proof of concept of registration that does not solve
+the pv problem. The current figure also removes the outer prior}}}
+\label{fig:sulcusmodel_result}
+\end{figure}
 
 
 \subsection{Simulated diffusion data}
@@ -12,23 +29,16 @@
 The proposed method successfully reverted the synthetic distortion
 field we applied to the data. With 16x16x16 control points, the
 displacements field is dense enough to correctly represent the
-synthetic field. (INCLUDE FIGURE). Figure XX shows the restored
-image and a difference map with the original model (we can also
-compute Dice indexes and that stuff).\\
+synthetic field. Second row in \autoref{fig:fa} shows the fitted
+contours obtained by using the original surfaces of the model
+as shape priors, with a constant translation of (5.0mm,10mm.,-5.0mm)
+to illustrate briefly the extent of the capture range of the algorithm.
+Computation time in this case was around 4 minutes in the previously
+described platform. \\
 %
 
 \begin{figure}
 \begin{tabular}{ccccc}
-%\includegraphics[width=0.19\textwidth]{fig_modelFA_00} &
-%\includegraphics[width=0.19\textwidth]{fig_modelFA_01} &
-%\includegraphics[width=0.19\textwidth]{fig_modelFA_02} &
-%\includegraphics[width=0.19\textwidth]{fig_modelFA_03} &
-%\includegraphics[width=0.19\textwidth]{fig_modelFA_04} \\
-%\includegraphics[width=0.19\textwidth]{fig_contours_00} &
-%\includegraphics[width=0.19\textwidth]{fig_contours_01} &
-%\includegraphics[width=0.19\textwidth]{fig_contours_02} &
-%\includegraphics[width=0.19\textwidth]{fig_contours_03} &
-%\includegraphics[width=0.19\textwidth]{fig_contours_04}
 \includegraphics[width=0.19\textwidth]{model1result_b_1} &
 \includegraphics[width=0.19\textwidth]{model1result_b_2} &
 \includegraphics[width=0.19\textwidth]{model1result_b_3} &

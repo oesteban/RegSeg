@@ -19,7 +19,7 @@ distortions inherent to the imaging techniques \citep{hagmann_mr_2012}.
 
 In this work, we will refer as brain tissue segmentation to the precise
 delineation of the \ac{csf}-\ac{gm} and \ac{gm}-\ac{wm} interface surfaces.
-This segmentation is an important step on which strongly rely further
+This segmentation is an processing step on which strongly rely further
 tasks. In tractography, a high-standard \ac{wm} mask is required. Otherwise,
 there is an important risk for the algorithm to lose fiber bundles. This
 requirement is usually solved in practice by plainly thresholding the 
@@ -33,7 +33,7 @@ high-resolution and better understood structural \ac{mri} of the same
 subject (e.g. \ac{t1} and/or \ac{t2} weighted acquisitions). %Conversely, this problem is resolved with non-linear registration of a structural \ac{mri} of the subject to the \ac{dwi} data. 
 Even though some efforts have addressed
 the study of the robustness of tractography with respect to intra-subject variability
-\cite{wakana_reproducibility_2007,heiervang_between_2006}, these results are restricted to some regions of the brain, only. Therefore, extremely robust
+\cite{wakana_reproducibility_2007,heiervang_between_2006}, these results are restricted to some regions of the brain, only. Therefore, robust
 and precise segmentation methods are required in the whole-brain application. 
 
 The \ac{dwi} data is usually obtained with \ac{epi}
@@ -44,24 +44,76 @@ been developed and generically named as \emph{\ac{epi}-unwarp} techniques
 \cite{holland_efficient_2010,hsu_correction_2009,jezzard_characterization_2005,
 reber_correction_2005}. These methods usually 
 require the extra acquisition of the magnitude and phase of
-the field (field-mapping), a condition which is not always met. Some other 
+the field (``field-mapping''), a condition which is not always met. Some other 
 methodologies do not make use of the field-mapping, compensating the distortion
 with non-linear registration from structural \ac{mri} or other means
 \citep{andersson_modeling_2001}. To our knowledge, there exists no study
-of the impact of the \ac{epi} distortion on the variability of tractography
+on the impact of the \ac{epi} distortion on the variability of tractography
 results. 
 
-It is easy to see, that the problems of precise segmentation in \ac{dwi}-space and the spatial mapping between these contours and the corresponding surfaces in anatomical images bear important redundancy. Once the spatial relationship between \ac{t1} and \ac{dwi} space is established, the contours which are readily available in \ac{t1} space, can simply be projected on to the \ac{dwi}-data. Conversely, if a precise delineation in \ac{dwi}-space was achieved, the spatial mapping with \ac{t1}-space could be derived from one-to-one correspondences on the contours. However, neither segmentation nor registration can be performed flawlessly, if considered independently. The significant benefits of exploiting the anatomical \ac{mri} when segmenting the \ac{dwi} data have been demonstrated \cite{zollei_improved_2010}, justifying the use
-of the shape prior information. 
+Therefore, the problems of precise segmentation in \ac{dwi}-space and the 
+spatial mapping between these contours and the corresponding surfaces in 
+anatomical images bear significant redundancy. Once the spatial relationship 
+between \ac{t1} and \ac{dwi} space is established, the contours which are 
+readily available in \ac{t1} space, can simply be projected on to the 
+\ac{dwi}-data. Conversely, if a precise delineation in \ac{dwi}-space 
+was achieved, the spatial mapping with \ac{t1}-space could be derived 
+from one-to-one correspondences on the contours. However, neither segmentation 
+nor registration can be performed flawlessly, if considered independently. 
+The significant benefits of exploiting the anatomical \ac{mri} when 
+segmenting the \ac{dwi} data have been demonstrated \cite{zollei_improved_2010}, 
+justifying the use of the shape prior information. 
 
-The use of anatomical templates in medical image segmentation is not exactly new---for an early overview see \citep{McInerney1996} and references therein. More recently, we suggest clustering the diverse methods of template-based segmentation methods into three groups. The first group typically adds a shape prior term to the energy functional of an evolving active contour \citep{Rousson2002,Chen2002,Paragios2003,Vemuri2003a,Yezzi2003a,Gastaud2004,Chan2005,Cremers2006,Bresson2006a,Ayvaci2007,Schmid2008}.
-These methods have a more or less explicit description of the expected relative boundary locations of the object to be delineated, and some even model the statistical deviations from this average shape. Closely related to this group are atlas-based segmentation methods \citep{Pohl2005,Pohl2006,Wang2006,Gorthi2009,Gorthi2011}, where the prior imposes consistent voxel-based classification of contiguous regions. Here, the presence of more structures than just the actual \ac{roi} helps aligning the target image with the atlas in a hierarchical fashion. Finally, the third group generalizes the atlas to actual images, and the contour is to segment simultaneously two different target images, related by a spatial transform to be co-estimated \citep{Wyatt2003,Yezzi2003}.
+We suggest clustering the current methodologies of template-based segmentation 
+methods into three groups. The first group typically adds a shape prior term to 
+the energy functional of an evolving active contour~\citep{Rousson2002,Chen2002,
+Paragios2003,Vemuri2003a,Yezzi2003a,Gastaud2004,Chan2005,Cremers2006,Bresson2006a,
+Ayvaci2007,Schmid2008} 
+{\color{red}{(FIXME:I would select from here the most important,
+removing directly those appearing in conferences and never published on journal. Better
+if we found a review paper/book chapter. I don't like so many references on a row)}}.
+These methods generally have a explicit description of the expected relative boundary 
+locations of the object to be delineated, and some even model the statistical deviations
+from this average shape. Closely related to this group are atlas-based segmentation
+methods \citep{Pohl2005,Pohl2006,Wang2006,Gorthi2009,Gorthi2011}, where the prior 
+imposes consistent voxel-based classification of contiguous regions. Here, the 
+presence of more structures than one unique \ac{roi} helps aligning the target image 
+with the atlas in a hierarchical fashion. Finally, the third group generalizes 
+the atlas to actual images, and the contour is to segment simultaneously two 
+different target images, related by a spatial transform to be co-estimated~\citep{Wyatt2003,
+Yezzi2003}.
 
 In this paper we propose a novel registration framework to simultaneously
 solving the segmentation and distortion challenges, by exploiting as strong 
-shape-prior the detailed anatomy extracted from anatomical \ac{mri}. Indeed, in our case we can consider the segmentation in anatomical images as a solved problem. Moreover, the shape prior is of very strong nature, since it is very specific to the particular subject. Also, after global alignment using existing approaches, the remaining spatial deformation between anatomical and diffusion space is due to \ac{mr} distortion. Finally, we need to establish precise spatial correspondence between the surfaces in both spaces, including the tangential direction for parcellation. Therefore, we can reduce the problem to finding the differences of spatial distortion in between anatomical and \ac{dwi} space. We thus reformulate the segmentation problem as an inverse problem, where we seek for an underlying deformation field---the distortion---mapping 
-from the structural space into the diffusion space, such that the structural contours segment optimally the \ac{dwi} data. In the process, the one-to-one correspondence between the contours in both spaces is guaranteed, and projection of parcellisation is trivial.
+shape-prior the detailed anatomy extracted from anatomical \ac{mri}. Indeed,
+hereafter we consider the segmentation in anatomical images as a solved problem.
+Moreover, the shape prior is of very ``strong'' nature, since it is specific to 
+the particular subject. Also, after global alignment using existing approaches, 
+the remaining spatial deformation between anatomical and diffusion space is 
+due to \ac{mr} distortion. Finally, we need to establish precise spatial 
+correspondence between the surfaces in both spaces, including the tangential 
+direction for parcellation. Therefore, we can reduce the problem to finding 
+the differences of spatial distortion in between anatomical and \ac{dw} space.
+We thus reformulate the segmentation problem as an inverse problem, where we 
+seek for an underlying deformation field (the distortion) mapping 
+from the structural space into the diffusion space, such that the structural 
+contours segment optimally the \ac{dwi} data. In the process, the one-to-one 
+correspondence between the contours in both spaces is guaranteed, and projection 
+of parcellisation to \ac{dw} space is implicit and consistent.
 
-We test our proposed joint segmentation-registration model on two different synthetic examples. The first example is a scalar sulcus model, where the \ac{csf}-\ac{gm} boundary particularly suffers from \ac{pve} and can only be segmented correctly thanks to the shape prior and its coupling with the inner, \ac{gm}-\ac{wm} boundary through the imposed deformation field regularity. The second case deals with more realistic \ac{dwi} data stemming from simulations of a simplistic brain data. Again, we can show that the proposed model successfully segments the \ac{dwi} data based on two derived scalar features, namely \ac{fa} and \ac{md}, while establishing an estimate of the dense distortion field.
+We test our proposed joint segmentation-registration model on two different 
+synthetic examples. The first example is a scalar sulcus model, where the 
+\ac{csf}-\ac{gm} boundary particularly suffers from \ac{pve} and can only be 
+segmented correctly thanks to the shape prior and its coupling with the inner, 
+\ac{gm}-\ac{wm} boundary through the imposed deformation field regularity. 
+The second case deals with more realistic \ac{dwi} data stemming from 
+phantom simulations of a simplistic brain data. Again, we show that the 
+proposed model successfully segments the \ac{dwi} data based on two derived 
+scalar features, namely \ac{fa} and \ac{md}, while establishing an estimate 
+of the dense distortion field.
 
-The rest of this paper is organized as follows. First, in \autoref{sec:methods} we introduce our proposed model for joint multivariate segmentation-registration. Then we provide a more detailed description of the data and experimental setup in \autoref{sec:experiments}. We present results in \autoref{sec:results} and conclude in \autoref{sec:conclusion}.
+The rest of this paper is organized as follows. First, in \autoref{sec:methods}
+we introduce our proposed model for joint multivariate segmentation-registration.
+Then we provide a more detailed description of the data and experimental setup in
+\autoref{sec:experiments}. We present results in \autoref{sec:results} and conclude 
+in \autoref{sec:conclusion}.
