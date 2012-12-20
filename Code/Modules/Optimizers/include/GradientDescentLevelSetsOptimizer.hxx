@@ -45,7 +45,10 @@
 #include <cmath>
 #include <itkComplexToRealImageFilter.h>
 #include "DisplacementFieldFileWriter.h"
-
+#include <sstream>
+#include <iostream>
+#include <iomanip>
+using namespace std;
 
 namespace rstk {
 
@@ -57,7 +60,7 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_LearningRate = itk::NumericTraits<InternalComputationValueType>::One;
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
-	this->m_ConvergenceWindowSize = 20;
+	this->m_ConvergenceWindowSize = 30;
 	this->m_StepSize = 0.1;
 	this->m_Alpha = 1e-4;
 	this->m_Beta = 1e-3;
@@ -141,7 +144,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		/* Compute metric value/derivative. */
 		try	{
 			this->m_SpeedsField = this->m_LevelSetsFunction->GetLevelSetsMap(this->m_DeformationField);
-			/*
+
 			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
 			typename Writer::Pointer p = Writer::New();
 			std::stringstream ss;
@@ -149,7 +152,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			p->SetFileName( ss.str().c_str() );
 			p->SetInput( this->m_SpeedsField );
 			p->Update();
-			*/
+
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = Superclass::COSTFUNCTION_ERROR;
@@ -185,6 +188,23 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		//	this->m_CurrentBestValue = this->m_CurrentLevelSetsValue;
 		//	this->m_BestParameters = this->GetCurrentPosition( );
 		//}
+
+		typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
+		// Write final result out
+		typename WriterType::Pointer polyDataWriter = WriterType::New();
+		polyDataWriter->SetInput( this->m_LevelSetsFunction->GetCurrentContourPosition()[0] );
+		std::stringstream ss;
+		ss << "Model2-wm_it" <<  setfill('0') << setw(4) << this->m_CurrentIteration << ".vtk";
+		polyDataWriter->SetFileName( ss.str().c_str() );
+		polyDataWriter->Update();
+
+		// Write final result out
+		typename WriterType::Pointer polyDataWriter2 = WriterType::New();
+		polyDataWriter2->SetInput( this->m_LevelSetsFunction->GetCurrentContourPosition()[1] );
+		std::stringstream ss2;
+		ss2 << "Model2-pial_it" << setfill('0') << setw(4) << this->m_CurrentIteration << ".vtk";
+		polyDataWriter2->SetFileName( ss2.str().c_str() );
+		polyDataWriter2->Update();
 
 		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentLevelSetsValue << std::endl;
 

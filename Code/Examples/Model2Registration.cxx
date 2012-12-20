@@ -95,20 +95,20 @@ int main(int argc, char *argv[]) {
 
 
 	ImageReader::Pointer r = ImageReader::New();
-	r->SetFileName( std::string( DATA_DIR ) + "deformed.nii" );
+	r->SetFileName( std::string( DATA_DIR ) + "deformed2.nii" );
 	r->Update();
 	ChannelType::Pointer im = r->GetOutput();
 	ChannelType::DirectionType dir = im->GetDirection();
 
-	ChannelType::DirectionType ident; ident.SetIdentity();
-	OrientFilter::Pointer orient = OrientFilter::New();
-	orient->UseImageDirectionOn();
-	orient->SetDesiredCoordinateDirection( ident );
-	orient->SetInput( im );
-	orient->Update();
-	im = orient->GetOutput();
-	ChannelType::PointType newOrig; newOrig.Fill(0.0);
-	im->SetOrigin( newOrig );
+	//ChannelType::DirectionType ident; ident.SetIdentity();
+	//OrientFilter::Pointer orient = OrientFilter::New();
+	//orient->UseImageDirectionOn();
+	//orient->SetDesiredCoordinateDirection( ident );
+	//orient->SetInput( im );
+	//orient->Update();
+	//im = orient->GetOutput();
+	//ChannelType::PointType newOrig; newOrig.Fill(0.0);
+	//im->SetOrigin( newOrig );
 
 	ImageWriter::Pointer ww = ImageWriter::New();
 	ww->SetInput( im );
@@ -119,7 +119,8 @@ int main(int argc, char *argv[]) {
 	VectorType zero = itk::NumericTraits<VectorType>::Zero;
 
 	ReaderType::Pointer polyDataReader1 = ReaderType::New();
-	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "gmwm_surface.vtk" );
+	//polyDataReader1->SetFileName( std::string( DATA_DIR ) + "gmwm_surface.vtk" );
+	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "new_surf_wm.vtk" );
 	polyDataReader1->Update();
 	ContourDisplacementFieldPointer initialContour1 = polyDataReader1->GetOutput();
 
@@ -132,7 +133,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	ReaderType::Pointer polyDataReader2 = ReaderType::New();
-	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "pial_surface.vtk" );
+	//polyDataReader2->SetFileName( std::string( DATA_DIR ) + "pial_surface.vtk" );
+	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "new_surf_gm.vtk" );
 	polyDataReader2->Update();
 	ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
 
@@ -197,9 +199,9 @@ int main(int argc, char *argv[]) {
 	//opt->SetBeta( 100 );
 	//opt->SetStepSize( 0.001 );
 	opt->SetNumberOfIterations(5000);
-	opt->SetAlpha( 1e-5 );
-	opt->SetBeta( 1e-2 );
-	opt->SetStepSize( 10.0 );
+	opt->SetAlpha( 100 );
+	opt->SetBeta( 10 );
+	opt->SetStepSize( 0.001 );
 
 
 	// Start
