@@ -94,8 +94,7 @@ the \ac{md} depicts the \emph{magnitude} of the process.
 \mathrm{FA} &= \sqrt{ \frac{1}{2}}\,\frac{\sqrt{ (\lambda_1 - \lambda_2)^2 + (\lambda_2 - \lambda_3)^2 + (\lambda_3 - \lambda_1)^2}}{\sqrt{ {\lambda_1}^2 + {\lambda_2}^2 + {\lambda_3}^2}} \label{eq:fa} \\
 \mathrm{MD} &= ( \lambda_1 + \lambda_2 + \lambda_3 ) / 3 \label{eq:md}
 \end{align}
-
-There exist two main reasons to justify their choice. 
+where $\lambda_i$ are the eigenvalues of the diffusion tensor associated with the diffusion signal $S(\vec{q})$. There exist two main reasons to justify their choice. 
 First, they are well-understood and standardized in clinical routine.
 Second, together they contain most of the information that is
 usually extracted from the \ac{dwi}-derived scalar maps. \\
@@ -111,29 +110,34 @@ Finally, we estimated their parameters using the tissue probability
 distribution maps from the original model (\autoref{table:parameters}).
 
 \begin{table}
-\begin{tabularx}{1.0\textwidth}{c|XXX}
-\hline
-         & $\mathbf{\mu}_{FA}$ & $\mathbf{\mu}_{MD}$ & $\Sigma$ \\
-\hline
+\caption{Model means and covariances of \acl{fa} and \acl{md} estimated from the reconstructed simulated \ac{dwi} images for each modeled tissue, \acl{wm},\acl{gm}, and \acl{csf}. As expected, the two scalar features are complementary and the three tissues can well be discriminated. }
+\label{table:parameters}
+%\begin{tabularx}{1.0\textwidth}{c|XXX}
+\begin{tabular}{*{3}{@{}p{0.2\textwidth}}@{}p{0.4\textwidth}@{}}
+\toprule
+% tissue        & $\mathbf{\mu}_{FA}$ & $\mathbf{\mu}_{MD}$ & $\Sigma$ \newline
+        & $\mathbf{\mu}$ \\
+\cmidrule(r){2-3}
+Tissue& FA & MD &$\Sigma$\\
+\cmidrule(r){1-1}\cmidrule(r){2-2}\cmidrule(r){3-3}\cmidrule{4-4}
 \ac{wm}  & 0.778 & 6.94\e{-4} & 
    $\begin{pmatrix}
    	4.85\e{-3} & -6.90\e{-6} \\ -6.90\e{-6} & 1.03\e{-8}
-   \end{pmatrix}$
-\\
-\hline
+   \end{pmatrix}$\vspace{2mm}\\
+%
 \ac{gm}  & 0.119 & 8.95\e{-4} &
    $\begin{pmatrix}
    	5.90\e{-4} & -1.43\e{-6} \\ -1.43\e{-6} & 1.04\e{-8}
-   \end{pmatrix}$
+   \end{pmatrix}$\vspace{2mm}
 \\
-\hline
+%
 \ac{csf} & 0.103 & 2.99\e{-3} &
    $\begin{pmatrix}
    	1.19\e{-3} & 2.22\e{-7} \\ 2.22\e{-7} & 1.56\e{-8}
    \end{pmatrix}$
 \\
-\hline
-\end{tabularx}
-\caption{Model parameters}
-\label{table:parameters}
+\bottomrule
+\end{tabular}
+%\end{tabularx}
+
 \end{table}
