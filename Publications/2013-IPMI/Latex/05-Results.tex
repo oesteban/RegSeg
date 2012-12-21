@@ -10,13 +10,22 @@ partial voluming in the outer contour of the sulcus.
 for this result. With 16x16x16 control points, 
 computation time for this model was around
 10 minutes in a {\color{red}{(specific machine details)}}.
+
 \begin{figure}
-\includegraphics[width=1.0\textwidth]{model2result}
-\caption{Result of the segmentation performance on the first
-model. In red and blue colors the obtained \ac{wm}/\ac{gm} 
-and \ac{gm}/\ac{csf} contours for the deformed image, respectively.
-In white color, the initial shape priors for the \ac{wm}/\ac{gm}
-interface.
+\begin{tabular}{ccccc}
+\includegraphics[width=0.19\textwidth]{model2result_b_1} &
+\includegraphics[width=0.19\textwidth]{model2result_b_2} &
+\includegraphics[width=0.19\textwidth]{model2result_a_1} &
+\includegraphics[width=0.19\textwidth]{model2result_a_2} &
+\includegraphics[width=0.19\textwidth]{model2surf} \\
+\multicolumn{2}{c}{a)} & \multicolumn{2}{c}{b)} & c)
+\end{tabular}
+\caption{Result of the segmentation performance on the sulcus model.
+a) Two slices and prior contours before segmentation-registration. b) The same slices and contours after distortion estimation. c) 3D rendering of the deformed priors, with the traces of the two selected slices highlighted. 
+%In red and blue colors the obtained \ac{wm}/\ac{gm} 
+%and \ac{gm}/\ac{csf} contours for the deformed image, respectively.
+%In white color, the initial shape priors for the \ac{wm}/\ac{gm}
+%interface.
 {\color{red}{This figure is to be replaced by the real result,
 this is a proof of concept of registration that does not solve
 the pv problem. The current figure also removes the outer prior}}}
