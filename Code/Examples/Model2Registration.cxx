@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 
 	ReaderType::Pointer polyDataReader1 = ReaderType::New();
 	//polyDataReader1->SetFileName( std::string( DATA_DIR ) + "gmwm_surface.vtk" );
-	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "new_surf_wm.vtk" );
+	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "new_surf2_wm.vtk" );
 	polyDataReader1->Update();
 	ContourDisplacementFieldPointer initialContour1 = polyDataReader1->GetOutput();
 
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 
 	ReaderType::Pointer polyDataReader2 = ReaderType::New();
 	//polyDataReader2->SetFileName( std::string( DATA_DIR ) + "pial_surface.vtk" );
-	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "new_surf_gm.vtk" );
+	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "new_surf2_gm.vtk" );
 	polyDataReader2->Update();
 	ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
 
@@ -200,8 +200,8 @@ int main(int argc, char *argv[]) {
 	//opt->SetStepSize( 0.001 );
 	opt->SetNumberOfIterations(5000);
 	opt->SetAlpha( 100 );
-	opt->SetBeta( 10 );
-	opt->SetStepSize( 0.001 );
+	opt->SetBeta( 1 );
+	opt->SetStepSize( 0.0005 );
 
 
 	// Start
