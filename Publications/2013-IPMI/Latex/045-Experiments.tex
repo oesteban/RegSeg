@@ -60,32 +60,42 @@ a)&b)&c)&d)&e)
 %
 In order to demonstrate the functionality of the methodology, 
 and characterize its possibilities with diffusion data,
-we simulated the \gls{dw} signal of a synthetic phantom from a model
-consisting of several spherical shapes emulating
-the different brain tissues (see \autoref{fig:fa}, first row). 
-We reconstructed the signal with standard procedures to 
-approximate the environment to the real one at maximum. \\
+we built a synthetic phantom from a model consisting of several 
+spherical shapes emulating the different brain tissues (see 
+\autoref{fig:fa}, first row). We simulated a single-shell
+acquisition at $b=1000$ \eqref{eqn:MultiTensor} with 30 samples
+equally distributed on one hemisphere, corresponding to a standard
+\gls{dti} acquisition commonly used in clinical practice.
+We generated a synthetic displacement field to produce
+an \gls{epi}-like distortion on the \gls{dwi} signal. Finally,
+we reconstructed the deformed signal, and generated \gls{dwi}-derived
+scalar maps (specifically the \gls{fa} and \gls{md} maps).
+Then, the scalar maps were placed as features in 
+\eqref{eq:complete_energy} to drive our segmentation approach, 
+finding the location of the \gls{wm}-\gls{gm}
+and the \gls{csf}-\gls{wm} interfaces in the distorted space. \\
 
 \paragraph{Signal simulation}
-To numerically simulate the MRI signal attenuation when applying a diffusion 
+To numerically simulate the \gls{mri} signal attenuation when applying a diffusion 
 gradient in a voxel with $N$ fiber populations we made use of the standard 
 \emph{Multi-Tensor Model}~\cite{Tuch:2002aa}:
 %
 \begin{equation} 
 \label{eqn:MultiTensor}
-S(\vec{q}) / S_{0} = \sum_{i=1}^{N} f_{i} \, \exp{ \left( -b \, \vec{q}^{T} \, \mathbf{D}_i \, \vec{q}\right) } + f_{iso} \, \exp{ \left( -b \, \mathbf{D}_{iso} \right) } ,
+S(q) / S_{0} = \sum_{i=1}^{N} f_{i} \, \exp{ \left( -b \, q^{T} \, \mathbf{D}_i \, q\right) } + f_{iso} \, \exp{ \left( -b \, \mathbf{D}_{iso} \right) }  + f_{gm} \, \exp{ \left( -b \, \mathbf{D}_{gm} \right) } ,
 \end{equation}
 %
-where $\vec{q} \in \mathbb{S}^2$ is the direction of the diffusion gradient 
-applied, $b$ is the b-value accounting for its strength, $S_0 \equiv S(\vec{0})$ 
-is the signal with no diffusion weighting, $f_i$ and $\mathbf{D}_i$ are 
-respectively the volume fraction and the diffusion tensor characterizing the 
-$i$-th fiber population.
-
-The diffusion tensors $\mathbf{D}_i$ and $\mathbf{D}_{iso}$ describe the diffusion 
-processes of each fiber compartment and of contaminations from the CSF. In this work, 
-these quantities have been taken from standard ranges typically observed in the 
-human brain~\cite{Canales-Rodriguez:2009aa}.
+where $q \in \mathbb{S}^2$ is the direction of the diffusion gradient applied,
+$b$ is the b-value accounting for its strength and $S_0 \equiv S(0)$ is the 
+signal with no diffusion weighting. $f_i$ and $\mathbf{D}_i$ are the volume 
+fraction and the diffusion tensor characterizing the $i$-th fiber population, 
+whereas the tensors $\mathbf{D}_{iso}$ and $\mathbf{D}_{gm}$ describe the 
+diffusion processes of partial volumes with \gls{csf} and \gls{gm} within the 
+voxel, which volume fractions are, respectively, $f_{iso}$ and $f_{gm}$, and
+$\sum_i f_i + f_{iso} + f_{gm} = 1$. In this work, the diffusion properties have
+been taken from standard ranges typically observed in the human 
+brain~\cite{Canales-Rodriguez:2009aa}. Moreover we assumed $N = 1$ and $S_0 = 1$ 
+without loss of generality.
 
 \paragraph{Noise simulation}
 The diffusion MRI signal $S$ has been corrupted with 
@@ -99,16 +109,24 @@ where $\varepsilon_{1,2}$ are Gaussian distributed with zero mean
 and standard deviation $\sigma = S_0 / \mathit{SNR}$ and \gls{snr}
 is the \gls{snr} on the $S_0$ image.
 
+\paragraph{Simulated \gls{epi} distortion}
+For this model, we created manually a sound distortion to approximate
+the real \gls{epi} distortions. We interpolated the distortion to a 
+dense deformation field, and applied it to generate the deformed \gls{dwi}
+signal.
+
 \paragraph{Derived scalar features}
-The target \gls{dwi} data is characterized by its distortions and its
-low resolution (typically around $2.2x2.2x3mm^3$). Depending on the
-posterior reconstruction methodology and the angular resolution
-intended, the \gls{dwi} raw data has to be processed in order to
-extract the information in a manageable manner. The properties of
+We obtained the local fiber configuration in each voxel with a commonly 
+used \gls{dti} reconstruction tool~\footnote{DTIFIT, included
+in the FMRIB's Software Library (FSL), 
+\url{http://fsl.fmrib.ox.ac.uk/fsl/fsl-4.1.9/fdt/fdt_dtifit.html}}. 
+
+The properties of
 the reconstructed tensors and derived scalar maps have been
 studied by \cite{ennis_orthogonal_2006}. Based on their
-findings, the proposed energy model adapts to the \gls{fa}~\eqref{eq:fa} 
-and \gls{md}~\eqref{eq:md} for their properties. 
+findings, we chose \gls{fa}~\eqref{eq:fa} 
+and \gls{md}~\eqref{eq:md} as features for the energy model in driving
+the registration-segmentation process. 
 Whereas \gls{fa} \ describes the \emph{shape} of diffusion, 
 the \gls{md} depicts the \emph{magnitude} of the process. 
 
@@ -121,17 +139,9 @@ associated with the diffusion signal $S(\vec{q})$. There exist
 two main reasons to justify their choice. 
 First, they are well-understood and standardized in clinical routine.
 Second, together they contain most of the information that is
-usually extracted from the \gls{dwi}-derived scalar maps. \\
-
-\subsubsection{Simulated distortions}
-
-For this model, we created manually a sound distortion visually similar
-to real \gls{epi} distortions. We interpolated the distortion to a 
-dense deformation field, necessary for warping the raw \gls{dwi} simulated
-data. Once the signal was deformed, we proceeded to reconstruct the
-\gls{dti} and subsequently obtained the scalars of interest (\gls{fa}, \gls{md}).
-Finally, we estimated their parameters using the tissue probability
-distribution maps from the original model (\autoref{table:parameters}).
+usually extracted from the \gls{dwi}-derived scalar maps. The properties
+of brain tissues on the joint distribution of \gls{fa} and \gls{md} are 
+summarized in \autoref{table:parameters}. \\
 
 \begin{table}
 \caption{Model means and covariances of \acrfull{fa} and \acrfull{md} estimated from the reconstructed simulated \gls{dwi} images for each modeled tissue, \acrfull{wm},\acrfull{gm}, and \acrfull{csf}. As expected, the two scalar features are complementary and the three tissues can well be discriminated. }

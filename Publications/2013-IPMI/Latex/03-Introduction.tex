@@ -10,36 +10,43 @@ large amount of imaging techniques for acquisition, processing, and analysis
 specifically tuned for \gls{dwi} data.
 
 The whole-brain connectivity analysis has given rise to some challenges
-towards reliable structural information
-about the neuronal tracts from \gls{dwi} \cite{johansen-berg_using_2009,
-jones_white_2012}. The earlier stages of these
-processing pipelines generally include two necessary steps, brain tissue
-segmentation on the diffusion space and the correction of geometrical
-distortions inherent to the imaging techniques \citep{hagmann_mr_2012}.
+towards reliable structural information about the neuronal tracts 
+from \gls{dwi} \cite{johansen-berg_using_2009,jones_white_2012}. 
+The earlier stages of these processing pipelines generally include 
+two necessary steps, brain tissue segmentation on the diffusion space 
+and the correction of geometrical distortions inherent to the acquisition 
+sequence \citep{hagmann_mr_2012}.
 
 In this work, we will refer as brain tissue segmentation to the precise
 delineation of the \gls{csf}-\gls{gm} and \gls{gm}-\gls{wm} interface surfaces.
-This segmentation is an processing step on which strongly rely further
-tasks. In tractography, a high-standard \gls{wm} mask is required. Otherwise,
-there is an important risk for the algorithm to lose fiber bundles. This
-requirement is usually solved in practice by plainly thresholding the 
+This segmentation is a processing step on which strongly rely further
+tasks. An accurate brain tissue segmentation is required
+to filter the fiber bundles obtained with \gls{dwi} tractography. 
+This requirement is usually solved in practice by plainly thresholding the 
 \gls{fa}, a well-known scalar map derived from \gls{dwi} which depicts 
-the isotropy of water diffusion inside the brain. 
-A precise location of the
-\gls{gm}-\gls{wm} surface is also essential in the final steps to
-achieve a consistent parcellisation of the cortex to represent the nodes 
-of the output network. This parcellisation is generally defined in a 
-high-resolution and better understood structural \gls{mri} of the same 
-subject (e.g. \gls{t1} and/or \gls{t2} weighted acquisitions). %Conversely, this problem is resolved with non-linear registration of a structural \gls{mri} of the subject to the \gls{dwi} data. 
-Even though some efforts have addressed
-the study of the robustness of tractography with respect to intra-subject variability
-\cite{heiervang_between_2006,wakana_reproducibility_2007}, these results are restricted to some regions of the brain, only. Therefore, robust
-and precise segmentation methods are required in the whole-brain application. 
+the isotropy of water diffusion inside the brain. Also,
+it is necessary to locate the intersections of fiber bundles and \gls{gm}.
+Moreover, a precise location of the \gls{gm}-\gls{wm} surface is also essential 
+to finally achieve a consistent parcellisation of the cortex 
+to represent the nodes of the output network. This parcellisation 
+is generally defined in a high-resolution and better understood structural 
+\gls{mri} of the same 
+subject (e.g. \gls{t1} and/or \gls{t2} weighted acquisitions). Even though
+some efforts have addressed the study of the robustness of tractography with
+respect to intra-subject variability \cite{heiervang_between_2006,
+wakana_reproducibility_2007}, these results are restricted to certain regions 
+of the brain, only. Therefore, robust and precise segmentation methods are 
+required in the whole-brain application. The problem is challenging due to
+the much lower resolution of \gls{dwi} (typically around 
+$2.5\times2.5\times2.5mm^3.$) compared to structural \gls{mri}, and the
+existence of geometrical distortions.
 
-The \gls{dwi} data is usually obtained with \gls{epi}
-acquisition techniques, that often suffer from severe distortions due to 
-local field inhomogeneities. Generally, it is appreciated in the anterior
-part of the brain, along the phase-encoded direction. Some methodologies have
+\gls{dwi} data are usually acquired with \gls{epi} sequences 
+as they allow for very fast acquisitions but they are known to 
+suffer from geometrical distortions due to local field inhomogeneities. 
+These artifacts happen along the phase-encoding direction, and are most 
+appreciable in the front part of the brain for the strong air/tissue 
+interface around the frontal sinuses. Some methodologies have
 been developed and generically named as \emph{\gls{epi}-unwarp} techniques
 \cite{holland_efficient_2010,hsu_correction_2009,jezzard_characterization_2005,
 reber_correction_2005}. These methods usually 
@@ -55,7 +62,7 @@ Therefore, the problems of precise segmentation in \gls{dwi}-space and the
 spatial mapping between these contours and the corresponding surfaces in 
 anatomical images bear significant redundancy. Once the spatial relationship 
 between \gls{t1} and \gls{dwi} space is established, the contours which are 
-readily available in \gls{t1} space, can simply be projected on to the 
+readily available in \gls{t1} space can simply be projected on to the 
 \gls{dwi}-data. Conversely, if a precise delineation in \gls{dwi}-space 
 was achieved, the spatial mapping with \gls{t1}-space could be derived 
 from one-to-one correspondences on the contours. However, neither segmentation 
@@ -67,10 +74,7 @@ justifying the use of the shape prior information.
 We suggest clustering the current methodologies of template-based segmentation 
 methods into three groups. The first group typically adds a shape prior term to 
 the energy functional of an evolving active contour~\citep{Bresson2006a,Chan2005,
-Chen2002,Cremers2006,Gastaud2004,Paragios2003,Vemuri2003a,Yezzi2003a} %removed Rousson2002,Ayvaci2007,Schmid2008
-%{\color{red}{(FIXME:I would select from here the most important,
-%removing directly those appearing in conferences and never published on journal. Better
-%if we found a review paper/book chapter. I don't like so many references on a row)}}.
+Chen2002,Cremers2006,Gastaud2004,Paragios2003,Vemuri2003a,Yezzi2003a}.
 These methods generally have a explicit description of the expected relative boundary 
 locations of the object to be delineated, and some even model the statistical deviations
 from this average shape. Closely related to this group are atlas-based segmentation
@@ -84,12 +88,13 @@ Yezzi2003}.
 
 In this paper we propose a novel registration framework to simultaneously
 solving the segmentation and distortion challenges, by exploiting as strong 
-shape-prior the detailed anatomy extracted from anatomical \gls{mri}. Indeed,
-hereafter we consider the segmentation in anatomical images as a solved problem.
+shape-prior the detailed morphology extracted from high-resolution anatomical 
+\gls{mri}. Indeed, hereafter we assume this segmentation problem in anatomical 
+images as a solved by widely used available procedures.
 Moreover, the shape prior is of very ``strong'' nature, since it is specific to 
 the particular subject. Also, after global alignment using existing approaches, 
 the remaining spatial deformation between anatomical and diffusion space is 
-due to \gls{mr} distortion. Finally, we need to establish precise spatial 
+due to \gls{epi} distortions. Finally, we need to establish precise spatial 
 correspondence between the surfaces in both spaces, including the tangential 
 direction for parcellation. Therefore, we can reduce the problem to finding 
 the differences of spatial distortion in between anatomical and \gls{dw} space.
