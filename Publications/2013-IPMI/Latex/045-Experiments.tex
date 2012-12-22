@@ -5,7 +5,7 @@
 %
 As described in \autoref{sec:introduction}, the general situation in
 the connectivity pipelines consists of having 
-a reliable segmentation obtained from the high resolution \ac{t1} 
+a reliable segmentation obtained from the high resolution \gls{t1} 
 reference image. Therefore, a precise location of the tissue interfaces
 of interest is available in a reference space. Given that the anatomical 
 reference segmentation is beyond the scope of this manuscript, we simply 
@@ -15,7 +15,7 @@ seek to establish them in a separate segmentation step on ``anatomical'' images.
 \subsection{Synthetic gray-scale data}
 %
 The first simplified model to test the approach is inspired by a problem 
-shown for coupled \ac{csf}/\ac{gm} and \ac{gm}/\ac{wm} segmentation in \citep{macdonald_automated_2000}. Authors note that ``partial volume effects 
+shown for coupled \gls{csf}/\gls{gm} and \gls{gm}/\gls{wm} segmentation in \citep{macdonald_automated_2000}. Authors note that ``partial volume effects 
 blur the distinction between closely adjacent surfaces in deep sulci, leading 
 to a well-known segmentation error in which the deeper reaches of sulci are 
 not penetrated by the putative surface model.'' This problem is aggravated 
@@ -26,17 +26,17 @@ which the distinction between opposing banks of the sulcus has been obscured
 by partial volume.''  
 
 Here, we reproduce their model on a volume consisting of three 
-piecewise-constant parts: a notched ball representing the \ac{wm} with a single 
-sulcus ($\mu_{WM} = 0.8$), a cortical sheet of \ac{gm} obtained through dilation 
-of the \ac{wm} ($\mu_{GM} = 0.5$), and the surrounding background representing 
-\ac{csf} ($\mu_{CSF} = 0.2$). The volume is then affected by additive Gaussian 
+piecewise-constant parts: a notched ball representing the \gls{wm} with a single 
+sulcus ($\mu_{WM} = 0.8$), a cortical sheet of \gls{gm} obtained through dilation 
+of the \gls{wm} ($\mu_{GM} = 0.5$), and the surrounding background representing 
+\gls{csf} ($\mu_{CSF} = 0.2$). The volume is then affected by additive Gaussian 
 noise, effectively creating uniform standard deviation of $\sigma = 0.045$ per 
 region.
 
 As illustrated in \autoref{fig:sulcusmodel}, conventional single surface 
-segmentation of the \ac{csf}/\ac{gm} boundary misses to capture the sulcus in 
+segmentation of the \gls{csf}/\gls{gm} boundary misses to capture the sulcus in 
 its full depth. With our proposed model, we expect the joint 
-segmentation-registration to be driven largely by the inner, \ac{gm}/\ac{wm}
+segmentation-registration to be driven largely by the inner, \gls{gm}/\gls{wm}
 contour that exhibits sufficient contrast and lesser partial volume effects. 
 The shape prior of the outer, difficult contour will then be co-aligned through 
 the regularity of the estimated deformation field.
@@ -60,7 +60,7 @@ a)&b)&c)&d)&e)
 %
 In order to demonstrate the functionality of the methodology, 
 and characterize its possibilities with diffusion data,
-we simulated the \acs{dw} signal of a synthetic phantom from a model
+we simulated the \gls{dw} signal of a synthetic phantom from a model
 consisting of several spherical shapes emulating
 the different brain tissues (see \autoref{fig:fa}, first row). 
 We reconstructed the signal with standard procedures to 
@@ -96,21 +96,21 @@ The diffusion MRI signal $S$ has been corrupted with
 \end{equation}
 %
 where $\varepsilon_{1,2}$ are Gaussian distributed with zero mean
-and standard deviation $\sigma = S_0 / \mathit{SNR}$ and \acs{snr}
-is the \ac{snr} on the $S_0$ image.
+and standard deviation $\sigma = S_0 / \mathit{SNR}$ and \gls{snr}
+is the \gls{snr} on the $S_0$ image.
 
 \paragraph{Derived scalar features}
-The target \ac{dwi} data is characterized by its distortions and its
+The target \gls{dwi} data is characterized by its distortions and its
 low resolution (typically around $2.2x2.2x3mm^3$). Depending on the
 posterior reconstruction methodology and the angular resolution
-intended, the \ac{dwi} raw data has to be processed in order to
+intended, the \gls{dwi} raw data has to be processed in order to
 extract the information in a manageable manner. The properties of
 the reconstructed tensors and derived scalar maps have been
 studied by \cite{ennis_orthogonal_2006}. Based on their
-findings, the proposed energy model adapts to the \ac{fa}~\eqref{eq:fa} 
-and \ac{md}~\eqref{eq:md} for their properties. 
-Whereas \ac{fa} \ describes the \emph{shape} of diffusion, 
-the \ac{md} depicts the \emph{magnitude} of the process. 
+findings, the proposed energy model adapts to the \gls{fa}~\eqref{eq:fa} 
+and \gls{md}~\eqref{eq:md} for their properties. 
+Whereas \gls{fa} \ describes the \emph{shape} of diffusion, 
+the \gls{md} depicts the \emph{magnitude} of the process. 
 
 \begin{align}
 \mathrm{FA} &= \sqrt{ \frac{1}{2}}\,\frac{\sqrt{ (\lambda_1 - \lambda_2)^2 + (\lambda_2 - \lambda_3)^2 + (\lambda_3 - \lambda_1)^2}}{\sqrt{ {\lambda_1}^2 + {\lambda_2}^2 + {\lambda_3}^2}} \label{eq:fa} \\
@@ -121,20 +121,20 @@ associated with the diffusion signal $S(\vec{q})$. There exist
 two main reasons to justify their choice. 
 First, they are well-understood and standardized in clinical routine.
 Second, together they contain most of the information that is
-usually extracted from the \ac{dwi}-derived scalar maps. \\
+usually extracted from the \gls{dwi}-derived scalar maps. \\
 
 \subsubsection{Simulated distortions}
 
 For this model, we created manually a sound distortion visually similar
-to real \ac{epi} distortions. We interpolated the distortion to a 
-dense deformation field, necessary for warping the raw \ac{dwi} simulated
+to real \gls{epi} distortions. We interpolated the distortion to a 
+dense deformation field, necessary for warping the raw \gls{dwi} simulated
 data. Once the signal was deformed, we proceeded to reconstruct the
-\ac{dti} and subsequently obtained the scalars of interest (\ac{fa}, \ac{md}).
+\gls{dti} and subsequently obtained the scalars of interest (\gls{fa}, \gls{md}).
 Finally, we estimated their parameters using the tissue probability
 distribution maps from the original model (\autoref{table:parameters}).
 
 \begin{table}
-\caption{Model means and covariances of \acl{fa} and \acl{md} estimated from the reconstructed simulated \ac{dwi} images for each modeled tissue, \acl{wm},\acl{gm}, and \acl{csf}. As expected, the two scalar features are complementary and the three tissues can well be discriminated. }
+\caption{Model means and covariances of \acrfull{fa} and \acrfull{md} estimated from the reconstructed simulated \gls{dwi} images for each modeled tissue, \acrfull{wm},\acrfull{gm}, and \acrfull{csf}. As expected, the two scalar features are complementary and the three tissues can well be discriminated. }
 \label{table:parameters}
 %\begin{tabularx}{1.0\textwidth}{c|XXX}
 \begin{tabular}{*{3}{@{}p{0.2\textwidth}}@{}p{0.4\textwidth}@{}}
@@ -144,18 +144,18 @@ distribution maps from the original model (\autoref{table:parameters}).
 \cmidrule(r){2-3}
 Tissue& FA & MD &$\Sigma$\\
 \cmidrule(r){1-1}\cmidrule(r){2-2}\cmidrule(r){3-3}\cmidrule{4-4}
-\ac{wm}  & 0.778 & 6.94\e{-4} & 
+\gls{wm}  & 0.778 & 6.94\e{-4} & 
    $\begin{pmatrix}
    	4.85\e{-3} & -6.90\e{-6} \\ -6.90\e{-6} & 1.03\e{-8}
    \end{pmatrix}$\vspace{2mm}\\
 %
-\ac{gm}  & 0.119 & 8.95\e{-4} &
+\gls{gm}  & 0.119 & 8.95\e{-4} &
    $\begin{pmatrix}
    	5.90\e{-4} & -1.43\e{-6} \\ -1.43\e{-6} & 1.04\e{-8}
    \end{pmatrix}$\vspace{2mm}
 \\
 %
-\ac{csf} & 0.103 & 2.99\e{-3} &
+\gls{csf} & 0.103 & 2.99\e{-3} &
    $\begin{pmatrix}
    	1.19\e{-3} & 2.22\e{-7} \\ 2.22\e{-7} & 1.56\e{-8}
    \end{pmatrix}$

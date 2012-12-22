@@ -1,17 +1,17 @@
 \section{Methods}
 \label{sec:methods}
 %
-\subsection{\acl{acwe}-like variational segmentation model}
+\subsection{\Acrlong{acwe} based segmentation model}
 %
 Let us denote $\{c_i\}_{i=1..N_c}$ the nodes of a shape prior surface. In
-our application, a precise \ac{wm}-\ac{gm} interface extracted from a
+our application, a precise \gls{wm}-\gls{gm} interface extracted from a
 high-resolution reference volume. All the formulations can be naturally
 extended to include more shape priors. On the other hand, we have a 
-number of \ac{dwi}-derived features at each
+number of \gls{dwi}-derived features at each
 voxel of the volume. Let us denote by $x$ the voxel and 
 $f(x) = [ f_1, f_2, \ldots, f_N]^T(x)$ its associated feature vector.\\
 %
-The transformation from reference into \ac{dwi} coordinate space is 
+The transformation from reference into \gls{dwi} coordinate space is 
 achieved through a dense deformation field $u(x)$, such that:
 %
 \begin{equation}
@@ -40,12 +40,12 @@ c_i' = T\{c_i\} = c_i + u(c_i) = c_i + \sum_k \Psi_k(c_i)u_k
 %support of the basis functions, the system remains relatively sparse.\\
 %
 Based on the current estimate of the distortion $u$, we can compute 
-``expected samples'' within the shape prior projected into the \ac{dwi}.
-Thus, we now estimate region descriptors of the \ac{dwi} features 
-$f(x)$ of the regions defined by the priors in \ac{dwi} space.
+``expected samples'' within the shape prior projected into the \gls{dwi}.
+Thus, we now estimate region descriptors of the \gls{dwi} features 
+$f(x)$ of the regions defined by the priors in \gls{dwi} space.
 %
 Using Gaussian distributions as region descriptors, we propose an
-\ac{acwe}-like, piece-wise constant, variational image segmentation
+\gls{acwe}-like, piece-wise constant, variational image segmentation
 model (where the unknown is the deformation field)
 \cite{chan_active_2001}:
 \begin{equation}
@@ -54,7 +54,7 @@ E(u)= \sum_{\forall{R}} \int_{\Omega_R} (f-\mu_R)^T\Sigma_R^{-1}(f-\mu_R) dx
 \end{equation}
 where $R$ indexes the existing regions and the integral domains
 depend on the deformation field $u$. Note
-that minimizing this energy, $\argmin_u\{E\}$, yields the \ac{map} 
+that minimizing this energy, $\argmin_u\{E\}$, yields the \gls{map} 
 estimate of a piece-wise smooth image model affected by Gaussian 
 additive noise. This inverse problem is ill-posed
 \cite{bertero_ill-posed_1988,hadamard_sur_1902}.
@@ -69,10 +69,10 @@ E(u) &= \sum_{\forall{R}} \lbrace \int_{\Omega_R} (f-\mu_R)^T\Sigma_R^{-1}(f-\mu
 \end{align}
 %
 These regularity terms ensure that the segmenting contours in 
-\ac{dwi} space are still close to their native shape. The model
+\gls{dwi} space are still close to their native shape. The model
 easily allows to incorporate inhomogeneous and anisotropic 
 regularization \cite{nagel_investigation_1986} to better regularize
-the \ac{epi} distortion. \\
+the \gls{epi} distortion. \\
 %
 
 At each iteration, we update the distortion along the steepest 
