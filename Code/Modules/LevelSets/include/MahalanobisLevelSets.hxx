@@ -67,14 +67,40 @@ template <typename TReferenceImageType, typename TCoordRepType>
 typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::MeasureType
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::GetValue() const {
-	// for all classes
+	/*
+	this->m_Value = 0;
+	PixelType* buffer = this->m_Reference->GetBufferPointer();
+	size_t nPix = this->m_Reference->GetLargestPossibleRegion().GetNumberOfPixels();
+	SpatialObjectsVector objs;
 
+	size_t nRegions = this->m_CurrentContourPosition.size();
+	for( size_t i = 0; i< nRegions; i++) {
+		ContourSpatialPointer sp = ContourSpatialObject::New();
+		sp->SetMesh( this->m_CurrentContourPosition[i] );
+		objs.push_back( sp );
+	}
+
+	// for all pixel
+	PixelPointType pi;
+	int regionId;
+	for( size_t pix = 0; pix < nPix; pix++) {
+		regionId=-1;
+		this->m_ReferenceImage->TransformIndexToPhysicalPoint(
+				this->m_ReferenceImage->ComputeIndex(pix), &pi );
 		// if pixel is inside object
+		for( size_t r = 0; r<nRegions; r++ ) {
+			if( objs[r]->IsInside(pi)) regionId = r;
+		}
+
+		if (r>=0) {
+			this->m_Value+= this->m_Parameters[cont].bias[i] + dot_product(dist.GetVnlVector(), this->m_Parameters[cont].iCovariance[i].GetVnlMatrix() * dist.GetVnlVector() );
+		}
 
 			// compute mahalanobis distance to class
 
 			// add to energy
 
+	}*/
 	// reset m_Value and return
 	return this->m_Value;
 }

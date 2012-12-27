@@ -201,9 +201,9 @@ int main(int argc, char *argv[]) {
 	opt->SetLevelSetsFunction( ls );
 	opt->SetDeformationField( df );
 	opt->SetNumberOfIterations(5000);
-	opt->SetAlpha( 10 );
-	opt->SetBeta( 1 );
-	opt->SetStepSize( 0.001 );
+	opt->SetAlpha( 1e-3 );
+	opt->SetBeta( 1e-3 );
+	opt->SetStepSize( 1 );
 
 	// Start
 	opt->Start();
