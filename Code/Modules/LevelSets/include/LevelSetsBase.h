@@ -47,6 +47,7 @@
 #include <itkQuadEdgeMesh.h>
 #include <itkQuadEdgeMeshToQuadEdgeMeshFilter.h>
 #include <itkWarpMeshFilter.h>
+#include <itkMeshSpatialObject.h>
 
 
 #include "SparseToDenseFieldResampleFilter.h"
@@ -92,6 +93,7 @@ public:
 
 	typedef TReferenceImageType                              ReferenceImageType;
 	typedef typename ReferenceImageType::PixelType           PixelType;
+	typedef typename ReferenceImageType::PointType           PixelPointType;
 	typedef typename PixelType::ValueType                    PixelValueType;
 
 	typedef itk::VectorLinearInterpolateImageFunction
@@ -108,6 +110,11 @@ public:
 
 
 	typedef typename std::vector<ContourDeformationPointer>  ContourDeformationList;
+
+	typedef typename itk::MeshSpatialObject
+			                   <ContourDeformationType>      ContourSpatialObject;
+	typedef typename ContourSpatialObject::Pointer           ContourSpatialPointer;
+	typedef typename std::vector<ContourSpatialPointer>      SpatialObjectsVector;
 
 	typedef typename itk::QuadEdgeMeshToQuadEdgeMeshFilter
 			<ContourDeformationType,ContourDeformationType>  ContourCopyType;

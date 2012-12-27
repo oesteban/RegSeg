@@ -145,6 +145,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		try	{
 			this->m_SpeedsField = this->m_LevelSetsFunction->GetLevelSetsMap(this->m_DeformationField);
 
+			/*
 			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
 			typename Writer::Pointer p = Writer::New();
 			std::stringstream ss;
@@ -152,6 +153,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			p->SetFileName( ss.str().c_str() );
 			p->SetInput( this->m_SpeedsField );
 			p->Update();
+			*/
 
 		}
 		catch ( itk::ExceptionObject & err ) {
@@ -189,6 +191,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		//	this->m_BestParameters = this->GetCurrentPosition( );
 		//}
 
+		/*
 		typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
 		// Write final result out
 		typename WriterType::Pointer polyDataWriter = WriterType::New();
@@ -205,6 +208,8 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		ss2 << "Model2-pial_it" << setfill('0') << setw(4) << this->m_CurrentIteration << ".vtk";
 		polyDataWriter2->SetFileName( ss2.str().c_str() );
 		polyDataWriter2->Update();
+		*/
+
 
 		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentLevelSetsValue << std::endl;
 
@@ -212,6 +217,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		/*
 		 * Check the convergence by WindowConvergenceMonitoringFunction.
 		 */
+		/*
 		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentLevelSetsValue );
 		try {
 			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
@@ -225,13 +231,14 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		catch(std::exception & e) {
 			std::cerr << "GetConvergenceValue() failed with exception: " << e.what() << std::endl;
 		}
-		/*
+		*/
+
 		if( this->m_CurrentLevelSetsValue < this->m_ConvergenceValue ) {
 			this->m_StopConditionDescription << "Deformation field changed below the minimum threshold.";
 			this->m_StopCondition = Superclass::STEP_TOO_SMALL;
 			this->Stop();
 			break;
-		}*/
+		}
 
 		/* Update and check iteration count */
 		this->m_CurrentIteration++;
