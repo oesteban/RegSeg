@@ -12,15 +12,13 @@ specifically tuned for \gls{dwi} data.
 The whole-brain connectivity analysis has given rise to some challenges
 towards reliable structural information about the neuronal tracts 
 from \gls{dwi} \cite{johansen-berg_using_2009,jones_white_2012}. 
-The earlier stages of these processing pipelines generally include 
-two necessary steps, brain tissue segmentation on the diffusion space 
-and the correction of geometrical distortions inherent to the acquisition 
+Here, we shall address brain tissue segmentation on diffusion space 
+and correction of geometrical distortions inherent to the acquisition 
 sequence \citep{hagmann_mr_2012}.
 
 In this work, we will refer as brain tissue segmentation to the precise
 delineation of the \gls{csf}-\gls{gm} and \gls{gm}-\gls{wm} interface surfaces.
-This segmentation is a processing step on which strongly rely further
-tasks. An accurate brain tissue segmentation is required
+An accurate brain tissue segmentation is required
 to filter the fiber bundles obtained with \gls{dwi} tractography. 
 This requirement is usually solved in practice by plainly thresholding the 
 \gls{fa}, a well-known scalar map derived from \gls{dwi} which depicts 
@@ -38,16 +36,17 @@ wakana_reproducibility_2007}, these results are restricted to certain regions
 of the brain, only. Therefore, robust and precise segmentation methods are 
 required in the whole-brain application. The problem is challenging due to
 the much lower resolution of \gls{dwi} (typically around 
-$2.5\times2.5\times2.5mm^3.$) compared to structural \gls{mri}, and the
+$2.5\times2.5\times2.5mm^3$) compared to structural \gls{mri}, and the
 existence of geometrical distortions.
 
 \gls{dwi} data are usually acquired with \gls{epi} sequences 
-as they allow for very fast acquisitions but they are known to 
+as they allow for very fast acquisitions, but they are known to 
 suffer from geometrical distortions due to local field inhomogeneities. 
 These artifacts happen along the phase-encoding direction, and are most 
 appreciable in the front part of the brain for the strong air/tissue 
-interface around the frontal sinuses. Some methodologies have
-been developed and generically named as \emph{\gls{epi}-unwarp} techniques
+interface around the frontal sinuses. A number of methodologies have
+been developed to correct for the distortion, and are generically named 
+as \emph{\gls{epi}-unwarp} techniques
 \cite{holland_efficient_2010,hsu_correction_2009,jezzard_characterization_2005,
 reber_correction_2005}. These methods usually 
 require the extra acquisition of the magnitude and phase of

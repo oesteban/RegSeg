@@ -120,15 +120,14 @@ We obtained the local fiber configuration in each voxel with a commonly
 used \gls{dti} reconstruction tool~\footnote{DTIFIT, included
 in the FMRIB's Software Library (FSL), 
 \url{http://fsl.fmrib.ox.ac.uk/fsl/fsl-4.1.9/fdt/fdt_dtifit.html}}. 
-
-The properties of
-the reconstructed tensors and derived scalar maps have been
-studied by \cite{ennis_orthogonal_2006}. Based on their
-findings, we chose \gls{fa}~\eqref{eq:fa} 
-and \gls{md}~\eqref{eq:md} as features for the energy model in driving
-the registration-segmentation process. 
-Whereas \gls{fa} \ describes the \emph{shape} of diffusion, 
-the \gls{md} depicts the \emph{magnitude} of the process. 
+The properties of the reconstructed tensors and derived scalar maps have
+been studied by \cite{ennis_orthogonal_2006}. Based on their
+findings, \gls{fa}~\eqref{eq:fa} and \gls{md}~\eqref{eq:md} are
+considered complementary features, and therefore we selected them for the 
+energy model \eqref{eq:complete_energy} in driving the 
+registration-segmentation process. 
+Whereas \gls{fa} informs mainly about the \emph{shape} of diffusion, 
+the \gls{md} is more related to the \emph{magnitude} of the process:
 
 \begin{align}
 \mathrm{FA} &= \sqrt{ \frac{1}{2}}\,\frac{\sqrt{ (\lambda_1 - \lambda_2)^2 + (\lambda_2 - \lambda_3)^2 + (\lambda_3 - \lambda_1)^2}}{\sqrt{ {\lambda_1}^2 + {\lambda_2}^2 + {\lambda_3}^2}} \label{eq:fa} \\
@@ -139,12 +138,16 @@ associated with the diffusion signal $S(\vec{q})$. There exist
 two main reasons to justify their choice. 
 First, they are well-understood and standardized in clinical routine.
 Second, together they contain most of the information that is
-usually extracted from the \gls{dwi}-derived scalar maps. The properties
-of brain tissues on the joint distribution of \gls{fa} and \gls{md} are 
-summarized in \autoref{table:parameters}. \\
+usually extracted from the \gls{dwi}-derived scalar maps
+\cite{ennis_orthogonal_2006}. The different region properties 
+$(\mathbf{\mu}_R,\Sigma_R)$ measured for the \gls{fa} and \gls{md}
+joint distribution are summarized in \autoref{table:parameters}. \\ 
 
 \begin{table}
-\caption{Model means and covariances of \acrfull{fa} and \acrfull{md} estimated from the reconstructed simulated \gls{dwi} images for each modeled tissue, \acrfull{wm},\acrfull{gm}, and \acrfull{csf}. As expected, the two scalar features are complementary and the three tissues can well be discriminated. }
+\caption{Model means and covariances of \gls{fa} and \gls{md} estimated 
+from the reconstructed simulated \gls{dwi} images for each modeled tissue, 
+\gls{wm}, \gls{gm}, and \gls{csf}. As expected, the two scalar features 
+are complementary and the three tissues can well be discriminated. }
 \label{table:parameters}
 %\begin{tabularx}{1.0\textwidth}{c|XXX}
 \begin{tabular}{*{3}{@{}p{0.2\textwidth}}@{}p{0.4\textwidth}@{}}
