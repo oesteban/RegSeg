@@ -58,7 +58,6 @@
 #include <itkImageFileWriter.h>
 #include <itkMesh.h>
 #include <itkMeshFileReader.h>
-#include <itkImageToVectorImageFilter.h>
 #include "DisplacementFieldFileWriter.h"
 
 
