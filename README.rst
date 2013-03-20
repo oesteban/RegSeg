@@ -10,10 +10,11 @@ non-linear registration of strong priors to a reference image with subvoxel prec
 Credits
 -------
 
-* Oscar Esteban (oesteban): implementation
-* Dominique Zosso (zosso): mathematical formulation
+* Oscar Esteban (@oesteban): implementation
+* Dominique Zosso (@zosso): mathematical formulation
+* Alessandro Daducci (@daducci)
 * Jean-Philippe Thiran
-* Meritxell Bach-Cuadra
+* Meritxell Bach-Cuadra (@meribach)
 * Andrés Santos Lleó
 
 
