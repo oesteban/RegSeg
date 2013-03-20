@@ -13,8 +13,8 @@ Credits
 * Oscar Esteban (oesteban): implementation
 * Dominique Zosso (zosso): mathematical formulation
 * Jean-Philippe Thiran
+* Meritxell Bach-Cuadra
 * Andrés Santos Lleó
-* Luminita Vese
 
 
 
