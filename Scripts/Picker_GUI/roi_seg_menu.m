@@ -130,7 +130,7 @@ end
 function icRGB = read_icon_menu(name_icon)
 
     clear icRGB
-    [ic,~] = imread(name_icon);
+    [ic,t] = imread(name_icon);
     tamX = 22; tamY = 22;
     icR = imresize(ic(:,:,1), [tamX tamY]);
     icG = imresize(ic(:,:,2), [tamX tamY]);
