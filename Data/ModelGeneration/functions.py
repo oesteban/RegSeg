@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from pandas import *
 import nibabel as nib
 import matplotlib.cm as cm
+import datetime as dt
 
 def GenerateSurface( data, fname, use_smooth=True, spacing=(1.0,1.0,1.0), origin=(0.0,0.0,0.0) ):
     grid = tvtk.ImageData(spacing=spacing, origin=origin, dimensions=data.shape)
@@ -24,9 +25,34 @@ def GenerateSurface( data, fname, use_smooth=True, spacing=(1.0,1.0,1.0), origin
         contour = vtkmeshclean2.output
     contour.point_data.scalars = np.ones( np.shape( contour.points )[0] )
     contour.point_data.scalars.name = 'scalars'
+    vtk2fsa( contour, '%s.asc' % os.path.splitext( fname )[0] )
     w = tvtk.PolyDataWriter(input=contour, file_name=fname )
     w.write()
     return contour
+
+def vtk2fsa( vtk, fname ):
+    ncells = vtk.polys.number_of_cells
+    npoints = len( vtk.points )
+    nvalues = len( vtk.polys.data )
+    cells = np.reshape( vtk.polys.data, ( ncells, int(nvalues/ncells) ) )
+    now = dt.datetime.now()
+
+    try:
+        with open(fname, 'a+') as f:
+            f.write( '#!ascii freesurfer mesh generated from vtk - %s, generated on %s\n' % (os.path.basename(fname),now.strftime("%Y-%m-%d %H:%M"))) # Write header
+            f.write( '%d %d\n' % ( npoints, ncells ) ) # Write number of vertices and number of faces
+            
+            for row in vtk.points:
+                f.write( '%.6f %.6f %.6f 0\n' % tuple(row) )
+    
+            for row in cells:
+                f.write( '%d %d %d 0\n' % tuple( row[1:] ) )
+    except Exception as err:
+        print err
+        return 0
+
+    return 1
+
 
 
 def FilterMesh(points, sl, zdim, fname=None ):
