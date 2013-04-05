@@ -44,32 +44,148 @@
 #define DATA_DIR "../Data/FreeSurferTest/"
 #endif
 
-#include <itkQuadEdgeMesh.h>
-#include <itkImage.h>
 #include <itkVector.h>
-#include <itkVTKPolyDataReader.h>
-#include <itkVTKPolyDataWriter.h>
+#include <itkVectorImage.h>
+#include <itkImage.h>
+#include <itkImageFileReader.h>
+#include <itkImageFileWriter.h>
+#include <itkQuadEdgeMesh.h>
+#include <itkMeshFileReader.h>
+#include <itkMeshFileWriter.h>
+#include <itkVectorImageToImageAdaptor.h>
+#include <itkComposeImageFilter.h>
+#include <itkVectorResampleImageFilter.h>
+#include <itkBSplineInterpolateImageFunction.h>
+#include <itkDisplacementFieldTransform.h>
+#include <itkResampleImageFilter.h>
 #include "MahalanobisLevelSets.h"
+#include "GradientDescentLevelSetsOptimizer.h"
 
 using namespace rstk;
 
 int main(int argc, char *argv[]) {
+	typedef itk::Image<float, 3u>                                ChannelType;
 	typedef itk::Vector<float, 2u>                               VectorPixelType;
 	typedef itk::Image<VectorPixelType, 3u>                      ImageType;
+	typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
+
 	typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
 	typedef LevelSetsType::ContourDeformationType                ContourDeformationType;
 	typedef ContourDeformationType::Pointer                      ContourDisplacementFieldPointer;
-	typedef itk::VTKPolyDataReader< ContourDeformationType >     ReaderType;
-	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
+	typedef LevelSetsType::VectorType                            VectorType;
+	typedef LevelSetsType::MeanType                              MeanType;
+	typedef LevelSetsType::CovarianceType                        CovarianceType;
+	typedef LevelSetsType::DeformationFieldType                  DeformationFieldType;
+
+	typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
+	typedef typename Optimizer::Pointer                          OptimizerPointer;
+
+	typedef itk::MeshFileReader< ContourDeformationType >     ReaderType;
+	typedef itk::MeshFileWriter< ContourDeformationType >     WriterType;
+	typedef itk::ImageFileReader<ChannelType>                      ImageReader;
+	typedef itk::ImageFileWriter<ChannelType>                      ImageWriter;
+	typedef itk::ImageFileWriter<DeformationFieldType>           DeformationWriter;
+
+	typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
+	typedef itk::VectorResampleImageFilter
+			<DeformationFieldType,DeformationFieldType,double>   DisplacementResamplerType;
+	typedef itk::BSplineInterpolateImageFunction
+			                <DeformationFieldType>               InterpolatorFunction;
+	typedef itk::DisplacementFieldTransform<float, 3u>           TransformType;
+
+	typedef itk::ResampleImageFilter<ChannelType,ChannelType,float>    ResamplerType;
+
+
+
+
+	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
+
+	ImageReader::Pointer r = ImageReader::New();
+	r->SetFileName( std::string( DATA_DIR ) + "FA_distorted.nii.gz" );
+	r->Update();
+	comb->SetInput(0,r->GetOutput());
+
+	ImageReader::Pointer r2 = ImageReader::New();
+	r2->SetFileName( std::string( DATA_DIR ) + "MD_distorted.nii.gz" );
+	r2->Update();
+	comb->SetInput(1,r2->GetOutput());
+	comb->Update();
+
+	ChannelType::Pointer im = r->GetOutput();
+
 
 	ReaderType::Pointer polyDataReader = ReaderType::New();
-	polyDataReader->SetFileName( std::string( DATA_DIR ) + "new_priors_wm.vtk" );
+	polyDataReader->SetFileName( std::string( DATA_DIR ) + "new_priors_wm.fsa" );
 	polyDataReader->Update();
 	ContourDisplacementFieldPointer initialContour = polyDataReader->GetOutput();
 
-	WriterType::Pointer polyDataWriter = WriterType::New();
-	polyDataWriter->SetInput( initialContour );
-	polyDataWriter->SetFileName( std::string( DATA_DIR ) + "new_priors_wm.fsb" );
+	typename ContourDeformationType::PointsContainerPointer points = initialContour->GetPoints();
+	typename ContourDeformationType::PointsContainerIterator u_it = points->Begin();
 
+	VectorType zero = itk::NumericTraits<VectorType>::Zero;
+	while( u_it != points->End() ) {
+		initialContour->SetPointData( u_it.Index(),zero);
+		++u_it;
+	}
+
+	// Initialize tissue signatures
+	MeanType mean1; // This is GM
+	mean1[0] = 0.11941234;
+	mean1[1] = 0.00089523;
+	CovarianceType cov1;
+	cov1(0,0) =  5.90117156e-04;
+	cov1(0,1) = -1.43226633e-06;
+	cov1(1,0) = -1.43226633e-06;
+	cov1(1,1) =  1.03718252e-08;
+	MeanType mean2; // This is WM
+	mean2[0] = 7.77335644e-01;
+	mean2[1] = 6.94673450e-04;
+	CovarianceType cov2;
+	cov2(0,0) =  4.85065832e-03;
+	cov2(0,1) = -6.89610616e-06;
+	cov2(1,0) = -6.89610616e-06;
+	cov2(1,1) =  1.02706528e-08;
+
+	typename LevelSetsType::ParametersType params;
+	params.mean[0] = mean2;
+	params.mean[1] = mean1;
+	params.iCovariance[0] = cov2;
+	params.iCovariance[2] = cov1;
+
+	// Initialize deformation field
+	DeformationFieldType::Pointer df = DeformationFieldType::New();
+	DeformationFieldType::SizeType imSize = im->GetLargestPossibleRegion().GetSize();
+	DeformationFieldType::SizeType size; size.Fill(16);
+	DeformationFieldType::SpacingType spacing = im->GetSpacing();
+	for( size_t i = 0; i<3; i++) spacing[i] = 1.0*imSize[i]/size[i];
+	df->SetRegions( size );
+	df->SetSpacing( spacing );
+	df->SetDirection( im->GetDirection() );
+	df->Allocate();
+	df->FillBuffer( itk::NumericTraits<DeformationFieldType::PixelType>::Zero );
+
+	// Initialize LevelSet function
+	LevelSetsType::Pointer ls = LevelSetsType::New();
+	ls->SetReferenceImage( comb->GetOutput() );
+	ls->AddShapePrior( initialContour, params );
+
+	// Connect Optimizer
+	OptimizerPointer opt = Optimizer::New();
+	opt->SetLevelSetsFunction( ls );
+	opt->SetDeformationField( df );
+	opt->SetNumberOfIterations(200);
+
+	// Start
+	opt->Start();
+
+	// Write final result out
+	WriterType::Pointer polyDataWriter = WriterType::New();
+	polyDataWriter->SetInput( ls->GetCurrentContourPosition()[0] );
+	polyDataWriter->SetFileName( "registered_wm.fsb" );
 	polyDataWriter->Update();
+
+	DeformationWriter::Pointer w = DeformationWriter::New();
+	w->SetInput( opt->GetDeformationField() );
+	w->SetFileName( "estimated_field.nii.gz" );
+	w->Update();
 }
