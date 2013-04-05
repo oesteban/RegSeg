@@ -26,8 +26,8 @@ def GenerateSurface( data, fname, use_smooth=True, spacing=(1.0,1.0,1.0), origin
         contour = vtkmeshclean2.output
     contour.point_data.scalars = np.ones( np.shape( contour.points )[0] )
     contour.point_data.scalars.name = 'scalars'
-    new_origin = tuple( (np.array(data.shape).astype(float)) * -0.5 ) # fix new origin to have a nice view in tkmedit 
-    vtk2fsa( contour, '%s.asc' % os.path.splitext( fname )[0], origin=new_origin)
+    #origin = tuple( (np.array(data.shape).astype(float)) * -0.5 ) # fix new origin to have a nice view in tkmedit 
+    vtk2fsa( contour, '%s.asc' % os.path.splitext( fname )[0], origin=origin)
     #w = tvtk.PolyDataWriter(input=contour, file_name=fname )
     #w.write()
     savevtk( contour, fname )
