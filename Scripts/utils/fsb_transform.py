@@ -7,6 +7,7 @@ import argparse
 import sys
 import subprocess as sp
 
+
 def is_valid_file(parser, arg):
     if not os.path.exists(arg):
         parser.error("The file %s does not exist!"%arg)
@@ -45,7 +46,10 @@ def transform(origin, target, tfm, output_prefix ):
         vtk.points[i] = np.dot( M, point ) + O
     
     writer = tvtk.XMLPolyDataWriter( file_name='%s.vtp' % output_prefix, input=vtk )
+#    writer = tvtk.PolyDataWriter( file_name='%s.vtk' % output_prefix, input=vtk )
     writer.update()
+
+    savevtk( vtk, '%s.vtk' % output_prefix )
 
     if del_vtk:
         os.remove( origin )
@@ -68,8 +72,39 @@ def main():
         args.output_prefix+= '_%s' % os.path.basename( args.origin )
     
     transform( args.origin, args.target, args.transform, args.output_prefix )
+
+    return 0
     
 
+def savevtk( vtk, fname, origin=(0.0,0.0,0.0) ):
+    ncells = vtk.polys.number_of_cells
+    npoints = len( vtk.points )
+    nvalues = len( vtk.polys.data )
+    cells = np.reshape( vtk.polys.data, ( ncells, int(nvalues/ncells) ) )
+    now = dt.datetime.now()
+    points = vtk.points + np.array(origin)
+
+    if os.path.exists( fname ):
+        os.remove( fname )
+
+    try:
+        with open(fname, 'a+') as f:
+            f.write( '# vtk DataFile Version 2.0\n' ) # Write identification
+            f.write( '%s, generated on %s\n' % (os.path.basename(fname),now.strftime("%Y-%m-%d %H:%M"))) # Write comment (up to 256 chars)
+            f.write( 'ASCII\n' )
+            f.write( 'DATASET POLYDATA\n' )
+            f.write( 'POINTS %d float\n' % npoints ) 
+            for row in points:
+                f.write( '%.6f %.6f %.6f\n' % tuple(row) )
+    
+            f.write( 'POLYGONS %d %d\n' % ( ncells, nvalues ) )
+            for row in cells:
+                f.write( '3 %d %d %d\n' % tuple( row[1:] ) )
+    except Exception as err:
+        print err
+        return 0
+
+    return 1
     
 
 
