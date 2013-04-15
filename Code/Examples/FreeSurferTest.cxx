@@ -101,12 +101,12 @@ int main(int argc, char *argv[]) {
 	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
 
 	ImageReader::Pointer r = ImageReader::New();
-	r->SetFileName( std::string( DATA_DIR ) + "FA_distorted.nii.gz" );
+	r->SetFileName( std::string( DATA_DIR ) + "FA.nii.gz" );
 	r->Update();
 	comb->SetInput(0,r->GetOutput());
 
 	ImageReader::Pointer r2 = ImageReader::New();
-	r2->SetFileName( std::string( DATA_DIR ) + "MD_distorted.nii.gz" );
+	r2->SetFileName( std::string( DATA_DIR ) + "MD.nii.gz" );
 	r2->Update();
 	comb->SetInput(1,r2->GetOutput());
 	comb->Update();
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 
 
 	ReaderType::Pointer polyDataReader = ReaderType::New();
-	polyDataReader->SetFileName( std::string( DATA_DIR ) + "new_priors_wm.fsa" );
+	polyDataReader->SetFileName( std::string( DATA_DIR ) + "lh.white.vtk" );
 	polyDataReader->Update();
 	ContourDisplacementFieldPointer initialContour = polyDataReader->GetOutput();
 
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
 	// Write final result out
 	WriterType::Pointer polyDataWriter = WriterType::New();
 	polyDataWriter->SetInput( ls->GetCurrentContourPosition()[0] );
-	polyDataWriter->SetFileName( "registered_wm.fsb" );
+	polyDataWriter->SetFileName( "registered.white.vtk" );
 	polyDataWriter->Update();
 
 	DeformationWriter::Pointer w = DeformationWriter::New();
