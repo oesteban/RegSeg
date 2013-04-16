@@ -115,6 +115,41 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	size_t id = this->m_Parameters.size();
 	this->m_Parameters.resize( id + 1 );
 	this->SetParameters( id, params );
+
+	if ( this->m_ReferenceImage.IsNotNull() ) {
+		this->CheckExtents( prior );
+	}
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+bool
+MahalanobisLevelSets<TReferenceImageType, TCoordRepType>
+::CheckExtents( typename MahalanobisLevelSets<TReferenceImageType, TCoordRepType>::ContourDeformationType* prior ) const {
+	typename ContourDeformationType::PointsContainerConstIterator u_it = prior->GetPoints()->Begin();
+    typename ContourDeformationType::PointsContainerConstIterator u_end = prior->GetPoints()->End();
+
+    PointType p;
+    ContinuousIndex idx;
+	while( u_it != u_end ) {
+		if ( !this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex(u_it.Value(), idx ) ) {
+			p = u_it.Value();
+			PointType origin;
+			typename ReferenceImageType::IndexType tmp_idx;
+			tmp_idx.Fill(0);
+			this->m_ReferenceImage->TransformIndexToPhysicalPoint( tmp_idx, origin );
+			PointType end;
+
+			typename ReferenceImageType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
+			for ( size_t d=0; d< ReferenceImageType::ImageDimension; d++)
+				tmp_idx[d] = size[d]  - 1;
+			this->m_ReferenceImage->TransformIndexToPhysicalPoint( tmp_idx, end );
+			itkExceptionMacro( << "Setting prior surface: vertex " << p << " is outside image extents (" << origin << ", " << end << ").");
+			return false;
+		}
+		++u_it;
+	}
+
+	return true;
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
