@@ -73,6 +73,7 @@ public:
 	typedef typename Superclass::PointType                 PointType;
 	typedef typename Superclass::PointValueType            PointValueType;
 	typedef typename Superclass::VectorType                VectorType;
+	typedef typename Superclass::ContinuousIndex           ContinuousIndex;
 	typedef typename Superclass::PixelType                 PixelType;
 	typedef typename Superclass::PixelValueType            PixelValueType;
 	typedef typename Superclass::DeformationFieldType      DeformationFieldType;
@@ -91,7 +92,6 @@ public:
 	typedef typename ReferenceImageType::ConstPointer      ReferenceImageConstPointer;
 	typedef typename Superclass::InterpolatorType          InterpolatorType;
 	typedef typename Superclass::InterpolatorPointer       InterpolatorPointer;
-
 
 	itkStaticConstMacro( Components, unsigned int, itkGetStaticConstMacro(PixelType::Dimension) );
 
@@ -129,6 +129,8 @@ protected:
 private:
 	MahalanobisLevelSets( const Self &); // purposely not implemented
 	void operator=(const Self &); // purposely not implemented
+
+	bool CheckExtents( ContourDeformationType* prior ) const;
 }; // End of class MahalanobisLevelSets
 } // End of namespace
 

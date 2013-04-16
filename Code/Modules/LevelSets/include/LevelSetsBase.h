@@ -41,6 +41,7 @@
 #include <itkObject.h>
 #include <itkNumericTraits.h>
 #include <itkVector.h>
+#include <itkContinuousIndex.h>
 #include <itkImage.h>
 #include <itkVectorImage.h>
 #include <itkVectorLinearInterpolateImageFunction.h>
@@ -90,6 +91,7 @@ public:
 	typedef double                                           MeasureType;
 	typedef TCoordRepType                                    PointValueType;
 	typedef itk::Vector< PointValueType, Dimension >         VectorType;
+	typedef itk::ContinuousIndex<TCoordRepType, Dimension >  ContinuousIndex;
 
 	typedef TReferenceImageType                              ReferenceImageType;
 	typedef typename ReferenceImageType::PixelType           PixelType;
@@ -169,9 +171,11 @@ protected:
 	ContourCopyPointer m_ContourCopier;
 	WarpContourPointer m_ContourUpdater;
 	SparseToDenseFieldResamplePointer m_SparseToDenseResampler;
+
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented
+
 
 }; // end LevelSetsBase Class
 } // end namespace rstk
