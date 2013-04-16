@@ -43,7 +43,7 @@ def transform(origin, target, tfm, output_prefix, use_paraview=False ):
     O = xfm[0:3,3]
 
     if use_paraview:
-        phy_size = np.dot( ac[0:3,0:3], nib.load(target).get_data().shape )
+        phy_size = np.dot( ac[0:3,0:3], np.array(nib.load(target).get_data().shape) - [1,1,1] )
         #print phy_size
         #M[0,0:3]*=-1
         O[0]-=phy_size[0]*0.5
