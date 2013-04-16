@@ -14,7 +14,7 @@ def is_valid_file(parser, arg):
     else:
         return arg
 
-def transform(origin, target, tfm, output_prefix ):
+def transform(origin, target, tfm, output_prefix, use_paraview=False ):
     del_vtk = False
     reg = np.genfromtxt(tfm,skiprows=4,comments='r')
     cmd_info = "mri_info --ras2vox-tkr %s" % target
@@ -41,6 +41,12 @@ def transform(origin, target, tfm, output_prefix ):
 
     M = xfm[0:3,0:3]
     O = xfm[0:3,3]
+
+    if use_paraview:
+        phy_size = np.dot( ac[0:3,0:3], nib.load(target).get_data().shape )
+        #print phy_size
+        #M[0,0:3]*=-1
+        O[0]-=phy_size[0]*0.5
     
     for i,point in enumerate(vtk.points):
         vtk.points[i] = np.dot( M, point ) + O
@@ -62,6 +68,7 @@ def main():
     parser.add_argument( '--orig', dest='origin', type=lambda x: is_valid_file(parser,x), help='original surface (e.g. surf/lh.pial outcome from freesurfer)', required=True  )
     parser.add_argument( '--o'   , dest='output_prefix', type=str, help='output prefix for filename (will be an XML Vtk file)' )
     parser.add_argument( '--tfm' , dest='transform', type=lambda x: is_valid_file(parser,x), help='transform file (e.g. register.dat from bbregister)', required=True  )
+    parser.add_argument( '--paraview', dest='use_paraview', action='store_true', default=False, help='True if orientation should be fixed for Paraview rendering' )
     args = parser.parse_args( )
 
     if args.output_prefix == None:
@@ -71,7 +78,7 @@ def main():
             args.output_prefix,_ = os.path.splitext( basename )
         args.output_prefix+= '_%s' % os.path.basename( args.origin )
     
-    transform( args.origin, args.target, args.transform, args.output_prefix )
+    transform( args.origin, args.target, args.transform, args.output_prefix, args.use_paraview )
 
     return 0
     
