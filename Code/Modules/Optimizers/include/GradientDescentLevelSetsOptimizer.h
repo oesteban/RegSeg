@@ -108,8 +108,8 @@ public:
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
 
-//	itkSetObjectMacro(DeformationField, DeformationFieldType);
-//	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
+	itkSetObjectMacro(DeformationField, DeformationFieldType);
+	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
 
 	/** Minimum convergence value for convergence checking.
 	 *  The convergence checker calculates convergence value by fitting to

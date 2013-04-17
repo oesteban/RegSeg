@@ -45,6 +45,7 @@
 #include <cmath>
 #include <itkComplexToRealImageFilter.h>
 #include "DisplacementFieldFileWriter.h"
+#include <itkMeshFileWriter.h>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
@@ -61,7 +62,7 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize = 0.1;
+	this->m_StepSize = 10.0;
 	this->m_Alpha = 1e-4;
 	this->m_Beta = 1e-3;
 }
@@ -96,7 +97,6 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 		typename DeformationFieldType::SizeType refSize = this->m_LevelSetsFunction->GetReferenceImage()->GetLargestPossibleRegion().GetSize();
 		for( size_t dim = 0; dim < DeformationFieldType::ImageDimension; dim++ ) end_idx[dim] = refSize[dim] - 1;
 		this->m_LevelSetsFunction->GetReferenceImage()->TransformIndexToPhysicalPoint( end_idx, end );
-
 		this->InitializeDeformationField( orig, end, this->m_LevelSetsFunction->GetReferenceImage()->GetDirection() );
 	}
 
@@ -156,13 +156,23 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		try	{
 			this->m_SpeedsField = this->m_LevelSetsFunction->GetLevelSetsMap(this->m_DeformationField);
 
+#ifndef NDEBUG
+			typedef itk::MeshFileWriter< ContourDeformationType >     MeshWriterType;
+			typename MeshWriterType::Pointer w = MeshWriterType::New();
+			w->SetInput( this->m_LevelSetsFunction->GetCurrentContourPosition()[0] );
+			std::stringstream ss;
+			ss << "contour_position_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".vtk";
+			w->SetFileName( ss.str() );
+			w->Update();
+
 			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
 			typename Writer::Pointer p = Writer::New();
-			std::stringstream ss;
-			ss << "speedsfield" << this->m_CurrentIteration << ".nii.gz";
-			p->SetFileName( ss.str().c_str() );
+			std::stringstream ss2;
+			ss2 << "speedsfield_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+			p->SetFileName( ss2.str().c_str() );
 			p->SetInput( this->m_SpeedsField );
 			p->Update();
+#endif
 
 		}
 		catch ( itk::ExceptionObject & err ) {
