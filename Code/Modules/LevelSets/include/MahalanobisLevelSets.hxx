@@ -279,18 +279,6 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 #endif
 		}
 		this->m_SparseToDenseResampler->SetInput( cont, normals );
-
-
-
-#ifndef NDEBUG
-		typedef itk::MeshFileWriter< ContourDeformationType >     WriterType;
-		typename WriterType::Pointer w = WriterType::New();
-		w->SetInput( normals );
-		std::stringstream ss;
-		ss << "nextUpdate_" << cont << ".vtk";
-		w->SetFileName( ss.str() );
-		w->Update();
-#endif
 	}
 
 	// Interpolate sparse velocity field to targetDeformation

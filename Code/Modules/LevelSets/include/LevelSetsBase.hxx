@@ -57,6 +57,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::AddShapePrior( typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourDeformationType* prior ) {
 	this->m_CurrentContourPosition.push_back( prior );
 	/*
+	// TODO Check that contour copier now works.
+
 	this->m_ContourCopier = ContourCopyType::New();
 	m_ContourCopier->SetInput( prior );
 	this->m_ContourCopier->Update();

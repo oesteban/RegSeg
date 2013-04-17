@@ -160,8 +160,7 @@ int main(int argc, char *argv[]) {
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
-//	opt->SetDeformationField( df );
-	opt->SetNumberOfIterations(200);
+	opt->SetNumberOfIterations(15);
 
 	// Start
 	opt->Start();
@@ -172,8 +171,8 @@ int main(int argc, char *argv[]) {
 	polyDataWriter->SetFileName( "registered.white.vtk" );
 	polyDataWriter->Update();
 
-//	DeformationWriter::Pointer w = DeformationWriter::New();
-//	w->SetInput( opt->GetDeformationField() );
-//	w->SetFileName( "estimated_field.nii.gz" );
-//	w->Update();
+	DeformationWriter::Pointer w = DeformationWriter::New();
+	w->SetInput( opt->GetDeformationField() );
+	w->SetFileName( "estimated_field.nii.gz" );
+	w->Update();
 }
