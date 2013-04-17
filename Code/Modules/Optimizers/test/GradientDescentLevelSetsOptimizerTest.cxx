@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
 
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
-	opt->SetDeformationField( df );
+	//opt->SetDeformationField( df );
 	opt->SetNumberOfIterations(10);
 	opt->Start();
 

@@ -114,7 +114,7 @@ public:
 
 	void AddShapePrior( ContourDeformationType* prior, ParametersType&params );
 
-	itkSetObjectMacro(ReferenceImage, ReferenceImageType);
+	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
 
 protected:
