@@ -152,18 +152,6 @@ int main(int argc, char *argv[]) {
 	params.iCovariance[0] = cov2;
 	params.iCovariance[2] = cov1;
 
-	// Initialize deformation field
-	DeformationFieldType::Pointer df = DeformationFieldType::New();
-	DeformationFieldType::SizeType imSize = im->GetLargestPossibleRegion().GetSize();
-	DeformationFieldType::SizeType size; size.Fill(16);
-	DeformationFieldType::SpacingType spacing = im->GetSpacing();
-	for( size_t i = 0; i<3; i++) spacing[i] = 1.0*imSize[i]/size[i];
-	df->SetRegions( size );
-	df->SetSpacing( spacing );
-	df->SetDirection( im->GetDirection() );
-	df->Allocate();
-	df->FillBuffer( itk::NumericTraits<DeformationFieldType::PixelType>::Zero );
-
 	// Initialize LevelSet function
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
@@ -172,7 +160,7 @@ int main(int argc, char *argv[]) {
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
-	opt->SetDeformationField( df );
+//	opt->SetDeformationField( df );
 	opt->SetNumberOfIterations(200);
 
 	// Start
@@ -184,8 +172,8 @@ int main(int argc, char *argv[]) {
 	polyDataWriter->SetFileName( "registered.white.vtk" );
 	polyDataWriter->Update();
 
-	DeformationWriter::Pointer w = DeformationWriter::New();
-	w->SetInput( opt->GetDeformationField() );
-	w->SetFileName( "estimated_field.nii.gz" );
-	w->Update();
+//	DeformationWriter::Pointer w = DeformationWriter::New();
+//	w->SetInput( opt->GetDeformationField() );
+//	w->SetFileName( "estimated_field.nii.gz" );
+//	w->Update();
 }

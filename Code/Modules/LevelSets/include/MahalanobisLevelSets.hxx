@@ -45,6 +45,7 @@
 #include <vnl/algo/vnl_ldl_cholesky.h>
 
 #include "DisplacementFieldFileWriter.h"
+#include <itkMeshFileWriter.h>
 
 namespace rstk {
 template <typename TReferenceImageType, typename TCoordRepType>
@@ -234,7 +235,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 
 #ifndef NDEBUG
-	double maxLS = 0.0;
+	double maxLS = -1.0;
 #endif
 
 	for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++) {
@@ -273,38 +274,28 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 			normals->SetPointData( idx, ni );
 			++c_it;
 #ifndef NDEBUG
-			if ( abs( levelSet ) > abs( maxLS ) )
+			if ( fabs( levelSet ) > fabs( maxLS ) )
 				maxLS = levelSet;
 #endif
 		}
 		this->m_SparseToDenseResampler->SetInput( cont, normals );
-	}
+
 
 
 #ifndef NDEBUG
-	std::cout << "Maximum levelset update = " << maxLS << "." << std::endl;
+		typedef itk::MeshFileWriter< ContourDeformationType >     WriterType;
+		typename WriterType::Pointer w = WriterType::New();
+		w->SetInput( normals );
+		std::stringstream ss;
+		ss << "nextUpdate_" << cont << ".vtk";
+		w->SetFileName( ss.str() );
+		w->Update();
 #endif
+	}
 
 	// Interpolate sparse velocity field to targetDeformation
 	this->m_SparseToDenseResampler->Update();
 	return this->m_SparseToDenseResampler->GetOutput();
-
-	/*
-	// Output map (testing purposes)
-	typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
-	typename Writer::Pointer writer = Writer::New();
-	writer->SetFileName( "speedtest.nii.gz" );
-	writer->SetInput( levelSetMap );
-	writer->Update();*/
-
-	/*
-	// Write final result out
-	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
-	typename WriterType::Pointer polyDataWriter = WriterType::New();
-	polyDataWriter->SetInput( normals );
-	polyDataWriter->SetFileName( "speedmap.vtk" );
-	polyDataWriter->Update();
-	*/
 
 }
 

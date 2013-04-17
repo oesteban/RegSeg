@@ -75,6 +75,8 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
              << this->m_MaximumStepSizeInPhysicalUnits << std::endl;
 }
 
+
+
 template< typename TLevelSetsFunction >
 void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 	itkDebugMacro("GradientDescentLevelSetsOptimizer::Start()");
@@ -86,8 +88,16 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 	}
 
 	if (this->m_DeformationField.IsNull()) {
-		/* TODO Initialize default deformation field */
-		itkExceptionMacro("DeformationField Object must be set");
+		// TODO LevelSets function should provide an Extent Object
+		DeformationFieldPointType orig = this->m_LevelSetsFunction->GetReferenceImage()->GetOrigin();
+		DeformationFieldPointType end;
+
+		typename DeformationFieldType::IndexType end_idx;
+		typename DeformationFieldType::SizeType refSize = this->m_LevelSetsFunction->GetReferenceImage()->GetLargestPossibleRegion().GetSize();
+		for( size_t dim = 0; dim < DeformationFieldType::ImageDimension; dim++ ) end_idx[dim] = refSize[dim] - 1;
+		this->m_LevelSetsFunction->GetReferenceImage()->TransformIndexToPhysicalPoint( end_idx, end );
+
+		this->InitializeDeformationField( orig, end, this->m_LevelSetsFunction->GetReferenceImage()->GetDirection() );
 	}
 
 	if ( this->m_SpeedsField.IsNull() ) {
@@ -104,6 +114,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 	this->m_NextDeformationField->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
 	this->m_NextDeformationField->SetSpacing( this->m_DeformationField->GetSpacing() );
 	this->m_NextDeformationField->SetDirection( this->m_DeformationField->GetDirection() );
+	this->m_NextDeformationField->SetOrigin( this->m_DeformationField->GetOrigin() );
 	this->m_NextDeformationField->Allocate();
 	this->m_NextDeformationField->FillBuffer( zerov );
 
@@ -145,7 +156,6 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		try	{
 			this->m_SpeedsField = this->m_LevelSetsFunction->GetLevelSetsMap(this->m_DeformationField);
 
-			/*
 			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
 			typename Writer::Pointer p = Writer::New();
 			std::stringstream ss;
@@ -153,7 +163,6 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			p->SetFileName( ss.str().c_str() );
 			p->SetInput( this->m_SpeedsField );
 			p->Update();
-			*/
 
 		}
 		catch ( itk::ExceptionObject & err ) {
@@ -358,7 +367,31 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComputeIterationChan
 	this->m_CurrentLevelSetsValue = totalNorm/nPix;
 }
 
+
+template< typename TLevelSetsFunction >
+void
+GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::InitializeDeformationField(
+	 const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::DeformationFieldPointType orig,
+	 const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::DeformationFieldPointType end,
+	 const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::DeformationFieldDirectionType dir)
+{
+	this->m_DeformationField = DeformationFieldType::New();
+
+	// TODO: dense deformation field grid size should not be hard-coded
+	typename DeformationFieldType::SizeType size; size.Fill(16); size[2]=8;
+
+	typename DeformationFieldType::SpacingType spacing;
+	for( size_t dim = 0; dim < DeformationFieldType::ImageDimension; dim++ ) {
+		spacing[dim] = fabs( (end[dim]-orig[dim])/(1.0*size[dim]));
+	}
+
+	this->m_DeformationField->SetRegions( size );
+	this->m_DeformationField->SetSpacing( spacing );
+	this->m_DeformationField->SetDirection( dir );
+	this->m_DeformationField->SetOrigin( orig );
+	this->m_DeformationField->Allocate();
+	this->m_DeformationField->FillBuffer( itk::NumericTraits<typename DeformationFieldType::PixelType>::Zero );
 }
 
-
+}
 #endif /* GRADIENTDESCENTLEVELSETSOPTIMIZER_HXX_ */

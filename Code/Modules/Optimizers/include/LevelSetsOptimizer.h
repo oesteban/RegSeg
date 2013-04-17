@@ -91,12 +91,12 @@ public:
 	itkStaticConstMacro( Dimension, unsigned int, DeformationFieldType::ImageDimension );
 
 	typedef typename DeformationFieldType::Pointer                        DeformationFieldPointer;
+	typedef typename DeformationFieldType::PointType                      DeformationFieldPointType;
+	typedef typename DeformationFieldType::DirectionType                  DeformationFieldDirectionType;
 	typedef typename itk::Image<PointValueType, Dimension >               DeformationComponentType;
 	typedef typename DeformationComponentType::Pointer                    DeformationComponentPointer;
-	typedef typename LevelSetsFunctionType::
-			                           ContourDeformationType             ContourDeformationType;
-	typedef typename LevelSetsFunctionType::
-			                        ContourDeformationPointer             ContourDeformationPointer;
+	typedef typename LevelSetsFunctionType::ContourDeformationType        ContourDeformationType;
+	typedef typename LevelSetsFunctionType::ContourDeformationPointer     ContourDeformationPointer;
 	typedef typename ContourDeformationType::PointType                    ContourPointType;
 
 	typedef itk::ForwardFFTImageFilter<DeformationComponentType>          FFTType;

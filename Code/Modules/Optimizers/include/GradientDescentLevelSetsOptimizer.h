@@ -74,30 +74,32 @@ public:
 	itkStaticConstMacro( Dimension, unsigned int, Superclass::Dimension );
 
 	/** Metric type over which this class is templated */
-	typedef typename Superclass::MeasureType                  MeasureType;
-	typedef typename Superclass::InternalComputationValueType InternalComputationValueType;
-	typedef typename Superclass::StopConditionType            StopConditionType;
-	typedef typename Superclass::LevelSetsFunctionType        LevelSetsFunctionType;
-	typedef typename Superclass::LevelSetsPointer             LevelSetsPointer;
-	typedef typename Superclass::DeformationFieldType         DeformationFieldType;
-	typedef typename Superclass::DeformationFieldPointer      DeformationFieldPointer;
-	typedef typename Superclass::PointValueType               PointValueType;
-	typedef typename Superclass::VectorType                   VectorType;
-	typedef typename Superclass::DeformationComponentType     DeformationComponentType;
-	typedef typename Superclass::DeformationComponentPointer  DeformationComponentPointer;
-	typedef typename Superclass::ContourDeformationType       ContourDeformationType;
-	typedef typename Superclass::ContourDeformationPointer    ContourDeformationPointer;
-	typedef typename Superclass::ContourPointType             ContourPointType;
-	typedef typename Superclass::FFTType                      FFTType;
-	typedef typename Superclass::FFTPointer                   FFTPointer;
-	typedef typename Superclass::FTDomainType                 FTDomainType;
-	typedef typename Superclass::FTDomainPointer              FTDomainPointer;
-	typedef typename Superclass::ComplexType                  ComplexType;
-	typedef typename Superclass::ComplexValueType             ComplexValueType;
-	typedef typename Superclass::RealPartType                 RealPartType;
-	typedef typename RealPartType::Pointer                    RealPartPointer;
-	typedef typename Superclass::IFFTType                     IFFTType;
-	typedef typename Superclass::IFFTPointer                  IFFTPointer;
+	typedef typename Superclass::MeasureType                                         MeasureType;
+	typedef typename Superclass::InternalComputationValueType                        InternalComputationValueType;
+	typedef typename Superclass::StopConditionType                                   StopConditionType;
+	typedef typename Superclass::LevelSetsFunctionType                               LevelSetsFunctionType;
+	typedef typename Superclass::LevelSetsPointer                                    LevelSetsPointer;
+	typedef typename Superclass::DeformationFieldType                                DeformationFieldType;
+	typedef typename Superclass::DeformationFieldPointer                             DeformationFieldPointer;
+	typedef typename Superclass::DeformationFieldPointType                           DeformationFieldPointType;
+	typedef typename Superclass::DeformationFieldDirectionType                       DeformationFieldDirectionType;
+	typedef typename Superclass::PointValueType                                      PointValueType;
+	typedef typename Superclass::VectorType                                          VectorType;
+	typedef typename Superclass::DeformationComponentType                            DeformationComponentType;
+	typedef typename Superclass::DeformationComponentPointer                         DeformationComponentPointer;
+	typedef typename Superclass::ContourDeformationType                              ContourDeformationType;
+	typedef typename Superclass::ContourDeformationPointer                           ContourDeformationPointer;
+	typedef typename Superclass::ContourPointType                                    ContourPointType;
+	typedef typename Superclass::FFTType                                             FFTType;
+	typedef typename Superclass::FFTPointer                                          FFTPointer;
+	typedef typename Superclass::FTDomainType                                        FTDomainType;
+	typedef typename Superclass::FTDomainPointer                                     FTDomainPointer;
+	typedef typename Superclass::ComplexType                                         ComplexType;
+	typedef typename Superclass::ComplexValueType                                    ComplexValueType;
+	typedef typename Superclass::RealPartType                                        RealPartType;
+	typedef typename RealPartType::Pointer                                           RealPartPointer;
+	typedef typename Superclass::IFFTType                                            IFFTType;
+	typedef typename Superclass::IFFTPointer                                         IFFTPointer;
 
 	/** Type for the convergence checker */
 	typedef itk::Function::WindowConvergenceMonitoringFunction<MeasureType>	         ConvergenceMonitoringType;
@@ -106,8 +108,8 @@ public:
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
 
-	itkSetObjectMacro(DeformationField, DeformationFieldType);
-	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
+//	itkSetObjectMacro(DeformationField, DeformationFieldType);
+//	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
 
 	/** Minimum convergence value for convergence checking.
 	 *  The convergence checker calculates convergence value by fitting to
@@ -223,6 +225,7 @@ protected:
 
 	void Iterate(void);
 	void ApplyRegularizationTerm( FTDomainType* reference );
+	void InitializeDeformationField( const DeformationFieldPointType orig, const DeformationFieldPointType end, const DeformationFieldDirectionType dir);
 
 private:
 	GradientDescentLevelSetsOptimizer( const Self & ); // purposely not implemented

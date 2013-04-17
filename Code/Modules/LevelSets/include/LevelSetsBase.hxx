@@ -111,16 +111,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	VectorInterpolatorPointer interp = VectorInterpolatorType::New();
 	interp->SetInputImage( newField );
 
-
-	typename DeformationFieldType::DirectionType dir = newField->GetDirection();
-	typename itk::ContinuousIndex<PointValueType,Dimension> point_idx;
-	typename DeformationFieldType::IndexType end_idx;
-	end_idx.Fill(0);
-	end_idx+=newField->GetLargestPossibleRegion().GetSize();
-	typename DeformationFieldType::PointType origin = newField->GetOrigin();
-	typename DeformationFieldType::PointType end;
-	newField->TransformIndexToPhysicalPoint( end_idx, end);
-
+	ContinuousIndex point_idx;
 	for( size_t cont = 0; cont < this->m_ShapePrior.size(); cont++ ) {
 		typename ContourDeformationType::PointsContainerPointer curr_points = this->m_CurrentContourPosition[cont]->GetPoints();
 		typename ContourDeformationType::PointsContainerIterator p_end = curr_points->End();
@@ -135,16 +126,18 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			VectorType desp = interp->Evaluate( currentPoint );
 			// Add vector to the point
 			if( desp.GetNorm()>0 ) {
-				//newPoint.SetPoint( currentPoint + desp );
 				newPoint.SetPoint( shape_it.Value() + desp );
 				newPoint.SetEdge( currentPoint.GetEdge() );
 
-				//newField->TransformPhysicalPointToContinuousIndex( newPoint, point_idx );
-				for ( size_t i = 0; i< Dimension; i++ ) {
-					if( newPoint[i] < origin[i] || newPoint[i]> end[i] ){
-						//itkWarningMacro( << "Contour is outside image regions after update" );
-						itkExceptionMacro( << "Contour is outside image regions after update" );
-					}
+				if(! newField->TransformPhysicalPointToContinuousIndex( newPoint, point_idx ) ) {
+					typename DeformationFieldType::PointType origin, end;
+					typename DeformationFieldType::IndexType tmp_idx;
+					typename DeformationFieldType::SizeType size = newField->GetLargestPossibleRegion().GetSize();
+					tmp_idx.Fill(0);
+					newField->TransformIndexToPhysicalPoint( tmp_idx, origin );
+					for ( size_t dim = 0; dim<DeformationFieldType::ImageDimension; dim++)  tmp_idx[dim]= size[dim]-1;
+					newField->TransformIndexToPhysicalPoint( tmp_idx, end);
+					itkExceptionMacro( << "Contour is outside image regions after update: vertex " << newPoint << " is outside image extents (" << origin << ", " << end << ").");
 				}
 
 				this->m_CurrentContourPosition[cont]->SetPoint( p_it.Index(), newPoint );
