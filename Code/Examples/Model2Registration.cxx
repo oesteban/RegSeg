@@ -199,8 +199,8 @@ int main(int argc, char *argv[]) {
 	//opt->SetBeta( 100 );
 	//opt->SetStepSize( 0.001 );
 	opt->SetNumberOfIterations(5000);
-	opt->SetAlpha( 100 );
-	opt->SetBeta( 1 );
+	//opt->SetA( 100 );
+	//opt->SetB( 1 );
 	opt->SetStepSize( 0.0005 );
 
 

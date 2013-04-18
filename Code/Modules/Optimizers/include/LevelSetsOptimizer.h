@@ -105,7 +105,18 @@ public:
 	typedef typename FTDomainType::Pointer                                FTDomainPointer;
 	typedef typename FTDomainType::PixelType                              ComplexType;
 	typedef typename ComplexType::value_type                              ComplexValueType;
+
 	typedef itk::Image< ComplexValueType, Dimension >                     RealPartType;
+	typedef itk::Vector< ComplexValueType, Dimension >                    ComplexValuesVector;
+
+	typedef itk::Vector< ComplexType, Dimension >                         ComplexFieldValue;
+	typedef itk::Image< ComplexFieldValue, Dimension >                    ComplexFieldType;
+	typedef typename ComplexFieldType::Pointer                            ComplexFieldPointer;
+
+	typedef itk::Matrix< ComplexValueType, Dimension, Dimension >         MatrixType;
+	typedef itk::Image< MatrixType, Dimension >                           TensorFieldType;
+	typedef typename TensorFieldType::Pointer                             TensorFieldPointer;
+
 
 	typedef itk::InverseFFTImageFilter
 			        <FTDomainType, DeformationComponentType>              IFFTType;

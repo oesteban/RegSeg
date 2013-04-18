@@ -200,8 +200,8 @@ int main(int argc, char *argv[]) {
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetNumberOfIterations(5000);
-	opt->SetAlpha( 1e-3 );
-	opt->SetBeta( 1e-3 );
+	//opt->SetAlpha( 1e-3 );
+	//opt->SetBeta( 1e-3 );
 	opt->SetStepSize( 1 );
 
 	// Start

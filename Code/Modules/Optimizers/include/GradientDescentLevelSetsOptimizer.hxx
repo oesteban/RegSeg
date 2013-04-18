@@ -42,6 +42,8 @@
 #include "GradientDescentLevelSetsOptimizer.h"
 #include <vector>
 #include <vnl/vnl_math.h>
+#include <vnl/vnl_matrix.h>
+#include <vnl/vnl_diag_matrix.h>
 #include <cmath>
 #include <itkComplexToRealImageFilter.h>
 #include "DisplacementFieldFileWriter.h"
@@ -63,8 +65,10 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
 	this->m_StepSize = 10.0;
-	this->m_Alpha = 1e-4;
-	this->m_Beta = 1e-3;
+	this->m_A.SetIdentity();
+	this->m_A*= (2.0 * 1e-4);
+	this->m_B.SetIdentity();
+	this->m_B*= (2.0 * 1e-3);
 }
 
 template< typename TLevelSetsFunction >
@@ -283,10 +287,13 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 
 	// Create container for deformation field components
 	DeformationComponentPointer fieldComponent = DeformationComponentType::New();
-	fieldComponent->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
-	fieldComponent->SetSpacing( this->m_DeformationField->GetSpacing() );
+	fieldComponent->CopyInformation( this->m_DeformationField );
+	//fieldComponent->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
+	//fieldComponent->SetSpacing( this->m_DeformationField->GetSpacing() );
 	fieldComponent->Allocate();
 	PointValueType* dCompBuffer = fieldComponent->GetBufferPointer();
+
+	ComplexFieldPointer fftNum;
 
 	size_t nPix = fieldComponent->GetLargestPossibleRegion().GetNumberOfPixels();
 	for( size_t d = 0; d < Dimension; d++ ) {
@@ -296,14 +303,50 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 			*(dCompBuffer+pix) = (PointValueType) (*(dFieldBuffer+pix))[d] / this->m_StepSize + (*(sFieldBuffer+pix))[d]; // ATTENTION: the + symbol depends on the definition of the normal
 		}                                                                                                                 // OUTWARDS-> + ; INWARDS-> -.
 
-		FFTPointer fft = FFTType::New();
-		fft->SetInput( fieldComponent );
-		fft->Update();  // This is required for computing the denominator for first time
-		FTDomainPointer num = fft->GetOutput();
-		this->ApplyRegularizationTerm( num );
+		FFTPointer fftFilter = FFTType::New();
+		fftFilter->SetInput( fieldComponent );
+		fftFilter->Update();  // This is required for computing the denominator for first time
+		FTDomainPointer fftComponent =  fftFilter->GetOutput();
+
+		if ( fftNum.IsNull() ) {
+			fftNum = ComplexFieldType::New();
+			fftNum->SetRegions( fftComponent->GetLargestPossibleRegion() );
+			//fftNum->CopyInformation( fftComponent );
+			fftNum->Allocate();
+			fftNum->FillBuffer( ComplexType( itk::NumericTraits<ComplexValueType>::Zero, itk::NumericTraits<ComplexValueType>::Zero) );
+		}
+
+
+		// Fill in ND fourier transform of numerator
+		ComplexFieldValue* fftBuffer = fftNum->GetBufferPointer();
+		ComplexType* fftCompBuffer = fftComponent->GetBufferPointer();
+		size_t nFrequel = fftComponent->GetLargestPossibleRegion().GetNumberOfPixels();
+		ComplexFieldValue cur;
+		for(size_t fr = 0; fr< nFrequel; fr++) {
+			cur = *(fftBuffer+fr);
+			cur[d] = *(fftCompBuffer+fr);
+			*(fftBuffer+fr) = cur;
+		}
+	}
+
+	this->ApplyRegularizationTerm( fftNum );
+
+	for( size_t d = 0; d < Dimension; d++ ) {
+		// Take out fourier component
+		FTDomainPointer fftComponent = FTDomainType::New();
+		fftComponent->CopyInformation( fftNum );
+		fftComponent->Allocate();
+		fftComponent->FillBuffer( itk::NumericTraits<ComplexType>::Zero );
+		ComplexType* fftCompBuffer = fftComponent->GetBufferPointer();
+		ComplexFieldValue* fftBuffer = fftNum->GetBufferPointer();
+		size_t nFrequel = fftComponent->GetLargestPossibleRegion().GetNumberOfPixels();
+		for(size_t fr = 0; fr< nFrequel; fr++) {
+			*(fftCompBuffer+fr) = (*(fftBuffer+fr))[d];
+		}
+
 
 		IFFTPointer ifft = IFFTType::New();
-		ifft->SetInput( num );
+		ifft->SetInput( fftComponent );
 
 		try {
 			ifft->Update();
@@ -328,39 +371,69 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 
 template< typename TLevelSetsFunction >
 void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
-::ApplyRegularizationTerm( typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::FTDomainType* reference ){
-	double pi2 = 2* vnl_math::pi;
-	ComplexValueType constant = (1.0/this->m_StepSize) + m_Alpha;
-
+::ApplyRegularizationTerm( typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComplexFieldType* reference ){
 	if( this->m_Denominator.IsNull() ) { // If executed for first time, cache the map
-		this->m_Denominator = RealPartType::New();
-		this->m_Denominator->SetRegions( reference->GetLargestPossibleRegion() );
-		this->m_Denominator->SetSpacing( reference->GetSpacing() );
-		this->m_Denominator->SetDirection( reference->GetDirection() );
-		this->m_Denominator->Allocate();
-		this->m_Denominator->FillBuffer( itk::NumericTraits<ComplexValueType>::Zero );
-
-		// Fill Buffer with denominator data
-		ComplexValueType lag_el; // accumulates the FT{lagrange operator}.
-		typename RealPartType::IndexType idx;
-		typename RealPartType::SizeType size = this->m_Denominator->GetLargestPossibleRegion().GetSize();
-		ComplexValueType* buffer = this->m_Denominator->GetBufferPointer();
-		size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
-		for (size_t pix = 0; pix < nPix; pix++ ) {
-			lag_el = 0.0;
-			idx = this->m_Denominator->ComputeIndex( pix );
-			for(size_t d = 0; d < Dimension; d++ ) lag_el+= 2.0*cos( pi2* idx[d]/(1.0*size[d]))-2;
-			*(buffer+pix) = 1.0 / (constant - m_Beta* lag_el);
-		}
+		this->InitializeDenominator( reference );
 	}
 
 	// Fill reference buffer with elements updated with the filter
-	ComplexType* nBuffer = reference->GetBufferPointer();
-	ComplexValueType* dBuffer = this->m_Denominator->GetBufferPointer();
+	ComplexFieldValue* nBuffer = reference->GetBufferPointer();
+	MatrixType* dBuffer = this->m_Denominator->GetBufferPointer();
+	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
+	ComplexFieldValue curval;
+	ComplexValuesVector realval;
+	ComplexValuesVector imagval;
+
+	for (size_t pix = 0; pix < nPix; pix++ ) {
+		curval = *(nBuffer+pix);
+		MatrixType tensor = *(dBuffer+pix);
+
+		for( size_t i = 0; i<Dimension; i++ ) {
+			realval[i] = curval[i].real();
+			imagval[i] = curval[i].imag();
+		}
+
+		realval = tensor * realval;
+		imagval = tensor * imagval;
+
+		for( size_t i = 0; i<Dimension; i++ ) {
+			curval[i] = ComplexType(realval[i],imagval[i]);
+		}
+
+
+		*(nBuffer+pix) = curval;
+	}
+}
+
+template< typename TLevelSetsFunction >
+void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
+::InitializeDenominator( typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComplexFieldType* reference ){
+	double pi2 = 2* vnl_math::pi;
+	MatrixType I;
+	I.SetIdentity();
+	MatrixType C = I * (1.0/this->m_StepSize) + m_A*I;
+
+	this->m_Denominator = TensorFieldType::New();
+	//this->m_Denominator->SetRegions(   reference->GetLargestPossibleRegion() );
+	//this->m_Denominator->SetSpacing(   reference->GetSpacing() );
+	//this->m_Denominator->SetDirection( reference->GetDirection() );
+	this->m_Denominator->CopyInformation( reference );
+	this->m_Denominator->FillBuffer( I );
+	this->m_Denominator->Allocate();
+
+	// Fill Buffer with denominator data
+	double lag_el; // accumulates the FT{lagrange operator}.
+	typename TensorFieldType::IndexType idx;
+	typename TensorFieldType::SizeType size = this->m_Denominator->GetLargestPossibleRegion().GetSize();
+	MatrixType* buffer = this->m_Denominator->GetBufferPointer();
 	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
 	for (size_t pix = 0; pix < nPix; pix++ ) {
-		ComplexType cur = *(nBuffer+pix);
-		*(nBuffer+pix) = cur * (*(dBuffer+pix));
+		lag_el = 0.0;
+		idx = this->m_Denominator->ComputeIndex( pix );
+		for(size_t d = 0; d < Dimension; d++ )
+			lag_el+= 2.0*cos( pi2* idx[d]/(1.0*(size[d]-1)))-2.0;  // FIXME: should I make size[d] - 1 ???
+		MatrixType ddor = C - m_B*lag_el;
+		*(buffer+pix) = ddor.GetInverse();
 	}
 }
 
