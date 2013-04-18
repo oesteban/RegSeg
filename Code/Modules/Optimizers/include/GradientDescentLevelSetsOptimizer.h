@@ -85,11 +85,15 @@ public:
 	typedef typename Superclass::DeformationFieldDirectionType                       DeformationFieldDirectionType;
 	typedef typename Superclass::PointValueType                                      PointValueType;
 	typedef typename Superclass::VectorType                                          VectorType;
+	typedef typename Superclass::MatrixType                                          MatrixType;
 	typedef typename Superclass::DeformationComponentType                            DeformationComponentType;
 	typedef typename Superclass::DeformationComponentPointer                         DeformationComponentPointer;
 	typedef typename Superclass::ContourDeformationType                              ContourDeformationType;
 	typedef typename Superclass::ContourDeformationPointer                           ContourDeformationPointer;
 	typedef typename Superclass::ContourPointType                                    ContourPointType;
+	typedef typename Superclass::TensorFieldType                                     TensorFieldType;
+	typedef typename Superclass::TensorFieldPointer                                  TensorFieldPointer;
+
 	typedef typename Superclass::FFTType                                             FFTType;
 	typedef typename Superclass::FFTPointer                                          FFTPointer;
 	typedef typename Superclass::FTDomainType                                        FTDomainType;
@@ -98,6 +102,12 @@ public:
 	typedef typename Superclass::ComplexValueType                                    ComplexValueType;
 	typedef typename Superclass::RealPartType                                        RealPartType;
 	typedef typename RealPartType::Pointer                                           RealPartPointer;
+
+	typedef typename Superclass::ComplexValuesVector                                 ComplexValuesVector;
+	typedef typename Superclass::ComplexFieldValue                                   ComplexFieldValue;
+	typedef typename Superclass::ComplexFieldType                                    ComplexFieldType;
+	typedef typename Superclass::ComplexFieldPointer                                 ComplexFieldPointer;
+
 	typedef typename Superclass::IFFTType                                            IFFTType;
 	typedef typename Superclass::IFFTPointer                                         IFFTPointer;
 
@@ -150,11 +160,11 @@ public:
 //	itkGetConstReferenceMacro(ReturnBestParametersAndValue, bool);
 //	itkBooleanMacro(ReturnBestParametersAndValue);
 
-	itkSetMacro( Alpha, InternalComputationValueType );
-	itkGetConstMacro( Alpha, InternalComputationValueType );
+	itkSetMacro( A, MatrixType );
+	itkGetConstMacro( A, MatrixType );
 
-	itkSetMacro( Beta, InternalComputationValueType );
-	itkGetConstMacro( Beta, InternalComputationValueType );
+	itkSetMacro( B, MatrixType );
+	itkGetConstMacro( B, MatrixType );
 
 	itkSetMacro( StepSize, InternalComputationValueType );
 	itkGetConstMacro( StepSize, InternalComputationValueType );
@@ -207,14 +217,14 @@ protected:
 
 	/** Particular parameter definitions from our method */
 	InternalComputationValueType m_StepSize; // Step-size is tau in the formulations
-	InternalComputationValueType m_Alpha;
-	InternalComputationValueType m_Beta;
+	MatrixType m_A;
+	MatrixType m_B;
 
 
 	DeformationFieldPointer m_DeformationField;
 	DeformationFieldPointer m_NextDeformationField;
 	DeformationFieldPointer m_SpeedsField;
-	RealPartPointer m_Denominator;
+	TensorFieldPointer m_Denominator;
 	MeasureType m_CurrentLevelSetsValue;
 
 
@@ -224,8 +234,9 @@ protected:
 	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 
 	void Iterate(void);
-	void ApplyRegularizationTerm( FTDomainType* reference );
+	void ApplyRegularizationTerm( ComplexFieldType* reference );
 	void InitializeDeformationField( const DeformationFieldPointType orig, const DeformationFieldPointType end, const DeformationFieldDirectionType dir);
+	void InitializeDenominator( ComplexFieldType* reference );
 
 private:
 	GradientDescentLevelSetsOptimizer( const Self & ); // purposely not implemented
