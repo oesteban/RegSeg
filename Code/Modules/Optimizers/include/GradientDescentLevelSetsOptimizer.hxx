@@ -283,13 +283,11 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	// Get deformation fields pointers
 	const VectorType* dFieldBuffer = this->m_DeformationField->GetBufferPointer();
 	const VectorType* sFieldBuffer = this->m_SpeedsField->GetBufferPointer();
-	VectorType* nextFieldBuffer = this->m_NextDeformationField->GetBufferPointer();
 
 	// Create container for deformation field components
 	DeformationComponentPointer fieldComponent = DeformationComponentType::New();
-	fieldComponent->CopyInformation( this->m_DeformationField );
-	//fieldComponent->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
-	//fieldComponent->SetSpacing( this->m_DeformationField->GetSpacing() );
+	fieldComponent->SetDirection( this->m_DeformationField->GetDirection() );
+	fieldComponent->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
 	fieldComponent->Allocate();
 	PointValueType* dCompBuffer = fieldComponent->GetBufferPointer();
 
@@ -331,12 +329,16 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 
 	this->ApplyRegularizationTerm( fftNum );
 
+
+	VectorType* nextFieldBuffer = this->m_NextDeformationField->GetBufferPointer();
 	for( size_t d = 0; d < Dimension; d++ ) {
 		// Take out fourier component
 		FTDomainPointer fftComponent = FTDomainType::New();
-		fftComponent->CopyInformation( fftNum );
+		fftComponent->SetRegions( fftNum->GetLargestPossibleRegion() );
+		fftComponent->SetOrigin( fftNum->GetOrigin() );
+		fftComponent->SetSpacing( fftNum->GetSpacing() );
 		fftComponent->Allocate();
-		fftComponent->FillBuffer( itk::NumericTraits<ComplexType>::Zero );
+		fftComponent->FillBuffer( ComplexType(0.0,0.0) );
 		ComplexType* fftCompBuffer = fftComponent->GetBufferPointer();
 		ComplexFieldValue* fftBuffer = fftNum->GetBufferPointer();
 		size_t nFrequel = fftComponent->GetLargestPossibleRegion().GetNumberOfPixels();
@@ -362,7 +364,8 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 		// Set component on this->m_NextDeformationField
 		const PointValueType* resultBuffer = ifft->GetOutput()->GetBufferPointer();
 		for(size_t pix = 0; pix< nPix; pix++) {
-			(*(nextFieldBuffer+pix))[d] = *(resultBuffer+pix);
+			PointValueType val = *(resultBuffer+pix);
+			(*(nextFieldBuffer+pix))[d] = val;
 		}
 	}
 
@@ -414,12 +417,11 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 	MatrixType C = I * (1.0/this->m_StepSize) + m_A*I;
 
 	this->m_Denominator = TensorFieldType::New();
-	//this->m_Denominator->SetRegions(   reference->GetLargestPossibleRegion() );
-	//this->m_Denominator->SetSpacing(   reference->GetSpacing() );
-	//this->m_Denominator->SetDirection( reference->GetDirection() );
-	this->m_Denominator->CopyInformation( reference );
-	this->m_Denominator->FillBuffer( I );
+	this->m_Denominator->SetSpacing(   reference->GetSpacing() );
+	this->m_Denominator->SetDirection( reference->GetDirection() );
+	this->m_Denominator->SetRegions( reference->GetLargestPossibleRegion().GetSize() );
 	this->m_Denominator->Allocate();
+	this->m_Denominator->FillBuffer( I );
 
 	// Fill Buffer with denominator data
 	double lag_el; // accumulates the FT{lagrange operator}.
