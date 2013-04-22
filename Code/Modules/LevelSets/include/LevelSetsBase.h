@@ -130,6 +130,10 @@ public:
 			< DeformationFieldType >                         VectorInterpolatorType;
 	typedef typename VectorInterpolatorType::Pointer         VectorInterpolatorPointer;
 
+	typedef itk::Image< unsigned int, Dimension >            ROIType;
+	typedef typename ROIType::Pointer                        ROIPointer;
+	typedef typename ROIType::ConstPointer                   ROIConstPointer;
+	typedef std::vector< ROIConstPointer >                   ROIList;
 
 	typedef SparseToDenseFieldResampleFilter
 			<ContourDeformationType, DeformationFieldType>   SparseToDenseFieldResampleType;
@@ -164,13 +168,20 @@ protected:
 		os << std::endl;
 	}
 
+	virtual void InitializeSamplingGrid( void ) = 0;
+	virtual void InitializeROIs( void ) = 0;
+	inline virtual MeasureType GetEnergyAtPoint( PixelPointType& point ) = 0;
+
 	mutable MeasureType m_Value;
 	DeformationFieldPointer m_DeformationField;
+	DeformationFieldPointer m_ReferenceSamplingGrid;
 	ContourDeformationList m_ShapePrior;
 	ContourDeformationList m_CurrentContourPosition;
 	ContourCopyPointer m_ContourCopier;
 	WarpContourPointer m_ContourUpdater;
 	SparseToDenseFieldResamplePointer m_SparseToDenseResampler;
+	SparseToDenseFieldResamplePointer m_EnergyResampler;
+	ROIList m_ROIs;
 
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented
