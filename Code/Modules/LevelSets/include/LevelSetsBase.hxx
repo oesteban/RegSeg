@@ -94,6 +94,52 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_SparseToDenseResampler->AddControlPoints( shapePrior );
 }
 
+
+template< typename TReferenceImageType, typename TCoordRepType >
+typename LevelSetsBase<TReferenceImageType, TCoordRepType>::MeasureType
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::GetValue() const {
+	this->m_Value = 0.0;
+
+	// 1. Define the sampling grid and cache it
+	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
+		this->InitializeSamplingGrid();
+		this->m_EnergyResampler = SparseToDenseFieldResampleType::New();
+		this->m_EnergyResampler->CopyImageInformation( this->m_ReferenceSamplingGrid );
+		for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++) {
+			this->m_SparseToDenseResampler->SetInput( cont, m_CurrentContourPosition[cont] );
+		}
+	}
+
+	// 2. Resample dense deformation field on the grid.
+	this->m_SparseToDenseResampler->Update();
+	this->m_ReferenceSamplingGrid = this->m_SparseToDenseResampler->GetOutput();
+
+	// 3. Resample ROIs on the sampling grid and cache them.
+	if ( m_ROIs.size() == 0 ) {
+		this->InitializeROIs();
+	}
+
+	// 4. For each ROI, for each pixel, compute energy (call derived class)
+	for ( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
+		unsigned int * roiBuffer = this->m_ROIs[roi]->GetBufferPointer();
+		VectorType * defBuffer = this->m_ReferenceSamplingGrid->GetBufferPointer();
+		size_t nPix = this->m_ROIs[roi]->GetLargestPossibleRegion().GetNumberOfPixels();
+		PixelPointType pos, targetPos;
+
+		for( size_t i = 0; i < nPix; i++) {
+			if ( *(roiBuffer+i) > 0.0 ) {
+				this->m_ROIs[roi]->TransformIndexToPhysicalPoint( this->m_ROIs[roi]->ComputeIndex(i), pos);
+				targetPos = pos + *( defBuffer + i);
+				this->m_Value += this->GetEnergyAtPoint( targetPos );
+
+			}
+		}
+	}
+
+	return this->m_Value;
+}
+
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
