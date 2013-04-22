@@ -51,7 +51,7 @@ namespace rstk {
 template <typename TReferenceImageType, typename TCoordRepType>
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::MahalanobisLevelSets() {
-
+	this->m_Interp = InterpolatorType::New();
 
 }
 
@@ -65,46 +65,58 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
-typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::MeasureType
+void
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::GetValue() const {
-	/*
-	this->m_Value = 0;
-	PixelType* buffer = this->m_Reference->GetBufferPointer();
-	size_t nPix = this->m_Reference->GetLargestPossibleRegion().GetNumberOfPixels();
-	SpatialObjectsVector objs;
+::InitializeSamplingGrid() {
+	this->m_ReferenceSamplingGrid = DeformationFieldType::New();
+	typename ReferenceImageType::SpacingType sp = this->m_ReferenceImage->GetSpacing();
+	double spacing = itk::NumericTraits< double >::max();
 
-	size_t nRegions = this->m_CurrentContourPosition.size();
-	for( size_t i = 0; i< nRegions; i++) {
-		ContourSpatialPointer sp = ContourSpatialObject::New();
-		sp->SetMesh( this->m_CurrentContourPosition[i] );
-		objs.push_back( sp );
+	for (size_t i = 0; i<Dimension; i++ ){
+		if (sp[i] < spacing )
+			spacing = sp[i];
 	}
 
-	// for all pixel
-	PixelPointType pi;
-	int regionId;
-	for( size_t pix = 0; pix < nPix; pix++) {
-		regionId=-1;
-		this->m_ReferenceImage->TransformIndexToPhysicalPoint(
-				this->m_ReferenceImage->ComputeIndex(pix), &pi );
-		// if pixel is inside object
-		for( size_t r = 0; r<nRegions; r++ ) {
-			if( objs[r]->IsInside(pi)) regionId = r;
-		}
+	sp.Fill( spacing * 0.25 );
 
-		if (r>=0) {
-			this->m_Value+= this->m_Parameters[cont].bias[i] + dot_product(dist.GetVnlVector(), this->m_Parameters[cont].iCovariance[i].GetVnlMatrix() * dist.GetVnlVector() );
-		}
+	typename ReferenceImageType::PointType origin = this->m_ReferenceImage->GetOrigin();
+	this->m_ReferenceSamplingGrid->SetOrigin( origin );
+	this->m_ReferenceSamplingGrid->SetDirection( this->m_ReferenceImage->GetDirection() );
 
-			// compute mahalanobis distance to class
+	typename ReferenceImageType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
+	typename itk::ContinuousIndex<double, Dimension> idx;
+	for (size_t i = 0; i<Dimension; i++ ){
+		idx[i]=size[i]-1.0;
+	}
 
-			// add to energy
+	typename ReferenceImageType::PointType end;
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( idx, end );
 
-	}*/
-	// reset m_Value and return
-	return this->m_Value;
+	for (size_t i = 0; i<Dimension; i++ ){
+		size[i]= (unsigned int) ( fabs( end[i]-origin[i]/(1.0*sp[i]) ) );
+	}
+
+	this->m_ReferenceSamplingGrid->SetRegions( size );
+	this->m_ReferenceSamplingGrid->Allocate();
+
 }
+
+template <typename TReferenceImageType, typename TCoordRepType>
+typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::MeasureType
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+::GetValue() {
+	this->m_Interp->SetInputImage( this->m_ReferenceImage );
+	return Superclass::GetValue();
+}
+
+template <typename TReferenceImageType, typename TCoordRepType>
+inline typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::MeasureType
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+::GetEnergyAtPoint( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::PixelPointType & point, size_t cont, size_t outside ) {
+	PixelType dist = this->m_Interp->Evaluate( point ) - this->m_Parameters[cont].mean[outside];
+	return dot_product(dist.GetVnlVector(), this->m_Parameters[cont].iCovariance[outside].GetVnlMatrix() * dist.GetVnlVector() );
+}
+
 
 template <typename TReferenceImageType, typename TCoordRepType>
 void
@@ -229,8 +241,7 @@ typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFie
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::GetLevelSetsMap( MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldType* levelSetMap) {
 	// Initialize interpolators
-	InterpolatorPointer interp = InterpolatorType::New();
-	interp->SetInputImage( this->m_ReferenceImage );
+	this->m_Interp->SetInputImage( this->m_ReferenceImage );
 	this->m_SparseToDenseResampler->CopyImageInformation( levelSetMap );
 
 
@@ -261,7 +272,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 			levelSet = 0;
 			idx = c_it.Index();
 			ci_prime = c_it.Value();
-			fi = interp->Evaluate( ci_prime );    // Feature in c'_{i}
+			fi = this->m_Interp->Evaluate( ci_prime );    // Feature in c'_{i}
 			for( size_t i = 0; i<2; i++) {                 // Compute on both sides of the levelset
 				PixelType dist = fi - this->m_Parameters[cont].mean[i];
 				// compute mahalanobis distance in position

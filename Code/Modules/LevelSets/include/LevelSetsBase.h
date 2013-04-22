@@ -49,6 +49,8 @@
 #include <itkQuadEdgeMeshToQuadEdgeMeshFilter.h>
 #include <itkWarpMeshFilter.h>
 #include <itkMeshSpatialObject.h>
+#include <itkGroupSpatialObject.h>
+#include <itkSpatialObjectToImageFilter.h>
 
 
 #include "SparseToDenseFieldResampleFilter.h"
@@ -113,11 +115,6 @@ public:
 
 	typedef typename std::vector<ContourDeformationPointer>  ContourDeformationList;
 
-	typedef typename itk::MeshSpatialObject
-			                   <ContourDeformationType>      ContourSpatialObject;
-	typedef typename ContourSpatialObject::Pointer           ContourSpatialPointer;
-	typedef typename std::vector<ContourSpatialPointer>      SpatialObjectsVector;
-
 	typedef typename itk::QuadEdgeMeshToQuadEdgeMeshFilter
 			<ContourDeformationType,ContourDeformationType>  ContourCopyType;
 	typedef typename ContourCopyType::Pointer                ContourCopyPointer;
@@ -135,6 +132,14 @@ public:
 	typedef typename ROIType::ConstPointer                   ROIConstPointer;
 	typedef std::vector< ROIConstPointer >                   ROIList;
 
+	typedef typename itk::MeshSpatialObject
+			                   <ContourDeformationType>      ContourSpatialObject;
+	typedef typename ContourSpatialObject::Pointer           ContourSpatialPointer;
+	typedef typename std::vector<ContourSpatialPointer>      SpatialObjectsVector;
+	typedef itk::SpatialObjectToImageFilter
+			       < ContourSpatialObject, ROIType >         SpatialObjectToImageFilterType;
+	typedef typename SpatialObjectToImageFilterType::Pointer SpatialObjectToImageFilterPointer;
+
 	typedef SparseToDenseFieldResampleFilter
 			<ContourDeformationType, DeformationFieldType>   SparseToDenseFieldResampleType;
 	typedef typename  SparseToDenseFieldResampleType::Pointer  SparseToDenseFieldResamplePointer;
@@ -145,7 +150,7 @@ public:
 			  DeformationFieldType>                          WarpContourType;
 	typedef typename WarpContourType::Pointer                WarpContourPointer;
 
-	virtual MeasureType GetValue() const = 0;
+	virtual MeasureType GetValue() = 0;
 	virtual DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap) = 0;
 
 	void UpdateDeformationField( const DeformationFieldType* newField );
@@ -168,9 +173,11 @@ protected:
 		os << std::endl;
 	}
 
+
+	void InitializeROIs( void );
 	virtual void InitializeSamplingGrid( void ) = 0;
-	virtual void InitializeROIs( void ) = 0;
-	inline virtual MeasureType GetEnergyAtPoint( PixelPointType& point ) = 0;
+
+	inline virtual MeasureType GetEnergyAtPoint( PixelPointType& point, size_t cont ) = 0;
 
 	mutable MeasureType m_Value;
 	DeformationFieldPointer m_DeformationField;

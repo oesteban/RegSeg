@@ -71,6 +71,7 @@ public:
 
 	typedef typename Superclass::MeasureType               MeasureType;
 	typedef typename Superclass::PointType                 PointType;
+	typedef typename Superclass::PixelPointType            PixelPointType;
 	typedef typename Superclass::PointValueType            PointValueType;
 	typedef typename Superclass::VectorType                VectorType;
 	typedef typename Superclass::ContinuousIndex           ContinuousIndex;
@@ -94,6 +95,7 @@ public:
 	typedef typename Superclass::InterpolatorPointer       InterpolatorPointer;
 
 	itkStaticConstMacro( Components, unsigned int, itkGetStaticConstMacro(PixelType::Dimension) );
+	itkStaticConstMacro( Dimension, unsigned int, TReferenceImageType::ImageDimension );
 
 	typedef PixelType                                      MeanType;
 	typedef itk::Matrix
@@ -107,7 +109,7 @@ public:
 
 	typedef typename std::vector< ParametersType >         ParametersList;
 
-	MeasureType GetValue() const;
+	MeasureType GetValue();
 	DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap);
 
 	void SetParameters( size_t contour_id, ParametersType& params );
@@ -123,6 +125,14 @@ protected:
 
 	void PrintSelf( std::ostream& os, itk::Indent indent) const;
 
+	void InitializeSamplingGrid( void );
+
+	inline MeasureType GetEnergyAtPoint( PixelPointType& point, size_t cont, size_t outside );
+
+	inline MeasureType GetEnergyAtPoint( PixelPointType& point, size_t cont ) {
+		this->GetEnergyAtPoint( point, cont, 0 );
+	}
+
 	ParametersList m_Parameters;
 	ReferenceImageConstPointer m_ReferenceImage;
 
@@ -131,6 +141,9 @@ private:
 	void operator=(const Self &); // purposely not implemented
 
 	bool CheckExtents( ContourDeformationType* prior ) const;
+
+	InterpolatorPointer m_Interp;
+
 }; // End of class MahalanobisLevelSets
 } // End of namespace
 

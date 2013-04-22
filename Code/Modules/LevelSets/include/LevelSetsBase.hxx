@@ -40,6 +40,9 @@
 
 #include "LevelSetsBase.h"
 
+#include <iostream>
+#include <iomanip>
+
 namespace rstk {
 
 
@@ -98,7 +101,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::MeasureType
 LevelSetsBase<TReferenceImageType, TCoordRepType>
-::GetValue() const {
+::GetValue() {
 	this->m_Value = 0.0;
 
 	// 1. Define the sampling grid and cache it
@@ -122,7 +125,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	// 4. For each ROI, for each pixel, compute energy (call derived class)
 	for ( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
-		unsigned int * roiBuffer = this->m_ROIs[roi]->GetBufferPointer();
+		const unsigned int * roiBuffer = this->m_ROIs[roi]->GetBufferPointer();
 		VectorType * defBuffer = this->m_ReferenceSamplingGrid->GetBufferPointer();
 		size_t nPix = this->m_ROIs[roi]->GetLargestPossibleRegion().GetNumberOfPixels();
 		PixelPointType pos, targetPos;
@@ -131,7 +134,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			if ( *(roiBuffer+i) > 0.0 ) {
 				this->m_ROIs[roi]->TransformIndexToPhysicalPoint( this->m_ROIs[roi]->ComputeIndex(i), pos);
 				targetPos = pos + *( defBuffer + i);
-				this->m_Value += this->GetEnergyAtPoint( targetPos );
+				this->m_Value += this->GetEnergyAtPoint( targetPos, roi );
 
 			}
 		}
@@ -191,6 +194,31 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 				this->m_CurrentContourPosition[cont]->SetPoint( p_it.Index(), newPoint );
 			}
 		}
+	}
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::InitializeROIs() {
+
+	for( size_t cont = 0; cont < this->m_ShapePrior.size(); cont++ ) {
+		ContourSpatialPointer spatialObject = ContourSpatialObject::New();
+		spatialObject->SetMesh( this->m_ShapePrior[cont] );
+		SpatialObjectToImageFilterPointer imFilter = SpatialObjectToImageFilterType::New();
+		imFilter->SetInput( spatialObject );
+		imFilter->Update();
+		m_ROIs.push_back( imFilter->GetOutput() );
+
+#ifndef DNDEBUG
+		typedef itk::ImageFileWriter< ROIType > ROIWriter;
+		typename ROIWriter::Pointer w = ROIWriter::New();
+		w->SetInput( imFilter->GetOutput() );
+		std::stringstream ss;
+		ss << "roi_" << std::setfill( '0' ) << std::setw(2) << cont << ".nii.gz";
+		w->SetFileName( ss.str().c_str() );
+		w->Update();
+#endif
 	}
 }
 
