@@ -51,6 +51,7 @@
 #include <itkMeshSpatialObject.h>
 #include <itkGroupSpatialObject.h>
 #include <itkSpatialObjectToImageFilter.h>
+#include <itkVectorResampleImageFilter.h>
 
 
 #include "SparseToDenseFieldResampleFilter.h"
@@ -104,7 +105,6 @@ public:
 			< ReferenceImageType >                           InterpolatorType;
 	typedef typename InterpolatorType::Pointer               InterpolatorPointer;
 
-
 	typedef itk::QuadEdgeMesh< VectorType, Dimension >       ContourDeformationType;
 	typedef typename ContourDeformationType::PointType       PointType;
 	typedef typename ContourDeformationType::Pointer         ContourDeformationPointer;
@@ -123,9 +123,15 @@ public:
 	typedef typename DeformationFieldType::Pointer           DeformationFieldPointer;
 	typedef typename DeformationFieldType::ConstPointer      DeformationFieldConstPointer;
 	typedef typename DeformationFieldType::PointType         DeformationFieldPointType;
+	typedef typename DeformationFieldType::IndexType         DeformationFieldIndexType;
+
 	typedef itk::VectorLinearInterpolateImageFunction
 			< DeformationFieldType >                         VectorInterpolatorType;
 	typedef typename VectorInterpolatorType::Pointer         VectorInterpolatorPointer;
+
+	typedef itk::VectorResampleImageFilter
+		<DeformationFieldType,DeformationFieldType,double>   DisplacementResamplerType;
+	typedef typename DisplacementResamplerType::Pointer      DisplacementResamplerPointer;
 
 	typedef itk::Image< unsigned int, Dimension >            ROIType;
 	typedef typename ROIType::Pointer                        ROIPointer;
@@ -135,7 +141,9 @@ public:
 	typedef typename itk::MeshSpatialObject
 			                   <ContourDeformationType>      ContourSpatialObject;
 	typedef typename ContourSpatialObject::Pointer           ContourSpatialPointer;
+	typedef typename ContourSpatialObject::ConstPointer      ContourSpatialConstPointer;
 	typedef typename std::vector<ContourSpatialPointer>      SpatialObjectsVector;
+
 	typedef itk::SpatialObjectToImageFilter
 			       < ContourSpatialObject, ROIType >         SpatialObjectToImageFilterType;
 	typedef typename SpatialObjectToImageFilterType::Pointer SpatialObjectToImageFilterPointer;
@@ -187,8 +195,8 @@ protected:
 	ContourCopyPointer m_ContourCopier;
 	WarpContourPointer m_ContourUpdater;
 	SparseToDenseFieldResamplePointer m_SparseToDenseResampler;
-	SparseToDenseFieldResamplePointer m_EnergyResampler;
-	ROIList m_ROIs;
+	DisplacementResamplerPointer m_EnergyResampler;
+	SpatialObjectsVector m_ROIs;
 
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented

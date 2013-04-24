@@ -51,6 +51,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::LevelSetsBase() {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_SparseToDenseResampler = SparseToDenseFieldResampleType::New();
+	this->m_EnergyResampler = DisplacementResamplerType::New();
 }
 
 
@@ -103,40 +104,76 @@ typename LevelSetsBase<TReferenceImageType, TCoordRepType>::MeasureType
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetValue() {
 	this->m_Value = 0.0;
-
 	// 1. Define the sampling grid and cache it
 	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
 		this->InitializeSamplingGrid();
-		this->m_EnergyResampler = SparseToDenseFieldResampleType::New();
-		this->m_EnergyResampler->CopyImageInformation( this->m_ReferenceSamplingGrid );
+		this->m_EnergyResampler->SetOutputOrigin(    this->m_ReferenceSamplingGrid->GetOrigin()  );
+		this->m_EnergyResampler->SetOutputSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+		this->m_EnergyResampler->SetOutputDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+		this->m_EnergyResampler->SetSize(            this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
 		for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++) {
-			this->m_SparseToDenseResampler->SetInput( cont, m_CurrentContourPosition[cont] );
+			this->m_EnergyResampler->SetInput( this->m_SparseToDenseResampler->GetOutput() );
 		}
 	}
 
 	// 2. Resample dense deformation field on the grid.
-	this->m_SparseToDenseResampler->Update();
-	this->m_ReferenceSamplingGrid = this->m_SparseToDenseResampler->GetOutput();
+	this->m_EnergyResampler->Update();
+	this->m_ReferenceSamplingGrid = this->m_EnergyResampler->GetOutput();
 
 	// 3. Resample ROIs on the sampling grid and cache them.
+	DeformationFieldPointType origin = this->m_ReferenceSamplingGrid->GetOrigin();
 	if ( m_ROIs.size() == 0 ) {
 		this->InitializeROIs();
 	}
 
 	// 4. For each ROI, for each pixel, compute energy (call derived class)
-	for ( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
-		const unsigned int * roiBuffer = this->m_ROIs[roi]->GetBufferPointer();
-		VectorType * defBuffer = this->m_ReferenceSamplingGrid->GetBufferPointer();
-		size_t nPix = this->m_ROIs[roi]->GetLargestPossibleRegion().GetNumberOfPixels();
-		PixelPointType pos, targetPos;
+	DeformationFieldPointType minPoint;
+	DeformationFieldPointType maxPoint;
+	for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
+		typedef typename ContourSpatialObject::BoundingBoxType::PointsContainerConstPointer Points;
+		Points p = m_ROIs[roi]->GetBoundingBox()->GetCorners();
 
-		for( size_t i = 0; i < nPix; i++) {
-			if ( *(roiBuffer+i) > 0.0 ) {
-				this->m_ROIs[roi]->TransformIndexToPhysicalPoint( this->m_ROIs[roi]->ComputeIndex(i), pos);
-				targetPos = pos + *( defBuffer + i);
-				this->m_Value += this->GetEnergyAtPoint( targetPos, roi );
+		double minDist = itk::NumericTraits<double>::max();
+		double maxDist = 0.0;
 
+		for( size_t i = 0; i< p->Size(); i++ ) {
+			double dist = origin.EuclideanDistanceTo( p->GetElement(i) );
+
+			if( dist < minDist ) {
+				minDist = dist;
+				minPoint = p->GetElement(i);
 			}
+
+			if( dist > maxDist ){
+				maxDist = dist;
+				maxPoint = p->GetElement(i);
+			}
+		}
+
+	}
+
+	DeformationFieldIndexType minIndex, maxIndex;
+	typename DeformationFieldType::SizeType regionSize;
+	this->m_ReferenceSamplingGrid->TransformPhysicalPointToIndex( minPoint, minIndex );
+	this->m_ReferenceSamplingGrid->TransformPhysicalPointToIndex( maxPoint, maxIndex );
+
+	for (size_t i = 0; i<Dimension; i++ ) {
+		regionSize[i] = maxIndex[i] - minIndex[i];
+		//assert( regionSize[i] > 0 );
+	}
+
+	//const unsigned int * roiBuffer = this->m_ROIs[roi]->GetBufferPointer();
+	VectorType * defBuffer = this->m_ReferenceSamplingGrid->GetBufferPointer();
+	size_t nPix = this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetNumberOfPixels();
+	PixelPointType pos, targetPos;
+
+	for( size_t i = 0; i < nPix; i++) {
+		this->m_ReferenceSamplingGrid->TransformIndexToPhysicalPoint( this->m_ReferenceSamplingGrid->ComputeIndex(i), pos);
+		targetPos = pos + *( defBuffer + i);
+
+		for ( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
+			if ( this->m_ROIs[roi]->IsInside( targetPos ) )
+					this->m_Value += this->GetEnergyAtPoint( targetPos, roi );
 		}
 	}
 
@@ -203,22 +240,26 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::InitializeROIs() {
 
 	for( size_t cont = 0; cont < this->m_ShapePrior.size(); cont++ ) {
-		ContourSpatialPointer spatialObject = ContourSpatialObject::New();
-		spatialObject->SetMesh( this->m_ShapePrior[cont] );
-		SpatialObjectToImageFilterPointer imFilter = SpatialObjectToImageFilterType::New();
-		imFilter->SetInput( spatialObject );
-		imFilter->Update();
-		m_ROIs.push_back( imFilter->GetOutput() );
+		m_ROIs.push_back( ContourSpatialObject::New() );
+		m_ROIs[cont]->SetMesh( this->m_ShapePrior[cont] );
 
-#ifndef DNDEBUG
-		typedef itk::ImageFileWriter< ROIType > ROIWriter;
-		typename ROIWriter::Pointer w = ROIWriter::New();
-		w->SetInput( imFilter->GetOutput() );
-		std::stringstream ss;
-		ss << "roi_" << std::setfill( '0' ) << std::setw(2) << cont << ".nii.gz";
-		w->SetFileName( ss.str().c_str() );
-		w->Update();
-#endif
+//		SpatialObjectToImageFilterPointer imFilter = SpatialObjectToImageFilterType::New();
+//		imFilter->SetInput( spatialObject );
+//		imFilter->SetSpacing( this->m_ReferenceSamplingGrid->GetSpacing() );
+//		imFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+//		imFilter->SetOrigin( this->m_ReferenceSamplingGrid->GetOrigin() );
+//		imFilter->SetSize( this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+//		imFilter->Update();
+//#ifndef DNDEBUG
+//		typedef itk::ImageFileWriter< ROIType > ROIWriter;
+//		typename ROIWriter::Pointer w = ROIWriter::New();
+//		w->SetInput( imFilter->GetOutput() );
+//		std::stringstream ss;
+//		ss << "roi_" << std::setfill( '0' ) << std::setw(2) << cont << ".nii.gz";
+//		w->SetFileName( ss.str().c_str() );
+//		w->Update();
+//#endif
+
 	}
 }
 
