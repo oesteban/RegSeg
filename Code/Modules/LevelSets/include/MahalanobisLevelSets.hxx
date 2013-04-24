@@ -68,7 +68,7 @@ template <typename TReferenceImageType, typename TCoordRepType>
 void
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::InitializeSamplingGrid() {
-	this->m_ReferenceSamplingGrid = DeformationFieldType::New();
+this->m_ReferenceSamplingGrid = DeformationFieldType::New();
 	typename ReferenceImageType::SpacingType sp = this->m_ReferenceImage->GetSpacing();
 	double spacing = itk::NumericTraits< double >::max();
 
@@ -77,7 +77,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 			spacing = sp[i];
 	}
 
-	sp.Fill( spacing * 0.25 );
+	sp.Fill( spacing * 1.50 );
 
 	typename ReferenceImageType::PointType origin = this->m_ReferenceImage->GetOrigin();
 	this->m_ReferenceSamplingGrid->SetOrigin( origin );

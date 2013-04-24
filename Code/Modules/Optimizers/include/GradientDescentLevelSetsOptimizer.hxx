@@ -234,8 +234,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		*/
 
 
-		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentLevelSetsValue << std::endl;
-
+		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentLevelSetsValue << " " << this->m_LevelSetsFunction->GetValue() << std::endl;
 
 		/*
 		 * Check the convergence by WindowConvergenceMonitoringFunction.
