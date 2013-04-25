@@ -133,10 +133,13 @@ public:
 		<DeformationFieldType,DeformationFieldType,double>   DisplacementResamplerType;
 	typedef typename DisplacementResamplerType::Pointer      DisplacementResamplerPointer;
 
-	typedef itk::Image< unsigned int, Dimension >            ROIType;
+	typedef itk::Image< unsigned char, Dimension >           ROIType;
 	typedef typename ROIType::Pointer                        ROIPointer;
 	typedef typename ROIType::ConstPointer                   ROIConstPointer;
 	typedef std::vector< ROIConstPointer >                   ROIList;
+	typedef itk::TriangleMeshToBinaryImageFilter
+			          <ContourDeformationType, ROIType>	     BinarizeMeshFilterType;
+	typedef typename BinarizeMeshFilterType::Pointer         BinarizeMeshFilterPointer;
 
 	typedef typename itk::MeshSpatialObject
 			                   <ContourDeformationType>      ContourSpatialObject;
@@ -196,7 +199,7 @@ protected:
 	WarpContourPointer m_ContourUpdater;
 	SparseToDenseFieldResamplePointer m_SparseToDenseResampler;
 	DisplacementResamplerPointer m_EnergyResampler;
-	SpatialObjectsVector m_ROIs;
+	ROIList m_ROIs;
 
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented

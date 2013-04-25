@@ -68,7 +68,7 @@ template <typename TReferenceImageType, typename TCoordRepType>
 void
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::InitializeSamplingGrid() {
-this->m_ReferenceSamplingGrid = DeformationFieldType::New();
+	this->m_ReferenceSamplingGrid = DeformationFieldType::New();
 	typename ReferenceImageType::SpacingType sp = this->m_ReferenceImage->GetSpacing();
 	double spacing = itk::NumericTraits< double >::max();
 
@@ -77,12 +77,9 @@ this->m_ReferenceSamplingGrid = DeformationFieldType::New();
 			spacing = sp[i];
 	}
 
-	sp.Fill( spacing * 1.50 );
+	sp.Fill( spacing * 0.25 );
 
 	typename ReferenceImageType::PointType origin = this->m_ReferenceImage->GetOrigin();
-	this->m_ReferenceSamplingGrid->SetOrigin( origin );
-	this->m_ReferenceSamplingGrid->SetDirection( this->m_ReferenceImage->GetDirection() );
-
 	typename ReferenceImageType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
 	typename itk::ContinuousIndex<double, Dimension> idx;
 	for (size_t i = 0; i<Dimension; i++ ){
@@ -93,12 +90,31 @@ this->m_ReferenceSamplingGrid = DeformationFieldType::New();
 	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( idx, end );
 
 	for (size_t i = 0; i<Dimension; i++ ){
-		size[i]= (unsigned int) ( fabs( end[i]-origin[i]/(1.0*sp[i]) ) );
+		size[i]= (unsigned int) ( fabs( (end[i]-origin[i])/sp[i] ) );
 	}
 
+	this->m_ReferenceSamplingGrid->SetOrigin( origin );
+	this->m_ReferenceSamplingGrid->SetDirection( this->m_ReferenceImage->GetDirection() );
 	this->m_ReferenceSamplingGrid->SetRegions( size );
+	this->m_ReferenceSamplingGrid->SetSpacing( sp );
 	this->m_ReferenceSamplingGrid->Allocate();
 
+#ifndef NDEBUG
+	typedef itk::VectorResampleImageFilter< ReferenceImageType, ReferenceImageType > Int;
+	typename Int::Pointer intp = Int::New();
+	intp->SetInput( this->m_ReferenceImage );
+	intp->SetOutputSpacing( this->m_ReferenceSamplingGrid->GetSpacing() );
+	intp->SetOutputDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+	intp->SetOutputOrigin( this->m_ReferenceSamplingGrid->GetOrigin() );
+	intp->SetSize( this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+	intp->Update();
+
+	typedef itk::ImageFileWriter< ReferenceImageType > W;
+	typename W::Pointer w = W::New();
+	w->SetInput( intp->GetOutput() );
+	w->SetFileName( "test.nii.gz" );
+	w->Update();
+#endif
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
