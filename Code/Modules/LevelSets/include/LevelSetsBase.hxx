@@ -40,6 +40,8 @@
 
 #include "LevelSetsBase.h"
 
+#include <itkTriangleMeshToBinaryImageFilter.h>
+
 #include <iostream>
 #include <iomanip>
 
@@ -116,17 +118,18 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		}
 	}
 
-	// 2. Resample dense deformation field on the grid.
-	this->m_EnergyResampler->Update();
-	this->m_ReferenceSamplingGrid = this->m_EnergyResampler->GetOutput();
-
-	// 3. Resample ROIs on the sampling grid and cache them.
-	DeformationFieldPointType origin = this->m_ReferenceSamplingGrid->GetOrigin();
+	// 2. Resample ROIs on the sampling grid and cache them.
 	if ( m_ROIs.size() == 0 ) {
 		this->InitializeROIs();
 	}
 
+	// 3. Resample dense deformation field on the grid.
+	this->m_EnergyResampler->Update();
+	this->m_ReferenceSamplingGrid = this->m_EnergyResampler->GetOutput();
+
+
 	// 4. For each ROI, for each pixel, compute energy (call derived class)
+	DeformationFieldPointType origin = this->m_ReferenceSamplingGrid->GetOrigin();
 	DeformationFieldPointType minPoint;
 	DeformationFieldPointType maxPoint;
 	for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
@@ -240,25 +243,23 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::InitializeROIs() {
 
 	for( size_t cont = 0; cont < this->m_ShapePrior.size(); cont++ ) {
-		m_ROIs.push_back( ContourSpatialObject::New() );
-		m_ROIs[cont]->SetMesh( this->m_ShapePrior[cont] );
-
-//		SpatialObjectToImageFilterPointer imFilter = SpatialObjectToImageFilterType::New();
-//		imFilter->SetInput( spatialObject );
-//		imFilter->SetSpacing( this->m_ReferenceSamplingGrid->GetSpacing() );
-//		imFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-//		imFilter->SetOrigin( this->m_ReferenceSamplingGrid->GetOrigin() );
-//		imFilter->SetSize( this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-//		imFilter->Update();
-//#ifndef DNDEBUG
-//		typedef itk::ImageFileWriter< ROIType > ROIWriter;
-//		typename ROIWriter::Pointer w = ROIWriter::New();
-//		w->SetInput( imFilter->GetOutput() );
-//		std::stringstream ss;
-//		ss << "roi_" << std::setfill( '0' ) << std::setw(2) << cont << ".nii.gz";
-//		w->SetFileName( ss.str().c_str() );
-//		w->Update();
-//#endif
+		BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
+		meshFilter->SetSpacing( this->m_ReferenceSamplingGrid->GetSpacing() );
+		meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+		meshFilter->SetOrigin( this->m_ReferenceSamplingGrid->GetOrigin() );
+		meshFilter->SetSize( this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+		meshFilter->SetInput(this->m_ShapePrior[cont]);
+		meshFilter->Update();
+		m_ROIs.push_back( meshFilter->GetOutput() );
+#ifndef DNDEBUG
+		typedef itk::ImageFileWriter< ROIType > ROIWriter;
+		typename ROIWriter::Pointer w = ROIWriter::New();
+		w->SetInput( meshFilter->GetOutput() );
+		std::stringstream ss;
+		ss << "roi_" << std::setfill( '0' ) << std::setw(2) << cont << ".nii.gz";
+		w->SetFileName( ss.str().c_str() );
+		w->Update();
+#endif
 
 	}
 }
