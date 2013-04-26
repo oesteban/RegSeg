@@ -130,7 +130,7 @@ protected:
 	inline MeasureType GetEnergyAtPoint( PixelPointType& point, size_t cont, size_t outside );
 
 	inline MeasureType GetEnergyAtPoint( PixelPointType& point, size_t cont ) {
-		this->GetEnergyAtPoint( point, cont, 0 );
+		return this->GetEnergyAtPoint( point, cont, 0 );
 	}
 
 	ParametersList m_Parameters;
