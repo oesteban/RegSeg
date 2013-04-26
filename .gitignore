@@ -40,3 +40,4 @@ result*.nii.gz
 *.npz
 *.html
 *.csv
+*.sql
