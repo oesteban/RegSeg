@@ -3,6 +3,9 @@ set(RSTKCoreTests
   IDWMultivariateInterpolatorTest.cxx
 )
 
+ADD_EXECUTABLE(itkTriangleMeshToBinaryImageFilterTest itkTriangleMeshToBinaryImageFilterTest.cxx ) 
+TARGET_LINK_LIBRARIES(itkTriangleMeshToBinaryImageFilterTest ${ITK_LIBRARIES} )
+
 ADD_EXECUTABLE(ContourDisplacementFieldTest ContourDisplacementFieldTest.cxx ) 
 TARGET_LINK_LIBRARIES(ContourDisplacementFieldTest ${ITK_LIBRARIES} )
 

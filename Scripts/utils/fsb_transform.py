@@ -25,6 +25,7 @@ def transform(origin, target, tfm, output_prefix, use_paraview=False ):
 #    tkr_to_b0 = np.dot( np.linalg.inv(dti_ras2vox_tkr), ac )
     tkr_to_b0 = np.dot( ac, dti_ras2vox_tkr )
 #    xfm = np.dot( reg, tkr_to_b0 )
+
     xfm = np.dot( tkr_to_b0, reg )
     _, origin_ext = os.path.splitext( origin )
 
@@ -39,8 +40,15 @@ def transform(origin, target, tfm, output_prefix, use_paraview=False ):
     vtk = reader.output
     reader.update()
 
-    M = xfm[0:3,0:3]
-    O = xfm[0:3,3]
+    flip = np.identity(3)
+    flip[0,0] *= -1.0;
+    flip[1,1] *= -1.0;
+
+    M = np.dot( flip, xfm[0:3,0:3] )
+    O = np.dot( flip, xfm[0:3,3] )
+
+    print M
+    print O
 
     if use_paraview:
         phy_size = np.dot( ac[0:3,0:3], np.array(nib.load(target).get_data().shape) - [1,1,1] )
