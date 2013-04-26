@@ -40,8 +40,6 @@
 
 #include "LevelSetsBase.h"
 
-#include <itkTriangleMeshToBinaryImageFilter.h>
-
 #include <iostream>
 #include <iomanip>
 
@@ -133,50 +131,17 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	DeformationFieldPointType minPoint;
 	DeformationFieldPointType maxPoint;
 	for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
-		typedef typename ContourSpatialObject::BoundingBoxType::PointsContainerConstPointer Points;
-		Points p = m_ROIs[roi]->GetBoundingBox()->GetCorners();
+		const unsigned char * roiBuffer = this->m_ROIs[roi]->GetBufferPointer();
+		VectorType * defBuffer = this->m_ReferenceSamplingGrid->GetBufferPointer();
+		size_t nPix = this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetNumberOfPixels();
+		PixelPointType pos, targetPos;
 
-		double minDist = itk::NumericTraits<double>::max();
-		double maxDist = 0.0;
+		for( size_t i = 0; i < nPix; i++) {
+			this->m_ReferenceSamplingGrid->TransformIndexToPhysicalPoint( this->m_ReferenceSamplingGrid->ComputeIndex(i), pos);
+			targetPos = pos + *( defBuffer + i);
 
-		for( size_t i = 0; i< p->Size(); i++ ) {
-			double dist = origin.EuclideanDistanceTo( p->GetElement(i) );
-
-			if( dist < minDist ) {
-				minDist = dist;
-				minPoint = p->GetElement(i);
-			}
-
-			if( dist > maxDist ){
-				maxDist = dist;
-				maxPoint = p->GetElement(i);
-			}
-		}
-
-	}
-
-	DeformationFieldIndexType minIndex, maxIndex;
-	typename DeformationFieldType::SizeType regionSize;
-	this->m_ReferenceSamplingGrid->TransformPhysicalPointToIndex( minPoint, minIndex );
-	this->m_ReferenceSamplingGrid->TransformPhysicalPointToIndex( maxPoint, maxIndex );
-
-	for (size_t i = 0; i<Dimension; i++ ) {
-		regionSize[i] = maxIndex[i] - minIndex[i];
-		//assert( regionSize[i] > 0 );
-	}
-
-	//const unsigned int * roiBuffer = this->m_ROIs[roi]->GetBufferPointer();
-	VectorType * defBuffer = this->m_ReferenceSamplingGrid->GetBufferPointer();
-	size_t nPix = this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetNumberOfPixels();
-	PixelPointType pos, targetPos;
-
-	for( size_t i = 0; i < nPix; i++) {
-		this->m_ReferenceSamplingGrid->TransformIndexToPhysicalPoint( this->m_ReferenceSamplingGrid->ComputeIndex(i), pos);
-		targetPos = pos + *( defBuffer + i);
-
-		for ( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
-			if ( this->m_ROIs[roi]->IsInside( targetPos ) )
-					this->m_Value += this->GetEnergyAtPoint( targetPos, roi );
+			if ( *( roiBuffer + i ) > 0.0 )
+				this->m_Value += this->GetEnergyAtPoint( targetPos, roi );
 		}
 	}
 

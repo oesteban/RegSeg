@@ -52,6 +52,7 @@
 #include <itkGroupSpatialObject.h>
 #include <itkSpatialObjectToImageFilter.h>
 #include <itkVectorResampleImageFilter.h>
+#include <itkTriangleMeshToBinaryImageFilter.h>
 
 
 #include "SparseToDenseFieldResampleFilter.h"
