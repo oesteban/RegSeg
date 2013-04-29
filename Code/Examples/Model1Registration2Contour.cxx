@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
 	typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
 	typedef itk::VectorResampleImageFilter
-			<DeformationFieldType,DeformationFieldType,double>   DisplacementResamplerType;
+			<DeformationFieldType,DeformationFieldType,float>   DisplacementResamplerType;
 	typedef itk::BSplineInterpolateImageFunction
 			                <DeformationFieldType>               InterpolatorFunction;
 	typedef itk::DisplacementFieldTransform<float, 3u>           TransformType;

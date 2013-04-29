@@ -132,7 +132,8 @@ public:
 	typedef typename VectorInterpolatorType::Pointer         VectorInterpolatorPointer;
 
 	typedef itk::VectorResampleImageFilter
-		<DeformationFieldType,DeformationFieldType,double>   DisplacementResamplerType;
+        <DeformationFieldType,DeformationFieldType >
+	                                                         DisplacementResamplerType;
 	typedef typename DisplacementResamplerType::Pointer      DisplacementResamplerPointer;
 
 	typedef itk::DisplacementFieldJacobianDeterminantFilter

@@ -87,13 +87,17 @@ int main(int argc, char *argv[]) {
 	typedef itk::ImageFileWriter<DeformationFieldType>           DeformationWriter;
 
 	typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
+
+
+	typedef itk::Image< itk::Vector<double,3u>, 3u >             NewField;
 	typedef itk::VectorResampleImageFilter
-			<DeformationFieldType,DeformationFieldType,double>   DisplacementResamplerType;
+			<DeformationFieldType,NewField, double >             DisplacementResamplerType;
 	typedef itk::BSplineInterpolateImageFunction
 			                <DeformationFieldType>               InterpolatorFunction;
-	typedef itk::DisplacementFieldTransform<float, 3u>           TransformType;
 
-	typedef itk::ResampleImageFilter<ChannelType,ChannelType,float>    ResamplerType;
+	typedef itk::DisplacementFieldTransform<double, 3u>          TransformType;
+
+	typedef itk::ResampleImageFilter<ChannelType,ChannelType,double>    ResamplerType;
 
 
 
@@ -171,8 +175,35 @@ int main(int argc, char *argv[]) {
 	polyDataWriter->SetFileName( "registered.white.vtk" );
 	polyDataWriter->Update();
 
-	DeformationWriter::Pointer w = DeformationWriter::New();
-	w->SetInput( opt->GetDeformationField() );
-	w->SetFileName( "estimated_field.nii.gz" );
-	w->Update();
+	DisplacementResamplerType::Pointer disResampler = DisplacementResamplerType::New();
+	disResampler->SetInput(opt->GetDeformationField() );
+	disResampler->SetOutputOrigin(    im->GetOrigin()  );
+	disResampler->SetOutputSpacing(   im->GetSpacing() );
+	disResampler->SetSize(            im->GetLargestPossibleRegion().GetSize() );
+	disResampler->SetOutputDirection( im->GetDirection() );
+	disResampler->Update();
+
+	//DeformationWriter::Pointer w = DeformationWriter::New();
+	//w->SetInput( disResampler->GetOutput() );
+	//w->SetFileName( "estimated_field.nii.gz" );
+	//w->Update();
+
+	TransformType::Pointer t = TransformType::New();
+	t->SetDisplacementField( disResampler->GetOutput() );
+
+
+	typename ResamplerType::Pointer res = ResamplerType::New();
+	res->SetInput( im );
+	res->SetTransform( t );
+	res->SetOutputParametersFromImage( im );
+	res->Update();
+
+	ImageWriter::Pointer ww = ImageWriter::New();
+	ww->SetInput( res->GetOutput() );
+	ww->SetFileName( "FA_resampled.nii.gz" );
+	ww->Update();
+
+
+
+
 }
