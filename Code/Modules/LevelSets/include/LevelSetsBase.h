@@ -53,6 +53,7 @@
 #include <itkSpatialObjectToImageFilter.h>
 #include <itkVectorResampleImageFilter.h>
 #include <itkTriangleMeshToBinaryImageFilter.h>
+#include <itkDisplacementFieldJacobianDeterminantFilter.h>
 
 
 #include "SparseToDenseFieldResampleFilter.h"
@@ -133,6 +134,11 @@ public:
 	typedef itk::VectorResampleImageFilter
 		<DeformationFieldType,DeformationFieldType,double>   DisplacementResamplerType;
 	typedef typename DisplacementResamplerType::Pointer      DisplacementResamplerPointer;
+
+	typedef itk::DisplacementFieldJacobianDeterminantFilter
+		< DeformationFieldType >                             ModulateFilterType;
+	typedef typename ModulateFilterType::Pointer             ModulateFilterPointer;
+
 
 	typedef itk::Image< unsigned char, Dimension >           ROIType;
 	typedef typename ROIType::Pointer                        ROIPointer;
