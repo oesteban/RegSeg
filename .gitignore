@@ -41,3 +41,4 @@ result*.nii.gz
 *.html
 *.csv
 *.sql
+*.pdf
