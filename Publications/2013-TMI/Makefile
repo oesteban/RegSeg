@@ -8,3 +8,8 @@ all: 00-main.pdf
 
 00-main.aux: 00-main.tex
 	pdflatex -shell-escape 00-main.tex 
+
+ACWE.bib:
+	echo "" > ACWE.bib
+	cat ../Bibliography/*.bib >> ACWE.bib
+
