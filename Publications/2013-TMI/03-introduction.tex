@@ -1,12 +1,27 @@
+\section{Introduction}
 \label{sec:introduction}
+% The very first letter is a 2 line initial drop letter followed
+% by the rest of the first word in caps.
+% 
+% form to use if the first word consists of a single letter:
+% \IEEEPARstart{A}{demo} file is ....
+% 
+% form to use if you need the single drop letter followed by
+% normal text (unknown if ever used by IEEE):
+% \IEEEPARstart{A}{}demo file is ....
+% 
+% Some journals put the first two words in caps:
+% \IEEEPARstart{T}{his demo} file is ....
+% 
+% Here we have the typical use of a "T" for an initial drop letter
+% and "HIS" in caps to complete the first word.
 %
 \IEEEPARstart{D}{iffusion} MRI (dMRI) is a widely used family of \gls{mr} techniques
 \citep{sundgren_diffusion_2004} which recently has accounted for a growing
 interest in its application to whole-brain structural connectivity analysis.
-This emerging field, coined in 2005 as \emph{\gls{mr} Connectomics}
-\citep{hagmann_diffusion_2005,sporns_human_2005}, currently includes a
-large amount of imaging techniques for acquisition, processing, and analysis
-specifically tuned for \gls{dwi} data.
+This emerging field \citep{hagmann_diffusion_2005,sporns_human_2005}, currently 
+includes a large amount of imaging techniques for acquisition, processing, 
+and analysis specifically tuned for \gls{dwi} data \citep{daducci_connectome_2012}.
 
 The whole-brain connectivity analysis has given rise to some challenges
 towards reliable structural information about the neuronal tracts 
@@ -35,7 +50,7 @@ wakana_reproducibility_2007}, these results are restricted to certain regions
 of the brain, only. Therefore, robust and precise segmentation methods are 
 required in the whole-brain application. The problem is challenging due to
 the much lower resolution of \gls{dwi} (typically around 
-$2.5\times2.5\times2.5mm^3$) compared to structural \gls{mri}, and the
+$2.0\times2.0\times2.0mm^3$) compared to structural \gls{mri}, and the
 existence of geometrical distortions.
 
 \gls{dwi} data are usually acquired with \gls{epi} sequences 
