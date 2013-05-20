@@ -49,6 +49,24 @@
 	pages = {266{\textendash}277}
 },
 
+@article{holland_efficient_2010,
+	title = {Efficient Correction of Inhomogeneous Static Magnetic Field-Induced Distortion in Echo Planar Imaging},
+	volume = {50},
+	issn = {1053-8119},
+	url = {http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2819607/},
+	doi = {10.1016/j.neuroimage.2009.11.044},
+	abstract = {Single-shot Echo Planar Imaging ({EPI)} is one of the most efficient magnetic resonance imaging ({MRI)} acquisition schemes, producing relatively high-definition images in 100 ms or less. These qualities make it desirable for Diffusion Tensor Imaging ({DTI)}, functional {MRI} ({fMRI)}, and Dynamic Susceptibility Contrast {MRI} ({DSC-MRI).} However, {EPI} suffers from severe spatial and intensity distortion due to B0 field inhomogeneity induced by magnetic susceptibility variations. Anatomically accurate, undistorted images are essential for relating {DTI} and {fMRI} images with anatomical {MRI} scans, and for spatial registration with other modalities. We present here a fast, robust, and accurate procedure for correcting {EPI} images from such spatial and intensity distortions. The method involves acquisition of scans with opposite phase encoding polarities, resulting in opposite spatial distortion patterns, and alignment of the resulting images using a fast nonlinear registration procedure. We show that this method, requiring minimal additional scan time, provides superior accuracy relative to the more commonly used, and more time consuming, field mapping approach. This method is also highly computationally efficient, allowing for direct {\textquoteleft}real-time{\textquoteright} implementation on the {MRI} scanner. We further demonstrate that the proposed method can be used to recover dropouts in gradient echo ({BOLD} and {DSC-MRI)} {EPI} images.},
+	number = {1},
+	urldate = {2012-12-04},
+	journal = {{NeuroImage}},
+	author = {Holland, Dominic and Kuperman, Joshua M. and Dale, Anders M.},
+	month = mar,
+	year = {2010},
+	note = {{PMID:} 19944768
+{PMCID:} {PMC2819607}},
+	pages = {175}
+},
+
 @inproceedings{bertero_ill-posed_1988,
 	title = {Ill-Posed Problems in Early Vision},
 	volume = {76},
@@ -123,22 +141,6 @@
 	year = {2006}
 },
 
-@article{jehan-besson_dream2s:_2003,
-	title = {{DREAM2S:} Deformable Regions Driven by an Eulerian Accurate Minimization Method for Image and Video Segmentation},
-	volume = {53},
-	issn = {0920-5691},
-	url = {http://www.springerlink.com/content/k02g18w07187x344/},
-	doi = {10.1023/A:1023031708305},
-	abstract = {This paper deals with image and video segmentation using active contours. We propose a general form for the energy functional related to region-based active contours. We compute the associated evolution equation using shape derivation tools and accounting for the evolving region-based terms. Then we apply this general framework to compute the evolution equation from functionals that include various statistical measures of homogeneity for the region to be segmented. Experimental results show that the determinant of the covariance matrix appears to be a very relevant tool for segmentation of homogeneous color regions. As an example, it has been successfully applied to face segmentation in real video sequences.},
-	number = {1},
-	journal = {International Journal of Computer Vision},
-	author = {Jehan-Besson, St{\'e}phanie and Barlaud, Michel and Aubert, Gilles},
-	month = jun,
-	year = {2003},
-	keywords = {boundary functionals, Computer Science, covariance matrix determinant, energy minimization, face segmen-, functionals, image segmentation, level sets, partial differential equations, region, region-based active contours, region segmentation, shape gradient, shape optimization, tation},
-	pages = {45{\textendash}70}
-},
-
 @inproceedings{estellers_efficient_2011,
 	title = {An Efficient Algorithm for Level Set Method Preserving Distance Function},
 	booktitle = {{IEEE} Transactions on Image Processing},
@@ -181,6 +183,22 @@
 	pages = {340}
 },
 
+@article{herbulot_segmentation_2006,
+	title = {Segmentation of Vectorial Image Features Using Shape Gradients and Information Measures},
+	volume = {25},
+	issn = {0924-9907},
+	url = {http://www.springerlink.com/content/581247x96784v173/ http://www.springerlink.com/index/10.1007/s10851-006-6898-y},
+	doi = {10.1007/s10851-006-6898-y},
+	abstract = {In this paper, we propose to focus on the segmentation of vectorial features (e.g. vector fields or color intensity) using region-based active contours. We search for a domain that minimizes a criterion based on homogeneity measures of the vectorial features. We choose to evaluate, within each region to be segmented, the average quantity of information carried out by the vectorial features, namely the joint entropy of vector components. We do not make any assumption on the underlying distribution of joint probability density functions of vector components, and so we evaluate the entropy using non parametric probability density functions. A local shape minimizer is then obtained through the evolution of a deformable domain in the direction of the shape gradient. The first contribution of this paper lies in the methodological approach used to differentiate such a criterion. This approach is mainly based on shape optimization tools. The second one is the extension of this method to vectorial data. We apply this segmentation method on color images for the segmentation of color homogeneous regions. We then focus on the segmentation of synthetic vector fields and show interesting results where motion vector fields may be separated using both their length and their direction. Then, optical flow is estimated in real video sequences and segmented using the proposed technique. This leads to promising results for the segmentation of moving video objects.},
+	number = {3},
+	journal = {Journal of Mathematical Imaging and Vision},
+	author = {Herbulot, Ariane and Jehan-Besson, St{\'e}phanie and Duffner, Stefan and Barlaud, Michel and Aubert, Gilles},
+	month = aug,
+	year = {2006},
+	keywords = {Computer, Science},
+	pages = {365{\textendash}386}
+},
+
 @article{brown_completely_2012,
 	title = {Completely convex formulation of the chan-vese image segmentation model},
 	url = {http://www.springerlink.com/index/X13522L740302G1R.pdf},
@@ -190,4 +208,45 @@
 	year = {2012},
 	pages = {1{\textendash}19},
 	file = {[PDF] de cityu.edu.hk:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/8VXKPNCF/Brown et al. - 2012 - Completely convex formulation of the chan-vese ima.pdf:application/pdf;Snapshot:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/7P5B54H2/10.html:text/html}
+},
+
+@article{brox_local_2009,
+	title = {On Local Region Models and a Statistical Interpretation of the Piecewise Smooth Mumford-Shah Functional},
+	volume = {84},
+	issn = {0920-5691, 1573-1405},
+	url = {http://link.springer.com/article/10.1007/s11263-008-0153-5},
+	doi = {10.1007/s11263-008-0153-5},
+	abstract = {The Mumford-Shah functional is a general and quite popular variational model for image segmentation. In particular, it provides the possibility to represent regions by smooth approximations. In this paper, we derive a statistical interpretation of the full (piecewise smooth) Mumford-Shah functional by relating it to recent works on local region statistics. Moreover, we show that this statistical interpretation comes along with several implications. Firstly, one can derive extended versions of the Mumford-Shah functional including more general distribution models. Secondly, it leads to faster implementations. Finally, thanks to the analytical expression of the smooth approximation via Gaussian convolution, the coordinate descent can be replaced by a true gradient descent.},
+	language = {en},
+	number = {2},
+	urldate = {2013-05-17},
+	journal = {International Journal of Computer Vision},
+	author = {Brox, Thomas and Cremers, Daniel},
+	month = aug,
+	year = {2009},
+	keywords = {Artificial Intelligence (incl. Robotics), Computer Imaging, Vision, Pattern Recognition and Graphics, Image Processing and Computer Vision, Pattern Recognition, Regularization, segmentation, Statistical methods, Variational methods},
+	pages = {184--193},
+	file = {Full Text PDF:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/PCMTW3GH/Brox and Cremers - 2009 - On Local Region Models and a Statistical Interpret.pdf:application/pdf;Snapshot:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/XBQJG4AR/s11263-008-0153-5.html:text/html}
+},
+
+@article{cremers_kernel_2006,
+	title = {Kernel Density Estimation and Intrinsic Alignment for Shape Priors in Level Set Segmentation},
+	volume = {69},
+	number = {3},
+	journal = {International Journal of Computer Vision},
+	author = {Cremers, Daniel and Osher, Stanley J. and Soatto, Stefano},
+	month = may,
+	year = {2006},
+	pages = {335{\textendash}351}
+},
+
+@article{gastaud_combining_2004,
+	title = {Combining Shape Prior and Statistical Features for Active Contour Segmentation},
+	volume = {14},
+	number = {5},
+	journal = {{IEEE} Transactions on Circuits and Systems for Video Technology},
+	author = {Gastaud, Muriel and Barlaud, Michel and Aubert, Gilles},
+	month = may,
+	year = {2004},
+	pages = {726{\textendash}734}
 }

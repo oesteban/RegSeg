@@ -1,125 +1,64 @@
 \section{Data and experiments}
 \label{sec:experiments}
 %
-\subsection{Shape prior}
+
+
+\subsection{Image Data}
+\label{sec:datasets}
+
+\subsubsection{Simulated digital phantom} %
 %
-As described in \autoref{sec:introduction}, the general situation in
-the connectivity pipelines consists of having 
-a reliable segmentation obtained from the high resolution \gls{t1} 
-reference image. Therefore, a precise location of the tissue interfaces
-of interest is available in a reference space. Given that the anatomical 
-reference segmentation is beyond the scope of this manuscript, we simply 
-rely on the true contours known from the underlying models, and do not 
-seek to establish them in a separate segmentation step on ``anatomical'' images.
+The lack of a widely accepted \emph{gold}-standard in the application
+field has been addressed by several authors \citep{cote_tractometer:_2013}
+In this work, we use one of the most complete, and publicly available,
+digital phantoms (\url{http://hardi.epfl.ch/static/events/2013_ISBI/testing_data.html}).
+The phantom is a spherical volume containing a set of fiber bundles, that connect 
+one area of a ``cortex'' to another. The model accounts for \gls{pve} using 
+a similar approach to \citep{close_software_2009} and for \gls{csf} contamination
+as well.
+
+\subsubsection{Real \gls{mri} datasets} %
 %
-\subsection{Synthetic gray-scale data}
+We used image data from XX healthy volunteers with no history of neurological
+conditions (ages XX$\pm$XX, X female) to illustrate the applicability of our 
+approach. All the subjects were scanned in a 3T MR Scanner (Siemens Magnetom
+TrioTim blah blah)
+with an X-channel head coil. Subjects were scanned twice with the same protocol,
+described hereafter. After being scanned the first time, each subject exited the
+scan room for a short break and then reentered for an identical scan session.
+To note, there was a full repositioning of the volunteer, coils, blankets and pads
+before each scan and re-scan session.
+
+The scan session protocol was as follows:
+\begin{enumerate}
+\item Triplanar survey (Localizer).
+\item Field Mapping: field mapping using GRE sequence was performed before \gls{dwi}
+acquisition for susceptibility correction purposes.
+\item DTI: \gls{dwi} were acquired with axial in-plane 
+isotropic resolution $2mm$, slice thickness $2mm$, $XXX \times XXX \times XXX$ 
+image matrix, TR= XXXX ms, TE = XX ms, NEX = X, BW = XXXX Hz/pixel, GRAPPA
+acceleration factor 2. The series included images acquired with diffusion
+weighting along 30 non-collinear directions ( $b$=700sm$^{-2}$ ) sampled
+twice for averaging, and 5 interleaved images acquired without diffusion 
+weighting ( $b=0$ ).
+\item Field Mapping (same as before DTI)
+\item Structural T1: An MPRAGE T1-weighted acquisition, sagittal
+GRE sequence, in-plane isotropic resolution 1.0 mm, slice thickness 1.2mm
+$XXX \times XXX \times XXX$ image matrix, TR=2300 ms, TE=2.98 ms, FA= 9, NEX=X, BW= 240 Hz/pixel.
+\item Structural T2: A T2-weighted acquisition, oblique axial
+TSE sequence, in-plane isotropic resolution 1.0 mm, slice thickness 1.2mm
+$XXX \times XXX \times XXX$ image matrix, TR=3200 ms, TE= 408 ms, NEX=X, BW= 751 Hz/pixel.
+\end{enumerate}
+
+
+\subsection{Image preprocessing and shape-prior generation}
+\label{sec:preprocessing}
 %
-The first simplified model to test the approach is inspired by a problem 
-shown for coupled \gls{csf}/\gls{gm} and \gls{gm}/\gls{wm} segmentation in \citep{macdonald_automated_2000}. Authors note that ``partial volume effects 
-blur the distinction between closely adjacent surfaces in deep sulci, leading 
-to a well-known segmentation error in which the deeper reaches of sulci are 
-not penetrated by the putative surface model.'' This problem is aggravated 
-in DWI, since the resolution tends to be worse compared to the anatomical 
-images considered in \citep{macdonald_automated_2000}. They test their 
-coupled segmentation algorithm on an image, ``representing a sulcus in 
-which the distinction between opposing banks of the sulcus has been obscured 
-by partial volume.''  
-
-Here, we reproduce their model on a volume consisting of three 
-piecewise-constant parts: a notched ball representing the \gls{wm} with a single 
-sulcus ($\mu_{WM} = 0.8$), a cortical sheet of \gls{gm} obtained through dilation 
-of the \gls{wm} ($\mu_{GM} = 0.5$), and the surrounding background representing 
-\gls{csf} ($\mu_{CSF} = 0.2$). The volume is then affected by additive Gaussian 
-noise, effectively creating uniform standard deviation of $\sigma = 0.045$ per 
-region.
-
-As illustrated in \autoref{fig:sulcusmodel}, conventional single surface 
-segmentation of the \gls{csf}/\gls{gm} boundary misses to capture the sulcus in 
-its full depth. With our proposed model, we expect the joint 
-segmentation-registration to be driven largely by the inner, \gls{gm}/\gls{wm}
-contour that exhibits sufficient contrast and lesser partial volume effects. 
-The shape prior of the outer, difficult contour will then be co-aligned through 
-the regularity of the estimated deformation field.
-
-\begin{figure}
-\begin{tabular}{ccccc}
-\includegraphics[width=0.19\textwidth]{contours_wrong} & \includegraphics[width=0.19\textwidth]{contours_inner} &
-\includegraphics[width=0.19\textwidth]{contours_both} &
-\includegraphics[width=0.19\textwidth]{pialsurf} &
-\includegraphics[width=0.19\textwidth]{gmwmsurf}\\
-a)&b)&c)&d)&e)
-\end{tabular}
-\caption{The gray-scale sulcus model. a) The apparent CSF/GM boundary is affected by partial volume in the sulcal cavity, and conventional segmentation is likely to miss it. b) The GM/WM interface here has consistently good contrast. c) Registering the two shape priors coupled through deformation field regularity is expected to guide the CSF/GM contour. d\&e) 3D view of the two shape priors.}
-\label{fig:sulcusmodel}
-\end{figure}
-
-
-
-%
-\subsection{Simulated diffusion data}
-%
-In order to demonstrate the functionality of the methodology, 
-and characterize its possibilities with diffusion data,
-we built a synthetic phantom from a model consisting of several 
-spherical shapes emulating the different brain tissues (see 
-\autoref{fig:fa}, first row). We simulated a single-shell
-acquisition at $b=1000$ \eqref{eqn:MultiTensor} with 30 samples
-equally distributed on one hemisphere, corresponding to a standard
-\gls{dti} acquisition commonly used in clinical practice.
-We generated a synthetic displacement field to produce
-an \gls{epi}-like distortion on the \gls{dwi} signal. Finally,
-we reconstructed the deformed signal, and generated \gls{dwi}-derived
-scalar maps (specifically the \gls{fa} and \gls{md} maps).
-Then, the scalar maps were placed as features in 
-\eqref{eq:complete_energy} to drive our segmentation approach, 
-finding the location of the \gls{wm}-\gls{gm}
-and the \gls{csf}-\gls{wm} interfaces in the distorted space. \\
-
-\paragraph{Signal simulation}
-To numerically simulate the \gls{mri} signal attenuation when applying a diffusion 
-gradient in a voxel with $N$ fiber populations we made use of the standard 
-\emph{Multi-Tensor Model}~\cite{Tuch:2002aa}:
-%
-\begin{equation} 
-\label{eqn:MultiTensor}
-S(q) / S_{0} = \sum_{i=1}^{N} f_{i} \, \exp{ \left( -b \, q^{T} \, \mathbf{D}_i \, q\right) } + f_{iso} \, \exp{ \left( -b \, \mathbf{D}_{iso} \right) }  + f_{gm} \, \exp{ \left( -b \, \mathbf{D}_{gm} \right) } ,
-\end{equation}
-%
-where $q \in \mathbb{S}^2$ is the direction of the diffusion gradient applied,
-$b$ is the b-value accounting for its strength and $S_0 \equiv S(0)$ is the 
-signal with no diffusion weighting. $f_i$ and $\mathbf{D}_i$ are the volume 
-fraction and the diffusion tensor characterizing the $i$-th fiber population, 
-whereas the tensors $\mathbf{D}_{iso}$ and $\mathbf{D}_{gm}$ describe the 
-diffusion processes of partial volumes with \gls{csf} and \gls{gm} within the 
-voxel, which volume fractions are, respectively, $f_{iso}$ and $f_{gm}$, and
-$\sum_i f_i + f_{iso} + f_{gm} = 1$. In this work, the diffusion properties have
-been taken from standard ranges typically observed in the human 
-brain~\cite{Canales-Rodriguez:2009aa}. Moreover we assumed $N = 1$ and $S_0 = 1$ 
-without loss of generality.
-
-\paragraph{Noise simulation}
-The diffusion MRI signal $S$ has been corrupted with 
-\textit{Rician noise}~\cite{Gudbjartsson:1995aa} as follows:
-%
-\begin{equation}
-	\tilde{S} = \sqrt{ (S + \varepsilon_1)^2 + \varepsilon_2^2 }
-\end{equation}
-%
-where $\varepsilon_{1,2}$ are Gaussian distributed with zero mean
-and standard deviation $\sigma = S_0 / \mathit{SNR}$ and \gls{snr}
-is the \gls{snr} on the $S_0$ image.
-
-\paragraph{Simulated \gls{epi} distortion}
-For this model, we created manually a sound distortion to approximate
-the real \gls{epi} distortions. We interpolated the distortion to a 
-dense deformation field, and applied it to generate the deformed \gls{dwi}
-signal.
-
-\paragraph{Derived scalar features}
-We obtained the local fiber configuration in each voxel with a commonly 
-used \gls{dti} reconstruction tool~\footnote{DTIFIT, included
-in the FMRIB's Software Library (FSL), 
-\url{http://fsl.fmrib.ox.ac.uk/fsl/fsl-4.1.9/fdt/fdt_dtifit.html}}. 
+Regardless the dataset type (simulated or real), all \gls{dwi} datasets were processed
+using the standard \gls{dti} reconstruction methods provided by FSL \footnote{DTIFIT, 
+included in the FMRIB's Software Library (FSL), 
+\url{http://fsl.fmrib.ox.ac.uk/fsl/fsl-4.1.9/fdt/fdt_dtifit.html}} to fit
+the tensor model and produce scalar maps of the required features.
 The properties of the reconstructed tensors and derived scalar maps have
 been studied by \cite{ennis_orthogonal_2006}. Based on their
 findings, \gls{fa}~\eqref{eq:fa} and \gls{md}~\eqref{eq:md} are
@@ -139,42 +78,67 @@ two main reasons to justify their choice.
 First, they are well-understood and standardized in clinical routine.
 Second, together they contain most of the information that is
 usually extracted from the \gls{dwi}-derived scalar maps
-\cite{ennis_orthogonal_2006}. The different region properties 
-$(\mathbf{\mu}_R,\Sigma_R)$ measured for the \gls{fa} and \gls{md}
-joint distribution are summarized in \autoref{table:parameters}. \\ 
+\cite{ennis_orthogonal_2006}.
 
-\begin{table}
-\caption{Model means and covariances of \gls{fa} and \gls{md} estimated 
-from the reconstructed simulated \gls{dwi} images for each modeled tissue, 
-\gls{wm}, \gls{gm}, and \gls{csf}. As expected, the two scalar features 
-are complementary and the three tissues can well be discriminated. }
-\label{table:parameters}
-%\begin{tabularx}{1.0\textwidth}{c|XXX}
-\begin{tabular}{*{3}{@{}p{0.2\textwidth}}@{}p{0.4\textwidth}@{}}
-\toprule
-% tissue        & $\mathbf{\mu}_{FA}$ & $\mathbf{\mu}_{MD}$ & $\Sigma$ \newline
-        & $\mathbf{\mu}$ \\
-\cmidrule(r){2-3}
-Tissue& FA & MD &$\Sigma$\\
-\cmidrule(r){1-1}\cmidrule(r){2-2}\cmidrule(r){3-3}\cmidrule{4-4}
-\gls{wm}  & 0.778 & 6.94\e{-4} & 
-   $\begin{pmatrix}
-   	4.85\e{-3} & -6.90\e{-6} \\ -6.90\e{-6} & 1.03\e{-8}
-   \end{pmatrix}$\vspace{2mm}\\
-%
-\gls{gm}  & 0.119 & 8.95\e{-4} &
-   $\begin{pmatrix}
-   	5.90\e{-4} & -1.43\e{-6} \\ -1.43\e{-6} & 1.04\e{-8}
-   \end{pmatrix}$\vspace{2mm}
-\\
-%
-\gls{csf} & 0.103 & 2.99\e{-3} &
-   $\begin{pmatrix}
-   	1.19\e{-3} & 2.22\e{-7} \\ 2.22\e{-7} & 1.56\e{-8}
-   \end{pmatrix}$
-\\
-\bottomrule
-\end{tabular}
-%\end{tabularx}
 
-\end{table}
+Preprocessing differed between simulated and real datasets in the 
+shape-prior surfaces generation, as we describe hereafter.
+
+
+\subsubsection{Simulated digital phantom} %
+A description goes here: surfaces extraction, synthetic susceptibility artifact generation.
+
+\subsubsection {Real \gls{mri} data} %
+
+We used a standard automated method 
+available in \emph{FreeSurfer} \citep{fischl_freesurfer_2012} to obtain the
+cortical gray/white boundary from the T1 scan \citep{greve_accurate_2009}.
+Parcellations used to evaluate the repeatability of the method are also
+obtained from \emph{FreeSurfer}.
+
+
+\subsection{Experiments and evaluation}
+\label{sec:experiments_evaluation}
+%
+\subsubsection{Validation on the simulated digital phantom} %
+\label{sec:validation_phantom}
+We firstly evaluated our approach on the simulated data, using
+the distorted data with a deformation field similar to the
+susceptibility artifact that affects real \gls{dwi} data. To 
+this end, we report the following indices:
+\begin{itemize}
+\item \gls{se}, a distance between the one-to-one corresponding
+vertices, weighted by their respective Voronoi area.
+\begin{equation}
+MSE = \sum\limits_k \sum\limits_j^M w_j\,\| \mathbf{x}_j - \hat{\mathbf{x}}_j \|
+\end{equation}
+where $\mathbf{x}_j$ are the locations of the $M$ vertices of the $k$ priors,
+$\hat{\mathbf{x}}_j$ are the corresponding locations recovered, and $w_j$ the
+weighting factor as the relative surface of the Voronoi area.
+\item \gls{wi}, L2-distance between the theoretical and the recovered
+deformation field.
+\begin{equation}
+WI = \frac{1}{N} \sum\limits_i^N \| \mathbf{d}_i - \hat{\mathbf{d}}_i \|
+\end{equation}
+where $\mathbf{d}_i$ is the theoretical displacement vector at position $i$
+and $\hat{\mathbf{d}}_i$ is the recovered one at the same index position.
+\item Parcellation agreement, the \gls{se} averaged by defined \glspl{roi}
+between the theoretical and the recovered parcellations.
+\item \gls{nof} agreement, between the fibers recovered on the original
+data and the processed data.
+\end{itemize}
+
+Additionally, the entropy of data is studied in both
+original and recovered datasets to draw another possible basis for the 
+assessment of the real datasets. We also report the same indices for the
+outcome of a widely-used methodology that combines field-map susceptibility 
+correction and T1-T2-\gls{dwi} registration (\textbf{FIXME}: I suggest to give 
+it a compact name and define it in the pre-processing section or even before
+in the intro).
+
+\subsubsection{Evaluation on real datasets}
+For the real datasets there is no published \emph{gold}-standard to validate results.
+Thus, visual results are provided to let compare the performance with the NICEACRONYM
+standard methodology. Additionally, cross-comparison of repeatability results are 
+provided. In this second evaluation strategy, all the indices defined in 
+\autoref{sec:validation_phantom} are reported.

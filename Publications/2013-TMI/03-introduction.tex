@@ -86,18 +86,20 @@ justifying the use of the shape prior information.
 
 We suggest clustering the current methodologies of template-based segmentation 
 methods into three groups. The first group typically adds a shape prior term to 
-the energy functional of an evolving active contour~\citep{Bresson2006a,Chan2005,
-Chen2002,Cremers2006,Gastaud2004,Paragios2003,Vemuri2003a,Yezzi2003a}.
+the energy functional of an evolving active contour
+\citep{bresson_variational_2006,chan_level_2005,chen_using_2002,cremers_kernel_2006,
+gastaud_combining_2004,paragios_level_2003,vemuri_joint_2003,yezzi_variational_2003}.
 These methods generally have a explicit description of the expected relative boundary 
 locations of the object to be delineated, and some even model the statistical deviations
 from this average shape. Closely related to this group are atlas-based segmentation
-methods \citep{Gorthi2011,Gorthi2009,Pohl2005,Pohl2006,Wang2006}, where the prior 
+methods \citep{gorthi_segmentation_2009,gorthi_active_2011,pohl_unifying_2005,
+pohl_bayesian_2006,wang_joint_2006}, where the prior 
 imposes consistent voxel-based classification of contiguous regions. Here, the 
 presence of more structures than one unique \gls{roi} helps aligning the target image 
 with the atlas in a hierarchical fashion. Finally, the third group generalizes 
 the atlas to actual images, and the contour is to segment simultaneously two 
-different target images, related by a spatial transform to be co-estimated~\citep{Wyatt2003,
-Yezzi2003}.
+different target images, related by a spatial transform to be co-estimated
+\citep{wyatt_map_2003,yezzi_variational_2003}.
 
 In this paper we propose a novel registration framework to simultaneously
 solving the segmentation and distortion challenges, by exploiting as strong 

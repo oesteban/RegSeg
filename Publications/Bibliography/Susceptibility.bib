@@ -8,7 +8,7 @@
 	abstract = {Single-shot Echo Planar Imaging ({EPI)} is one of the most efficient magnetic resonance imaging ({MRI)} acquisition schemes, producing relatively high-definition images in 100 ms or less. These qualities make it desirable for Diffusion Tensor Imaging ({DTI)}, functional {MRI} ({fMRI)}, and Dynamic Susceptibility Contrast {MRI} ({DSC-MRI).} However, {EPI} suffers from severe spatial and intensity distortion due to B0 field inhomogeneity induced by magnetic susceptibility variations. Anatomically accurate, undistorted images are essential for relating {DTI} and {fMRI} images with anatomical {MRI} scans, and for spatial registration with other modalities. We present here a fast, robust, and accurate procedure for correcting {EPI} images from such spatial and intensity distortions. The method involves acquisition of scans with opposite phase encoding polarities, resulting in opposite spatial distortion patterns, and alignment of the resulting images using a fast nonlinear registration procedure. We show that this method, requiring minimal additional scan time, provides superior accuracy relative to the more commonly used, and more time consuming, field mapping approach. This method is also highly computationally efficient, allowing for direct {\textquoteleft}real-time{\textquoteright} implementation on the {MRI} scanner. We further demonstrate that the proposed method can be used to recover dropouts in gradient echo ({BOLD} and {DSC-MRI)} {EPI} images.},
 	number = {1},
 	urldate = {2012-12-04},
-	journal = {{NeuroImage}},
+	journal = {Neuroimage},
 	author = {Holland, Dominic and Kuperman, Joshua M. and Dale, Anders M.},
 	month = mar,
 	year = {2010},
@@ -24,7 +24,6 @@
 	doi = {10.1109/TMI.2009.2026474},
 	abstract = {Susceptibility-induced distortion is one of the major artifacts in echo-planar imaging ({EPI)}, and many solutions have been proposed for the problem, including the Fourier method and the point spread function ({PSF)} method. In this paper, a framework unifying both methods is presented. Under this framework, a model-based {PSF} method is proposed in which the {PSF} of the source object is modeled along with a single field map measured by {TE-offset} reference scans. {EPI} images of a phantom and a healthy human subject were acquired, and the results of distortion correction by the Fourier method, linear interpolation method, and the model-based {PSF} method were compared. The results showed that the model-based {PSF} method could correct for geometric distortion and signal intensity distortion satisfactorily, avoiding the rippling artifact shown in the Fourier method. In conclusion, the proposed framework gave us an overall picture of how different correction methods work. The model-based {PSF} method, which required fewer reference scans and less computational load, was more clinically feasible than other methods.},
 	number = {11},
-	journal = {{IEEE} Transactions on Medical Imaging},
 	author = {Hsu, Yung-Chin and Hsu, Ching-Han and Tseng, W.-{Y.I.}},
 	month = nov,
 	year = {2009},
@@ -38,7 +37,6 @@
 	url = {http://onlinelibrary.wiley.com/doi/10.1002/mrm.1910390223/abstract},
 	number = {2},
 	urldate = {2012-12-04},
-	journal = {Magnetic Resonance in Medicine},
 	author = {Reber, P. J. and Wong, E. C. and Buxton, R. B. and Frank, L. R.},
 	year = {2005},
 	pages = {328{\textendash}330}
@@ -66,7 +64,6 @@
 	url = {http://onlinelibrary.wiley.com/doi/10.1002/mrm.1910390518/abstract},
 	number = {5},
 	urldate = {2012-12-04},
-	journal = {Magnetic resonance in medicine},
 	author = {Jezzard, P. and Barnett, A. S. and Pierpaoli, C.},
 	year = {2005},
 	pages = {801{\textendash}812}
@@ -79,7 +76,6 @@
 	doi = {10.1109/42.836368},
 	abstract = {Echo-planar imaging ({EPI)} is a fast nuclear magnetic resonance imaging ({MRI)} method. Unfortunately, local magnetic field inhomogeneities induced mainly by the subject's presence cause significant geometrical distortion, predominantly along the phase-encoding direction, which must be undone to allow for meaningful further processing. So far, this aspect has been too often neglected. In this paper, the authors suggest a new approach using an algorithm specifically developed for the automatic registration of distorted {EPI} images with corresponding anatomically correct {MRI} images. They model the deformation field with splines, which gives us a great deal of flexibility, while comprising the affine transform as a special case. The registration criterion is least squares. Interestingly, the complexity of its evaluation does not depend on the resolution of the control grid. The spline model gives the authors good accuracy thanks to its high approximation order. The short support of splines leads to a fast algorithm. A multiresolution approach yields robustness and additional speedup. The algorithm was tested on real as well as synthetic data, and the results were compared with a manual method. A wavelet-based Sobolev-type random deformation generator was developed for testing purposes. A blind test indicates that the proposed automatic method is faster, more reliable, and more precise than the manual one.},
 	number = {2},
-	journal = {{IEEE} Transactions on Medical Imaging},
 	author = {Kybic, J. and Thevenaz, P. and Nirkko, A. and Unser, M.},
 	month = feb,
 	year = {2000},
@@ -158,19 +154,4 @@
 	year = {2003},
 	pages = {127--142},
 	file = {ScienceDirect Full Text PDF:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/N45ENURQ/Cusack et al. - 2003 - An Evaluation of the Use of Magnetic Field Maps to.pdf:application/pdf;ScienceDirect Snapshot:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/HMEI8Q5N/S1053811902912814.html:text/html}
-},
-
-@article{kybic_unwarping_2000-1,
-	title = {Unwarping of unidirectionally distorted {EPI} images},
-	volume = {19},
-	issn = {0278-0062},
-	doi = {10.1109/42.836368},
-	abstract = {Echo-planar imaging ({EPI)} is a fast nuclear magnetic resonance imaging ({MRI)} method. Unfortunately, local magnetic field inhomogeneities induced mainly by the subject's presence cause significant geometrical distortion, predominantly along the phase-encoding direction, which must be undone to allow for meaningful further processing. So far, this aspect has been too often neglected. In this paper, the authors suggest a new approach using an algorithm specifically developed for the automatic registration of distorted {EPI} images with corresponding anatomically correct {MRI} images. They model the deformation field with splines, which gives us a great deal of flexibility, while comprising the affine transform as a special case. The registration criterion is least squares. Interestingly, the complexity of its evaluation does not depend on the resolution of the control grid. The spline model gives the authors good accuracy thanks to its high approximation order. The short support of splines leads to a fast algorithm. A multiresolution approach yields robustness and additional speedup. The algorithm was tested on real as well as synthetic data, and the results were compared with a manual method. A wavelet-based Sobolev-type random deformation generator was developed for testing purposes. A blind test indicates that the proposed automatic method is faster, more reliable, and more precise than the manual one.},
-	number = {2},
-	journal = {{IEEE} Transactions on Medical Imaging},
-	author = {Kybic, J. and Thevenaz, P. and Nirkko, A. and Unser, M.},
-	year = {2000},
-	keywords = {Algorithms, approximation order, biomedical {MRI}, brain, control grid, Deformable models, deformation field modeling, echo-planar imaging, fast algorithm, geometrical distortion, Humans, Image Processing, Computer-Assisted, Image registration, Least squares approximation, Least squares methods, local magnetic field inhomogeneities, Magnetic field measurement, Magnetic fields, Magnetic resonance imaging, medical diagnostic imaging, medical image processing, {MRI}, multiresolution approach, Phase distortion, phase-encoding direction, Signal resolution, Spatial resolution, splines (mathematics), synthetic data, Testing, wavelet-based Sobolev-type random deformation generator, wavelet transforms},
-	pages = {80--93},
-	file = {IEEE Xplore Abstract Record:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/862FRAWB/abs_all.html:text/html;IEEE Xplore Full Text PDF:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/PPBC5XVR/Kybic et al. - 2000 - Unwarping of unidirectionally distorted EPI images.pdf:application/pdf}
 }
