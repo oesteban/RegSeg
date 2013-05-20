@@ -22,10 +22,54 @@ Here the demonstration that we are preparing.
 %\section{}
 %Appendix two text goes here.
 
+In the probabilistic approach to image segmentation, the smoothness constraints
+can be introduced into the \gls{map} criterium as a \gls{mrf}. Accordingly to the
+Hammersley-Clifford theorem (\textbf{FIXME}: citations needed), an \gls{mrf} can
+be equivalently characterized by a Gibb's distribution:
 \begin{equation}
-P(K)=P(I \mid K)\, P(K)=\underset{i}{\prod} p (\mathbf{x}_i | K ) \, p_i(K).
+P(\mathbf{K})=\underset{i}{\prod} Z(U)^{-1}\,e^{-U(\mathbf{x}_i \mid \beta,K)} = \mathit{const.}\,e^{- \sum\limits_i \left( U(\mathbf{x}_i \mid \beta,K) \right) } \sim e^{-\nu_B \left| K \right| }.
+\end{equation}
+This way, we include the assumption that the total length of the edge set $K$ is small
+and we draw the equivalence with the \gls{mrf} modeling, for $U(\mathbf{x}_i \mid \beta,K)$
+being the Potts model.
+
+In the probabilistic approach, the underlying concept to segmenting an image is the
+Bayes' rule. For a discrete image of $N$ pixels indexed by $i$, this rule reads as
+follows:
+\begin{equation}
+P(K|I)=P(I \mid K)\, P(K)=\underset{i}{\prod} p (\mathbf{x}_i | K ) \, p_i(K).
+\end{equation}
+The normalizer probability $P(I)$ has been ommited for simplicity.
+
+In order to express the likelihood as an absolute energy in our variation framework,
+the \textit{log}-likelihood is computed:
+\begin{equation}
+E(K)= -\log( P(K|I) ) = \sum\limits_k \int_{\Omega_k} -\log p_k(I(\mathbf{x}),\mathbf{x}) \,d\mathbf{x}+\nu_B \left|K\right|,
+\end{equation}
+where $\mathbf{s} = I(\mathbf{x})$, $\mathbf{s} \in \mathbb{R}^C$ (a vector of $C$ scalar features).
+Additionally, the discrete grid of $N$ pixels has been converted to a continuous space by assuming
+$d\mathbf{x}$ as infinitesimal bin size.
+
+To explicitly define the likelihood, we firstly define the squared \textit{Mahalanobis distance} that
+is the exponential of a multivariate normal distribution:
+\begin{equation}
+\Delta^2_k (\mathbf{s}) = (\mathbf{s} - \boldsymbol{\mu}_k)^T \, \Sigma^{-1}_k \, (\mathbf{s} - \boldsymbol{\mu}_k).
+\end{equation}
+
+Therefore, the likelihood is defined as follows:
+\begin{equation}
+p_k(I(\mathbf{x}),\mathbf{x}) = p_k(\mathbf{s},\mathbf{x})= p_k(\mathbf{s}) = \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{s}) \right)}}.
+\end{equation}
+
+Introducing this definition on (14), we have:
+\begin{equation}
+E(K)= \sum\limits_k \int_{\Omega_k} -\log{\left[ \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{s}) \right)} \right] } \,d\mathbf{x}+\nu_B \left|K\right|.
 \end{equation}
 
 \begin{equation}
-E(K)= -\log( P(K) ) = \sum\limits_k \int_{\Omega_k} -\log p_k(I(\mathbf{x}),\mathbf{x})+\nu_B \left|K\right|.
+E(K) = \sum\limits_k \int_{\Omega_k} \left( \frac{1}{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right| \right)} + \frac{1}{2}  \Delta^2_k (\mathbf{s}) \right) \,d\mathbf{x}+\nu_B \left|K\right|
+\end{equation}
+
+\begin{equation}
+E(K) = \sum\limits_k \left( \frac{ V_k }{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right| \right)}+ \frac{1}{2} \int_{\Omega_k} \Delta^2_k (\mathbf{s}) \,d\mathbf{x}+\nu_B \left|K\right| \right)
 \end{equation}
