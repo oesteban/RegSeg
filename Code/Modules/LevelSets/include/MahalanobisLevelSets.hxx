@@ -112,7 +112,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	typedef itk::ImageFileWriter< ReferenceImageType > W;
 	typename W::Pointer w = W::New();
 	w->SetInput( intp->GetOutput() );
-	w->SetFileName( "test.nii.gz" );
+	w->SetFileName( "ReferenceSamplingGridTest.nii.gz" );
 	w->Update();
 #endif
 }
