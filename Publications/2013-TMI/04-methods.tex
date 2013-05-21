@@ -6,8 +6,8 @@
 %
 A widely used approach to image segmentation is derived from the
 Bayes' rule (\autoref{eq:bayes_rule}), where one seeks for a partitioning
-of a certain image $X$ in piecewise smooth regions $\Omega_k$, 
-with $k \in \lbrace 1 .. K \rbrace$, that maximizes the a posteriori 
+of a certain image $X$ in piecewise smooth regions $\Omega = \lbrace \Omega_k , 
+k\in\left[ 1 .. K \right] \rbrace$,  that maximizes the a posteriori 
 probability given the multivariate image $X \in \mathbb{R}^C$, 
 with $C$ being the number of image channels.
 \begin{equation}
@@ -16,9 +16,9 @@ p(Y \mid X) = \frac{p(X \mid Y)\, p(Y)}{p(X)}.
 \end{equation}
 
 Therefore, $Y$ is a certain realization of the piecewise 
-disjoint region set $\Omega_k$. $p(X \mid Y)$ is the \emph{likelihood} of 
+disjoint region set $\Omega$. $p(X \mid Y)$ is the \emph{likelihood} of 
 the realization of $X$ (the image) given a certain distribution model for 
-each region $k$. The second term, $p(Y)$, is the a-priori probability of 
+each region $\Omega_k$. The second term, $p(Y)$, is the a-priori probability of 
 the partitioning $Y$. Finally, $p(X)$ is the probability of a certain image 
 realization, and thus, it will remain constant when computing the \gls{map}.
 Consequently, $p(Y \mid X) \propto p(X \mid Y)\, p(Y)$, and:
