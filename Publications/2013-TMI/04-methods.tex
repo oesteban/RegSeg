@@ -1,6 +1,85 @@
 \section{Methods}
 \label{sec:methods}
 %
+\subsection{Maximum A-Posteriori Model}
+\label{sec:methods_map}
+%
+A widely used approach to image segmentation is derived from the
+Bayes' rule (\autoref{eq:bayes_rule}), where one seeks for a partitioning
+of a certain image $X$ in piecewise smooth regions $\Omega_k$, 
+with $k \in \lbrace 1 .. K \rbrace$, that maximizes the a posteriori 
+probability given the multivariate image $X \in \mathbb{R}^C$, 
+with $C$ being the number of image channels.
+\begin{equation}
+p(Y \mid X) = \frac{p(X \mid Y)\, p(Y)}{p(X)}.
+\label{eq:bayes_rule}
+\end{equation}
+
+Therefore, $Y$ is a certain realization of the piecewise 
+disjoint region set $\Omega_k$. $p(X \mid Y)$ is the \emph{likelihood} of 
+the realization of $X$ (the image) given a certain distribution model for 
+each region $k$. The second term, $p(Y)$, is the a-priori probability of 
+the partitioning $Y$. Finally, $p(X)$ is the probability of a certain image 
+realization, and thus, it will remain constant when computing the \gls{map}.
+Consequently, $p(Y \mid X) \propto p(X \mid Y)\, p(Y)$, and:
+\begin{equation}
+\textrm{argmax} \left\{ p(Y \mid X) \right\} = 
+\textrm{argmax} \left\{ p(X \mid Y)\, p(Y) \right\}.
+\end{equation}
+
+
+An extended assumption is that the feature vector realization $X$ is
+\emph{i.i.d.}, and thus, it is possible to write the a-posteriori
+probability $p(X \mid Y)$ as a continuous product with $d\mathbf{x}$ the
+infinitesimal voxel size:
+\begin{equation}
+p(X \mid Y) \, p(Y) = \underset{k}{\prod} \underset{\mathbf{x}\in \Omega_k}{\prod}
+p_k( X(\mathbf{x}) \mid Y(\mathbf{x}) )^{d\mathbf{x}},
+\label{eq:bayes_aposteriori}
+\end{equation}
+where the prior probability $p(Y)$ is implicitly
+defined by the regions definition. 
+
+
+A second widely-accepted assumption is the multivariate normal 
+distribution of the different tissues in \gls{mri} data. Therefore,
+the posterior probability of an infinitesimal voxel
+can be written as:
+\begin{equation}
+p_k( X(\mathbf{x}) \mid Y(\mathbf{x}) ) = \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{X(\mathbf{x})}) \right)}}.
+\label{eq:bayes_mpdf}
+\end{equation}
+where we can identify the factor in the exponential, with 
+$\mathbf{s} = X(\mathbf{x})$ as the squared \emph{Mahalanobis 
+distance}:
+\begin{equation}
+\Delta^2_k (\mathbf{s}) = (\mathbf{s} - \boldsymbol{\mu}_k)^T \, \Sigma^{-1}_k \, (\mathbf{s} - \boldsymbol{\mu}_k).
+\label{eq:bayes_mahalanobis}
+\end{equation}
+
+Finally, we can turn the \gls{map} problem into a variational problem
+applying the following log-transform:
+\begin{align}
+E(X \mid Y)= -\log( p(X \mid Y) \, p(Y) ) = \\
+= -\log(\underset{k}{\prod} \underset{\mathbf{x}\in \Omega_k}{\prod}
+p_k( X(\mathbf{x}) \mid Y(\mathbf{x}) )^{d\mathbf{x}}) = \\
+= \sum\limits_k \int_{\Omega_k} p_k(X(\mathbf{x}) \mid Y(\mathbf{x} ) ) \, d\mathbf{x},
+\label{eq:energy_1}
+\end{align}
+and introducing the posterior probability term (\autoref{eq:bayes_mpdf}), we get:
+\begin{align}
+E(X \mid Y) = \sum\limits_k \int_{\Omega_k} \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{X(\mathbf{x})}) \right)}} \, d\mathbf{x} = \\
+= \sum\limits_k \int_{\Omega_k} \left[ \frac{1}{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right| \right)} + \frac{1}{2}  \Delta^2_k (\mathbf{s}) \right] \,d\mathbf{x}.
+\end{align}
+Finally, after removing scaling factors and independent constants,
+we obtain
+\begin{align}
+E(X \mid Y) = \sum\limits_k V_k \, \log{\left|\boldsymbol{\Sigma}_{k}\right|} + \sum\limits_k \int_{\Omega_k} \Delta^2_k (\mathbf{s}) \,d\mathbf{x},
+\end{align}
+that is a constant varying with the corresponding total volume and the 
+determinant of the covariance matrix of the region $k$, plus an energy 
+term based on the squared \emph{Mahalanobis distance}.
+
 \subsection{\Acrlong{acwe} based segmentation model}
 %
 Let us denote $\{c_i\}_{i=1..N_c}$ the nodes of a shape prior surface. In
