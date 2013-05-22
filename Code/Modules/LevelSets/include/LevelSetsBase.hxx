@@ -52,6 +52,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_SparseToDenseResampler = SparseToDenseFieldResampleType::New();
 	this->m_EnergyResampler = DisplacementResamplerType::New();
+	this->m_Transform = DisplacementTransformType::New();
 }
 
 
@@ -210,6 +211,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++) {
 			this->m_EnergyResampler->SetInput( this->m_SparseToDenseResampler->GetOutput() );
 		}
+		this->m_Transform->SetDisplacementField( this->m_EnergyResampler->GetOutput() );
 	}
 
 
@@ -235,14 +237,34 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	}
 
 	// TODO Check overlap (regions are disjoint).
+
+	m_CurrentROIs.resize( m_ROIs.size() );
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ProbabilityMapConstPointer
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetCurrentRegion( size_t idx ) {
+	this->m_Transform->Update();
 
+	ResampleROIFilterPointer resampleFilter = ResampleROIFilterType::New();
+	resampleFilter->SetInput( this->m_ROIs[idx] );
+	resampleFilter->SetTransform( this->m_Transform );
+	resampleFilter->SetSize( this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
+	resampleFilter->SetOutputOrigin(    this->m_ReferenceImage->GetOrigin() );
+	resampleFilter->SetOutputSpacing(   this->m_ReferenceImage->GetSpacing() );
+	resampleFilter->SetOutputDirection( this->m_ReferenceImage->GetDirection() );
+	resampleFilter->SetDefaultPixelValue( 0.0 );
+
+	// TODO check if the filter deals with the jacobian || at least, the transform does.
+	//ModulateFilterPointer mod = ModulateFilterType::New();
+	//mod->SetInput( this->m_ReferenceSamplingGrid );
+	//mod->Update();
+
+	this->m_CurrentROIs[idx] = resampleFilter->GetOutput();
+	return this->m_CurrentROIs[idx];
 }
 
+}
 
 #endif /* LEVELSETSBASE_HXX_ */

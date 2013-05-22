@@ -51,10 +51,11 @@
 #include <itkMeshSpatialObject.h>
 #include <itkGroupSpatialObject.h>
 #include <itkSpatialObjectToImageFilter.h>
+#include <itkResampleImageFilter.h>
 #include <itkVectorResampleImageFilter.h>
 #include <itkTriangleMeshToBinaryImageFilter.h>
 #include <itkDisplacementFieldJacobianDeterminantFilter.h>
-
+#include <itkDisplacementFieldTransform.h>
 
 #include "SparseToDenseFieldResampleFilter.h"
 
@@ -99,6 +100,8 @@ public:
 	typedef itk::ContinuousIndex<TCoordRepType, Dimension >  ContinuousIndex;
 
 	typedef TReferenceImageType                              ReferenceImageType;
+	typedef typename ReferenceImageType::Pointer             ReferenceImagePointer;
+	typedef typename ReferenceImageType::ConstPointer        ReferenceImageConstPointer;
 	typedef typename ReferenceImageType::PixelType           PixelType;
 	typedef typename ReferenceImageType::PointType           PixelPointType;
 	typedef typename PixelType::ValueType                    PixelValueType;
@@ -141,6 +144,11 @@ public:
 	typedef typename ModulateFilterType::Pointer             ModulateFilterPointer;
 
 
+	typedef itk::DisplacementFieldTransform<PointValueType, Dimension>
+															 DisplacementTransformType;
+	typedef typename DisplacementTransformType::Pointer      DisplacementTransformPointer;
+
+
 	typedef itk::Image< unsigned char, Dimension >           ROIType;
 	typedef typename ROIType::Pointer                        ROIPointer;
 	typedef typename ROIType::ConstPointer                   ROIConstPointer;
@@ -152,6 +160,11 @@ public:
 	typedef itk::Image< float, Dimension >                   ProbabilityMapType;
 	typedef typename ProbabilityMapType::Pointer             ProbabilityMapPointer;
 	typedef typename ProbabilityMapType::ConstPointer        ProbabilityMapConstPointer;
+	typedef std::vector< ProbabilityMapConstPointer >        ProbabilityMapList;
+
+	typedef itk::ResampleImageFilter
+			                 <ROIType, ProbabilityMapType >  ResampleROIFilterType;
+	typedef typename ResampleROIFilterType::Pointer          ResampleROIFilterPointer;
 
 	typedef typename itk::MeshSpatialObject
 			                   <ContourDeformationType>      ContourSpatialObject;
@@ -173,6 +186,8 @@ public:
 			  DeformationFieldType>                          WarpContourType;
 	typedef typename WarpContourType::Pointer                WarpContourPointer;
 
+
+
 	virtual MeasureType GetValue() = 0;
 	virtual DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap) = 0;
 
@@ -186,6 +201,8 @@ public:
 	itkSetObjectMacro(DeformationField, DeformationFieldType);
 	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
 
+	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
+	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
 protected:
 	LevelSetsBase();
 	virtual ~LevelSetsBase() {}
@@ -214,7 +231,9 @@ protected:
 	SparseToDenseFieldResamplePointer m_SparseToDenseResampler;
 	DisplacementResamplerPointer m_EnergyResampler;
 	ROIList m_ROIs;
-
+	ProbabilityMapList m_CurrentROIs;
+	DisplacementTransformPointer m_Transform;
+	ReferenceImageConstPointer m_ReferenceImage;
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented

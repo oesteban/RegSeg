@@ -139,7 +139,7 @@ void MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	// 1. Check ROIs exist and update deformation field
 
 	// 2. Update regions
-	for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
+	for( size_t roi = 0; roi < this->m_ROIs.size(); roi++ ) {
 		this->UpdateParametersOfRegion(roi);
 	}
 
@@ -148,8 +148,8 @@ void MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType&
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::UpdateParametersOfRegion( size_t idx ) {
-	typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType newParameters;
+::UpdateParametersOfRegion( const size_t idx ) {
+	ParametersType newParameters;
 
 	this->GetCurrentRegion( idx );
 
