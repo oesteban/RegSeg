@@ -133,6 +133,37 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	return dot_product(dist.GetVnlVector(), this->m_Parameters[cont].iCovariance[outside].GetVnlMatrix() * dist.GetVnlVector() );
 }
 
+template <typename TReferenceImageType, typename TCoordRepType>
+void MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+::ComputeParameters() {
+	// 1. Check ROIs exist and update deformation field
+
+	// 2. Update regions
+	for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
+		this->UpdateParametersOfRegion(roi);
+	}
+
+}
+
+template <typename TReferenceImageType, typename TCoordRepType>
+typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType&
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+::UpdateParametersOfRegion( size_t idx ) {
+	typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType newParameters;
+
+	this->GetCurrentRegion( idx );
+
+	// Resample to reference image resolution
+
+
+	// Apply weighted mean/covariance estimators from ITK
+
+	this->SetParameters( idx, newParameters );
+	return newParameters;
+}
+
+
+
 
 template <typename TReferenceImageType, typename TCoordRepType>
 void

@@ -104,24 +104,13 @@ typename LevelSetsBase<TReferenceImageType, TCoordRepType>::MeasureType
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetValue() {
 	this->m_Value = 0.0;
-	// 1. Define the sampling grid and cache it
-	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
-		this->InitializeSamplingGrid();
-		this->m_EnergyResampler->SetOutputOrigin(    this->m_ReferenceSamplingGrid->GetOrigin()  );
-		this->m_EnergyResampler->SetOutputSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-		this->m_EnergyResampler->SetOutputDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-		this->m_EnergyResampler->SetSize(            this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-		for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++) {
-			this->m_EnergyResampler->SetInput( this->m_SparseToDenseResampler->GetOutput() );
-		}
-	}
 
-	// 2. Resample ROIs on the sampling grid and cache them.
-	if ( m_ROIs.size() == 0 ) {
+	// 1. Resample ROIs on the sampling grid and cache them.
+	if ( this->m_ReferenceSamplingGrid.IsNull() || m_ROIs.size() == 0 ) {
 		this->InitializeROIs();
 	}
 
-	// 3. Resample dense deformation field on the grid.
+	// 2. Resample dense deformation field on the grid.
 	this->m_EnergyResampler->Update();
 	this->m_ReferenceSamplingGrid = this->m_EnergyResampler->GetOutput();
 	ModulateFilterPointer mod = ModulateFilterType::New();
@@ -129,7 +118,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	mod->Update();
 
 
-	// 4. For each ROI, for each pixel, compute energy (call derived class)
+	// 3. For each ROI, for each pixel, compute energy (call derived class)
 	DeformationFieldPointType origin = this->m_ReferenceSamplingGrid->GetOrigin();
 	DeformationFieldPointType minPoint;
 	DeformationFieldPointType maxPoint;
@@ -211,6 +200,18 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::InitializeROIs() {
+	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
+
+		this->InitializeSamplingGrid();
+		this->m_EnergyResampler->SetOutputOrigin(    this->m_ReferenceSamplingGrid->GetOrigin()  );
+		this->m_EnergyResampler->SetOutputSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+		this->m_EnergyResampler->SetOutputDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+		this->m_EnergyResampler->SetSize(            this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+		for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++) {
+			this->m_EnergyResampler->SetInput( this->m_SparseToDenseResampler->GetOutput() );
+		}
+	}
+
 
 	for( size_t cont = 0; cont < this->m_ShapePrior.size(); cont++ ) {
 		BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
@@ -232,7 +233,14 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 #endif
 
 	}
+
+	// TODO Check overlap (regions are disjoint).
 }
+
+template< typename TReferenceImageType, typename TCoordRepType >
+typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ProbabilityMapConstPointer
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::GetCurrentRegion( size_t idx ) {
 
 }
 
