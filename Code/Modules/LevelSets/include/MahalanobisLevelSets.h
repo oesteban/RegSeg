@@ -57,7 +57,7 @@ namespace rstk {
  *  \ingroup
  */
 template <typename TReferenceImageType, typename TCoordRepType = float>
-class MahalanobisLevelSets: public rstk::LevelSetsBase< TReferenceImageType, TCoordRepType> {
+class MahalanobisLevelSets: public rstk::LevelSetsBase< TReferenceImageType, TCoordRepType > {
 public:
 	typedef MahalanobisLevelSets                         Self;
 	typedef rstk::LevelSetsBase
@@ -89,8 +89,8 @@ public:
 	typedef typename NormalFilterType::Pointer             NormalFilterPointer;
 
 	typedef typename Superclass::ReferenceImageType        ReferenceImageType;
-	typedef typename ReferenceImageType::Pointer           ReferenceImagePointer;
-	typedef typename ReferenceImageType::ConstPointer      ReferenceImageConstPointer;
+	typedef typename Superclass::Pointer                   ReferenceImagePointer;
+	typedef typename Superclass::ConstPointer              ReferenceImageConstPointer;
 	typedef typename Superclass::InterpolatorType          InterpolatorType;
 	typedef typename Superclass::InterpolatorPointer       InterpolatorPointer;
 
@@ -116,9 +116,6 @@ public:
 
 	void AddShapePrior( ContourDeformationType* prior, ParametersType&params );
 
-	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
-	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
-
 protected:
 	MahalanobisLevelSets();
 	~MahalanobisLevelSets() {}
@@ -133,8 +130,10 @@ protected:
 		return this->GetEnergyAtPoint( point, cont, 0 );
 	}
 
+	ParametersType& UpdateParametersOfRegion( const size_t idx );
+	void ComputeParameters( void );
+
 	ParametersList m_Parameters;
-	ReferenceImageConstPointer m_ReferenceImage;
 
 private:
 	MahalanobisLevelSets( const Self &); // purposely not implemented
