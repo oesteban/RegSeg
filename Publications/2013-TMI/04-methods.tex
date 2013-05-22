@@ -23,8 +23,8 @@ the partitioning $Y$. Finally, $p(X)$ is the probability of a certain image
 realization, and thus, it will remain constant when computing the \gls{map}.
 Consequently, $p(Y \mid X) \propto p(X \mid Y)\, p(Y)$, and:
 \begin{equation}
-\textrm{argmax} \left\{ p(Y \mid X) \right\} = 
-\textrm{argmax} \left\{ p(X \mid Y)\, p(Y) \right\}.
+\underset{Y}{\argmax} \left\{ p(Y \mid X) \right\} = 
+\underset{Y}{\argmax} \left\{ p(X \mid Y)\, p(Y) \right\}.
 \end{equation}
 
 
@@ -50,35 +50,56 @@ p_k( X(\mathbf{x}) \mid Y(\mathbf{x}) ) = \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\bol
 \label{eq:bayes_mpdf}
 \end{equation}
 where we can identify the factor in the exponential, with 
-$\mathbf{s} = X(\mathbf{x})$ as the squared \emph{Mahalanobis 
+$\mathbf{f} = X(\mathbf{x})$ as the squared \emph{Mahalanobis 
 distance}:
 \begin{equation}
-\Delta^2_k (\mathbf{s}) = (\mathbf{s} - \boldsymbol{\mu}_k)^T \, \Sigma^{-1}_k \, (\mathbf{s} - \boldsymbol{\mu}_k).
+\Delta^2_k (\mathbf{f}) = (\mathbf{f} - \boldsymbol{\mu}_k)^T \, \Sigma^{-1}_k \, (\mathbf{f} - \boldsymbol{\mu}_k).
 \label{eq:bayes_mahalanobis}
 \end{equation}
 
-Finally, we can turn the \gls{map} problem into a variational problem
+Finally, we can turn the \gls{map} problem into a variational one
 applying the following log-transform:
 \begin{align}
-E(X \mid Y)= -\log( p(X \mid Y) \, p(Y) ) = \\
-= -\log(\underset{k}{\prod} \underset{\mathbf{x}\in \Omega_k}{\prod}
-p_k( X(\mathbf{x}) \mid Y(\mathbf{x}) )^{d\mathbf{x}}) = \\
-= \sum\limits_k \int_{\Omega_k} p_k(X(\mathbf{x}) \mid Y(\mathbf{x} ) ) \, d\mathbf{x},
+E(X \mid Y)= -\log \left[ p(X \mid Y) \, p(Y) \right] = \\
+= -\log \left[ \underset{k}{\prod} \underset{\mathbf{x}\in \Omega_k}{\prod}
+p_k( X(\mathbf{x}) \mid Y(\mathbf{x}) )^{d\mathbf{x}} \right] = \\
+= \sum\limits_k \int_{\Omega_k} -\log \left[ p_k(X(\mathbf{x}) \mid Y(\mathbf{x} ) ) \right] \, d\mathbf{x},
 \label{eq:energy_1}
 \end{align}
 and introducing the posterior probability term (\autoref{eq:bayes_mpdf}), we get:
 \begin{align}
-E(X \mid Y) = \sum\limits_k \int_{\Omega_k} \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{X(\mathbf{x})}) \right)}} \, d\mathbf{x} = \\
-= \sum\limits_k \int_{\Omega_k} \left[ \frac{1}{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right| \right)} + \frac{1}{2}  \Delta^2_k (\mathbf{s}) \right] \,d\mathbf{x}.
+E(X \mid Y) = \sum\limits_k \int_{\Omega_k} -\log \left[ \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{f}) \right)}} \right] \, d\mathbf{x} = \\
+= \sum\limits_k \int_{\Omega_k} \left[ \frac{1}{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right| \right)} + \frac{1}{2}  \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}.
 \end{align}
 Finally, after removing scaling factors and independent constants,
 we obtain
 \begin{align}
-E(X \mid Y) = \sum\limits_k V_k \, \log{\left|\boldsymbol{\Sigma}_{k}\right|} + \sum\limits_k \int_{\Omega_k} \Delta^2_k (\mathbf{s}) \,d\mathbf{x},
+E(X \mid Y) = \sum\limits_k \left[ \log{\left|\boldsymbol{\Sigma}_{k}\right|} \int_{\Omega_k} d\mathbf{x} + \int_{\Omega_k} \Delta^2_k (\mathbf{f}) \,d\mathbf{x} \right],
+\label{eq:map_energy}
 \end{align}
-that is a constant varying with the corresponding total volume and the 
-determinant of the covariance matrix of the region $k$, plus an energy 
-term based on the squared \emph{Mahalanobis distance}.
+(\textbf{FIXME:} bad explanation) where we have a constant term scaled by
+the total volume of the partition $\Omega_k$ and the determinant of the 
+covariance matrix of the partition $\left|\boldsymbol{\Sigma}_{k}\right|$,
+plus an energy term based on the squared \emph{Mahalanobis distance}.
+
+
+
+\subsection{Deformation model}
+\label{sec:deformation}
+%
+The segmentation problem is transformed into a registration one if the initial
+partition $Y$ is derived from the initial shape-priors in reference space. 
+Introducing a dense deformation field $u$ that maps the original partition to
+a better fit of the regions in the target coordinate space. Thus, the minimization
+problem stated in \autoref{eq:map_energy} can be expressed so that $u$ is the 
+unknown:
+\begin{equation}
+E(u(\mathbf{x})) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}
+\label{eq:map_energy_deformation}
+\end{equation}
+
+
+
 
 \subsection{\Acrlong{acwe} based segmentation model}
 %
@@ -127,10 +148,7 @@ Using Gaussian distributions as region descriptors, we propose an
 \gls{acwe}-like, piece-wise constant, variational image segmentation
 model (where the unknown is the deformation field)
 \cite{chan_active_2001}:
-\begin{equation}
-\label{eq:gaussian_energy}
-E(u)= \sum_{\forall{R}} \int_{\Omega_R} (f-\mu_R)^T\Sigma_R^{-1}(f-\mu_R) dx
-\end{equation}
+
 where $R$ indexes the existing regions and the integral domains
 depend on the deformation field $u$. Note
 that minimizing this energy, $\argmin_u\{E\}$, yields the \gls{map} 
