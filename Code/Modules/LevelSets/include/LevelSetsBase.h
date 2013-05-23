@@ -160,7 +160,7 @@ public:
 	typedef itk::Image< float, Dimension >                   ProbabilityMapType;
 	typedef typename ProbabilityMapType::Pointer             ProbabilityMapPointer;
 	typedef typename ProbabilityMapType::ConstPointer        ProbabilityMapConstPointer;
-	typedef std::vector< ProbabilityMapConstPointer >        ProbabilityMapList;
+	typedef std::vector< const ProbabilityMapType* >         ProbabilityMapList;
 
 	typedef itk::ResampleImageFilter
 			                 <ROIType, ProbabilityMapType >  ResampleROIFilterType;
