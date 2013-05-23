@@ -188,11 +188,12 @@ MahalanobisLevelSets<TReferenceImageType, TCoordRepType>
 	typename ContourDeformationType::PointsContainerConstIterator u_it = prior->GetPoints()->Begin();
     typename ContourDeformationType::PointsContainerConstIterator u_end = prior->GetPoints()->End();
 
-    PointType p;
+    PixelPointType p;
     ContinuousIndex idx;
 	while( u_it != u_end ) {
-		if ( !this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex(u_it.Value(), idx ) ) {
-			p = u_it.Value();
+		p = u_it.Value();
+
+		if ( !this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex( p, idx ) ) {
 			PointType origin;
 			typename ReferenceImageType::IndexType tmp_idx;
 			tmp_idx.Fill(0);

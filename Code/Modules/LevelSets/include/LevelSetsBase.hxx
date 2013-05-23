@@ -171,16 +171,18 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 		// For all the points in the mesh
 		PointType currentPoint,newPoint;
+		PixelPointType p;
 		for(typename ContourDeformationType::PointsContainerIterator p_it = curr_points->Begin(); p_it != p_end; ++p_it, ++shape_it) {
 			currentPoint = p_it.Value();
 			// Interpolate the value of the field in the point
 			VectorType desp = interp->Evaluate( currentPoint );
 			// Add vector to the point
 			if( desp.GetNorm()>0 ) {
-				newPoint.SetPoint( shape_it.Value() + desp );
+				p = shape_it.Value() + desp;
+				newPoint.SetPoint( p );
 				newPoint.SetEdge( currentPoint.GetEdge() );
 
-				if(! newField->TransformPhysicalPointToContinuousIndex( newPoint, point_idx ) ) {
+				if(! newField->TransformPhysicalPointToContinuousIndex( p, point_idx ) ) {
 					typename DeformationFieldType::PointType origin, end;
 					typename DeformationFieldType::IndexType tmp_idx;
 					typename DeformationFieldType::SizeType size = newField->GetLargestPossibleRegion().GetSize();

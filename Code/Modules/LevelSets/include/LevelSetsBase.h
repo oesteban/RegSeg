@@ -81,7 +81,7 @@ namespace rstk {
  */
 
 
-template <typename TReferenceImageType, typename TCoordRepType = float>
+template <typename TReferenceImageType, typename TCoordRepType = double>
 class LevelSetsBase: public itk::Object {
 public:
 	typedef LevelSetsBase                    Self;
@@ -144,7 +144,7 @@ public:
 	typedef typename ModulateFilterType::Pointer             ModulateFilterPointer;
 
 
-	typedef itk::DisplacementFieldTransform<PointValueType, Dimension>
+	typedef itk::DisplacementFieldTransform<TCoordRepType, Dimension>
 															 DisplacementTransformType;
 	typedef typename DisplacementTransformType::Pointer      DisplacementTransformPointer;
 
@@ -157,7 +157,7 @@ public:
 			          <ContourDeformationType, ROIType>	     BinarizeMeshFilterType;
 	typedef typename BinarizeMeshFilterType::Pointer         BinarizeMeshFilterPointer;
 
-	typedef itk::Image< float, Dimension >                   ProbabilityMapType;
+	typedef itk::Image< TCoordRepType, Dimension >                   ProbabilityMapType;
 	typedef typename ProbabilityMapType::Pointer             ProbabilityMapPointer;
 	typedef typename ProbabilityMapType::ConstPointer        ProbabilityMapConstPointer;
 	typedef std::vector< ProbabilityMapConstPointer >        ProbabilityMapList;
