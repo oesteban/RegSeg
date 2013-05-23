@@ -151,14 +151,72 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::UpdateParametersOfRegion( const size_t idx ) {
 	ParametersType newParameters;
 
-	this->GetCurrentRegion( idx );
+	ROIConstPointer map = this->GetCurrentRegion( idx );
 
 	// Resample to reference image resolution
+	ResampleROIFilterPointer resampleFilter = ResampleROIFilterType::New();
+	resampleFilter->SetInput( map );
+	resampleFilter->SetSize( this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
+	resampleFilter->SetOutputOrigin(    this->m_ReferenceImage->GetOrigin() );
+	resampleFilter->SetOutputSpacing(   this->m_ReferenceImage->GetSpacing() );
+	resampleFilter->SetOutputDirection( this->m_ReferenceImage->GetDirection() );
+	resampleFilter->SetDefaultPixelValue( 0.0 );
+	resampleFilter->Update();
+
+	ProbabilityMapConstPointer roipm = resampleFilter->GetOutput();
+
+#ifndef DNDEBUG
+	typedef itk::ImageFileWriter< ProbabilityMapType > ROIWriter;
+	typename ROIWriter::Pointer w = ROIWriter::New();
+	w->SetInput( roipm );
+	std::stringstream ss;
+	ss << "roi_transformed_lr_" << std::setfill( '0' ) << std::setw(2) << idx << ".nii.gz";
+	w->SetFileName( ss.str().c_str() );
+	w->Update();
+#endif
+
 
 
 	// Apply weighted mean/covariance estimators from ITK
+	typename CovarianceFilter::WeightArrayType weights;
+	ReferenceSamplePointer sample = ReferenceSampleType::New();
+	sample->SetImage( this->m_ReferenceImage );
 
-	this->SetParameters( idx, newParameters );
+	size_t sampleSize = this->m_ReferenceImage->GetLargestPossibleRegion().GetNumberOfPixels();
+	weights.SetSize( sampleSize );
+	weights.Fill( 0.0 );
+
+	// Outside
+	typename CovarianceFilter::WeightArrayType weights2;
+	weights2.SetSize( sampleSize );
+	weights2.Fill( 0.0 );
+
+	const typename ProbabilityMapType::PixelType* roipmb = roipm->GetBufferPointer();
+	for ( size_t pidx = 0; pidx < sampleSize; pidx++) {
+		weights[pidx] = *( roipmb + pidx );
+		weights2[pidx] = 1.0 - weights[pidx];
+	}
+
+	CovarianceFilterPointer cov = CovarianceFilter::New();
+	cov->SetInput( sample );
+	cov->SetWeights( weights );
+
+	cov->Update();
+
+	std::cout << cov->GetMean() << std::endl;
+
+	//newParameters.mean[0] = cov->GetMean();
+	//newParameters.iCovariance[0] = CovarianceType (cov->GetCovarianceMatrix().GetVnlMatrix());
+
+	cov->SetWeights( weights2 );
+	cov->Update();
+
+	std::cout << cov->GetMean() << std::endl;
+
+	//newParameters.mean[1] = cov->GetMean();
+	//newParameters.iCovariance[2] = cov->GetCovariance();
+    //
+	//this->SetParameters( idx, newParameters );
 	return newParameters;
 }
 
@@ -291,6 +349,9 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	// Initialize interpolators
 	this->m_Interp->SetInputImage( this->m_ReferenceImage );
 	this->m_SparseToDenseResampler->CopyImageInformation( levelSetMap );
+
+	// Check that parameters are initialized
+	this->ComputeParameters();
 
 
 #ifndef NDEBUG

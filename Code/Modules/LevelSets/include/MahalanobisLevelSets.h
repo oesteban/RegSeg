@@ -43,7 +43,11 @@
 #include <itkVector.h>
 #include <itkVariableSizeMatrix.h>
 #include <itkNormalQuadEdgeMeshFilter.h>
+#include <itkImageToListSampleAdaptor.h>
+#include <itkWeightedCovarianceSampleFilter.h>
+
 #include "LevelSetsBase.h"
+
 
 // Namespace declaration
 namespace rstk {
@@ -69,30 +73,54 @@ public:
 	itkTypeMacro( MahalanobisLevelSets, rstk::LevelSetsBase );
 	itkNewMacro( Self );
 
-	typedef typename Superclass::MeasureType               MeasureType;
-	typedef typename Superclass::PointType                 PointType;
-	typedef typename Superclass::PixelPointType            PixelPointType;
-	typedef typename Superclass::PointValueType            PointValueType;
-	typedef typename Superclass::VectorType                VectorType;
-	typedef typename Superclass::ContinuousIndex           ContinuousIndex;
-	typedef typename Superclass::PixelType                 PixelType;
-	typedef typename Superclass::PixelValueType            PixelValueType;
-	typedef typename Superclass::DeformationFieldType      DeformationFieldType;
-	typedef typename Superclass::DeformationFieldPointer   DeformationFieldPointer;
-	typedef typename Superclass::ContourDeformationType    ContourDeformationType;
-	typedef typename Superclass::ContourDeformationPointer ContourDeformationPointer;
-	typedef typename Superclass::ContourCopyType           ContourCopyType;
-	typedef typename Superclass::ContourCopyPointer        ContourCopyPointer;
+	typedef typename Superclass::MeasureType                 MeasureType;
+	typedef typename Superclass::PointType                   PointType;
+	typedef typename Superclass::PixelPointType              PixelPointType;
+	typedef typename Superclass::PointValueType              PointValueType;
+	typedef typename Superclass::VectorType                  VectorType;
+	typedef typename Superclass::ContinuousIndex             ContinuousIndex;
+	typedef typename Superclass::PixelType                   PixelType;
+	typedef typename Superclass::PixelValueType              PixelValueType;
+	typedef typename Superclass::DeformationFieldType        DeformationFieldType;
+	typedef typename Superclass::DeformationFieldPointer     DeformationFieldPointer;
+	typedef typename Superclass::ContourDeformationType      ContourDeformationType;
+	typedef typename Superclass::ContourDeformationPointer   ContourDeformationPointer;
+	typedef typename Superclass::ContourCopyType             ContourCopyType;
+	typedef typename Superclass::ContourCopyPointer          ContourCopyPointer;
 
 	typedef itk::NormalQuadEdgeMeshFilter
-	    < ContourDeformationType, ContourDeformationType > NormalFilterType;
-	typedef typename NormalFilterType::Pointer             NormalFilterPointer;
+	    < ContourDeformationType, ContourDeformationType >   NormalFilterType;
+	typedef typename NormalFilterType::Pointer               NormalFilterPointer;
 
-	typedef typename Superclass::ReferenceImageType        ReferenceImageType;
-	typedef typename Superclass::Pointer                   ReferenceImagePointer;
-	typedef typename Superclass::ConstPointer              ReferenceImageConstPointer;
-	typedef typename Superclass::InterpolatorType          InterpolatorType;
-	typedef typename Superclass::InterpolatorPointer       InterpolatorPointer;
+	typedef typename Superclass::ReferenceImageType          ReferenceImageType;
+	typedef typename Superclass::Pointer                     ReferenceImagePointer;
+	typedef typename Superclass::ConstPointer                ReferenceImageConstPointer;
+	typedef typename Superclass::InterpolatorType            InterpolatorType;
+	typedef typename Superclass::InterpolatorPointer         InterpolatorPointer;
+
+	typedef typename Superclass::ROIType                     ROIType;
+	typedef typename Superclass::ROIPointer                  ROIPointer;
+	typedef typename Superclass::ROIConstPointer             ROIConstPointer;
+	typedef typename Superclass::ROIList                     ROIList;
+
+	typedef typename Superclass::ProbabilityMapType          ProbabilityMapType;
+	typedef typename Superclass::ProbabilityMapPointer       ProbabilityMapPointer;
+	typedef typename Superclass::ProbabilityMapConstPointer  ProbabilityMapConstPointer;
+	typedef typename Superclass::ProbabilityMapList          ProbabilityMapList;
+
+	typedef itk::Statistics::ImageToListSampleAdaptor
+			< ReferenceImageType >                           ReferenceSampleType;
+	typedef typename ReferenceSampleType::Pointer            ReferenceSamplePointer;
+
+	typedef itk::Statistics::WeightedCovarianceSampleFilter
+			< ReferenceSampleType >                          CovarianceFilter;
+	typedef typename CovarianceFilter::Pointer               CovarianceFilterPointer;
+
+
+	typedef itk::ResampleImageFilter
+			                 <ROIType, ProbabilityMapType >  ResampleROIFilterType;
+	typedef typename ResampleROIFilterType::Pointer          ResampleROIFilterPointer;
+
 
 	itkStaticConstMacro( Components, unsigned int, itkGetStaticConstMacro(PixelType::Dimension) );
 	itkStaticConstMacro( Dimension, unsigned int, TReferenceImageType::ImageDimension );
