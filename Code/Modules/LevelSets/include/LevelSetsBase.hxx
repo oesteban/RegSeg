@@ -43,8 +43,6 @@
 #include <iostream>
 #include <iomanip>
 
-#include <itkMeanImageFilter.h>
-
 namespace rstk {
 
 
@@ -257,27 +255,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	meshFilter->SetInput(     this->m_CurrentContourPosition[idx]);
 	meshFilter->Update();
 
-	typedef itk::MeanImageFilter< ROIType, ProbabilityMapType > Mean;
-	typename Mean::Pointer mean = Mean::New();
-	typename Mean::RadiusType r;
-
-	mean->SetRadius( 4.0 );
-	mean->SetInput( meshFilter->GetOutput() );
-	mean->Update();
-
-#ifndef DNDEBUG
-		typedef itk::ImageFileWriter< ProbabilityMapType > ROIWriter1;
-		typename ROIWriter1::Pointer w1 = ROIWriter1::New();
-		w1->SetInput( mean->GetOutput() );
-		std::stringstream ss;
-		ss << "roi_transformed_hr_" << std::setfill( '0' ) << std::setw(2) << idx << ".nii.gz";
-		w1->SetFileName( ss.str().c_str() );
-		w1->Update();
-#endif
-
-	typedef itk::ResampleImageFilter< ProbabilityMapType, ProbabilityMapType > ResampleROIFilterType2;
-	typename ResampleROIFilterType2::Pointer resampleFilter = ResampleROIFilterType2::New();
-	resampleFilter->SetInput( mean->GetOutput() );
+	ResampleROIFilterPointer resampleFilter = ResampleROIFilterType::New();
+	resampleFilter->SetInput( meshFilter->GetOutput() );
 	resampleFilter->SetSize( this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
 	resampleFilter->SetOutputOrigin(    this->m_ReferenceImage->GetOrigin() );
 	resampleFilter->SetOutputSpacing(   this->m_ReferenceImage->GetSpacing() );
@@ -285,24 +264,19 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	resampleFilter->SetDefaultPixelValue( 0.0 );
 	resampleFilter->Update();
 
-	// TODO check if the filter deals with the jacobian || at least, the transform does.
-	//ModulateFilterPointer mod = ModulateFilterType::New();
-	//mod->SetInput( this->m_ReferenceSamplingGrid );
-	//mod->Update();
-
 	this->m_CurrentROIs[idx] = resampleFilter->GetOutput();
 
 #ifndef DNDEBUG
 		typedef itk::ImageFileWriter< ProbabilityMapType > ROIWriter;
 		typename ROIWriter::Pointer w = ROIWriter::New();
 		w->SetInput( resampleFilter->GetOutput() );
-		ss.str("");
+		std::stringstream ss;
 		ss << "roi_transformed_lr_" << std::setfill( '0' ) << std::setw(2) << idx << ".nii.gz";
 		w->SetFileName( ss.str().c_str() );
 		w->Update();
 #endif
 
-	return this->m_CurrentROIs[idx];
+	return resampleFilter->GetOutput();
 }
 
 }
