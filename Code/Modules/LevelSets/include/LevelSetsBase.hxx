@@ -244,7 +244,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ProbabilityMapConstPointer
+typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetCurrentRegion( size_t idx ) {
 	BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
@@ -254,29 +254,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	meshFilter->SetSize(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
 	meshFilter->SetInput(     this->m_CurrentContourPosition[idx]);
 	meshFilter->Update();
-
-	ResampleROIFilterPointer resampleFilter = ResampleROIFilterType::New();
-	resampleFilter->SetInput( meshFilter->GetOutput() );
-	resampleFilter->SetSize( this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
-	resampleFilter->SetOutputOrigin(    this->m_ReferenceImage->GetOrigin() );
-	resampleFilter->SetOutputSpacing(   this->m_ReferenceImage->GetSpacing() );
-	resampleFilter->SetOutputDirection( this->m_ReferenceImage->GetDirection() );
-	resampleFilter->SetDefaultPixelValue( 0.0 );
-	resampleFilter->Update();
-
-	this->m_CurrentROIs[idx] = resampleFilter->GetOutput();
-
-#ifndef DNDEBUG
-		typedef itk::ImageFileWriter< ProbabilityMapType > ROIWriter;
-		typename ROIWriter::Pointer w = ROIWriter::New();
-		w->SetInput( resampleFilter->GetOutput() );
-		std::stringstream ss;
-		ss << "roi_transformed_lr_" << std::setfill( '0' ) << std::setw(2) << idx << ".nii.gz";
-		w->SetFileName( ss.str().c_str() );
-		w->Update();
-#endif
-
-	return resampleFilter->GetOutput();
+	this->m_CurrentROIs[idx] = meshFilter->GetOutput();
+	return meshFilter->GetOutput();
 }
 
 }

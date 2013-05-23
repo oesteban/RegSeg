@@ -162,10 +162,6 @@ public:
 	typedef typename ProbabilityMapType::ConstPointer        ProbabilityMapConstPointer;
 	typedef std::vector< const ProbabilityMapType* >         ProbabilityMapList;
 
-	typedef itk::ResampleImageFilter
-			                 <ROIType, ProbabilityMapType >  ResampleROIFilterType;
-	typedef typename ResampleROIFilterType::Pointer          ResampleROIFilterPointer;
-
 	typedef typename itk::MeshSpatialObject
 			                   <ContourDeformationType>      ContourSpatialObject;
 	typedef typename ContourSpatialObject::Pointer           ContourSpatialPointer;
@@ -193,7 +189,7 @@ public:
 
 	void UpdateDeformationField( const DeformationFieldType* newField );
 
-	ProbabilityMapConstPointer GetCurrentRegion( size_t idx );
+	ROIConstPointer GetCurrentRegion( size_t idx );
 
 	void AddShapePrior( ContourDeformationType* prior );
 	itkGetMacro(ShapePrior, ContourDeformationList);
@@ -231,7 +227,7 @@ protected:
 	SparseToDenseFieldResamplePointer m_SparseToDenseResampler;
 	DisplacementResamplerPointer m_EnergyResampler;
 	ROIList m_ROIs;
-	ProbabilityMapList m_CurrentROIs;
+	ROIList m_CurrentROIs;
 	DisplacementTransformPointer m_Transform;
 	ReferenceImageConstPointer m_ReferenceImage;
 private:
