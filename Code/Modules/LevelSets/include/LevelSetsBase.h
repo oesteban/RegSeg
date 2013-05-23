@@ -157,7 +157,7 @@ public:
 			          <ContourDeformationType, ROIType>	     BinarizeMeshFilterType;
 	typedef typename BinarizeMeshFilterType::Pointer         BinarizeMeshFilterPointer;
 
-	typedef itk::Image< TCoordRepType, Dimension >                   ProbabilityMapType;
+	typedef itk::Image< float, Dimension >                   ProbabilityMapType;
 	typedef typename ProbabilityMapType::Pointer             ProbabilityMapPointer;
 	typedef typename ProbabilityMapType::ConstPointer        ProbabilityMapConstPointer;
 	typedef std::vector< ProbabilityMapConstPointer >        ProbabilityMapList;
@@ -193,6 +193,8 @@ public:
 
 	void UpdateDeformationField( const DeformationFieldType* newField );
 
+	ProbabilityMapConstPointer GetCurrentRegion( size_t idx );
+
 	void AddShapePrior( ContourDeformationType* prior );
 	itkGetMacro(ShapePrior, ContourDeformationList);
 
@@ -218,8 +220,6 @@ protected:
 	virtual void InitializeSamplingGrid( void ) = 0;
 
 	inline virtual MeasureType GetEnergyAtPoint( PixelPointType& point, size_t cont ) = 0;
-
-	ProbabilityMapConstPointer GetCurrentRegion( size_t idx );
 
 	mutable MeasureType m_Value;
 	DeformationFieldPointer m_DeformationField;
