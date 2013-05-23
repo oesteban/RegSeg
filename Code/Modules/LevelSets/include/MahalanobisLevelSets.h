@@ -56,7 +56,7 @@ namespace rstk {
  *
  *  \ingroup
  */
-template <typename TReferenceImageType, typename TCoordRepType = float>
+template <typename TReferenceImageType, typename TCoordRepType = double>
 class MahalanobisLevelSets: public rstk::LevelSetsBase< TReferenceImageType, TCoordRepType > {
 public:
 	typedef MahalanobisLevelSets                         Self;
