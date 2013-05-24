@@ -146,7 +146,7 @@ void MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
-typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType&
+typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::UpdateParametersOfRegion( const size_t idx ) {
 	ParametersType newParameters;
@@ -203,20 +203,22 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 	cov->Update();
 
-	std::cout << cov->GetMean() << std::endl;
-
-	//newParameters.mean[0] = cov->GetMean();
-	//newParameters.iCovariance[0] = CovarianceType (cov->GetCovarianceMatrix().GetVnlMatrix());
+	newParameters.mean[0] = cov->GetMean();
+	typename CovarianceFilter::MatrixType cov0 = cov->GetCovarianceMatrix();
 
 	cov->SetWeights( weights2 );
 	cov->Update();
 
-	std::cout << cov->GetMean() << std::endl;
+	newParameters.mean[1] = cov->GetMean();
+	typename CovarianceFilter::MatrixType cov1 = cov->GetCovarianceMatrix();
 
-	//newParameters.mean[1] = cov->GetMean();
-	//newParameters.iCovariance[2] = cov->GetCovariance();
-    //
-	//this->SetParameters( idx, newParameters );
+	for (size_t row = 0; row < Components; row ++ ) {
+		for (size_t col = 0; col < Components; col ++ ) {
+			newParameters.iCovariance[0](row,col) = cov0(row,col);
+			newParameters.iCovariance[1](row,col) = cov1(row,col);
+		}
+	}
+
 	return newParameters;
 }
 
@@ -352,7 +354,6 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 	// Check that parameters are initialized
 	this->ComputeParameters();
-
 
 #ifndef NDEBUG
 	double maxLS = -1.0;

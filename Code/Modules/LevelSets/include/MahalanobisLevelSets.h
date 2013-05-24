@@ -158,7 +158,7 @@ protected:
 		return this->GetEnergyAtPoint( point, cont, 0 );
 	}
 
-	ParametersType& UpdateParametersOfRegion( const size_t idx );
+	ParametersType UpdateParametersOfRegion( const size_t idx );
 	void ComputeParameters( void );
 
 	ParametersList m_Parameters;

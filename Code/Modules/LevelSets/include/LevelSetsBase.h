@@ -211,8 +211,6 @@ protected:
 		os << std::endl;
 	}
 
-
-	void InitializeROIs( void );
 	virtual void InitializeSamplingGrid( void ) = 0;
 
 	inline virtual MeasureType GetEnergyAtPoint( PixelPointType& point, size_t cont ) = 0;
@@ -230,6 +228,8 @@ protected:
 	ROIList m_CurrentROIs;
 	DisplacementTransformPointer m_Transform;
 	ReferenceImageConstPointer m_ReferenceImage;
+	bool m_Modified;
+
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented

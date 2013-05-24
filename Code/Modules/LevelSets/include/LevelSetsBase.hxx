@@ -52,7 +52,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_SparseToDenseResampler = SparseToDenseFieldResampleType::New();
 	this->m_EnergyResampler = DisplacementResamplerType::New();
-	this->m_Transform = DisplacementTransformType::New();
+	this->m_Modified = false;
 }
 
 
@@ -97,6 +97,36 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	}
 
 	this->m_SparseToDenseResampler->AddControlPoints( shapePrior );
+
+	// Initialize corresponding ROI /////////////////////////////
+	// 1. Check that high-res reference sampling grid has been initialized
+	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
+			this->InitializeSamplingGrid();
+	}
+
+	// 2. Generate discretized region mask
+	BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
+	meshFilter->SetSpacing( this->m_ReferenceSamplingGrid->GetSpacing() );
+	meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+	meshFilter->SetOrigin( this->m_ReferenceSamplingGrid->GetOrigin() );
+	meshFilter->SetSize( this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+	meshFilter->SetInput( shapePrior );
+	meshFilter->Update();
+	m_ROIs.push_back( meshFilter->GetOutput() );
+	m_CurrentROIs.push_back( meshFilter->GetOutput() );
+
+#ifndef DNDEBUG
+	typedef itk::ImageFileWriter< ROIType > ROIWriter;
+	typename ROIWriter::Pointer w = ROIWriter::New();
+	w->SetInput( meshFilter->GetOutput() );
+	std::stringstream ss;
+	ss << "roi_" << std::setfill( '0' ) << std::setw(2) << (m_ROIs.size()-1) << ".nii.gz";
+	w->SetFileName( ss.str().c_str() );
+	w->Update();
+#endif
+
+	// TODO Check overlap (regions are disjoint see issue #76).
+
 }
 
 
@@ -107,8 +137,14 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_Value = 0.0;
 
 	// 1. Resample ROIs on the sampling grid and cache them.
-	if ( this->m_ReferenceSamplingGrid.IsNull() || m_ROIs.size() == 0 ) {
-		this->InitializeROIs();
+	if ( this->m_Transform.IsNull() ) {
+		this->m_EnergyResampler->SetOutputOrigin(    this->m_ReferenceSamplingGrid->GetOrigin()  );
+		this->m_EnergyResampler->SetOutputSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+		this->m_EnergyResampler->SetOutputDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+		this->m_EnergyResampler->SetSize(            this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+		this->m_EnergyResampler->SetInput( this->m_SparseToDenseResampler->GetOutput() );
+		this->m_Transform = DisplacementTransformType::New();
+		this->m_Transform->SetDisplacementField( this->m_EnergyResampler->GetOutput() );
 	}
 
 	// 2. Resample dense deformation field on the grid.
@@ -163,6 +199,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	interp->SetInputImage( newField );
 
 	ContinuousIndex point_idx;
+	size_t changed = 0;
+
 	for( size_t cont = 0; cont < this->m_ShapePrior.size(); cont++ ) {
 		typename ContourDeformationType::PointsContainerPointer curr_points = this->m_CurrentContourPosition[cont]->GetPoints();
 		typename ContourDeformationType::PointsContainerIterator p_end = curr_points->End();
@@ -194,68 +232,31 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 				}
 
 				this->m_CurrentContourPosition[cont]->SetPoint( p_it.Index(), newPoint );
+				changed++;
 			}
 		}
 	}
-}
 
-template< typename TReferenceImageType, typename TCoordRepType >
-void
-LevelSetsBase<TReferenceImageType, TCoordRepType>
-::InitializeROIs() {
-	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
-
-		this->InitializeSamplingGrid();
-		this->m_EnergyResampler->SetOutputOrigin(    this->m_ReferenceSamplingGrid->GetOrigin()  );
-		this->m_EnergyResampler->SetOutputSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-		this->m_EnergyResampler->SetOutputDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-		this->m_EnergyResampler->SetSize(            this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-		for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++) {
-			this->m_EnergyResampler->SetInput( this->m_SparseToDenseResampler->GetOutput() );
-		}
-		this->m_Transform->SetDisplacementField( this->m_EnergyResampler->GetOutput() );
-	}
-
-
-	for( size_t cont = 0; cont < this->m_ShapePrior.size(); cont++ ) {
-		BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
-		meshFilter->SetSpacing( this->m_ReferenceSamplingGrid->GetSpacing() );
-		meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-		meshFilter->SetOrigin( this->m_ReferenceSamplingGrid->GetOrigin() );
-		meshFilter->SetSize( this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-		meshFilter->SetInput(this->m_ShapePrior[cont]);
-		meshFilter->Update();
-		m_ROIs.push_back( meshFilter->GetOutput() );
-#ifndef DNDEBUG
-		typedef itk::ImageFileWriter< ROIType > ROIWriter;
-		typename ROIWriter::Pointer w = ROIWriter::New();
-		w->SetInput( meshFilter->GetOutput() );
-		std::stringstream ss;
-		ss << "roi_" << std::setfill( '0' ) << std::setw(2) << cont << ".nii.gz";
-		w->SetFileName( ss.str().c_str() );
-		w->Update();
-#endif
-
-	}
-
-	// TODO Check overlap (regions are disjoint).
-
-	m_CurrentROIs.resize( m_ROIs.size() );
+	this->m_Modified = (changed>0);
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetCurrentRegion( size_t idx ) {
-	BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
-	meshFilter->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-	meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-	meshFilter->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-	meshFilter->SetSize(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-	meshFilter->SetInput(     this->m_CurrentContourPosition[idx]);
-	meshFilter->Update();
-	this->m_CurrentROIs[idx] = meshFilter->GetOutput();
-	return meshFilter->GetOutput();
+	// if u(x)=0, return original ROI (it is pre-computed)
+	if( this->m_Modified ) {
+		BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
+		meshFilter->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+		meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+		meshFilter->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
+		meshFilter->SetSize(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+		meshFilter->SetInput(     this->m_CurrentContourPosition[idx]);
+		meshFilter->Update();
+		this->m_CurrentROIs[idx] = meshFilter->GetOutput();
+	}
+
+	return this->m_CurrentROIs[idx];
 }
 
 }
