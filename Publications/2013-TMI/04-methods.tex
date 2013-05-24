@@ -94,10 +94,10 @@ a better fit of the regions in the target coordinate space. Thus, the minimizati
 problem stated in \autoref{eq:map_energy} can be expressed so that $u$ is the 
 unknown:
 \begin{equation}
-E(u(\mathbf{x})) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}
+E(u(\mathbf{x})) = \sum\limits_k \int_{\Omega'_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f'}) \right] \,d\mathbf{x}
 \label{eq:map_energy_deformation}
 \end{equation}
-
+where $\Omega'_k = u(\Omega_k)$ and $\mathbf{f'} = X(u(\mathbf{x}))$.
 
 
 
