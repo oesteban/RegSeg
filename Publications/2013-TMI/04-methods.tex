@@ -1,11 +1,11 @@
 \section{Methods}
 \label{sec:methods}
 %
-\subsection{Maximum A-Posteriori Model}
+\subsection{Mumford-Shah Functional derivation from the Maximum A-Posteriori Model}
 \label{sec:methods_map}
 %
 A widely used approach to image segmentation is derived from the
-Bayes' rule (\autoref{eq:bayes_rule}), where one seeks for a partitioning
+Bayes' rule \eqref{eq:bayes_rule}, where one seeks for a partitioning
 of a certain image $X$ in piecewise smooth regions $\Omega = \lbrace \Omega_k , 
 k\in\left[ 1 .. K \right] \rbrace$,  that maximizes the a posteriori 
 probability given the multivariate image $X \in \mathbb{R}^C$, 
@@ -51,30 +51,30 @@ p_k( X(\mathbf{x}) \mid Y(\mathbf{x}) ) = \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\bol
 \end{equation}
 where we can identify the factor in the exponential, with 
 $\mathbf{f} = X(\mathbf{x})$ as the squared \emph{Mahalanobis 
-distance}:
+distance} with the parameters set $\Theta_k = \lbrace \boldsymbol{\mu}_k, \boldsymbol{\Sigma}_k \rbrace$:
 \begin{equation}
-\Delta^2_k (\mathbf{f}) = (\mathbf{f} - \boldsymbol{\mu}_k)^T \, \Sigma^{-1}_k \, (\mathbf{f} - \boldsymbol{\mu}_k).
+\Delta^2_k (\mathbf{f} \mid \Theta_k ) = (\mathbf{f} - \boldsymbol{\mu}_k)^T \, \boldsymbol{\Sigma}^{-1}_k \, (\mathbf{f} - \boldsymbol{\mu}_k).
 \label{eq:bayes_mahalanobis}
 \end{equation}
 
 Finally, we can turn the \gls{map} problem into a variational one
 applying the following log-transform:
-\begin{align}
+\begin{multline}
 E(X \mid Y)= -\log \left[ p(X \mid Y) \, p(Y) \right] = \\
 = -\log \left[ \underset{k}{\prod} \underset{\mathbf{x}\in \Omega_k}{\prod}
 p_k( X(\mathbf{x}) \mid Y(\mathbf{x}) )^{d\mathbf{x}} \right] = \\
 = \sum\limits_k \int_{\Omega_k} -\log \left[ p_k(X(\mathbf{x}) \mid Y(\mathbf{x} ) ) \right] \, d\mathbf{x},
 \label{eq:energy_1}
-\end{align}
-and introducing the posterior probability term (\autoref{eq:bayes_mpdf}), we get:
-\begin{align}
+\end{multline}
+and introducing the posterior probability term \eqref{eq:bayes_mpdf}, we get:
+\begin{multline}
 E(X \mid Y) = \sum\limits_k \int_{\Omega_k} -\log \left[ \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{f}) \right)}} \right] \, d\mathbf{x} = \\
 = \sum\limits_k \int_{\Omega_k} \left[ \frac{1}{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right| \right)} + \frac{1}{2}  \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}.
-\end{align}
+\end{multline}
 Finally, after removing scaling factors and independent constants,
-we obtain
+we can express the functional in terms of $\lbrace\Theta_k,\Omega_k\rbrace$:
 \begin{align}
-E(X \mid Y) = \sum\limits_k \left[ \log{\left|\boldsymbol{\Sigma}_{k}\right|} \int_{\Omega_k} d\mathbf{x} + \int_{\Omega_k} \Delta^2_k (\mathbf{f}) \,d\mathbf{x} \right],
+E(\Theta_k,K) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x},
 \label{eq:map_energy}
 \end{align}
 (\textbf{FIXME:} bad explanation) where we have a constant term scaled by
@@ -82,7 +82,24 @@ the total volume of the partition $\Omega_k$ and the determinant of the
 covariance matrix of the partition $\left|\boldsymbol{\Sigma}_{k}\right|$,
 plus an energy term based on the squared \emph{Mahalanobis distance}.
 
-
+Equation \eqref{eq:map_energy} resembles the Mumford-Shah functional including variance,
+that modifies the original functional in a way that it can deal with more general
+distributions. This is necessary to avoid the assumption that regions $\Omega_k$
+have a fixed covariance matrix on their complete domain. One immediate advantage
+of this functional from the original one is the possibility to distinguish regions
+with the same mean vector but different covariance matrix \citep{brox_local_2009}:
+\begin{multline}
+E(\Theta_k,\Omega_k) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x} \\
++ \lambda \int_{\Omega_k - K}  ( \left| \nabla \mathbf{\mu} \right| ^2 + \left| \nabla \mathbf{\Sigma}_k \right| ^2 ) \, d\mathbf{x} 
++ \nu |K|,
+\end{multline}
+that is easily identifiable with \eqref{eq:map_energy} when we apply 
+the so-called \emph{cartoon limit}, 
+for $\lambda \to \infty$:
+\begin{equation}
+E(\Theta_k,K) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}
++ \nu |K|.
+\end{equation}
 
 \subsection{Deformation model}
 \label{sec:deformation}
@@ -91,7 +108,7 @@ The segmentation problem is transformed into a registration one if the initial
 partition $Y$ is derived from the initial shape-priors in reference space. 
 Introducing a dense deformation field $u$ that maps the original partition to
 a better fit of the regions in the target coordinate space. Thus, the minimization
-problem stated in \autoref{eq:map_energy} can be expressed so that $u$ is the 
+problem stated in \eqref{eq:map_energy} can be expressed so that $u$ is the 
 unknown:
 \begin{equation}
 E(u(\mathbf{x})) = \sum\limits_k \int_{\Omega'_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f'}) \right] \,d\mathbf{x}
