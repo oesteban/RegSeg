@@ -66,15 +66,17 @@ p_k( X(\mathbf{x}) \mid Y(\mathbf{x}) )^{d\mathbf{x}} \right] = \\
 = \sum\limits_k \int_{\Omega_k} -\log \left[ p_k(X(\mathbf{x}) \mid Y(\mathbf{x} ) ) \right] \, d\mathbf{x},
 \label{eq:energy_1}
 \end{multline}
-and introducing the posterior probability term \eqref{eq:bayes_mpdf}, we get:
+and introducing the posterior probability term \eqref{eq:bayes_mpdf}, 
+we can express the functional in terms of $\lbrace\Theta_k,\Omega_k\rbrace$:
 \begin{multline}
-E(X \mid Y) = \sum\limits_k \int_{\Omega_k} -\log \left[ \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{f}) \right)}} \right] \, d\mathbf{x} = \\
+E(\Theta_k,\Omega_k) = \\
+= \sum\limits_k \int_{\Omega_k} -\log \left[ \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{f}) \right)}} \right] \, d\mathbf{x} = \\
 = \sum\limits_k \int_{\Omega_k} \left[ \frac{1}{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right| \right)} + \frac{1}{2}  \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}.
 \end{multline}
 Finally, after removing scaling factors and independent constants,
-we can express the functional in terms of $\lbrace\Theta_k,\Omega_k\rbrace$:
+we obtain:
 \begin{align}
-E(\Theta_k,K) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x},
+E(\Theta_k,\Omega_k) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x},
 \label{eq:map_energy}
 \end{align}
 (\textbf{FIXME:} bad explanation) where we have a constant term scaled by
@@ -100,6 +102,13 @@ for $\lambda \to \infty$:
 E(\Theta_k,K) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}
 + \nu |K|.
 \end{equation}
+
+As long as we do not penalize the edge set $K$ length, $\nu = 0$ and
+the result is dual to \eqref{eq:map_energy}:
+\begin{equation}
+E(\Theta_k,K) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}.
+\end{equation}
+
 
 \subsection{Deformation model}
 \label{sec:deformation}
