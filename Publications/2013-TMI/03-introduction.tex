@@ -16,60 +16,154 @@
 % Here we have the typical use of a "T" for an initial drop letter
 % and "HIS" in caps to complete the first word.
 %
-\IEEEPARstart{D}{iffusion} MRI (dMRI) is a widely used family of \gls{mr} techniques
-\citep{sundgren_diffusion_2004} which recently has accounted for a growing
-interest in its application to whole-brain structural connectivity analysis.
-This emerging field \citep{hagmann_diffusion_2005,sporns_human_2005}, currently 
-includes a large amount of imaging techniques for acquisition, processing, 
-and analysis specifically tuned for \gls{dwi} data \citep{daducci_connectome_2012}.
+\IEEEPARstart{D}{iffusion} \gls{mri} is a widely used family
+of \gls{mri} techniques \citep{sundgren_diffusion_2004} which recently 
+has accounted for a growing interest in its application to structural 
+connectivity analysis of the brain. This emerging field exploits
+\gls{dwi} data to derive the local axonal structure at each imaging voxel 
+\citep{basser_microstructural_2011} and estimate a whole-brain mapping of fiber 
+tracts represented by trajectories reconstructed from the local information.
+This comprehensive map of neural connections of the brain is called the 
+\emph{connectome} \citep{hagmann_diffusion_2005,sporns_human_2005}. The connectome
+analysis is a promising tool for neuroscience and clinical applications 
+(\textbf{FIXME:} why? or references?).
 
-The whole-brain connectivity analysis has given rise to some challenges
-towards reliable structural information about the neuronal tracts 
-from \gls{dwi} \cite{johansen-berg_using_2009,jones_white_2012}. 
-Here, we shall address brain tissue segmentation on diffusion space 
-and correction of geometrical distortions inherent to the acquisition 
-sequence \citep{hagmann_mr_2012}.
 
-In this work, we will refer as brain tissue segmentation to the precise
-delineation of the \gls{csf}-\gls{gm} and \gls{gm}-\gls{wm} interface surfaces.
-An accurate brain tissue segmentation is required
-to filter the fiber bundles obtained with \gls{dwi} tractography. 
-This requirement is usually solved in practice by plainly thresholding the 
-\gls{fa}, a well-known scalar map derived from \gls{dwi} which depicts 
-the isotropy of water diffusion inside the brain. Also,
-it is necessary to locate the intersections of fiber bundles and \gls{gm}.
-Moreover, a precise location of the \gls{gm}-\gls{wm} surface is also essential 
-to finally achieve a consistent parcellisation of the cortex 
-to represent the nodes of the output network. This parcellisation 
-is generally defined in a high-resolution and better understood structural 
-\gls{mri} of the same 
-subject (e.g. \gls{t1} and/or \gls{t2} weighted acquisitions). Even though
-some efforts have addressed the study of the robustness of tractography with
-respect to intra-subject variability \cite{heiervang_between_2006,
-wakana_reproducibility_2007}, these results are restricted to certain regions 
-of the brain, only. Therefore, robust and precise segmentation methods are 
-required in the whole-brain application. The problem is challenging due to
-the much lower resolution of \gls{dwi} (typically around 
-$2.0\times2.0\times2.0mm^3$) compared to structural \gls{mri}, and the
-existence of geometrical distortions.
+Early \gls{dwi} research focused mainly on the improvements of imaging 
+methodologies better understanding the diffusion effect and improving
+image reconstruction methodologies. Currently, the connectome extraction 
+and analysis relies on a large amount of sophisticated computational techniques
+\citep{daducci_connectome_2012,hagmann_mr_2012} including acquisition,
+reconstruction, modeling and model fitting, image processing, fibre tracking,
+connectivity mapping, visualization, group studies, and inference. This 
+growing complexity has given rise to challenging issues towards reliable 
+structural information about the neuronal tracts \cite{johansen-berg_using_2009,
+jones_white_2012,soares_hitchhikers_2013}, and statistical analysis 
+\citep{meskaldji_comparing_????}. Here,we shall address three tasks included within 
+the image processing stage in a unified approach: brain tissue segmentation in 
+diffusion space (\autoref{sec:dwi_segmentation}), correction of geometrical 
+distortions (\autoref{sec:distortion}), and structural image registration to 
+diffusion coordinate space (\autoref{sec:registration}). These tasks are generally
+solved independently, or combined in pairs. However, there exist fundamental 
+coupling relationships that can be exploited to obtain a simultaneous solution to 
+the three problems. This joint approach satisfactory impacts the downstream
+outcomes of the whole pipeline with the increase of the internal consistency.
+
+\subsection{\gls{dwi} data overview}
+\label{sec:dwi_overview}
+
+\todo[inline]{VERY brief look into signal generation HERE and cite reconstruction methods.}
+
+\gls{dwi} data is strongly affected by \glspl{pve} \citep{alexander_analysis_2001},
+which appear when several different tissues, or signal emitters, are present
+in the same imaging unit, producing an averaged intensity. The effect is directly
+related to the low resolution achievable with \gls{dwi} (typically around 
+$2.0\times2.0\times2.0mm^3$). An additional complication specific to
+\gls{dwi} is the \gls{csf} \emph{contamination} \citep{metzler-baddeley_how_2012},
+that is a particular \gls{pve} in which the signal sensed inside the affected voxel is 
+linear with respect the \gls{gm} and \gls{wm} contributions, but non-linear with
+respect \gls{csf}.
+
+Generally speaking, alongside the difficulty posed by the low resolution, \gls{dwi} 
+processing is also challenging due to the \emph{direction dependency} of raw data.
+\todo[inline]{Introduce here what are b0, fa, md, and direction dependency problem.}
+These low-$b$ (or $b = 0$) volumes are acquired without direction gradient as reference, 
+and present a T2-like contrast.
+
+
+
+\subsection{\gls{dwi} segmentation}
+\label{sec:dwi_segmentation}
+
+A precise delineation of the \gls{csf}, \gls{gm} and \gls{wm} interfacing surfaces
+is required with sub-pixel resolution.
+The resulting segmentation is necessary to perform the majority of tractography 
+algorithms and it is required to filter the resulting tractogram. The \gls{gm}-\gls{wm}
+interface is necessary to locate the starting and ending points of the detected
+fiber bundles, and \gls{csf}-\gls{wm} surface is critical for pruning spurious 
+and discontinued fiber bundles.
+
+A number of methodologies have been proposed for \gls{dwi} segmentation, ranging 
+from intensity thresholding to atlas-based segmentation. The first approach is performed 
+on the \gls{fa} \citep{ennis_orthogonal_2006}, a well-known scalar map derived from
+\gls{dwi} data which depicts the isotropy of water diffusion inside the brain.
+Although this methodology was popular among the premier tractography studies,
+they were generally limited to certain regions or significant fiber tracts, and thus,
+it cannot be applied in whole-brain tractography. Early approaches to \gls{dwi} segmentation 
+include level set formulations using scalar maps of direction invariants derived
+from the tensor model \citep{zhukov_level_2003}, directly on the diffusion raw data
+\citep{rousson_level_2004}, or finding alternative diffusion representations 
+\citep{jonasson_representing_2007}. Even though this latter case was restricted to the extraction of
+the corpus callosum from a real dataset, the density of the components of the diffusion tensor
+are approximated by multivariate Gaussians for first. Iterative clustering performed on the 
+\emph{low}-$b$ volumes of \gls{dwi} data was proposed by \citep{hadjiprocopis_unbiased_2005}.
+Later studies investigated the application of probabilistic frameworks combining mixtures of 
+gaussians, \gls{mrf} and labeling fusion techniques \citep{liu_brain_2007} using as features 
+widely-used \gls{dwi}-derived scalar maps as \gls{fa} or \gls{md}. A similar framework 
+combining co-registered structural information (T1 weighted) with \emph{independent orthogonal 
+invariants} derived from the \gls{dwi} tensor model was proposed by \citep{awate_multivariate_2008}. 
+Some proposals suggest the use of the raw diffusion data (directionally dependent) to avoid fitting 
+a certain model \citep{lu_segmentation_2008}. In \citep{han_experimental_2009}, graph-cuts 
+voxel-based techniques are proposed using the most common diffusion tensor derived features.
+Further developments of the probabilistic approach have been proposed adding more scalar maps
+as features and a more detailed treatment of \gls{pve} \citep{kumazawa_partial_2010}.
+
+A number of methods have been proposed using features not directly derived from \gls{dwi} data.
+Segmentation obtained by co-registering structural T1-weighted images will be covered in 
+\autoref{sec:registration}. Some other works delay the segmentation task after the tractogram 
+is obtained, performing clustering on features derived on the tracts alignment 
+\citep{jonasson_white_2005}, combined tract registration \citep{mayer_supervised_2011} or using
+tractography atlases \citep{odonnell_automatic_2007}. However, methods based on tractography
+usually address the tractogram segmentation problem, to later combine the solution to 
+answer the whole-brain segmentation problem.
+
+None of the presented methods have claimed for definite results, mainly due to the lack of 
+a \emph{gold-standard} evaluation methodology. Most of them are tested only on certain
+regions \todo{citations}, or do not provide sub-pixel resolution results
+\citep{hadjiprocopis_unbiased_2005,liu_brain_2007,awate_multivariate_2008,lu_segmentation_2008,
+han_experimental_2009}. Generally, results obtained with high resolution atlas co-registration
+(\autoref{sec:registration}) are more compelling, minimizing the activity on this line which is 
+currently being considered to be included in reconstruction algorithms 
+\citep{kumazawa_improvement_2013}. \emph{Golden}-standard evaluation frameworks have been 
+proposed for the segmentation validation \citep{jha_task-based_2012} on the task of lesion 
+detection in visceral organs.
+
+\subsection{Correction for susceptibility distortions}
+\label{sec:distortion}
 
 \gls{dwi} data are usually acquired with \gls{epi} sequences 
 as they allow for very fast acquisitions, but they are known to 
-suffer from geometrical distortions due to local field inhomogeneities. 
-These artifacts happen along the phase-encoding direction, and are most 
-appreciable in the front part of the brain for the strong air/tissue 
-interface around the frontal sinuses. A number of methodologies have
-been developed to correct for the distortion, and are generically named 
-as \emph{\gls{epi}-unwarp} techniques
-\cite{holland_efficient_2010,hsu_correction_2009,jezzard_characterization_2005,
-reber_correction_2005}. These methods usually 
-require the extra acquisition of the magnitude and phase of
-the field (``field-mapping''), a condition which is not always met. Some other 
-methodologies do not make use of the field-mapping, compensating the distortion
-with non-linear registration from structural \gls{mri} or other means
-\citep{andersson_modeling_2001}. To our knowledge, there exists no study
-on the impact of the \gls{epi} distortion on the variability of tractography
+suffer from geometrical distortions and artifacts due to, mainly,
+three sources: the subject motion between direction sampling, the 
+induced \emph{Eddy currents} on the scanner coils and finally
+distortions caused by the magnetic susceptibility inhomogeneity
+present at tissue interface. In this paper, we restrict ourselves to
+the last one, as it accounts for the major impact in the connectome
+analysis. \emph{Susceptibility distortions} happen along the 
+phase-encoding direction, and are most appreciable in the front part of 
+the brain for the strong air/tissue interface surrounding the frontal sinuses.
+
+One approach to correcting the susceptibility distortions was proposed
+with the earliest \gls{epi} sequences used in functional \gls{mri}, and
+relies on the acquisition of extra \gls{mri} data. Generally, a \gls{gre} is used to 
+obtain a map of magnitude and phase of the actual magnetic field inside the
+scanner. Based on this \emph{fieldmap}, a number of methodologies have 
+been developed to correct for the distortion, and are generically named as 
+\emph{\gls{epi}-unwarp} techniques \cite{holland_efficient_2010,
+hsu_correction_2009,jezzard_characterization_2005, reber_correction_2005}. 
+Unfortunately, the availability of the corresponding fieldmap is not always
+met.\todo[inline]{Mention other problems: low precission, unreliability}
+
+Some other methodologies do not make use of the fieldmaps, compensating the 
+distortion with non-linear registration from structural \gls{mri} 
+\citep{kybic_unwarping_2000} (see \autoref{sec:registration}), or other means 
+\citep{andersson_modeling_2001}. To our knowledge, there exists no study on 
+the impact of the \gls{epi} distortion on the variability of tractography 
 results. 
+
+
+\subsection{Structural information co-registration}
+\label{sec:registration}
 
 Therefore, the problems of precise segmentation in \gls{dwi}-space and the 
 spatial mapping between these contours and the corresponding surfaces in 
@@ -84,22 +178,8 @@ The significant benefits of exploiting the anatomical \gls{mri} when
 segmenting the \gls{dwi} data have been demonstrated \cite{zollei_improved_2010}, 
 justifying the use of the shape prior information. 
 
-We suggest clustering the current methodologies of template-based segmentation 
-methods into three groups. The first group typically adds a shape prior term to 
-the energy functional of an evolving active contour
-\citep{bresson_variational_2006,chan_level_2005,chen_using_2002,cremers_kernel_2006,
-gastaud_combining_2004,paragios_level_2003,vemuri_joint_2003,yezzi_variational_2003}.
-These methods generally have a explicit description of the expected relative boundary 
-locations of the object to be delineated, and some even model the statistical deviations
-from this average shape. Closely related to this group are atlas-based segmentation
-methods \citep{gorthi_segmentation_2009,gorthi_active_2011,pohl_unifying_2005,
-pohl_bayesian_2006,wang_joint_2006}, where the prior 
-imposes consistent voxel-based classification of contiguous regions. Here, the 
-presence of more structures than one unique \gls{roi} helps aligning the target image 
-with the atlas in a hierarchical fashion. Finally, the third group generalizes 
-the atlas to actual images, and the contour is to segment simultaneously two 
-different target images, related by a spatial transform to be co-estimated
-\citep{wyatt_map_2003,yezzi_variational_2003}.
+\subsection{Summary}
+\label{sec:contributions}
 
 In this paper we propose a novel registration framework to simultaneously
 solving the segmentation and distortion challenges, by exploiting as strong 

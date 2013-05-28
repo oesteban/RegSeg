@@ -9,12 +9,8 @@
 % should be used if it is desired that the figures are to be displayed in
 % draft mode.
 %
+%\documentclass[draftcls]{IEEEtran}
 \documentclass[journal]{IEEEtran}
-%
-% If IEEEtran.cls has not been installed into the LaTeX system files,
-% manually specify the path to it like:
-% \documentclass[journal]{../sty/IEEEtran}
-
 
 % Some very useful LaTeX packages include:
 % (uncomment the ones you want to load)
@@ -90,7 +86,7 @@
 %
 % You can find documentation about the pdfTeX application at:
 % http://www.tug.org/applications/pdftex
-
+\usepackage[colorinlistoftodos]{todonotes}
 
 
 
@@ -400,7 +396,7 @@ Science Foundation (SNF) under grant PBELP2-137727.}% <-this % stops a space
 
 % make the title area
 \maketitle
-
+\todo[inline]{Fix Memberships}
 % As a general rule, do not put math, special symbols or citations
 % in the abstract or keywords.
 \begin{abstract}
