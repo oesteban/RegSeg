@@ -136,46 +136,20 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetValue() {
 	this->m_Value = 0.0;
 
-	// 1. Resample ROIs on the sampling grid and cache them.
-	if ( this->m_Transform.IsNull() ) {
-		this->m_EnergyResampler->SetOutputOrigin(    this->m_ReferenceSamplingGrid->GetOrigin()  );
-		this->m_EnergyResampler->SetOutputSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-		this->m_EnergyResampler->SetOutputDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-		this->m_EnergyResampler->SetSize(            this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-		this->m_EnergyResampler->SetInput( this->m_SparseToDenseResampler->GetOutput() );
-		this->m_Transform = DisplacementTransformType::New();
-		this->m_Transform->SetDisplacementField( this->m_EnergyResampler->GetOutput() );
-	}
-
-	// 2. Resample dense deformation field on the grid.
-	this->m_EnergyResampler->Update();
-	this->m_ReferenceSamplingGrid = this->m_EnergyResampler->GetOutput();
-	ModulateFilterPointer mod = ModulateFilterType::New();
-	mod->SetInput( this->m_ReferenceSamplingGrid );
-	mod->Update();
-
-
-	// 3. For each ROI, for each pixel, compute energy (call derived class)
-	DeformationFieldPointType origin = this->m_ReferenceSamplingGrid->GetOrigin();
-	DeformationFieldPointType minPoint;
-	DeformationFieldPointType maxPoint;
-	VectorType * defBuffer = this->m_ReferenceSamplingGrid->GetBufferPointer();
-	typename ModulateFilterType::OutputImageType::PixelType* modBuffer = mod->GetOutput()->GetBufferPointer();
 	size_t nPix = this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetNumberOfPixels();
 
-
 	for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
-		const unsigned char * roiBuffer = this->m_ROIs[roi]->GetBufferPointer();
+		ROIConstPointer mask = this->GetCurrentRegion(roi);
+		const unsigned char * roiBuffer = mask->GetBufferPointer();
+
 		PixelPointType pos, targetPos;
 		for( size_t i = 0; i < nPix; i++) {
 			if ( *( roiBuffer + i ) > 0.0 ) {
-				this->m_ReferenceSamplingGrid->TransformIndexToPhysicalPoint( this->m_ReferenceSamplingGrid->ComputeIndex(i), pos);
-				targetPos = pos + *( defBuffer + i);
-				this->m_Value +=  fabs( *(modBuffer+i) ) * this->GetEnergyAtPoint( targetPos, roi );
+				mask->TransformIndexToPhysicalPoint( mask->ComputeIndex(i), pos);
+				this->m_Value +=  this->GetEnergyAtPoint( targetPos, roi );
 			}
 		}
 	}
-
 	return this->m_Value;
 }
 
