@@ -8,7 +8,7 @@
 	abstract = {Single-shot Echo Planar Imaging ({EPI)} is one of the most efficient magnetic resonance imaging ({MRI)} acquisition schemes, producing relatively high-definition images in 100 ms or less. These qualities make it desirable for Diffusion Tensor Imaging ({DTI)}, functional {MRI} ({fMRI)}, and Dynamic Susceptibility Contrast {MRI} ({DSC-MRI).} However, {EPI} suffers from severe spatial and intensity distortion due to B0 field inhomogeneity induced by magnetic susceptibility variations. Anatomically accurate, undistorted images are essential for relating {DTI} and {fMRI} images with anatomical {MRI} scans, and for spatial registration with other modalities. We present here a fast, robust, and accurate procedure for correcting {EPI} images from such spatial and intensity distortions. The method involves acquisition of scans with opposite phase encoding polarities, resulting in opposite spatial distortion patterns, and alignment of the resulting images using a fast nonlinear registration procedure. We show that this method, requiring minimal additional scan time, provides superior accuracy relative to the more commonly used, and more time consuming, field mapping approach. This method is also highly computationally efficient, allowing for direct {\textquoteleft}real-time{\textquoteright} implementation on the {MRI} scanner. We further demonstrate that the proposed method can be used to recover dropouts in gradient echo ({BOLD} and {DSC-MRI)} {EPI} images.},
 	number = {1},
 	urldate = {2012-12-04},
-	journal = {Neuroimage},
+	journal = {{NeuroImage}},
 	author = {Holland, Dominic and Kuperman, Joshua M. and Dale, Anders M.},
 	month = mar,
 	year = {2010},
@@ -24,6 +24,7 @@
 	doi = {10.1109/TMI.2009.2026474},
 	abstract = {Susceptibility-induced distortion is one of the major artifacts in echo-planar imaging ({EPI)}, and many solutions have been proposed for the problem, including the Fourier method and the point spread function ({PSF)} method. In this paper, a framework unifying both methods is presented. Under this framework, a model-based {PSF} method is proposed in which the {PSF} of the source object is modeled along with a single field map measured by {TE-offset} reference scans. {EPI} images of a phantom and a healthy human subject were acquired, and the results of distortion correction by the Fourier method, linear interpolation method, and the model-based {PSF} method were compared. The results showed that the model-based {PSF} method could correct for geometric distortion and signal intensity distortion satisfactorily, avoiding the rippling artifact shown in the Fourier method. In conclusion, the proposed framework gave us an overall picture of how different correction methods work. The model-based {PSF} method, which required fewer reference scans and less computational load, was more clinically feasible than other methods.},
 	number = {11},
+	journal = {{IEEE} Transactions on Medical Imaging},
 	author = {Hsu, Yung-Chin and Hsu, Ching-Han and Tseng, W.-{Y.I.}},
 	month = nov,
 	year = {2009},
@@ -37,6 +38,7 @@
 	url = {http://onlinelibrary.wiley.com/doi/10.1002/mrm.1910390223/abstract},
 	number = {2},
 	urldate = {2012-12-04},
+	journal = {Magnetic Resonance in Medicine},
 	author = {Reber, P. J. and Wong, E. C. and Buxton, R. B. and Frank, L. R.},
 	year = {2005},
 	pages = {328{\textendash}330}
@@ -64,6 +66,7 @@
 	url = {http://onlinelibrary.wiley.com/doi/10.1002/mrm.1910390518/abstract},
 	number = {5},
 	urldate = {2012-12-04},
+	journal = {Magnetic resonance in medicine},
 	author = {Jezzard, P. and Barnett, A. S. and Pierpaoli, C.},
 	year = {2005},
 	pages = {801{\textendash}812}
@@ -76,6 +79,7 @@
 	doi = {10.1109/42.836368},
 	abstract = {Echo-planar imaging ({EPI)} is a fast nuclear magnetic resonance imaging ({MRI)} method. Unfortunately, local magnetic field inhomogeneities induced mainly by the subject's presence cause significant geometrical distortion, predominantly along the phase-encoding direction, which must be undone to allow for meaningful further processing. So far, this aspect has been too often neglected. In this paper, the authors suggest a new approach using an algorithm specifically developed for the automatic registration of distorted {EPI} images with corresponding anatomically correct {MRI} images. They model the deformation field with splines, which gives us a great deal of flexibility, while comprising the affine transform as a special case. The registration criterion is least squares. Interestingly, the complexity of its evaluation does not depend on the resolution of the control grid. The spline model gives the authors good accuracy thanks to its high approximation order. The short support of splines leads to a fast algorithm. A multiresolution approach yields robustness and additional speedup. The algorithm was tested on real as well as synthetic data, and the results were compared with a manual method. A wavelet-based Sobolev-type random deformation generator was developed for testing purposes. A blind test indicates that the proposed automatic method is faster, more reliable, and more precise than the manual one.},
 	number = {2},
+	journal = {{IEEE} Transactions on Medical Imaging},
 	author = {Kybic, J. and Thevenaz, P. and Nirkko, A. and Unser, M.},
 	month = feb,
 	year = {2000},
@@ -102,6 +106,17 @@
 	file = {ScienceDirect Full Text PDF:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/XPHK35FI/Xu et al. - 2010 - Quantitative analysis of spatial distortions of di.pdf:application/pdf;ScienceDirect Snapshot:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/75ZUHBJT/S0730725X09002872.html:text/html}
 },
 
+@inproceedings{bhushan_correcting_2012,
+	title = {Correcting susceptibility-induced distortion in diffusion-weighted {MRI} using constrained nonrigid registration},
+	abstract = {Echo Planar Imaging ({EPI)} is the standard pulse sequence used in fast diffusion-weighted magnetic resonance imaging ({MRI)}, but is sensitive to susceptibility-induced inhomogeneities in the main B0 magnetic field. In diffusion {MRI} of the human head, this leads to geometric distortion of the brain in reconstructed diffusion images and a resulting lack of correspondence with the high-resolution {MRI} scans that are used to define the subject anatomy. In this study, we propose and test an approach to estimate and correct this distortion using a non-linear registration framework based on mutual-information. We use an anatomical image as the registration-template and constrain the registration using spatial regularization and physics-based information about the characteristics of the distortion, without requiring any additional data collection. Results are shown for simulated and experimental data. The proposed method aligns diffusion images to the anatomical image with an error of 1-3 mm in most brain regions.},
+	booktitle = {Signal Information Processing Association Annual Summit and Conference ({APSIPA} {ASC)}, 2012 Asia-Pacific},
+	author = {Bhushan, C. and Haldar, {J.P.} and Joshi, {A.A.} and Leahy, {R.M.}},
+	year = {2012},
+	keywords = {biodiffusion, biomedical {MRI}, brain, constrained nonrigid registration, diffusion-weighted magnetic resonance imaging, diffusion-weighted {MRI}, echo planar imaging, {EPI}, geometric distortion, high-resolution {MRI} scans, human head, Image registration, Image resolution, interpolation, magnetic field, Magnetic resonance imaging, medical image processing, Nonhomogeneous media, Nonlinear distortion, nonlinear registration, reconstructed diffusion images, spatial regularization, splines (mathematics), standard pulse sequence, Standards, susceptibility-induced distortion, susceptibility-induced inhomogeneities},
+	pages = {1--9},
+	file = {IEEE Xplore Abstract Record:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/BUMGRTNG/abs_all.html:text/html;IEEE Xplore Full Text PDF:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/8J59K7RB/Bhushan et al. - 2012 - Correcting susceptibility-induced distortion in di.pdf:application/pdf}
+},
+
 @article{andersson_modeling_2001,
 	title = {Modeling Geometric Deformations in {EPI} Time Series},
 	volume = {13},
@@ -117,6 +132,21 @@
 	year = {2001},
 	pages = {903--919},
 	file = {ScienceDirect Full Text PDF:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/SJ6TAJV7/Andersson et al. - 2001 - Modeling Geometric Deformations in EPI Time Series.pdf:application/pdf;ScienceDirect Snapshot:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/CWN7644B/S1053811901907463.html:text/html}
+},
+
+@article{li_accounting_2007,
+	title = {Accounting for Signal Loss Due to Dephasing in the Correction of Distortions in Gradient-Echo {EPI} Via Nonrigid Registration},
+	volume = {26},
+	issn = {0278-0062},
+	doi = {10.1109/TMI.2007.901987},
+	abstract = {Gradient-echo ({GE)} echo planar imaging ({EPI)} is susceptible to both geometric distortions and signal loss. This paper presents a retrospective correction approach based on nonrigid image registration. A new physics-based intensity correction factor derived to compensate for intravoxel dephasing in {GE} {EPI} images is incorporated into a previously reported nonrigid registration algorithm. Intravoxel dephasing causes signal loss and thus intensity attenuation in the images. The new rephasing factor we introduce, which changes the intensity of a voxel in images during the registration, is used to improve the accuracy of the intensity-based nonrigid registration method and mitigate the intensity attenuation effect. Simulation-based experiments are first used to evaluate the method. A magnetic resonance ({MR)} simulator and a real field map are used to generate a realistic {GE} {EPI} image. The geometric distortion computed from the field map is used as the ground truth to which the estimated nonrigid deformation is compared. We then apply the algorithm to a set of real human brain images. The results show that, after registration, alignment between {EPI} and multishot, spin-echo images, which have relatively long acquisition times but negligible distortion, is improved and that signal loss caused by dephasing can be recovered.},
+	number = {12},
+	journal = {{IEEE} Transactions on Medical Imaging},
+	author = {Li, Yong and Xu, Ning and Fitzpatrick, {J.M.} and Morgan, {V.L.} and Pickens, {D.R.} and Dawant, {B.M.}},
+	year = {2007},
+	keywords = {Algorithms, Artifacts, Attenuation, biomedical {MRI}, brain, Brain Mapping, Chronology as Topic, Computational modeling, computed geometric distortion, Computer Simulation, Diffusion tensor imaging, distortion, Distortion correction, echo-planar imaging, Encoding, estimated nonrigid deformation, Feedback, {GE} {EPI} images, gradient-echo echo planar imaging, gradient echo ({GE)} echo planar imaging ({EPI)}, Head Movements, human brain images, Humans, Image Enhancement, Image Processing, Computer-Assisted, Image registration, intensity attenuation effect, intensity-based nonrigid registration method, intravoxel dephasing, Magnetic fields, Magnetic resonance imaging, magnetic resonance simulator, medical image processing, Models, Anatomic, neurophysiology, nonrigid image registration algorithm, nonrigid registration, physics-based intensity correction factor, Radio frequency, rephasing factor, retrospective correction approach, Sensitivity and Specificity, Signal processing, Signal Processing, Computer-Assisted, simulation-based experiments, Work Simplification},
+	pages = {1698--1707},
+	file = {IEEE Xplore Abstract Record:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/MXX2A7M9/abs_all.html:text/html;IEEE Xplore Full Text PDF:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/X82RWJBW/Li et al. - 2007 - Accounting for Signal Loss Due to Dephasing in the.pdf:application/pdf}
 },
 
 @incollection{wu_comparison_2008,
@@ -154,4 +184,39 @@
 	year = {2003},
 	pages = {127--142},
 	file = {ScienceDirect Full Text PDF:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/N45ENURQ/Cusack et al. - 2003 - An Evaluation of the Use of Magnetic Field Maps to.pdf:application/pdf;ScienceDirect Snapshot:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/HMEI8Q5N/S1053811902912814.html:text/html}
+},
+
+@incollection{tao_variational_2009,
+	series = {Lecture Notes in Computer Science},
+	title = {A Variational Image-Based Approach to the Correction of Susceptibility Artifacts in the Alignment of Diffusion Weighted and Structural {MRI}},
+	copyright = {{\textcopyright}2009 Springer Berlin Heidelberg},
+	isbn = {978-3-642-02497-9, 978-3-642-02498-6},
+	url = {http://link.springer.com/chapter/10.1007/978-3-642-02498-6_55},
+	abstract = {This paper presents a method for correcting the geometric and greyscale distortions in diffusion-weighted {MRI} that result from inhomogeneities in the static magnetic field. These inhomogeneities may due to imperfections in the magnet or to spatial variations in the magnetic susceptibility of the object being imaged{\textemdash}so called susceptibility artifacts. Echo-planar imaging ({EPI)}, used in virtually all diffusion weighted acquisition protocols, assumes a homogeneous static field, which generally does not hold for head {MRI.} The resulting distortions are significant, sometimes more than ten millimeters. These artifacts impede accurate alignment of diffusion images with structural {MRI}, and are generally considered an obstacle to the joint analysis of connectivity and structure in head {MRI.} In principle, susceptibility artifacts can be corrected by acquiring (and applying) a field map. However, as shown in the literature and demonstrated in this paper, field map corrections of susceptibility artifacts are not entirely accurate and reliable, and thus field maps do not produce reliable alignment of {EPIs} with corresponding structural images. This paper presents a new, image-based method for correcting susceptibility artifacts. The method relies on a variational formulation of the match between an {EPI} baseline image and a corresponding T2-weighted structural image but also specifically accounts for the physics of susceptibility artifacts. We derive a set of partial differential equations associated with the optimization, describe the numerical methods for solving these equations, and present results that demonstrate the effectiveness of the proposed method compared with field-map correction.},
+	number = {5636},
+	urldate = {2013-05-29},
+	booktitle = {Information Processing in Medical Imaging},
+	publisher = {Springer Berlin Heidelberg},
+	author = {Tao, Ran and Fletcher, P. Thomas and Gerber, Samuel and Whitaker, Ross T.},
+	editor = {Prince, Jerry L. and Pham, Dzung L. and Myers, Kyle J.},
+	month = jan,
+	year = {2009},
+	keywords = {Artificial Intelligence (incl. Robotics), Computer Graphics, Health Informatics, Image Processing and Computer Vision, Imaging / Radiology, Pattern Recognition},
+	pages = {664--675},
+	file = {Full Text PDF:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/EN6AAM6B/Tao et al. - 2009 - A Variational Image-Based Approach to the Correcti.pdf:application/pdf;Snapshot:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/VR4NASNE/978-3-642-02498-6_55.html:text/html}
+},
+
+@article{studholme_accurate_2000,
+	title = {Accurate alignment of functional {EPI} data to anatomical {MRI} using a physics-based distortion model},
+	volume = {19},
+	issn = {0278-0062},
+	doi = {10.1109/42.896788},
+	abstract = {Mapping of functional magnetic resonance imaging ({fMRI)} to conventional anatomical {MRI} is a valuable step in the interpretation of {fMRI} activations. One of the main limits on the accuracy of this alignment arises from differences in the geometric distortion induced by magnetic field inhomogeneity. This paper describes an approach to the registration of echo planar image ({EPI)} data to conventional anatomical images which takes into account this difference in geometric distortion. The authors make use of an additional spin echo {EPI} image and use the known signal conservation in spin echo distortion to derive a specialized multimodality nonrigid registration algorithm. They also examine a plausible modification using log-intensity evaluation of the criterion to provide increased sensitivity in areas of low {EPI} signal. A phantom-based imaging experiment is used to evaluate the behavior of the different criteria, comparing nonrigid displacement estimates to those provided by a magnetic field mapping acquisition. The algorithm is then applied to a range of nine brain imaging studies illustrating global and local improvement in the anatomical alignment and localization of {fMRI} activations.},
+	number = {11},
+	journal = {{IEEE} Transactions on Medical Imaging},
+	author = {Studholme, C. and Constable, {R.T.} and Duncan, {J.S.}},
+	year = {2000},
+	keywords = {accurate alignment, Algorithms, anatomical {MRI}, Anatomical structure, biomedical {MRI}, brain, Computed tomography, distortion, echo planar imaging, {fMRI} activations, functional {EPI} data, geometric distortion, Humans, Image registration, log-intensity evaluation, magnetic field mapping acquisition, Magnetic field measurement, Magnetic fields, Magnetic resonance imaging, magnetic susceptibility, medical diagnostic imaging, medical image processing, Models, Anatomic, Models, Theoretical, Mutual information, nonrigid displacement estimates, phantom-based imaging experiment, Phantoms, Imaging, Physics, physics-based distortion model, Radiology, Reproducibility of Results, signal conservation, spin echo distortion},
+	pages = {1115--1127},
+	file = {IEEE Xplore Abstract Record:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/2J9B3QFH/articleDetails.html:text/html;IEEE Xplore Full Text PDF:/home/oesteban/.zotero/zotero/ndhgvh37.default/zotero/storage/USPEPGJ4/Studholme et al. - 2000 - Accurate alignment of functional EPI data to anato.pdf:application/pdf}
 }

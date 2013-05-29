@@ -54,6 +54,21 @@ outcomes of the whole pipeline with the increase of the internal consistency.
 
 \todo[inline]{VERY brief look into signal generation HERE and cite reconstruction methods.}
 
+\gls{dwi} data are usually acquired with \gls{epi} sequences 
+as they allow for very fast acquisitions, but they are known to 
+suffer from geometrical distortions and artifacts due to, mainly,
+three sources: the subject motion in between acquiring different
+sampling directions, the induced \emph{Eddy currents} on the scanner 
+coils and finally distortions caused by the magnetic susceptibility inhomogeneity
+present at tissue interface. In this paper, we restrict ourselves to
+the last one, as it accounts for the major impact in the connectome
+analysis. \emph{Susceptibility distortions} happen along the 
+phase-encoding direction, and are most appreciable in the front part of 
+the brain for the strong air/tissue interface surrounding the frontal sinuses.
+Two implications are associated to this artifact: the signal loss caused on
+highly distorted regions, and a significant added difficulty in 
+registering with structural images (e.g. T1-weighted).
+
 \gls{dwi} data is strongly affected by \glspl{pve} \citep{alexander_analysis_2001},
 which appear when several different tissues, or signal emitters, are present
 in the same imaging unit, producing an averaged intensity. The effect is directly
@@ -63,12 +78,14 @@ $2.0\times2.0\times2.0mm^3$). An additional complication specific to
 that is a particular \gls{pve} in which the signal sensed inside the affected voxel is 
 linear with respect the \gls{gm} and \gls{wm} contributions, but non-linear with
 respect \gls{csf}.
+\todo[inline]{Define \textit{raw data}}
 
 Generally speaking, alongside the difficulty posed by the low resolution, \gls{dwi} 
 processing is also challenging due to the \emph{direction dependency} of raw data.
 \todo[inline]{Introduce here what are b0, fa, md, and direction dependency problem.}
-These low-$b$ (or $b = 0$) volumes are acquired without direction gradient as reference, 
-and present a T2-like contrast.
+These $b = 0$ volumes (also called \emph{\gls{epi} baseline}, low-$b$, or just B0) 
+are acquired without direction gradient as reference, and they present a T2-like 
+contrast.
 
 
 
@@ -96,7 +113,7 @@ from the tensor model \citep{zhukov_level_2003}, directly on the diffusion raw d
 \citep{jonasson_representing_2007}. Even though this latter case was restricted to the extraction of
 the corpus callosum from a real dataset, the density of the components of the diffusion tensor
 are approximated by multivariate Gaussians for first. Iterative clustering performed on the 
-\emph{low}-$b$ volumes of \gls{dwi} data was proposed by \citep{hadjiprocopis_unbiased_2005}.
+B0 volumes of \gls{dwi} data was proposed by \citep{hadjiprocopis_unbiased_2005}.
 Later studies investigated the application of probabilistic frameworks combining mixtures of 
 gaussians, \gls{mrf} and labeling fusion techniques \citep{liu_brain_2007} using as features 
 widely-used \gls{dwi}-derived scalar maps as \gls{fa} or \gls{md}. A similar framework 
@@ -131,75 +148,123 @@ detection in visceral organs.
 \subsection{Correction for susceptibility distortions}
 \label{sec:distortion}
 
-\gls{dwi} data are usually acquired with \gls{epi} sequences 
-as they allow for very fast acquisitions, but they are known to 
-suffer from geometrical distortions and artifacts due to, mainly,
-three sources: the subject motion between direction sampling, the 
-induced \emph{Eddy currents} on the scanner coils and finally
-distortions caused by the magnetic susceptibility inhomogeneity
-present at tissue interface. In this paper, we restrict ourselves to
-the last one, as it accounts for the major impact in the connectome
-analysis. \emph{Susceptibility distortions} happen along the 
-phase-encoding direction, and are most appreciable in the front part of 
-the brain for the strong air/tissue interface surrounding the frontal sinuses.
-
 One approach to correcting the susceptibility distortions was proposed
 with the earliest \gls{epi} sequences used in functional \gls{mri}, and
 relies on the acquisition of extra \gls{mri} data. Generally, a \gls{gre} is used to 
 obtain a map of magnitude and phase of the actual magnetic field inside the
-scanner. Based on this \emph{fieldmap}, a number of methodologies have 
-been developed to correct for the distortion, and are generically named as 
-\emph{\gls{epi}-unwarp} techniques \cite{holland_efficient_2010,
-hsu_correction_2009,jezzard_characterization_2005, reber_correction_2005}. 
-Unfortunately, the availability of the corresponding fieldmap is not always
-met.\todo[inline]{Mention other problems: low precission, unreliability}
+scanner. Based on this \emph{fieldmap} and the theory underlying the 
+distortion, \citep{jezzard_characterization_2005} proposed a correction 
+methodology. A number of forked and improved methodologies have been 
+developed to correct for the susceptibility distortion and received the
+generic name of ``fieldmap correction'' techniques \cite{hsu_correction_2009,
+reber_correction_2005}.
 
-Some other methodologies do not make use of the fieldmaps, compensating the 
-distortion with non-linear registration from structural \gls{mri} 
-\citep{kybic_unwarping_2000} (see \autoref{sec:registration}), or other means 
-\citep{andersson_modeling_2001}. To our knowledge, there exists no study on 
-the impact of the \gls{epi} distortion on the variability of tractography 
-results. 
+Some other retrospective methodologies do not make use of the fieldmaps, 
+as explicitly modeling the distortion \citep{andersson_modeling_2001},
+registering with (anatomically correct) T2-weighted \gls{mri} 
+\citep{kybic_unwarping_2000,studholme_accurate_2000,li_accounting_2007,
+tao_variational_2009} (see \autoref{sec:registration}), or acquiring an 
+extra B0 image with reversed phase encoding direction 
+\citep{holland_efficient_2010}.
+
+To our knowledge, there exists no study on 
+the impact of the susceptibility distortion over the subsequent tractography 
+and connectome analyses. However, a comparison of the diverse correction 
+techniques is found in \citep{wu_comparison_2008}. This
+study claimed that fieldmap correction methodologies are not entirely accurate
+and reliable, even though the method is correct in principle. This conclusion
+was later confirmed by \citep{tao_variational_2009}. Additional concerns regarding
+fieldmap correction are the requirement of an extra acquisition (that is not always
+met or it is impractical), or the accuracy of the measured fieldmap that is sensitive
+to various effects (such us respiration, blood flow, etc.). All these factors 
+have turned susceptibility distortion in \gls{epi} sequences an active field of 
+research for the last 10 years.
 
 
 \subsection{Structural information co-registration}
 \label{sec:registration}
 
+The last addressed task in the image processing stage of the studied 
+connectivity analysis pipelines is the structural information co-registration.
+The need for this registration step is mainly raised when defining the 
+nodes of the connectivity matrix. This definition step is named
+\textit{cortical parcellation} as it imposes the regions that will be
+considered to cluster the fiber bundles reaching the \gls{wm}-\gls{gm}
+surface. The common procedure to accomplish this clustering is using
+a predefined parcellation in a high-resolution structural T1-weighted 
+atlas. The second goal that has justified the applicability of structural
+images co-registration is susceptibility distortion correction
+as discussed in \autoref{sec:distortion}. In any case, susceptibility 
+distortion hinders a rigid-registration solution to this end.
+Additionally, when applying non-linear intensity-based
+registration algorithms other difficulties have to be addressed as
+the significant \gls{pve} in the \gls{wm}-\gls{gm} layer, or the
+inherent inadequacy of the B0 contrast (the only \textit{directionally
+independent} existing in the raw \gls{dwi} data) due to the almost null
+difference in intensity between \gls{wm} and \gls{gm} pixels. Early 
+registration methods appeared targeting the distortion correction.
+They quickly standardized the choice of T2 as anatomically correct source
+to be registered against the B0 in \gls{dwi}. B0 images have a very similar
+contrast to T2 weighted due to the duality of acquisition procedure. However,
+parcellation is defined in T1 weighted space, adding an additional registration
+step missing on the literature due to the novelty of the task. Even though this
+registration step has a very low complexity compared to the remaining tasks of 
+the pipeline process, it is one additional source of inconsistency and unreliability.
+
+
+One of the first proposals is \citep{kybic_unwarping_2000}, where the deformation
+field is modeled with B-Splines, the cost function is least squares and optimized
+in a multi-resolution gradient descent strategy. Their method is evaluated in 
+both synthetic and real 2D images. Similarly,
+\citep{studholme_accurate_2000} proposed a spline-based deformation but including
+a weighting factor proportional to the Jacobian of the transform to correct the
+intensity of the undistorted data. They also use the $\log$ of the signal to
+enhance the low-signal regions and optimize with a gradient descent algorithm
+the mutual information of the mapping. The basis in the procedure is still the most 
+extended. For instance, \citep{wu_comparison_2008} also proposed a B-Spline registration
+providing quantitative comparisons with fieldmap correction methods. Recent approaches
+take into account the signal loss due to dephasing \citep{li_accounting_2007}, or 
+introduce more complex variational frameworks \citep{tao_variational_2009}.
+
+The significant benefits of exploiting the anatomical \gls{mri} when 
+segmenting the \gls{dwi} data have been demonstrated \cite{zollei_improved_2010}, 
+justifying the use of the shape prior information. To our knowledge, there is
+no study simultaneously taking advantage from segmentation or distortion correction
+tasks to be applied to the co-registration problem.
+
+\subsection{Summary}
+\label{sec:contributions}
 Therefore, the problems of precise segmentation in \gls{dwi}-space and the 
 spatial mapping between these contours and the corresponding surfaces in 
 anatomical images bear significant redundancy. Once the spatial relationship 
 between \gls{t1} and \gls{dwi} space is established, the contours which are 
 readily available in \gls{t1} space can simply be projected on to the 
-\gls{dwi}-data. Conversely, if a precise delineation in \gls{dwi}-space 
+\gls{dwi} data. Conversely, if a precise delineation in \gls{dwi} space 
 was achieved, the spatial mapping with \gls{t1}-space could be derived 
 from one-to-one correspondences on the contours. However, neither segmentation 
 nor registration can be performed flawlessly, if considered independently. 
-The significant benefits of exploiting the anatomical \gls{mri} when 
-segmenting the \gls{dwi} data have been demonstrated \cite{zollei_improved_2010}, 
-justifying the use of the shape prior information. 
 
-\subsection{Summary}
-\label{sec:contributions}
 
 In this paper we propose a novel registration framework to simultaneously
-solving the segmentation and distortion challenges, by exploiting as strong 
-shape-prior the detailed morphology extracted from high-resolution anatomical 
-\gls{mri}. Indeed, hereafter we assume this segmentation problem in anatomical 
-images as a solved by widely used available procedures.
-Moreover, the shape prior is of very ``strong'' nature, since it is specific to 
-the particular subject. Also, after global alignment using existing approaches, 
-the remaining spatial deformation between anatomical and diffusion space is 
-due to \gls{epi} distortions. Finally, we need to establish precise spatial 
-correspondence between the surfaces in both spaces, including the tangential 
-direction for parcellation. Therefore, we can reduce the problem to finding 
-the differences of spatial distortion in between anatomical and \gls{dw} space.
+solving the segmentation, distortion and cortical parcellation challenges, 
+by exploiting as strong shape-prior the detailed morphology extracted 
+from high-resolution anatomically correct \gls{mri}. Indeed, hereafter 
+we assume this segmentation problem in anatomical images is reliably and
+accurately solved with readily available tools. After global alignment 
+using existing approaches, the remaining spatial mismatch between 
+anatomical and diffusion space is due to susceptibility distortions.
+Finally, we need to establish precise spatial correspondence between the 
+surfaces in both spaces, including the tangential direction for parcellation.
+Therefore, we can reduce the problem to finding the differences of spatial 
+distortion in between anatomical and \gls{dwi} space.
 We thus reformulate the segmentation problem as an inverse problem, where we 
 seek for an underlying deformation field (the distortion) mapping 
 from the structural space into the diffusion space, such that the structural 
 contours segment optimally the \gls{dwi} data. In the process, the one-to-one 
 correspondence between the contours in both spaces is guaranteed, and projection 
-of parcellisation to \gls{dw} space is implicit and consistent.
+of parcellisation to \gls{dwi} space is implicit and consistent.
 
+\todo[inline]{ (Rewrite) 
 We test our proposed joint segmentation-registration model on two different 
 synthetic examples. The first example is a scalar sulcus model, where the 
 \gls{csf}-\gls{gm} boundary particularly suffers from \gls{pve} and can only be 
@@ -215,4 +280,4 @@ The rest of this paper is organized as follows. First, in \autoref{sec:methods}
 we introduce our proposed model for joint multivariate segmentation-registration.
 Then we provide a more detailed description of the data and experimental setup in
 \autoref{sec:experiments}. We present results in \autoref{sec:results} and conclude 
-in \autoref{sec:conclusion}.
+in \autoref{sec:conclusion}.}
