@@ -121,6 +121,8 @@ template <typename TReferenceImageType, typename TCoordRepType>
 void
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::Initialize() {
+	Superclass::Initialize();
+
 	// Initialize interpolators
 	this->m_Interp->SetInputImage( this->m_ReferenceImage );
 	this->m_SparseToDenseResampler->CopyImageInformation( this->m_DeformationField );
@@ -153,7 +155,25 @@ void MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	for( size_t roi = 0; roi < this->m_ROIs.size(); roi++ ) {
 		ParametersType param = this->UpdateParametersOfRegion(roi);
 		this->SetParameters(roi, param);
+
+#ifndef DNDEBUG
+		MeanType mean = param.mean[0];
+		CovarianceType cov = param.iCovariance[0];
+		std::cout << "Region " << roi << ":" << std::endl;
+		std::cout << "\tInside region" << std::endl;
+		std::cout << "\t\tMean = " << mean << std::endl;
+		std::cout << "\t\tCovariance Matrix " << std::endl << cov << std::endl;
+
+		mean = param.mean[1];
+		cov = param.iCovariance[1];
+		std::cout << "\tOutside region" << std::endl;
+		std::cout << "\t\tMean = " << mean << std::endl;
+		std::cout << "\t\tCovariance Matrix " << std::endl << cov << std::endl;
+
+#endif
 	}
+
+
 
 }
 

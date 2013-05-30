@@ -132,6 +132,19 @@ int main(int argc, char *argv[]) {
 		++u_it;
 	}
 
+	ReaderType::Pointer polyDataReader2 = ReaderType::New();
+	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "rh.white.vtk" );
+	polyDataReader2->Update();
+	ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
+
+	typename ContourDeformationType::PointsContainerPointer points2 = initialContour2->GetPoints();
+	typename ContourDeformationType::PointsContainerIterator u_it2 = points2->Begin();
+
+	while( u_it != points->End() ) {
+		initialContour2->SetPointData( u_it2.Index(),zero);
+		++u_it;
+	}
+
 	// Initialize tissue signatures
 	//MeanType mean1; // This is GM
 	//mean1[0] = 0.11941234;
@@ -160,6 +173,7 @@ int main(int argc, char *argv[]) {
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
 	ls->AddShapePrior( initialContour );
+	ls->AddShapePrior( initialContour2 );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();

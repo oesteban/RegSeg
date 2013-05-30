@@ -53,6 +53,35 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_SparseToDenseResampler = SparseToDenseFieldResampleType::New();
 	this->m_EnergyResampler = DisplacementResamplerType::New();
 	this->m_Modified = false;
+	this->m_RegionsModified = false;
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::Initialize() {
+	// Initialize corresponding ROI /////////////////////////////
+	// 1. Check that high-res reference sampling grid has been initialized
+	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
+			this->InitializeSamplingGrid();
+	}
+
+	this->ComputeCurrentRegions();
+
+	for( size_t id = 0; id < m_ROIs.size(); id++) {
+		this->m_ROIs[id] = this->m_CurrentROIs[id];
+#ifndef DNDEBUG
+		typedef itk::ImageFileWriter< ROIType > ROIWriter;
+		typename ROIWriter::Pointer w = ROIWriter::New();
+		w->SetInput( this->m_ROIs[id] );
+		std::stringstream ss;
+		ss << "roi_" << std::setfill( '0' ) << std::setw(2) << id << ".nii.gz";
+		w->SetFileName( ss.str().c_str() );
+		w->Update();
+#endif
+	}
+
+	this->m_Modified = false;
 }
 
 
@@ -70,6 +99,9 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_ShapePrior = m_ContourCopier->GetOutput();*/
 
     this->m_ShapePrior.push_back( ContourDeformationType::New() );
+    this->m_ROIs.resize( this->m_ShapePrior.size() );
+    this->m_CurrentROIs.resize( this->m_ShapePrior.size() );
+
     ContourDeformationPointer shapePrior = this->m_ShapePrior.back();
 
 	typename ContourDeformationType::PointsContainerConstIterator u_it = prior->GetPoints()->Begin();
@@ -97,33 +129,6 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	}
 
 	this->m_SparseToDenseResampler->AddControlPoints( shapePrior );
-
-	// Initialize corresponding ROI /////////////////////////////
-	// 1. Check that high-res reference sampling grid has been initialized
-	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
-			this->InitializeSamplingGrid();
-	}
-
-	// 2. Generate discretized region mask
-	BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
-	meshFilter->SetSpacing( this->m_ReferenceSamplingGrid->GetSpacing() );
-	meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-	meshFilter->SetOrigin( this->m_ReferenceSamplingGrid->GetOrigin() );
-	meshFilter->SetSize( this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-	meshFilter->SetInput( shapePrior );
-	meshFilter->Update();
-	m_ROIs.push_back( meshFilter->GetOutput() );
-	m_CurrentROIs.push_back( meshFilter->GetOutput() );
-
-#ifndef DNDEBUG
-	typedef itk::ImageFileWriter< ROIType > ROIWriter;
-	typename ROIWriter::Pointer w = ROIWriter::New();
-	w->SetInput( meshFilter->GetOutput() );
-	std::stringstream ss;
-	ss << "roi_" << std::setfill( '0' ) << std::setw(2) << (m_ROIs.size()-1) << ".nii.gz";
-	w->SetFileName( ss.str().c_str() );
-	w->Update();
-#endif
 
 	return this->m_CurrentContourPosition.size()-1;
 
@@ -219,8 +224,18 @@ template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetCurrentRegion( size_t idx ) {
-	// if u(x)=0, return original ROI (it is pre-computed)
-	if( this->m_Modified ) {
+	if(this->m_Modified )
+		this->ComputeCurrentRegions();
+
+	return this->m_CurrentROIs[idx];
+}
+
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::ComputeCurrentRegions() {
+	for (size_t idx = 0; idx < this->m_CurrentROIs.size(); idx++ ) {
 		BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
 		meshFilter->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
 		meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
@@ -228,10 +243,25 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		meshFilter->SetSize(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
 		meshFilter->SetInput(     this->m_CurrentContourPosition[idx]);
 		meshFilter->Update();
-		this->m_CurrentROIs[idx] = meshFilter->GetOutput();
-	}
+		ROIPointer tempROI = meshFilter->GetOutput();
 
-	return this->m_CurrentROIs[idx];
+		if( idx > 0 ) {
+			ROIPixelType* roiBuffer = tempROI->GetBufferPointer();
+			size_t nPix = tempROI->GetLargestPossibleRegion().GetNumberOfPixels();
+
+			for( size_t layer = 0; layer < idx; layer++ ) {
+				const ROIPixelType* layerBuffer = this->m_CurrentROIs[layer]->GetBufferPointer();
+
+				for( size_t pix = 0; pix < nPix; pix++ ){
+					if( *( layerBuffer+pix) > 0 ) {
+						*( roiBuffer + pix ) = 0;
+					}
+				}
+			}
+		}
+
+		this->m_CurrentROIs[idx] = tempROI;
+	}
 }
 
 }

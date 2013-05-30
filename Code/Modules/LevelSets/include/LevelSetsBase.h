@@ -148,8 +148,8 @@ public:
 															 DisplacementTransformType;
 	typedef typename DisplacementTransformType::Pointer      DisplacementTransformPointer;
 
-
-	typedef itk::Image< unsigned char, Dimension >           ROIType;
+	typedef unsigned char                                    ROIPixelType;
+	typedef itk::Image< ROIPixelType, Dimension >            ROIType;
 	typedef typename ROIType::Pointer                        ROIPointer;
 	typedef typename ROIType::ConstPointer                   ROIConstPointer;
 	typedef std::vector< ROIConstPointer >                   ROIList;
@@ -188,7 +188,7 @@ public:
 
 	void UpdateDeformationField( const DeformationFieldType* newField );
 
-	virtual void Initialize( void ) = 0;
+	virtual void Initialize( void );
 
 	ROIConstPointer GetCurrentRegion( size_t idx );
 
@@ -230,10 +230,13 @@ protected:
 	DisplacementTransformPointer m_Transform;
 	ReferenceImageConstPointer m_ReferenceImage;
 	bool m_Modified;
+	bool m_RegionsModified;
 
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented
+
+	void ComputeCurrentRegions( void );
 
 
 }; // end LevelSetsBase Class
