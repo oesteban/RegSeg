@@ -57,7 +57,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 
 template< typename TReferenceImageType, typename TCoordRepType >
-void
+size_t
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::AddShapePrior( typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourDeformationType* prior ) {
 	this->m_CurrentContourPosition.push_back( prior );
@@ -125,10 +125,11 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	w->Update();
 #endif
 
+	return this->m_CurrentContourPosition.size()-1;
+
 	// TODO Check overlap (regions are disjoint see issue #76).
 
 }
-
 
 template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::MeasureType

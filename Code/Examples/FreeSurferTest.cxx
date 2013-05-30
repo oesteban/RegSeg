@@ -133,33 +133,33 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Initialize tissue signatures
-	MeanType mean1; // This is GM
-	mean1[0] = 0.11941234;
-	mean1[1] = 0.00089523;
-	CovarianceType cov1;
-	cov1(0,0) =  5.90117156e-04;
-	cov1(0,1) = -1.43226633e-06;
-	cov1(1,0) = -1.43226633e-06;
-	cov1(1,1) =  1.03718252e-08;
-	MeanType mean2; // This is WM
-	mean2[0] = 7.77335644e-01;
-	mean2[1] = 6.94673450e-04;
-	CovarianceType cov2;
-	cov2(0,0) =  4.85065832e-03;
-	cov2(0,1) = -6.89610616e-06;
-	cov2(1,0) = -6.89610616e-06;
-	cov2(1,1) =  1.02706528e-08;
-
-	typename LevelSetsType::ParametersType params;
-	params.mean[0] = mean2;
-	params.mean[1] = mean1;
-	params.iCovariance[0] = cov2;
-	params.iCovariance[2] = cov1;
+	//MeanType mean1; // This is GM
+	//mean1[0] = 0.11941234;
+	//mean1[1] = 0.00089523;
+	//CovarianceType cov1;
+	//cov1(0,0) =  5.90117156e-04;
+	//cov1(0,1) = -1.43226633e-06;
+	//cov1(1,0) = -1.43226633e-06;
+	//cov1(1,1) =  1.03718252e-08;
+	//MeanType mean2; // This is WM
+	//mean2[0] = 7.77335644e-01;
+	//mean2[1] = 6.94673450e-04;
+	//CovarianceType cov2;
+	//cov2(0,0) =  4.85065832e-03;
+	//cov2(0,1) = -6.89610616e-06;
+	//cov2(1,0) = -6.89610616e-06;
+	//cov2(1,1) =  1.02706528e-08;
+    //
+	//typename LevelSetsType::ParametersType params;
+	//params.mean[0] = mean2;
+	//params.mean[1] = mean1;
+	//params.iCovariance[0] = cov2;
+	//params.iCovariance[2] = cov1;
 
 	// Initialize LevelSet function
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
-	ls->AddShapePrior( initialContour, params );
+	ls->AddShapePrior( initialContour );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();

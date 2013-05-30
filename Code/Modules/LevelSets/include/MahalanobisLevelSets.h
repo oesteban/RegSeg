@@ -133,16 +133,20 @@ public:
 		MeanType mean[2];
 		CovarianceType iCovariance[2];
 		double bias[2];
+		bool initialized;
 	};
 
 	typedef typename std::vector< ParametersType >         ParametersList;
 
-	MeasureType GetValue();
+	//MeasureType GetValue();
 	DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap);
 
 	void SetParameters( size_t contour_id, ParametersType& params );
 
-	void AddShapePrior( ContourDeformationType* prior, ParametersType&params );
+	size_t AddShapePrior( ContourDeformationType* prior, ParametersType&params );
+	size_t AddShapePrior( ContourDeformationType* prior );
+
+	void Initialize( void );
 
 protected:
 	MahalanobisLevelSets();
@@ -168,6 +172,7 @@ private:
 	void operator=(const Self &); // purposely not implemented
 
 	bool CheckExtents( ContourDeformationType* prior ) const;
+	bool ParametersInitialized() const;
 
 	InterpolatorPointer m_Interp;
 

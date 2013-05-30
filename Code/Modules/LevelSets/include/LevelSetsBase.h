@@ -182,16 +182,17 @@ public:
 			  DeformationFieldType>                          WarpContourType;
 	typedef typename WarpContourType::Pointer                WarpContourPointer;
 
+	MeasureType GetValue();
 
-
-	virtual MeasureType GetValue() = 0;
 	virtual DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap) = 0;
 
 	void UpdateDeformationField( const DeformationFieldType* newField );
 
+	virtual void Initialize( void ) = 0;
+
 	ROIConstPointer GetCurrentRegion( size_t idx );
 
-	void AddShapePrior( ContourDeformationType* prior );
+	size_t AddShapePrior( ContourDeformationType* prior );
 	itkGetMacro(ShapePrior, ContourDeformationList);
 
 	itkGetMacro(CurrentContourPosition, ContourDeformationList);
