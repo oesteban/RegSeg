@@ -134,6 +134,9 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 //		this->m_CurrentBestValue = NumericTraits< MeasureType >::max();
 //	}
 
+	this->m_LevelSetsFunction->SetDeformationField( this->m_DeformationField );
+	this->m_LevelSetsFunction->Initialize();
+
 	this->m_CurrentIteration = 0;
 	this->Resume();
 }
@@ -236,11 +239,10 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 
 		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentLevelSetsValue << " " << this->m_LevelSetsFunction->GetValue() << std::endl;
 
-		this->m_LevelSetsFunction->GetCurrentRegion(0);
-
 		/*
 		 * Check the convergence by WindowConvergenceMonitoringFunction.
 		 */
+
 		/*
 		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentLevelSetsValue );
 		try {
@@ -255,7 +257,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		catch(std::exception & e) {
 			std::cerr << "GetConvergenceValue() failed with exception: " << e.what() << std::endl;
 		}
-		*/
+
 
 		if( this->m_CurrentLevelSetsValue < this->m_ConvergenceValue ) {
 			this->m_StopConditionDescription << "Deformation field changed below the minimum threshold.";
@@ -263,6 +265,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			this->Stop();
 			break;
 		}
+		*/
 
 		/* Update and check iteration count */
 		this->m_CurrentIteration++;

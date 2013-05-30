@@ -118,12 +118,25 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
-typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::MeasureType
+void
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::GetValue() {
+::Initialize() {
+	// Initialize interpolators
 	this->m_Interp->SetInputImage( this->m_ReferenceImage );
-	return Superclass::GetValue();
+	this->m_SparseToDenseResampler->CopyImageInformation( this->m_DeformationField );
+
+	// Check that parameters are initialized
+	if (! this->ParametersInitialized() )
+		this->ComputeParameters();
+
 }
+
+//template <typename TReferenceImageType, typename TCoordRepType>
+//typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::MeasureType
+//MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+//::GetValue() {
+//	return Superclass::GetValue();
+//}
 
 template <typename TReferenceImageType, typename TCoordRepType>
 inline typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::MeasureType
@@ -136,11 +149,10 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 void MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::ComputeParameters() {
-	// 1. Check ROIs exist and update deformation field
-
-	// 2. Update regions
+	// Update regions
 	for( size_t roi = 0; roi < this->m_ROIs.size(); roi++ ) {
-		this->UpdateParametersOfRegion(roi);
+		ParametersType param = this->UpdateParametersOfRegion(roi);
+		this->SetParameters(roi, param);
 	}
 
 }
@@ -226,19 +238,30 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 
 template <typename TReferenceImageType, typename TCoordRepType>
-void
+size_t
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::AddShapePrior( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ContourDeformationType* prior,
 		         typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType& params){
+
+	size_t id = this->AddShapePrior( prior );
+	this->SetParameters( id, params );
+}
+
+template <typename TReferenceImageType, typename TCoordRepType>
+size_t
+MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+::AddShapePrior( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ContourDeformationType* prior ){
 	this->Superclass::AddShapePrior( prior );
 
 	size_t id = this->m_Parameters.size();
 	this->m_Parameters.resize( id + 1 );
-	this->SetParameters( id, params );
+	this->m_Parameters.back().initialized = false;
 
 	if ( this->m_ReferenceImage.IsNotNull() ) {
 		this->CheckExtents( prior );
 	}
+
+	return id;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -341,6 +364,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 			//this->m_Parameters[contour_id].bias[idx] = Components * log( 2*vnl_math::pi ) + log( cov(0,0) );
 		}
 		this->m_Parameters[contour_id].bias[idx] = 1.0;
+		this->m_Parameters[contour_id].initialized = true;
 	}
 }
 
@@ -348,13 +372,6 @@ template <typename TReferenceImageType, typename TCoordRepType>
 typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldPointer
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 ::GetLevelSetsMap( MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::DeformationFieldType* levelSetMap) {
-	// Initialize interpolators
-	this->m_Interp->SetInputImage( this->m_ReferenceImage );
-	this->m_SparseToDenseResampler->CopyImageInformation( levelSetMap );
-
-	// Check that parameters are initialized
-	this->ComputeParameters();
-
 #ifndef NDEBUG
 	double maxLS = -1.0;
 #endif
@@ -406,6 +423,16 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 	this->m_SparseToDenseResampler->Update();
 	return this->m_SparseToDenseResampler->GetOutput();
 
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+bool
+MahalanobisLevelSets<TReferenceImageType, TCoordRepType>
+::ParametersInitialized() const {
+	for ( size_t i = 0; i < this->m_Parameters.size(); i++ ) {
+		if ( ! this->m_Parameters[i].initialized ) return false;
+	}
+	return true;
 }
 
 }
