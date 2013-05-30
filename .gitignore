@@ -42,3 +42,5 @@ result*.nii.gz
 *.csv
 *.sql
 Publications/2013-TMI/ACWE.bib
+*.pdf
+papers/FINF-ITK
