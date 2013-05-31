@@ -257,8 +257,9 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 					newField->TransformIndexToPhysicalPoint( tmp_idx, origin );
 					for ( size_t dim = 0; dim<DeformationFieldType::ImageDimension; dim++)  tmp_idx[dim]= size[dim]-1;
 					newField->TransformIndexToPhysicalPoint( tmp_idx, end);
-					itkExceptionMacro( << "Contour is outside image regions after update: vertex " << newPoint << " is outside image extents (" << origin << ", " << end << ") " <<
-							" after trying to move " << desp.GetNorm() << "mm.");
+					itkExceptionMacro( << "Contour is outside image regions after update: " << std::endl <<
+							"\tMoving vertex [" << shape_it.Index() << "] from " << shape_it.Value() << " to " << newPoint << " norm="  << desp.GetNorm() << "mm." <<
+							"\tImage Extents=(" << origin << ", " << end << ").");
 				}
 
 				this->m_CurrentContourPosition[cont]->SetPoint( p_it.Index(), newPoint );

@@ -64,7 +64,7 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize = 0.1;
+	this->m_StepSize = 0.001;
 	this->m_A.SetIdentity();
 	this->m_A*= (2.0 * 1e-4);
 	this->m_B.SetIdentity();
