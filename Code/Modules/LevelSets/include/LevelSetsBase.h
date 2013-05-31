@@ -45,6 +45,7 @@
 #include <itkImage.h>
 #include <itkVectorImage.h>
 #include <itkVectorLinearInterpolateImageFunction.h>
+#include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkQuadEdgeMesh.h>
 #include <itkQuadEdgeMeshToQuadEdgeMeshFilter.h>
 #include <itkWarpMeshFilter.h>
@@ -117,6 +118,10 @@ public:
 	typedef typename ContourDeformationType
 			                     ::PointDataContainerPointer PointDataContainerPointer;
 
+	typedef itk::NormalQuadEdgeMeshFilter
+	    < ContourDeformationType, ContourDeformationType >   NormalFilterType;
+	typedef typename NormalFilterType::Pointer               NormalFilterPointer;
+
 
 	typedef typename std::vector<ContourDeformationPointer>  ContourDeformationList;
 
@@ -152,6 +157,8 @@ public:
 	typedef itk::Image< ROIPixelType, Dimension >            ROIType;
 	typedef typename ROIType::Pointer                        ROIPointer;
 	typedef typename ROIType::ConstPointer                   ROIConstPointer;
+	typedef typename itk::NearestNeighborInterpolateImageFunction
+			< ROIType >                                      ROIInterpolatorType;
 	typedef std::vector< ROIConstPointer >                   ROIList;
 	typedef itk::TriangleMeshToBinaryImageFilter
 			          <ContourDeformationType, ROIType>	     BinarizeMeshFilterType;
@@ -182,15 +189,19 @@ public:
 			  DeformationFieldType>                          WarpContourType;
 	typedef typename WarpContourType::Pointer                WarpContourPointer;
 
+	typedef typename std::vector< ROIPixelType >             ContourOuterRegions;
+	typedef typename std::vector< ContourOuterRegions >      ContourOuterRegionsList;
+
 	MeasureType GetValue();
 
-	virtual DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap) = 0;
+	virtual DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap);
 
 	void UpdateDeformationField( const DeformationFieldType* newField );
 
 	virtual void Initialize( void );
 
 	ROIConstPointer GetCurrentRegion( size_t idx );
+	ROIConstPointer GetCurrentRegions( void );
 
 	size_t AddShapePrior( ContourDeformationType* prior );
 	itkGetMacro(ShapePrior, ContourDeformationList);
@@ -214,7 +225,7 @@ protected:
 
 	virtual void InitializeSamplingGrid( void ) = 0;
 
-	inline virtual MeasureType GetEnergyAtPoint( PixelPointType& point, size_t cont ) = 0;
+	inline virtual MeasureType GetEnergyAtPoint( PixelPointType& point, size_t roi ) = 0;
 
 	mutable MeasureType m_Value;
 	DeformationFieldPointer m_DeformationField;
@@ -227,8 +238,10 @@ protected:
 	DisplacementResamplerPointer m_EnergyResampler;
 	ROIList m_ROIs;
 	ROIList m_CurrentROIs;
+	ROIPointer m_CurrentRegions;
 	DisplacementTransformPointer m_Transform;
 	ReferenceImageConstPointer m_ReferenceImage;
+	ContourOuterRegionsList m_OuterList;
 	bool m_Modified;
 	bool m_RegionsModified;
 
