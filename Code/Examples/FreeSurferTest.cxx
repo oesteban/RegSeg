@@ -123,57 +123,22 @@ int main(int argc, char *argv[]) {
 	polyDataReader->Update();
 	ContourDisplacementFieldPointer initialContour = polyDataReader->GetOutput();
 
-	typename ContourDeformationType::PointsContainerPointer points = initialContour->GetPoints();
-	typename ContourDeformationType::PointsContainerIterator u_it = points->Begin();
-
-	VectorType zero = itk::NumericTraits<VectorType>::Zero;
-	while( u_it != points->End() ) {
-		initialContour->SetPointData( u_it.Index(),zero);
-		++u_it;
-	}
-
 	ReaderType::Pointer polyDataReader2 = ReaderType::New();
 	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "rh.white.vtk" );
 	polyDataReader2->Update();
 	ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
 
-	typename ContourDeformationType::PointsContainerPointer points2 = initialContour2->GetPoints();
-	typename ContourDeformationType::PointsContainerIterator u_it2 = points2->Begin();
-
-	while( u_it != points->End() ) {
-		initialContour2->SetPointData( u_it2.Index(),zero);
-		++u_it;
-	}
-
-	// Initialize tissue signatures
-	//MeanType mean1; // This is GM
-	//mean1[0] = 0.11941234;
-	//mean1[1] = 0.00089523;
-	//CovarianceType cov1;
-	//cov1(0,0) =  5.90117156e-04;
-	//cov1(0,1) = -1.43226633e-06;
-	//cov1(1,0) = -1.43226633e-06;
-	//cov1(1,1) =  1.03718252e-08;
-	//MeanType mean2; // This is WM
-	//mean2[0] = 7.77335644e-01;
-	//mean2[1] = 6.94673450e-04;
-	//CovarianceType cov2;
-	//cov2(0,0) =  4.85065832e-03;
-	//cov2(0,1) = -6.89610616e-06;
-	//cov2(1,0) = -6.89610616e-06;
-	//cov2(1,1) =  1.02706528e-08;
-    //
-	//typename LevelSetsType::ParametersType params;
-	//params.mean[0] = mean2;
-	//params.mean[1] = mean1;
-	//params.iCovariance[0] = cov2;
-	//params.iCovariance[2] = cov1;
+	ReaderType::Pointer polyDataReader3 = ReaderType::New();
+	polyDataReader3->SetFileName( std::string( DATA_DIR ) + "lh.pial.vtk" );
+	polyDataReader3->Update();
+	ContourDisplacementFieldPointer initialContour3 = polyDataReader3->GetOutput();
 
 	// Initialize LevelSet function
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
 	ls->AddShapePrior( initialContour );
 	ls->AddShapePrior( initialContour2 );
+	ls->AddShapePrior( initialContour3 );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
