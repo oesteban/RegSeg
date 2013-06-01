@@ -111,12 +111,12 @@ int main(int argc, char *argv[]) {
 	std::cout << "Initial MSE="<< initialDistance / initialContour->GetNumberOfPoints() << std::endl;
 	assert( initialContour->GetNumberOfPoints() == refContour->GetNumberOfPoints() );
 
-	CovarianceType cov; cov.SetIdentity();
-	typename LevelSetsType::ParametersType params;
-	params.mean[0] = 255;
-	params.mean[1] = 127;
-	params.iCovariance[0] = cov;
-	params.iCovariance[2] = cov;
+//	CovarianceType cov; cov.SetIdentity();
+//	typename LevelSetsType::ParametersType params;
+//	params.mean[0] = 255;
+//	params.mean[1] = 127;
+//	params.iCovariance[0] = cov;
+//	params.iCovariance[2] = cov;
 
 	DeformationFieldType::Pointer df = DeformationFieldType::New();
 	DeformationFieldType::SizeType imSize = im->GetLargestPossibleRegion().GetSize();
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
 
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( im );
-	ls->AddShapePrior( initialContour, params );
+	ls->AddShapePrior( initialContour );
 
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );

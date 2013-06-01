@@ -87,10 +87,8 @@ public:
 	typedef typename Superclass::ContourDeformationPointer   ContourDeformationPointer;
 	typedef typename Superclass::ContourCopyType             ContourCopyType;
 	typedef typename Superclass::ContourCopyPointer          ContourCopyPointer;
-
-	typedef itk::NormalQuadEdgeMeshFilter
-	    < ContourDeformationType, ContourDeformationType >   NormalFilterType;
-	typedef typename NormalFilterType::Pointer               NormalFilterPointer;
+	typedef typename Superclass::NormalFilterType            NormalFilterType;
+	typedef typename Superclass::NormalFilterPointer         NormalFilterPointer;
 
 	typedef typename Superclass::ReferenceImageType          ReferenceImageType;
 	typedef typename Superclass::Pointer                     ReferenceImagePointer;
@@ -98,9 +96,11 @@ public:
 	typedef typename Superclass::InterpolatorType            InterpolatorType;
 	typedef typename Superclass::InterpolatorPointer         InterpolatorPointer;
 
+	typedef typename Superclass::ROIPixelType                ROIPixelType;
 	typedef typename Superclass::ROIType                     ROIType;
 	typedef typename Superclass::ROIPointer                  ROIPointer;
 	typedef typename Superclass::ROIConstPointer             ROIConstPointer;
+	typedef typename Superclass::ROIInterpolatorType         ROIInterpolatorType;
 	typedef typename Superclass::ROIList                     ROIList;
 
 	typedef typename Superclass::ProbabilityMapType          ProbabilityMapType;
@@ -130,18 +130,16 @@ public:
 			< PixelValueType, Components, Components >     CovarianceType;
 
 	struct ParametersType {
-		MeanType mean[2];
-		CovarianceType iCovariance[2];
-		double bias[2];
+		MeanType mean;
+		CovarianceType cov;
+		CovarianceType invcov;
+		float bias;
 		bool initialized;
 	};
 
 	typedef typename std::vector< ParametersType >         ParametersList;
 
-	//MeasureType GetValue();
-	DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap);
-
-	void SetParameters( size_t contour_id, ParametersType& params );
+	void SetParameters( size_t roi, ParametersType& params );
 
 	size_t AddShapePrior( ContourDeformationType* prior, ParametersType&params );
 	size_t AddShapePrior( ContourDeformationType* prior );
@@ -156,11 +154,7 @@ protected:
 
 	void InitializeSamplingGrid( void );
 
-	inline MeasureType GetEnergyAtPoint( PixelPointType& point, size_t cont, size_t outside );
-
-	inline MeasureType GetEnergyAtPoint( PixelPointType& point, size_t cont ) {
-		return this->GetEnergyAtPoint( point, cont, 0 );
-	}
+	inline MeasureType GetEnergyAtPoint( PixelPointType& point, size_t roi );
 
 	ParametersType UpdateParametersOfRegion( const size_t idx );
 	void ComputeParameters( void );
