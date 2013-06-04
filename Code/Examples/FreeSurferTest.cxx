@@ -123,13 +123,13 @@ int main(int argc, char *argv[]) {
 	polyDataReader->Update();
 	ContourDisplacementFieldPointer initialContour = polyDataReader->GetOutput();
 
-	ReaderType::Pointer polyDataReader2 = ReaderType::New();
-	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "rh.white.vtk" );
-	polyDataReader2->Update();
-	ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
+	//ReaderType::Pointer polyDataReader2 = ReaderType::New();
+	//polyDataReader2->SetFileName( std::string( DATA_DIR ) + "rh.white.vtk" );
+	//polyDataReader2->Update();
+	//ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
 
 	ReaderType::Pointer polyDataReader3 = ReaderType::New();
-	polyDataReader3->SetFileName( std::string( DATA_DIR ) + "lh.pial.vtk" );
+	polyDataReader3->SetFileName( std::string( DATA_DIR ) + "pial.vtk" );
 	polyDataReader3->Update();
 	ContourDisplacementFieldPointer initialContour3 = polyDataReader3->GetOutput();
 
@@ -137,8 +137,8 @@ int main(int argc, char *argv[]) {
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
 	ls->AddShapePrior( initialContour );
-	ls->AddShapePrior( initialContour2 );
-	ls->AddShapePrior( initialContour3 );
+	//ls->AddShapePrior( initialContour2 );
+	//ls->AddShapePrior( initialContour3 );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();

@@ -230,6 +230,9 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	MeasureType norm;
 	MeasureType meanNorm = 0.0;
+	MeasureType maxNorm = 0.0;
+	VectorType meanDesp;
+	meanDesp.Fill(0.0);
 
 	// Set-up a linear interpolator for the vector field
 	VectorInterpolatorPointer interp = VectorInterpolatorType::New();
@@ -254,6 +257,9 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			norm = desp.GetNorm();
 			// Add vector to the point
 			if( norm >0 ) {
+				if ( norm > maxNorm ) maxNorm = norm;
+
+				meanDesp += desp;
 				meanNorm += norm;
 				p = shape_it.Value() + desp;
 				newPoint.SetPoint( p );
@@ -271,6 +277,10 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	}
 
 	this->m_Modified = (changed>0);
+
+#ifndef NDEBUG
+	std::cout << "MeanNorm=" << (meanNorm/changed) << "mm.; maxNorm=" << maxNorm << "mm.;" << " meanDesp=" << (meanDesp/changed) << std::endl;
+#endif
 
 	return (meanNorm/changed);
 }
@@ -321,10 +331,6 @@ template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldPointer
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetShapeGradients( LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldType* gradientsMap) {
-#ifndef NDEBUG
-	double maxLS = 0.0;
-#endif
-
 	for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++) {
 		// Compute mesh of normals
 		NormalFilterPointer normFilter = NormalFilterType::New();
@@ -351,8 +357,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			outer_cont = this->m_OuterList[cont][idx];
 			ci_prime = c_it.Value();
 
-			levelSet = - this->GetEnergyAtPoint( ci_prime, cont )
-					   + this->GetEnergyAtPoint( ci_prime, outer_cont );
+			levelSet = this->GetEnergyAtPoint( ci_prime, outer_cont ) - this->GetEnergyAtPoint( ci_prime, cont );
 
 			assert( !std::isnan(levelSet) );
 			// project to normal, updating transform
@@ -360,17 +365,9 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			ni*=levelSet;
 			normals->SetPointData( idx, ni );
 			++c_it;
-#ifndef NDEBUG
-			if ( fabs( levelSet ) > fabs( maxLS ) )
-				maxLS = levelSet;
-#endif
 		}
 		this->m_SparseToDenseResampler->SetInput( cont, normals );
 	}
-
-#ifndef NDEBUG
-	std::cout << "Shape Gradient maximum update value = " << maxLS << std::endl;
-#endif
 
 	// Interpolate sparse velocity field to targetDeformation
 	this->m_SparseToDenseResampler->Update();
@@ -441,6 +438,59 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 		this->m_CurrentROIs[idx] = tempROI;
 	}
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::InitializeSamplingGrid() {
+	this->m_ReferenceSamplingGrid = DeformationFieldType::New();
+	typename ReferenceImageType::SpacingType sp = this->m_ReferenceImage->GetSpacing();
+	double spacing = itk::NumericTraits< double >::max();
+
+	for (size_t i = 0; i<Dimension; i++ ){
+		if (sp[i] < spacing )
+			spacing = sp[i];
+	}
+
+	sp.Fill( spacing * 0.25 );
+
+	typename ReferenceImageType::PointType origin = this->m_ReferenceImage->GetOrigin();
+	typename ReferenceImageType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
+	typename itk::ContinuousIndex<double, Dimension> idx;
+	for (size_t i = 0; i<Dimension; i++ ){
+		idx[i]=size[i]-1.0;
+	}
+
+	typename ReferenceImageType::PointType end;
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( idx, end );
+
+	for (size_t i = 0; i<Dimension; i++ ){
+		size[i]= (unsigned int) ( fabs( (end[i]-origin[i])/sp[i] ) );
+	}
+
+	this->m_ReferenceSamplingGrid->SetOrigin( origin );
+	this->m_ReferenceSamplingGrid->SetDirection( this->m_ReferenceImage->GetDirection() );
+	this->m_ReferenceSamplingGrid->SetRegions( size );
+	this->m_ReferenceSamplingGrid->SetSpacing( sp );
+	this->m_ReferenceSamplingGrid->Allocate();
+
+#ifndef NDEBUG
+	typedef itk::VectorResampleImageFilter< ReferenceImageType, ReferenceImageType > Int;
+	typename Int::Pointer intp = Int::New();
+	intp->SetInput( this->m_ReferenceImage );
+	intp->SetOutputSpacing( this->m_ReferenceSamplingGrid->GetSpacing() );
+	intp->SetOutputDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+	intp->SetOutputOrigin( this->m_ReferenceSamplingGrid->GetOrigin() );
+	intp->SetSize( this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+	intp->Update();
+
+	typedef itk::ImageFileWriter< ReferenceImageType > W;
+	typename W::Pointer w = W::New();
+	w->SetInput( intp->GetOutput() );
+	w->SetFileName( "ReferenceSamplingGridTest.nii.gz" );
+	w->Update();
+#endif
 }
 
 }

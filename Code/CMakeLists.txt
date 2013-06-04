@@ -25,6 +25,11 @@ INCLUDE_DIRECTORIES( ${OPTIMIZERS_SOURCE_DIR}/include
                      
 )
 
+ENABLE_TESTING()
+
+#find_package(GTest REQUIRED)
+ADD_SUBDIRECTORY( GTest/ )
+
 ADD_SUBDIRECTORY( Modules/Core )
 
 ADD_SUBDIRECTORY( Modules/LevelSets )

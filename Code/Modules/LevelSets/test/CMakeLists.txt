@@ -1,7 +1,12 @@
 set(RSTKLevelSetsTests
   MahalanobisLevelSetsTest.cxx
   LevelSetsGenerateTestObjects.cxx
+  LevelSetsBaseTest.cxx
 )
+
+ADD_EXECUTABLE(LevelSetsBaseTest LevelSetsBaseTest.cxx )
+TARGET_LINK_LIBRARIES(  LevelSetsBaseTest gtest ${ITK_LIBRARIES} )
+ADD_TEST( NAME LevelSetsBaseTest COMMAND LevelSetsBaseTest WORKING_DIRECTORY "/home/oesteban/workspace/ACWE-Reg/Data/Ellipse")
 
 ADD_EXECUTABLE(MahalanobisLevelSetsTest MahalanobisLevelSetsTest.cxx ) 
 TARGET_LINK_LIBRARIES(MahalanobisLevelSetsTest ${ITK_LIBRARIES} )
