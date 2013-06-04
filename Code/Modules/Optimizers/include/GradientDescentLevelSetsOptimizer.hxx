@@ -104,13 +104,13 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 		this->InitializeDeformationField( orig, end, this->m_LevelSetsFunction->GetReferenceImage()->GetDirection() );
 	}
 
-	if ( this->m_SpeedsField.IsNull() ) {
-		this->m_SpeedsField = DeformationFieldType::New();
-		this->m_SpeedsField->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
-		this->m_SpeedsField->SetSpacing( this->m_DeformationField->GetSpacing() );
-		this->m_SpeedsField->SetDirection( this->m_DeformationField->GetDirection() );
-		this->m_SpeedsField->Allocate();
-		this->m_SpeedsField->FillBuffer( zerov );
+	if ( this->m_ShapeGradients.IsNull() ) {
+		this->m_ShapeGradients = DeformationFieldType::New();
+		this->m_ShapeGradients->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
+		this->m_ShapeGradients->SetSpacing( this->m_DeformationField->GetSpacing() );
+		this->m_ShapeGradients->SetDirection( this->m_DeformationField->GetDirection() );
+		this->m_ShapeGradients->Allocate();
+		this->m_ShapeGradients->FillBuffer( zerov );
 	}
 
 	/* Initialize next deformationfield */
@@ -161,7 +161,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 	while( ! this->m_Stop )	{
 		/* Compute metric value/derivative. */
 		try	{
-			this->m_SpeedsField = this->m_LevelSetsFunction->GetLevelSetsMap(this->m_DeformationField);
+			this->m_ShapeGradients = this->m_LevelSetsFunction->GetShapeGradients(this->m_DeformationField);
 
 #ifndef NDEBUG
 			typedef itk::MeshFileWriter< ContourDeformationType >     MeshWriterType;
@@ -177,7 +177,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			std::stringstream ss2;
 			ss2 << "speedsfield_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
 			p->SetFileName( ss2.str().c_str() );
-			p->SetInput( this->m_SpeedsField );
+			p->SetInput( this->m_ShapeGradients );
 			p->Update();
 #endif
 
@@ -286,7 +286,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 
 	// Get deformation fields pointers
 	const VectorType* dFieldBuffer = this->m_DeformationField->GetBufferPointer();
-	const VectorType* sFieldBuffer = this->m_SpeedsField->GetBufferPointer();
+	const VectorType* sFieldBuffer = this->m_ShapeGradients->GetBufferPointer();
 
 	// Create container for deformation field components
 	DeformationComponentPointer fieldComponent = DeformationComponentType::New();

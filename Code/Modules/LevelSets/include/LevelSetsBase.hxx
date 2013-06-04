@@ -60,6 +60,11 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
+	// Check priors
+	for ( size_t pid = 0; pid < this->m_CurrentContourPosition.size(); pid++ ) {
+		this->CheckExtents( this->m_CurrentContourPosition[pid] );
+	}
+
 	// Initialize corresponding ROI /////////////////////////////
 	// 1. Check that high-res reference sampling grid has been initialized
 	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
@@ -223,6 +228,25 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_ContourUpdater->Update();
 	*/
 
+#ifndef NDEBUG
+	typename DeformationFieldType::PointType origin, end;
+	typename DeformationFieldType::IndexType tmp_idx;
+	typename DeformationFieldType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
+	tmp_idx.Fill(0);
+	this->m_ReferenceImage->TransformIndexToPhysicalPoint( tmp_idx, origin );
+	for ( size_t dim = 0; dim<DeformationFieldType::ImageDimension; dim++)  tmp_idx[dim]= size[dim]-1;
+	this->m_ReferenceImage->TransformIndexToPhysicalPoint( tmp_idx, end);
+
+	std::cout << "Reference Image Extents: ([" << origin << "], [" << end << "])." << std::endl;
+
+	size = newField->GetLargestPossibleRegion().GetSize();
+	tmp_idx.Fill(0);
+	newField->TransformIndexToPhysicalPoint( tmp_idx, origin );
+	for ( size_t dim = 0; dim<DeformationFieldType::ImageDimension; dim++)  tmp_idx[dim]= size[dim]-1;
+	newField->TransformIndexToPhysicalPoint( tmp_idx, end);
+	std::cout << "Shape gradients Image Extents: ([" << origin << "], [" << end << "])." << std::endl;
+#endif
+
 	// Set-up a linear interpolator for the vector field
 	VectorInterpolatorPointer interp = VectorInterpolatorType::New();
 	interp->SetInputImage( newField );
@@ -249,17 +273,9 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 				newPoint.SetPoint( p );
 				newPoint.SetEdge( currentPoint.GetEdge() );
 
-				if(! newField->TransformPhysicalPointToContinuousIndex( p, point_idx ) ) {
-					typename DeformationFieldType::PointType origin, end;
-					typename DeformationFieldType::IndexType tmp_idx;
-					typename DeformationFieldType::SizeType size = newField->GetLargestPossibleRegion().GetSize();
-					tmp_idx.Fill(0);
-					newField->TransformIndexToPhysicalPoint( tmp_idx, origin );
-					for ( size_t dim = 0; dim<DeformationFieldType::ImageDimension; dim++)  tmp_idx[dim]= size[dim]-1;
-					newField->TransformIndexToPhysicalPoint( tmp_idx, end);
-					itkExceptionMacro( << "Contour is outside image regions after update: " << std::endl <<
-							"\tMoving vertex [" << shape_it.Index() << "] from " << shape_it.Value() << " to " << newPoint << " norm="  << desp.GetNorm() << "mm." <<
-							"\tImage Extents=(" << origin << ", " << end << ").");
+				if( ! this->IsInside(p,point_idx) ) {
+					itkExceptionMacro( << "Contour is outside image regions after update.\n" <<
+						"\tMoving vertex [" << shape_it.Index() << "] from " << shape_it.Value() << " to " << p << " norm="  << desp.GetNorm() << "mm.\n");
 				}
 
 				this->m_CurrentContourPosition[cont]->SetPoint( p_it.Index(), newPoint );
@@ -272,9 +288,51 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
+inline bool
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::IsInside( const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::PixelPointType p, typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
+	bool isInside = this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex( p, idx );
+#ifndef NDEBUG
+	if(!isInside) {
+		typename DeformationFieldType::PointType origin, end;
+		typename DeformationFieldType::IndexType tmp_idx;
+		typename DeformationFieldType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
+		tmp_idx.Fill(0);
+		this->m_ReferenceImage->TransformIndexToPhysicalPoint( tmp_idx, origin );
+		for ( size_t dim = 0; dim<DeformationFieldType::ImageDimension; dim++)  tmp_idx[dim]= size[dim]-1;
+		this->m_ReferenceImage->TransformIndexToPhysicalPoint( tmp_idx, end);
+		itkWarningMacro( << "Point p=[" << p << "] is outside image extents (" << origin << ", " << end << ").");
+	}
+#endif
+	return isInside;
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+bool
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::CheckExtents( const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourDeformationType* prior ) const {
+	typename ContourDeformationType::PointsContainerConstIterator u_it = prior->GetPoints()->Begin();
+    typename ContourDeformationType::PointsContainerConstIterator u_end = prior->GetPoints()->End();
+
+    PixelPointType p;
+    ContinuousIndex idx;
+	while( u_it != u_end ) {
+		p = u_it.Value();
+
+		if ( ! this->IsInside( p, idx ) ) {
+			itkExceptionMacro( << "Setting prior surface outside reference extents: vertex " << p << ").");
+			return false;
+		}
+		++u_it;
+	}
+
+	return true;
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldPointer
 LevelSetsBase<TReferenceImageType, TCoordRepType>
-::GetLevelSetsMap( LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldType* levelSetMap) {
+::GetShapeGradients( LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldType* gradientsMap) {
 #ifndef NDEBUG
 	double maxLS = 0.0;
 #endif

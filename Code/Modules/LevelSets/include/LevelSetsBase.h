@@ -194,7 +194,7 @@ public:
 
 	MeasureType GetValue();
 
-	virtual DeformationFieldPointer GetLevelSetsMap( DeformationFieldType* levelSetMap);
+	DeformationFieldPointer GetShapeGradients( DeformationFieldType* gradientsMap );
 
 	void UpdateDeformationField( const DeformationFieldType* newField );
 
@@ -224,6 +224,9 @@ protected:
 	}
 
 	virtual void InitializeSamplingGrid( void ) = 0;
+
+	inline bool IsInside( const PixelPointType p, ContinuousIndex& idx ) const;
+	bool CheckExtents( const ContourDeformationType* prior ) const;
 
 	inline virtual MeasureType GetEnergyAtPoint( PixelPointType& point, size_t roi ) = 0;
 

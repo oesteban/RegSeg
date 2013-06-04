@@ -165,7 +165,6 @@ private:
 	MahalanobisLevelSets( const Self &); // purposely not implemented
 	void operator=(const Self &); // purposely not implemented
 
-	bool CheckExtents( ContourDeformationType* prior ) const;
 	bool ParametersInitialized() const;
 
 	InterpolatorPointer m_Interp;
