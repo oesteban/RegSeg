@@ -203,7 +203,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		this->ComputeIterationChange();
 
 		/* Update the level sets contour and deformation field */
-		this->m_LevelSetsFunction->UpdateDeformationField( this->m_NextDeformationField );
+		double updateNorm = this->m_LevelSetsFunction->UpdateDeformationField( this->m_NextDeformationField );
 		itk::ImageAlgorithm::Copy<DeformationFieldType,DeformationFieldType>(
 				this->m_NextDeformationField, this->m_DeformationField,
 				this->m_NextDeformationField->GetLargestPossibleRegion(),
@@ -237,7 +237,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		*/
 
 
-		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentLevelSetsValue << " " << this->m_LevelSetsFunction->GetValue() << std::endl;
+		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentLevelSetsValue << " | " << updateNorm << " | " << this->m_LevelSetsFunction->GetValue() << std::endl;
 
 		/*
 		 * Check the convergence by WindowConvergenceMonitoringFunction.

@@ -196,7 +196,7 @@ public:
 
 	DeformationFieldPointer GetShapeGradients( DeformationFieldType* gradientsMap );
 
-	void UpdateDeformationField( const DeformationFieldType* newField );
+	MeasureType UpdateDeformationField( const DeformationFieldType* newField );
 
 	virtual void Initialize( void );
 
