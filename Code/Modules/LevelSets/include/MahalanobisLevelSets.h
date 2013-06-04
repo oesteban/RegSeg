@@ -152,7 +152,7 @@ protected:
 
 	void PrintSelf( std::ostream& os, itk::Indent indent) const;
 
-	void InitializeSamplingGrid( void );
+	//void InitializeSamplingGrid( void );
 
 	inline MeasureType GetEnergyAtPoint( PixelPointType& point, size_t roi );
 

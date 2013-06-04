@@ -213,6 +213,7 @@ public:
 
 	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
+
 protected:
 	LevelSetsBase();
 	virtual ~LevelSetsBase() {}
@@ -223,12 +224,12 @@ protected:
 		os << std::endl;
 	}
 
-	virtual void InitializeSamplingGrid( void ) = 0;
+	void InitializeSamplingGrid( void );
+	inline virtual MeasureType GetEnergyAtPoint( PixelPointType& point, size_t roi ) = 0;
+
 
 	inline bool IsInside( const PixelPointType p, ContinuousIndex& idx ) const;
 	bool CheckExtents( const ContourDeformationType* prior ) const;
-
-	inline virtual MeasureType GetEnergyAtPoint( PixelPointType& point, size_t roi ) = 0;
 
 	mutable MeasureType m_Value;
 	DeformationFieldPointer m_DeformationField;
