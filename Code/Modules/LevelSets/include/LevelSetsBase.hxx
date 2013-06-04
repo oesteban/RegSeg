@@ -135,6 +135,11 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		this->m_OuterList.push_back( outerVect );
 	}
 
+	if( this->m_DeformationField.IsNotNull() )
+		this->m_SparseToDenseResampler->CopyImageInformation( this->m_DeformationField );
+	else
+		itkWarningMacro( << "No Deformation grid parametrization was defined.");
+
 	this->m_Modified = false;
 }
 

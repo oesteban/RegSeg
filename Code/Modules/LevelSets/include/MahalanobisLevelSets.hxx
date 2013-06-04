@@ -72,7 +72,6 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 	// Initialize interpolators
 	this->m_Interp->SetInputImage( this->m_ReferenceImage );
-	this->m_SparseToDenseResampler->CopyImageInformation( this->m_DeformationField );
 
 	this->m_Parameters.resize( this->m_Parameters.size() + 1 ); // Add 1 slot for the "null" region
 
