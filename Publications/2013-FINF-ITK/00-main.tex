@@ -1,0 +1,118 @@
+\documentclass{frontiers}
+
+\usepackage{url}
+\usepackage{acronym}
+\usepackage{hyperref}
+
+
+\copyrightyear{2013}
+\pubyear{}
+%\onecolumn
+%%% write here for which journal %%%
+\def\journal{Neuroinformatics}
+\def\DOI{}
+\def\articleType{Original Research}
+\def\keyFont{\fontsize{6}{11}\helveticabold }
+\def\firstAuthorLast{Esteban {et~al}} %use et al only if is more than 1 author
+\def\Authors{Oscar Esteban\,$^{1,2,*}$, Alessandro Daducci\,$^{1}$, Meritxell Bach-Cuadra\,$^{2,3}$, Jean-Philippe Thiran\,$^{2,3}$,
+Andr\'es Santos\,$^{1}$, and Dominique Zosso\,$^{2,4}$}
+% Affiliations should be keyed to the author's name with superscript numbers and be listed as follows: Laboratory, Institute, Department, Organization, City, State abbreviation (USA, Canada, Australia), and Country (without detailed address information such as city zip codes or street names).
+% If one of the authors has a change of address, list the new address below the correspondence details using a superscript symbol and use the same symbol to indicate the author in the author list.
+\def\Address{$^{1}$ Biomedical Image Technologies (BIT), ETSI Telecomunicaci\'on, Universidad Polit\'ecnica de Madrid and Ciber-BBN, Madrid, Spain\\
+$^{2}$ Signal Processing Laboratory (LTS5), \'Ecole Polytechnique F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland\\
+$^{3}$ Dept. of Radiology, University Hospital Center (CHUV) and University of Lausanne (UNIL), Lausanne, Switzerland\\
+$^{4}$ Dept. of Mathematics, University of California, Los Angeles (UCLA), Los Angeles, CA, USA} 
+% The Corresponding Author should be marked with an asterisk
+% Provide the exact contact address (this time including street name and city zip code) and email of the corresponding author
+\def\corrAuthor{O. Esteban}
+\def\corrAddress{Biomedical Image Technologies (BIT), Av. Complutense 30, ETSI Telecomunicaci\'on, Lab. C203, E-28040 Madrid, Spain}
+\def\corrEmail{oesteban@die.upm.es}
+%$^{\dagger}$ Authors contributed equally}
+
+% \color{FrontiersBlue} Is the blue color, used in the Journal name, in the title, and the names of the sections
+% \color{darkgray} Is only used for the name of the research topic
+% \color{gray} Is only used for "Frontiers in"
+
+\newcommand{\vect}[1]{\ensuremath{\mathbf{#1}}}
+\newcommand{\vx}{\vect{x}}
+\newcommand{\vy}{\vect{y}}
+
+\newcommand{\fixme}[1]{{\color{red}{\bf FIXME:}\emph{#1}}}
+
+\begin{document}
+\onecolumn
+\firstpage{1}
+
+\title[SPReg: shape-priors registration in ITK]{SPReg: Shape-priors registration in ITK applied to diffusion weighted MRI}
+\author[\firstAuthorLast ]{\Authors}
+\address{}
+\correspondance{}
+\editor{}
+\topic{Research Topic}
+
+\maketitle
+
+%\input{001-acronyms}
+
+
+\begin{abstract}
+
+% From http://www.frontiersin.org/Neuroinformatics/authorguidelines, original research has:
+% Abstract: < 2001 characters
+% Running title: <6 words
+% Figures & tables: <16
+% Total length: <12.001 words
+% Final PDF length: <13 pages
+
+
+\section{}
+%As a primary goal, the abstract should render the general significance and conceptual advance of the work clearly accessible to a broad readership. References should not be cited in the abstract.
+\input{01-abstract}
+
+\tiny
+  \section{Keywords:} non-linear registration, shape priors, active contours, diffusion MRI, susceptibility distortion, cortical parcellation
+  %All article types: you may provide up to 8 keywords; at least 5 are mandatory.
+\end{abstract}
+
+
+% \section{Introduction}
+% \label{sec:intro}
+% % For Original Research Articles, Clinical Trial Articles, and Technology Reports the introduction should be succinct, with no subheadings.
+% % For Clinical Case Studies the Introduction should include symptoms at presentation, physical exams and lab results.
+% \input{02-introduction}
+% 
+% \section{Material \& Methods}
+% \label{sec:methods}
+% % Don't add the figures in the LaTeX files, please upload them when submitting the article. Frontiers will add the figures at the end of the provisional pdf.
+% %\textbf{Figure 1.}{ Enter the caption for your figure here.  Repeat as  necessary for each of your figures.}\label{fig:01}
+% \input{03-methods}
+% 
+% 
+% \section{Results}
+% \label{sec:results}
+% \input{04-results}
+% 
+% 
+% \section{Discussion}
+% \label{sec:discussion}
+% \input{05-discussion}
+% 
+% 
+% \section*{Disclosure/Conflict-of-Interest Statement}
+% %All relationships financial, commercial or otherwise that might be perceived by the academic community as representing a potential conflict of interest must be described. If no such relationship exists, authors will be asked to declare that the research was conducted in the absence of any commercial or financial relationships that could be construed as a potential conflict of interest.
+% The authors declare that the research was conducted in the absence of any commercial or financial relationships that could be construed as a potential conflict of interest.
+% 
+% \section*{Acknowledgement}
+% \paragraph{Funding\textcolon} This work was supported in part by Multimodal Imaging tools for Neurological Diseases (MIND-t) project of Biomedical Research Networking center in Bioengineering, Biomaterials and Nanomedicine (CIBER-BBN), by Spain's Ministry of Science and Innovation through SAF2009-08076, TEC2011-28972-C02-02, IPT-300000-2010-003 and CDTICENIT (AMIT project) and Fondo de Investigaciones Sanitarias (PI12-00390).
+% B. Mart\'i-Fuster was awarded a PhD fellowship (App Form – Call 07-2009) of Institute for Bioengineering of Catalonia (IBEC).
+% 
+% %\section*{Supplemental Data}
+% % enable if needed
+
+
+\bibliographystyle{plainnat} % for Science articles
+
+%\begin{thebibliography}{}
+\bibliography{99-references}
+%\end{thebibliography}
+\end{document}
