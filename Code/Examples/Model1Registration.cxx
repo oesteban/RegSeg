@@ -98,12 +98,12 @@ int main(int argc, char *argv[]) {
 	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
 
 	ImageReader::Pointer r = ImageReader::New();
-	r->SetFileName( std::string( DATA_DIR ) + "deformed2_FA.nii.gz" );
+	r->SetFileName( std::string( DATA_DIR ) + "deformed_FA.nii.gz" );
 	r->Update();
 	comb->SetInput(0,r->GetOutput());
 
 	ImageReader::Pointer r2 = ImageReader::New();
-	r2->SetFileName( std::string( DATA_DIR ) + "deformed2_MD.nii.gz" );
+	r2->SetFileName( std::string( DATA_DIR ) + "deformed_MD.nii.gz" );
 	r2->Update();
 	comb->SetInput(1,r2->GetOutput());
 	comb->Update();
@@ -111,60 +111,27 @@ int main(int argc, char *argv[]) {
 	ChannelType::Pointer im = r->GetOutput();
 
 
-	ReaderType::Pointer polyDataReader = ReaderType::New();
-	polyDataReader->SetFileName( std::string( DATA_DIR ) + "wm_prior.vtk" );
-	polyDataReader->Update();
-	ContourDisplacementFieldPointer initialContour = polyDataReader->GetOutput();
+	ReaderType::Pointer polyDataReader0 = ReaderType::New();
+	polyDataReader0->SetFileName( std::string( DATA_DIR ) + "csf_prior.vtk" );
+	polyDataReader0->Update();
+	ContourDisplacementFieldPointer initialContour0 = polyDataReader0->GetOutput();
 
-	typename ContourDeformationType::PointsContainerPointer points = initialContour->GetPoints();
-	typename ContourDeformationType::PointsContainerIterator u_it = points->Begin();
+	ReaderType::Pointer polyDataReader1 = ReaderType::New();
+	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "wm_prior.vtk" );
+	polyDataReader1->Update();
+	ContourDisplacementFieldPointer initialContour1 = polyDataReader1->GetOutput();
 
-	VectorType zero = itk::NumericTraits<VectorType>::Zero;
-	while( u_it != points->End() ) {
-		initialContour->SetPointData( u_it.Index(),zero);
-		++u_it;
-	}
-
-	// Initialize tissue signatures
-	MeanType mean1; // This is GM
-	mean1[0] = 0.11941234;
-	mean1[1] = 0.00089523;
-	CovarianceType cov1;
-	cov1(0,0) =  5.90117156e-04;
-	cov1(0,1) = -1.43226633e-06;
-	cov1(1,0) = -1.43226633e-06;
-	cov1(1,1) =  1.03718252e-08;
-	MeanType mean2; // This is WM
-	mean2[0] = 7.77335644e-01;
-	mean2[1] = 6.94673450e-04;
-	CovarianceType cov2;
-	cov2(0,0) =  4.85065832e-03;
-	cov2(0,1) = -6.89610616e-06;
-	cov2(1,0) = -6.89610616e-06;
-	cov2(1,1) =  1.02706528e-08;
-
-	typename LevelSetsType::ParametersType params;
-	params.mean[0] = mean2;
-	params.mean[1] = mean1;
-	params.iCovariance[0] = cov2;
-	params.iCovariance[2] = cov1;
-
-	// Initialize deformation field
-	DeformationFieldType::Pointer df = DeformationFieldType::New();
-	DeformationFieldType::SizeType imSize = im->GetLargestPossibleRegion().GetSize();
-	DeformationFieldType::SizeType size; size.Fill(16);
-	DeformationFieldType::SpacingType spacing = im->GetSpacing();
-	for( size_t i = 0; i<3; i++) spacing[i] = 1.0*imSize[i]/size[i];
-	df->SetRegions( size );
-	df->SetSpacing( spacing );
-	df->SetDirection( im->GetDirection() );
-	df->Allocate();
-	df->FillBuffer( itk::NumericTraits<DeformationFieldType::PixelType>::Zero );
+	ReaderType::Pointer polyDataReader2 = ReaderType::New();
+	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "gm_prior.vtk" );
+	polyDataReader2->Update();
+	ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
 
 	// Initialize LevelSet function
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
-	ls->AddShapePrior( initialContour, params );
+	ls->AddShapePrior( initialContour0 );
+	ls->AddShapePrior( initialContour1 );
+	ls->AddShapePrior( initialContour2 );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
