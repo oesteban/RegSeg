@@ -214,7 +214,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-void
+typename LevelSetsBase<TReferenceImageType, TCoordRepType>::MeasureType
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::UpdateDeformationField(const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldType* newField ) {
 	/*
@@ -228,24 +228,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_ContourUpdater->Update();
 	*/
 
-#ifndef NDEBUG
-	typename DeformationFieldType::PointType origin, end;
-	typename DeformationFieldType::IndexType tmp_idx;
-	typename DeformationFieldType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
-	tmp_idx.Fill(0);
-	this->m_ReferenceImage->TransformIndexToPhysicalPoint( tmp_idx, origin );
-	for ( size_t dim = 0; dim<DeformationFieldType::ImageDimension; dim++)  tmp_idx[dim]= size[dim]-1;
-	this->m_ReferenceImage->TransformIndexToPhysicalPoint( tmp_idx, end);
-
-	std::cout << "Reference Image Extents: ([" << origin << "], [" << end << "])." << std::endl;
-
-	size = newField->GetLargestPossibleRegion().GetSize();
-	tmp_idx.Fill(0);
-	newField->TransformIndexToPhysicalPoint( tmp_idx, origin );
-	for ( size_t dim = 0; dim<DeformationFieldType::ImageDimension; dim++)  tmp_idx[dim]= size[dim]-1;
-	newField->TransformIndexToPhysicalPoint( tmp_idx, end);
-	std::cout << "Shape gradients Image Extents: ([" << origin << "], [" << end << "])." << std::endl;
-#endif
+	MeasureType norm;
+	MeasureType meanNorm = 0.0;
 
 	// Set-up a linear interpolator for the vector field
 	VectorInterpolatorPointer interp = VectorInterpolatorType::New();
@@ -267,8 +251,10 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			currentPoint = p_it.Value();
 			// Interpolate the value of the field in the point
 			VectorType desp = interp->Evaluate( currentPoint );
+			norm = desp.GetNorm();
 			// Add vector to the point
-			if( desp.GetNorm()>0 ) {
+			if( norm >0 ) {
+				meanNorm += norm;
 				p = shape_it.Value() + desp;
 				newPoint.SetPoint( p );
 				newPoint.SetEdge( currentPoint.GetEdge() );
@@ -285,6 +271,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	}
 
 	this->m_Modified = (changed>0);
+
+	return (meanNorm/changed);
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
