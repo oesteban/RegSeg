@@ -223,7 +223,7 @@ protected:
 
 	DeformationFieldPointer m_DeformationField;
 	DeformationFieldPointer m_NextDeformationField;
-	DeformationFieldPointer m_SpeedsField;
+	DeformationFieldPointer m_ShapeGradients;
 	TensorFieldPointer m_Denominator;
 	MeasureType m_CurrentLevelSetsValue;
 
