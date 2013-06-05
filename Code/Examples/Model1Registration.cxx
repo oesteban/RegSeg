@@ -93,6 +93,8 @@ int main(int argc, char *argv[]) {
 	typedef itk::ResampleImageFilter<ChannelType,ChannelType,float>    ResamplerType;
 
 
+	// Initialize LevelSet function
+	LevelSetsType::Pointer ls = LevelSetsType::New();
 
 
 	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
@@ -105,38 +107,33 @@ int main(int argc, char *argv[]) {
 	ImageReader::Pointer r2 = ImageReader::New();
 	r2->SetFileName( std::string( DATA_DIR ) + "deformed_MD.nii.gz" );
 	r2->Update();
+
+	ChannelType::DirectionType dir; dir.SetIdentity();
 	comb->SetInput(1,r2->GetOutput());
 	comb->Update();
+	ImageType::Pointer im = comb->GetOutput();
+	im->SetDirection( dir );
 
-	ChannelType::Pointer im = r->GetOutput();
-
+	ls->SetReferenceImage( im );
 
 	ReaderType::Pointer polyDataReader0 = ReaderType::New();
-	polyDataReader0->SetFileName( std::string( DATA_DIR ) + "csf_prior.vtk" );
+	polyDataReader0->SetFileName( std::string( DATA_DIR ) + "fixed.csf.vtk" );
 	polyDataReader0->Update();
-	ContourDisplacementFieldPointer initialContour0 = polyDataReader0->GetOutput();
+	ls->AddShapePrior( polyDataReader0->GetOutput() );
 
 	ReaderType::Pointer polyDataReader1 = ReaderType::New();
-	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "wm_prior.vtk" );
+	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "fixed.wm.vtk" );
 	polyDataReader1->Update();
-	ContourDisplacementFieldPointer initialContour1 = polyDataReader1->GetOutput();
+	ls->AddShapePrior( polyDataReader1->GetOutput() );
 
 	ReaderType::Pointer polyDataReader2 = ReaderType::New();
-	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "gm_prior.vtk" );
+	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "fixed.gm.vtk" );
 	polyDataReader2->Update();
-	ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
-
-	// Initialize LevelSet function
-	LevelSetsType::Pointer ls = LevelSetsType::New();
-	ls->SetReferenceImage( comb->GetOutput() );
-	ls->AddShapePrior( initialContour0 );
-	ls->AddShapePrior( initialContour1 );
-	ls->AddShapePrior( initialContour2 );
+	ls->AddShapePrior( polyDataReader2->GetOutput() );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
-	//opt->SetDeformationField( df );
 	opt->SetNumberOfIterations(200);
 
 	// Start
