@@ -9,6 +9,37 @@ import matplotlib.cm as cm
 import datetime as dt
 import os
 
+def fixVtk( input_file, output_file, ref_nii ):
+    ref = nib.load( ref_nii )
+    orig = np.array( ref.get_shape() ) * 0.5
+    ac = ref.get_affine()[0:3,0:3]
+    
+    rotM = np.zeros( shape=ac.shape )
+    rotM[0,0] = -1.0
+    rotM[1,2] = 1.0
+    rotM[2,1] = -1.0
+    
+    R = np.dot( rotM, ac )
+        
+    with open( input_file, 'r' ) as f:
+        with open( output_file, 'w' ) as w:
+            npoints = 0
+            pointid = -5
+            
+            for i,l in enumerate(f):
+                if (i==4):
+                    s = l.split()
+                    npoints = int( s[1] )
+                    fmt = np.dtype( s[2] )
+                elif( i>4 and pointid<npoints):
+                    vert = np.array( [float(x) for x in l.split()] )
+                    vert = np.dot( vert, R ) + orig
+                    l = '%.9f  %.9f  %.9f\n' % tuple(vert)
+                
+                w.write( l )
+                pointid = pointid + 1
+    return True
+
 def GenerateSurface( data, fname, use_smooth=True, spacing=(1.0,1.0,1.0), origin=(0.0,0.0,0.0) ):
     grid = tvtk.ImageData(spacing=spacing, origin=origin, dimensions=data.shape)
     grid.point_data.scalars = data.ravel().astype( np.uint8 )

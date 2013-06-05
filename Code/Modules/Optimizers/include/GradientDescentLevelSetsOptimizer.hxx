@@ -67,8 +67,8 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_StepSize = 0.1;
 	this->m_A.SetIdentity();
 	this->m_A(0,0) = 2.0*1e-4;
-	this->m_A(1,1) = 2.0;
-	this->m_A(2,2) = 2.0;
+	this->m_A(1,1) = 2.0*1e-4;
+	this->m_A(2,2) = 2.0*1e-4;
 	this->m_B.SetIdentity();
 	this->m_B*= (2.0 * 1e-3);
 }
@@ -168,16 +168,19 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 #ifndef NDEBUG
 			typedef itk::MeshFileWriter< ContourDeformationType >     MeshWriterType;
 			typename MeshWriterType::Pointer w = MeshWriterType::New();
-			w->SetInput( this->m_LevelSetsFunction->GetCurrentContourPosition()[0] );
-			std::stringstream ss;
-			ss << "contour_position_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".vtk";
-			w->SetFileName( ss.str() );
-			w->Update();
+
+			for ( size_t c = 0; c < this->m_LevelSetsFunction->GetCurrentContourPosition().size(); c++ ) {
+				w->SetInput( this->m_LevelSetsFunction->GetCurrentContourPosition()[c] );
+				std::stringstream ss;
+				ss << "contour_" << std::setfill('0') << std::setw(2) << c <<"_it_" << std::setw(3) << this->m_CurrentIteration << ".vtk";
+				w->SetFileName( ss.str() );
+				w->Update();
+			}
 
 			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
 			typename Writer::Pointer p = Writer::New();
 			std::stringstream ss2;
-			ss2 << "speedsfield_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+			ss2 << "gradient_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
 			p->SetFileName( ss2.str().c_str() );
 			p->SetInput( this->m_ShapeGradients );
 			p->Update();
