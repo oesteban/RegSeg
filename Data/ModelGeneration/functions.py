@@ -9,6 +9,31 @@ import matplotlib.cm as cm
 import datetime as dt
 import os
 
+import nipype.pipeline.engine as pe          # pypeline engine
+import nipype.interfaces.freesurfer as fs
+import nipype.interfaces.utility as niu
+import nipype.interfaces.io as nio
+
+def surfaceWorkflow(model_path, name="Surface"):
+    pipeline = pe.Workflow( name=name )
+    inputnode = pe.Node(niu.IdentityInterface( fields=['in_roi','surf_id', 'model_id'] ), name='inputnode' )
+    tess = pe.Node( fs.MRITessellate( label_value=1, use_real_RAS_coordinates=True ), name='tessellate' )
+    smooth = pe.Node( fs.SmoothTessellation(disable_estimates=True), name='smooth' )
+    convert = pe.Node( fs.MRIsConvert(out_datatype='vtk'), name='tovtk' )
+    ds = pe.Node(nio.DataSink( base_directory=model_path ), name='sinker')
+    outputnode = pe.Node( niu.IdentityInterface( fields=['surface'] ), name='outputnode' )
+    
+    pipeline.connect( [
+                        ( inputnode, tess, [ ( 'in_roi' , 'in_file' ) ] )
+                       ,( tess, smooth, [ ( 'surface', 'in_file' ) ])
+                       ,( smooth, convert, [ ( 'surface', 'in_file' ) ])
+                       ,( inputnode, ds, [ ( 'model_id', 'container' ), ('surf_id', 'surf') ])
+                       ,( convert, ds, [( 'converted', 'surf.@file' ) ])
+                       ,( ds,outputnode, [('out_file','surface') ]) 
+                       ])
+    return pipeline  
+
+
 def fixVtk( input_file, output_file, ref_nii ):
     ref = nib.load( ref_nii )
     orig = np.array( ref.get_shape() ) * 0.5
