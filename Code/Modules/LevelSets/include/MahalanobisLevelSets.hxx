@@ -85,8 +85,8 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 inline typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::MeasureType
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::GetEnergyAtPoint( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::PixelPointType & point, size_t roi ) {
-	PixelType dist = this->m_Interp->Evaluate( point ) - this->m_Parameters[roi].mean;
+::GetEnergyAtPoint( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::PointType & point, size_t roi ) {
+	ReferencePixelType dist = this->m_Interp->Evaluate( point ) - this->m_Parameters[roi].mean;
 	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() );
 }
 
@@ -177,7 +177,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 size_t
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::AddShapePrior( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ContourDeformationType* prior,
+::AddShapePrior( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ContourType* prior,
 		         typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType& params){
 	size_t id = this->AddShapePrior( prior );
 	this->SetParameters( id, params );
@@ -186,7 +186,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 size_t
 MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::AddShapePrior( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ContourDeformationType* prior ){
+::AddShapePrior( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ContourType* prior ){
 	this->Superclass::AddShapePrior( prior );
 
 	size_t id = this->m_Parameters.size();
@@ -214,13 +214,13 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 		itkExceptionMacro(<< "Length of measurement vectors must be the same as the size of the covariance.");
 	}
 
-	PixelValueType det = 0.0;
+	ReferenceValueType det = 0.0;
 
 	if( Components > 1 ) {
 		// Compute diagonal and check that eigenvectors >= 0.0
-		typedef typename vnl_diag_matrix<PixelValueType>::iterator DiagonalIterator;
-		typedef vnl_symmetric_eigensystem<PixelValueType> Eigensystem;
-		vnl_matrix< PixelValueType > vnlCov = cov.GetVnlMatrix();
+		typedef typename vnl_diag_matrix<ReferenceValueType>::iterator DiagonalIterator;
+		typedef vnl_symmetric_eigensystem<ReferenceValueType> Eigensystem;
+		vnl_matrix< ReferenceValueType > vnlCov = cov.GetVnlMatrix();
 		Eigensystem* e = new Eigensystem( vnlCov );
 
 		bool modified = false;
@@ -240,7 +240,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 		delete e;
 
 		// the inverse of the covariance matrix is first computed by SVD
-		vnl_matrix_inverse< PixelValueType > inv_cov( cov.GetVnlMatrix() );
+		vnl_matrix_inverse< ReferenceValueType > inv_cov( cov.GetVnlMatrix() );
 
 		// the determinant is then costless this way
 		det = inv_cov.determinant_magnitude();
@@ -250,7 +250,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 		}
 
 		// FIXME Singurality Threshold for Covariance matrix: 1e-6 is an arbitrary value!!!
-		const PixelValueType singularThreshold = 1.0e-10;
+		const ReferenceValueType singularThreshold = 1.0e-10;
 		if( det > singularThreshold ) {
 			// allocate the memory for inverse covariance matrix
 			this->m_Parameters[roi].invcov = inv_cov.inverse();

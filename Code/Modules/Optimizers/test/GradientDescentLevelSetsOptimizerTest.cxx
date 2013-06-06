@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 
 	typedef LevelSetsType::ContourDeformationType                ContourDeformationType;
 	typedef ContourDeformationType::Pointer                      ContourDisplacementFieldPointer;
-	typedef LevelSetsType::VectorType                            VectorType;
+	typedef LevelSetsType::PointType                             PointType;
 	typedef LevelSetsType::MeanType                              MeanType;
 	typedef LevelSetsType::CovarianceType                        CovarianceType;
 	typedef LevelSetsType::DeformationFieldType                  DeformationFieldType;
@@ -98,11 +98,11 @@ int main(int argc, char *argv[]) {
 	typename ContourDeformationType::PointsContainerIterator u_it = points->Begin();
 	typename ContourDeformationType::PointsContainerIterator u_it2 = points2->Begin();
 
-	VectorType zero = itk::NumericTraits<VectorType>::Zero;
+	PointType zero = itk::NumericTraits<PointType>::Zero;
 	double initialDistance = 0;
 	while( u_it != points->End() ) {
 		initialContour->SetPointData( u_it.Index(),zero);
-		VectorType dist = u_it.Value() - u_it2.Value();
+		PointType dist = u_it.Value() - u_it2.Value();
 		initialDistance+= dist.GetSquaredNorm();
 		++u_it;
 		++u_it2;
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
 	double finalDistance = 0;
 	while( u_it3 != points3->End() ) {
-		VectorType dist = u_it3.Value() - u_it2.Value();
+		PointType dist = u_it3.Value() - u_it2.Value();
 		finalDistance+= dist.GetSquaredNorm();
 		++u_it2;
 		++u_it3;

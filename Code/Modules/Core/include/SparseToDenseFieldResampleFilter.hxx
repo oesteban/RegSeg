@@ -44,69 +44,72 @@
 
 namespace rstk {
 
-template<class TInputMesh, class TOutputImage>
-SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::SparseToDenseFieldResampleFilter() {
-	m_OutputSpacing.Fill(1.0);
-	m_OutputOrigin.Fill(0.0);
-	m_OutputDirection.SetIdentity();
-	m_OutputSize.Fill(0);
-	m_OutputStartIndex.Fill(0);
-
-	m_Interpolator =
-			IDWMultivariateInterpolator<InputMeshType, OutputImageType>::New();
-	m_DefaultPixelValue = NumericTraits<ValueType>::ZeroValue(
-			m_DefaultPixelValue);
+template<class TInputMesh, class TDenseFieldType>
+SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>::SparseToDenseFieldResampleFilter() {
+	m_FieldSpacing.Fill(1.0);
+	m_FieldOrigin.Fill(0.0);
+	m_FieldDirection.SetIdentity();
+	m_FieldSize.Fill(0);
+	m_FieldStartIndex.Fill(0);
 	m_IsPhiInitialized = false;
 	m_N = 0;
 	m_k = 0;
 };
 
-template<class TInputMesh, class TOutputImage>
-void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::
-AddControlPoints( const typename SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::InputMeshType* prior) {
-	for( size_t i = 0; i<prior->GetNumberOfPoints();i++ ) {
-		this->m_ControlPoints.push_back( prior->GetPoint(i));
-	}
-	this->m_N = this->m_ControlPoints.size();
+template<class TInputMesh, class TDenseFieldType>
+inline void SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>::
+AddControlPoint( const typename SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>::PointType p ) {
+//	FieldContinuousIndexType idx;
+//
+//	if( ! this->m_Field->TransformPhysicalPointToContinuousIndex( p, idx ) ) {
+//		itkExceptionMacro( << "ControlPoint p=[" << p << "] is outside deformation field extents." );
+//	}
+	this->m_ControlPoints.push_back( p );
+	this->m_N+=1;
 }
 
-template<class TInputMesh, class TOutputImage>
-void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::PrintSelf(
+template<class TInputMesh, class TDenseFieldType>
+void SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>::
+AddControlPoints( const typename SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>::ContourType* prior) {
+	for( size_t i = 0; i<prior->GetNumberOfPoints();i++ ) {
+		this->AddControlPoint( prior->GetPoint(i) );
+	}
+}
+
+template<class TInputMesh, class TDenseFieldType>
+void SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>::PrintSelf(
 		std::ostream &os, Indent indent) const {
 	//Superclass::PrintSelf(os, indent);
 
-	os << indent << "DefaultPixelValue: "
-			<< static_cast<typename NumericTraits<OutputPixelType>::PrintType>(m_DefaultPixelValue)
-			<< std::endl;
-	os << indent << "Size: " << m_OutputSize << std::endl;
-	os << indent << "OutputStartIndex: " << m_OutputStartIndex << std::endl;
-	os << indent << "OutputSpacing: " << m_OutputSpacing << std::endl;
-	os << indent << "OutputOrigin: " << m_OutputOrigin << std::endl;
-	os << indent << "OutputDirection: " << m_OutputDirection << std::endl;
-	os << indent << "Interpolator: " << m_Interpolator.GetPointer()
-			<< std::endl;
+	os << indent << "Size: " << m_FieldSize << std::endl;
+	os << indent << "FieldStartIndex: " << m_FieldStartIndex << std::endl;
+	os << indent << "FieldSpacing: " << m_FieldSpacing << std::endl;
+	os << indent << "FieldOrigin: " << m_FieldOrigin << std::endl;
+	os << indent << "FieldDirection: " << m_FieldDirection << std::endl;
+	//os << indent << "Interpolator: " << m_Interpolator.GetPointer()
+	//		<< std::endl;
 }
 ;
 
 /**
  * Set the output image spacing.
  */
-template<class TInputMesh, class TOutputImage>
-void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::SetOutputSpacing(
+template<class TInputMesh, class TDenseFieldType>
+void SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>::SetFieldSpacing(
 		const double *spacing) {
-	OutputSpacingType s(spacing);
+	FieldSpacingType s(spacing);
 
-	this->SetOutputSpacing(s);
+	this->SetFieldSpacing(s);
 }
 
 /**
  * Set the output image origin.
  */
-template<class TInputMesh, class TOutputImage>
-void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::SetOutputOrigin(
+template<class TInputMesh, class TDenseFieldType>
+void SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>::SetFieldOrigin(
 		const double *origin) {
-	OutputPointType p(origin);
-	this->SetOutputOrigin(p);
+	FieldPointType p(origin);
+	this->SetFieldOrigin(p);
 }
 
 /**
@@ -114,39 +117,33 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::SetOutputOrigin
  * InterpolatorType::SetInputImage is not thread-safe and hence
  * has to be set up before ThreadedGenerateData
  */
-template<class TInputMesh, class TOutputImage>
-void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateData() {
+template<class TInputMesh, class TDenseFieldType>
+void SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>::GenerateData() {
 	if ( m_N == 0 ) {
 		itkExceptionMacro(<< "Shape priors not set");
 	}
 
-	if (m_DefaultPixelValue.Size() == 0) {
-		NumericTraits<OutputPixelType>::SetLength(m_DefaultPixelValue,
-				this->GetOutput()->GetNumberOfComponentsPerPixel());
-		m_DefaultPixelValue.Fill(0);
-	}
+	FieldPointer field = this->GetOutput();
 
-//	this->GetOutput()->FillBuffer( this->m_DefaultPixelValue );
+	m_k = field->GetLargestPossibleRegion().GetNumberOfPixels();
 
-	m_k = this->GetOutput()->GetLargestPossibleRegion().GetNumberOfPixels();
-
-	for (size_t i = 0; i < OutputImageDimension; i++ ) m_LevelSetVector[i] = SpeedsVector( m_N );
+	for (size_t i = 0; i < Dimension; i++ ) m_LevelSetVector[i] = GradientsVector( m_N );
 	size_t nConts = this->GetNumberOfIndexedInputs();
 
 	if (!m_IsPhiInitialized) {
 		m_Phi = WeightsMatrix(m_k, m_N);
 		double dist, wi;
-		OutputPointType ci, pi;
+		FieldPointType ci, pi;
 		size_t row, col;
 
 		// Walk the output region
 		for( row = 0; row < this->m_k; row++ ) {
-			this->GetOutput()->TransformIndexToPhysicalPoint(this->GetOutput()->ComputeIndex(row), pi);
+			field->TransformIndexToPhysicalPoint(field->ComputeIndex(row), pi);
 
 			for ( col=0; col < this->m_N; col++) {
 				// TODO Extract RBF from here (use a functor?)
 				// Compute weight i: wi(x) (inverse distance)
-				dist = (this->m_ControlPoints[col] - pi).GetNorm();
+				dist = (pi - this->m_ControlPoints[col]).GetNorm();
 				wi = (dist < vnl_math::eps) ? 1.0 : (1.0 / vcl_pow(dist, 2));
 				if (wi > 1e-3) {
 					m_Phi.put(row, col, wi);
@@ -158,13 +155,13 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateData() 
 	}
 
 	size_t contsOffset = 0;
+	VectorType ni;
 	for( size_t cont = 0; cont< nConts; cont++ ) {
-		OutputPixelType ni;
 		size_t nPoints = this->GetInput(cont)->GetNumberOfPoints();
 		for (size_t el = 0; el < nPoints; el++) {
 			this->GetInput(cont)->GetPointData( el, &ni );
 
-			for ( size_t i = 0; i < OutputImageDimension; i++ ) {
+			for ( size_t i = 0; i < Dimension; i++ ) {
 				if( std::isnan( ni[i] )) ni[i] = 0;
 				m_LevelSetVector[i].put( contsOffset + el, ni[i] );
 			}
@@ -173,53 +170,54 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateData() 
 	}
 
 	double norms = 0.0;
-	for (size_t i = 0; i < OutputImageDimension; i++ ) {
+	for (size_t i = 0; i < Dimension; i++ ) {
 		norms+= m_LevelSetVector[i].one_norm();
 	}
 
 
 	if( norms==0 ) return;
 
-    SpeedsVector outvector[3];
+    GradientsVector outvector[3];
     norms=0;
-    for ( size_t i = 0; i < OutputImageDimension; i++ ) {
+    for ( size_t i = 0; i < Dimension; i++ ) {
     	m_Phi.mult(m_LevelSetVector[i], outvector[i] );
     	norms+= outvector[i].one_norm();
     }
 
     if( norms==0 ) return;
 
-    bool isZero;
-    OutputPixelType* buffer = this->GetOutput()->GetBufferPointer();
-    OutputPixelType ni;
+
+    VectorType* buffer = field->GetBufferPointer();
+
     for( size_t k = 0; k<m_k; k++ ) {
-    	ni = m_DefaultPixelValue;
-    	isZero = true;
-    	for ( size_t i = 0; i < OutputImageDimension; i++ ) {
+    	ni = itk::NumericTraits<VectorType>::Zero;
+    	for ( size_t i = 0; i < Dimension; i++ ) {
     		ni[i] = outvector[i].get(k);
-    		isZero = isZero && (ni[i]==0.0);
     	}
-    	if ( isZero ) continue;
-    	*( buffer + k ) = ni;
+
+    	if ( ni.GetNorm()!=0 ){
+    		*( buffer + k ) = ni;
+    	}
     }
 
 }
 
-template<class TInputMesh, class TOutputImage>
-void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::CopyImageInformation(
-		const OutputImageType* image) {
-	m_OutputDirection = image->GetDirection();
-	m_OutputOrigin = image->GetOrigin();
-	m_OutputSpacing = image->GetSpacing();
-	m_OutputStartIndex = image->GetRequestedRegion().GetIndex();
-	m_OutputSize = image->GetRequestedRegion().GetSize();
+template<class TInputMesh, class TDenseFieldType>
+void SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>
+::CopyImageInformation( const FieldType* image) {
+	m_FieldDirection = image->GetDirection();
+	m_FieldOrigin = image->GetOrigin();
+	m_FieldSpacing = image->GetSpacing();
+	m_FieldStartIndex = image->GetRequestedRegion().GetIndex();
+	m_FieldSize = image->GetRequestedRegion().GetSize();
 }
 
 /**
  * Inform pipeline of required output region
  */
-template<class TInputMesh, class TOutputImage>
-void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::UpdateOutputInformation() {
+template<class TInputMesh, class TDenseFieldType>
+void SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>
+::UpdateOutputInformation() {
 	this->Modified();
 	this->Superclass::UpdateOutputInformation();
 }
@@ -227,30 +225,32 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::UpdateOutputInf
 /**
  * Inform pipeline of required output region
  */
-template<class TInputMesh, class TOutputImage>
-void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateOutputInformation() {
+template<class TInputMesh, class TDenseFieldType>
+void SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>
+::GenerateOutputInformation() {
 	// call the superclass' implementation of this method
 	this->Superclass::GenerateOutputInformation();
 
 	// get pointers to the input and output
-	OutputImagePointer outputPtr = this->GetOutput();
-	if (!outputPtr) {
+	m_Field=this->GetOutput();
+
+	if (!m_Field) {
 		return;
 	}
 
 	// Set the size of the output region
-	typename TOutputImage::RegionType outputLargestPossibleRegion;
-	outputLargestPossibleRegion.SetSize(m_OutputSize);
-	outputLargestPossibleRegion.SetIndex(m_OutputStartIndex);
-	outputPtr->SetLargestPossibleRegion(outputLargestPossibleRegion);
-	outputPtr->SetBufferedRegion(outputLargestPossibleRegion);
-	outputPtr->Allocate();
-	outputPtr->FillBuffer(m_DefaultPixelValue);
+	typename FieldType::RegionType outputLargestPossibleRegion;
+	outputLargestPossibleRegion.SetSize(m_FieldSize);
+	outputLargestPossibleRegion.SetIndex(m_FieldStartIndex);
+	m_Field->SetLargestPossibleRegion(outputLargestPossibleRegion);
+	m_Field->SetBufferedRegion(outputLargestPossibleRegion);
+	m_Field->Allocate();
+	m_Field->FillBuffer( itk::NumericTraits<VectorType>::Zero );
 
 	// Set spacing and origin
-	outputPtr->SetSpacing(m_OutputSpacing);
-	outputPtr->SetOrigin(m_OutputOrigin);
-	outputPtr->SetDirection(m_OutputDirection);
+	m_Field->SetSpacing(m_FieldSpacing);
+	m_Field->SetOrigin(m_FieldOrigin);
+	m_Field->SetDirection(m_FieldDirection);
 
 	return;
 }
@@ -258,8 +258,8 @@ void SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GenerateOutputI
 /**
  * Verify if any of the components has been modified.
  */
-template<class TInputMesh, class TOutputImage>
-unsigned long SparseToDenseFieldResampleFilter<TInputMesh, TOutputImage>::GetMTime(
+template<class TInputMesh, class TDenseFieldType>
+unsigned long SparseToDenseFieldResampleFilter<TInputMesh, TDenseFieldType>::GetMTime(
 		void) const {
 	unsigned long latestTime = Object::GetMTime();
 /*

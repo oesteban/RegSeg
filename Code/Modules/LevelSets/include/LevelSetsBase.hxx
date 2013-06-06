@@ -91,38 +91,52 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		ControlPointsVector controlPoints;
 
 		// Compute mesh of normals
-		NormalFilterPointer normFilter = NormalFilterType::New();
-		normFilter->SetInput( this->m_CurrentContourPosition[id] );
-		normFilter->Update();
-		ContourDeformationPointer normals = normFilter->GetOutput();
+		this->m_NormalFilter.push_back( NormalFilterType::New() );
+		this->m_NormalFilter[id]->SetInput( this->m_CurrentContourPosition[id] );
+		this->m_NormalFilter[id]->Update();
+
+		ContourPointer normals = this->m_NormalFilter[id]->GetOutput();
 		outerVect.resize( normals->GetNumberOfPoints() );
 		controlPoints.resize( normals->GetNumberOfPoints() );
 
-		typename ContourDeformationType::PointsContainerConstIterator c_it  = normals->GetPoints()->Begin();
-		typename ContourDeformationType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
+		typename ContourType::PointsContainerConstIterator c_it  = normals->GetPoints()->Begin();
+		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
-		PixelPointType p;
-		itk::Vector<double, 3u> norm;
-		long unsigned int idx;
+		PointType p;
+		VectorType v;
+		VectorType ni;
+
+		long unsigned int pid;
 		while( c_it != c_end ) {
-			p = c_it.Value();
-			idx = c_it.Index();
-			controlPoints[idx] =  p;
-			normals->GetPointData( idx, &norm );
-			p = p + norm;
-			outerVect[idx] =  interp->Evaluate( p );
+			pid = c_it.Index();
+			p = normals->GetPoint(pid);
+			v = p.GetVectorFromOrigin();
+			controlPoints[pid] = p;
+
+			this->m_SparseToDenseResampler->AddControlPoint( p );
+			normals->GetPointData( pid, &ni );
+			p = p + ni;
+			outerVect[pid] =  interp->Evaluate( p );
 			++c_it;
 		}
 		this->m_ShapePrior.push_back( controlPoints );
 		this->m_OuterList.push_back( outerVect );
 
-		this->m_SparseToDenseResampler->AddControlPoints( this->m_CurrentContourPosition[id] );
 	}
 
-	if( this->m_DeformationField.IsNotNull() )
-		this->m_SparseToDenseResampler->CopyImageInformation( this->m_DeformationField );
-	else
+	// FIXME AddGridPoints!
+	if( this->m_DeformationField.IsNotNull() ) {
+		PointType p;
+		size_t nGridPoints = this->m_DeformationField->GetLargestPossibleRegion().GetNumberOfPixels();
+
+		for ( size_t gid = 0; gid < nGridPoints; gid++ ) {
+			this->m_DeformationField->TransformIndexToPhysicalPoint( this->m_DeformationField->ComputeIndex( gid ), p );
+			this->m_SparseToDenseResampler->AddGridPoint( p );
+		}
+
+	} else {
 		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
+	}
 
 	this->m_Modified = false;
 
@@ -148,7 +162,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 size_t
 LevelSetsBase<TReferenceImageType, TCoordRepType>
-::AddShapePrior( typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourDeformationType* prior ) {
+::AddShapePrior( typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourType* prior ) {
 	this->m_CurrentContourPosition.push_back( prior );
     this->m_ROIs.resize( this->m_CurrentContourPosition.size()+1 );
     this->m_CurrentROIs.resize( this->m_CurrentContourPosition.size()+1 );
@@ -167,7 +181,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		ROIConstPointer mask = this->GetCurrentRegion(roi);
 		const unsigned char * roiBuffer = mask->GetBufferPointer();
 
-		PixelPointType pos, targetPos;
+		ReferencePointType pos, targetPos;
 		for( size_t i = 0; i < nPix; i++) {
 			if ( *( roiBuffer + i ) > 0.0 ) {
 				mask->TransformIndexToPhysicalPoint( mask->ComputeIndex(i), pos);
@@ -206,21 +220,23 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	ContinuousIndex point_idx;
 	size_t changed = 0;
 
-	for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++ ) {
-		typename ContourDeformationType::PointsContainerPointer curr_points = this->m_CurrentContourPosition[cont]->GetPoints();
-		typename ContourDeformationType::PointsContainerIterator p_it = curr_points->Begin();
-		typename ContourDeformationType::PointsContainerIterator p_end = curr_points->End();
+	for( size_t contid = 0; contid < this->m_CurrentContourPosition.size(); contid++ ) {
+		typename ContourType::PointsContainerPointer curr_points = this->m_CurrentContourPosition[contid]->GetPoints();
+		typename ContourType::PointsContainerIterator p_it = curr_points->Begin();
+		typename ContourType::PointsContainerIterator p_end = curr_points->End();
 
 		// For all the points in the mesh
-		PointType currentPoint,newPoint;
-		PixelPointType p;
-		long unsigned int idx;
+		PointType p;
+		VectorType desp;
+		typename ContourType::PointType currentPoint,newPoint;
+		long unsigned int pid;
 
 		while ( p_it != p_end ) {
 			currentPoint = p_it.Value();
-			idx = p_it.Index();
+			pid = p_it.Index();
+			// FIXME Substitute!!!!
 			// Interpolate the value of the field in the point
-			VectorType desp = interp->Evaluate( currentPoint );
+			desp = interp->Evaluate( currentPoint );
 			norm = desp.GetNorm();
 			// Add vector to the point
 			if( norm >0 ) {
@@ -228,16 +244,16 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 				meanDesp += desp;
 				meanNorm += norm;
-				p = this->m_ShapePrior[cont][idx] + desp;
+				p = this->m_ShapePrior[contid][pid] + desp;
 				newPoint.SetPoint( p );
 				newPoint.SetEdge( currentPoint.GetEdge() );
 
 				if( ! this->IsInside(p,point_idx) ) {
 					itkExceptionMacro( << "Contour is outside image regions after update.\n" <<
-						"\tMoving vertex [" << idx << "] from " << this->m_ShapePrior[cont][idx] << " to " << p << " norm="  << desp.GetNorm() << "mm.\n");
+						"\tMoving vertex [" << pid << "] from " << this->m_ShapePrior[contid][pid] << " to " << p << " norm="  << desp.GetNorm() << "mm.\n");
 				}
 
-				this->m_CurrentContourPosition[cont]->SetPoint( p_it.Index(), newPoint );
+				this->m_CurrentContourPosition[contid]->SetPoint( p_it.Index(), newPoint );
 				changed++;
 			}
 
@@ -257,7 +273,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 inline bool
 LevelSetsBase<TReferenceImageType, TCoordRepType>
-::IsInside( const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::PixelPointType p, typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
+::IsInside( const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::PointType p, typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
 	bool isInside = this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex( p, idx );
 #ifndef NDEBUG
 	if(!isInside) {
@@ -275,71 +291,49 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-bool
-LevelSetsBase<TReferenceImageType, TCoordRepType>
-::CheckExtents( const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourDeformationType* prior ) const {
-	typename ContourDeformationType::PointsContainerConstIterator u_it = prior->GetPoints()->Begin();
-    typename ContourDeformationType::PointsContainerConstIterator u_end = prior->GetPoints()->End();
-
-    PixelPointType p;
-    ContinuousIndex idx;
-	while( u_it != u_end ) {
-		p = u_it.Value();
-
-		if ( ! this->IsInside( p, idx ) ) {
-			itkExceptionMacro( << "Setting prior surface outside reference extents: vertex " << p << ").");
-			return false;
-		}
-		++u_it;
-	}
-
-	return true;
-}
-
-template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldPointer
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetShapeGradients() {
-	for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++) {
+	for( size_t contid = 0; contid < this->m_CurrentContourPosition.size(); contid++) {
 		// Compute mesh of normals
-		NormalFilterPointer normFilter = NormalFilterType::New();
-		normFilter->SetInput( this->m_CurrentContourPosition[cont] );
-		normFilter->Update();
-		ContourDeformationPointer normals = normFilter->GetOutput();
+		this->m_NormalFilter[contid]->Update();
+		ContourPointer normals = this->m_NormalFilter[contid]->GetOutput();
 
-		typename ContourDeformationType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
-		typename ContourDeformationType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
-
+		typename ContourType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
+		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
 		PointValueType levelSet;
 		PointType  ci;          //
-		PixelPointType  ci_prime;
-		PixelType  fi;          // Feature on ci_prime
-		typename ContourDeformationType::PixelType ni;
-		typename ContourDeformationType::PointIdentifier idx;
-		PixelType dist[2];
-		size_t outer_cont;
+		PointType  ci_prime;
+		ReferencePixelType  fi;          // Feature on ci_prime
+		VectorType ni;
+		typename ContourType::PointIdentifier pid;
+		ReferencePixelType dist[2];
+		size_t outer_contid;
 
 		// for all node in mesh
 		while (c_it!=c_end) {
-			idx = c_it.Index();
-			outer_cont = this->m_OuterList[cont][idx];
-			ci_prime = c_it.Value();
-			levelSet = this->GetEnergyAtPoint( ci_prime, outer_cont ) - this->GetEnergyAtPoint( ci_prime, cont );
+			pid = c_it.Index();
+			outer_contid = this->m_OuterList[contid][pid];
+			ci = c_it.Value();
+			levelSet = this->GetEnergyAtPoint( ci, outer_contid ) - this->GetEnergyAtPoint( ci, contid );
 
 			assert( !std::isnan(levelSet) );
 			// project to normal, updating transform
-			normals->GetPointData( idx, &ni );         // Normal ni in point c'_i
-			ni*=levelSet;
-			normals->SetPointData( idx, ni );
+			normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
+			ni*= levelSet;
+			normals->SetPointData( pid, ni );
 			++c_it;
 		}
-		this->m_SparseToDenseResampler->SetInput( cont, normals );
+		//FIXME SetControlPointsData
+		//this->m_SparseToDenseResampler->SetInput( contid, normals );
 	}
 
 	// Interpolate sparse velocity field to targetDeformation
-	this->m_SparseToDenseResampler->Update();
-	return this->m_SparseToDenseResampler->GetOutput();
+	// FIXME perform interpolation
+	// this->m_SparseToDenseResampler->Update();
+	// return this->m_SparseToDenseResampler->GetOutput();
+	return this->m_DeformationField;
 
 }
 
@@ -423,14 +417,14 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	sp.Fill( spacing * 0.25 );
 
-	typename ReferenceImageType::PointType origin = this->m_ReferenceImage->GetOrigin();
+	PointType origin = this->m_ReferenceImage->GetOrigin();
 	typename ReferenceImageType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
 	typename itk::ContinuousIndex<double, Dimension> idx;
 	for (size_t i = 0; i<Dimension; i++ ){
 		idx[i]=size[i]-1.0;
 	}
 
-	typename ReferenceImageType::PointType end;
+	PointType end;
 	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( idx, end );
 
 	for (size_t i = 0; i<Dimension; i++ ){
@@ -460,6 +454,29 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	w->Update();
 #endif
 }
+
+
+//template< typename TReferenceImageType, typename TCoordRepType >
+//bool
+//LevelSetsBase<TReferenceImageType, TCoordRepType>
+//::CheckExtents( const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourType* prior ) const {
+//	typename ContourType::PointsContainerConstIterator u_it = prior->GetPoints()->Begin();
+//    typename ContourType::PointsContainerConstIterator u_end = prior->GetPoints()->End();
+//
+//    PointType p;
+//    ContinuousIndex idx;
+//	while( u_it != u_end ) {
+//		p = u_it.Value();
+//
+//		if ( ! this->IsInside( p, idx ) ) {
+//			itkExceptionMacro( << "Setting prior surface outside reference extents: vertex " << p << ").");
+//			return false;
+//		}
+//		++u_it;
+//	}
+//
+//	return true;
+//}
 
 }
 

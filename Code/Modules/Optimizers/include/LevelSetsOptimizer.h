@@ -85,6 +85,7 @@ public:
 	typedef TLevelSetsFunction                                    LevelSetsFunctionType;
 	typedef typename LevelSetsFunctionType::Pointer               LevelSetsPointer;
 	typedef typename LevelSetsFunctionType::DeformationFieldType  DeformationFieldType;
+	typedef typename LevelSetsFunctionType::PointType             PointType;
 	typedef typename LevelSetsFunctionType::VectorType            VectorType;
 	typedef typename LevelSetsFunctionType::PointValueType        PointValueType;
 
@@ -96,9 +97,9 @@ public:
 	typedef typename DeformationFieldType::SizeType                       GridSizeType;
 	typedef typename itk::Image<PointValueType, Dimension >               DeformationComponentType;
 	typedef typename DeformationComponentType::Pointer                    DeformationComponentPointer;
-	typedef typename LevelSetsFunctionType::ContourDeformationType        ContourDeformationType;
-	typedef typename LevelSetsFunctionType::ContourDeformationPointer     ContourDeformationPointer;
-	typedef typename ContourDeformationType::PointType                    ContourPointType;
+	typedef typename LevelSetsFunctionType::ContourType        ContourType;
+	//typedef typename LevelSetsFunctionType::ContourPointer     ContourPointer;
+	typedef typename ContourType::PointType                    ContourPointType;
 
 	typedef itk::ForwardFFTImageFilter<DeformationComponentType>          FFTType;
 	typedef typename FFTType::Pointer                                     FFTPointer;
@@ -122,6 +123,8 @@ public:
 	typedef itk::InverseFFTImageFilter
 			        <FTDomainType, DeformationComponentType>              IFFTType;
 	typedef typename IFFTType::Pointer                                    IFFTPointer;
+
+	typedef size_t SizeValueType;
 
 	//typedef itk::ComplexToRealImageFilter< FTDomainType, RealPartType > RealFilterType;
 

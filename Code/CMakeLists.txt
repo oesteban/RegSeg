@@ -18,9 +18,13 @@ SET( LEVELSETS_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/LevelSets )
 SET( OPTIMIZERS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Optimizers )
 SET( OPTIMIZERS_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Optimizers )
 
+SET( TRANSFORM_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Transform )
+SET( TRANSFORM_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Transform )
+
 
 INCLUDE_DIRECTORIES( ${OPTIMIZERS_SOURCE_DIR}/include
                      ${LEVELSETS_SOURCE_DIR}/include
+                     ${TRANSFORM_SOURCE_DIR}/include
                      ${CORE_SOURCE_DIR}/include
                      
 )

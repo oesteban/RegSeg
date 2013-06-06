@@ -58,7 +58,9 @@
 #include <itkDisplacementFieldJacobianDeterminantFilter.h>
 #include <itkDisplacementFieldTransform.h>
 
-#include "SparseToDenseFieldResampleFilter.h"
+//#include "SparseToDenseFieldResampleFilter.h"
+
+#include "SparseMatrixTransform.h"
 
 namespace rstk {
 /** \class LevelSetsBase
@@ -98,35 +100,34 @@ public:
 	typedef double                                           MeasureType;
 	typedef TCoordRepType                                    PointValueType;
 	typedef itk::Vector< PointValueType, Dimension >         VectorType;
+	typedef itk::Point< PointValueType, Dimension >          PointType;
 	typedef itk::ContinuousIndex<TCoordRepType, Dimension >  ContinuousIndex;
 
 	typedef TReferenceImageType                              ReferenceImageType;
 	typedef typename ReferenceImageType::Pointer             ReferenceImagePointer;
 	typedef typename ReferenceImageType::ConstPointer        ReferenceImageConstPointer;
-	typedef typename ReferenceImageType::PixelType           PixelType;
-	typedef typename ReferenceImageType::PointType           PixelPointType;
-	typedef typename PixelType::ValueType                    PixelValueType;
+	typedef typename ReferenceImageType::PixelType           ReferencePixelType;
+	typedef typename ReferencePixelType::ValueType           ReferenceValueType;
+	typedef typename ReferenceImageType::PointType           ReferencePointType;
 
 	typedef itk::VectorLinearInterpolateImageFunction
 			< ReferenceImageType >                           InterpolatorType;
 	typedef typename InterpolatorType::Pointer               InterpolatorPointer;
 
-	typedef itk::QuadEdgeMesh< VectorType, Dimension >       ContourDeformationType;
-	typedef typename ContourDeformationType::PointType       PointType;
-	typedef typename ContourDeformationType::Pointer         ContourDeformationPointer;
-	typedef typename ContourDeformationType::ConstPointer    ContourDeformationConstPointer;
-	typedef typename ContourDeformationType
-			                     ::PointDataContainerPointer PointDataContainerPointer;
+	typedef itk::QuadEdgeMesh< VectorType, Dimension >       ContourType;
+	typedef typename ContourType::Pointer                    ContourPointer;
+	typedef typename ContourType::PointType                  ContourPointType;
+	typedef typename ContourType::ConstPointer               ContourConstPointer;
+	typedef typename std::vector<ContourPointer>             ContourList;
+	typedef typename ContourType::PointDataContainerPointer  PointDataContainerPointer;
 
 	typedef itk::NormalQuadEdgeMeshFilter
-	    < ContourDeformationType, ContourDeformationType >   NormalFilterType;
+			< ContourType, ContourType >                     NormalFilterType;
 	typedef typename NormalFilterType::Pointer               NormalFilterPointer;
-
-
-	typedef typename std::vector<ContourDeformationPointer>  ContourDeformationList;
+	typedef std::vector< NormalFilterPointer >               NormalFilterList;
 
 	typedef typename itk::QuadEdgeMeshToQuadEdgeMeshFilter
-			<ContourDeformationType,ContourDeformationType>  ContourCopyType;
+			<ContourType,ContourType>  ContourCopyType;
 	typedef typename ContourCopyType::Pointer                ContourCopyPointer;
 
 	typedef itk::Image< VectorType, Dimension >              DeformationFieldType;
@@ -158,10 +159,10 @@ public:
 	typedef typename ROIType::Pointer                        ROIPointer;
 	typedef typename ROIType::ConstPointer                   ROIConstPointer;
 	typedef typename itk::NearestNeighborInterpolateImageFunction
-			< ROIType >                                      ROIInterpolatorType;
+			< ROIType, TCoordRepType >                       ROIInterpolatorType;
 	typedef std::vector< ROIConstPointer >                   ROIList;
 	typedef itk::TriangleMeshToBinaryImageFilter
-			          <ContourDeformationType, ROIType>	     BinarizeMeshFilterType;
+			          <ContourType, ROIType>	     BinarizeMeshFilterType;
 	typedef typename BinarizeMeshFilterType::Pointer         BinarizeMeshFilterPointer;
 
 	typedef itk::Image< float, Dimension >                   ProbabilityMapType;
@@ -170,7 +171,7 @@ public:
 	typedef std::vector< const ProbabilityMapType* >         ProbabilityMapList;
 
 	typedef typename itk::MeshSpatialObject
-			                   <ContourDeformationType>      ContourSpatialObject;
+			                   <ContourType>      ContourSpatialObject;
 	typedef typename ContourSpatialObject::Pointer           ContourSpatialPointer;
 	typedef typename ContourSpatialObject::ConstPointer      ContourSpatialConstPointer;
 	typedef typename std::vector<ContourSpatialPointer>      SpatialObjectsVector;
@@ -179,19 +180,23 @@ public:
 			       < ContourSpatialObject, ROIType >         SpatialObjectToImageFilterType;
 	typedef typename SpatialObjectToImageFilterType::Pointer SpatialObjectToImageFilterPointer;
 
-	typedef SparseToDenseFieldResampleFilter
-			<ContourDeformationType, DeformationFieldType>   SparseToDenseFieldResampleType;
-	typedef typename  SparseToDenseFieldResampleType::Pointer  SparseToDenseFieldResamplePointer;
+
+	typedef SparseMatrixTransform< TCoordRepType, Dimension > SparseToDenseFieldResampleType;
+
+	//typedef SparseToDenseFieldResampleFilter
+	//	<ContourType, DeformationFieldType>       SparseToDenseFieldResampleType;
+
+	typedef typename SparseToDenseFieldResampleType::Pointer SparseToDenseFieldResamplePointer;
 
 	typedef typename itk::WarpMeshFilter
-			< ContourDeformationType,
-			  ContourDeformationType,
+			< ContourType,
+			  ContourType,
 			  DeformationFieldType>                          WarpContourType;
 	typedef typename WarpContourType::Pointer                WarpContourPointer;
 
 	typedef typename std::vector< ROIPixelType >             ContourOuterRegions;
 	typedef typename std::vector< ContourOuterRegions >      ContourOuterRegionsList;
-	typedef typename std::vector< PixelPointType >           ControlPointsVector;
+	typedef typename std::vector< PointType >                ControlPointsVector;
 	typedef typename std::vector< ControlPointsVector >      ControlPointsList;
 
 
@@ -206,10 +211,10 @@ public:
 	ROIConstPointer GetCurrentRegion( size_t idx );
 	ROIConstPointer GetCurrentRegions( void );
 
-	size_t AddShapePrior( ContourDeformationType* prior );
-	//itkGetMacro(ShapePrior, ContourDeformationList);
+	size_t AddShapePrior( ContourType* prior );
+	//itkGetMacro(ShapePrior, ContourList);
 
-	itkGetMacro(CurrentContourPosition, ContourDeformationList);
+	itkGetMacro(CurrentContourPosition, ContourList);
 
 	itkSetObjectMacro(DeformationField, DeformationFieldType);
 	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
@@ -228,16 +233,17 @@ protected:
 	}
 
 	void InitializeSamplingGrid( void );
-	inline virtual MeasureType GetEnergyAtPoint( PixelPointType& point, size_t roi ) = 0;
+	inline virtual MeasureType GetEnergyAtPoint( PointType& point, size_t roi ) = 0;
 
 
-	inline bool IsInside( const PixelPointType p, ContinuousIndex& idx ) const;
-	bool CheckExtents( const ContourDeformationType* prior ) const;
+	inline bool IsInside( const PointType p, ContinuousIndex& idx ) const;
+	//bool CheckExtents( const ContourType* prior ) const;
 
 	mutable MeasureType m_Value;
 	DeformationFieldPointer m_DeformationField;
 	DeformationFieldPointer m_ReferenceSamplingGrid;
-	ContourDeformationList m_CurrentContourPosition;
+	ContourList m_CurrentContourPosition;
+	NormalFilterList m_NormalFilter;
 	ContourCopyPointer m_ContourCopier;
 	WarpContourPointer m_ContourUpdater;
 	SparseToDenseFieldResamplePointer m_SparseToDenseResampler;

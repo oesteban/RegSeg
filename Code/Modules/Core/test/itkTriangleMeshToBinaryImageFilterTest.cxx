@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 	typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
 	typedef LevelSetsType::ContourDeformationType                ContourDeformationType;
 	typedef ContourDeformationType::Pointer                      ContourDisplacementFieldPointer;
-	typedef LevelSetsType::VectorType                            VectorType;
+	typedef LevelSetsType::PointType                             PointType;
 	typedef LevelSetsType::MeanType                              MeanType;
 	typedef LevelSetsType::CovarianceType                        CovarianceType;
 	typedef LevelSetsType::DeformationFieldType                  DeformationFieldType;
@@ -53,10 +53,10 @@ int main(int argc, char *argv[]) {
 	typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
 	typedef typename Optimizer::Pointer                          OptimizerPointer;
 
-	typedef itk::MeshFileReader< ContourDeformationType >     ReaderType;
-	typedef itk::MeshFileWriter< ContourDeformationType >     WriterType;
-	typedef itk::ImageFileReader<ChannelType>                      ImageReader;
-	typedef itk::ImageFileWriter<ChannelType>                      ImageWriter;
+	typedef itk::MeshFileReader< ContourDeformationType >        ReaderType;
+	typedef itk::MeshFileWriter< ContourDeformationType >        WriterType;
+	typedef itk::ImageFileReader<ChannelType>                    ImageReader;
+	typedef itk::ImageFileWriter<ChannelType>                    ImageWriter;
 	typedef itk::ImageFileWriter<DeformationFieldType>           DeformationWriter;
 
 	typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;

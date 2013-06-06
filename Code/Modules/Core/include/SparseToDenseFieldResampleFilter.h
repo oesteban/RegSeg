@@ -56,102 +56,78 @@ namespace rstk {
  * \ingroup ImageFilters
  * \ingroup ITKMesh
  */
-template< class TInputMesh, class TOutputImage >
-class SparseToDenseFieldResampleFilter: public MeshToImageFilter< TInputMesh, TOutputImage >
+template< class TInputMesh, class TDenseFieldType >
+class SparseToDenseFieldResampleFilter: public MeshToImageFilter< TInputMesh, TDenseFieldType >
 {
 public:
 	typedef SparseToDenseFieldResampleFilter                    Self;
-	typedef MeshToImageFilter< TInputMesh, TOutputImage >       Superclass;
+	typedef TInputMesh                                          ContourType;
+	typedef TDenseFieldType                                     FieldType;
+	typedef MeshToImageFilter< ContourType, FieldType >         Superclass;
 	typedef itk::SmartPointer< Self >                           Pointer;
 	typedef itk::SmartPointer< const Self >                     ConstPointer;
 
 	itkNewMacro( Self );
 	itkTypeMacro( SparseToDenseFieldResampleFilter, itk::MeshToImageFilter );
 
-	typedef typename Superclass::InputMeshType             InputMeshType;
-	typedef typename Superclass::InputMeshPointer          InputMeshPointer;
-	typedef typename Superclass::InputMeshConstPointer     InputMeshConstPointer;
-	typedef typename Superclass::MeshPointType             MeshPointType;
-	typedef typename Superclass::OutputImageType           OutputImageType;
-	typedef typename Superclass::OutputImagePointer        OutputImagePointer;
-	typedef typename Superclass::OutputImageConstPointer   OutputImageConstPointer;
-	typedef typename Superclass::OutputImageSizeType       OutputImageSizeType;
-	typedef typename Superclass::ValueType                 ValueType;
+	itkStaticConstMacro( Dimension, unsigned int, FieldType::ImageDimension );
 
-	typedef typename OutputImageType::PixelType            OutputPixelType;
-	typedef typename OutputImageType::PointType            OutputPointType;
-	typedef typename OutputImageType::SpacingType          OutputSpacingType;
-	typedef typename OutputImageType::IndexType            OutputIndexType;
-	typedef typename OutputImageType::DirectionType        OutputDirectionType;
-	typedef typename OutputImageType::RegionType           OutputRegionType;
-	typedef typename OutputPixelType::ValueType            OutputVectorValueType;
+	typedef typename FieldType::Pointer                    FieldPointer;
+	typedef typename FieldType::ConstPointer               FieldConstPointer;
+	typedef typename FieldType::PixelType                  VectorType;
+	typedef typename FieldType::PointType                  FieldPointType;
+	typedef typename FieldType::SpacingType                FieldSpacingType;
+	typedef typename FieldType::IndexType                  FieldIndexType;
+	typedef typename FieldType::DirectionType              FieldDirectionType;
+	typedef typename FieldType::SizeType                   FieldSizeType;
+	typedef typename VectorType::ValueType                 CoordinateValueType;
+	typedef itk::ContinuousIndex<
+		typename FieldPointType::ValueType, Dimension >    FieldContinuousIndexType;
 
-	typedef vnl_sparse_matrix< double >                    WeightsMatrix;
-	typedef vnl_vector< double >                           SpeedsVector;
-	typedef vnl_matrix< OutputPixelType >                  DenseFieldMatrix;
+	typedef typename itk::Point
+			       < CoordinateValueType, Dimension>       PointType;
 
-	typedef SparseMultivariateInterpolator
-			< TInputMesh, TOutputImage >                   InterpolatorType;
-	typedef typename InterpolatorType::Pointer             InterpolatorPointerType;
+	typedef typename std::vector<PointType>                ControlPointList;
 
-	typedef typename std::vector<MeshPointType>      ControlPointList;
+	typedef vnl_sparse_matrix< CoordinateValueType >       WeightsMatrix;
+	typedef vnl_vector< CoordinateValueType >              GradientsVector;
+	typedef vnl_matrix< PointType >                        DenseFieldMatrix;
 
+	void AddControlPoints( const ContourType* prior );
+	inline void AddControlPoint( const PointType p );
 
-	itkStaticConstMacro( OutputImageDimension, unsigned int, TOutputImage::ImageDimension );
-
-	//const OutputImageType* GetOutput( void ) { return this->GetOutput(0); }
-
-	void AddControlPoints( const InputMeshType* prior );
 	itkGetMacro( ControlPoints, ControlPointList );
-	//itkSetConstObjectMacro( ShapePrior, InputMeshType );
-	//itkGetConstObjectMacro( ShapePrior, InputMeshType );
 
-	/** Set the interpolator function.  The default is
-	 * itk::VectorLinearInterpolateImageFunction<InputImageType, TInterpolatorPrecisionType>.  */
-	itkSetObjectMacro(Interpolator, InterpolatorType);
-
-	/** Get a pointer to the interpolator function. */
-	itkGetConstObjectMacro(Interpolator, InterpolatorType);
-
-	/** Set the size of the output image. */
-	itkSetMacro(OutputSize, OutputImageSizeType);
-
-	/** Get the size of the output image. */
-	itkGetConstReferenceMacro(OutputSize, OutputImageSizeType);
-
-	/** Set the pixel value when a transformed pixel is outside of the
-	 * image.  The default default pixel value is 0. */
-	itkSetMacro(DefaultPixelValue, OutputPixelType);
-
-	/** Get the pixel value when a transformed pixel is outside of the image */
-	itkGetConstMacro(DefaultPixelValue, OutputPixelType);
 
 	/** Set the output image spacing. */
-	itkSetMacro(OutputSpacing, OutputSpacingType);
-	virtual void SetOutputSpacing(const double *values);
+	itkSetMacro(FieldSpacing, FieldSpacingType);
+	virtual void SetFieldSpacing(const double *values);
 
 	/** Get the output image spacing. */
-	itkGetConstReferenceMacro(OutputSpacing, OutputSpacingType);
+	itkGetConstReferenceMacro(FieldSpacing, FieldSpacingType);
 
 	/** Set the output image origin. */
-	itkSetMacro(OutputOrigin, OutputPointType);
-	virtual void SetOutputOrigin(const double *values);
+	itkSetMacro(FieldOrigin, FieldPointType);
+	virtual void SetFieldOrigin(const double *values);
 
 	/** Get the output image origin. */
-	itkGetConstReferenceMacro(OutputOrigin, OutputPointType);
+	itkGetConstReferenceMacro(FieldOrigin, FieldPointType);
+
+	itkSetMacro(FieldSize, FieldSizeType);
+	itkGetConstReferenceMacro(FieldSize, FieldSizeType);
 
 	/** Set the output direciton cosine matrix. */
-	itkSetMacro(OutputDirection, OutputDirectionType);
-	itkGetConstReferenceMacro(OutputDirection, OutputDirectionType);
+	itkSetMacro(FieldDirection, FieldDirectionType);
+	itkGetConstReferenceMacro(FieldDirection, FieldDirectionType);
 
 	/** Set the start index of the output largest possible region.
 	 * The default is an index of all zeros. */
-	itkSetMacro(OutputStartIndex, OutputIndexType);
+	itkSetMacro(FieldStartIndex, FieldIndexType);
 
 	/** Get the start index of the output largest possible region. */
-	itkGetConstReferenceMacro(OutputStartIndex, OutputIndexType);
+	itkGetConstReferenceMacro(FieldStartIndex, FieldIndexType);
 
-	virtual void CopyImageInformation( const OutputImageType* image );
+	virtual void CopyImageInformation( const FieldType* image );
 
 	/** VectorResampleImageFilter produces an image which is a different size
 	 * than its input.  As such, it needs to provide an implementation
@@ -175,23 +151,21 @@ private:
 	SparseToDenseFieldResampleFilter( const Self& ); // purposely not implemented
 	void operator=( const Self& );                 // purposely not implemented
 
-	ValueType                       m_DefaultPixelValue;
-	InterpolatorPointerType         m_Interpolator;
-	OutputDirectionType             m_OutputDirection;
-	OutputPointType                 m_OutputOrigin;
-	OutputSpacingType               m_OutputSpacing;
-	OutputIndexType                 m_OutputStartIndex;
-	OutputImageSizeType             m_OutputSize;
+	//InterpolatorPointerType                      m_Interpolator;
+	FieldDirectionType                          m_FieldDirection;
+	FieldPointType                              m_FieldOrigin;
+	FieldSpacingType                            m_FieldSpacing;
+	FieldIndexType                              m_FieldStartIndex;
+	FieldSizeType                               m_FieldSize;
+	FieldPointer								m_Field;
 
-	//InputMeshConstPointer           m_ShapePrior;
-	ControlPointList                m_ControlPoints;
+	ControlPointList                             m_ControlPoints;
 
-	WeightsMatrix                   m_Phi;
-	SpeedsVector                    m_LevelSetVector[OutputImageDimension];
-	SpeedsVector                    m_OutputMatrix;
-	size_t                          m_N;
-	size_t                          m_k;
-	bool                            m_IsPhiInitialized;
+	WeightsMatrix                                m_Phi;
+	GradientsVector                              m_LevelSetVector[Dimension];
+	size_t                                       m_N;
+	size_t                                       m_k;
+	bool                                         m_IsPhiInitialized;
 
 };
 

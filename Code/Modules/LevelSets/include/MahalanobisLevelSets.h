@@ -75,23 +75,26 @@ public:
 
 	typedef typename Superclass::MeasureType                 MeasureType;
 	typedef typename Superclass::PointType                   PointType;
-	typedef typename Superclass::PixelPointType              PixelPointType;
-	typedef typename Superclass::PointValueType              PointValueType;
 	typedef typename Superclass::VectorType                  VectorType;
+	typedef typename Superclass::PointValueType              PointValueType;
 	typedef typename Superclass::ContinuousIndex             ContinuousIndex;
-	typedef typename Superclass::PixelType                   PixelType;
-	typedef typename Superclass::PixelValueType              PixelValueType;
+
+	typedef typename Superclass::ContourType                 ContourType;
 	typedef typename Superclass::DeformationFieldType        DeformationFieldType;
 	typedef typename Superclass::DeformationFieldPointer     DeformationFieldPointer;
-	typedef typename Superclass::ContourDeformationType      ContourDeformationType;
-	typedef typename Superclass::ContourDeformationPointer   ContourDeformationPointer;
 	typedef typename Superclass::ContourCopyType             ContourCopyType;
 	typedef typename Superclass::ContourCopyPointer          ContourCopyPointer;
 	typedef typename Superclass::NormalFilterType            NormalFilterType;
 	typedef typename Superclass::NormalFilterPointer         NormalFilterPointer;
 
+
 	typedef typename Superclass::ReferenceImageType          ReferenceImageType;
 	typedef typename Superclass::Pointer                     ReferenceImagePointer;
+	typedef typename Superclass::ReferencePixelType          ReferencePixelType;
+	typedef typename Superclass::ReferencePointType          ReferencePointType;
+	typedef typename Superclass::ReferenceValueType          ReferenceValueType;
+
+
 	typedef typename Superclass::ConstPointer                ReferenceImageConstPointer;
 	typedef typename Superclass::InterpolatorType            InterpolatorType;
 	typedef typename Superclass::InterpolatorPointer         InterpolatorPointer;
@@ -122,12 +125,12 @@ public:
 	typedef typename ResampleROIFilterType::Pointer          ResampleROIFilterPointer;
 
 
-	itkStaticConstMacro( Components, unsigned int, itkGetStaticConstMacro(PixelType::Dimension) );
+	itkStaticConstMacro( Components, unsigned int, itkGetStaticConstMacro(ReferencePixelType::Dimension) );
 	itkStaticConstMacro( Dimension, unsigned int, TReferenceImageType::ImageDimension );
 
-	typedef PixelType                                      MeanType;
+	typedef ReferencePixelType                               MeanType;
 	typedef itk::Matrix
-			< PixelValueType, Components, Components >     CovarianceType;
+	      < ReferenceValueType, Components, Components >     CovarianceType;
 
 	struct ParametersType {
 		MeanType mean;
@@ -141,8 +144,8 @@ public:
 
 	void SetParameters( size_t roi, ParametersType& params );
 
-	size_t AddShapePrior( ContourDeformationType* prior, ParametersType&params );
-	size_t AddShapePrior( ContourDeformationType* prior );
+	size_t AddShapePrior( ContourType* prior, ParametersType&params );
+	size_t AddShapePrior( ContourType* prior );
 
 	void Initialize( void );
 
@@ -154,7 +157,7 @@ protected:
 
 	//void InitializeSamplingGrid( void );
 
-	inline MeasureType GetEnergyAtPoint( PixelPointType& point, size_t roi );
+	inline MeasureType GetEnergyAtPoint( PointType& point, size_t roi );
 
 	ParametersType UpdateParametersOfRegion( const size_t idx );
 	void ComputeParameters( void );

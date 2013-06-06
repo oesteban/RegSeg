@@ -96,8 +96,8 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 
 	if (this->m_DeformationField.IsNull()) {
 		// TODO LevelSets function should provide an Extent Object
-		DeformationFieldPointType orig = this->m_LevelSetsFunction->GetReferenceImage()->GetOrigin();
-		DeformationFieldPointType end;
+		PointType orig = this->m_LevelSetsFunction->GetReferenceImage()->GetOrigin();
+		PointType end;
 
 		typename DeformationFieldType::IndexType end_idx;
 		typename DeformationFieldType::SizeType refSize = this->m_LevelSetsFunction->GetReferenceImage()->GetLargestPossibleRegion().GetSize();
@@ -202,7 +202,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		//}
 
 #ifndef NDEBUG
-			typedef itk::MeshFileWriter< ContourDeformationType >     MeshWriterType;
+			typedef itk::MeshFileWriter< ContourType >     MeshWriterType;
 			typename MeshWriterType::Pointer w = MeshWriterType::New();
 
 			for ( size_t c = 0; c < this->m_LevelSetsFunction->GetCurrentContourPosition().size(); c++ ) {
@@ -445,8 +445,8 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComputeIterationChan
 template< typename TLevelSetsFunction >
 void
 GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::InitializeDeformationField(
-	 const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::DeformationFieldPointType orig,
-	 const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::DeformationFieldPointType end,
+	 const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::PointType orig,
+	 const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::PointType end,
 	 const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::DeformationFieldDirectionType dir)
 {
 	this->m_DeformationField = DeformationFieldType::New();

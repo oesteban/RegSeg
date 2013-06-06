@@ -38,15 +38,14 @@ typedef itk::Vector<float, 1u>               VectorPixelType;
 typedef itk::Image<VectorPixelType, 3u>      ImageType;
 typedef MahalanobisLevelSets<ImageType>      LevelSetsType;
 
-typedef LevelSetsType::ContourDeformationType     ContourDeformationType;
-typedef ContourDeformationType::Pointer           ContourDisplacementFieldPointer;
-typedef LevelSetsType::VectorType                 VectorType;
+typedef LevelSetsType::ContourType     ContourType;
+typedef ContourType::Pointer           ContourDisplacementFieldPointer;
 typedef LevelSetsType::MeanType                   MeanType;
 typedef LevelSetsType::CovarianceType             CovarianceType;
 typedef LevelSetsType::DeformationFieldType       DeformationFieldType;
 
-typedef itk::MeshFileReader< ContourDeformationType >        ReaderType;
-typedef itk::MeshFileWriter< ContourDeformationType >        WriterType;
+typedef itk::MeshFileReader< ContourType >        ReaderType;
+typedef itk::MeshFileWriter< ContourType >        WriterType;
 typedef itk::ImageFileReader<ImageType>                      ImageReader;
 typedef itk::ImageFileWriter<ImageType>                      ImageWriter;
 typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;

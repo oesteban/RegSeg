@@ -61,15 +61,15 @@ int main(int argc, char *argv[]) {
 	typedef itk::Image<VectorPixelType, 3u>      ImageType;
 	typedef MahalanobisLevelSets<ImageType>      LevelSetsType;
 
-	typedef LevelSetsType::ContourDeformationType     ContourDeformationType;
-	typedef ContourDeformationType::Pointer           ContourDisplacementFieldPointer;
-	typedef LevelSetsType::VectorType                 VectorType;
+	typedef LevelSetsType::ContourType     ContourType;
+	typedef ContourType::Pointer           ContourDisplacementFieldPointer;
+	typedef LevelSetsType::PointType                 PointType;
 	typedef LevelSetsType::MeanType                   MeanType;
 	typedef LevelSetsType::CovarianceType             CovarianceType;
 	typedef LevelSetsType::DeformationFieldType       DeformationFieldType;
 
-	typedef itk::VTKPolyDataReader< ContourDeformationType >     ReaderType;
-	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
+	typedef itk::VTKPolyDataReader< ContourType >     ReaderType;
+	typedef itk::VTKPolyDataWriter< ContourType >     WriterType;
 	typedef itk::ImageFileReader<ImageType>                      ImageReader;
 	typedef itk::ImageFileWriter<ImageType>                      ImageWriter;
 	typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
@@ -86,10 +86,10 @@ int main(int argc, char *argv[]) {
 	polyDataReader->Update();
 	ContourDisplacementFieldPointer ellipse = polyDataReader->GetOutput();
 
-	typename ContourDeformationType::PointsContainerPointer points = ellipse->GetPoints();
-	typename ContourDeformationType::PointsContainerIterator u_it = points->Begin();
+	typename ContourType::PointsContainerPointer points = ellipse->GetPoints();
+	typename ContourType::PointsContainerIterator u_it = points->Begin();
 
-	VectorType zero = itk::NumericTraits<VectorType>::Zero;
+	PointType zero = itk::NumericTraits<PointType>::Zero;
 	while( u_it != points->End() ) {
 		ellipse->SetPointData( u_it.Index(),zero);
 		++u_it;
