@@ -49,25 +49,52 @@ namespace rstk {
 
 template< class TScalarType, unsigned int NDimensions >
 SparseMatrixTransform<TScalarType,NDimensions>
-::SparseMatrixTransform() {
-	m_N = 0;
-	m_k = 0;
+::SparseMatrixTransform(): Superclass(NDimensions) {
+	this->m_N = 0;
+	this->m_K = 0;
+	this->m_GridDataChanged = false;
+	this->m_ControlDataChanged = false;
+}
+
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::SetN( size_t N ) {
+	this->m_N = N;
+	this->m_ControlPoints.resize(N);
+	for( size_t dim = 0; dim<Dimension; dim++ )
+		this->m_ControlPointsData[dim] = DimensionVector(N);
+
+}
+
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::SetK( size_t K ) {
+	this->m_K = K;
+	this->m_GridPoints.resize(K);
+	for( size_t dim = 0; dim<Dimension; dim++ )
+		this->m_GridPointsData[dim] = DimensionVector(K);
+
+	for ( size_t k = 0; k<K; k++ ) {
+		this->SetGridPointData( k, itk::NumericTraits<VectorType>::Zero );
+	}
+
 }
 
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputePhi() {
-	this->m_k = this->m_GridPoints.size();
-	this->m_N = this->m_ControlPoints.size();
+	this->m_Phi = WeightsMatrix(this->m_K, this->m_N);
+	this->m_InvertPhi = WeightsMatrix( this->m_N, this->m_K );
 
-	this->m_Phi = WeightsMatrix(this->m_k, this->m_N);
 	ScalarType dist, wi;
 	PointType ci, pi;
 	size_t row, col;
 
 	// Walk the grid region
-	for( row = 0; row < this->m_k; row++ ) {
+	for( row = 0; row < this->m_K; row++ ) {
 		pi = this->m_GridPoints[row];
 
 		for ( col=0; col < this->m_N; col++) {
@@ -80,19 +107,18 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	}
 
 	// TODO Invert phi matrix
-	this->m_InvertPhi = WeghtsMatrix( this->m_N, this->m_k );
-
-
 }
 
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputeGridPoints() {
-	// TODO check m_Phi and initializations
-	// TODO check if ControlPointsData changed
+	// Check m_Phi and initializations
+	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
+		this->ComputePhi();
+	}
 
-
+	// Check if ControlPointsData changed
 	double norms = 0.0;
 	for (size_t i = 0; i < Dimension; i++ ) {
 		norms+= this->m_ControlPointsData[i].one_norm();
@@ -109,9 +135,12 @@ template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputeControlPoints() {
-	// TODO check m_Phi and initializations
-	// TODO check if ControlPointsData changed
+	// Check m_Phi and initializations
+	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
+		this->ComputePhi();
+	}
 
+	// Check if GridPointsData changed
 	double norms = 0.0;
 	for (size_t i = 0; i < Dimension; i++ ) {
 		norms+= this->m_GridPointsData[i].one_norm();
@@ -129,43 +158,65 @@ SparseMatrixTransform<TScalarType,NDimensions>
 template< class TScalarType, unsigned int NDimensions >
 inline void
 SparseMatrixTransform<TScalarType,NDimensions>
-::AddControlPoint(typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
-	this->m_ControlPoints.push_back( pi );
+::SetControlPoint(size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
+	this->m_ControlPoints[id] = pi;
 }
 
 template< class TScalarType, unsigned int NDimensions >
 inline void
 SparseMatrixTransform<TScalarType,NDimensions>
-::AddGridPoint(typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
-	this->m_GridPoints.push_back( pi );
+::SetGridPoint(size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
+	this->m_GridPoints[id] = pi;
 }
-/*
-template< class TScalarType, unsigned int NDimensions >
-inline typename SparseMatrixTransform<TScalarType,NDimensions>::PointType&
-SparseMatrixTransform<TScalarType,NDimensions>
-::GetControlPoint( const size_t id ) {
-	PointType ci;
-	for( size_t dim = 0; dim < Dimension; dim++) {
-		ci[dim] = this->m_ControlPoints[dim][id];
-		if( std::isnan( ci[dim] )) ci[dim] = 0;
+
+template<class TScalarType, unsigned int NDimensions>
+void SparseMatrixTransform<TScalarType, NDimensions>::SetParameters(
+		const ParametersType & parameters) {
+	// Save parameters. Needed for proper operation of TransformUpdateParameters.
+	if (&parameters != &(this->m_Parameters)) {
+		this->m_Parameters = parameters;
 	}
 
-	return ci;
-}
-
-template< class TScalarType, unsigned int NDimensions >
-inline typename SparseMatrixTransform<TScalarType,NDimensions>::PointType&
-SparseMatrixTransform<TScalarType,NDimensions>
-::GetGridPoint( const size_t id ) {
-	PointType gi;
-	for( size_t dim = 0; dim < Dimension; dim++){
-		gi[dim] = this->m_GridPoints[dim][id];
-		if( std::isnan( gi[dim] )) gi[dim] = 0;
+	if( this->m_ControlPoints.size() == 0 ) {
+		itkExceptionMacro( << "Control Points should be set first." );
 	}
 
-	return gi;
+	if( this->m_N != this->m_ControlPoints.size() ) {
+		if (! this->m_N == 0 ){
+			itkExceptionMacro( << "N and number of control points should match." );
+		} else {
+			this->m_N = this->m_ControlPoints.size();
+		}
+	}
+
+	if ( this->m_N != (parameters.Size() * Dimension) ) {
+		itkExceptionMacro( << "N and number of parameters should match." );
+	}
+
+	for ( size_t dim = 0; dim<Dimension; dim++) {
+		if ( this->m_ControlPointsData[dim].size() == 0 ) {
+			this->m_ControlPointsData[dim]( this->m_N );
+		}
+		else if ( this->m_ControlPointsData[dim].size()!=this->m_N ) {
+			itkExceptionMacro( << "N and number of slots for parameter data should match." );
+		}
+	}
+
+	size_t didx = 0;
+
+	while( didx < this->m_N ) {
+		for ( size_t dim = 0; dim< Dimension; dim++ ) {
+			this->m_ControlPointsData[dim][didx] = parameters[didx+dim];
+		}
+		didx++;
+	}
+
+	// Modified is always called since we just have a pointer to the
+	// parameters and cannot know if the parameters have changed.
+	this->Modified();
 }
-*/
+
+
 template< class TScalarType, unsigned int NDimensions >
 inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType
 SparseMatrixTransform<TScalarType,NDimensions>
@@ -193,23 +244,33 @@ SparseMatrixTransform<TScalarType,NDimensions>
 }
 
 template< class TScalarType, unsigned int NDimensions >
-inline void
+inline bool
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetControlPointData( const size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType pi ) {
+	bool changed = false;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		if( std::isnan( pi[dim] )) pi[dim] = 0;
-		this->m_ControlPointsData[dim][id] = pi[dim];
+		if( this->m_ControlPointsData[dim][id] != pi[dim] ) {
+			this->m_ControlPointsData[dim][id] = pi[dim];
+			changed = true;
+		}
 	}
+	return changed;
 }
 
 template< class TScalarType, unsigned int NDimensions >
-inline void
+inline bool
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetGridPointData( const size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType pi ) {
+	bool changed = false;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		if( std::isnan( pi[dim] )) pi[dim] = 0;
-		this->m_GridPointsData[dim][id] = pi[dim];
+		if( this->m_GridPointsData[dim][id] != pi[dim]) {
+			this->m_GridPointsData[dim][id] = pi[dim];
+			changed=true;
+		}
 	}
+	return changed;
 }
 
 }

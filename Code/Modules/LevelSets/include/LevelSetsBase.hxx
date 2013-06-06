@@ -60,8 +60,16 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
+	// Set number of control points in the sparse-dense interpolator
+	size_t nControlPoints = 0;
+	for ( size_t id = 0; id < this->m_CurrentContourPosition.size(); id ++) {
+		nControlPoints+= this->m_CurrentContourPosition[id]->GetNumberOfPoints();
+	}
+	this->m_SparseToDenseResampler->SetN(nControlPoints);
+
+
 	// Initialize corresponding ROI /////////////////////////////
-	// 1. Check that high-res reference sampling grid has been initialized
+	// Check that high-res reference sampling grid has been initialized
 	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
 			this->InitializeSamplingGrid();
 			this->m_CurrentRegions = ROIType::New();
@@ -72,20 +80,19 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			this->m_CurrentRegions->Allocate();
 	}
 
+	// Compute and set regions
 	this->ComputeCurrentRegions();
-
 	for( size_t id = 0; id < m_ROIs.size(); id++) {
 		this->m_ROIs[id] = this->m_CurrentROIs[id];
 	}
 
-	//
-	// Assign the outer region to each region
-	//
-
-	// 1. Set up ROI interpolator
+	// Set up ROI interpolator
 	typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
 	interp->SetInputImage( this->m_CurrentRegions );
 
+
+	// Set up outer regions AND control points in the interpolator
+	size_t cpid = 0;
 	for ( size_t id = 0; id < this->m_CurrentContourPosition.size(); id ++) {
 		ContourOuterRegions outerVect;
 		ControlPointsVector controlPoints;
@@ -112,28 +119,28 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			p = normals->GetPoint(pid);
 			v = p.GetVectorFromOrigin();
 			controlPoints[pid] = p;
-
-			this->m_SparseToDenseResampler->AddControlPoint( p );
+			this->m_SparseToDenseResampler->SetControlPoint( cpid, p );
 			normals->GetPointData( pid, &ni );
 			p = p + ni;
 			outerVect[pid] =  interp->Evaluate( p );
 			++c_it;
+			cpid++;
 		}
 		this->m_ShapePrior.push_back( controlPoints );
 		this->m_OuterList.push_back( outerVect );
-
 	}
 
-	// FIXME AddGridPoints!
-	if( this->m_DeformationField.IsNotNull() ) {
+
+	// Set up grid points in the sparse-dense interpolator
+	if( this->m_GradientMap.IsNotNull() ) {
 		PointType p;
-		size_t nGridPoints = this->m_DeformationField->GetLargestPossibleRegion().GetNumberOfPixels();
+		size_t nGridPoints = this->m_GradientMap->GetLargestPossibleRegion().GetNumberOfPixels();
+		this->m_SparseToDenseResampler->SetK( nGridPoints );
 
 		for ( size_t gid = 0; gid < nGridPoints; gid++ ) {
-			this->m_DeformationField->TransformIndexToPhysicalPoint( this->m_DeformationField->ComputeIndex( gid ), p );
-			this->m_SparseToDenseResampler->AddGridPoint( p );
+			this->m_GradientMap->TransformIndexToPhysicalPoint( this->m_GradientMap->ComputeIndex( gid ), p );
+			this->m_SparseToDenseResampler->SetGridPoint( gid, p );
 		}
-
 	} else {
 		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
 	}
@@ -195,7 +202,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::MeasureType
 LevelSetsBase<TReferenceImageType, TCoordRepType>
-::UpdateDeformationField(const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldType* newField ) {
+::UpdateContour(const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldType* newField ) {
 	/*
 	if ( this->m_ContourUpdater.IsNull() ) {
 		this->m_ContourUpdater = WarpContourType::New();
@@ -294,6 +301,8 @@ template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldPointer
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetShapeGradients() {
+	size_t cpid = 0;
+
 	for( size_t contid = 0; contid < this->m_CurrentContourPosition.size(); contid++) {
 		// Compute mesh of normals
 		this->m_NormalFilter[contid]->Update();
@@ -323,17 +332,23 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
 			ni*= levelSet;
 			normals->SetPointData( pid, ni );
+			this->m_SparseToDenseResampler->SetControlPointData(cpid, ni);
 			++c_it;
+			cpid++;
 		}
-		//FIXME SetControlPointsData
-		//this->m_SparseToDenseResampler->SetInput( contid, normals );
 	}
 
 	// Interpolate sparse velocity field to targetDeformation
-	// FIXME perform interpolation
-	// this->m_SparseToDenseResampler->Update();
-	// return this->m_SparseToDenseResampler->GetOutput();
-	return this->m_DeformationField;
+	this->m_SparseToDenseResampler->ComputeGridPoints();
+
+	VectorType* gmBuffer = this->m_GradientMap->GetBufferPointer();
+	size_t nPoints = this->m_GradientMap->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	for( size_t gpid = 0; gpid<nPoints; gpid++ ) {
+		*( gmBuffer + gpid ) = this->m_SparseToDenseResampler->GetGridPointData( gpid );
+	}
+
+	return this->m_GradientMap;
 
 }
 

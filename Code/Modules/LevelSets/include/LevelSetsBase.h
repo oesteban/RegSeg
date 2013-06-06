@@ -204,7 +204,7 @@ public:
 
 	DeformationFieldPointer GetShapeGradients( );
 
-	MeasureType UpdateDeformationField( const DeformationFieldType* newField );
+	MeasureType UpdateContour( const DeformationFieldType* newField );
 
 	virtual void Initialize( void );
 
@@ -216,8 +216,8 @@ public:
 
 	itkGetMacro(CurrentContourPosition, ContourList);
 
-	itkSetObjectMacro(DeformationField, DeformationFieldType);
-	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
+	itkSetObjectMacro(GradientMap, DeformationFieldType);
+	itkGetConstObjectMacro(GradientMap, DeformationFieldType);
 
 	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
@@ -240,7 +240,7 @@ protected:
 	//bool CheckExtents( const ContourType* prior ) const;
 
 	mutable MeasureType m_Value;
-	DeformationFieldPointer m_DeformationField;
+	DeformationFieldPointer m_GradientMap;
 	DeformationFieldPointer m_ReferenceSamplingGrid;
 	ContourList m_CurrentContourPosition;
 	NormalFilterList m_NormalFilter;
