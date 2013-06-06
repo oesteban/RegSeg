@@ -60,11 +60,6 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
-	// Check priors
-	for ( size_t pid = 0; pid < this->m_CurrentContourPosition.size(); pid++ ) {
-		this->CheckExtents( this->m_CurrentContourPosition[pid] );
-	}
-
 	// Initialize corresponding ROI /////////////////////////////
 	// 1. Check that high-res reference sampling grid has been initialized
 	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
@@ -73,7 +68,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			this->m_CurrentRegions->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
 			this->m_CurrentRegions->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
 			this->m_CurrentRegions->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-			this->m_CurrentRegions->SetRegions(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+			this->m_CurrentRegions->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
 			this->m_CurrentRegions->Allocate();
 	}
 
@@ -81,24 +76,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	for( size_t id = 0; id < m_ROIs.size(); id++) {
 		this->m_ROIs[id] = this->m_CurrentROIs[id];
-#ifndef DNDEBUG
-		typedef itk::ImageFileWriter< ROIType > ROIWriter;
-		typename ROIWriter::Pointer w = ROIWriter::New();
-		w->SetInput( this->m_ROIs[id] );
-		std::stringstream ss;
-		ss << "roi_" << std::setfill( '0' ) << std::setw(2) << id << ".nii.gz";
-		w->SetFileName( ss.str().c_str() );
-		w->Update();
-#endif
 	}
-
-#ifndef DNDEBUG
-	typedef itk::ImageFileWriter< ROIType > ROIWriter;
-	typename ROIWriter::Pointer w = ROIWriter::New();
-	w->SetInput( this->m_CurrentRegions );
-	w->SetFileName( "regions.nii.gz" );
-	w->Update();
-#endif
 
 	//
 	// Assign the outer region to each region
@@ -110,15 +88,18 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	for ( size_t id = 0; id < this->m_CurrentContourPosition.size(); id ++) {
 		ContourOuterRegions outerVect;
+		ControlPointsVector controlPoints;
 
 		// Compute mesh of normals
 		NormalFilterPointer normFilter = NormalFilterType::New();
 		normFilter->SetInput( this->m_CurrentContourPosition[id] );
 		normFilter->Update();
 		ContourDeformationPointer normals = normFilter->GetOutput();
+		outerVect.resize( normals->GetNumberOfPoints() );
+		controlPoints.resize( normals->GetNumberOfPoints() );
 
-		typename ContourDeformationType::PointsContainerConstIterator c_it     = this->m_ShapePrior[id]->GetPoints()->Begin();
-		typename ContourDeformationType::PointsContainerConstIterator c_end    = this->m_ShapePrior[id]->GetPoints()->End();
+		typename ContourDeformationType::PointsContainerConstIterator c_it  = normals->GetPoints()->Begin();
+		typename ContourDeformationType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
 		PixelPointType p;
 		itk::Vector<double, 3u> norm;
@@ -126,21 +107,41 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		while( c_it != c_end ) {
 			p = c_it.Value();
 			idx = c_it.Index();
+			controlPoints[idx] =  p;
 			normals->GetPointData( idx, &norm );
 			p = p + norm;
-			outerVect.push_back(  interp->Evaluate( p ) );
+			outerVect[idx] =  interp->Evaluate( p );
 			++c_it;
 		}
-
+		this->m_ShapePrior.push_back( controlPoints );
 		this->m_OuterList.push_back( outerVect );
+
+		this->m_SparseToDenseResampler->AddControlPoints( this->m_CurrentContourPosition[id] );
 	}
 
 	if( this->m_DeformationField.IsNotNull() )
 		this->m_SparseToDenseResampler->CopyImageInformation( this->m_DeformationField );
 	else
-		itkWarningMacro( << "No Deformation grid parametrization was defined.");
+		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
 
 	this->m_Modified = false;
+
+#ifndef DNDEBUG
+	for( size_t id = 0; id < m_ROIs.size(); id++) {
+		typedef itk::ImageFileWriter< ROIType > ROIWriter;
+		typename ROIWriter::Pointer w = ROIWriter::New();
+		w->SetInput( this->m_ROIs[id] );
+		std::stringstream ss;
+		ss << "roi_" << std::setfill( '0' ) << std::setw(2) << id << ".nii.gz";
+		w->SetFileName( ss.str().c_str() );
+		w->Update();
+	}
+	typedef itk::ImageFileWriter< ROIType > ROIWriter;
+	typename ROIWriter::Pointer w = ROIWriter::New();
+	w->SetInput( this->m_CurrentRegions );
+	w->SetFileName( "regions.nii.gz" );
+	w->Update();
+#endif
 }
 
 
@@ -149,50 +150,9 @@ size_t
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::AddShapePrior( typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourDeformationType* prior ) {
 	this->m_CurrentContourPosition.push_back( prior );
-	/*
-	// TODO Check that contour copier now works.
-
-	this->m_ContourCopier = ContourCopyType::New();
-	m_ContourCopier->SetInput( prior );
-	this->m_ContourCopier->Update();
-	this->m_ShapePrior = m_ContourCopier->GetOutput();*/
-
-    this->m_ShapePrior.push_back( ContourDeformationType::New() );
-    this->m_ROIs.resize( this->m_ShapePrior.size()+1 );
-    this->m_CurrentROIs.resize( this->m_ShapePrior.size()+1 );
-
-    ContourDeformationPointer shapePrior = this->m_ShapePrior.back();
-
-	typename ContourDeformationType::PointsContainerConstIterator u_it = prior->GetPoints()->Begin();
-    typename ContourDeformationType::PointsContainerConstIterator u_end = prior->GetPoints()->End();
-	VectorType zero = itk::NumericTraits<VectorType>::Zero;
-
-	PointType p, newP;
-	while( u_it != u_end ) {
-		p = u_it.Value();
-		newP.SetPoint( p );
-		newP.SetEdge( p.GetEdge() );
-		shapePrior->SetPointData( shapePrior->AddPoint( newP ), zero);
-		++u_it;
-	}
-
-	typename ContourDeformationType::CellsContainerConstIterator c_it  = prior->GetCells()->Begin();
-	typename ContourDeformationType::CellsContainerConstIterator c_end = prior->GetCells()->End();
-
-	size_t i = 0;
-	while( c_it!=c_end ) {
-		typename ContourDeformationType::CellType::CellAutoPointer cellCopy;
-		c_it.Value()->MakeCopy( cellCopy );
-		shapePrior->SetCell( i++ ,cellCopy );
-		++c_it;
-	}
-
-	this->m_SparseToDenseResampler->AddControlPoints( shapePrior );
-
+    this->m_ROIs.resize( this->m_CurrentContourPosition.size()+1 );
+    this->m_CurrentROIs.resize( this->m_CurrentContourPosition.size()+1 );
 	return this->m_CurrentContourPosition.size()-1;
-
-	// TODO Check overlap (regions are disjoint see issue #76).
-
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -246,17 +206,19 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	ContinuousIndex point_idx;
 	size_t changed = 0;
 
-	for( size_t cont = 0; cont < this->m_ShapePrior.size(); cont++ ) {
+	for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++ ) {
 		typename ContourDeformationType::PointsContainerPointer curr_points = this->m_CurrentContourPosition[cont]->GetPoints();
+		typename ContourDeformationType::PointsContainerIterator p_it = curr_points->Begin();
 		typename ContourDeformationType::PointsContainerIterator p_end = curr_points->End();
-		typename ContourDeformationType::PointsContainerPointer shape_points = this->m_ShapePrior[cont]->GetPoints();
-		typename ContourDeformationType::PointsContainerIterator shape_it = shape_points->Begin();
 
 		// For all the points in the mesh
 		PointType currentPoint,newPoint;
 		PixelPointType p;
-		for(typename ContourDeformationType::PointsContainerIterator p_it = curr_points->Begin(); p_it != p_end; ++p_it, ++shape_it) {
+		long unsigned int idx;
+
+		while ( p_it != p_end ) {
 			currentPoint = p_it.Value();
+			idx = p_it.Index();
 			// Interpolate the value of the field in the point
 			VectorType desp = interp->Evaluate( currentPoint );
 			norm = desp.GetNorm();
@@ -266,18 +228,20 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 				meanDesp += desp;
 				meanNorm += norm;
-				p = shape_it.Value() + desp;
+				p = this->m_ShapePrior[cont][idx] + desp;
 				newPoint.SetPoint( p );
 				newPoint.SetEdge( currentPoint.GetEdge() );
 
 				if( ! this->IsInside(p,point_idx) ) {
 					itkExceptionMacro( << "Contour is outside image regions after update.\n" <<
-						"\tMoving vertex [" << shape_it.Index() << "] from " << shape_it.Value() << " to " << p << " norm="  << desp.GetNorm() << "mm.\n");
+						"\tMoving vertex [" << idx << "] from " << this->m_ShapePrior[cont][idx] << " to " << p << " norm="  << desp.GetNorm() << "mm.\n");
 				}
 
 				this->m_CurrentContourPosition[cont]->SetPoint( p_it.Index(), newPoint );
 				changed++;
 			}
+
+			++p_it;
 		}
 	}
 
@@ -335,7 +299,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldPointer
 LevelSetsBase<TReferenceImageType, TCoordRepType>
-::GetShapeGradients( LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldType* gradientsMap) {
+::GetShapeGradients() {
 	for( size_t cont = 0; cont < this->m_CurrentContourPosition.size(); cont++) {
 		// Compute mesh of normals
 		NormalFilterPointer normFilter = NormalFilterType::New();
@@ -361,7 +325,6 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			idx = c_it.Index();
 			outer_cont = this->m_OuterList[cont][idx];
 			ci_prime = c_it.Value();
-
 			levelSet = this->GetEnergyAtPoint( ci_prime, outer_cont ) - this->GetEnergyAtPoint( ci_prime, cont );
 
 			assert( !std::isnan(levelSet) );

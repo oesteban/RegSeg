@@ -93,6 +93,7 @@ public:
 	typedef typename DeformationFieldType::Pointer                        DeformationFieldPointer;
 	typedef typename DeformationFieldType::PointType                      DeformationFieldPointType;
 	typedef typename DeformationFieldType::DirectionType                  DeformationFieldDirectionType;
+	typedef typename DeformationFieldType::SizeType                       GridSizeType;
 	typedef typename itk::Image<PointValueType, Dimension >               DeformationComponentType;
 	typedef typename DeformationComponentType::Pointer                    DeformationComponentPointer;
 	typedef typename LevelSetsFunctionType::ContourDeformationType        ContourDeformationType;
@@ -133,6 +134,8 @@ public:
 	/** Set the number of iterations. */
 	itkSetMacro(NumberOfIterations, SizeValueType);
 
+	itkSetMacro( GridSize, GridSizeType );
+
 	/** Get the number of iterations. */
 	itkGetConstReferenceMacro(NumberOfIterations, SizeValueType);
 
@@ -162,6 +165,7 @@ protected:
 	StopConditionDescriptionType  m_StopConditionDescription;
 	SizeValueType                 m_NumberOfIterations;
 	SizeValueType                 m_CurrentIteration;
+	GridSizeType                  m_GridSize;
 
 	virtual void PrintSelf(std::ostream & os, itk::Indent indent) const;
 
