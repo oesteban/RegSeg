@@ -74,6 +74,10 @@ public:
 	itkStaticConstMacro( Dimension, unsigned int, Superclass::Dimension );
 
 	/** Metric type over which this class is templated */
+	typedef typename Superclass::PointType                                           PointType;
+	typedef typename Superclass::VectorType                                           VectorType;
+	typedef typename Superclass::PointValueType                                      PointValueType;
+
 	typedef typename Superclass::MeasureType                                         MeasureType;
 	typedef typename Superclass::InternalComputationValueType                        InternalComputationValueType;
 	typedef typename Superclass::StopConditionType                                   StopConditionType;
@@ -81,16 +85,12 @@ public:
 	typedef typename Superclass::LevelSetsPointer                                    LevelSetsPointer;
 	typedef typename Superclass::DeformationFieldType                                DeformationFieldType;
 	typedef typename Superclass::DeformationFieldPointer                             DeformationFieldPointer;
-	typedef typename Superclass::DeformationFieldPointType                           DeformationFieldPointType;
 	typedef typename Superclass::DeformationFieldDirectionType                       DeformationFieldDirectionType;
 	typedef typename Superclass::GridSizeType                                        GridSizeType;
-	typedef typename Superclass::PointValueType                                      PointValueType;
-	typedef typename Superclass::VectorType                                          VectorType;
 	typedef typename Superclass::MatrixType                                          MatrixType;
 	typedef typename Superclass::DeformationComponentType                            DeformationComponentType;
 	typedef typename Superclass::DeformationComponentPointer                         DeformationComponentPointer;
-	typedef typename Superclass::ContourDeformationType                              ContourDeformationType;
-	typedef typename Superclass::ContourDeformationPointer                           ContourDeformationPointer;
+	typedef typename Superclass::ContourType                                         ContourType;
 	typedef typename Superclass::ContourPointType                                    ContourPointType;
 	typedef typename Superclass::TensorFieldType                                     TensorFieldType;
 	typedef typename Superclass::TensorFieldPointer                                  TensorFieldPointer;
@@ -236,7 +236,7 @@ protected:
 
 	void Iterate(void);
 	void ApplyRegularizationTerm( ComplexFieldType* reference );
-	void InitializeDeformationField( const DeformationFieldPointType orig, const DeformationFieldPointType end, const DeformationFieldDirectionType dir);
+	void InitializeDeformationField( const PointType orig, const PointType end, const DeformationFieldDirectionType dir);
 	void InitializeDenominator( ComplexFieldType* reference );
 
 private:

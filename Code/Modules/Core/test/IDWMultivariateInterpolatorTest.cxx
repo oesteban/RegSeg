@@ -65,9 +65,9 @@ namespace bpo = boost::program_options;
 
 typedef float       PixelType;
 const unsigned int Dimension = 3;
-typedef itk::Vector< PixelType, 3 >                 VectorType;
-typedef itk::Image< VectorType, Dimension >         DenseVectorFieldType;
-typedef itk::PointSet< VectorType, Dimension >      SparseVectorFieldType;
+typedef itk::Vector< PixelType, 3 >                 PointType;
+typedef itk::Image< PointType, Dimension >         DenseVectorFieldType;
+typedef itk::PointSet< PointType, Dimension >      SparseVectorFieldType;
 typedef rstk::SparseToDenseFieldResampleFilter<SparseVectorFieldType, DenseVectorFieldType>  ResamplerType;
 //typedef itk::ImageFileWriter< DenseVectorFieldType > Writer;
 typedef rstk::DisplacementFieldFileWriter<DenseVectorFieldType> Writer;
@@ -79,8 +79,8 @@ int main(int argc, char *argv[]) {
 
 
 	// Set some vectors
-	SparseVectorFieldType::PointType p1;
-	VectorType v1;
+	PointType p1;
+	PointType v1;
 	v1.Fill( 5.0 );
 	p1[0] = 10;
 	p1[1] = 10;
@@ -88,11 +88,11 @@ int main(int argc, char *argv[]) {
 	svf->SetPoint( 0, p1 );
 	svf->SetPointData( 0, v1 );
 
-	SparseVectorFieldType::PointType p2;
+	PointType p2;
 	p2[0] = 90;
 	p2[1] = 90;
 	p2[2] = 90;
-	VectorType v2;
+	PointType v2;
 	v2[0] = -5.0;
 	v2[1] = -15.0;
 	v2[2] = 10.0;
@@ -100,11 +100,11 @@ int main(int argc, char *argv[]) {
 	svf->SetPoint( 1, p2 );
 	svf->SetPointData( 1, v2 );
 
-	SparseVectorFieldType::PointType p3;
+	PointType p3;
 	p3[0] = 10;
 	p3[1] = 90;
 	p3[2] = 70;
-	VectorType v3;
+	PointType v3;
 	v3[0] = 2.0;
 	v3[1] = -1.0;
 	v3[2] = -5.0;
@@ -118,8 +118,8 @@ int main(int argc, char *argv[]) {
 	ResamplerType::Pointer res = ResamplerType::New();
 	res->SetInput( svf );
 	res->AddControlPoints( svf );
-	res->SetOutputSize( size );
-	res->SetOutputSpacing( 2.0 );
+	res->SetFieldSize( size );
+	res->SetFieldSpacing( 2.0 );
 	res->Update();
 	DenseVectorFieldType::Pointer df = res->GetOutput();
 

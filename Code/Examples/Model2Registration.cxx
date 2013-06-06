@@ -67,8 +67,8 @@ int main(int argc, char *argv[]) {
 	typedef itk::Image<itk::Vector<float,1u>, 3u>                ChannelType;
 	typedef itk::OrientImageFilter< ChannelType, ChannelType >   OrientFilter;
 	typedef MahalanobisLevelSets<ChannelType>                    LevelSetsType;
-	typedef LevelSetsType::ContourDeformationType                ContourDeformationType;
-	typedef ContourDeformationType::Pointer                      ContourDisplacementFieldPointer;
+	typedef LevelSetsType::ContourType                ContourType;
+	typedef ContourType::Pointer                      ContourDisplacementFieldPointer;
 	typedef LevelSetsType::VectorType                            VectorType;
 	typedef LevelSetsType::MeanType                              MeanType;
 	typedef LevelSetsType::CovarianceType                        CovarianceType;
@@ -77,8 +77,8 @@ int main(int argc, char *argv[]) {
 	typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
 	typedef typename Optimizer::Pointer                          OptimizerPointer;
 
-	typedef itk::VTKPolyDataReader< ContourDeformationType >     ReaderType;
-	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
+	typedef itk::VTKPolyDataReader< ContourType >     ReaderType;
+	typedef itk::VTKPolyDataWriter< ContourType >     WriterType;
 	typedef itk::ImageFileReader<ChannelType>                      ImageReader;
 	typedef itk::ImageFileWriter<ChannelType>                      ImageWriter;
 	typedef itk::ImageFileWriter<DeformationFieldType>           DeformationWriter;
@@ -124,8 +124,8 @@ int main(int argc, char *argv[]) {
 	polyDataReader1->Update();
 	ContourDisplacementFieldPointer initialContour1 = polyDataReader1->GetOutput();
 
-	typename ContourDeformationType::PointsContainerPointer points1 = initialContour1->GetPoints();
-	typename ContourDeformationType::PointsContainerIterator u_it1 = points1->Begin();
+	typename ContourType::PointsContainerPointer points1 = initialContour1->GetPoints();
+	typename ContourType::PointsContainerIterator u_it1 = points1->Begin();
 
 	while( u_it1 != points1->End() ) {
 		initialContour1->SetPointData( u_it1.Index(),zero);
@@ -138,8 +138,8 @@ int main(int argc, char *argv[]) {
 	polyDataReader2->Update();
 	ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
 
-	typename ContourDeformationType::PointsContainerPointer points2 = initialContour2->GetPoints();
-	typename ContourDeformationType::PointsContainerIterator u_it2 = points2->Begin();
+	typename ContourType::PointsContainerPointer points2 = initialContour2->GetPoints();
+	typename ContourType::PointsContainerIterator u_it2 = points2->Begin();
 
 	while( u_it2 != points2->End() ) {
 		initialContour2->SetPointData( u_it2.Index(),zero);

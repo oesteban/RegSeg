@@ -67,9 +67,8 @@ int main(int argc, char *argv[]) {
 	typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
 	typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
-	typedef LevelSetsType::ContourDeformationType                ContourDeformationType;
-	typedef ContourDeformationType::Pointer                      ContourDisplacementFieldPointer;
-	typedef LevelSetsType::VectorType                            VectorType;
+	typedef LevelSetsType::ContourType                ContourType;
+	typedef ContourType::Pointer                      ContourDisplacementFieldPointer;
 	typedef LevelSetsType::MeanType                              MeanType;
 	typedef LevelSetsType::CovarianceType                        CovarianceType;
 	typedef LevelSetsType::DeformationFieldType                  DeformationFieldType;
@@ -77,8 +76,8 @@ int main(int argc, char *argv[]) {
 	typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
 	typedef typename Optimizer::Pointer                          OptimizerPointer;
 
-	typedef itk::VTKPolyDataReader< ContourDeformationType >     ReaderType;
-	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
+	typedef itk::VTKPolyDataReader< ContourType >     ReaderType;
+	typedef itk::VTKPolyDataWriter< ContourType >     WriterType;
 	typedef itk::ImageFileReader<ChannelType>                      ImageReader;
 	typedef itk::ImageFileWriter<ChannelType>                      ImageWriter;
 	typedef itk::ImageFileWriter<DeformationFieldType>           DeformationWriter;

@@ -76,11 +76,11 @@ public:
 	typedef typename OutputImageType::Pointer              OutputImagePointer;
 	typedef typename OutputImageType::ConstPointer         OutputImageConstPointer;
 	typedef typename OutputImageType::SizeType             OutputImageSizeType;
-	typedef typename OutputImageType::PixelType            ValueType;
+	typedef typename OutputImageType::PixelType            PointType;
 
 	typedef typename std::vector< InputMeshConstPointer >  InputMeshList;
 
-	itkStaticConstMacro( OutputImageDimension, unsigned int, TOutputImage::ImageDimension );
+	itkStaticConstMacro( Dimension, unsigned int, TOutputImage::ImageDimension );
 
 
 	virtual void SetInput( const InputMeshType *input ) {

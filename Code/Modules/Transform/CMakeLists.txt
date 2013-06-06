@@ -1,0 +1,2 @@
+project(RSTKTransform)
+set(RSTKTransform_LIBRARIES RSTKTransform)

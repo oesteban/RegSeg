@@ -68,23 +68,23 @@ int main(int argc, char *argv[]) {
 	typedef itk::Image<PixelType, Dimension>            ImageType;
 	typedef MahalanobisLevelSets<itk::Image<VectorPixelType, Dimension> >      LevelSetsType;
 
-	typedef typename LevelSetsType::ContourDeformationType     ContourDeformationType;
-	typedef typename ContourDeformationType::Pointer           ContourDeformationPointer;
-	typedef typename LevelSetsType::VectorType                 VectorType;
+	typedef typename LevelSetsType::ContourType     ContourType;
+	typedef typename ContourType::Pointer           ContourDeformationPointer;
+	typedef typename LevelSetsType::PointType                 PointType;
 
-	typedef itk::BinaryMask3DMeshSource< itk::Image<PixelType, 3u>, ContourDeformationType > MeshSource;
+	typedef itk::BinaryMask3DMeshSource< itk::Image<PixelType, 3u>, ContourType > MeshSource;
 	typedef itk::AddImageFilter<ImageType, ImageType, ImageType > Add;
 
 
-//	typedef itk::VTKPolyDataReader< ContourDeformationType >     ReaderType;
-	typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
+//	typedef itk::VTKPolyDataReader< ContourType >     ReaderType;
+	typedef itk::VTKPolyDataWriter< ContourType >     WriterType;
 	typedef itk::ImageFileWriter<ImageType>                      ImageWriter;
 
 	typedef itk::EllipseSpatialObject< Dimension >   EllipseType;
 	typedef itk::SpatialObjectToImageFilter< EllipseType, ImageType >   SpatialObjectToImageFilterType;
 
 	typedef itk::NormalQuadEdgeMeshFilter
-		    < ContourDeformationType, ContourDeformationType > NormalFilterType;
+		    < ContourType, ContourType > NormalFilterType;
 		typedef typename NormalFilterType::Pointer             NormalFilterPointer;
 
 
@@ -171,17 +171,17 @@ int main(int argc, char *argv[]) {
 	polyDataWriter->Update();
 
 
-	typename ContourDeformationType::PointDataContainerPointer points = normals->GetPointData();
-	typename ContourDeformationType::PointDataContainerIterator u_it = points->Begin();
+	typename ContourType::PointDataContainerPointer points = normals->GetPointData();
+	typename ContourType::PointDataContainerIterator u_it = points->Begin();
 
-	typename ContourDeformationType::PointType position;
-	VectorType norm;
-	VectorType zero = itk::NumericTraits<VectorType>::Zero;
+	typename ContourType::PointType position;
+	PointType norm;
+	PointType zero = itk::NumericTraits<PointType>::Zero;
 	while( u_it != points->End() ) {
 		position = normals->GetPoint( u_it.Index() );
-		norm = (VectorType) u_it.Value();
+		norm = (PointType) u_it.Value();
 		for (size_t i =0; i < norm.Size(); i++) norm[i]*=2.0;
-		typename ContourDeformationType::PointType newP = position - norm;
+		typename ContourType::PointType newP = position - norm;
 		result->SetPoint( u_it.Index(), newP );
 		++u_it;
 	}
