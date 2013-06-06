@@ -83,6 +83,7 @@ public:
 	typedef typename Superclass::DeformationFieldPointer                             DeformationFieldPointer;
 	typedef typename Superclass::DeformationFieldPointType                           DeformationFieldPointType;
 	typedef typename Superclass::DeformationFieldDirectionType                       DeformationFieldDirectionType;
+	typedef typename Superclass::GridSizeType                                        GridSizeType;
 	typedef typename Superclass::PointValueType                                      PointValueType;
 	typedef typename Superclass::VectorType                                          VectorType;
 	typedef typename Superclass::MatrixType                                          MatrixType;

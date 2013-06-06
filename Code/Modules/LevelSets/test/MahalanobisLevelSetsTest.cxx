@@ -122,11 +122,10 @@ int main(int argc, char *argv[]) {
 	//params.cov = cov;
 	//params.iCovariance[2] = cov;
 	ls->AddShapePrior( ellipse );
-	ls->GetShapeGradients(df);
 
 	Writer::Pointer writer = Writer::New();
 	writer->SetFileName( std::string( TEST_DATA_DIR ) + "shapegradientmap.nii.gz" );
-	writer->SetInput( df );
+	writer->SetInput( ls->GetShapeGradients() );
 	writer->Update();
 }
 

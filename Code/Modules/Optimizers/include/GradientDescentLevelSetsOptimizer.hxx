@@ -101,7 +101,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 
 		typename DeformationFieldType::IndexType end_idx;
 		typename DeformationFieldType::SizeType refSize = this->m_LevelSetsFunction->GetReferenceImage()->GetLargestPossibleRegion().GetSize();
-		for( size_t dim = 0; dim < DeformationFieldType::ImageDimension; dim++ ) end_idx[dim] = refSize[dim] - 1;
+		for( size_t dim = 0; dim < DeformationFieldType::ImageDimension; dim++ ) end_idx[dim] = refSize[dim];
 		this->m_LevelSetsFunction->GetReferenceImage()->TransformIndexToPhysicalPoint( end_idx, end );
 		this->InitializeDeformationField( orig, end, this->m_LevelSetsFunction->GetReferenceImage()->GetDirection() );
 	}
@@ -163,29 +163,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 	while( ! this->m_Stop )	{
 		/* Compute metric value/derivative. */
 		try	{
-			this->m_ShapeGradients = this->m_LevelSetsFunction->GetShapeGradients(this->m_DeformationField);
-
-#ifndef NDEBUG
-			typedef itk::MeshFileWriter< ContourDeformationType >     MeshWriterType;
-			typename MeshWriterType::Pointer w = MeshWriterType::New();
-
-			for ( size_t c = 0; c < this->m_LevelSetsFunction->GetCurrentContourPosition().size(); c++ ) {
-				w->SetInput( this->m_LevelSetsFunction->GetCurrentContourPosition()[c] );
-				std::stringstream ss;
-				ss << "contour_" << std::setfill('0') << std::setw(2) << c <<"_it_" << std::setw(3) << this->m_CurrentIteration << ".vtk";
-				w->SetFileName( ss.str() );
-				w->Update();
-			}
-
-			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
-			typename Writer::Pointer p = Writer::New();
-			std::stringstream ss2;
-			ss2 << "gradient_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
-			p->SetFileName( ss2.str().c_str() );
-			p->SetInput( this->m_ShapeGradients );
-			p->Update();
-#endif
-
+			this->m_ShapeGradients = this->m_LevelSetsFunction->GetShapeGradients();
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = Superclass::COSTFUNCTION_ERROR;
@@ -200,6 +178,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			this->m_StopConditionDescription << "Stop() called externally";
 			break;
 		}
+
 
 		/* Advance one step along the gradient.
 		 * This will modify the gradient and update the transform. */
@@ -222,25 +201,26 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		//	this->m_BestParameters = this->GetCurrentPosition( );
 		//}
 
-		/*
-		typedef itk::VTKPolyDataWriter< ContourDeformationType >     WriterType;
-		// Write final result out
-		typename WriterType::Pointer polyDataWriter = WriterType::New();
-		polyDataWriter->SetInput( this->m_LevelSetsFunction->GetCurrentContourPosition()[0] );
-		std::stringstream ss;
-		ss << "Model2-wm_it" <<  setfill('0') << setw(4) << this->m_CurrentIteration << ".vtk";
-		polyDataWriter->SetFileName( ss.str().c_str() );
-		polyDataWriter->Update();
+#ifndef NDEBUG
+			typedef itk::MeshFileWriter< ContourDeformationType >     MeshWriterType;
+			typename MeshWriterType::Pointer w = MeshWriterType::New();
 
-		// Write final result out
-		typename WriterType::Pointer polyDataWriter2 = WriterType::New();
-		polyDataWriter2->SetInput( this->m_LevelSetsFunction->GetCurrentContourPosition()[1] );
-		std::stringstream ss2;
-		ss2 << "Model2-pial_it" << setfill('0') << setw(4) << this->m_CurrentIteration << ".vtk";
-		polyDataWriter2->SetFileName( ss2.str().c_str() );
-		polyDataWriter2->Update();
-		*/
+			for ( size_t c = 0; c < this->m_LevelSetsFunction->GetCurrentContourPosition().size(); c++ ) {
+				w->SetInput( this->m_LevelSetsFunction->GetCurrentContourPosition()[c] );
+				std::stringstream ss;
+				ss << "contour_" << std::setfill('0') << std::setw(2) << c <<"_it_" << std::setw(3) << this->m_CurrentIteration << ".vtk";
+				w->SetFileName( ss.str() );
+				w->Update();
+			}
 
+			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
+			typename Writer::Pointer p = Writer::New();
+			std::stringstream ss2;
+			ss2 << "gradient_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+			p->SetFileName( ss2.str().c_str() );
+			p->SetInput( this->m_ShapeGradients );
+			p->Update();
+#endif
 
 		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentLevelSetsValue << " | " << updateNorm << " | " << this->m_LevelSetsFunction->GetValue() << std::endl;
 
@@ -471,15 +451,12 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::InitializeDeformationFiel
 {
 	this->m_DeformationField = DeformationFieldType::New();
 
-	// TODO: dense deformation field grid size should not be hard-coded
-	typename DeformationFieldType::SizeType size; size.Fill(16); size[2]=8;
-
 	typename DeformationFieldType::SpacingType spacing;
 	for( size_t dim = 0; dim < DeformationFieldType::ImageDimension; dim++ ) {
-		spacing[dim] = fabs( (end[dim]-orig[dim])/(1.0*size[dim]));
+		spacing[dim] = fabs( (end[dim]-orig[dim])/(1.0*this->m_GridSize[dim]));
 	}
 
-	this->m_DeformationField->SetRegions( size );
+	this->m_DeformationField->SetRegions( this->m_GridSize );
 	this->m_DeformationField->SetSpacing( spacing );
 	this->m_DeformationField->SetDirection( dir );
 	this->m_DeformationField->SetOrigin( orig );

@@ -191,10 +191,13 @@ public:
 
 	typedef typename std::vector< ROIPixelType >             ContourOuterRegions;
 	typedef typename std::vector< ContourOuterRegions >      ContourOuterRegionsList;
+	typedef typename std::vector< PixelPointType >           ControlPointsVector;
+	typedef typename std::vector< ControlPointsVector >      ControlPointsList;
+
 
 	MeasureType GetValue();
 
-	DeformationFieldPointer GetShapeGradients( DeformationFieldType* gradientsMap );
+	DeformationFieldPointer GetShapeGradients( );
 
 	MeasureType UpdateDeformationField( const DeformationFieldType* newField );
 
@@ -204,7 +207,7 @@ public:
 	ROIConstPointer GetCurrentRegions( void );
 
 	size_t AddShapePrior( ContourDeformationType* prior );
-	itkGetMacro(ShapePrior, ContourDeformationList);
+	//itkGetMacro(ShapePrior, ContourDeformationList);
 
 	itkGetMacro(CurrentContourPosition, ContourDeformationList);
 
@@ -234,7 +237,6 @@ protected:
 	mutable MeasureType m_Value;
 	DeformationFieldPointer m_DeformationField;
 	DeformationFieldPointer m_ReferenceSamplingGrid;
-	ContourDeformationList m_ShapePrior;
 	ContourDeformationList m_CurrentContourPosition;
 	ContourCopyPointer m_ContourCopier;
 	WarpContourPointer m_ContourUpdater;
@@ -246,6 +248,7 @@ protected:
 	DisplacementTransformPointer m_Transform;
 	ReferenceImageConstPointer m_ReferenceImage;
 	ContourOuterRegionsList m_OuterList;
+	ControlPointsList m_ShapePrior;
 	bool m_Modified;
 	bool m_RegionsModified;
 
