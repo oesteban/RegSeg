@@ -136,7 +136,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 //		this->m_CurrentBestValue = NumericTraits< MeasureType >::max();
 //	}
 
-	this->m_LevelSetsFunction->SetDeformationField( this->m_DeformationField );
+	this->m_LevelSetsFunction->SetGradientMap( this->m_DeformationField );
 	this->m_LevelSetsFunction->Initialize();
 
 	this->m_CurrentIteration = 0;
@@ -187,7 +187,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		this->ComputeIterationChange();
 
 		/* Update the level sets contour and deformation field */
-		double updateNorm = this->m_LevelSetsFunction->UpdateDeformationField( this->m_NextDeformationField );
+		double updateNorm = this->m_LevelSetsFunction->UpdateContour( this->m_NextDeformationField );
 		itk::ImageAlgorithm::Copy<DeformationFieldType,DeformationFieldType>(
 				this->m_NextDeformationField, this->m_DeformationField,
 				this->m_NextDeformationField->GetLargestPossibleRegion(),

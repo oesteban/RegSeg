@@ -102,26 +102,37 @@ public:
     typedef typename Superclass::InputVnlVectorType  InputVnlVectorType;
     typedef typename Superclass::OutputVnlVectorType OutputVnlVectorType;
 
-	inline void AddControlPoint( const PointType pi );
-	inline void AddGridPoint( const PointType pi );
+    void SetN( size_t N );
+    void SetK( size_t K );
+    void SetNumberOfParameters( size_t N, size_t K ) {
+    	this->SetN( N );
+    	this->SetK( K );
+    }
+
+	void ComputeGridPoints( void );
+	void ComputeControlPoints( void );
+
+	inline void SetControlPoint( size_t id, const PointType pi );
+	inline void SetGridPoint   ( size_t id, const PointType pi );
+
+	inline VectorType GetControlPointData( const size_t id );
+	inline VectorType GetGridPointData( const size_t id );
+	inline bool SetControlPointData( const size_t id, VectorType pi );
+	inline bool SetGridPointData( const size_t id, VectorType pi );
 
 	// Virtual members inherited from Transform
-	virtual void SetParameters(const ParametersType &)                       \
-		    {                                                                                             \
-		      itkExceptionMacro(                                                                          \
-		        << "TransformVector(const InputVectorType &) is not implemented for KernelTransform");    \
-		    }
+	virtual void SetParameters(const ParametersType & parameters);
+
 	virtual void SetFixedParameters(const ParametersType &)                       \
 		    {                                                                                             \
 		      itkExceptionMacro(                                                                          \
 		        << "TransformVector(const InputVectorType &) is not implemented for KernelTransform");    \
 		    }
 
-	virtual OutputPointType TransformPoint(const InputPointType &)                       \
-		    {                                                                                             \
-		      itkExceptionMacro(                                                                          \
-		        << "TransformVector(const InputVectorType &) is not implemented for KernelTransform");    \
-		    }
+	virtual OutputPointType TransformPoint(const InputPointType  & point) const
+	{
+	  return point;
+	}
 
 	/** These vector transforms are not implemented for this transform */
     using Superclass::TransformVector;
@@ -145,7 +156,11 @@ public:
         << "TransformCovariantVector(const InputCovariantVectorType &) is not implemented for KernelTransform"); \
     }
     /** Compute the Jacobian Matrix of the transformation at one point */
-    virtual void ComputeJacobianWithRespectToParameters( const InputPointType  & p, JacobianType & jacobian) const;
+    virtual void ComputeJacobianWithRespectToParameters( const InputPointType  & p, JacobianType & jacobian) const           \
+    {                                                                                 \
+      itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented "  \
+                         "for " << this->GetNameOfClass() );                          \
+    }
 
     virtual void ComputeJacobianWithRespectToPosition(const InputPointType &,
                                                       JacobianType &) const           \
@@ -165,15 +180,6 @@ protected:
 
 	inline ScalarType ComputeWeight( PointType gridPoint, PointType controlPoint ) { return 0.0; }
 
-	void ComputeGridPoints( void );
-	void ComputeControlPoints( void );
-
-
-	inline VectorType GetControlPointData( const size_t id );
-	inline VectorType GetGridPointData( const size_t id );
-	inline void SetControlPointData( const size_t id, VectorType pi );
-	inline void SetGridPointData( const size_t id, VectorType pi );
-
 	PointsList m_ControlPoints; // Nc points in the mesh
 	PointsList m_GridPoints;    // Serialized k points in a grid
 
@@ -183,7 +189,10 @@ protected:
 	WeightsMatrix   m_Phi;
 	WeightsMatrix   m_InvertPhi;
 	size_t          m_N;
-	size_t          m_k;
+	size_t          m_K;
+
+	bool            m_GridDataChanged;
+	bool            m_ControlDataChanged;
 private:
 	SparseMatrixTransform( const Self & );
 	void operator=( const Self & );
