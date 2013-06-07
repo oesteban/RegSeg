@@ -53,7 +53,7 @@
 
 namespace rstk {
 
-template< class TScalarType = double, unsigned int NDimensions = 3u >
+template< class RBFunction, class TScalarType = double, unsigned int NDimensions = 3u >
 class SparseMatrixTransform: public itk::Transform< TScalarType, NDimensions, NDimensions >
 {
 public:
@@ -73,6 +73,8 @@ public:
 
 	typedef itk::Point< ScalarType, Dimension >      PointType;
 	typedef itk::Vector< ScalarType, Dimension >     VectorType;
+
+	typedef RBFunction                               RBFType;
 
 	typedef vnl_sparse_matrix< ScalarType >          WeightsMatrix;
 	typedef vnl_vector< ScalarType >                 DimensionVector;
@@ -175,10 +177,6 @@ protected:
 
 
 	void ComputePhi( void );
-	// FIXME
-	//inline ScalarType ComputeWeight( PointType gridPoint, PointType controlPoint ) const =0;
-
-	inline ScalarType ComputeWeight( PointType gridPoint, PointType controlPoint ) { return 0.0; }
 
 	PointsList m_ControlPoints; // Nc points in the mesh
 	PointsList m_GridPoints;    // Serialized k points in a grid
@@ -190,6 +188,8 @@ protected:
 	WeightsMatrix   m_InvertPhi;
 	size_t          m_N;
 	size_t          m_K;
+
+	RBFType         m_RBF;
 
 	bool            m_GridDataChanged;
 	bool            m_ControlDataChanged;

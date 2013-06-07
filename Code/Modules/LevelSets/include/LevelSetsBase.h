@@ -60,6 +60,7 @@
 
 //#include "SparseToDenseFieldResampleFilter.h"
 
+#include "VectorIDWBasisFunction.h"
 #include "SparseMatrixTransform.h"
 
 namespace rstk {
@@ -181,12 +182,14 @@ public:
 	typedef typename SpatialObjectToImageFilterType::Pointer SpatialObjectToImageFilterPointer;
 
 
-	typedef SparseMatrixTransform< TCoordRepType, Dimension > SparseToDenseFieldResampleType;
+	typedef RBF::VectorIDWBasisFunction< PointType, TCoordRepType, Dimension > RBFType;
+	typedef SparseMatrixTransform<RBFType, TCoordRepType, Dimension > FieldInterpolatorType;
+	typedef typename FieldInterpolatorType::Pointer FieldInterpolatorPointer;
+
 
 	//typedef SparseToDenseFieldResampleFilter
 	//	<ContourType, DeformationFieldType>       SparseToDenseFieldResampleType;
-
-	typedef typename SparseToDenseFieldResampleType::Pointer SparseToDenseFieldResamplePointer;
+	//typedef typename SparseToDenseFieldResampleType::Pointer SparseToDenseFieldResamplePointer;
 
 	typedef typename itk::WarpMeshFilter
 			< ContourType,
@@ -246,7 +249,7 @@ protected:
 	NormalFilterList m_NormalFilter;
 	ContourCopyPointer m_ContourCopier;
 	WarpContourPointer m_ContourUpdater;
-	SparseToDenseFieldResamplePointer m_SparseToDenseResampler;
+	FieldInterpolatorPointer m_FieldInterpolator;
 	DisplacementResamplerPointer m_EnergyResampler;
 	ROIList m_ROIs;
 	ROIList m_CurrentROIs;
