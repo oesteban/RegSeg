@@ -42,7 +42,7 @@
 
 #include <iostream>
 #include <iomanip>
-
+#include "DisplacementFieldFileWriter.h"
 namespace rstk {
 
 
@@ -50,7 +50,7 @@ template< typename TReferenceImageType, typename TCoordRepType >
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::LevelSetsBase() {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
-	this->m_SparseToDenseResampler = SparseToDenseFieldResampleType::New();
+	this->m_FieldInterpolator = FieldInterpolatorType::New();
 	this->m_EnergyResampler = DisplacementResamplerType::New();
 	this->m_Modified = false;
 	this->m_RegionsModified = false;
@@ -65,7 +65,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	for ( size_t id = 0; id < this->m_CurrentContourPosition.size(); id ++) {
 		nControlPoints+= this->m_CurrentContourPosition[id]->GetNumberOfPoints();
 	}
-	this->m_SparseToDenseResampler->SetN(nControlPoints);
+	this->m_FieldInterpolator->SetN(nControlPoints);
 
 
 	// Initialize corresponding ROI /////////////////////////////
@@ -119,7 +119,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			p = normals->GetPoint(pid);
 			v = p.GetVectorFromOrigin();
 			controlPoints[pid] = p;
-			this->m_SparseToDenseResampler->SetControlPoint( cpid, p );
+			this->m_FieldInterpolator->SetControlPoint( cpid, p );
 			normals->GetPointData( pid, &ni );
 			p = p + ni;
 			outerVect[pid] =  interp->Evaluate( p );
@@ -135,11 +135,11 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	if( this->m_GradientMap.IsNotNull() ) {
 		PointType p;
 		size_t nGridPoints = this->m_GradientMap->GetLargestPossibleRegion().GetNumberOfPixels();
-		this->m_SparseToDenseResampler->SetK( nGridPoints );
+		this->m_FieldInterpolator->SetK( nGridPoints );
 
 		for ( size_t gid = 0; gid < nGridPoints; gid++ ) {
 			this->m_GradientMap->TransformIndexToPhysicalPoint( this->m_GradientMap->ComputeIndex( gid ), p );
-			this->m_SparseToDenseResampler->SetGridPoint( gid, p );
+			this->m_FieldInterpolator->SetGridPoint( gid, p );
 		}
 	} else {
 		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
@@ -303,6 +303,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetShapeGradients() {
 	size_t cpid = 0;
 
+	this->m_GradientMap->FillBuffer( itk::NumericTraits<VectorType>::Zero );
+
 	for( size_t contid = 0; contid < this->m_CurrentContourPosition.size(); contid++) {
 		// Compute mesh of normals
 		this->m_NormalFilter[contid]->Update();
@@ -332,21 +334,31 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
 			ni*= levelSet;
 			normals->SetPointData( pid, ni );
-			this->m_SparseToDenseResampler->SetControlPointData(cpid, ni);
+			this->m_FieldInterpolator->SetControlPointData(cpid, ni);
 			++c_it;
 			cpid++;
 		}
 	}
 
 	// Interpolate sparse velocity field to targetDeformation
-	this->m_SparseToDenseResampler->ComputeGridPoints();
+	this->m_FieldInterpolator->ComputeGridPoints();
 
 	VectorType* gmBuffer = this->m_GradientMap->GetBufferPointer();
 	size_t nPoints = this->m_GradientMap->GetLargestPossibleRegion().GetNumberOfPixels();
+	VectorType v;
 
 	for( size_t gpid = 0; gpid<nPoints; gpid++ ) {
-		*( gmBuffer + gpid ) = this->m_SparseToDenseResampler->GetGridPointData( gpid );
+		v = this->m_FieldInterpolator->GetGridPointData( gpid );
+		if ( v.GetNorm() > 0 ) {
+			this->m_GradientMap->SetPixel( this->m_GradientMap->ComputeIndex(gpid), v);
+		}
 	}
+
+	typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
+	typename Writer::Pointer p = Writer::New();
+	p->SetFileName( "testgradient.nii.gz");
+	p->SetInput( this->m_GradientMap );
+	p->Update();
 
 	return this->m_GradientMap;
 

@@ -64,7 +64,7 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize = 0.1;
+	this->m_StepSize = 0.001;
 	this->m_A.SetIdentity();
 	this->m_A(0,0) = 2.0*1e-4;
 	this->m_A(1,1) = 2.0*1e-4;
@@ -164,6 +164,15 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		/* Compute metric value/derivative. */
 		try	{
 			this->m_ShapeGradients = this->m_LevelSetsFunction->GetShapeGradients();
+#ifndef NDEBUG
+			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
+			typename Writer::Pointer p = Writer::New();
+			std::stringstream ss2;
+			ss2 << "gradient_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+			p->SetFileName( ss2.str().c_str() );
+			p->SetInput( this->m_ShapeGradients );
+			p->Update();
+#endif
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = Superclass::COSTFUNCTION_ERROR;
@@ -212,14 +221,6 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 				w->SetFileName( ss.str() );
 				w->Update();
 			}
-
-			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
-			typename Writer::Pointer p = Writer::New();
-			std::stringstream ss2;
-			ss2 << "gradient_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
-			p->SetFileName( ss2.str().c_str() );
-			p->SetInput( this->m_ShapeGradients );
-			p->Update();
 #endif
 
 		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentLevelSetsValue << " | " << updateNorm << " | " << this->m_LevelSetsFunction->GetValue() << std::endl;
