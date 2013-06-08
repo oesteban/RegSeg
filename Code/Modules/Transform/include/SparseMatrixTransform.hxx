@@ -103,6 +103,7 @@ SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
 			wi = this->m_RBF( ci, pi );
 			if (wi > 1e-3) {
 				this->m_Phi.put(row, col, wi);
+				this->m_InvertPhi.put( col, row, 1.0/wi );
 			}
 		}
 
@@ -113,7 +114,12 @@ SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
 		}
 	}
 
-	// TODO Invert phi matrix
+	for ( row = 0; row < this->m_N; row++ ){
+		norm = this->m_InvertPhi.sum_row( row );
+		if( norm > 0 ) {
+			this->m_InvertPhi.scale_row( row, norm );
+		}
+	}
 }
 
 template< class RBFunction, class TScalarType, unsigned int NDimensions >
@@ -133,10 +139,8 @@ SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
 
 	if( norms==0 ) return; // Nothing to do
 
-	norms = 0;
     for ( size_t i = 0; i < Dimension; i++ ) {
     	this->m_Phi.mult(this->m_ControlPointsData[i], this->m_GridPointsData[i] );
-    	norms+= this->m_GridPointsData[i].one_norm();
     }
 
 }

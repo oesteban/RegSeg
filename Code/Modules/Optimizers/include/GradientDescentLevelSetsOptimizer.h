@@ -85,6 +85,7 @@ public:
 	typedef typename Superclass::LevelSetsPointer                                    LevelSetsPointer;
 	typedef typename Superclass::DeformationFieldType                                DeformationFieldType;
 	typedef typename Superclass::DeformationFieldPointer                             DeformationFieldPointer;
+	typedef typename DeformationFieldType::ConstPointer                              DeformationFieldConstPointer;
 	typedef typename Superclass::DeformationFieldDirectionType                       DeformationFieldDirectionType;
 	typedef typename Superclass::GridSizeType                                        GridSizeType;
 	typedef typename Superclass::MatrixType                                          MatrixType;
@@ -224,7 +225,6 @@ protected:
 
 	DeformationFieldPointer m_DeformationField;
 	DeformationFieldPointer m_NextDeformationField;
-	DeformationFieldPointer m_ShapeGradients;
 	TensorFieldPointer m_Denominator;
 	MeasureType m_CurrentLevelSetsValue;
 

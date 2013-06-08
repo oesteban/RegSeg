@@ -131,23 +131,22 @@ public:
 			<ContourType,ContourType>  ContourCopyType;
 	typedef typename ContourCopyType::Pointer                ContourCopyPointer;
 
-	typedef itk::Image< VectorType, Dimension >              DeformationFieldType;
-	typedef typename DeformationFieldType::Pointer           DeformationFieldPointer;
-	typedef typename DeformationFieldType::ConstPointer      DeformationFieldConstPointer;
-	typedef typename DeformationFieldType::PointType         DeformationFieldPointType;
-	typedef typename DeformationFieldType::IndexType         DeformationFieldIndexType;
+	typedef itk::Image< VectorType, Dimension >              FieldType;
+	typedef typename FieldType::Pointer                      FieldPointer;
+	typedef typename FieldType::ConstPointer                 FieldConstPointer;
+	typedef typename FieldType::PointType                    FieldPointType;
+	typedef typename FieldType::IndexType                    FieldIndexType;
 
 	typedef itk::VectorLinearInterpolateImageFunction
-			< DeformationFieldType >                         VectorInterpolatorType;
+			           < FieldType >                         VectorInterpolatorType;
 	typedef typename VectorInterpolatorType::Pointer         VectorInterpolatorPointer;
 
 	typedef itk::VectorResampleImageFilter
-        <DeformationFieldType,DeformationFieldType >
-	                                                         DisplacementResamplerType;
+                                  <FieldType,FieldType >     DisplacementResamplerType;
 	typedef typename DisplacementResamplerType::Pointer      DisplacementResamplerPointer;
 
 	typedef itk::DisplacementFieldJacobianDeterminantFilter
-		< DeformationFieldType >                             ModulateFilterType;
+		< FieldType >                             ModulateFilterType;
 	typedef typename ModulateFilterType::Pointer             ModulateFilterPointer;
 
 
@@ -188,13 +187,13 @@ public:
 
 
 	//typedef SparseToDenseFieldResampleFilter
-	//	<ContourType, DeformationFieldType>       SparseToDenseFieldResampleType;
+	//	<ContourType, FieldType>       SparseToDenseFieldResampleType;
 	//typedef typename SparseToDenseFieldResampleType::Pointer SparseToDenseFieldResamplePointer;
 
 	typedef typename itk::WarpMeshFilter
 			< ContourType,
 			  ContourType,
-			  DeformationFieldType>                          WarpContourType;
+			  FieldType>                          WarpContourType;
 	typedef typename WarpContourType::Pointer                WarpContourPointer;
 
 	typedef typename std::vector< ROIPixelType >             ContourOuterRegions;
@@ -202,12 +201,13 @@ public:
 	typedef typename std::vector< PointType >                ControlPointsVector;
 	typedef typename std::vector< ControlPointsVector >      ControlPointsList;
 
+	void CopyInformation( const FieldType* field);
 
 	MeasureType GetValue();
 
-	DeformationFieldPointer GetShapeGradients( );
+	void ComputeGradient( void );
 
-	MeasureType UpdateContour( const DeformationFieldType* newField );
+	MeasureType UpdateContour( const FieldType* newField );
 
 	virtual void Initialize( void );
 
@@ -219,8 +219,8 @@ public:
 
 	itkGetMacro(CurrentContourPosition, ContourList);
 
-	itkSetObjectMacro(GradientMap, DeformationFieldType);
-	itkGetConstObjectMacro(GradientMap, DeformationFieldType);
+	itkSetObjectMacro(GradientMap, FieldType);
+	itkGetConstObjectMacro(GradientMap, FieldType);
 
 	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
@@ -243,8 +243,8 @@ protected:
 	//bool CheckExtents( const ContourType* prior ) const;
 
 	mutable MeasureType m_Value;
-	DeformationFieldPointer m_GradientMap;
-	DeformationFieldPointer m_ReferenceSamplingGrid;
+	FieldPointer m_GradientMap;
+	FieldPointer m_ReferenceSamplingGrid;
 	ContourList m_CurrentContourPosition;
 	NormalFilterList m_NormalFilter;
 	ContourCopyPointer m_ContourCopier;

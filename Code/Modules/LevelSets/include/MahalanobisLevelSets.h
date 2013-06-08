@@ -80,8 +80,8 @@ public:
 	typedef typename Superclass::ContinuousIndex             ContinuousIndex;
 
 	typedef typename Superclass::ContourType                 ContourType;
-	typedef typename Superclass::DeformationFieldType        DeformationFieldType;
-	typedef typename Superclass::DeformationFieldPointer     DeformationFieldPointer;
+	typedef typename Superclass::FieldType        FieldType;
+	typedef typename Superclass::FieldPointer     FieldPointer;
 	typedef typename Superclass::ContourCopyType             ContourCopyType;
 	typedef typename Superclass::ContourCopyPointer          ContourCopyPointer;
 	typedef typename Superclass::NormalFilterType            NormalFilterType;

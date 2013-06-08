@@ -67,11 +67,11 @@ int main(int argc, char *argv[]) {
 	typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
 	typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
-	typedef LevelSetsType::ContourType                ContourType;
-	typedef ContourType::Pointer                      ContourDisplacementFieldPointer;
+	typedef LevelSetsType::ContourType                           ContourType;
+	typedef ContourType::Pointer                                 ContourDisplacementFieldPointer;
 	typedef LevelSetsType::MeanType                              MeanType;
 	typedef LevelSetsType::CovarianceType                        CovarianceType;
-	typedef LevelSetsType::DeformationFieldType                  DeformationFieldType;
+	typedef LevelSetsType::FieldType                             DeformationFieldType;
 
 	typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
 	typedef typename Optimizer::Pointer                          OptimizerPointer;

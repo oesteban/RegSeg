@@ -51,6 +51,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::LevelSetsBase() {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_FieldInterpolator = FieldInterpolatorType::New();
+	this->m_GradientMap = FieldType::New();
 	this->m_EnergyResampler = DisplacementResamplerType::New();
 	this->m_Modified = false;
 	this->m_RegionsModified = false;
@@ -202,17 +203,14 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::MeasureType
 LevelSetsBase<TReferenceImageType, TCoordRepType>
-::UpdateContour(const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldType* newField ) {
-	/*
-	if ( this->m_ContourUpdater.IsNull() ) {
-		this->m_ContourUpdater = WarpContourType::New();
-		this->m_ContourUpdater->SetInput(this->m_ShapePrior);
-		this->m_CurrentContourPosition = this->m_ContourUpdater->GetOutput();
-	}
+::UpdateContour(const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::FieldType* newField ) {
+	// Copy newField values to interpolator
+	size_t nGridPoints = newField->GetLargestPossibleRegion().GetNumberOfPixels();
+	const VectorType* gridPointsBuffer = newField->GetBufferPointer();
+	for( size_t gpid = 0; gpid < nGridPoints; gpid++ )
+		this->m_FieldInterpolator->SetGridPointData( gpid, *( gridPointsBuffer + gpid ) );
 
-	this->m_ContourUpdater->SetDisplacementField( newField );
-	this->m_ContourUpdater->Update();
-	*/
+	this->m_FieldInterpolator->ComputeControlPoints();
 
 	MeasureType norm;
 	MeasureType meanNorm = 0.0;
@@ -227,6 +225,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	ContinuousIndex point_idx;
 	size_t changed = 0;
 
+	size_t gpid = 0;
 	for( size_t contid = 0; contid < this->m_CurrentContourPosition.size(); contid++ ) {
 		typename ContourType::PointsContainerPointer curr_points = this->m_CurrentContourPosition[contid]->GetPoints();
 		typename ContourType::PointsContainerIterator p_it = curr_points->Begin();
@@ -234,7 +233,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 		// For all the points in the mesh
 		PointType p;
-		VectorType desp;
+		VectorType desp, desp_back;
 		typename ContourType::PointType currentPoint,newPoint;
 		long unsigned int pid;
 
@@ -243,7 +242,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			pid = p_it.Index();
 			// FIXME Substitute!!!!
 			// Interpolate the value of the field in the point
-			desp = interp->Evaluate( currentPoint );
+			desp_back = interp->Evaluate( currentPoint );
+			desp = this->m_FieldInterpolator->GetGridPointData( gpid );
 			norm = desp.GetNorm();
 			// Add vector to the point
 			if( norm >0 ) {
@@ -262,6 +262,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 				this->m_CurrentContourPosition[contid]->SetPoint( p_it.Index(), newPoint );
 				changed++;
+				gpid++;
 			}
 
 			++p_it;
@@ -284,12 +285,12 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	bool isInside = this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex( p, idx );
 #ifndef NDEBUG
 	if(!isInside) {
-		typename DeformationFieldType::PointType origin, end;
-		typename DeformationFieldType::IndexType tmp_idx;
-		typename DeformationFieldType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
+		typename FieldType::PointType origin, end;
+		typename FieldType::IndexType tmp_idx;
+		typename FieldType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
 		tmp_idx.Fill(0);
 		this->m_ReferenceImage->TransformIndexToPhysicalPoint( tmp_idx, origin );
-		for ( size_t dim = 0; dim<DeformationFieldType::ImageDimension; dim++)  tmp_idx[dim]= size[dim]-1;
+		for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= size[dim]-1;
 		this->m_ReferenceImage->TransformIndexToPhysicalPoint( tmp_idx, end);
 		itkWarningMacro( << "Point p=[" << p << "] is outside image extents (" << origin << ", " << end << ").");
 	}
@@ -298,9 +299,9 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-typename LevelSetsBase<TReferenceImageType, TCoordRepType>::DeformationFieldPointer
+void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
-::GetShapeGradients() {
+::ComputeGradient() {
 	size_t cpid = 0;
 
 	this->m_GradientMap->FillBuffer( itk::NumericTraits<VectorType>::Zero );
@@ -353,14 +354,6 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			this->m_GradientMap->SetPixel( this->m_GradientMap->ComputeIndex(gpid), v);
 		}
 	}
-
-	typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
-	typename Writer::Pointer p = Writer::New();
-	p->SetFileName( "testgradient.nii.gz");
-	p->SetInput( this->m_GradientMap );
-	p->Update();
-
-	return this->m_GradientMap;
 
 }
 
@@ -433,7 +426,7 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::InitializeSamplingGrid() {
-	this->m_ReferenceSamplingGrid = DeformationFieldType::New();
+	this->m_ReferenceSamplingGrid = FieldType::New();
 	typename ReferenceImageType::SpacingType sp = this->m_ReferenceImage->GetSpacing();
 	double spacing = itk::NumericTraits< double >::max();
 
@@ -482,6 +475,16 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 #endif
 }
 
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::CopyInformation( const FieldType* field) {
+	this->m_GradientMap->SetDirection( field->GetDirection() );
+	this->m_GradientMap->SetOrigin   ( field->GetOrigin() );
+	this->m_GradientMap->SetSpacing  ( field->GetSpacing() );
+	this->m_GradientMap->SetRegions  ( field->GetRequestedRegion().GetSize());
+	this->m_GradientMap->Allocate();
+}
 
 //template< typename TReferenceImageType, typename TCoordRepType >
 //bool

@@ -84,7 +84,7 @@ public:
 
 	typedef TLevelSetsFunction                                    LevelSetsFunctionType;
 	typedef typename LevelSetsFunctionType::Pointer               LevelSetsPointer;
-	typedef typename LevelSetsFunctionType::DeformationFieldType  DeformationFieldType;
+	typedef typename LevelSetsFunctionType::FieldType             DeformationFieldType;
 	typedef typename LevelSetsFunctionType::PointType             PointType;
 	typedef typename LevelSetsFunctionType::VectorType            VectorType;
 	typedef typename LevelSetsFunctionType::PointValueType        PointValueType;
