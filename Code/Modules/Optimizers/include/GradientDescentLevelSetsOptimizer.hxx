@@ -106,15 +106,6 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 		this->InitializeDeformationField( orig, end, this->m_LevelSetsFunction->GetReferenceImage()->GetDirection() );
 	}
 
-	if ( this->m_ShapeGradients.IsNull() ) {
-		this->m_ShapeGradients = DeformationFieldType::New();
-		this->m_ShapeGradients->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
-		this->m_ShapeGradients->SetSpacing( this->m_DeformationField->GetSpacing() );
-		this->m_ShapeGradients->SetDirection( this->m_DeformationField->GetDirection() );
-		this->m_ShapeGradients->Allocate();
-		this->m_ShapeGradients->FillBuffer( zerov );
-	}
-
 	/* Initialize next deformationfield */
 	this->m_NextDeformationField = DeformationFieldType::New();
 	this->m_NextDeformationField->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
@@ -136,7 +127,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 //		this->m_CurrentBestValue = NumericTraits< MeasureType >::max();
 //	}
 
-	this->m_LevelSetsFunction->SetGradientMap( this->m_DeformationField );
+	this->m_LevelSetsFunction->CopyInformation( this->m_DeformationField );
 	this->m_LevelSetsFunction->Initialize();
 
 	this->m_CurrentIteration = 0;
@@ -163,14 +154,14 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 	while( ! this->m_Stop )	{
 		/* Compute metric value/derivative. */
 		try	{
-			this->m_ShapeGradients = this->m_LevelSetsFunction->GetShapeGradients();
+			this->m_LevelSetsFunction->ComputeGradient();
 #ifndef NDEBUG
 			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
 			typename Writer::Pointer p = Writer::New();
 			std::stringstream ss2;
 			ss2 << "gradient_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
 			p->SetFileName( ss2.str().c_str() );
-			p->SetInput( this->m_ShapeGradients );
+			p->SetInput( this->m_LevelSetsFunction->GetGradientMap() );
 			p->Update();
 #endif
 		}
@@ -270,9 +261,11 @@ template< typename TLevelSetsFunction >
 void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
 
+	DeformationFieldConstPointer shapeGradient = this->m_LevelSetsFunction->GetGradientMap();
+
 	// Get deformation fields pointers
 	const VectorType* dFieldBuffer = this->m_DeformationField->GetBufferPointer();
-	const VectorType* sFieldBuffer = this->m_ShapeGradients->GetBufferPointer();
+	const VectorType* sFieldBuffer = shapeGradient->GetBufferPointer();
 
 	// Create container for deformation field components
 	DeformationComponentPointer fieldComponent = DeformationComponentType::New();

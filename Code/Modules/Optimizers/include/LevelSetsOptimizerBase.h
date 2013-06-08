@@ -64,7 +64,7 @@ public:
   /** Metric function type */
   typedef TLevelSetsFunction                                                   LevelSetsFunctionType;
   typedef typename LevelSetsFunctionType::Pointer                              LevelSetsPointer;
-  typedef typename LevelSetsFunctionType::DeformationFieldType                 DeformationFieldType;
+  typedef typename LevelSetsFunctionType::FieldType                            DeformationFieldType;
 
   /** Number of parameters type */
   //typedef typename LevelSetsFunctionType::NumberOfParametersType               NumberOfParametersType;
