@@ -47,19 +47,21 @@
 
 namespace rstk {
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
-SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
+template< class TScalarType, unsigned int NDimensions >
+SparseMatrixTransform<TScalarType,NDimensions>
 ::SparseMatrixTransform(): Superclass(NDimensions) {
 	this->m_N = 0;
 	this->m_K = 0;
 	this->m_GridDataChanged = false;
 	this->m_ControlDataChanged = false;
-	this->m_RBF = RBFType();
+	//RBFType rbf = DefaultRBFType();
+//	this->m_RadialBasisFunction = dynamic_cast<RBFType*> (&rbf );
+	this->m_RadialBasisFunction = DefaultRBFType();
 }
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
+template< class TScalarType, unsigned int NDimensions >
 void
-SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
+SparseMatrixTransform<TScalarType,NDimensions>
 ::SetN( size_t N ) {
 	this->m_N = N;
 	this->m_ControlPoints.resize(N);
@@ -68,9 +70,9 @@ SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
 
 }
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
+template< class TScalarType, unsigned int NDimensions >
 void
-SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
+SparseMatrixTransform<TScalarType,NDimensions>
 ::SetK( size_t K ) {
 	this->m_K = K;
 	this->m_GridPoints.resize(K);
@@ -83,9 +85,9 @@ SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
 
 }
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
+template< class TScalarType, unsigned int NDimensions >
 void
-SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
+SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputePhi() {
 	this->m_Phi = WeightsMatrix(this->m_K, this->m_N);
 	this->m_InvertPhi = WeightsMatrix( this->m_N, this->m_K );
@@ -100,10 +102,10 @@ SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
 
 		for ( col=0; col < this->m_N; col++) {
 			ci = this->m_ControlPoints[col];
-			wi = this->m_RBF( ci, pi );
+			wi = this->m_RadialBasisFunction.GetWeight( ci, pi );
 			if (wi > 1e-3) {
 				this->m_Phi.put(row, col, wi);
-				this->m_InvertPhi.put( col, row, 1.0/wi );
+				this->m_InvertPhi.put( col, row, wi );
 			}
 		}
 
@@ -122,9 +124,9 @@ SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
 	}
 }
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
+template< class TScalarType, unsigned int NDimensions >
 void
-SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
+SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputeGridPoints() {
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
@@ -145,9 +147,9 @@ SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
 
 }
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
+template< class TScalarType, unsigned int NDimensions >
 void
-SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
+SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputeControlPoints() {
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
@@ -169,22 +171,22 @@ SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
 }
 
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
+template< class TScalarType, unsigned int NDimensions >
 inline void
-SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
-::SetControlPoint(size_t id, typename SparseMatrixTransform<RBFunction,TScalarType,NDimensions>::PointType pi ){
+SparseMatrixTransform<TScalarType,NDimensions>
+::SetControlPoint(size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
 	this->m_ControlPoints[id] = pi;
 }
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
+template< class TScalarType, unsigned int NDimensions >
 inline void
-SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
-::SetGridPoint(size_t id, typename SparseMatrixTransform<RBFunction,TScalarType,NDimensions>::PointType pi ){
+SparseMatrixTransform<TScalarType,NDimensions>
+::SetGridPoint(size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
 	this->m_GridPoints[id] = pi;
 }
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
-void SparseMatrixTransform<RBFunction,TScalarType,NDimensions>::SetParameters(
+template< class TScalarType, unsigned int NDimensions >
+void SparseMatrixTransform<TScalarType,NDimensions>::SetParameters(
 		const ParametersType & parameters) {
 	// Save parameters. Needed for proper operation of TransformUpdateParameters.
 	if (&parameters != &(this->m_Parameters)) {
@@ -231,9 +233,9 @@ void SparseMatrixTransform<RBFunction,TScalarType,NDimensions>::SetParameters(
 }
 
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
-inline typename SparseMatrixTransform<RBFunction,TScalarType,NDimensions>::VectorType
-SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
+template< class TScalarType, unsigned int NDimensions >
+inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType
+SparseMatrixTransform<TScalarType,NDimensions>
 ::GetControlPointData( const size_t id ) {
 	VectorType ci;
 	for( size_t dim = 0; dim < Dimension; dim++) {
@@ -244,9 +246,9 @@ SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
 	return ci;
 }
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
-inline typename SparseMatrixTransform<RBFunction,TScalarType,NDimensions>::VectorType
-SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
+template< class TScalarType, unsigned int NDimensions >
+inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType
+SparseMatrixTransform<TScalarType,NDimensions>
 ::GetGridPointData( const size_t id ) {
 	VectorType gi;
 	for( size_t dim = 0; dim < Dimension; dim++){
@@ -257,10 +259,10 @@ SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
 	return gi;
 }
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
+template< class TScalarType, unsigned int NDimensions >
 inline bool
-SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
-::SetControlPointData( const size_t id, typename SparseMatrixTransform<RBFunction,TScalarType,NDimensions>::VectorType pi ) {
+SparseMatrixTransform<TScalarType,NDimensions>
+::SetControlPointData( const size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType pi ) {
 	bool changed = false;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		if( std::isnan( pi[dim] )) pi[dim] = 0;
@@ -272,10 +274,10 @@ SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
 	return changed;
 }
 
-template< class RBFunction, class TScalarType, unsigned int NDimensions >
+template< class TScalarType, unsigned int NDimensions >
 inline bool
-SparseMatrixTransform<RBFunction,TScalarType,NDimensions>
-::SetGridPointData( const size_t id, typename SparseMatrixTransform<RBFunction,TScalarType,NDimensions>::VectorType pi ) {
+SparseMatrixTransform<TScalarType,NDimensions>
+::SetGridPointData( const size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType pi ) {
 	bool changed = false;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		if( std::isnan( pi[dim] )) pi[dim] = 0;

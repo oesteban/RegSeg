@@ -46,6 +46,11 @@
 #include <itkTransform.h>
 #include <itkPoint.h>
 #include <itkVector.h>
+#include <itkPointSet.h>
+#include <itkDefaultStaticMeshTraits.h>
+
+#include "RadialBasisFunction.h"
+#include "VectorIDWBasisFunction.h"
 
 #include <vnl/vnl_sparse_matrix.h>
 #include <vnl/vnl_vector.h>
@@ -53,7 +58,7 @@
 
 namespace rstk {
 
-template< class RBFunction, class TScalarType = double, unsigned int NDimensions = 3u >
+template< class TScalarType = double, unsigned int NDimensions = 3u >
 class SparseMatrixTransform: public itk::Transform< TScalarType, NDimensions, NDimensions >
 {
 public:
@@ -74,7 +79,11 @@ public:
 	typedef itk::Point< ScalarType, Dimension >      PointType;
 	typedef itk::Vector< ScalarType, Dimension >     VectorType;
 
-	typedef RBFunction                               RBFType;
+	typedef RBF::RadialBasisFunction
+			< PointType, TScalarType, NDimensions >  RBFType;
+
+	typedef RBF::VectorIDWBasisFunction
+			< PointType, TScalarType, NDimensions >  DefaultRBFType;
 
 	typedef vnl_sparse_matrix< ScalarType >          WeightsMatrix;
 	typedef vnl_vector< ScalarType >                 DimensionVector;
@@ -171,6 +180,11 @@ public:
                          "for " << this->GetNameOfClass() );                          \
     }
 
+
+    void SetRadialBasisFunction( RBFType* rbf ) {
+    	this->m_RadialBasisFunction = rbf;
+    }
+
 protected:
 	SparseMatrixTransform();
 	~SparseMatrixTransform(){};
@@ -189,7 +203,7 @@ protected:
 	size_t          m_N;
 	size_t          m_K;
 
-	RBFType         m_RBF;
+	DefaultRBFType  m_RadialBasisFunction;
 
 	bool            m_GridDataChanged;
 	bool            m_ControlDataChanged;

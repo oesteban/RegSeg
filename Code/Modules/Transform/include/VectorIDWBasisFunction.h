@@ -43,7 +43,8 @@
 #ifndef VECTORIDWBASISFUNCTION_H_
 #define VECTORIDWBASISFUNCTION_H_
 
-#include "itkNumericTraits.h"
+#include "RadialBasisFunction.h"
+#include <itkNumericTraits.h>
 #include <cmath>
 
 namespace rstk {
@@ -51,7 +52,7 @@ namespace RBF {
 
 
 template< class TPixel, class TScalarType = double, unsigned int NDimensions = 3>
-class VectorIDWBasisFunction
+class VectorIDWBasisFunction : RadialBasisFunction< TPixel, TScalarType, NDimensions >
 {
 public:
 	typedef VectorIDWBasisFunction          Self;
@@ -66,7 +67,7 @@ public:
 	};
 	~VectorIDWBasisFunction(){};
 
-	inline TScalarType operator()( const TPixel &center, const TPixel &point ){
+	inline TScalarType GetWeight( const TPixel &center, const TPixel &point ) const{
 		VectorType v = (center-point);
 		TScalarType w = v.GetNorm();
 
