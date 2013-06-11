@@ -182,7 +182,7 @@ public:
 
 
 	typedef RBF::VectorIDWBasisFunction< PointType, TCoordRepType, Dimension > RBFType;
-	typedef SparseMatrixTransform<RBFType, TCoordRepType, Dimension > FieldInterpolatorType;
+	typedef SparseMatrixTransform<TCoordRepType, Dimension > FieldInterpolatorType;
 	typedef typename FieldInterpolatorType::Pointer FieldInterpolatorPointer;
 
 

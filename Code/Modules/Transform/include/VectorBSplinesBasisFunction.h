@@ -51,7 +51,7 @@ namespace RBF {
 
 
 template< class TPixel, class TScalarType = double, unsigned int NDimensions = 3>
-class VectorBSplinesBasisFunction
+class VectorBSplinesBasisFunction: RadialBasisFunction< TPixel, TScalarType, NDimensions >
 {
 public:
 	typedef VectorBSplinesBasisFunction          Self;
@@ -66,8 +66,12 @@ public:
 	};
 	~VectorBSplinesBasisFunction(){};
 
-	inline TScalarType operator()( const TPixel &center, const TPixel &point ){
-		TScalarType w = (center-point).GetNorm() / (0.5*m_width);
+	inline TScalarType GetWeight( const TPixel &center, const TPixel &point ) const {
+		VectorType dist = center-point;
+		for( size_t i = 0; i< Dimension; i++)
+			dist[i] = dist[i] / (0.5*this->m_width[i]);
+
+		TScalarType w = dist.GetNorm();
 
         double sqrValue = vnl_math_sqr( w );
 	    if ( w  < 1.0 ) {
@@ -81,18 +85,16 @@ public:
 		return w;
 	}
 
-	void SetFactor( TScalarType f ) { this->m_factor = f; }
-	TScalarType GetFactor(void) { return this->m_factor; }
+	void SetWidth( const PointType f ) { this->m_width = f; }
+	PointType GetWidth(void) { return this->m_width; }
 
 
 private:
 	TScalarType m_eps;
-	TScalarType m_factor;
-	TScalarType m_width;
+	PointType m_width;
 
 };
 }
 }
-
 
 #endif /* VECTORBSPLINESBASISFUNCTION_H_ */

@@ -42,6 +42,9 @@ SET( LEVELSETS_LIB "RSTKLevelSets" )
 ADD_SUBDIRECTORY( Modules/Optimizers )
 SET( OPTIMIZERS_LIB "RSTKOptimizers" )
 
+ADD_SUBDIRECTORY( Modules/Transform )
+SET( TRANSFORM_LIB "RSTKTransform" )
+
 ADD_SUBDIRECTORY( Examples/ )
 
 
