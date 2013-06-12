@@ -112,14 +112,14 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		// Normalize weights
 		norm = this->m_Phi.sum_row( row );
 		if( norm > 0 ) {
-			this->m_Phi.scale_row( row, norm );
+			this->m_Phi.scale_row( row, 1.0/norm );
 		}
 	}
 
 	for ( row = 0; row < this->m_N; row++ ){
 		norm = this->m_InvertPhi.sum_row( row );
 		if( norm > 0 ) {
-			this->m_InvertPhi.scale_row( row, norm );
+			this->m_InvertPhi.scale_row( row, 1.0/norm );
 		}
 	}
 }
