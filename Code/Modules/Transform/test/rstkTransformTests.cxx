@@ -78,8 +78,8 @@ public:
 		m_vectors[2][2] = 1.3;
 
 		for( size_t i = 0; i<m_N; i++ ) {
-			m_transform->SetControlPoint    (2,m_cp[i]);
-			m_transform->SetControlPointData(2,m_vectors[i]);
+			m_transform->SetControlPoint    (i,m_cp[i]);
+			m_transform->SetControlPointData(i,m_vectors[i]);
 		}
 
 		VectorType* fbuf = m_field->GetBufferPointer();
@@ -120,9 +120,16 @@ TEST_F( TransformTests, SparseMatrixForwardIDWTransformTest ) {
 
 
 TEST_F( TransformTests, SparseMatrixBackwardIDWTransformTest ) {
-	m_transform->ComputeControlPoints();
 	VectorType v[3];
 	bool is_equal = true;
+
+	m_transform->ComputeGridPoints();
+
+	for( size_t i = 0; i<m_N; i++ ){
+		v[i] = m_transform->GetControlPointData(i);
+		std::cout << v[i] << " vs. " << this->m_vectors[i] << std::endl;
+	}
+	m_transform->ComputeControlPoints();
 
 	for( size_t i = 0; i<m_N; i++ ){
 		v[i] = m_transform->GetControlPointData(i);
