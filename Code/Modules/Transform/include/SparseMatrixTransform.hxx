@@ -44,6 +44,9 @@
 #define SPARSEMATRIXTRANSFORM_HXX_
 
 #include "SparseMatrixTransform.h"
+#include <itkGaussianKernelFunction.h>
+#include <itkGaussianKernelFunction.h>
+#include <itkBSplineKernelFunction.h>
 
 namespace rstk {
 
@@ -52,11 +55,11 @@ SparseMatrixTransform<TScalarType,NDimensions>
 ::SparseMatrixTransform(): Superclass(NDimensions) {
 	this->m_N = 0;
 	this->m_K = 0;
+	this->m_Sigma.Fill(2.0);
 	this->m_GridDataChanged = false;
 	this->m_ControlDataChanged = false;
-	//RBFType rbf = DefaultRBFType();
-//	this->m_RadialBasisFunction = dynamic_cast<RBFType*> (&rbf );
-	this->m_RadialBasisFunction = DefaultRBFType();
+	this->m_KernelFunction  = dynamic_cast< KernelFunctionType * >(
+	    itk::BSplineKernelFunction<3u, ScalarType>::New().GetPointer() );
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -65,8 +68,10 @@ SparseMatrixTransform<TScalarType,NDimensions>
 ::SetN( size_t N ) {
 	this->m_N = N;
 	this->m_ControlPoints.resize(N);
-	for( size_t dim = 0; dim<Dimension; dim++ )
+	for( size_t dim = 0; dim<Dimension; dim++ ) {
 		this->m_ControlPointsData[dim] = DimensionVector(N);
+		this->m_ControlPointsData[dim].fill( 0.0 );
+	}
 
 }
 
@@ -76,13 +81,10 @@ SparseMatrixTransform<TScalarType,NDimensions>
 ::SetK( size_t K ) {
 	this->m_K = K;
 	this->m_GridPoints.resize(K);
-	for( size_t dim = 0; dim<Dimension; dim++ )
+	for( size_t dim = 0; dim<Dimension; dim++ ) {
 		this->m_GridPointsData[dim] = DimensionVector(K);
-
-	for ( size_t k = 0; k<K; k++ ) {
-		this->SetGridPointData( k, itk::NumericTraits<VectorType>::Zero );
+		this->m_GridPointsData[dim].fill( 0.0 );
 	}
-
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -92,36 +94,32 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	this->m_Phi = WeightsMatrix(this->m_K, this->m_N);
 	this->m_InvertPhi = WeightsMatrix( this->m_N, this->m_K );
 
-	ScalarType dist, wi, norm;
+	ScalarType wi, norm;
 	PointType ci, pi;
 	size_t row, col;
+	VectorType dist;
 
 	// Walk the grid region
 	for( row = 0; row < this->m_K; row++ ) {
 		pi = this->m_GridPoints[row];
 
 		for ( col=0; col < this->m_N; col++) {
+			wi=1.0;
 			ci = this->m_ControlPoints[col];
-			wi = this->m_RadialBasisFunction.GetWeight( ci, pi );
+			dist = ci - pi;
+			for (size_t i = 0; i<Dimension; i++) {
+				wi*= this->m_KernelFunction->Evaluate( fabs( dist[i] ) / m_Sigma[i] );
+				if( wi < vnl_math::eps ) break;
+			}
+
 			if (wi > 1e-3) {
 				this->m_Phi.put(row, col, wi);
-				this->m_InvertPhi.put( col, row, wi );
+				this->m_InvertPhi.put( col, row, wi);
 			}
 		}
-
-		// Normalize weights
-		norm = this->m_Phi.sum_row( row );
-		if( norm > 0 ) {
-			this->m_Phi.scale_row( row, 1.0/norm );
-		}
 	}
 
-	for ( row = 0; row < this->m_N; row++ ){
-		norm = this->m_InvertPhi.sum_row( row );
-		if( norm > 0 ) {
-			this->m_InvertPhi.scale_row( row, 1.0/norm );
-		}
-	}
+	this->m_InvertPhi.normalize_rows();
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -156,13 +154,11 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		this->ComputePhi();
 	}
 
-	// Check if GridPointsData changed
-	double norms = 0.0;
-	for (size_t i = 0; i < Dimension; i++ ) {
-		norms+= this->m_GridPointsData[i].one_norm();
-	}
+	// TODO Check if GridPointsData changed
 
-	if( norms==0 ) return; // Nothing to do
+	for (size_t i = 0; i < Dimension; i++ ) {
+		this->m_ControlPointsData[i].fill(0.0);
+	}
 
     for ( size_t i = 0; i < Dimension; i++ ) {
     	this->m_InvertPhi.mult(this->m_GridPointsData[i], this->m_ControlPointsData[i] );

@@ -246,7 +246,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			desp = this->m_FieldInterpolator->GetGridPointData( gpid );
 			norm = desp.GetNorm();
 			// Add vector to the point
-			if( norm >0 ) {
+			if( norm > 1.0e-3 ) {
 				if ( norm > maxNorm ) maxNorm = norm;
 
 				meanDesp += desp;

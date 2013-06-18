@@ -48,6 +48,7 @@
 #include <itkVector.h>
 #include <itkPointSet.h>
 #include <itkDefaultStaticMeshTraits.h>
+#include <itkKernelFunctionBase.h>
 
 #include "RadialBasisFunction.h"
 #include "VectorIDWBasisFunction.h"
@@ -78,6 +79,9 @@ public:
 
 	typedef itk::Point< ScalarType, Dimension >      PointType;
 	typedef itk::Vector< ScalarType, Dimension >     VectorType;
+
+    typedef itk::KernelFunctionBase<ScalarType>      KernelFunctionType;
+
 
 	typedef RBF::RadialBasisFunction
 			< PointType, TScalarType, NDimensions >  RBFType;
@@ -112,6 +116,15 @@ public:
     /** Standard vnl_vector type for this class. */
     typedef typename Superclass::InputVnlVectorType  InputVnlVectorType;
     typedef typename Superclass::OutputVnlVectorType OutputVnlVectorType;
+
+    typedef itk::FixedArray< ScalarType, itkGetStaticConstMacro(Dimension) >    ArrayType;
+
+
+    itkSetObjectMacro(KernelFunction, KernelFunctionType);
+    itkGetConstReferenceObjectMacro(KernelFunction, KernelFunctionType);
+
+    itkSetMacro(Sigma, ArrayType);
+    itkGetConstReferenceMacro(Sigma, ArrayType);
 
     void SetN( size_t N );
     void SetK( size_t K );
@@ -181,9 +194,9 @@ public:
     }
 
 
-    void SetRadialBasisFunction( RBFType* rbf ) {
-    	this->m_RadialBasisFunction = rbf;
-    }
+//    void SetRadialBasisFunction( RBFType* rbf ) {
+//    	this->m_RadialBasisFunction = rbf;
+//    }
 
 protected:
 	SparseMatrixTransform();
@@ -203,7 +216,8 @@ protected:
 	size_t          m_N;
 	size_t          m_K;
 
-	DefaultRBFType  m_RadialBasisFunction;
+	typename KernelFunctionType::Pointer  m_KernelFunction;
+	ArrayType m_Sigma;
 
 	bool            m_GridDataChanged;
 	bool            m_ControlDataChanged;
