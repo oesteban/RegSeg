@@ -240,7 +240,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		while ( p_it != p_end ) {
 			currentPoint = p_it.Value();
 			pid = p_it.Index();
-			// FIXME Substitute!!!!
+
 			// Interpolate the value of the field in the point
 			desp_back = interp->Evaluate( currentPoint );
 			desp = this->m_FieldInterpolator->GetGridPointData( gpid );

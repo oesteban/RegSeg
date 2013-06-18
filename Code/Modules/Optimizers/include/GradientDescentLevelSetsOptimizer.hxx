@@ -64,7 +64,7 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize = 0.001;
+	this->m_StepSize = 0.1;
 	this->m_A.SetIdentity();
 	this->m_A(0,0) = 2.0*1e-4;
 	this->m_A(1,1) = 2.0*1e-4;
@@ -185,6 +185,16 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		this->Iterate();
 
 		this->ComputeIterationChange();
+
+#ifndef NDEBUG
+			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
+			typename Writer::Pointer p = Writer::New();
+			std::stringstream ss2;
+			ss2 << "field_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+			p->SetFileName( ss2.str().c_str() );
+			p->SetInput( this->m_NextDeformationField );
+			p->Update();
+#endif
 
 		/* Update the level sets contour and deformation field */
 		double updateNorm = this->m_LevelSetsFunction->UpdateContour( this->m_NextDeformationField );
