@@ -55,7 +55,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 ::SparseMatrixTransform(): Superclass(NDimensions) {
 	this->m_N = 0;
 	this->m_K = 0;
-	this->m_Sigma.Fill(2.0);
+	this->m_Sigma.Fill(12.0);
 	this->m_GridDataChanged = false;
 	this->m_ControlDataChanged = false;
 	this->m_KernelFunction  = dynamic_cast< KernelFunctionType * >(
@@ -119,7 +119,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		}
 	}
 
-	this->m_InvertPhi.normalize_rows();
+	//this->m_InvertPhi.normalize_rows();
 }
 
 template< class TScalarType, unsigned int NDimensions >
