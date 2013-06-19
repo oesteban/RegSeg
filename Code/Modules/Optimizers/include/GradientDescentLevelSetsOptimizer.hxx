@@ -228,9 +228,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 				w->Update();
 			}
 
-			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
-			typename Writer::Pointer p = Writer::New();
-			std::stringstream ss2;
+			ss2.str("");
 			ss2 << "field_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
 			p->SetFileName( ss2.str().c_str() );
 			p->SetInput( this->m_DeformationField );
