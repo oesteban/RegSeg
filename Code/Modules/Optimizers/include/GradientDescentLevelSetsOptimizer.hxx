@@ -64,13 +64,14 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize = 1.0;
+	this->m_StepSize = 0.5;
 	this->m_A.SetIdentity();
-	this->m_A(0,0) = 2.0*1e-4;
-	this->m_A(1,1) = 2.0*1e-4;
-	this->m_A(2,2) = 2.0*1e-4;
+	this->m_A(0,0) = 10e3;
+	this->m_A(1,1) = 10e3;
+	this->m_A(2,2) = 10e10;
 	this->m_B.SetIdentity();
-	this->m_B*= (2.0 * 1e-3);
+	this->m_B*= 10e4;
+	this->m_B(2,2) = 10e10;
 }
 
 template< typename TLevelSetsFunction >
@@ -185,6 +186,16 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 		this->Iterate();
 
 		this->ComputeIterationChange();
+
+#ifndef NDEBUG
+			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
+			typename Writer::Pointer p = Writer::New();
+			std::stringstream ss2;
+			ss2 << "field_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+			p->SetFileName( ss2.str().c_str() );
+			p->SetInput( this->m_NextDeformationField );
+			p->Update();
+#endif
 
 		/* Update the level sets contour and deformation field */
 		double updateNorm = this->m_LevelSetsFunction->UpdateContour( this->m_NextDeformationField );
@@ -429,29 +440,32 @@ template< typename TLevelSetsFunction >
 void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 ::InitializeDenominator( typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComplexFieldType* reference ){
 	double pi2 = 2* vnl_math::pi;
-	MatrixType I;
+	MatrixType I, ddor, zero;
 	I.SetIdentity();
-	MatrixType C = I * (1.0/this->m_StepSize) + m_A*I;
+	zero.Fill(0.0);
+	MatrixType C = ( I * (1.0/this->m_StepSize) + m_A*I ) * pi2;
 
 	this->m_Denominator = TensorFieldType::New();
 	this->m_Denominator->SetSpacing(   reference->GetSpacing() );
 	this->m_Denominator->SetDirection( reference->GetDirection() );
 	this->m_Denominator->SetRegions( reference->GetLargestPossibleRegion().GetSize() );
 	this->m_Denominator->Allocate();
-	this->m_Denominator->FillBuffer( I );
+	this->m_Denominator->FillBuffer( zero );
+
+	typename TensorFieldType::SizeType size = this->m_Denominator->GetLargestPossibleRegion().GetSize();
+	MatrixType* buffer = this->m_Denominator->GetBufferPointer();
+	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
 
 	// Fill Buffer with denominator data
 	double lag_el; // accumulates the FT{lagrange operator}.
 	typename TensorFieldType::IndexType idx;
-	typename TensorFieldType::SizeType size = this->m_Denominator->GetLargestPossibleRegion().GetSize();
-	MatrixType* buffer = this->m_Denominator->GetBufferPointer();
-	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
 	for (size_t pix = 0; pix < nPix; pix++ ) {
 		lag_el = 0.0;
 		idx = this->m_Denominator->ComputeIndex( pix );
 		for(size_t d = 0; d < Dimension; d++ )
-			lag_el+= 2.0*cos( pi2* idx[d]/(1.0*(size[d]-1)))-2.0;  // FIXME: should I make size[d] - 1 ???
-		MatrixType ddor = C - m_B*lag_el;
+			lag_el+= 2.0 * cos( (pi2*idx[d])/size[d]) - 2.0;
+
+		ddor = C - m_B * lag_el;
 		*(buffer+pix) = ddor.GetInverse();
 	}
 }
