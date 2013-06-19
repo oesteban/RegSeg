@@ -79,8 +79,9 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	for( size_t dim = 0; dim<Dimension; dim++ )
 		this->m_GridPointsData[dim] = DimensionVector(K);
 
+	VectorType zerov; zerov.Fill(0.0);
 	for ( size_t k = 0; k<K; k++ ) {
-		this->SetGridPointData( k, itk::NumericTraits<VectorType>::Zero );
+		this->SetGridPointData( k, zerov );
 	}
 
 }
@@ -116,12 +117,12 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		}
 	}
 
-	for ( row = 0; row < this->m_N; row++ ){
-		norm = this->m_InvertPhi.sum_row( row );
-		if( norm > 0 ) {
-			this->m_InvertPhi.scale_row( row, 1.0/norm );
-		}
-	}
+	//for ( row = 0; row < this->m_N; row++ ){
+	//	norm = this->m_InvertPhi.sum_row( row );
+	//	if( norm > 0 ) {
+	//		this->m_InvertPhi.scale_row( row, 1.0/norm );
+	//	}
+	//}
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -166,6 +167,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
     for ( size_t i = 0; i < Dimension; i++ ) {
     	this->m_InvertPhi.mult(this->m_GridPointsData[i], this->m_ControlPointsData[i] );
+    	//this->m_Phi.pre_mult( this->m_GridPointsData[i], this->m_ControlPointsData[i] );
     }
 
 }

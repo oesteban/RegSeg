@@ -242,13 +242,12 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			pid = p_it.Index();
 			// FIXME Substitute!!!!
 			// Interpolate the value of the field in the point
-			desp_back = interp->Evaluate( currentPoint );
-			desp = this->m_FieldInterpolator->GetGridPointData( gpid );
+			desp = interp->Evaluate( currentPoint );
+			desp_back = this->m_FieldInterpolator->GetGridPointData( gpid );
 			norm = desp.GetNorm();
 			// Add vector to the point
 			if( norm >0 ) {
 				if ( norm > maxNorm ) maxNorm = norm;
-
 				meanDesp += desp;
 				meanNorm += norm;
 				p = this->m_ShapePrior[contid][pid] + desp;
