@@ -260,6 +260,7 @@ protected:
 	ControlPointsList m_ShapePrior;
 	bool m_Modified;
 	bool m_RegionsModified;
+	size_t m_NumberOfContours;
 
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented

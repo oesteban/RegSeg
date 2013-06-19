@@ -43,6 +43,9 @@
 #include <iostream>
 #include <iomanip>
 #include "DisplacementFieldFileWriter.h"
+
+#include <itkMeshFileWriter.h>
+
 namespace rstk {
 
 
@@ -55,6 +58,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_EnergyResampler = DisplacementResamplerType::New();
 	this->m_Modified = false;
 	this->m_RegionsModified = false;
+	this->m_NumberOfContours = 0;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -63,7 +67,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
 	// Set number of control points in the sparse-dense interpolator
 	size_t nControlPoints = 0;
-	for ( size_t id = 0; id < this->m_CurrentContourPosition.size(); id ++) {
+	for ( size_t id = 0; id < this->m_NumberOfContours; id ++) {
 		nControlPoints+= this->m_CurrentContourPosition[id]->GetNumberOfPoints();
 	}
 	this->m_FieldInterpolator->SetN(nControlPoints);
@@ -94,7 +98,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	// Set up outer regions AND control points in the interpolator
 	size_t cpid = 0;
-	for ( size_t id = 0; id < this->m_CurrentContourPosition.size(); id ++) {
+	for ( size_t id = 0; id < this->m_NumberOfContours; id ++) {
 		ContourOuterRegions outerVect;
 		ControlPointsVector controlPoints;
 
@@ -123,13 +127,24 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			this->m_FieldInterpolator->SetControlPoint( cpid, p );
 			normals->GetPointData( pid, &ni );
 			p = p + ni;
-			outerVect[pid] =  interp->Evaluate( p );
+			if( this->m_NumberOfContours>1 )
+				outerVect[pid] =  interp->Evaluate( p );
 			++c_it;
 			cpid++;
 		}
 		this->m_ShapePrior.push_back( controlPoints );
+
+		if( this->m_NumberOfContours>1 )
+			this->m_OuterList.push_back( outerVect );
+	}
+
+	if( this->m_NumberOfContours == 1 ) {
+		ContourOuterRegions outerVect;
+		outerVect.resize(this->m_CurrentContourPosition[0]->GetNumberOfPoints());
+		std::fill( outerVect.begin(), outerVect.end(), 1 );
 		this->m_OuterList.push_back( outerVect );
 	}
+
 
 
 	// Set up grid points in the sparse-dense interpolator
@@ -172,9 +187,10 @@ size_t
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::AddShapePrior( typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourType* prior ) {
 	this->m_CurrentContourPosition.push_back( prior );
-    this->m_ROIs.resize( this->m_CurrentContourPosition.size()+1 );
-    this->m_CurrentROIs.resize( this->m_CurrentContourPosition.size()+1 );
-	return this->m_CurrentContourPosition.size()-1;
+	this->m_NumberOfContours++;
+    this->m_ROIs.resize( this->m_NumberOfContours+1 );
+    this->m_CurrentROIs.resize( this->m_NumberOfContours+1 );
+	return this->m_NumberOfContours-1;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -226,7 +242,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	size_t changed = 0;
 
 	size_t gpid = 0;
-	for( size_t contid = 0; contid < this->m_CurrentContourPosition.size(); contid++ ) {
+	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
 		typename ContourType::PointsContainerPointer curr_points = this->m_CurrentContourPosition[contid]->GetPoints();
 		typename ContourType::PointsContainerIterator p_it = curr_points->Begin();
 		typename ContourType::PointsContainerIterator p_end = curr_points->End();
@@ -242,8 +258,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			pid = p_it.Index();
 
 			// Interpolate the value of the field in the point
-			desp_back = interp->Evaluate( currentPoint );
-			desp = this->m_FieldInterpolator->GetGridPointData( gpid );
+			desp = interp->Evaluate( currentPoint );
+			desp_back = this->m_FieldInterpolator->GetGridPointData( gpid );
 			norm = desp.GetNorm();
 			// Add vector to the point
 			if( norm > 1.0e-3 ) {
@@ -304,20 +320,35 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::ComputeGradient() {
 	size_t cpid = 0;
 
-	this->m_GradientMap->FillBuffer( itk::NumericTraits<VectorType>::Zero );
+#ifndef NDEBUG
+	double maxGradient = 0.0;
+	double sumGradient = 0.0;
+#endif
 
-	for( size_t contid = 0; contid < this->m_CurrentContourPosition.size(); contid++) {
+	VectorType zerov; zerov.Fill(0.0);
+	this->m_GradientMap->FillBuffer( zerov );
+
+	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		// Compute mesh of normals
+		this->m_NormalFilter[contid]->SetInput( this->m_CurrentContourPosition[contid] );
 		this->m_NormalFilter[contid]->Update();
 		ContourPointer normals = this->m_NormalFilter[contid]->GetOutput();
+
+#ifndef NDEBUG
+		typedef itk::MeshFileWriter< ContourType >     MeshWriterType;
+		typename MeshWriterType::Pointer w = MeshWriterType::New();
+		w->SetInput( this->m_CurrentContourPosition[contid] );
+		std::stringstream ss;
+		ss << "normals_" << std::setfill('0') << std::setw(2) << contid << ".vtk";
+		w->SetFileName( ss.str() );
+		w->Update();
+#endif
 
 		typename ContourType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
 		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
-		PointValueType levelSet;
-		PointType  ci;          //
-		PointType  ci_prime;
-		ReferencePixelType  fi;          // Feature on ci_prime
+		PointValueType gradient;
+		PointType  ci;
 		VectorType ni;
 		typename ContourType::PointIdentifier pid;
 		ReferencePixelType dist[2];
@@ -328,18 +359,27 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			pid = c_it.Index();
 			outer_contid = this->m_OuterList[contid][pid];
 			ci = c_it.Value();
-			levelSet = this->GetEnergyAtPoint( ci, outer_contid ) - this->GetEnergyAtPoint( ci, contid );
+			gradient = this->GetEnergyAtPoint( ci, outer_contid ) - this->GetEnergyAtPoint( ci, contid );
 
-			assert( !std::isnan(levelSet) );
+			assert( !std::isnan(gradient) );
 			// project to normal, updating transform
 			normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
-			ni*= levelSet;
+			ni*= gradient;
 			normals->SetPointData( pid, ni );
 			this->m_FieldInterpolator->SetControlPointData(cpid, ni);
 			++c_it;
 			cpid++;
+
+#ifndef NDEBUG
+			if ( gradient > maxGradient ) maxGradient = gradient;
+			sumGradient+=gradient;
+#endif
 		}
 	}
+
+#ifndef NDEBUG
+	std::cout << "max_gradient=" << maxGradient << ", avg=" << ( sumGradient/ cpid ) << "." << std::endl;
+#endif
 
 	// Interpolate sparse velocity field to targetDeformation
 	this->m_FieldInterpolator->ComputeGridPoints();
@@ -485,28 +525,6 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_GradientMap->SetRegions  ( field->GetRequestedRegion().GetSize());
 	this->m_GradientMap->Allocate();
 }
-
-//template< typename TReferenceImageType, typename TCoordRepType >
-//bool
-//LevelSetsBase<TReferenceImageType, TCoordRepType>
-//::CheckExtents( const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourType* prior ) const {
-//	typename ContourType::PointsContainerConstIterator u_it = prior->GetPoints()->Begin();
-//    typename ContourType::PointsContainerConstIterator u_end = prior->GetPoints()->End();
-//
-//    PointType p;
-//    ContinuousIndex idx;
-//	while( u_it != u_end ) {
-//		p = u_it.Value();
-//
-//		if ( ! this->IsInside( p, idx ) ) {
-//			itkExceptionMacro( << "Setting prior surface outside reference extents: vertex " << p << ").");
-//			return false;
-//		}
-//		++u_it;
-//	}
-//
-//	return true;
-//}
 
 }
 
