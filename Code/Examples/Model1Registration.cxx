@@ -120,15 +120,15 @@ int main(int argc, char *argv[]) {
 	polyDataReader0->Update();
 	ls->AddShapePrior( polyDataReader0->GetOutput() );
 
-	ReaderType::Pointer polyDataReader1 = ReaderType::New();
-	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "fixed.wm.vtk" );
-	polyDataReader1->Update();
-	ls->AddShapePrior( polyDataReader1->GetOutput() );
-
-	ReaderType::Pointer polyDataReader2 = ReaderType::New();
-	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "fixed.gm.vtk" );
-	polyDataReader2->Update();
-	ls->AddShapePrior( polyDataReader2->GetOutput() );
+	//ReaderType::Pointer polyDataReader1 = ReaderType::New();
+	//polyDataReader1->SetFileName( std::string( DATA_DIR ) + "fixed.wm.vtk" );
+	//polyDataReader1->Update();
+	//ls->AddShapePrior( polyDataReader1->GetOutput() );
+    //
+	//ReaderType::Pointer polyDataReader2 = ReaderType::New();
+	//polyDataReader2->SetFileName( std::string( DATA_DIR ) + "fixed.gm.vtk" );
+	//polyDataReader2->Update();
+	//ls->AddShapePrior( polyDataReader2->GetOutput() );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
@@ -143,38 +143,4 @@ int main(int argc, char *argv[]) {
 	polyDataWriter->SetInput( ls->GetCurrentContourPosition()[0] );
 	polyDataWriter->SetFileName( "deformed2-wm.vtk" );
 	polyDataWriter->Update();
-
-//	DeformationWriter::Pointer w = DeformationWriter::New();
-//	w->SetInput( opt->GetDeformationField() );
-//	w->SetFileName( "deformed2_field.nii.gz" );
-//	w->Update();
-//
-//	DisplacementResamplerType::Pointer p = DisplacementResamplerType::New();
-//	p->SetInput( opt->GetDeformationField() );
-//	p->SetOutputOrigin( im->GetOrigin() );
-//	p->SetOutputSpacing( im->GetSpacing() );
-//	p->SetOutputDirection( im->GetDirection() );
-//	p->SetSize( im->GetLargestPossibleRegion().GetSize() );
-//	//p->SetInterpolator( InterpolatorFunction::New() );
-//	p->Update();
-//	DeformationWriter::Pointer w2 = DeformationWriter::New();
-//	w2->SetInput( p->GetOutput() );
-//	w2->SetFileName( "deformed2_fieldHD.nii.gz" );
-//	w2->Update();
-/*
-	DeformationFieldType::Pointer dfield = DeformationFieldType::New();
-	TransformType::Pointer tf = TransformType::New();
-	tf->SetDisplacementField( dfield );
-
-	ResamplerType::Pointer res = ResamplerType::New();
-	res->SetInput( im );
-	res->SetReferenceImage( im );
-	res->SetTransform( tf );
-	res->UseReferenceImageOn();
-	res->Update();
-
-	ImageWriter::Pointer w3 = ImageWriter::New();
-	w3->SetInput( res->GetOutput() );
-	w3->SetFileName( "FAunwarped.nii.gz" );
-	w3->Update();*/
 }
