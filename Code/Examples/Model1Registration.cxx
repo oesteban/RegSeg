@@ -120,15 +120,15 @@ int main(int argc, char *argv[]) {
 	polyDataReader0->Update();
 	ls->AddShapePrior( polyDataReader0->GetOutput() );
 
-	ReaderType::Pointer polyDataReader1 = ReaderType::New();
-	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "fixed.wm.vtk" );
-	polyDataReader1->Update();
-	ls->AddShapePrior( polyDataReader1->GetOutput() );
-
-	ReaderType::Pointer polyDataReader2 = ReaderType::New();
-	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "fixed.gm.vtk" );
-	polyDataReader2->Update();
-	ls->AddShapePrior( polyDataReader2->GetOutput() );
+	//ReaderType::Pointer polyDataReader1 = ReaderType::New();
+	//polyDataReader1->SetFileName( std::string( DATA_DIR ) + "fixed.wm.vtk" );
+	//polyDataReader1->Update();
+	//ls->AddShapePrior( polyDataReader1->GetOutput() );
+    //
+	//ReaderType::Pointer polyDataReader2 = ReaderType::New();
+	//polyDataReader2->SetFileName( std::string( DATA_DIR ) + "fixed.gm.vtk" );
+	//polyDataReader2->Update();
+	//ls->AddShapePrior( polyDataReader2->GetOutput() );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
