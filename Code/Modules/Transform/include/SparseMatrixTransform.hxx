@@ -118,8 +118,6 @@ SparseMatrixTransform<TScalarType,NDimensions>
 			}
 		}
 	}
-
-	//this->m_InvertPhi.normalize_rows();
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -162,6 +160,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
     for ( size_t i = 0; i < Dimension; i++ ) {
     	this->m_InvertPhi.mult(this->m_GridPointsData[i], this->m_ControlPointsData[i] );
+    	//this->m_Phi.pre_mult( this->m_GridPointsData[i], this->m_ControlPointsData[i] );
     }
 
 }

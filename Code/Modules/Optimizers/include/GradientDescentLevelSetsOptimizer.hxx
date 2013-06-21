@@ -95,7 +95,6 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 	}
 
 	if (this->m_DeformationField.IsNull()) {
-		// TODO LevelSets function should provide an Extent Object
 		PointType orig = this->m_LevelSetsFunction->GetReferenceImage()->GetOrigin();
 		PointType end;
 
@@ -149,8 +148,9 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 	this->m_StopConditionDescription.str("");
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->InvokeEvent( itk::StartEvent() );
-
 	this->m_Stop = false;
+
+
 	while( ! this->m_Stop )	{
 		/* Compute metric value/derivative. */
 		try	{
@@ -198,10 +198,14 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 
 		/* Update the level sets contour and deformation field */
 		double updateNorm = this->m_LevelSetsFunction->UpdateContour( this->m_NextDeformationField );
-		itk::ImageAlgorithm::Copy<DeformationFieldType,DeformationFieldType>(
-				this->m_NextDeformationField, this->m_DeformationField,
-				this->m_NextDeformationField->GetLargestPossibleRegion(),
-				this->m_DeformationField->GetLargestPossibleRegion());
+
+		const VectorType* next = this->m_NextDeformationField->GetBufferPointer();
+		VectorType* curr = this->m_DeformationField->GetBufferPointer();
+		size_t nPix = this->m_DeformationField->GetLargestPossibleRegion().GetNumberOfPixels();
+
+		for( size_t pix = 0; pix<nPix; pix++){
+			*(curr+pix) = *(next+pix);
+		}
 
 
 		/* TODO Store best value and position */
@@ -222,6 +226,12 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 				w->SetFileName( ss.str() );
 				w->Update();
 			}
+
+			ss2.str("");
+			ss2 << "field_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+			p->SetFileName( ss2.str().c_str() );
+			p->SetInput( this->m_DeformationField );
+			p->Update();
 #endif
 
 		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentLevelSetsValue << " | " << updateNorm << " | " << this->m_LevelSetsFunction->GetValue() << std::endl;
@@ -270,8 +280,26 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 template< typename TLevelSetsFunction >
 void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
+	double min_val = 1.0e-5;
 
 	DeformationFieldConstPointer shapeGradient = this->m_LevelSetsFunction->GetGradientMap();
+
+#ifndef NDEBUG
+	typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
+	typename Writer::Pointer p = Writer::New();
+	std::stringstream ss2;
+	ss2 << "gradient2_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+	p->SetFileName( ss2.str().c_str() );
+	p->SetInput( shapeGradient );
+	p->Update();
+
+	typename Writer::Pointer p2 = Writer::New();
+	ss2.str("");
+	ss2 << "field2_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+	p->SetFileName( ss2.str().c_str() );
+	p->SetInput( shapeGradient );
+	p->Update();
+#endif
 
 	// Get deformation fields pointers
 	const VectorType* dFieldBuffer = this->m_DeformationField->GetBufferPointer();
@@ -290,8 +318,11 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	for( size_t d = 0; d < Dimension; d++ ) {
 		// Get component from vector image
 		size_t comp, idx2;
+		PointValueType u,grad;
 		for(size_t pix = 0; pix< nPix; pix++) {
-			*(dCompBuffer+pix) = (PointValueType) (*(dFieldBuffer+pix))[d] / this->m_StepSize + (*(sFieldBuffer+pix))[d]; // ATTENTION: the + symbol depends on the definition of the normal
+			u = (*(dFieldBuffer+pix))[d];
+			grad = (*(sFieldBuffer+pix))[d];
+			*(dCompBuffer+pix) = u / this->m_StepSize + grad; // ATTENTION: the + symbol depends on the definition of the normal
 		}                                                                                                                 // OUTWARDS-> + ; INWARDS-> -.
 
 		FFTPointer fftFilter = FFTType::New();
@@ -356,9 +387,10 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 
 		// Set component on this->m_NextDeformationField
 		const PointValueType* resultBuffer = ifft->GetOutput()->GetBufferPointer();
+		PointValueType val;
 		for(size_t pix = 0; pix< nPix; pix++) {
-			PointValueType val = *(resultBuffer+pix);
-			(*(nextFieldBuffer+pix))[d] = val;
+			val = *(resultBuffer+pix);
+			(*(nextFieldBuffer+pix))[d] = ( fabs(val) > min_val )?val:0.0;
 		}
 	}
 
@@ -441,8 +473,11 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComputeIterationChan
 	VectorType* fBuffer = this->m_DeformationField->GetBufferPointer();
 	size_t nPix = this->m_NextDeformationField->GetLargestPossibleRegion().GetNumberOfPixels();
 	double totalNorm = 0;
+	VectorType t0,t1;
 	for (size_t pix = 0; pix < nPix; pix++ ) {
-		totalNorm += (*(fnextBuffer+pix) - *(fBuffer+pix)).GetNorm();
+		t0 = *(fBuffer+pix);
+		t1 = *(fnextBuffer+pix);
+		totalNorm += ( t1 - t0 ).GetNorm();
 	}
 
 	this->m_CurrentLevelSetsValue = totalNorm/nPix;
@@ -463,12 +498,15 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::InitializeDeformationFiel
 		spacing[dim] = fabs( (end[dim]-orig[dim])/(1.0*this->m_GridSize[dim]));
 	}
 
+	VectorType zerov;
+	zerov.Fill(0.0);
+
 	this->m_DeformationField->SetRegions( this->m_GridSize );
 	this->m_DeformationField->SetSpacing( spacing );
 	this->m_DeformationField->SetDirection( dir );
 	this->m_DeformationField->SetOrigin( orig );
 	this->m_DeformationField->Allocate();
-	this->m_DeformationField->FillBuffer( itk::NumericTraits<typename DeformationFieldType::PixelType>::Zero );
+	this->m_DeformationField->FillBuffer( zerov );
 }
 
 }

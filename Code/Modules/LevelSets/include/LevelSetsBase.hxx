@@ -267,7 +267,6 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			// Add vector to the point
 			if( norm > 1.0e-3 ) {
 				if ( norm > maxNorm ) maxNorm = norm;
-
 				meanDesp += desp;
 				meanNorm += norm;
 				p = this->m_ShapePrior[contid][pid] + desp;
@@ -366,7 +365,6 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			outer_contid = this->m_OuterList[contid][pid];
 
 			if ( contid != outer_contid ) {
-				ci = this->m_CurrentContourPosition[contid]->GetPoint(pid);
 				ci_prime = c_it.Value();
 				gradient = this->GetEnergyAtPoint( ci_prime, contid ) - this->GetEnergyAtPoint( ci_prime, outer_contid );
 				assert( !std::isnan(gradient) );
