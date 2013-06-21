@@ -67,8 +67,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
 	// Set number of control points in the sparse-dense interpolator
 	size_t nControlPoints = 0;
-	for ( size_t id = 0; id < this->m_NumberOfContours; id ++) {
-		nControlPoints+= this->m_CurrentContourPosition[id]->GetNumberOfPoints();
+	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+		nControlPoints+= this->m_CurrentContourPosition[contid]->GetNumberOfPoints();
 	}
 	this->m_FieldInterpolator->SetN(nControlPoints);
 
@@ -98,16 +98,16 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	// Set up outer regions AND control points in the interpolator
 	size_t cpid = 0;
-	for ( size_t id = 0; id < this->m_NumberOfContours; id ++) {
+	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
 		ContourOuterRegions outerVect;
 		ControlPointsVector controlPoints;
 
 		// Compute mesh of normals
-		this->m_NormalFilter.push_back( NormalFilterType::New() );
-		this->m_NormalFilter[id]->SetInput( this->m_CurrentContourPosition[id] );
-		this->m_NormalFilter[id]->Update();
+		NormalFilterPointer normalsFilter = NormalFilterType::New();
+		normalsFilter->SetInput( this->m_CurrentContourPosition[contid] );
+		normalsFilter->Update();
 
-		ContourPointer normals = this->m_NormalFilter[id]->GetOutput();
+		ContourPointer normals = normalsFilter->GetOutput();
 		outerVect.resize( normals->GetNumberOfPoints() );
 		controlPoints.resize( normals->GetNumberOfPoints() );
 
@@ -122,13 +122,12 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		while( c_it != c_end ) {
 			pid = c_it.Index();
 			p = normals->GetPoint(pid);
-			v = p.GetVectorFromOrigin();
 			controlPoints[pid] = p;
 			this->m_FieldInterpolator->SetControlPoint( cpid, p );
-			normals->GetPointData( pid, &ni );
-			p = p + ni;
+
 			if( this->m_NumberOfContours>1 )
-				outerVect[pid] =  interp->Evaluate( p );
+				normals->GetPointData( pid, &ni );
+				outerVect[pid] =  interp->Evaluate( p - ni*0.5 );
 			++c_it;
 			cpid++;
 		}
@@ -160,6 +159,10 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	} else {
 		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
 	}
+
+	typename FieldType::SpacingType sigma = this->m_GradientMap->GetSpacing();
+
+	this->m_FieldInterpolator->SetSigma( sigma*2.0 );
 
 	this->m_Modified = false;
 
@@ -273,7 +276,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 				if( ! this->IsInside(p,point_idx) ) {
 					itkExceptionMacro( << "Contour is outside image regions after update.\n" <<
-						"\tMoving vertex [" << pid << "] from " << this->m_ShapePrior[contid][pid] << " to " << p << " norm="  << desp.GetNorm() << "mm.\n");
+						"\tMoving vertex [" << contid << "," << pid << "] from " << this->m_ShapePrior[contid][pid] << " to " << p << " norm="  << desp.GetNorm() << "mm.\n");
 				}
 
 				this->m_CurrentContourPosition[contid]->SetPoint( p_it.Index(), newPoint );
@@ -320,6 +323,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::ComputeGradient() {
 	size_t cpid = 0;
 
+	NormalFilterPointer normalsFilter;
+
 #ifndef NDEBUG
 	double maxGradient = 0.0;
 	double sumGradient = 0.0;
@@ -330,9 +335,10 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		// Compute mesh of normals
-		this->m_NormalFilter[contid]->SetInput( this->m_CurrentContourPosition[contid] );
-		this->m_NormalFilter[contid]->Update();
-		ContourPointer normals = this->m_NormalFilter[contid]->GetOutput();
+		normalsFilter = NormalFilterType::New();
+		normalsFilter->SetInput( this->m_CurrentContourPosition[contid] );
+		normalsFilter->Update();
+		ContourPointer normals = normalsFilter->GetOutput();
 
 #ifndef NDEBUG
 		typedef itk::MeshFileWriter< ContourType >     MeshWriterType;
@@ -348,7 +354,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
 		PointValueType gradient;
-		PointType  ci;
+		PointType  ci, ci_prime;
 		VectorType ni;
 		typename ContourType::PointIdentifier pid;
 		ReferencePixelType dist[2];
@@ -358,10 +364,16 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		while (c_it!=c_end) {
 			pid = c_it.Index();
 			outer_contid = this->m_OuterList[contid][pid];
-			ci = c_it.Value();
-			gradient = this->GetEnergyAtPoint( ci, outer_contid ) - this->GetEnergyAtPoint( ci, contid );
 
-			assert( !std::isnan(gradient) );
+			if ( contid != outer_contid ) {
+				ci = this->m_CurrentContourPosition[contid]->GetPoint(pid);
+				ci_prime = c_it.Value();
+				gradient = this->GetEnergyAtPoint( ci_prime, contid ) - this->GetEnergyAtPoint( ci_prime, outer_contid );
+				assert( !std::isnan(gradient) );
+			} else {
+				gradient = 0.0;
+			}
+
 			// project to normal, updating transform
 			normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
 			ni*= gradient;
