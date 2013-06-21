@@ -366,7 +366,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 			if ( contid != outer_contid ) {
 				ci_prime = c_it.Value();
-				gradient = this->GetEnergyAtPoint( ci_prime, contid ) - this->GetEnergyAtPoint( ci_prime, outer_contid );
+				gradient =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
 				assert( !std::isnan(gradient) );
 			} else {
 				gradient = 0.0;
