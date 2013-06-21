@@ -64,13 +64,13 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize =  1.0;
+	this->m_StepSize =  0.01;
 	this->m_A.SetIdentity();
-	this->m_A(0,0) = 1.0;
-	this->m_A(1,1) = 1.0;
-	this->m_A(2,2) = 1.0;
+	this->m_A(0,0) = 1.0e1;
+	this->m_A(1,1) = 1.0e1;
+	this->m_A(2,2) = 1.0e1;
 	this->m_B.SetIdentity();
-	this->m_B*= 10e6;
+	this->m_B*= 1.0e3;
 }
 
 template< typename TLevelSetsFunction >
@@ -292,13 +292,6 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	p->SetFileName( ss2.str().c_str() );
 	p->SetInput( shapeGradient );
 	p->Update();
-
-	typename Writer::Pointer p2 = Writer::New();
-	ss2.str("");
-	ss2 << "field2_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
-	p->SetFileName( ss2.str().c_str() );
-	p->SetInput( shapeGradient );
-	p->Update();
 #endif
 
 	// Get deformation fields pointers
@@ -322,8 +315,17 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 		for(size_t pix = 0; pix< nPix; pix++) {
 			u = (*(dFieldBuffer+pix))[d];
 			grad = (*(sFieldBuffer+pix))[d];
-			*(dCompBuffer+pix) = u / this->m_StepSize + grad; // ATTENTION: the + symbol depends on the definition of the normal
-		}                                                                                                                 // OUTWARDS-> + ; INWARDS-> -.
+			*(dCompBuffer+pix) = ( u / this->m_StepSize ) - grad; // ATTENTION: the + symbol depends on the definition of the normal
+		}                                                         // OUTWARDS-> + ; INWARDS-> -.
+#ifndef NDEBUG
+		typedef itk::ImageFileWriter<DeformationComponentType> ComponentWriter;
+		typename ComponentWriter::Pointer p = ComponentWriter::New();
+		ss2.str("");
+		ss2 << "gradient3_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << "_dim" << d << ".nii.gz";
+		p->SetFileName( ss2.str().c_str() );
+		p->SetInput( fieldComponent );
+		p->Update();
+#endif
 
 		FFTPointer fftFilter = FFTType::New();
 		fftFilter->SetInput( fieldComponent );
@@ -337,7 +339,6 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 			fftNum->Allocate();
 			fftNum->FillBuffer( ComplexType( itk::NumericTraits<ComplexValueType>::Zero, itk::NumericTraits<ComplexValueType>::Zero) );
 		}
-
 
 		// Fill in ND fourier transform of numerator
 		ComplexFieldValue* fftBuffer = fftNum->GetBufferPointer();
@@ -392,6 +393,16 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 			val = *(resultBuffer+pix);
 			(*(nextFieldBuffer+pix))[d] = ( fabs(val) > min_val )?val:0.0;
 		}
+
+#ifndef NDEBUG
+		typedef itk::ImageFileWriter<DeformationComponentType> ComponentWriter;
+		typename ComponentWriter::Pointer p = ComponentWriter::New();
+		ss2.str("");
+		ss2 << "fieldfiltered_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << "_dim" << d << ".nii.gz";
+		p->SetFileName( ss2.str().c_str() );
+		p->SetInput( ifft->GetOutput() );
+		p->Update();
+#endif
 	}
 
 	this->InvokeEvent( itk::IterationEvent() );
@@ -409,23 +420,25 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 	MatrixType* dBuffer = this->m_Denominator->GetBufferPointer();
 	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
 	ComplexFieldValue curval;
-	ComplexValuesVector realval;
-	ComplexValuesVector imagval;
+	VectorType realval;
+	VectorType imagval;
+	MatrixType regTensor;
 
 	for (size_t pix = 0; pix < nPix; pix++ ) {
 		curval = *(nBuffer+pix);
-		MatrixType tensor = *(dBuffer+pix);
+		regTensor = *(dBuffer+pix);
 
 		for( size_t i = 0; i<Dimension; i++ ) {
 			realval[i] = curval[i].real();
-			imagval[i] = curval[i].imag();
+			//imagval[i] = curval[i].imag();
 		}
 
-		realval = tensor * realval;
-		imagval = tensor * imagval;
+		realval = regTensor * realval;
+		//imagval = regTensor * imagval;
 
 		for( size_t i = 0; i<Dimension; i++ ) {
-			curval[i] = ComplexType(realval[i],imagval[i]);
+			//curval[i] = ComplexType(realval[i], imagval[i]);
+			curval[i] = ComplexType(realval[i], -realval[i]); // if f is real-valued, FT{f} should be hermitian.
 		}
 
 
@@ -437,17 +450,17 @@ template< typename TLevelSetsFunction >
 void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 ::InitializeDenominator( typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComplexFieldType* reference ){
 	double pi2 = 2* vnl_math::pi;
-	MatrixType I, ddor, zero;
+	MatrixType I, t;
 	I.SetIdentity();
-	zero.Fill(0.0);
-	MatrixType C = ( I * (1.0/this->m_StepSize) + m_A*I ) * pi2;
+	MatrixType C = ( I * (1.0/this->m_StepSize) + I * m_A ) * pi2;
+
 
 	this->m_Denominator = TensorFieldType::New();
 	this->m_Denominator->SetSpacing(   reference->GetSpacing() );
 	this->m_Denominator->SetDirection( reference->GetDirection() );
 	this->m_Denominator->SetRegions( reference->GetLargestPossibleRegion().GetSize() );
 	this->m_Denominator->Allocate();
-	this->m_Denominator->FillBuffer( zero );
+	this->m_Denominator->FillBuffer( I );
 
 	typename TensorFieldType::SizeType size = this->m_Denominator->GetLargestPossibleRegion().GetSize();
 	MatrixType* buffer = this->m_Denominator->GetBufferPointer();
@@ -459,11 +472,11 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 	for (size_t pix = 0; pix < nPix; pix++ ) {
 		lag_el = 0.0;
 		idx = this->m_Denominator->ComputeIndex( pix );
-		for(size_t d = 0; d < Dimension; d++ )
+		for(size_t d = 0; d < Dimension; d++ ) {
 			lag_el+= 2.0 * cos( (pi2*idx[d])/size[d]) - 2.0;
-
-		ddor = C - m_B * lag_el;
-		*(buffer+pix) = ddor.GetInverse();
+		}
+		t = C + m_B * lag_el * (-1.0);
+		*(buffer+pix) = t.GetInverse();
 	}
 }
 
