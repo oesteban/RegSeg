@@ -357,10 +357,14 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		while (c_it!=c_end) {
 			pid = c_it.Index();
 			outer_contid = this->m_OuterList[contid][pid];
-			ci = c_it.Value();
-			gradient = this->GetEnergyAtPoint( ci, outer_contid ) - this->GetEnergyAtPoint( ci, contid );
 
-			assert( !std::isnan(gradient) );
+			if ( contid != outer_contid ) {
+				ci = c_it.Value();
+				gradient = this->GetEnergyAtPoint( ci, outer_contid ) - this->GetEnergyAtPoint( ci, contid );
+				assert( !std::isnan(gradient) );
+			} else {
+				gradient = 0.0;
+			}
 			// project to normal, updating transform
 			normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
 			ni*= gradient;
