@@ -164,8 +164,6 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	this->m_FieldInterpolator->SetSigma( sigma*2.0 );
 
-	this->m_Modified = false;
-
 #ifndef DNDEBUG
 	for( size_t id = 0; id < m_ROIs.size(); id++) {
 		typedef itk::ImageFileWriter< ROIType > ROIWriter;
@@ -287,7 +285,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		}
 	}
 
-	this->m_Modified = (changed>0);
+	this->m_RegionsModified = (changed>0);
 
 #ifndef NDEBUG
 	std::cout << "MeanNorm=" << (meanNorm/changed) << "mm.; maxNorm=" << maxNorm << "mm.;" << " meanDesp=" << (meanDesp/changed) << std::endl;
@@ -411,7 +409,7 @@ template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetCurrentRegion( size_t idx ) {
-	if(this->m_Modified )
+	if(this->m_RegionsModified )
 		this->ComputeCurrentRegions();
 
 	return this->m_CurrentROIs[idx];
@@ -470,6 +468,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 		this->m_CurrentROIs[idx] = tempROI;
 	}
+
+	this->m_RegionsModified = false;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >

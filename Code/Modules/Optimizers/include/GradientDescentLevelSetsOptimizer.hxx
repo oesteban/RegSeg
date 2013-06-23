@@ -64,13 +64,13 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize =  0.001;
+	this->m_StepSize =  1e-4;
 	this->m_A.SetIdentity();
-	this->m_A(0,0) = 1.0e1;
-	this->m_A(1,1) = 1.0e1;
-	this->m_A(2,2) = 1.0e1;
+	this->m_A(0,0) = 1.0;
+	this->m_A(1,1) = 1.0;
+	this->m_A(2,2) = 1.0;
 	this->m_B.SetIdentity();
-	this->m_B*= 1.0e4;
+	this->m_B*= 1.0;
 }
 
 template< typename TLevelSetsFunction >
@@ -218,8 +218,9 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 #ifndef NDEBUG
 			typedef itk::MeshFileWriter< ContourType >     MeshWriterType;
 			typename MeshWriterType::Pointer w = MeshWriterType::New();
+			size_t nContours =this->m_LevelSetsFunction->GetCurrentContourPosition().size();
 
-			for ( size_t c = 0; c < this->m_LevelSetsFunction->GetCurrentContourPosition().size(); c++ ) {
+			for ( size_t c = 0; c < nContours; c++ ) {
 				w->SetInput( this->m_LevelSetsFunction->GetCurrentContourPosition()[c] );
 				std::stringstream ss;
 				ss << "contour_" << std::setfill('0') << std::setw(2) << c <<"_it_" << std::setw(3) << this->m_CurrentIteration << ".vtk";
@@ -232,6 +233,17 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			p->SetFileName( ss2.str().c_str() );
 			p->SetInput( this->m_DeformationField );
 			p->Update();
+
+
+			typedef itk::ImageFileWriter< typename TLevelSetsFunction::ROIType > ROIWriter;
+			for( size_t r = 0; r <= nContours; r++){
+				std::stringstream ss3;
+				ss3 << "roi_tfd_it" << std::setfill('0')<<std::setw(3) << this->m_CurrentIteration << "_id" << r << ".nii.gz";
+				typename ROIWriter::Pointer wr = ROIWriter::New();
+				wr->SetInput( this->m_LevelSetsFunction->GetCurrentRegion(r));
+				wr->SetFileName(ss3.str().c_str() );
+				wr->Update();
+			}
 #endif
 
 		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentLevelSetsValue << " | " << updateNorm << " | " << this->m_LevelSetsFunction->GetValue() << std::endl;

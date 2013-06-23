@@ -158,16 +158,6 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 		}
 	}
 
-#ifndef DNDEBUG
-	typedef itk::ImageFileWriter< ProbabilityMapType > ROIWriter;
-	typename ROIWriter::Pointer w = ROIWriter::New();
-	w->SetInput( roipm );
-	std::stringstream ss;
-	ss << "roi_transformed_lr_" << std::setfill( '0' ) << std::setw(2) << idx << ".nii.gz";
-	w->SetFileName( ss.str().c_str() );
-	w->Update();
-#endif
-
 	return newParameters;
 }
 
