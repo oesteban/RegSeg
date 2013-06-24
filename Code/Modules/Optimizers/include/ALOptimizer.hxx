@@ -70,13 +70,13 @@ ALOptimizer<TLevelSetsFunction>::ALOptimizer() {
 	this->m_ConvergenceWindowSize = 30;
 	this->m_R =  1.0e4;
 	this->m_A.SetIdentity();
-	this->m_A(0,0) = 2.0;
-	this->m_A(1,1) = 2.0;
-	this->m_A(2,2) = 2.0;
+	this->m_A(0,0) = 0.5;
+	this->m_A(1,1) = 0.5;
+	this->m_A(2,2) = 0.5;
 	this->m_B.SetIdentity();
-	this->m_B(0,0) = 2.0;
-	this->m_B(1,1) = 2.0;
-	this->m_B(2,2) = 2.0;
+	this->m_B(0,0) = 0.5;
+	this->m_B(1,1) = 0.5;
+	this->m_B(2,2) = 0.5;
 	this->m_Rho = 0.5 * this->m_R; // 0 < rho < r
 }
 
