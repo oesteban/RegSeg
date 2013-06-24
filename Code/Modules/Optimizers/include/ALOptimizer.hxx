@@ -1,45 +1,49 @@
-// --------------------------------------------------------------------------
-// File:             GradientDescentLevelSetsOptimizer.hxx
-// Date:             01/11/2012
-// Author:           code@oscaresteban.es (Oscar Esteban, OE)
-// Version:          0.1
-// License:          BSD
-// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------
+// File:          ALOptimizer.hxx
+// Date:          Jun 24, 2013
+// Author:        code@oscaresteban.es (Oscar Esteban)
+// Version:       1.0 beta
+// License:       GPLv3 - 29 June 2007
+// Short Summary:
+// --------------------------------------------------------------------------------------
 //
-// Copyright (c) 2012, code@oscaresteban.es (Oscar Esteban)
+// Copyright (c) 2013, code@oscaresteban.es (Oscar Esteban)
 // with Signal Processing Lab 5, EPFL (LTS5-EPFL)
 // and Biomedical Image Technology, UPM (BIT-UPM)
 // All rights reserved.
-// 
-// This file is part of ACWEReg
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-// * Neither the names of the LTS5-EFPL and the BIT-UPM, nor the names of its
-// contributors may be used to endorse or promote products derived from this
-// software without specific prior written permission.
+// This file is part of ACWE-Reg
 //
-// THIS SOFTWARE IS PROVIDED BY Oscar Esteban ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL OSCAR ESTEBAN BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ACWE-Reg is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// ACWE-Reg is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with ACWE-Reg.  If not, see <http://www.gnu.org/licenses/>.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 
-#ifndef GRADIENTDESCENTLEVELSETSOPTIMIZER_HXX_
-#define GRADIENTDESCENTLEVELSETSOPTIMIZER_HXX_
+#ifndef ALOPTIMIZER_HXX_
+#define ALOPTIMIZER_HXX_
 
-
-#include "GradientDescentLevelSetsOptimizer.h"
+#include "ALOptimizer.h"
 #include <vector>
 #include <vnl/vnl_math.h>
 #include <vnl/vnl_matrix.h>
@@ -59,7 +63,7 @@ namespace rstk {
  * Default constructor
  */
 template< typename TLevelSetsFunction >
-GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsOptimizer() {
+ALOptimizer<TLevelSetsFunction>::ALOptimizer() {
 	this->m_LearningRate = itk::NumericTraits<InternalComputationValueType>::One;
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
@@ -76,7 +80,7 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::GradientDescentLevelSetsO
 }
 
 template< typename TLevelSetsFunction >
-void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
+void ALOptimizer<TLevelSetsFunction>
 ::PrintSelf(std::ostream &os, itk::Indent indent) const {
 	Superclass::PrintSelf(os,indent);
 	os << indent << "Learning rate:" << this->m_LearningRate << std::endl;
@@ -87,8 +91,8 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 
 
 template< typename TLevelSetsFunction >
-void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
-	itkDebugMacro("GradientDescentLevelSetsOptimizer::Start()");
+void ALOptimizer<TLevelSetsFunction>::Start() {
+	itkDebugMacro("ALOptimizer::Start()");
 
 	VectorType zerov = itk::NumericTraits<VectorType>::Zero;
 	/* Settings validation */
@@ -96,7 +100,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 		itkExceptionMacro("LevelSets Object must be set");
 	}
 
-	if (this->m_DeformationField.IsNull()) {
+	if (this->m_uField.IsNull()) {
 		PointType orig = this->m_LevelSetsFunction->GetReferenceImage()->GetOrigin();
 		PointType end;
 
@@ -104,17 +108,9 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 		typename DeformationFieldType::SizeType refSize = this->m_LevelSetsFunction->GetReferenceImage()->GetLargestPossibleRegion().GetSize();
 		for( size_t dim = 0; dim < DeformationFieldType::ImageDimension; dim++ ) end_idx[dim] = refSize[dim];
 		this->m_LevelSetsFunction->GetReferenceImage()->TransformIndexToPhysicalPoint( end_idx, end );
-		this->InitializeDeformationField( orig, end, this->m_LevelSetsFunction->GetReferenceImage()->GetDirection() );
+		this->InitializeFields( orig, end, this->m_LevelSetsFunction->GetReferenceImage()->GetDirection() );
 	}
 
-	/* Initialize next deformationfield */
-	this->m_NextDeformationField = DeformationFieldType::New();
-	this->m_NextDeformationField->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
-	this->m_NextDeformationField->SetSpacing( this->m_DeformationField->GetSpacing() );
-	this->m_NextDeformationField->SetDirection( this->m_DeformationField->GetDirection() );
-	this->m_NextDeformationField->SetOrigin( this->m_DeformationField->GetOrigin() );
-	this->m_NextDeformationField->Allocate();
-	this->m_NextDeformationField->FillBuffer( zerov );
 
 	/* Initialize convergence checker */
 	this->m_ConvergenceMonitoring = ConvergenceMonitoringType::New();
@@ -128,7 +124,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 //		this->m_CurrentBestValue = NumericTraits< MeasureType >::max();
 //	}
 
-	this->m_LevelSetsFunction->CopyInformation( this->m_DeformationField );
+	this->m_LevelSetsFunction->CopyInformation( this->m_uField );
 	this->m_LevelSetsFunction->Initialize();
 
 	this->m_CurrentIteration = 0;
@@ -136,7 +132,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Start() {
 }
 
 template< typename TLevelSetsFunction >
-void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Stop() {
+void ALOptimizer<TLevelSetsFunction>::Stop() {
 
 //	if( this->m_ReturnBestParametersAndValue )	{
 //		this->GetMetric()->SetParameters( this->m_BestParameters );
@@ -146,7 +142,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Stop() {
 }
 
 template< typename TLevelSetsFunction >
-void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
+void ALOptimizer<TLevelSetsFunction>::Resume() {
 	this->m_StopConditionDescription.str("");
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->InvokeEvent( itk::StartEvent() );
@@ -194,16 +190,16 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			std::stringstream ss2;
 			ss2 << "field_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
 			p->SetFileName( ss2.str().c_str() );
-			p->SetInput( this->m_NextDeformationField );
+			p->SetInput( this->m_uFieldNext );
 			p->Update();
 #endif
 
 		/* Update the level sets contour and deformation field */
-		double updateNorm = this->m_LevelSetsFunction->UpdateContour( this->m_NextDeformationField );
+		double updateNorm = this->m_LevelSetsFunction->UpdateContour( this->m_uFieldNext );
 
-		const VectorType* next = this->m_NextDeformationField->GetBufferPointer();
-		VectorType* curr = this->m_DeformationField->GetBufferPointer();
-		size_t nPix = this->m_DeformationField->GetLargestPossibleRegion().GetNumberOfPixels();
+		const VectorType* next = this->m_uFieldNext->GetBufferPointer();
+		VectorType* curr = this->m_uField->GetBufferPointer();
+		size_t nPix = this->m_uField->GetLargestPossibleRegion().GetNumberOfPixels();
 
 		for( size_t pix = 0; pix<nPix; pix++){
 			*(curr+pix) = *(next+pix);
@@ -233,7 +229,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			ss2.str("");
 			ss2 << "field_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
 			p->SetFileName( ss2.str().c_str() );
-			p->SetInput( this->m_DeformationField );
+			p->SetInput( this->m_uField );
 			p->Update();
 
 
@@ -292,7 +288,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 
 
 template< typename TLevelSetsFunction >
-void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
+void ALOptimizer<TLevelSetsFunction>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
 	double min_val = 1.0e-5;
 
@@ -309,13 +305,13 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 #endif
 
 	// Get deformation fields pointers
-	const VectorType* dFieldBuffer = this->m_DeformationField->GetBufferPointer();
+	const VectorType* dFieldBuffer = this->m_uField->GetBufferPointer();
 	const VectorType* sFieldBuffer = shapeGradient->GetBufferPointer();
 
 	// Create container for deformation field components
 	DeformationComponentPointer fieldComponent = DeformationComponentType::New();
-	fieldComponent->SetDirection( this->m_DeformationField->GetDirection() );
-	fieldComponent->SetRegions( this->m_DeformationField->GetLargestPossibleRegion() );
+	fieldComponent->SetDirection( this->m_uField->GetDirection() );
+	fieldComponent->SetRegions( this->m_uField->GetLargestPossibleRegion() );
 	fieldComponent->Allocate();
 	PointValueType* dCompBuffer = fieldComponent->GetBufferPointer();
 
@@ -368,7 +364,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	this->ApplyRegularizationTerm( fftNum );
 
 
-	VectorType* nextFieldBuffer = this->m_NextDeformationField->GetBufferPointer();
+	VectorType* nextFieldBuffer = this->m_uFieldNext->GetBufferPointer();
 	for( size_t d = 0; d < Dimension; d++ ) {
 		// Take out fourier component
 		FTDomainPointer fftComponent = FTDomainType::New();
@@ -399,7 +395,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 			throw err;
 		}
 
-		// Set component on this->m_NextDeformationField
+		// Set component on this->m_uFieldNext
 		const PointValueType* resultBuffer = ifft->GetOutput()->GetBufferPointer();
 		PointValueType val;
 		for(size_t pix = 0; pix< nPix; pix++) {
@@ -422,8 +418,8 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 }
 
 template< typename TLevelSetsFunction >
-void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
-::ApplyRegularizationTerm( typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComplexFieldType* reference ){
+void ALOptimizer<TLevelSetsFunction>
+::ApplyRegularizationTerm( typename ALOptimizer<TLevelSetsFunction>::ComplexFieldType* reference ){
 	if( this->m_Denominator.IsNull() ) { // If executed for first time, cache the map
 		this->InitializeDenominator( reference );
 	}
@@ -459,8 +455,8 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 }
 
 template< typename TLevelSetsFunction >
-void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
-::InitializeDenominator( typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComplexFieldType* reference ){
+void ALOptimizer<TLevelSetsFunction>
+::InitializeDenominator( typename ALOptimizer<TLevelSetsFunction>::ComplexFieldType* reference ){
 	double pi2 = 2* vnl_math::pi;
 	MatrixType I, t;
 	I.SetIdentity();
@@ -493,10 +489,10 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>
 }
 
 template< typename TLevelSetsFunction >
-void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComputeIterationChange() {
-	VectorType* fnextBuffer = this->m_NextDeformationField->GetBufferPointer();
-	VectorType* fBuffer = this->m_DeformationField->GetBufferPointer();
-	size_t nPix = this->m_NextDeformationField->GetLargestPossibleRegion().GetNumberOfPixels();
+void ALOptimizer<TLevelSetsFunction>::ComputeIterationChange() {
+	VectorType* fnextBuffer = this->m_uFieldNext->GetBufferPointer();
+	VectorType* fBuffer = this->m_uField->GetBufferPointer();
+	size_t nPix = this->m_uFieldNext->GetLargestPossibleRegion().GetNumberOfPixels();
 	double totalNorm = 0;
 	VectorType t0,t1;
 	for (size_t pix = 0; pix < nPix; pix++ ) {
@@ -511,12 +507,12 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::ComputeIterationChan
 
 template< typename TLevelSetsFunction >
 void
-GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::InitializeDeformationField(
-	 const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::PointType orig,
-	 const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::PointType end,
-	 const typename GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::DeformationFieldDirectionType dir)
+ALOptimizer<TLevelSetsFunction>::InitializeFields(
+	 const typename ALOptimizer<TLevelSetsFunction>::PointType orig,
+	 const typename ALOptimizer<TLevelSetsFunction>::PointType end,
+	 const typename ALOptimizer<TLevelSetsFunction>::DeformationFieldDirectionType dir)
 {
-	this->m_DeformationField = DeformationFieldType::New();
+	this->m_uField = DeformationFieldType::New();
 
 	typename DeformationFieldType::SpacingType spacing;
 	for( size_t dim = 0; dim < DeformationFieldType::ImageDimension; dim++ ) {
@@ -526,13 +522,23 @@ GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::InitializeDeformationFiel
 	VectorType zerov;
 	zerov.Fill(0.0);
 
-	this->m_DeformationField->SetRegions( this->m_GridSize );
-	this->m_DeformationField->SetSpacing( spacing );
-	this->m_DeformationField->SetDirection( dir );
-	this->m_DeformationField->SetOrigin( orig );
-	this->m_DeformationField->Allocate();
-	this->m_DeformationField->FillBuffer( zerov );
+	this->m_uField->SetRegions( this->m_GridSize );
+	this->m_uField->SetSpacing( spacing );
+	this->m_uField->SetDirection( dir );
+	this->m_uField->SetOrigin( orig );
+	this->m_uField->Allocate();
+	this->m_uField->FillBuffer( zerov );
+
+	this->m_uFieldNext = DeformationFieldType::New();
+	this->m_uFieldNext->SetRegions( this->m_uField->GetLargestPossibleRegion() );
+	this->m_uFieldNext->SetSpacing( this->m_uField->GetSpacing() );
+	this->m_uFieldNext->SetDirection( this->m_uField->GetDirection() );
+	this->m_uFieldNext->SetOrigin( this->m_uField->GetOrigin() );
+	this->m_uFieldNext->Allocate();
+	this->m_uFieldNext->FillBuffer( zerov );
 }
 
 }
-#endif /* GRADIENTDESCENTLEVELSETSOPTIMIZER_HXX_ */
+
+
+#endif /* ALOPTIMIZER_HXX_ */
