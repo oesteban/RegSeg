@@ -68,7 +68,7 @@ ALOptimizer<TLevelSetsFunction>::ALOptimizer() {
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize =  1e-3; // stepsize = 1/r.
+	this->m_R =  1.0e4;
 	this->m_A.SetIdentity();
 	this->m_A(0,0) = 2.0;
 	this->m_A(1,1) = 2.0;
@@ -77,7 +77,7 @@ ALOptimizer<TLevelSetsFunction>::ALOptimizer() {
 	this->m_B(0,0) = 2.0;
 	this->m_B(1,1) = 2.0;
 	this->m_B(2,2) = 2.0;
-	this->m_Rho = 0.5 * (1.0/this->m_StepSize); // 0 < rho < r
+	this->m_Rho = 0.5 * this->m_R; // 0 < rho < r
 }
 
 template< typename TLevelSetsFunction >
@@ -170,14 +170,7 @@ void ALOptimizer<TLevelSetsFunction>::Resume() {
 		/* Update the level sets contour and deformation field */
 		double updateNorm = this->m_LevelSetsFunction->UpdateContour( this->m_uFieldNext );
 
-		const VectorType* next = this->m_uFieldNext->GetBufferPointer();
-		VectorType* curr = this->m_uField->GetBufferPointer();
-		size_t nPix = this->m_uField->GetLargestPossibleRegion().GetNumberOfPixels();
-
-		for( size_t pix = 0; pix<nPix; pix++){
-			*(curr+pix) = *(next+pix);
-		}
-
+		this->SetUpdate();
 
 		/* TODO Store best value and position */
 		//if ( this->m_ReturnBestParametersAndValue && this->m_CurrentLevelSetsValue < this->m_CurrentBestValue )
@@ -283,7 +276,7 @@ void ALOptimizer<TLevelSetsFunction>::UpdateU(){
 	size_t nPix = this->m_uFieldNext->GetLargestPossibleRegion().GetNumberOfPixels();
 
 	for ( size_t p = 0; p<nPix; p++ ) {
-		*( uFieldBuffer + p ) = *( vFieldBuffer+p ) - *( lFieldBuffer+p ) * this->m_StepSize - *( sFieldBuffer+p ) * this->m_StepSize;
+		*( uFieldBuffer + p ) = *( vFieldBuffer+p ) - *( lFieldBuffer+p ) * (1.0/this->m_R) - *( sFieldBuffer+p ) * (1.0/this->m_R);
 	}
 
 }
@@ -314,7 +307,7 @@ void ALOptimizer<TLevelSetsFunction>::UpdateV() {
 		for(size_t pix = 0; pix< nPix; pix++) {
 			u = (*(uFieldBuffer+pix))[d];
 			l = (*(lFieldBuffer+pix))[d];
-			*(dCompBuffer+pix) = ( u / this->m_StepSize ) - l; // ATTENTION: the + symbol depends on the definition of the normal
+			*(dCompBuffer+pix) = ( u * this->m_R ) - l; // ATTENTION: the + symbol depends on the definition of the normal
 		}                                                         // OUTWARDS-> + ; INWARDS-> -.
 
 		FFTPointer fftFilter = FFTType::New();
@@ -445,7 +438,7 @@ void ALOptimizer<TLevelSetsFunction>
 	double pi2 = 2* vnl_math::pi;
 	MatrixType I, t;
 	I.SetIdentity();
-	MatrixType C = ( I * (1.0/this->m_StepSize) + I * m_A ) * pi2;
+	MatrixType C = ( I * this->m_R + I * m_A ) * pi2;
 
 
 	this->m_Denominator = TensorFieldType::New();
@@ -497,8 +490,6 @@ ALOptimizer<TLevelSetsFunction>::InitializeFields(
 	 const typename ALOptimizer<TLevelSetsFunction>::PointType end,
 	 const typename ALOptimizer<TLevelSetsFunction>::DeformationFieldDirectionType dir)
 {
-	this->m_uField = DeformationFieldType::New();
-
 	typename DeformationFieldType::SpacingType spacing;
 	for( size_t dim = 0; dim < DeformationFieldType::ImageDimension; dim++ ) {
 		spacing[dim] = fabs( (end[dim]-orig[dim])/(1.0*this->m_GridSize[dim]));
@@ -507,6 +498,7 @@ ALOptimizer<TLevelSetsFunction>::InitializeFields(
 	VectorType zerov;
 	zerov.Fill(0.0);
 
+	this->m_uField = DeformationFieldType::New();
 	this->m_uField->SetRegions( this->m_GridSize );
 	this->m_uField->SetSpacing( spacing );
 	this->m_uField->SetDirection( dir );
@@ -514,6 +506,7 @@ ALOptimizer<TLevelSetsFunction>::InitializeFields(
 	this->m_uField->Allocate();
 	this->m_uField->FillBuffer( zerov );
 
+	this->m_vField = DeformationFieldType::New();
 	this->m_vField->SetRegions( this->m_GridSize );
 	this->m_vField->SetSpacing( spacing );
 	this->m_vField->SetDirection( dir );
@@ -521,6 +514,7 @@ ALOptimizer<TLevelSetsFunction>::InitializeFields(
 	this->m_vField->Allocate();
 	this->m_vField->FillBuffer( zerov );
 
+	this->m_lambdaField = DeformationFieldType::New();
 	this->m_lambdaField->SetRegions( this->m_GridSize );
 	this->m_lambdaField->SetSpacing( spacing );
 	this->m_lambdaField->SetDirection( dir );
@@ -528,6 +522,7 @@ ALOptimizer<TLevelSetsFunction>::InitializeFields(
 	this->m_lambdaField->Allocate();
 	this->m_lambdaField->FillBuffer( zerov );
 
+	this->m_uFieldNext = DeformationFieldType::New();
 	this->m_uFieldNext->SetRegions( this->m_GridSize );
 	this->m_uFieldNext->SetSpacing( spacing );
 	this->m_uFieldNext->SetDirection( dir );
@@ -535,6 +530,7 @@ ALOptimizer<TLevelSetsFunction>::InitializeFields(
 	this->m_uFieldNext->Allocate();
 	this->m_uFieldNext->FillBuffer( zerov );
 
+	this->m_vFieldNext = DeformationFieldType::New();
 	this->m_vFieldNext->SetRegions( this->m_GridSize );
 	this->m_vFieldNext->SetSpacing( spacing );
 	this->m_vFieldNext->SetDirection( dir );
@@ -542,12 +538,35 @@ ALOptimizer<TLevelSetsFunction>::InitializeFields(
 	this->m_vFieldNext->Allocate();
 	this->m_vFieldNext->FillBuffer( zerov );
 
+	this->m_lambdaFieldNext = DeformationFieldType::New();
 	this->m_lambdaFieldNext->SetRegions( this->m_GridSize );
 	this->m_lambdaFieldNext->SetSpacing( spacing );
 	this->m_lambdaFieldNext->SetDirection( dir );
 	this->m_lambdaFieldNext->SetOrigin( orig );
 	this->m_lambdaFieldNext->Allocate();
 	this->m_lambdaFieldNext->FillBuffer( zerov );
+
+}
+
+template< typename TLevelSetsFunction >
+void ALOptimizer<TLevelSetsFunction>::SetUpdate(){
+
+	const VectorType* uNext = this->m_uFieldNext->GetBufferPointer();
+	const VectorType* vNext = this->m_vFieldNext->GetBufferPointer();
+	const VectorType* lNext = this->m_lambdaFieldNext->GetBufferPointer();
+
+	VectorType* uCurr = this->m_uField->GetBufferPointer();
+	VectorType* vCurr = this->m_vField->GetBufferPointer();
+	VectorType* lCurr = this->m_lambdaField->GetBufferPointer();
+
+	size_t nPix = this->m_uField->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	for( size_t pix = 0; pix<nPix; pix++){
+		*(uCurr+pix) = *(uNext+pix);
+		*(vCurr+pix) = *(vNext+pix);
+		*(lCurr+pix) = *(lNext+pix);
+	}
+
 
 }
 
