@@ -125,8 +125,8 @@ public:
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
 
-	itkSetObjectMacro(DeformationField, DeformationFieldType);
-	itkGetConstObjectMacro(DeformationField, DeformationFieldType);
+	itkSetObjectMacro(uField, DeformationFieldType);
+	itkGetConstObjectMacro(uField, DeformationFieldType);
 
 	/** Minimum convergence value for convergence checking.
 	 *  The convergence checker calculates convergence value by fitting to
@@ -224,6 +224,7 @@ protected:
 
 	/** Particular parameter definitions from our method */
 	InternalComputationValueType m_StepSize; // Step-size is tau in the formulations
+	InternalComputationValueType m_Rho;
 	MatrixType m_A;
 	MatrixType m_B;
 
@@ -245,11 +246,14 @@ protected:
 
 	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 
-	void Iterate(void);
+	//void Iterate(void);
 	void ApplyRegularizationTerm( ComplexFieldType* reference );
 	void InitializeFields( const PointType orig, const PointType end, const DeformationFieldDirectionType dir);
 	void InitializeDenominator( ComplexFieldType* reference );
 
+	void UpdateU(void);
+	void UpdateV(void);
+	void UpdateLambda(void);
 private:
 	ALOptimizer( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
