@@ -68,7 +68,7 @@ ALOptimizer<TLevelSetsFunction>::ALOptimizer() {
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize =  1e-3;
+	this->m_StepSize =  1e-3; // stepsize = 1/r.
 	this->m_A.SetIdentity();
 	this->m_A(0,0) = 2.0;
 	this->m_A(1,1) = 2.0;
@@ -77,6 +77,7 @@ ALOptimizer<TLevelSetsFunction>::ALOptimizer() {
 	this->m_B(0,0) = 2.0;
 	this->m_B(1,1) = 2.0;
 	this->m_B(2,2) = 2.0;
+	this->m_Rho = 0.5 * (1.0/this->m_StepSize); // 0 < rho < r
 }
 
 template< typename TLevelSetsFunction >
@@ -150,25 +151,9 @@ void ALOptimizer<TLevelSetsFunction>::Resume() {
 
 
 	while( ! this->m_Stop )	{
-		/* Compute metric value/derivative. */
-		try	{
-			this->m_LevelSetsFunction->ComputeGradient();
-#ifndef NDEBUG
-			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
-			typename Writer::Pointer p = Writer::New();
-			std::stringstream ss2;
-			ss2 << "gradient_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
-			p->SetFileName( ss2.str().c_str() );
-			p->SetInput( this->m_LevelSetsFunction->GetGradientMap() );
-			p->Update();
-#endif
-		}
-		catch ( itk::ExceptionObject & err ) {
-			this->m_StopCondition = Superclass::COSTFUNCTION_ERROR;
-			this->m_StopConditionDescription << "LevelSets error during optimization";
-			this->Stop();
-			throw err;  // Pass exception to caller
-		}
+		this->UpdateU();
+		this->UpdateV();
+		this->UpdateLambda();
 
 		/* Check if optimization has been stopped externally.
 		 * (Presumably this could happen from a multi-threaded client app?) */
@@ -178,21 +163,9 @@ void ALOptimizer<TLevelSetsFunction>::Resume() {
 		}
 
 
-		/* Advance one step along the gradient.
-		 * This will modify the gradient and update the transform. */
-		this->Iterate();
+		this->InvokeEvent( itk::IterationEvent() );
 
 		this->ComputeIterationChange();
-
-#ifndef NDEBUG
-			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
-			typename Writer::Pointer p = Writer::New();
-			std::stringstream ss2;
-			ss2 << "field_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
-			p->SetFileName( ss2.str().c_str() );
-			p->SetInput( this->m_uFieldNext );
-			p->Update();
-#endif
 
 		/* Update the level sets contour and deformation field */
 		double updateNorm = this->m_LevelSetsFunction->UpdateContour( this->m_uFieldNext );
@@ -217,18 +190,20 @@ void ALOptimizer<TLevelSetsFunction>::Resume() {
 			typedef itk::MeshFileWriter< ContourType >     MeshWriterType;
 			typename MeshWriterType::Pointer w = MeshWriterType::New();
 			size_t nContours =this->m_LevelSetsFunction->GetCurrentContourPosition().size();
-
+			std::stringstream ss;
 			for ( size_t c = 0; c < nContours; c++ ) {
 				w->SetInput( this->m_LevelSetsFunction->GetCurrentContourPosition()[c] );
-				std::stringstream ss;
+				ss.str("");
 				ss << "contour_" << std::setfill('0') << std::setw(2) << c <<"_it_" << std::setw(3) << this->m_CurrentIteration << ".vtk";
 				w->SetFileName( ss.str() );
 				w->Update();
 			}
 
-			ss2.str("");
-			ss2 << "field_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
-			p->SetFileName( ss2.str().c_str() );
+			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
+			typename Writer::Pointer p = Writer::New();
+			ss.str("");
+			ss << "field_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+			p->SetFileName( ss.str().c_str() );
 			p->SetInput( this->m_uField );
 			p->Update();
 
@@ -286,27 +261,41 @@ void ALOptimizer<TLevelSetsFunction>::Resume() {
 	} //while (!m_Stop)
 }
 
-
 template< typename TLevelSetsFunction >
-void ALOptimizer<TLevelSetsFunction>::Iterate() {
-	itkDebugMacro("Optimizer Iteration");
-	double min_val = 1.0e-5;
+void ALOptimizer<TLevelSetsFunction>::UpdateU(){
+	itkDebugMacro("Optimizer Update u");
+	/* Compute metric value/derivative. */
+	try	{
+		this->m_LevelSetsFunction->ComputeGradient();
+	}
+	catch ( itk::ExceptionObject & err ) {
+		this->m_StopCondition = Superclass::COSTFUNCTION_ERROR;
+		this->m_StopConditionDescription << "LevelSets error during optimization";
+		this->Stop();
+		throw err;  // Pass exception to caller
+	}
 
 	DeformationFieldConstPointer shapeGradient = this->m_LevelSetsFunction->GetGradientMap();
+	VectorType* uFieldBuffer = this->m_uFieldNext->GetBufferPointer();
+	const VectorType* vFieldBuffer = this->m_vField->GetBufferPointer();
+	const VectorType* lFieldBuffer = this->m_lambdaField->GetBufferPointer();
+	const VectorType* sFieldBuffer = shapeGradient->GetBufferPointer();
+	size_t nPix = this->m_uFieldNext->GetLargestPossibleRegion().GetNumberOfPixels();
 
-#ifndef NDEBUG
-	typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
-	typename Writer::Pointer p = Writer::New();
-	std::stringstream ss2;
-	ss2 << "gradient2_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
-	p->SetFileName( ss2.str().c_str() );
-	p->SetInput( shapeGradient );
-	p->Update();
-#endif
+	for ( size_t p = 0; p<nPix; p++ ) {
+		*( uFieldBuffer + p ) = *( vFieldBuffer+p ) - *( lFieldBuffer+p ) * this->m_StepSize - *( sFieldBuffer+p ) * this->m_StepSize;
+	}
+
+}
+
+template< typename TLevelSetsFunction >
+void ALOptimizer<TLevelSetsFunction>::UpdateV() {
+	itkDebugMacro("Optimizer Update v");
+	double min_val = 1.0e-5;
 
 	// Get deformation fields pointers
-	const VectorType* dFieldBuffer = this->m_uField->GetBufferPointer();
-	const VectorType* sFieldBuffer = shapeGradient->GetBufferPointer();
+	const VectorType* uFieldBuffer = this->m_uFieldNext->GetBufferPointer();
+	const VectorType* lFieldBuffer = this->m_lambdaField->GetBufferPointer();
 
 	// Create container for deformation field components
 	DeformationComponentPointer fieldComponent = DeformationComponentType::New();
@@ -321,21 +310,12 @@ void ALOptimizer<TLevelSetsFunction>::Iterate() {
 	for( size_t d = 0; d < Dimension; d++ ) {
 		// Get component from vector image
 		size_t comp, idx2;
-		PointValueType u,grad;
+		PointValueType u,l;
 		for(size_t pix = 0; pix< nPix; pix++) {
-			u = (*(dFieldBuffer+pix))[d];
-			grad = (*(sFieldBuffer+pix))[d];
-			*(dCompBuffer+pix) = ( u / this->m_StepSize ) - grad; // ATTENTION: the + symbol depends on the definition of the normal
+			u = (*(uFieldBuffer+pix))[d];
+			l = (*(lFieldBuffer+pix))[d];
+			*(dCompBuffer+pix) = ( u / this->m_StepSize ) - l; // ATTENTION: the + symbol depends on the definition of the normal
 		}                                                         // OUTWARDS-> + ; INWARDS-> -.
-#ifndef NDEBUG
-		typedef itk::ImageFileWriter<DeformationComponentType> ComponentWriter;
-		typename ComponentWriter::Pointer p = ComponentWriter::New();
-		ss2.str("");
-		ss2 << "gradient3_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << "_dim" << d << ".nii.gz";
-		p->SetFileName( ss2.str().c_str() );
-		p->SetInput( fieldComponent );
-		p->Update();
-#endif
 
 		FFTPointer fftFilter = FFTType::New();
 		fftFilter->SetInput( fieldComponent );
@@ -364,7 +344,7 @@ void ALOptimizer<TLevelSetsFunction>::Iterate() {
 	this->ApplyRegularizationTerm( fftNum );
 
 
-	VectorType* nextFieldBuffer = this->m_uFieldNext->GetBufferPointer();
+	VectorType* nextFieldBuffer = this->m_vFieldNext->GetBufferPointer();
 	for( size_t d = 0; d < Dimension; d++ ) {
 		// Take out fourier component
 		FTDomainPointer fftComponent = FTDomainType::New();
@@ -389,7 +369,7 @@ void ALOptimizer<TLevelSetsFunction>::Iterate() {
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = Superclass::UPDATE_PARAMETERS_ERROR;
-			this->m_StopConditionDescription << "UpdateDeformationField error";
+			this->m_StopConditionDescription << "UpdateV error";
 			this->Stop();
 			// Pass exception to caller
 			throw err;
@@ -403,19 +383,24 @@ void ALOptimizer<TLevelSetsFunction>::Iterate() {
 			(*(nextFieldBuffer+pix))[d] = ( fabs(val) > min_val )?val:0.0;
 		}
 
-#ifndef NDEBUG
-		typedef itk::ImageFileWriter<DeformationComponentType> ComponentWriter;
-		typename ComponentWriter::Pointer p = ComponentWriter::New();
-		ss2.str("");
-		ss2 << "fieldfiltered_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << "_dim" << d << ".nii.gz";
-		p->SetFileName( ss2.str().c_str() );
-		p->SetInput( ifft->GetOutput() );
-		p->Update();
-#endif
 	}
 
-	this->InvokeEvent( itk::IterationEvent() );
 }
+
+template< typename TLevelSetsFunction >
+void ALOptimizer<TLevelSetsFunction>::UpdateLambda() {
+	VectorType* lFieldNextBuffer = this->m_lambdaFieldNext->GetBufferPointer();
+	const VectorType* uFieldBuffer = this->m_uFieldNext->GetBufferPointer();
+	const VectorType* vFieldBuffer = this->m_vFieldNext->GetBufferPointer();
+	const VectorType* lFieldBuffer = this->m_lambdaField->GetBufferPointer();
+	size_t nPix = this->m_uFieldNext->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	for ( size_t p = 0; p<nPix; p++ ) {
+		*( lFieldNextBuffer+p ) = *( lFieldBuffer+p ) + ( *( uFieldBuffer+p ) - *( vFieldBuffer+p ) ) * this->m_Rho;
+	}
+
+}
+
 
 template< typename TLevelSetsFunction >
 void ALOptimizer<TLevelSetsFunction>
@@ -529,13 +514,41 @@ ALOptimizer<TLevelSetsFunction>::InitializeFields(
 	this->m_uField->Allocate();
 	this->m_uField->FillBuffer( zerov );
 
-	this->m_uFieldNext = DeformationFieldType::New();
-	this->m_uFieldNext->SetRegions( this->m_uField->GetLargestPossibleRegion() );
-	this->m_uFieldNext->SetSpacing( this->m_uField->GetSpacing() );
-	this->m_uFieldNext->SetDirection( this->m_uField->GetDirection() );
-	this->m_uFieldNext->SetOrigin( this->m_uField->GetOrigin() );
+	this->m_vField->SetRegions( this->m_GridSize );
+	this->m_vField->SetSpacing( spacing );
+	this->m_vField->SetDirection( dir );
+	this->m_vField->SetOrigin( orig );
+	this->m_vField->Allocate();
+	this->m_vField->FillBuffer( zerov );
+
+	this->m_lambdaField->SetRegions( this->m_GridSize );
+	this->m_lambdaField->SetSpacing( spacing );
+	this->m_lambdaField->SetDirection( dir );
+	this->m_lambdaField->SetOrigin( orig );
+	this->m_lambdaField->Allocate();
+	this->m_lambdaField->FillBuffer( zerov );
+
+	this->m_uFieldNext->SetRegions( this->m_GridSize );
+	this->m_uFieldNext->SetSpacing( spacing );
+	this->m_uFieldNext->SetDirection( dir );
+	this->m_uFieldNext->SetOrigin( orig );
 	this->m_uFieldNext->Allocate();
 	this->m_uFieldNext->FillBuffer( zerov );
+
+	this->m_vFieldNext->SetRegions( this->m_GridSize );
+	this->m_vFieldNext->SetSpacing( spacing );
+	this->m_vFieldNext->SetDirection( dir );
+	this->m_vFieldNext->SetOrigin( orig );
+	this->m_vFieldNext->Allocate();
+	this->m_vFieldNext->FillBuffer( zerov );
+
+	this->m_lambdaFieldNext->SetRegions( this->m_GridSize );
+	this->m_lambdaFieldNext->SetSpacing( spacing );
+	this->m_lambdaFieldNext->SetDirection( dir );
+	this->m_lambdaFieldNext->SetOrigin( orig );
+	this->m_lambdaFieldNext->Allocate();
+	this->m_lambdaFieldNext->FillBuffer( zerov );
+
 }
 
 }

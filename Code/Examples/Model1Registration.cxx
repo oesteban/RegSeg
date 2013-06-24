@@ -57,6 +57,7 @@
 #include <itkResampleImageFilter.h>
 #include "MahalanobisLevelSets.h"
 #include "GradientDescentLevelSetsOptimizer.h"
+#include "ALOptimizer.h"
 
 using namespace rstk;
 
@@ -73,7 +74,8 @@ int main(int argc, char *argv[]) {
 	typedef LevelSetsType::CovarianceType                        CovarianceType;
 	typedef LevelSetsType::FieldType                             DeformationFieldType;
 
-	typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
+	typedef ALOptimizer< LevelSetsType >   Optimizer;
+	//typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
 	typedef typename Optimizer::Pointer                          OptimizerPointer;
 
 	typedef itk::VTKPolyDataReader< ContourType >     ReaderType;
