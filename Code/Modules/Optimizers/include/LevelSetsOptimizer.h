@@ -43,6 +43,8 @@
 #include <vector>
 #include <itkForwardFFTImageFilter.h>
 #include <itkInverseFFTImageFilter.h>
+#include <itkRealToHalfHermitianForwardFFTImageFilter.h>
+#include <itkHalfHermitianToRealInverseFFTImageFilter.h>
 
 namespace rstk
 {
@@ -101,7 +103,8 @@ public:
 	//typedef typename LevelSetsFunctionType::ContourPointer     ContourPointer;
 	typedef typename ContourType::PointType                    ContourPointType;
 
-	typedef itk::ForwardFFTImageFilter<DeformationComponentType>          FFTType;
+	typedef itk::RealToHalfHermitianForwardFFTImageFilter
+			                          <DeformationComponentType>          FFTType;
 	typedef typename FFTType::Pointer                                     FFTPointer;
 	typedef typename FFTType::OutputImageType                             FTDomainType;
 	typedef typename FTDomainType::Pointer                                FTDomainPointer;
@@ -120,7 +123,7 @@ public:
 	typedef typename TensorFieldType::Pointer                             TensorFieldPointer;
 
 
-	typedef itk::InverseFFTImageFilter
+	typedef itk::HalfHermitianToRealInverseFFTImageFilter
 			        <FTDomainType, DeformationComponentType>              IFFTType;
 	typedef typename IFFTType::Pointer                                    IFFTPointer;
 
