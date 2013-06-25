@@ -161,7 +161,6 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	}
 
 	typename FieldType::SpacingType sigma = this->m_GradientMap->GetSpacing();
-
 	this->m_FieldInterpolator->SetSigma( sigma*2.0 );
 
 #ifndef DNDEBUG

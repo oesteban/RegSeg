@@ -118,6 +118,8 @@ SparseMatrixTransform<TScalarType,NDimensions>
 			}
 		}
 	}
+
+	this->m_InvertPhi.normalize_rows();
 }
 
 template< class TScalarType, unsigned int NDimensions >

@@ -35,6 +35,9 @@ class TransformTests : public ::testing::Test {
 public:
 	virtual void SetUp() {
 		m_N = 3;
+		m_Sigma[0] = 2.1;
+		m_Sigma[1] = 2.1;
+		m_Sigma[2] = 2.1;
 
 		m_field = FieldType::New();
 		double origin[3] = { 0.0, 0.0, 0.0 };
@@ -55,6 +58,7 @@ public:
 		m_transform = Transform::New();
 		m_transform->SetN( m_N );
 		m_transform->SetK( m_K );
+		m_transform->SetSigma( m_Sigma );
 
 		m_cp[0][0] = 5.7;
 		m_cp[0][1] = 12.2;
@@ -98,6 +102,7 @@ public:
 	VectorType m_vectors[3];
 	size_t m_N;
 	size_t m_K;
+	double m_Sigma[3];
 
 };
 
