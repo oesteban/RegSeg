@@ -4,10 +4,12 @@
 \subsection{Related work}
 \label{sec:methods_background}
 
-We suggest clustering the current methodologies of template-based segmentation 
-methods into three groups. The first group typically adds a shape prior term to 
-the energy functional of an evolving active contour \citep{bresson_variational_2006,c
-han_level_2005,chen_using_2002,cremers_kernel_2006,gastaud_combining_2004}.
+\Gls{acwe} and level-set based formulations have been widely applied in image
+processing, as reviewed in \citep{suri_shape_2002}. We suggest clustering the 
+current methodologies of template-based segmentation methods into three groups. 
+The first group typically adds a shape prior term to the energy functional of 
+an evolving active contour \citep{bresson_variational_2006,
+chan_level_2005,chen_using_2002,cremers_kernel_2006,gastaud_combining_2004}.
 These methods generally have a explicit description of the expected relative boundary 
 locations of the object to be delineated, and some even model the statistical deviations
 from this average shape. By including a coordinates mapping, it is possible to perform
@@ -16,11 +18,60 @@ images \citep{wyatt_map_2003,paragios_level_2003,vemuri_joint_2003,yezzi_variati
 This second group is closely related to atlas-based segmentation methods 
 \citep{gorthi_segmentation_2009,gorthi_active_2011,pohl_unifying_2005,
 pohl_bayesian_2006,wang_joint_2006}, where the prior 
-imposes consistent voxel-based classification of contiguous regions. Here, the 
-presence of more structures than one unique \gls{roi} helps aligning the target image 
-with the atlas in a hierarchical fashion. Finally, the third group generalizes 
-the atlas to actual images, and the contour is to segment simultaneously two 
-different target images, related by a spatial transform to be co-estimated
+imposes consistent voxel-based classification of contiguous regions.
+A comprehensive summary of the \gls{acwe}-derived methodologies with special attention
+to joint registration-segmentation methods is found in \citep{gorthi_active_2011}.
+
+Our joint registration and segmentation method is mainly inspired in the active
+deformation fields presented by \citep{gorthi_active_2011}, that is a generalization
+of the methodologies presented by \citep{bertalmio_morphing_2000,vemuri_joint_2003,
+yezzi_variational_2003}.
+All these formulations are deduced from the general level set evolution equation
+introduced by \citep{osher_fronts_1988}:
+\begin{equation}
+\frac{\partial \Phi_D(x,t)}{\partial t} = \nu ( \Phi_D(x,t)) \, \left| \nabla \Phi_D(x,t) \right|
+\end{equation}
+where $\nu$ is the velocity of the flow or speed function that contains the local
+segmentation and contour regularization constraints, and $\Phi_D: \Omega \to \mathbb{R}$
+is the signed distance function often used to represent implicitly the active contour
+by its zero level. An early extension to image registration was proposed by 
+\citep{vemuri_joint_2003} but replacing $\Phi_D$ by the intensity function of the
+image to register, $\Phi_I: \Omega \to \mathbb{R}$ (the moving image). 
+\citep{bertalmio_morphing_2000,vemuri_joint_2003} then define the speed function as
+$\nu(\Phi_I(x,t)) = \Phi_I(x,t) - \Phi_T(x,t)$, where $\Phi_T(x)$ is the intensity
+function of the target image. Finally, \citep{gorthi_active_2011} propose a different
+multiphase label function as level set function ($\Phi_L$) that improves registration
+results.
+
+Generalizing the objective function $\Phi_G$, it is possible to introduce the 
+dense deformation field of vectors $u: \mathbb{R}^n \to \mathbb{R}^n$ (tipically
+$n = \{ 2, 3 \}$) assuming the conservation of the morphological description, that is,
+$\Phi_G(x,t) = \Phi_G( x + du, t + dt ) \implies d\Phi_G(x,t) = 0$, where $d\Phi_G$ is
+the total derivative of $\Phi_G$. Using the chain rule, this can be rewritten as the 
+evolution equation of a vector flow:
+\begin{equation}
+\frac{\partial u(x,t)}{\partial t}= - \frac{\Phi_G}{\left| \nabla \Phi_G \right|} N_{\Phi_G},
+\end{equation}
+where $N_{\Phi_G}$ is the normal of the level set. Finally, they introduce the general
+level set evolution equation into the vector flow to perform the registration task:
+\begin{equation}
+\frac{\partial u(x,t)}{\partial t} = - \nu( \Phi_G(x,t) ) N_{\Phi_G}.
+\end{equation}
+Therefore, the position of the level set function $\Phi_G$ at time $t$ is given by the
+deformation field $u(x,t)$ and the initial level set function $\Phi_G(x,0)$, yielding:
+\begin{equation}
+\frac{\partial u(x,t)}{\partial t} = - \nu( \Phi_G(x + u(x,t), 0) ) N_{\Phi_G}.
+\end{equation}
+
+Here, we propose an active deformation field framework with a slightly different
+formulation. The main differences with respect the approach proposed in
+\citep{gorthi_active_2011} are: 1) there is no need for an explicit level set function
+$\Phi_G$, replacing the level set gradient computation $N_{\Phi_G}$ with shape
+gradients \citep{jehan-besson_dream2s:_2003,herbulot_segmentation_2006}; 2) 
+\todo[inline]{regularization is also based on linear diffusion smoothing REF-thirion,
+but they use a Gaussian filtering)}; 3) optimization is applied in the spectral
+domain, observing anisotropic and inhomogeneous mappings along each direction.
+
 
 \subsection{From the Maximum A-Posteriori Model to the Mumford-Shah functional}
 \label{sec:methods_map}
@@ -269,7 +320,7 @@ v^{t+1} &=& \argmin_{v} AL(u^{t+1},v,\lambda^t,r)\\
 where typically $0 < \rho < r$. The two subminimization problems will now be much easier to handle than the original complete problem (``divide et impera'').
 
 \subsection{Shape gradients}
-To compute the gradient-descent of the data-term domain integrals with respect to the underlying deformation field, we want to make use of shape gradients \cite{Jehan-Besson2003,herbulot_segmentation_2006}. A little bit of theory is therefore in order.
+To compute the gradient-descent of the data-term domain integrals with respect to the underlying deformation field, we want to make use of shape gradients \cite{jehan-besson_dream2s:_2003,herbulot_segmentation_2006}. A little bit of theory is therefore in order.
 
 Let $\Omega$ be an image domain and $\omega$ its boundary. Further, $r(x)$ is an ``arbitrary'' function over the image domain. We now derive the domain integral w.r.t. the contour evolution parameter $\tau$ (~ time):
 \begin{equation}
