@@ -39,7 +39,6 @@
 #define MAHALANOBISLEVELSETS_H_
 
 #include "LevelSetsBase.h"
-#include "DownsampleAveragingFilter.h"
 
 // Include headers
 #include <itkObject.h>
@@ -119,9 +118,8 @@ public:
 	typedef typename CovarianceFilter::Pointer               CovarianceFilterPointer;
 
 
-	typedef DownsampleAveragingFilter
-			                 <ROIType, ProbabilityMapType >  ResampleROIFilterType;
-	typedef typename ResampleROIFilterType::Pointer          ResampleROIFilterPointer;
+	typedef typename Superclass::ResampleROIFilterType       ResampleROIFilterType;
+	typedef typename Superclass::ResampleROIFilterPointer    ResampleROIFilterPointer;
 
 
 	itkStaticConstMacro( Components, unsigned int, itkGetStaticConstMacro(ReferencePixelType::Dimension) );

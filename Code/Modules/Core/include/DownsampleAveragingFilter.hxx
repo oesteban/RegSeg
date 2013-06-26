@@ -135,6 +135,8 @@ DownsampleAveragingFilter< TInputImage, TOutputImage, TPrecisionType >
   // Compute pixel ratios
   for( size_t i = 0; i<ImageDimension; i++) {
     m_WindowSize[i] = vcl_floor( inputSize[i] / m_Size[i] );
+    if ( m_WindowSize[i] % 2 == 0 )
+    	m_WindowSize[i]--;
     tmpN*=m_WindowSize[i];
   }
   m_WindowN = tmpN;
@@ -187,20 +189,20 @@ DownsampleAveragingFilter< TInputImage, TOutputImage, TPrecisionType >
 
   // Get this input pointers
   InputImageConstPointer inputPtr = this->GetInput();
+  SizeType inputSize = inputPtr->GetLargestPossibleRegion().GetSize();
 
   // Create an iterator that will walk the output region for this thread.
-  typedef itk::ImageLinearIteratorWithIndex< TOutputImage > OutputIterator;
-  typedef itk::ImageLinearConstIteratorWithIndex< TInputImage > InputIterator;
+  typedef itk::ImageRegionIteratorWithIndex< TOutputImage > OutputIterator;
+  typedef itk::ImageRegionConstIterator< TInputImage > InputIterator;
 
   OutputIterator outIt(outputPtr, outputRegionForThread);
-  outIt.SetDirection(0);
 
   // Define a few indices that will be used to translate from an input pixel
   // to an output pixel
   PointType outputPoint;         // Coordinates of current output pixel
   PointType inputPoint;          // Coordinates of current input pixel
 
-  ContinuousInputIndexType inputIndex;
+  IndexType inputIndex;
 
   IndexType index;
   IndexType startInputIndex;
@@ -215,32 +217,49 @@ DownsampleAveragingFilter< TInputImage, TOutputImage, TPrecisionType >
   PixelType defaultValue = this->GetDefaultPixelValue();
 
   InputImageRegionType window;
-  window.SetSize( m_WindowSize );
+  SizeType windowSize;
+  int offset[ImageDimension];
+  for( size_t dim = 0; dim < ImageDimension; dim++) {
+	  offset[dim] = - vcl_floor( 0.5*m_WindowSize[dim] );
+  }
 
   while ( !outIt.IsAtEnd() )
     {
-
     // First get the position of the pixel in the output coordinate frame
     index = outIt.GetIndex();
     outputPtr->TransformIndexToPhysicalPoint(index, outputPoint);
 
     // Compute corresponding input pixel continuous index, this index
     // will incremented in the scanline loop
-    inputPtr->TransformPhysicalPointToContinuousIndex(outputPoint, inputIndex);
+    inputPtr->TransformPhysicalPointToIndex(outputPoint, inputIndex);
 
     PixelType pixval;
     double value = 0.0;
 
+    windowSize = m_WindowSize;
     // Insert here averaging code
     for( size_t dim = 0; dim < ImageDimension; dim++) {
-    	int idx = vcl_floor( inputIndex[dim] - 0.5*m_WindowSize[dim]);
-    	startInputIndex[dim] = (idx>0)?idx:0;
+    	startInputIndex[dim] = inputIndex[dim] + offset[dim];
+
+    	if ( startInputIndex[dim] < 0 ) {
+    		windowSize[dim]+=startInputIndex[dim];
+    		startInputIndex[dim] = 0;
+    	}
+
+    	if( (startInputIndex[dim] + windowSize[dim] ) > (inputSize[dim]-1) ) {
+    		windowSize[dim] = inputSize[dim] - startInputIndex[dim] -1;
+    	}
+
+		if ( windowSize[dim]>m_WindowSize[dim] ) {
+			windowSize[dim] = 0;
+		}
+
     }
 
+	window.SetSize( windowSize );
     window.SetIndex( startInputIndex );
 
     InputIterator inIt(inputPtr, window);
-    inIt.SetDirection(0);
 
     N = 0;
     while( !inIt.IsAtEnd() ) {
