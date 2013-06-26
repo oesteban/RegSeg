@@ -38,16 +38,15 @@
 #ifndef MAHALANOBISLEVELSETS_H_
 #define MAHALANOBISLEVELSETS_H_
 
+#include "LevelSetsBase.h"
+#include "DownsampleAveragingFilter.h"
+
 // Include headers
 #include <itkObject.h>
 #include <itkVector.h>
 #include <itkVariableSizeMatrix.h>
-#include <itkNormalQuadEdgeMeshFilter.h>
 #include <itkImageToListSampleAdaptor.h>
 #include <itkWeightedCovarianceSampleFilter.h>
-
-#include "LevelSetsBase.h"
-
 
 // Namespace declaration
 namespace rstk {
@@ -120,7 +119,7 @@ public:
 	typedef typename CovarianceFilter::Pointer               CovarianceFilterPointer;
 
 
-	typedef itk::ResampleImageFilter
+	typedef DownsampleAveragingFilter
 			                 <ROIType, ProbabilityMapType >  ResampleROIFilterType;
 	typedef typename ResampleROIFilterType::Pointer          ResampleROIFilterPointer;
 

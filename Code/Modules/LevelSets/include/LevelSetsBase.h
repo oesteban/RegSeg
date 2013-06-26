@@ -48,6 +48,7 @@
 #include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkQuadEdgeMesh.h>
 #include <itkQuadEdgeMeshToQuadEdgeMeshFilter.h>
+#include <itkNormalQuadEdgeMeshFilter.h>
 #include <itkWarpMeshFilter.h>
 #include <itkMeshSpatialObject.h>
 #include <itkGroupSpatialObject.h>
