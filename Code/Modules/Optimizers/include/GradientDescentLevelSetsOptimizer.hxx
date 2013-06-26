@@ -237,12 +237,12 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 			p->Update();
 
 
-			typedef itk::ImageFileWriter< typename TLevelSetsFunction::ROIType > ROIWriter;
+			typedef itk::ImageFileWriter< typename TLevelSetsFunction::ProbabilityMapType > MapWriter;
 			for( size_t r = 0; r <= nContours; r++){
 				std::stringstream ss3;
-				ss3 << "roi_tfd_it" << std::setfill('0')<<std::setw(3) << this->m_CurrentIteration << "_id" << r << ".nii.gz";
-				typename ROIWriter::Pointer wr = ROIWriter::New();
-				wr->SetInput( this->m_LevelSetsFunction->GetCurrentRegion(r));
+				ss3 << "region_" << r << "_it" << std::setfill('0')<<std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+				typename MapWriter::Pointer wr = MapWriter::New();
+				wr->SetInput( this->m_LevelSetsFunction->GetCurrentMap(r));
 				wr->SetFileName(ss3.str().c_str() );
 				wr->Update();
 			}
