@@ -48,6 +48,7 @@
 #include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkQuadEdgeMesh.h>
 #include <itkQuadEdgeMeshToQuadEdgeMeshFilter.h>
+#include <itkNormalQuadEdgeMeshFilter.h>
 #include <itkWarpMeshFilter.h>
 #include <itkMeshSpatialObject.h>
 #include <itkGroupSpatialObject.h>
@@ -62,6 +63,7 @@
 
 #include "VectorIDWBasisFunction.h"
 #include "SparseMatrixTransform.h"
+#include "DownsampleAveragingFilter.h"
 
 namespace rstk {
 /** \class LevelSetsBase
@@ -162,13 +164,13 @@ public:
 			< ROIType, TCoordRepType >                       ROIInterpolatorType;
 	typedef std::vector< ROIConstPointer >                   ROIList;
 	typedef itk::TriangleMeshToBinaryImageFilter
-			          <ContourType, ROIType>	     BinarizeMeshFilterType;
+			          <ContourType, ROIType>	             BinarizeMeshFilterType;
 	typedef typename BinarizeMeshFilterType::Pointer         BinarizeMeshFilterPointer;
 
 	typedef itk::Image< float, Dimension >                   ProbabilityMapType;
 	typedef typename ProbabilityMapType::Pointer             ProbabilityMapPointer;
 	typedef typename ProbabilityMapType::ConstPointer        ProbabilityMapConstPointer;
-	typedef std::vector< const ProbabilityMapType* >         ProbabilityMapList;
+	typedef std::vector< ProbabilityMapPointer >             ProbabilityMapList;
 
 	typedef typename itk::MeshSpatialObject
 			                   <ContourType>      ContourSpatialObject;
@@ -185,6 +187,10 @@ public:
 	typedef SparseMatrixTransform<TCoordRepType, Dimension > FieldInterpolatorType;
 	typedef typename FieldInterpolatorType::Pointer FieldInterpolatorPointer;
 
+	typedef DownsampleAveragingFilter
+			                 <ROIType, ProbabilityMapType >  ResampleROIFilterType;
+	typedef typename ResampleROIFilterType::Pointer          ResampleROIFilterPointer;
+	typedef std::vector< ResampleROIFilterPointer >          ResampleROIFilterList;
 
 	//typedef SparseToDenseFieldResampleFilter
 	//	<ContourType, FieldType>       SparseToDenseFieldResampleType;
@@ -193,7 +199,7 @@ public:
 	typedef typename itk::WarpMeshFilter
 			< ContourType,
 			  ContourType,
-			  FieldType>                          WarpContourType;
+			  FieldType>                                     WarpContourType;
 	typedef typename WarpContourType::Pointer                WarpContourPointer;
 
 	typedef typename std::vector< ROIPixelType >             ContourOuterRegions;
@@ -213,6 +219,8 @@ public:
 
 	ROIConstPointer GetCurrentRegion( size_t idx );
 	ROIConstPointer GetCurrentRegions( void );
+
+	const ProbabilityMapType* GetCurrentMap( size_t idx );
 
 	size_t AddShapePrior( ContourType* prior );
 	//itkGetMacro(ShapePrior, ContourList);
@@ -253,6 +261,7 @@ protected:
 	DisplacementResamplerPointer m_EnergyResampler;
 	ROIList m_ROIs;
 	ROIList m_CurrentROIs;
+	ProbabilityMapList m_CurrentMaps;
 	ROIPointer m_CurrentRegions;
 	DisplacementTransformPointer m_Transform;
 	ReferenceImageConstPointer m_ReferenceImage;

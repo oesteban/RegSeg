@@ -45,6 +45,7 @@
 #include "DisplacementFieldFileWriter.h"
 
 #include <itkMeshFileWriter.h>
+#include <itkImageAlgorithm.h>
 
 namespace rstk {
 
@@ -190,6 +191,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_NumberOfContours++;
     this->m_ROIs.resize( this->m_NumberOfContours+1 );
     this->m_CurrentROIs.resize( this->m_NumberOfContours+1 );
+    this->m_CurrentMaps.resize( this->m_NumberOfContours+1 );
 	return this->m_NumberOfContours-1;
 }
 
@@ -199,17 +201,20 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetValue() {
 	this->m_Value = 0.0;
 
-	size_t nPix = this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetNumberOfPixels();
-
 	for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
-		ROIConstPointer mask = this->GetCurrentRegion(roi);
-		const unsigned char * roiBuffer = mask->GetBufferPointer();
+		ProbabilityMapConstPointer roipm = this->GetCurrentMap( roi );
 
+		const typename ProbabilityMapType::PixelType* roiBuffer = roipm->GetBufferPointer();
+
+		size_t nPix = roipm->GetLargestPossibleRegion().GetNumberOfPixels();
 		ReferencePointType pos, targetPos;
+		typename ProbabilityMapType::PixelType w;
+
 		for( size_t i = 0; i < nPix; i++) {
-			if ( *( roiBuffer + i ) > 0.0 ) {
-				mask->TransformIndexToPhysicalPoint( mask->ComputeIndex(i), pos);
-				this->m_Value +=  this->GetEnergyAtPoint( targetPos, roi );
+			w = *( roiBuffer + i );
+			if ( w > 0.0 ) {
+				roipm->TransformIndexToPhysicalPoint( roipm->ComputeIndex(i), pos);
+				this->m_Value +=  w * this->GetEnergyAtPoint( targetPos, roi );
 			}
 		}
 	}
@@ -415,6 +420,47 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
+const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ProbabilityMapType*
+LevelSetsBase<TReferenceImageType, TCoordRepType>
+::GetCurrentMap( size_t idx ) {
+	if(this->m_RegionsModified ) {
+		this->ComputeCurrentRegions();
+	}
+
+	if( this->m_CurrentMaps[idx].IsNull() ) {
+		this->m_CurrentMaps[idx] = ProbabilityMapType::New();
+		this->m_CurrentMaps[idx]->SetRegions(      this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
+		this->m_CurrentMaps[idx]->SetOrigin(    this->m_ReferenceImage->GetOrigin() );
+		this->m_CurrentMaps[idx]->SetDirection( this->m_ReferenceImage->GetDirection() );
+		this->m_CurrentMaps[idx]->SetSpacing(   this->m_ReferenceImage->GetSpacing() );
+		this->m_CurrentMaps[idx]->Allocate();
+		this->m_CurrentMaps[idx]->FillBuffer( 0.0 );
+	}
+
+	// Resample to reference image resolution
+	ResampleROIFilterPointer resampleFilter = ResampleROIFilterType::New();
+	resampleFilter->SetInput( this->m_CurrentROIs[idx] );
+	resampleFilter->SetSize( this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
+	resampleFilter->SetOutputOrigin(    this->m_ReferenceImage->GetOrigin() );
+	resampleFilter->SetOutputSpacing(   this->m_ReferenceImage->GetSpacing() );
+	resampleFilter->SetOutputDirection( this->m_ReferenceImage->GetDirection() );
+	resampleFilter->SetDefaultPixelValue( 0.0 );
+	resampleFilter->Update();
+	ProbabilityMapPointer tpm = resampleFilter->GetOutput();
+
+	itk::ImageAlgorithm::Copy<ProbabilityMapType,ProbabilityMapType>(
+			tpm, this->m_CurrentMaps[idx],
+			tpm->GetLargestPossibleRegion(),
+			this->m_CurrentMaps[idx]->GetLargestPossibleRegion()
+	);
+
+	return this->m_CurrentMaps[idx].GetPointer();
+}
+
+
+
+
+template< typename TReferenceImageType, typename TCoordRepType >
 typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::GetCurrentRegions() {
@@ -478,19 +524,20 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_ReferenceSamplingGrid = FieldType::New();
 	typename ReferenceImageType::SpacingType sp = this->m_ReferenceImage->GetSpacing();
 	double spacing = itk::NumericTraits< double >::max();
+	double factor = 0.25;
 
 	for (size_t i = 0; i<Dimension; i++ ){
 		if (sp[i] < spacing )
 			spacing = sp[i];
 	}
 
-	sp.Fill( spacing * 0.25 );
+	sp.Fill( spacing * factor );
 
 	PointType origin = this->m_ReferenceImage->GetOrigin();
 	typename ReferenceImageType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
 	typename itk::ContinuousIndex<double, Dimension> idx;
 	for (size_t i = 0; i<Dimension; i++ ){
-		idx[i]=size[i]-1.0;
+		idx[i]=size[i];
 	}
 
 	PointType end;
