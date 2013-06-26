@@ -68,16 +68,16 @@ ALOptimizer<TLevelSetsFunction>::ALOptimizer() {
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_R =  1.0e4;
+	this->m_R =  1.5e4;
 	this->m_A.SetIdentity();
-	this->m_A(0,0) = 0.1;
-	this->m_A(1,1) = 0.1;
-	this->m_A(2,2) = 0.1;
+	this->m_A(0,0) = 1.0e-2;
+	this->m_A(1,1) = 1.0e-2;
+	this->m_A(2,2) = 1.0e-2;
 	this->m_B.SetIdentity();
-	this->m_B(0,0) = 0.1;
-	this->m_B(1,1) = 0.1;
-	this->m_B(2,2) = 0.1;
-	this->m_Rho = 0.5 * this->m_R; // 0 < rho < r
+	this->m_B(0,0) = 1.0e-2;
+	this->m_B(1,1) = 1.0e-2;
+	this->m_B(2,2) = 1.0e-2;
+	this->m_Rho = 0.75 * this->m_R; // 0 < rho < r
 }
 
 template< typename TLevelSetsFunction >
@@ -200,13 +200,12 @@ void ALOptimizer<TLevelSetsFunction>::Resume() {
 			p->SetInput( this->m_uField );
 			p->Update();
 
-
-			typedef itk::ImageFileWriter< typename TLevelSetsFunction::ROIType > ROIWriter;
+			typedef itk::ImageFileWriter< typename TLevelSetsFunction::ProbabilityMapType > MapWriter;
 			for( size_t r = 0; r <= nContours; r++){
 				std::stringstream ss3;
-				ss3 << "roi_tfd_it" << std::setfill('0')<<std::setw(3) << this->m_CurrentIteration << "_id" << r << ".nii.gz";
-				typename ROIWriter::Pointer wr = ROIWriter::New();
-				wr->SetInput( this->m_LevelSetsFunction->GetCurrentRegion(r));
+				ss3 << "region_" << r << "_it" << std::setfill('0')<<std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+				typename MapWriter::Pointer wr = MapWriter::New();
+				wr->SetInput( this->m_LevelSetsFunction->GetCurrentMap(r));
 				wr->SetFileName(ss3.str().c_str() );
 				wr->Update();
 			}
