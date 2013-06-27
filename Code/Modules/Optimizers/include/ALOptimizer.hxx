@@ -68,15 +68,15 @@ ALOptimizer<TLevelSetsFunction>::ALOptimizer() {
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_R =  1.5e4;
+	this->m_R =  1.0e3;
 	this->m_A.SetIdentity();
-	this->m_A(0,0) = 1.0e-2;
-	this->m_A(1,1) = 1.0e-2;
-	this->m_A(2,2) = 1.0e-2;
+	this->m_A(0,0) = 0.0e-1;
+	this->m_A(1,1) = 0.0e-1;
+	this->m_A(2,2) = 0.0e-1;
 	this->m_B.SetIdentity();
-	this->m_B(0,0) = 1.0e-2;
-	this->m_B(1,1) = 1.0e-2;
-	this->m_B(2,2) = 1.0e-2;
+	this->m_B(0,0) = 0.0e-1;
+	this->m_B(1,1) = 0.0e-1;
+	this->m_B(2,2) = 0.0e-1;
 	this->m_Rho = 0.75 * this->m_R; // 0 < rho < r
 }
 
