@@ -72,11 +72,39 @@ def transformVolume( mov_path, tar_path, tfmfile, invert=False, outname='' ):
     return outname
 
 
-def transformSurface(origin, mov_path, tar_path, tfmfile, output_prefix, use_paraview=False, write_vtp=False, del_vtk=False ):
+def MRIPreTess( in_file, in_norm, label=1, out_file="" ):
+    import subprocess as sp
+    import os
+    import os.path as op
+    
+    if out_file=="":
+        fname,ext = op.splitext( op.basename(in_file) )
+        if ext==".gz":
+            fname,_ = op.splitext(fname)
+            
+        out_file= op.join( op.abspath( os.getcwd() ), "%s_pretess.mgz" % fname )
+        
+    cmd="mri_pretess %s %d %s %s" % ( in_file, label, in_norm, out_file )
+    proc = sp.check_call( cmd, shell=True )
+        
+    return out_file  
+
+def transformSurface(origin, mov_path, tar_path, tfmfile, out_file="", use_paraview=False, write_vtp=False, del_vtk=False ):
     import numpy as np
     import nibabel as nib
     import os.path as op    
     from tvtk.api import tvtk
+    import subprocess as sp
+
+    def mri_info( fname, argument ):
+        import subprocess as sp
+        import numpy as np
+        cmd_info = "mri_info --%s %s" % (argument, fname)
+        proc = sp.Popen( cmd_info, stdout=sp.PIPE, shell=True )
+        data = bytearray( proc.stdout.read() )
+        result = np.reshape( np.fromstring(data.decode("utf-8"), sep='\n' ), (4,-1) )
+        return result
+
 
     # Load transform components
     mov_ras2vox_tkr = mri_info( mov_path, "ras2vox-tkr" )
@@ -90,10 +118,12 @@ def transformSurface(origin, mov_path, tar_path, tfmfile, output_prefix, use_par
     xfm = np.dot( tkr_to_moving, np.dot( np.linalg.inv(reg), target_to_tkr ) )
     #xfm = np.dot( tkr_to_moving, np.linalg.inv(reg) )
 
-    _, origin_ext = op.splitext( origin )
+    
+    ofname, origin_ext = op.splitext( origin )
+
     if not origin_ext == 'vtk':
         # Call mris_convert
-        new_origin = "%s_tmp.vtk" % output_prefix
+        new_origin = "%s_tmp.vtk" % origin
         sp.check_call( 'mris_convert %s %s' % (origin, new_origin), shell=True )
         origin = new_origin
         
@@ -105,7 +135,7 @@ def transformSurface(origin, mov_path, tar_path, tfmfile, output_prefix, use_par
         for i,point in enumerate( vtk.points ):
             vtk.points[i] = point + nO
 
-        fixed_center = "%s_fstkr.vtk" % output_prefix
+        fixed_center = "%s_fstkr.vtk" % ofname
 
         w = tvtk.PolyDataWriter( file_name=fixed_center, input=vtk )
         w.update()
@@ -140,16 +170,18 @@ def transformSurface(origin, mov_path, tar_path, tfmfile, output_prefix, use_par
         writer = tvtk.XMLPolyDataWriter( file_name='%s.vtp' % output_prefix, input=vtk )
         writer.update()
 
-    outfname = '%s.vtk' % output_prefix
+    if out_file=='':
+        ofname, origin_ext = op.splitext( origin )
+        out_file = '%s_tfm.vtk' % ofname
 
     #savevtk( vtk, outfname )
-    w = tvtk.PolyDataWriter( file_name=outfname, input=vtk )
+    w = tvtk.PolyDataWriter( file_name=out_file, input=vtk )
     w.update()
 
     if del_vtk:
         os.remove( origin )
     
-    return outfname
+    return out_file
 
 
 def main():
@@ -209,6 +241,42 @@ def savevtk( vtk, fname, origin=(0.0,0.0,0.0) ):
 if __name__ == '__main__':
     sys.exit(main())
 
+
+def disk_structure(size=(2,2,2)):
+    totalSize = np.array(size)*2+1
+    struct = np.zeros(totalSize)
+    coord = np.indices(totalSize).astype(np.float32)
+    positions = coord.T - ((totalSize.astype(np.float32)-1)/2)
+    terms = np.sum( ((positions**2)/(np.array(size)**2).astype(np.float32)).T, axis=0 )
+    struct[terms<=1] = 1
+    return struct.astype(np.bool)
+
+
+def CombineSegs( in_file, labels ):
+    import nibabel as nib
+    import numpy as np
+    import os.path as op
+    from scipy import ndimage
+    
+    img = nib.load( in_file )
+    imgdata = img.get_data()
+    
+    outdata = np.zeros( shape=imgdata.shape )
+    for l in labels:
+        outdata[ imgdata==l ] = 1
+
+    #disk = disk_structure( (2,2,2) )
+    #outdata = ndimage.binary_opening( outdata, structure=disk ).astype(np.int)
+    #outdata = ndimage.binary_closing( outdata, structure=disk ).astype(np.int)
+    
+    fname, ext = op.splitext( in_file )
+    
+    if ext=='.gz':
+        fname,_ = op.splitext(fname)
+        
+    out_file = '%s_bin.nii.gz' % fname
+    nib.save( nib.Nifti1Image( outdata, img.get_affine(), img.get_header() ), out_file)
+    return out_file
 
 #########################################################3
 
