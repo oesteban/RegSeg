@@ -44,3 +44,4 @@ result*.nii.gz
 Publications/2013-TMI/ACWE.bib
 *.pdf
 papers/FINF-ITK
+temp/
