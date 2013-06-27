@@ -116,26 +116,9 @@ int main(int argc, char *argv[]) {
 
 	ChannelType::Pointer im = r->GetOutput();
 
-
-	ReaderType::Pointer polyDataReader = ReaderType::New();
-	polyDataReader->SetFileName( std::string( DATA_DIR ) + "lh.white.vtk" );
-	polyDataReader->Update();
-	ContourDisplacementFieldPointer initialContour = polyDataReader->GetOutput();
-
-	//ReaderType::Pointer polyDataReader2 = ReaderType::New();
-	//polyDataReader2->SetFileName( std::string( DATA_DIR ) + "rh.white.vtk" );
-	//polyDataReader2->Update();
-	//ContourDisplacementFieldPointer initialContour2 = polyDataReader2->GetOutput();
-
-	ReaderType::Pointer polyDataReader3 = ReaderType::New();
-	polyDataReader3->SetFileName( std::string( DATA_DIR ) + "pial.vtk" );
-	polyDataReader3->Update();
-	ContourDisplacementFieldPointer initialContour3 = polyDataReader3->GetOutput();
-
 	// Initialize LevelSet function
 	LevelSetsType::Pointer ls = LevelSetsType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
-	ls->AddShapePrior( initialContour );
 	//ls->AddShapePrior( initialContour2 );
 	//ls->AddShapePrior( initialContour3 );
 
@@ -143,6 +126,16 @@ int main(int argc, char *argv[]) {
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
 	opt->SetNumberOfIterations(15);
+
+	std::string fnames[3] = { "init.csf.vtk", "init.lh.white.vtk", "init.lh.pial.vtk" };
+
+	for ( size_t n = 0; n<3; n++ ) {
+		ReaderType::Pointer polyDataReader0 = ReaderType::New();
+		polyDataReader0->SetFileName( std::string( DATA_DIR ) + fnames[n] );
+		polyDataReader0->Update();
+		ContourDisplacementFieldPointer initialContour0 = polyDataReader0->GetOutput();
+		ls->AddShapePrior( initialContour0 );
+	}
 
 	// Start
 	opt->Start();
