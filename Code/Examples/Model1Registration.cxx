@@ -135,14 +135,19 @@ int main(int argc, char *argv[]) {
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetLevelSetsFunction( ls );
-	opt->SetNumberOfIterations(200);
+	opt->SetNumberOfIterations(1000);
 
 	// Start
 	opt->Start();
 
 	// Write final result out
-	WriterType::Pointer polyDataWriter = WriterType::New();
-	polyDataWriter->SetInput( ls->GetCurrentContourPosition()[0] );
-	polyDataWriter->SetFileName( "deformed2-wm.vtk" );
-	polyDataWriter->Update();
+    size_t nCont = ls->GetCurrentContourPosition().size();
+    for ( size_t contid = 0; contid < nCont; contid++) {
+        std::stringstream ss;
+        ss << "final-cont0" << contid << ".vtk";
+    	WriterType::Pointer polyDataWriter = WriterType::New();
+    	polyDataWriter->SetInput( ls->GetCurrentContourPosition()[contid] );
+    	polyDataWriter->SetFileName( "deformed2-wm.vtk" );
+    	polyDataWriter->Update();
+    }
 }
