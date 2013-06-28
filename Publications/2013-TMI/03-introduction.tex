@@ -17,8 +17,8 @@
 % and "HIS" in caps to complete the first word.
 %
 \IEEEPARstart{D}{iffusion} \gls{mri} is a widely used family
-of \gls{mri} techniques \citep{sundgren_diffusion_2004} which recently 
-has accounted for a growing interest in its application to structural 
+of \gls{mri} techniques \citep{sundgren_diffusion_2004} which 
+accounts for a growing interest in its application to structural 
 connectivity analyses of the brain at the macro-scale
 \citep{craddock_imaging_2013}. This emerging field exploits
 \gls{dwi} data to derive the local axonal structure at each imaging voxel 
@@ -35,16 +35,16 @@ Early \gls{dwi} research mainly focused on the improvements of imaging
 methodologies by a better understanding of the diffusion effect, and improving
 image reconstruction methodologies. Currently, the connectome extraction 
 and analysis relies on a large chain of sophisticated computational techniques
-including acquisition, reconstruction, modeling and model fitting, image processing, 
-fibre tracking, connectivity mapping, visualization, group studies, and inference
-\citep{daducci_connectome_2012}. This growing complexity has given rise to 
-challenging issues towards reliable structural information about the neuronal tracts 
-presented in, and also difficulties on the statistical analysis 
+including acquisition, reconstruction, modeling and model fitting, image segmentation
+and registration, fibre tracking, connectivity mapping, visualization, statistical 
+group studies, and inference \citep{daducci_connectome_2012}. This growing complexity 
+has given rise to challenging issues towards reliable structural information about 
+the neuronal tracts presented in, and also difficulties on the statistical analysis 
 \citep{bullmore_complex_2009,meskaldji_comparing_2013}. To our knowledge, studies 
 regarding the impact of the different sources of inaccuracy and variability along
 the toolchain for connectivity analysis \citep{jones_twenty-five_2010,
 cheng_characteristics_2012,jones_white_2013} are scarce.
-Here,we shall address three tasks included within  the image processing stage in 
+Here, we shall address three tasks included within  the image processing stage in 
 a unified approach: brain tissue segmentation in diffusion space 
 (\autoref{sec:dwi_segmentation}), 
 correction of geometrical distortions (\autoref{sec:distortion}), and structural 
@@ -72,7 +72,7 @@ showing a T2-like contrast.
 \Gls{epi} are known to suffer from geometrical distortions and artifacts
 due to, mainly, three sources: the subject motion in between acquiring 
 different sampling directions, the induced \emph{Eddy currents} on the scanner 
-coils and finally distortions caused by the magnetic susceptibility inhomogeneity
+coils, and, finally, distortions caused by the magnetic susceptibility inhomogeneity
 present at tissue interface. \emph{Susceptibility distortions} happen along the 
 phase-encoding direction, and are most appreciable in the frontal part of 
 the brain due to the air/tissue interface located around the sinuses.
@@ -152,11 +152,12 @@ a \emph{gold-standard} evaluation methodology. Most of them are tested only on c
 regions, or do not provide sub-pixel resolution results
 \citep{hadjiprocopis_unbiased_2005,liu_brain_2007,awate_multivariate_2008,lu_segmentation_2008,
 han_experimental_2009}. Generally, results obtained with high resolution atlas co-registration
-(\autoref{sec:registration}) are more compelling, minimizing the activity on this line which is 
-currently being considered to be included in reconstruction algorithms 
-\citep{kumazawa_improvement_2013}. \emph{Golden}-standard evaluation frameworks have been 
-proposed for the segmentation validation \citep{jha_task-based_2012} on the task of lesion 
-detection in visceral organs.  \todo[inline]{reference to a summary table}
+(\autoref{sec:registration}) are more compelling, limiting the activity on \gls{dwi} 
+segmentation. However, recently \citep{kumazawa_improvement_2013} proposed to include this
+task within reconstruction algorithms. Finally, some \emph{golden}-standard evaluation
+frameworks for task-based validation have been proposed for the segmentation results
+(e.g. lesion detection in visceral organs \citep{jha_task-based_2012}).
+\todo[inline]{reference to a summary table}
 
 \subsection{Correction for susceptibility distortions}
 \label{sec:distortion}
@@ -205,10 +206,10 @@ a predefined parcellation in a high-resolution structural T1-weighted
 atlas (e.g. \citep{greve_accurate_2009}). The second goal that has 
 justified the applicability of structural
 images co-registration is susceptibility distortion correction
-as discussed in \autoref{sec:distortion}. In any case, susceptibility 
+as presented in \autoref{sec:distortion}. In any case, susceptibility 
 distortion hinders a rigid-registration solution to this problem.
 Additionally, when applying non-linear intensity-based
-registration algorithms other difficulties have to be addressed as
+registration algorithms, other difficulties have to be addressed as
 the significant \gls{pve} in the \gls{wm}-\gls{gm} layer, or the
 inherent inadequacy of the B0 contrast (the only \textit{directionally
 independent} existing in the raw \gls{dwi} data) due to the almost null
