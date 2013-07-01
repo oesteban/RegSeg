@@ -10,12 +10,16 @@ current methodologies of template-based segmentation methods into three groups.
 The first group typically adds a shape prior term to the energy functional of 
 an evolving active contour \citep{bresson_variational_2006,
 chan_level_2005,chen_using_2002,cremers_kernel_2006,gastaud_combining_2004}.
-These methods generally have a explicit description of the expected relative boundary 
+These methods generally have an explicit description of the expected relative boundary 
 locations of the object to be delineated, and some even model the statistical deviations
 from this average shape. By including a coordinates mapping, it is possible to perform
 active contours based registration between timesteps in a time-series or between different
-images \citep{wyatt_map_2003,paragios_level_2003,vemuri_joint_2003,yezzi_variational_2003}.
-This second group is closely related to atlas-based segmentation methods 
+images \citep{bertalmio_morphing_2000,wyatt_map_2003,paragios_level_2003,vemuri_joint_2003,
+yezzi_variational_2003}.
+A summary of these second set of techniques is performed in \citep{droske_mumfordshah_2009},
+proposing two different approaches to applying the Mumford-Shah \citep{mumford_optimal_1989}
+functional in joint registration and segmentation. Finally, a derivation of the 
+latter groups is composed by atlas-based segmentation methods 
 \citep{gorthi_segmentation_2009,gorthi_active_2011,pohl_unifying_2005,
 pohl_bayesian_2006,wang_joint_2006}, where the prior 
 imposes consistent voxel-based classification of contiguous regions.
@@ -24,9 +28,21 @@ to joint registration-segmentation methods is found in \citep{gorthi_active_2011
 
 Our joint registration and segmentation method is mainly inspired in the active
 deformation fields presented by \citep{gorthi_active_2011}, that is a generalization
-of the methodologies presented by \citep{bertalmio_morphing_2000,vemuri_joint_2003,
-yezzi_variational_2003}.
-All these formulations are deduced from the general level set evolution equation
+of the methodologies under second and third groups before. As it is described in
+their work, the first joint ``morphing''-segmentation approach (it was not a proper
+registration method) was proposed in \citep{bertalmio_morphing_2000}. The first
+registration framework is presented by \citep{yezzi_variational_2001} where the
+energy functional is defined simultaneously in the moving and target images with
+an affine transformation supporting the coordinates mapping (``2 PDEs approach'').
+\citep{vemuri_joint_2003} proposed the first atlas-based registration based on the 
+level set framework and using only one PDE. \citep{unal_coupled_2005} extended the 
+idea of \citep{bertalmio_morphing_2000,yezzi_variational_2001} for non-linear 
+registration with a dense deformation field as mapping function. \citep{droske_mumfordshah_2009}
+combining ideas from both branches and proposed the propagation of the 
+deformation field from the contours to the whole image definition. Finally,
+\citep{gorthi_active_2011} present a comprehensive generalization of the methodologies.
+
+All the surveyed frameworks are deduced from the general level set evolution equation
 introduced by \citep{osher_fronts_1988}:
 \begin{equation}
 \frac{\partial \Phi_D(x,t)}{\partial t} = \nu ( \Phi_D(x,t)) \, \left| \nabla \Phi_D(x,t) \right|
@@ -43,11 +59,11 @@ function of the target image. Finally, \citep{gorthi_active_2011} propose a diff
 multiphase label function as level set function ($\Phi_L$) that improves registration
 results.
 
-Generalizing the objective function $\Phi_G$, it is possible to introduce the 
-dense deformation field of vectors $u: \mathbb{R}^n \to \mathbb{R}^n$ (tipically
-$n = \{ 2, 3 \}$) assuming the conservation of the morphological description, that is,
+Naming $\Phi_G$ a generic objective function, a dense deformation field of vectors 
+$u: \mathbb{R}^n \to \mathbb{R}^n$ (tipically $n = \{ 2, 3 \}$) is introduced. 
+Then, the conservation of the morphological description is assumed, such as
 $\Phi_G(x,t) = \Phi_G( x + du, t + dt ) \implies d\Phi_G(x,t) = 0$, where $d\Phi_G$ is
-the total derivative of $\Phi_G$. Using the chain rule, this can be rewritten as the 
+the total derivative of $\Phi_G$. Using the chain rule, it can be rewritten as the 
 evolution equation of a vector flow:
 \begin{equation}
 \frac{\partial u(x,t)}{\partial t}= - \frac{\Phi_G}{\left| \nabla \Phi_G \right|} N_{\Phi_G},
@@ -63,10 +79,10 @@ deformation field $u(x,t)$ and the initial level set function $\Phi_G(x,0)$, yie
 \frac{\partial u(x,t)}{\partial t} = - \nu( \Phi_G(x + u(x,t), 0) ) N_{\Phi_G}.
 \end{equation}
 
-Here, we propose an active deformation field framework with a slightly different
-formulation. The main differences with respect the approach proposed in
+Here, we propose an active deformation field framework with some differences in
+the formulation of the problem. The main diverging points with respect to
 \citep{gorthi_active_2011} are: 1) there is no need for an explicit level set function
-$\Phi_G$, replacing the level set gradient computation $N_{\Phi_G}$ with shape
+$\Phi_G$, as we replace the level set gradient computation $N_{\Phi_G}$ with shape
 gradients \citep{jehan-besson_dream2s:_2003,herbulot_segmentation_2006}; 2) 
 \todo[inline]{regularization is also based on linear diffusion smoothing REF-thirion,
 but they use a Gaussian filtering)}; 3) optimization is applied in the spectral

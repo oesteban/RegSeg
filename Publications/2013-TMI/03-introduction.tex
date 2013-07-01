@@ -71,8 +71,9 @@ showing a T2-like contrast.
 
 \Gls{epi} are known to suffer from geometrical distortions and artifacts
 due to, mainly, three sources: the subject motion in between acquiring 
-different sampling directions, the induced \emph{Eddy currents} on the scanner 
-coils, and, finally, distortions caused by the magnetic susceptibility inhomogeneity
+different sampling directions, the induced \emph{eddy currents} on the scanner 
+coils due to the gradient switching \citep{obrien_3d_2013}, and, finally, 
+distortions caused by the magnetic susceptibility inhomogeneity
 present at tissue interface. \emph{Susceptibility distortions} happen along the 
 phase-encoding direction, and are most appreciable in the frontal part of 
 the brain due to the air/tissue interface located around the sinuses.
@@ -84,8 +85,9 @@ After correcting for artifacts, the difficulty of performing analyses directly
 on the \emph{directionally dependent} raw data is not affordable. Thus, 
 \gls{dwi} data is reconstructed using one of a numerous set of readily 
 available algorithms. The outcome is a voxel-wise model of diffusion shape 
-(\todo[inline]{cite here dti, dsi, hardi, etc.and refs}). On top of the
-chosen model, some scalar maps describing tissue features is
+(in \citep{daducci_isbi2013_2013} \todo{FIX ref} there is available a comprehensive review of 
+state-of-art methodologies). On top of the
+chosen model, some scalar maps describing tissue features is generally
 computed. For instance, the most popular \gls{dwi}-derived scalar map 
 is \gls{fa} which depicts the isotropy of water diffusion inside the brain.
 Another widely studied map is the \gls{adc} (or \gls{md} that has a dual definition),
@@ -112,7 +114,8 @@ A precise delineation of the \gls{csf}, \gls{gm} and \gls{wm} interfacing surfac
 is required with sub-pixel resolution, because whereas tractography algorithms are
 very good at estimating the location of bundles in deep \gls{wm}, they are not
 god (yet) at identifying where the tracts project into the \gls{gm} 
-\citep{jbabdi_tractography:_2011,craddock_imaging_2013}.
+(limitations on the termination criteria, \citep{jbabdi_tractography:_2011,
+craddock_imaging_2013}).
 Thus, a \gls{wm} segmentation is required by most of the available tractography 
 algorithms to \emph{filter} the resulting tractogram. The \gls{gm}-\gls{wm}
 interface is necessary to locate the starting and ending points of the detected
@@ -122,7 +125,7 @@ and discontinued fiber bundles.
 A number of methodologies have been proposed for \gls{dwi} segmentation, ranging 
 from intensity thresholding to atlas-based segmentation. 
 The first approach is performed simply thresholding the \gls{fa} map.
-Although this methodology was popular among the premier tractography studies,
+Although this methodology was popular among the pioneer tractography studies,
 they were generally limited to certain regions or significant fiber tracts, and thus,
 it cannot be applied in whole-brain tractography. Early approaches to \gls{dwi} segmentation 
 include level set formulations using scalar maps of direction invariants derived
@@ -177,13 +180,14 @@ Some other retrospective methodologies do not make use of the fieldmaps,
 as explicitly modeling the distortion \citep{andersson_modeling_2001},
 registering with (anatomically correct) T2-weighted \gls{mri} 
 \citep{kybic_unwarping_2000,studholme_accurate_2000,li_accounting_2007,
-tao_variational_2009} (see \autoref{sec:registration}), or acquiring an 
+tao_variational_2009} (we shall cover these methods in 
+\autoref{sec:registration}), or acquiring an 
 extra B0 image with reversed phase encoding direction 
 \citep{andersson_how_2003,holland_efficient_2010}.
 
 A comparison of the diverse correction techniques is found in \citep{wu_comparison_2008}.
 This study claims that fieldmap correction methodologies are not entirely accurate
-and reliable, even though the method is correct in principle. This conclusion
+and reliable, even though the method is correct in principle. The conclusion
 was later confirmed by \citep{tao_variational_2009}. Additional concerns regarding
 fieldmap correction are the requirement of an extra acquisition (that is not always
 met or it is impractical), or the accuracy of the measured fieldmap that is sensitive
