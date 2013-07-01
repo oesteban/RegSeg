@@ -96,8 +96,8 @@ A widely used approach to image segmentation is derived from the
 Bayes' rule \eqref{eq:bayes_rule}. This framework seeks for a 
 partitioning of a certain observation of features $F: \mathbb{R}^n \to %
 \mathbb{R}^C$ (an $n$-dimensional \emph{image} comprising $C$ different 
-channels) in piecewise smooth regions $\Omega = \lbrace \Omega_k , 
-k\in\left[ 1 \ldots K \right] \rbrace$,  that maximize the \emph{a posteriori}
+channels) in piecewise smooth regions $\Omega = \lbrace \Omega_l , 
+l\in\left[ 1 \ldots L \right] \rbrace$,  that maximize the \emph{a posteriori}
 probability $p(\Omega \mid F)$:
 \begin{equation}
 p(\Omega \mid F) = \frac{p(F \mid \Omega)\, p(\Omega)}{p(F)},
@@ -115,7 +115,7 @@ p(\Omega \mid F) \propto p(F \mid \Omega)\, p(\Omega).
 \end{equation}
 
 In the simplest Bayesian segmentation framework, the unknown is the
-parameter set $\Theta_k$ of region-wise descriptors that minimize 
+parameter set $\Theta_l$ of region-wise descriptors that minimize 
 \eqref{eq:bayes_rule}. Conversely, we can assume these descriptors as
 fixed (fulfilling the concept of conservation of morphological description
 mentioned before) and introduce a realization of a dense deformation field $U: %
@@ -142,8 +142,8 @@ An extended assumption is that the feature vector realization $F$ is
 probability $p(F \mid U)$ as a continuous product with $d\mathbf{x}$ the
 infinitesimal voxel size:
 \begin{equation}
-p(F \mid U) \, p(U) = \underset{k}{\prod} \underset{\mathbf{x}\in \Omega'_k}{\prod}
-p_k\left( F(\mathbf{x} + U(\mathbf{x})) \mid U(\mathbf{x}) \right)^{d\mathbf{x}}.
+p(F \mid U) \, p(U) = \underset{l}{\prod} \underset{\mathbf{x}\in \Omega'_l}{\prod}
+p_l\left( F(\mathbf{x} + U(\mathbf{x})) \mid U(\mathbf{x}) \right)^{d\mathbf{x}}.
 \label{eq:bayes_aposteriori}
 \end{equation}
 \todo[inline]{I'm not convinced about turning $p(\Omega)$ into $p(U)$.}
@@ -152,15 +152,15 @@ A second widely-accepted assumption is the multivariate normal
 distribution of the different tissues in \gls{mri} data. Therefore,
 the posterior probability of an infinitesimal voxel can be written as:
 \begin{equation}
-p_k( F(\mathbf{x}) \mid U(\mathbf{x}) ) = \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{f}') \right)}}.
+p_l( F(\mathbf{x}) \mid U(\mathbf{x}) ) = \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_l (\mathbf{f}') \right)}}.
 \label{eq:bayes_mpdf}
 \end{equation}
 where we can identify the factor in the exponential as the squared \emph{Mahalanobis 
 distance} of the feature observed in the displaced position, $\mathbf{f}' = 
 F(\mathbf{x} + U(\mathbf{x}))$ with region descriptors
-$\Theta_k = \lbrace \boldsymbol{\mu}_k, \boldsymbol{\Sigma}_k \rbrace$:
+$\Theta_l = \lbrace \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_l \rbrace$:
 \begin{equation}
-\Delta^2_k (\mathbf{f} \mid \Theta_k ) = (\mathbf{f} - \boldsymbol{\mu}_k)^T \, \boldsymbol{\Sigma}^{-1}_k \, (\mathbf{f} - \boldsymbol{\mu}_k).
+\Delta^2_l (\mathbf{f} \mid \Theta_l ) = (\mathbf{f} - \boldsymbol{\mu}_l)^T \, \boldsymbol{\Sigma}^{-1}_l \, (\mathbf{f} - \boldsymbol{\mu}_l).
 \label{eq:bayes_mahalanobis}
 \end{equation}
 
@@ -168,34 +168,34 @@ Finally, we can turn the \gls{map} problem into a variational one
 applying the following log-transform:
 \begin{multline}
 E(F \mid U)= -\log \left[ p(F \mid U) \, p(U) \right] = \\
-= -\log \left[ \underset{k}{\prod} \underset{\mathbf{x}\in \Omega'_k}{\prod}
-p_k( F(\mathbf{x}) \mid U(\mathbf{x}) )^{d\mathbf{x}} \right] = \\
-= \sum\limits_k \int_{\Omega'_k} -\log \left[ p_k(F(\mathbf{x}) \mid U(\mathbf{x} ) ) \right] \, d\mathbf{x},
+= -\log \left[ \underset{l}{\prod} \underset{\mathbf{x}\in \Omega'_l}{\prod}
+p_l( F(\mathbf{x}) \mid U(\mathbf{x}) )^{d\mathbf{x}} \right] = \\
+= \sum\limits_l \int_{\Omega'_l} -\log \left[ p_l(F(\mathbf{x}) \mid U(\mathbf{x} ) ) \right] \, d\mathbf{x},
 \label{eq:energy_1}
 \end{multline}
 and introducing the posterior probability term \eqref{eq:bayes_mpdf}, 
 we can express the functional in terms of the deformation field $U$ and
-the region descriptors $\Theta_k$:
+the region descriptors $\Theta_l$:
 \begin{multline}
 E(U) = \\
-= \sum\limits_k \int_{\Omega'_k} -\log \left[ \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{f}) \right)}} \right] \, d\mathbf{x} = \\
-= \sum\limits_k \int_{\Omega'_k} \left[ \frac{1}{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right| \right)} + \frac{1}{2}  \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}.
+= \sum\limits_l \int_{\Omega'_l} -\log \left[ \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_l (\mathbf{f}) \right)}} \right] \, d\mathbf{x} = \\
+= \sum\limits_l \int_{\Omega'_l} \left[ \frac{1}{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right| \right)} + \frac{1}{2}  \Delta^2_l (\mathbf{f}) \right] \,d\mathbf{x}.
 \end{multline}
 Finally, after removing scaling factors and independent constants,
 we obtain:
 \begin{align}
-E(U) = \sum\limits_k \left[ \left|\Omega'_k\right|\,\log \left|\mathbf{\Sigma}_k \right| + \int_{\Omega'_k} \Delta^2_k (\mathbf{f}) \,d\mathbf{x} \right],
+E(U) = \sum\limits_l \left[ \left|\Omega'_l\right|\,\log \left|\mathbf{\Sigma}_l \right| + \int_{\Omega'_l} \Delta^2_l (\mathbf{f}) \,d\mathbf{x} \right],
 \label{eq:map_energy}
 \end{align}
-where we have a constant term scaled by the total volume of the partition $\Omega_k$ and 
-the determinant of the  covariance matrix of the partition $\left|\boldsymbol{\Sigma}_{k}\right|$,
+where we have a constant term scaled by the total volume of the partition $\Omega_l$ and 
+the determinant of the  covariance matrix of the partition $\left|\boldsymbol{\Sigma}_{l}\right|$,
 plus an energy term based on the squared \emph{Mahalanobis distance}.
 As long as this shape-based registration framework is designed to allow small changes
 between boundaries (and therefore, their volumes), and the shape descriptors should not
 change significantly due to the conservation principle, the first term can be optionally
 dismissed with respect the second one, what yields:
 \begin{align}
-E(U) = \sum\limits_k \int_{\Omega'_k} \Delta^2_k (\mathbf{f}) \,d\mathbf{x}.
+E(U) = \sum\limits_l \int_{\Omega'_l} \Delta^2_l (\mathbf{f}) \,d\mathbf{x}.
 \label{eq:final_map_energy}
 \end{align}
 
@@ -204,28 +204,28 @@ This latter expression resembles the Mumford-Shah functional
 methods. In this case, \eqref{eq:final_map_energy} includes covariance as
 region descriptor, what modifies the original functional in a way that it 
 can deal with more general distributions. This is necessary to avoid the 
-assumption that regions $\Omega_k$ have a fixed covariance matrix on their 
+assumption that regions $\Omega_l$ have a fixed covariance matrix on their 
 complete domain. One immediate advantage of this functional from the original 
 one is the possibility to distinguish regions with the same mean vector but 
 different covariance matrix \citep{brox_local_2009}. In this work, the 
 Mumford-Shah functional is derived for this extension as follows:
 \begin{multline}
-E(\Theta_k,\Omega_k) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x} \\
-+ \lambda \int_{\Omega_k - K}  ( \left| \nabla \mathbf{\mu} \right| ^2 + \left| \nabla \mathbf{\Sigma}_k \right| ^2 ) \, d\mathbf{x} 
-+ \nu |K|,
+E(\Theta_l,\Omega_l) = \sum\limits_l \int_{\Omega_l} \left[ \log \left|\mathbf{\Sigma}_l\right| + \Delta^2_l (\mathbf{f}) \right] \,d\mathbf{x} \\
++ \lambda \int_{\Omega_l - d\Omega_l}  ( \left| \nabla \mathbf{\mu} \right| ^2 + \left| \nabla \mathbf{\Sigma}_l \right| ^2 ) \, d\mathbf{x} 
++ \nu |d\Omega_l|,
 \end{multline}
 that is easily identifiable with \eqref{eq:map_energy} when we apply 
 the so-called \emph{cartoon limit}, 
 for $\lambda \to \infty$:
 \begin{equation}
-E(\Theta_k,K) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}
-+ \nu |K|.
+E(\Theta_l,d\Omega_l) = \sum\limits_l \int_{\Omega_l} \left[ \log \left|\mathbf{\Sigma}_l\right| + \Delta^2_l (\mathbf{f}) \right] \,d\mathbf{x}
++ \nu |d\Omega_l|.
 \end{equation}
 
-As long as we do not penalize the edge set $K$ length, $\nu = 0$ and
+As long as we do not penalize the edge set $d\Omega_l$ length, $\nu = 0$ and
 the result is dual to \eqref{eq:map_energy}:
 \begin{equation}
-E(\Theta_k,K) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}.
+E(\Theta_l,d\Omega_l) = \sum\limits_l \int_{\Omega_l} \left[ \log \left|\mathbf{\Sigma}_l\right| + \Delta^2_l (\mathbf{f}) \right] \,d\mathbf{x}.
 \end{equation}
 
 
@@ -293,7 +293,7 @@ Then, the transformation writes
 %
 \begin{equation}
 \label{eq:transformation}
-c_i' = T\{c_i\} = c_i + u(c_i) = c_i + \sum_k \psi_k(c_i)u_k
+c_i' = T\{c_i\} = c_i + u(c_i) = c_i + \sum_k \psi_k(c_i)\,u_k
 \end{equation} 
 
 Based on the current estimate of the distortion $u$, we can compute 
@@ -312,7 +312,7 @@ problem well-posed, we include limiting and regularization terms into
 the energy functional \cite{morozov_linear_1975,tichonov_solution_1963}:
 %
 \begin{multline}
-E(u) = \sum\limits_k \int_{\Omega'_k} \Delta^2_k (\mathbf{f}) \,d\mathbf{x} \\
+E(u) = \sum\limits_l \int_{\Omega'_l} \Delta^2_l (\mathbf{f}) \,d\mathbf{x} \\
 + \int u^T \, A \, u \, d\mathbf{x} + \int \tr\{(\nabla u^T)^T B (\nabla u^T)\} d\mathbf{x}
 \label{eq:complete_energy}
 \end{multline}
@@ -330,7 +330,7 @@ we propose the following operator splitting: Let us optimize the data terms
 and the regularity terms on separate copies of the deformation field, 
 now called $u$ and $v$, constrained to be equal:
 \begin{multline}
-E(u,v) = \sum\limits_k \int_{\Omega'_k(u)} \Delta^2_k (\mathbf{f}) \,d\mathbf{x} \\
+E(u,v) = \sum\limits_l \int_{\Omega'_l(u)} \Delta^2_l (\mathbf{f}) \,d\mathbf{x} \\
 + \int v^T \, A \, v \, d\mathbf{x} + \int \tr\{(\nabla v^T)^T B (\nabla v^T)\} d\mathbf{x}
 \label{eq:operator_splitting}
 \end{multline}
@@ -384,11 +384,11 @@ with the presented approach in setting up the velocity function.
 The first minimization problem optimizes the data-term. The problem is equivalent 
 to minimizing the following energy:
 \begin{multline}
-E(u,v) = \sum\limits_k \int_{\Omega'_k(u)} \Delta^2_k (\mathbf{f}) \,d\mathbf{x}
+E(u,v) = \sum\limits_l \int_{\Omega'_l(u)} \Delta^2_l (\mathbf{f}) \,d\mathbf{x}
 + \langle \lambda, u-v \rangle + \frac{r}{2} \| u - v \|_2^2
 \end{multline}
 where we identify one instance of domain integrals of the form $\int_\Omega r(\mathbf{x}) 
-d\mathbf{x}$ for each region $k$. Optimality requires the derivative of this energy 
+d\mathbf{x}$ for each region $l$. Optimality requires the derivative of this energy 
 with respect to the parameters $u$ to be null. At this point, we decide to ignore 
 the influence of the boundary shift on the statistics of the regions (i.e. moving the 
 boundary does not significantly impact the $\mu$ and $\Sigma$ descriptors). This means 
@@ -397,15 +397,15 @@ What remains are the surface integrals at the subdomain interfaces, plus the Lag
 and penalty terms:
 
 \begin{multline}
-\frac{\partial E}{\partial u_k} = \sum\limits_k \int_{d\Omega'_k} \left[ \Delta^2_{O(k)} (\mathbf{f}) - \Delta^2_k (\mathbf{f}) \right]
-\left\langle\frac{\partial{d\Omega'_k}}{\partial t}, N_{d\Omega'_k}\right\rangle \,d\mathbf{x} \\
+\frac{\partial E}{\partial u_k} = \sum\limits_l \int_{d\Omega'_l} \left[ \Delta^2_{O(l)} (\mathbf{f}) - \Delta^2_l (\mathbf{f}) \right]
+\left\langle\frac{\partial{d\Omega'_l}}{\partial t}, N_{d\Omega'_l}\right\rangle \,d\mathbf{x} \\
 + \lambda_k + r(u_k - v_k) = 0
 \label{eq:energy_gradient}
 \end{multline}
-where $O(k)$ is a function that returns the neighboring region at $\mathbf{x}$ (i.e.
+where $O(l)$ is a function that returns the neighboring region at $\mathbf{x}$ (i.e.
 the region \emph{outside} the current location in the contour). For the shake of
 simple notation, we will refer as $c'$ to the positions of points belonging to
-any of the existing contours $d\Omega_k$.
+any of the existing contours $d\Omega_l$.
 Given the deformation field interpolation stated in \autoref{sec:deformation_field}, 
 the boundary moves according to
 \begin{equation}
@@ -419,15 +419,15 @@ of the image. Thus
 The discrete implementation of \eqref{eq:energy_gradient} is straightforward as
 we have a triangularized mesh representation of the interfacing surfaces:
 \begin{multline}
-\frac{\partial E}{\partial u_k} = \sum\limits_k \sum\limits_{c'} \left[ \Delta^2_{O(k)} (\mathbf{f}) - \Delta^2_k (\mathbf{f}) \right]
-\, \psi_k(c')\,\hat{\mathbf{n}}_{c'} \\
+\frac{\partial E}{\partial u_k} = \sum\limits_l \sum\limits_{c'} \left[ \Delta^2_{O(l)} (\mathbf{f}) - \Delta^2_l (\mathbf{f}) \right]
+\, \psi_l(c')\,\hat{\mathbf{n}}_{c'} \\
 + \lambda_k + r(u_k - v_k) = 0
 \label{eq:discrete_energy_gradient}
 \end{multline}
 The optimal distortion $u_k$ is found at each iteration as:
 \begin{multline}
 u_k^{t+1} = v_k^t - \frac{1}{r}\lambda_k^{t} \\
-- \frac{1}{r} \sum\limits_k \sum\limits_{c'} \left[ \Delta^2_{O(k)} (\mathbf{f}) - \Delta^2_k (\mathbf{f}) \right]
+- \frac{1}{r} \sum\limits_l \sum\limits_{c'} \left[ \Delta^2_{O(l)} (\mathbf{f}) - \Delta^2_l (\mathbf{f}) \right]
 \, \psi_k(c')\,\hat{\mathbf{n}}_{c'}
 \label{eq:update_u}
 \end{multline}
