@@ -45,7 +45,7 @@ deformation field from the contours to the whole image definition. Finally,
 All the surveyed frameworks are deduced from the general level set evolution equation
 introduced by \citep{osher_fronts_1988}:
 \begin{equation}
-\frac{\partial \Phi_D(x,t)}{\partial t} = \nu ( \Phi_D(x,t)) \, \left| \nabla \Phi_D(x,t) \right|
+\frac{\partial \Phi_D(\mathbf{x},t)}{\partial t} = \nu ( \Phi_D(\mathbf{x},t)) \, \left| \nabla \Phi_D(\mathbf{x},t) \right|
 \end{equation}
 where $\nu$ is the velocity of the flow or speed function that contains the local
 segmentation and contour regularization constraints, and $\Phi_D: \Omega \to \mathbb{R}$
@@ -54,7 +54,7 @@ by its zero level. An early extension to image registration was proposed by
 \citep{vemuri_joint_2003} but replacing $\Phi_D$ by the intensity function of the
 image to register, $\Phi_I: \Omega \to \mathbb{R}$ (the moving image). 
 \citep{bertalmio_morphing_2000,vemuri_joint_2003} then define the speed function as
-$\nu(\Phi_I(x,t)) = \Phi_I(x,t) - \Phi_T(x,t)$, where $\Phi_T(x)$ is the intensity
+$\nu(\Phi_I(\mathbf{x},t)) = \Phi_I(\mathbf{x},t) - \Phi_T(\mathbf{x},t)$, where $\Phi_T(\mathbf{x})$ is the intensity
 function of the target image. Finally, \citep{gorthi_active_2011} propose a different
 multiphase label function as level set function ($\Phi_L$) that improves registration
 results.
@@ -62,21 +62,21 @@ results.
 Naming $\Phi_G$ a generic objective function, a dense deformation field of vectors 
 $u: \mathbb{R}^n \to \mathbb{R}^n$ (tipically $n = \{ 2, 3 \}$) is introduced. 
 Then, the conservation of the morphological description is assumed, such as
-$\Phi_G(x,t) = \Phi_G( x + du, t + dt ) \implies d\Phi_G(x,t) = 0$, where $d\Phi_G$ is
+$\Phi_G(\mathbf{x},t) = \Phi_G( \mathbf{x} + du, t + dt ) \implies d\Phi_G(\mathbf{x},t) = 0$, where $d\Phi_G$ is
 the total derivative of $\Phi_G$. Using the chain rule, it can be rewritten as the 
 evolution equation of a vector flow:
 \begin{equation}
-\frac{\partial u(x,t)}{\partial t}= - \frac{\Phi_G}{\left| \nabla \Phi_G \right|} N_{\Phi_G},
+\frac{\partial u(\mathbf{x},t)}{\partial t}= - \frac{\Phi_G}{\left| \nabla \Phi_G \right|} N_{\Phi_G},
 \end{equation}
 where $N_{\Phi_G}$ is the normal of the level set. Finally, they introduce the general
 level set evolution equation into the vector flow to perform the registration task:
 \begin{equation}
-\frac{\partial u(x,t)}{\partial t} = - \nu( \Phi_G(x,t) ) N_{\Phi_G}.
+\frac{\partial u(\mathbf{x},t)}{\partial t} = - \nu( \Phi_G(\mathbf{x},t) ) N_{\Phi_G}.
 \end{equation}
 Therefore, the position of the level set function $\Phi_G$ at time $t$ is given by the
-deformation field $u(x,t)$ and the initial level set function $\Phi_G(x,0)$, yielding:
+deformation field $u(\mathbf{x},t)$ and the initial level set function $\Phi_G(\mathbf{x},0)$, yielding:
 \begin{equation}
-\frac{\partial u(x,t)}{\partial t} = - \nu( \Phi_G(x + u(x,t), 0) ) N_{\Phi_G}.
+\frac{\partial u(\mathbf{x},t)}{\partial t} = - \nu( \Phi_G(\mathbf{x} + u(\mathbf{x},t), 0) ) N_{\Phi_G}.
 \end{equation}
 
 Here, we propose an active deformation field framework with some differences in
@@ -89,57 +89,76 @@ but they use a Gaussian filtering)}; 3) optimization is applied in the spectral
 domain, observing anisotropic and inhomogeneous mappings along each direction.
 
 
-\subsection{From the Maximum A-Posteriori Model to the Mumford-Shah functional}
+\subsection{Bridging segmentation frameworks}
 \label{sec:methods_map}
 %
 A widely used approach to image segmentation is derived from the
-Bayes' rule \eqref{eq:bayes_rule}, where one seeks for a partitioning
-of a certain image $X$ in piecewise smooth regions $\Omega = \lbrace \Omega_k , 
-k\in\left[ 1 .. K \right] \rbrace$,  that maximizes the a posteriori 
-probability given the multivariate image $X \in \mathbb{R}^C$, 
-with $C$ being the number of image channels.
+Bayes' rule \eqref{eq:bayes_rule}. This framework seeks for a 
+partitioning of a certain observation of features $F: \mathbb{R}^n \to %
+\mathbb{R}^C$ (an $n$-dimensional \emph{image} comprising $C$ different 
+channels) in piecewise smooth regions $\Omega = \lbrace \Omega_k , 
+k\in\left[ 1 \ldots K \right] \rbrace$,  that maximize the \emph{a posteriori}
+probability $p(\Omega \mid F)$:
 \begin{equation}
-p(Y \mid X) = \frac{p(X \mid Y)\, p(Y)}{p(X)}.
+p(\Omega \mid F) = \frac{p(F \mid \Omega)\, p(\Omega)}{p(F)},
 \label{eq:bayes_rule}
 \end{equation}
-
-Therefore, $Y$ is a certain realization of the piecewise 
-disjoint region set $\Omega$. $p(X \mid Y)$ is the \emph{likelihood} of 
-the realization of $X$ (the image) given a certain distribution model for 
-each region $\Omega_k$. The second term, $p(Y)$, is the a-priori probability of 
-the partitioning $Y$. Finally, $p(X)$ is the probability of a certain image 
-realization, and thus, it will remain constant when computing the \gls{map}.
-Consequently, $p(Y \mid X) \propto p(X \mid Y)\, p(Y)$, and:
+where $p(F \mid \Omega)$ is the \emph{likelihood} of the realization 
+of $F$ given a certain region set $\Omega$. The second term, $p(\Omega)$,
+is the a-priori probability of the partitioning. Finally, $p(F)$ is the 
+probability of a certain image realization, and thus, it will remain 
+constant when computing the \gls{map}. Consequently, the Bayes' rule
+can be simplified for the optimization as follows:
 \begin{equation}
-\underset{Y}{\argmax} \left\{ p(Y \mid X) \right\} = 
-\underset{Y}{\argmax} \left\{ p(X \mid Y)\, p(Y) \right\}.
+p(\Omega \mid F) \propto p(F \mid \Omega)\, p(\Omega).
+\label{eq:bayes_rule_simplified}
+\end{equation}
+
+In the simplest Bayesian segmentation framework, the unknown is the
+parameter set $\Theta_k$ of region-wise descriptors that minimize 
+\eqref{eq:bayes_rule}. Conversely, we can assume these descriptors as
+fixed (fulfilling the concept of conservation of morphological description
+mentioned before) and introduce a realization of a dense deformation field $U: %
+\mathbb{R}^n \to \mathbb{R}^n$ that maps the initial partition $\Omega_0$
+to the estimated one:
+\begin{equation}
+\Omega' = \Omega_0 + \hat{U}.
+\label{eq:omega_tf}
+\end{equation}
+
+Thus, \eqref{eq:bayes_rule_simplified} is rewritten as 
+$p(U \mid F) \propto p(F \mid U)\, p(U)$ that yields the
+following \gls{map} solution:
+
+\begin{equation}
+\hat{U} = \underset{U}{\argmax} \left\{ p(U \mid F) \right\} = 
+\underset{U}{\argmax} \left\{ p(F \mid U)\, p(U) \right\}.
+\label{eq:map_u}
 \end{equation}
 
 
-An extended assumption is that the feature vector realization $X$ is
+An extended assumption is that the feature vector realization $F$ is
 \emph{i.i.d.}, and thus, it is possible to write the a-posteriori
-probability $p(X \mid Y)$ as a continuous product with $d\mathbf{x}$ the
+probability $p(F \mid U)$ as a continuous product with $d\mathbf{x}$ the
 infinitesimal voxel size:
 \begin{equation}
-p(X \mid Y) \, p(Y) = \underset{k}{\prod} \underset{\mathbf{x}\in \Omega_k}{\prod}
-p_k( X(\mathbf{x}) \mid Y(\mathbf{x}) )^{d\mathbf{x}},
+p(F \mid U) \, p(U) = \underset{k}{\prod} \underset{\mathbf{x}\in \Omega'_k}{\prod}
+p_k\left( F(\mathbf{x} + U(\mathbf{x})) \mid U(\mathbf{x}) \right)^{d\mathbf{x}}.
 \label{eq:bayes_aposteriori}
 \end{equation}
-where the prior probability $p(Y)$ is implicitly
-defined by the regions definition. 
-
+\todo[inline]{I'm not convinced about turning $p(\Omega)$ into $p(U)$.}
 
 A second widely-accepted assumption is the multivariate normal 
 distribution of the different tissues in \gls{mri} data. Therefore,
-the posterior probability of an infinitesimal voxel
-can be written as:
+the posterior probability of an infinitesimal voxel can be written as:
 \begin{equation}
-p_k( X(\mathbf{x}) \mid Y(\mathbf{x}) ) = \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{X(\mathbf{x})}) \right)}}.
+p_k( F(\mathbf{x}) \mid U(\mathbf{x}) ) = \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{f}') \right)}}.
 \label{eq:bayes_mpdf}
 \end{equation}
-where we can identify the factor in the exponential, with 
-$\mathbf{f} = X(\mathbf{x})$ as the squared \emph{Mahalanobis 
-distance} with the parameters set $\Theta_k = \lbrace \boldsymbol{\mu}_k, \boldsymbol{\Sigma}_k \rbrace$:
+where we can identify the factor in the exponential as the squared \emph{Mahalanobis 
+distance} of the feature observed in the displaced position, $\mathbf{f}' = 
+F(\mathbf{x} + U(\mathbf{x}))$ with region descriptors
+$\Theta_k = \lbrace \boldsymbol{\mu}_k, \boldsymbol{\Sigma}_k \rbrace$:
 \begin{equation}
 \Delta^2_k (\mathbf{f} \mid \Theta_k ) = (\mathbf{f} - \boldsymbol{\mu}_k)^T \, \boldsymbol{\Sigma}^{-1}_k \, (\mathbf{f} - \boldsymbol{\mu}_k).
 \label{eq:bayes_mahalanobis}
@@ -148,36 +167,48 @@ distance} with the parameters set $\Theta_k = \lbrace \boldsymbol{\mu}_k, \bolds
 Finally, we can turn the \gls{map} problem into a variational one
 applying the following log-transform:
 \begin{multline}
-E(X \mid Y)= -\log \left[ p(X \mid Y) \, p(Y) \right] = \\
-= -\log \left[ \underset{k}{\prod} \underset{\mathbf{x}\in \Omega_k}{\prod}
-p_k( X(\mathbf{x}) \mid Y(\mathbf{x}) )^{d\mathbf{x}} \right] = \\
-= \sum\limits_k \int_{\Omega_k} -\log \left[ p_k(X(\mathbf{x}) \mid Y(\mathbf{x} ) ) \right] \, d\mathbf{x},
+E(F \mid U)= -\log \left[ p(F \mid U) \, p(U) \right] = \\
+= -\log \left[ \underset{k}{\prod} \underset{\mathbf{x}\in \Omega'_k}{\prod}
+p_k( F(\mathbf{x}) \mid U(\mathbf{x}) )^{d\mathbf{x}} \right] = \\
+= \sum\limits_k \int_{\Omega'_k} -\log \left[ p_k(F(\mathbf{x}) \mid U(\mathbf{x} ) ) \right] \, d\mathbf{x},
 \label{eq:energy_1}
 \end{multline}
 and introducing the posterior probability term \eqref{eq:bayes_mpdf}, 
-we can express the functional in terms of $\lbrace\Theta_k,\Omega_k\rbrace$:
+we can express the functional in terms of the deformation field $U$ and
+the region descriptors $\Theta_k$:
 \begin{multline}
-E(\Theta_k,\Omega_k) = \\
-= \sum\limits_k \int_{\Omega_k} -\log \left[ \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{f}) \right)}} \right] \, d\mathbf{x} = \\
-= \sum\limits_k \int_{\Omega_k} \left[ \frac{1}{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right| \right)} + \frac{1}{2}  \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}.
+E(U) = \\
+= \sum\limits_k \int_{\Omega'_k} -\log \left[ \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_k (\mathbf{f}) \right)}} \right] \, d\mathbf{x} = \\
+= \sum\limits_k \int_{\Omega'_k} \left[ \frac{1}{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right| \right)} + \frac{1}{2}  \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x}.
 \end{multline}
 Finally, after removing scaling factors and independent constants,
 we obtain:
 \begin{align}
-E(\Theta_k,\Omega_k) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x},
+E(U) = \sum\limits_k \left[ \left|\Omega'_k\right|\,\log \left|\mathbf{\Sigma}_k \right| + \int_{\Omega'_k} \Delta^2_k (\mathbf{f}) \,d\mathbf{x} \right],
 \label{eq:map_energy}
 \end{align}
-\todo[inline]{improve this explanation} where we have a constant term scaled by
-the total volume of the partition $\Omega_k$ and the determinant of the 
-covariance matrix of the partition $\left|\boldsymbol{\Sigma}_{k}\right|$,
+where we have a constant term scaled by the total volume of the partition $\Omega_k$ and 
+the determinant of the  covariance matrix of the partition $\left|\boldsymbol{\Sigma}_{k}\right|$,
 plus an energy term based on the squared \emph{Mahalanobis distance}.
+As long as this shape-based registration framework is designed to allow small changes
+between boundaries (and therefore, their volumes), and the shape descriptors should not
+change significantly due to the conservation principle, the first term can be optionally
+dismissed with respect the second one, what yields:
+\begin{align}
+E(U) = \sum\limits_k \int_{\Omega'_k} \Delta^2_k (\mathbf{f}) \,d\mathbf{x}.
+\label{eq:final_map_energy}
+\end{align}
 
-Equation \eqref{eq:map_energy} resembles the Mumford-Shah functional including variance,
-that modifies the original functional in a way that it can deal with more general
-distributions. This is necessary to avoid the assumption that regions $\Omega_k$
-have a fixed covariance matrix on their complete domain. One immediate advantage
-of this functional from the original one is the possibility to distinguish regions
-with the same mean vector but different covariance matrix \citep{brox_local_2009}:
+This latter expression resembles the Mumford-Shah functional 
+\citep{mumford_optimal_1989} which is at the background of all \gls{acwe}-based
+methods. In this case, \eqref{eq:final_map_energy} includes covariance as
+region descriptor, what modifies the original functional in a way that it 
+can deal with more general distributions. This is necessary to avoid the 
+assumption that regions $\Omega_k$ have a fixed covariance matrix on their 
+complete domain. One immediate advantage of this functional from the original 
+one is the possibility to distinguish regions with the same mean vector but 
+different covariance matrix \citep{brox_local_2009}. In this work, the 
+Mumford-Shah functional is derived for this extension as follows:
 \begin{multline}
 E(\Theta_k,\Omega_k) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f}) \right] \,d\mathbf{x} \\
 + \lambda \int_{\Omega_k - K}  ( \left| \nabla \mathbf{\mu} \right| ^2 + \left| \nabla \mathbf{\Sigma}_k \right| ^2 ) \, d\mathbf{x} 
@@ -198,86 +229,93 @@ E(\Theta_k,K) = \sum\limits_k \int_{\Omega_k} \left[ \log \left|\mathbf{\Sigma}_
 \end{equation}
 
 
-\subsection{Deformation model}
-\label{sec:deformation}
+\subsection{Introducing priors}
+\label{sec:priors}
 %
-The segmentation problem is transformed into a registration one if the initial
-partition $Y$ is derived from the initial shape-priors in reference space. 
-Introducing a dense deformation field $u$ that maps the original partition to
-a better fit of the regions in the target coordinate space. Thus, the minimization
-problem stated in \eqref{eq:map_energy} can be expressed so that $u$ is the 
-unknown:
+By introducing $U$ in \eqref{eq:bayes_rule_simplified}, we transformed 
+the segmentation problem into a registration one provided with $\Omega_0$ 
+(the initial partition) is derived from the shape-priors given in reference 
+space. Therefore, the priors can be expressed in terms of the deformation
+field:
 \begin{equation}
-E(u(\mathbf{x})) = \sum\limits_k \int_{\Omega'_k} \left[ \log \left|\mathbf{\Sigma}_k\right| + \Delta^2_k (\mathbf{f'}) \right] \,d\mathbf{x}
-\label{eq:map_energy_deformation}
+P(U) = \underset{\mathbf{x}}{\prod}\,p(U(\mathbf{x}))\,^{d\mathbf{x}}.
+\label{eq:prior_u}
 \end{equation}
-where $\Omega'_k = u(\Omega_k)$ and $\mathbf{f'} = X(u(\mathbf{x}))$.
+We define $P(U(\mathbf{x})) = p(\mathbf{u}) = \underset{d}\prod \, p_d(\mathbf{u})$ 
+with $d$ the order of the derivative. We also assume that an initial
+affine registration let us consider that the deformation field ($d=0$)
+and its derivatives up to some order ($d>0$) are all zero mean, and
+have some variance $\Sigma_d$. We restrict ourselves to $d=\lbrace 0,1 \rbrace$
+(the field and its gradient):
+\begin{subequations}
+\begin{equation}
+p_0(\mathbf{u}) = \mathcal{N}( \mathbf{u} \mid 0, \alpha^{-1}),
+\end{equation}
+\begin{equation}
+p_1(\mathbf{u}) = \mathcal{N}( \nabla \mathbf{u} \mid 0, {\Sigma_\beta}^{-1}), 
+\end{equation}
+\end{subequations}
+And therefore:
+\begin{equation}
+P(U) = \underset{\mathbf{x}}\prod \left[ p_0(\mathbf{u}) \, p_1(\mathbf{u}) \right]^{d\mathbf{x}}.
+\end{equation}
 
 
 
-\subsection{\Acrlong{acwe} based segmentation model}
+
+\subsection{Numerical Implementation}
 %
-Let us denote $\{c_i\}_{i=1..N_c}$ the nodes of a shape prior surface. In
-our application, a precise \gls{wm}-\gls{gm} interface extracted from a
-high-resolution reference volume. All the formulations can be naturally
-extended to include more shape priors. On the other hand, we have a 
-number of \gls{dwi}-derived features at each
-voxel of the volume. Let us denote by $x$ the voxel and 
-$f(x) = [ f_1, f_2, \ldots, f_N]^T(x)$ its associated feature vector.\\
-%
+Let us denote $\{c_i\}_{i=1 \ldots N_c}$ the nodes of one or several shape-prior
+surface(s). In our application, precise tissue interfaces of interest 
+extracted from a high-resolution, anatomically correct reference volume. 
+On the other hand, we have a number of \gls{dwi}-derived features at each
+voxel of the volume. Let us denote by $\mathbf{x}$ the voxel and $f(\mathbf{x}) = 
+[ f_1, f_2, \ldots, f_N]^T(\mathbf{x})$ its associated feature vector.
+
+\subsubsection{Deformation field}
+\label{sec:deformation_field}
 The transformation from reference into \gls{dwi} coordinate space is 
-achieved through a dense deformation field $u(x)$, such that:
+achieved through a dense deformation field $u(\mathbf{x})$, such that:
+\begin{equation}
+c_i' = T\{c_i\} = c_i + u(c_i),
+\end{equation}
+what is equivalent to \eqref{eq:omega_tf}. Since the nodes of the anatomical 
+surfaces might lay off-grid, it is required to derive $u(\mathbf{x})$ from a discrete 
+set of parameters $\{u_k\}_{k=1 \ldots K}$. Densification is achieved through 
+a set of associated basis functions $\psi_k$ (e.g. rbf, interpolation splines):
 %
 \begin{equation}
-c_i' = T\{c_i\} = c_i + u(c_i)
-\end{equation}
-% 
-Since the nodes of the anatomical surfaces might lay off-grid, it is 
-required to derive $u(x)$ from a discrete set of parameters $\{u_k\}_{k=1..K}$.
-Densification is achieved through a set of associated basis functions 
-$\psi_k$ (e.g. rbf, interpolation splines):
-%
-\begin{equation}
-u(x) = \sum_k \psi_k(x) u_k
+u(\mathbf{x}) = \sum_k \psi_k(\mathbf{x}) u_k
 \end{equation}
 %
-Consequently, the transformation writes
+In our implementation, $\psi_k$ is chosen to be a tensor-product B-Spline kernel.
+Then, the transformation writes
 %
 \begin{equation}
 \label{eq:transformation}
 c_i' = T\{c_i\} = c_i + u(c_i) = c_i + \sum_k \psi_k(c_i)u_k
 \end{equation} 
-%
-% Comment: maybe this is not for IPMI 2013.
-%Note that, since $c_i$ remains constant in the DW segmentation process,
-%the values of $\psi_k(c_i)$ can be precomputed. Also, provided compact 
-%support of the basis functions, the system remains relatively sparse.\\
-%
+
 Based on the current estimate of the distortion $u$, we can compute 
 ``expected samples'' within the shape prior projected into the \gls{dwi}.
 Thus, we now estimate region descriptors of the \gls{dwi} features 
-$f(x)$ of the regions defined by the priors in \gls{dwi} space.
+$f(\mathbf{x})$ of the regions defined by the priors in \gls{dwi} space.
 %
-Using Gaussian distributions as region descriptors, we propose an
-\gls{acwe}-like, piece-wise constant, variational image segmentation
+Using the region descriptors derived in \autoref{sec:methods_map}, we propose
+an \gls{acwe}-like, piece-wise constant, variational image segmentation
 model (where the unknown is the deformation field)
-\cite{chan_active_2001}:
-
-where $R$ indexes the existing regions and the integral domains
-depend on the deformation field $u$. Note
-that minimizing this energy, $\argmin_u\{E\}$, yields the \gls{map} 
-estimate of a piece-wise smooth image model affected by Gaussian 
-additive noise. This inverse problem is ill-posed
+\cite{chan_active_2001} with the energy functional obtained in 
+\eqref{eq:final_map_energy}. This inverse problem is ill-posed
 \cite{bertero_ill-posed_1988,hadamard_sur_1902}.
 In order to account for deformation field regularity and to render the 
 problem well-posed, we include limiting and regularization terms into 
 the energy functional \cite{morozov_linear_1975,tichonov_solution_1963}:
 %
-\begin{align}
+\begin{multline}
+E(u) = \sum\limits_k \int_{\Omega'_k} \Delta^2_k (\mathbf{f}) \,d\mathbf{x} \\
++ \int u^T \, A \, u \, d\mathbf{x} + \int \tr\{(\nabla u^T)^T B (\nabla u^T)\} d\mathbf{x}
 \label{eq:complete_energy}
-E(u) &= \sum_{\forall{R}} \lbrace \int_{\Omega_R} (f-\mu_R)^T\Sigma_R^{-1}(f-\mu_R) dx \rbrace \nonumber \\
-&\quad + \alpha \int  \|u\|^2 dx + \beta \int \left( \|\nabla u_x\|^2 + \|\nabla u_y\|^2 + \|\nabla u_z\|^2\right) dx
-\end{align}
+\end{multline}
 %
 These regularity terms ensure that the segmenting contours in 
 \gls{dwi} space are still close to their native shape. The model
@@ -286,113 +324,124 @@ regularization \cite{nagel_investigation_1986} to better regularize
 the \gls{epi} distortion. \\
 %
 
-At each iteration, we update the distortion along the steepest 
-energy descent. This gradient descent step can be efficiently 
-tackled by discretizing the time in a forward Euler scheme, 
-and making the right hand side semi-implicit in the 
-regularization terms:
-%
-\begin{align}
-\frac{u^{t+1}-u^t}{\tau} &= - \sum_{i=1}^{N_c} \left[ e(f(c_i'))  \hat{n}_{c_i'} \psi_{c_i}(x) \right] -\alpha u^{t+1} + \beta\Delta u^{t+1}
-\end{align}
-%
-where the data terms remain functions of the current estimate 
-$u^t$, thus $c_i' = c_i'(u^t)$. For simplicity on notation, we 
-restricted the number of priors to only 1. We also defined 
-$e(f(c_i')) = E_{out}(f(c_i')) - E_{in}(f(c_i'))$, 
-and $E_R(f) = {(f-\mu_R)^T\Sigma_R^{-1}(f-\mu_R)}$.
-We applied a spectral approach to solve this implicit scheme:
-%
-\begin{equation}
-u^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{u^t/\tau
-- \sum_{i=1}^{N_c} \left[e(f(c_i')) \hat{n}_{c_i'} \psi_{c_i}(x) \right]  \}}{\mathcal{F}\{(1/\tau+\alpha)\mathcal{I}-\beta\Delta\}} \right\}
-\end{equation}
-%
-
-\subsection{Operator splitting}
-In order to make the Energy minimisation computationally more tractable, we propose the following operator splitting: Let us optimize the data terms and the regularity terms on separate copies of the deformation field, now called $u$ and $v$, constrained to be equal:
-\begin{align}
-E(u,v) &= \int_{w'(u)} (f-\mu_w)^T\Sigma_w^{-1}(f-\mu_w) dx\nonumber\\
-&\quad +\int_{g'(u)} (f-\mu_g)^T\Sigma_g^{-1}(f-\mu_g) dx\\
-&\quad +\int_{o'(u)} (f-\mu_o)^T\Sigma_o^{-1}(f-\mu_o) dx\nonumber\\
-&\quad +\int v^T A v dx + \int \tr\{(\nabla v^T)^T B (\nabla v^T)\} dx\nonumber
-\end{align}
+\subsubsection{Operator splitting}
+In order to make the energy minimization computationally more tractable, 
+we propose the following operator splitting: Let us optimize the data terms 
+and the regularity terms on separate copies of the deformation field, 
+now called $u$ and $v$, constrained to be equal:
+\begin{multline}
+E(u,v) = \sum\limits_k \int_{\Omega'_k(u)} \Delta^2_k (\mathbf{f}) \,d\mathbf{x} \\
++ \int v^T \, A \, v \, d\mathbf{x} + \int \tr\{(\nabla v^T)^T B (\nabla v^T)\} d\mathbf{x}
+\label{eq:operator_splitting}
+\end{multline}
 and now
 \begin{equation}
-\min_{u,v} \{ E \} \quad s.t. \quad u = v
+\min_{u,v} \{ E \} \quad s.t. \quad u = v.
 \end{equation}
-In order to take the equality constraint into account, we may make use of augmented Lagrangians (a combination of Lagrangian multipliers and penalty terms on the constraint)
-\cite{bertsekas_multiplier_1976,glowinski_augmented_1989,nocedal_numerical_2006}:
+
+In order to take the equality constraint into account, we may make use of 
+augmented Lagrangians (a combination of Lagrangian multipliers and penalty 
+terms on the constraint) \cite{bertsekas_multiplier_1976,
+glowinski_augmented_1989,nocedal_numerical_2006}:
 \begin{equation}
 AL(u,v,\lambda,r) = E(u,v) + \langle \lambda, u-v \rangle + \frac{r}{2} \| u - v \|_2^2
 \end{equation}
-To solve the constraint minimization problem, we may now optimize the Augmented Lagrangian in an iterative way:
+
+To solve the constraint minimization problem, we may now optimize the 
+Augmented Lagrangian in an iterative way:
 \begin{equation}
-\left\lbrace \begin{array}{rcl}
+\left\lbrace 
+\begin{array}{rcl}
 u^{t+1} &=& \argmin_{u} AL(u,v^t,\lambda^t,r)\\
 v^{t+1} &=& \argmin_{v} AL(u^{t+1},v,\lambda^t,r)\\
 \lambda^{t+1} &=& \lambda^t + \rho(u^{t+1}-v^{t+1})
-\end{array}\right.\end{equation}
-where typically $0 < \rho < r$. The two subminimization problems will now be much easier to handle than the original complete problem (``divide et impera'').
-
-\subsection{Shape gradients}
-To compute the gradient-descent of the data-term domain integrals with respect to the underlying deformation field, we want to make use of shape gradients \cite{jehan-besson_dream2s:_2003,herbulot_segmentation_2006}. A little bit of theory is therefore in order.
-
-Let $\Omega$ be an image domain and $\omega$ its boundary. Further, $r(x)$ is an ``arbitrary'' function over the image domain. We now derive the domain integral w.r.t. the contour evolution parameter $\tau$ (~ time):
-\begin{equation}
-\frac{\partial}{\partial \tau} \int_\Omega r(x) dx = \int_\Omega \frac{\partial r}{\partial \tau}(x) dx - \int_\omega r(x) \left\langle \frac{\partial\omega}{\partial\tau}, N_\omega\right\rangle dx
+\end{array}\right.
 \end{equation}
-where $\left\langle\frac{\partial\omega}{\partial\tau}, N_\omega\right\rangle$ is the projection of the boundary movement on the unit inward normal.
+where typically $0 < \rho < r$. The two sub-minimization problems will 
+now be much easier to handle than the original complete problem.
 
+\subsubsection{Shape gradients}
+To compute the gradient-descent of the data-term domain integrals with 
+respect to the underlying deformation field, we use shape gradients 
+\cite{jehan-besson_dream2s:_2003,herbulot_segmentation_2006}. A little 
+bit of theory is therefore in order.
 
-\subsection{Min w.r.t. $u$}
-The first minimization problem optimizes the data-term. The problem is equivalent to minimizing the following energy:
-\begin{align}
-E(u) &= \int_{w'(u)} (f-\mu_w)^T\Sigma_w^{-1}(f-\mu_w) dx\nonumber\\
-&\quad +\int_{g'(u)} (f-\mu_g)^T\Sigma_g^{-1}(f-\mu_g) dx\\
-&\quad +\int_{o'(u)} (f-\mu_o)^T\Sigma_o^{-1}(f-\mu_o) dx\nonumber\\
-&\quad + \langle \lambda, u-v \rangle + \frac{r}{2} \| u - v \|_2^2\nonumber
-\end{align}
-where we identify three instances of domain integrals of the form $\int_\Omega r(x) dx$. Optimality requires the derivative of this energy with respect to the parameters $u$ to be null. At this point, we may decide to ignore the influence of the boundary shift on the statistics of the regions (i.e. moving the boundary does not significantly impact the $\mu$ and $\Sigma$ descriptors). This means that we can drop the derivative of $r(x)$ w.r.t. contour evolution. What remains, are surface integrals at the two respective domain interfaces, $c'$ (wm/gm) and $d'$ (gm/CSF), plus the Lagrangian and penalty terms:
-\begin{align}
-\frac{\partial E}{\partial u_k^a} &= \int_{c'} \left[(f-\mu_g)^T\Sigma_g^{-1}(f-\mu_g) - (f-\mu_w)^T\Sigma_w^{-1}(f-\mu_w)\right]\left\langle\frac{\partial c'(s)}{\partial u_k^a}, N_{c'}(s)\right\rangle ds \nonumber\\
-&\quad + \int_{d'} \left[(f-\mu_o)^T\Sigma_o^{-1}(f-\mu_o) - (f-\mu_g)^T\Sigma_g^{-1}(f-\mu_g)\right]\left\langle\frac{\partial d'(s)}{\partial u_k^a}, N_{d'}(s)\right\rangle ds \\
-&\quad + \lambda_k^a + r(u_k^a - v_k^a)\nonumber\\
-& = 0\nonumber
-\end{align}
-where $u_k^a$ is the $a$-th component of the parameter $u_k$, $a\in \{x,y,z\}$, $s$ is the surface parameter, $c'(s)$ and $d'(s)$ the corresponding points on the surfaces $c'$ and $d'$, and $N_{c'}(s)$ and $N_{d'}(s)$ the associated brainwise-inward unit normals.
-Given the deformation field interpolation stated above, the boundary moves according to
+Let $\Omega$ be an image domain and $d\Omega$ its boundary. Further, $r(\mathbf{x})$ 
+is an ``arbitrary'' function over the image domain. We now derive the domain 
+integral w.r.t. the contour evolution parameter $t$ (time):
 \begin{equation}
-\frac{\partial c'(s)}{\partial u_k^a} = \psi_k(c'(s))e_a
+\frac{\partial}{\partial t} \int_\Omega r(\mathbf{x}) d\mathbf{x} = \int_\Omega \frac{\partial r}{\partial t}(\mathbf{x}) d\mathbf{x} - \int_{d\Omega} r(\mathbf{x}) \left\langle \frac{\partial{d\Omega}}{\partial t}, N_{d\Omega}\right\rangle d\mathbf{x}
+\label{eq:shape_gradients}
 \end{equation}
-where $e_a$ is the unit vector along direction $a$, and thus
+where $\left\langle\frac{\partial{d\Omega}}{\partial t}, N_{d\Omega}\right\rangle$ is 
+the projection of the boundary movement on the unit inward normal. We recall
+here that equation \eqref{eq:shape_gradients} stands the bridge between the 
+explicit level set formulations surveyed in \autoref{sec:methods_background} 
+with the presented approach in setting up the velocity function.
+
+
+\subsubsection{Minimization w.r.t. $u$}
+The first minimization problem optimizes the data-term. The problem is equivalent 
+to minimizing the following energy:
+\begin{multline}
+E(u,v) = \sum\limits_k \int_{\Omega'_k(u)} \Delta^2_k (\mathbf{f}) \,d\mathbf{x}
++ \langle \lambda, u-v \rangle + \frac{r}{2} \| u - v \|_2^2
+\end{multline}
+where we identify one instance of domain integrals of the form $\int_\Omega r(\mathbf{x}) 
+d\mathbf{x}$ for each region $k$. Optimality requires the derivative of this energy 
+with respect to the parameters $u$ to be null. At this point, we decide to ignore 
+the influence of the boundary shift on the statistics of the regions (i.e. moving the 
+boundary does not significantly impact the $\mu$ and $\Sigma$ descriptors). This means 
+that we can drop the derivative of $r(\mathbf{x})$ w.r.t. contour evolution. 
+What remains are the surface integrals at the subdomain interfaces, plus the Lagrangian 
+and penalty terms:
+
+\begin{multline}
+\frac{\partial E}{\partial u_k} = \sum\limits_k \int_{d\Omega'_k} \left[ \Delta^2_{O(k)} (\mathbf{f}) - \Delta^2_k (\mathbf{f}) \right]
+\left\langle\frac{\partial{d\Omega'_k}}{\partial t}, N_{d\Omega'_k}\right\rangle \,d\mathbf{x} \\
++ \lambda_k + r(u_k - v_k) = 0
+\label{eq:energy_gradient}
+\end{multline}
+where $O(k)$ is a function that returns the neighboring region at $\mathbf{x}$ (i.e.
+the region \emph{outside} the current location in the contour). For the shake of
+simple notation, we will refer as $c'$ to the positions of points belonging to
+any of the existing contours $d\Omega_k$.
+Given the deformation field interpolation stated in \autoref{sec:deformation_field}, 
+the boundary moves according to
 \begin{equation}
-\left\langle\frac{\partial c'(s)}{\partial u_k^a}, N_{c'}(s)\right\rangle = \psi_k(c'(s))N_{c'}^a(s)
+\frac{\partial c'}{\partial u_k} = \psi_k(c')\,e_a
 \end{equation}
-Now, we will discretize the surface integrals over $c'$ and $d'$ by simply summing over the nodes $c_i'$ and $d_i'$:
-\begin{align}
-\frac{\partial E}{\partial u_k^a} &= \sum_{i=1}^{N_c} \left[(f(c_i')-\mu_g)^T\Sigma_g^{-1}(f(c_i')-\mu_g) - (f(c_i')-\mu_w)^T\Sigma_w^{-1}(f(c_i')-\mu_w)\right]\psi_k(c_i')N_{c_i'}^a \nonumber\\
-&\quad + \sum_{i=1}^{N_d} \left[(f(d_i')-\mu_o)^T\Sigma_o^{-1}(f(d_i')-\mu_o) - (f(d_i')-\mu_g)^T\Sigma_g^{-1}(f(d_i')-\mu_g)\right]\psi_k(d_i')N_{d_i'}^a \\
-&\quad + \lambda_k^a + r(u_k^a - v_k^a)\nonumber\\
-& = 0\nonumber
-\end{align}
-It is straightforward to solve this equation for $u_k^a$. The optimal distortion $u_k$ is found at each iteration as:
-\begin{align}
-u_k^{t+1} &= v_k^t - \frac{1}{r}\lambda_k^{t}\nonumber\\
-&\quad - \frac{1}{r}\sum_{i=1}^{N_c} \left[(f(c_i')-\mu_g)^T\Sigma_g^{-1}(f(c_i')-\mu_g) - (f(c_i')-\mu_w)^T\Sigma_w^{-1}(f(c_i')-\mu_w)\right]\psi_k(c_i')N_{c_i'}\\
-&\quad - \frac{1}{r}\sum_{i=1}^{N_d} \left[(f(d_i')-\mu_o)^T\Sigma_o^{-1}(f(d_i')-\mu_o) - (f(d_i')-\mu_g)^T\Sigma_g^{-1}(f(d_i')-\mu_g)\right]\psi_k(d_i')N_{d_i'}\nonumber
-\end{align}
+where $e_a$ is the unit vector along direction $a \in \mathbb{R}^n$ and $n$ the dimension
+of the image. Thus
+\begin{equation}
+\left\langle\frac{\partial c'}{\partial u_k}, N_{c'}\right\rangle = \psi_k(c')\,\hat{\mathbf{n}}_{c'}
+\end{equation}
+The discrete implementation of \eqref{eq:energy_gradient} is straightforward as
+we have a triangularized mesh representation of the interfacing surfaces:
+\begin{multline}
+\frac{\partial E}{\partial u_k} = \sum\limits_k \sum\limits_{c'} \left[ \Delta^2_{O(k)} (\mathbf{f}) - \Delta^2_k (\mathbf{f}) \right]
+\, \psi_k(c')\,\hat{\mathbf{n}}_{c'} \\
++ \lambda_k + r(u_k - v_k) = 0
+\label{eq:discrete_energy_gradient}
+\end{multline}
+The optimal distortion $u_k$ is found at each iteration as:
+\begin{multline}
+u_k^{t+1} = v_k^t - \frac{1}{r}\lambda_k^{t} \\
+- \frac{1}{r} \sum\limits_k \sum\limits_{c'} \left[ \Delta^2_{O(k)} (\mathbf{f}) - \Delta^2_k (\mathbf{f}) \right]
+\, \psi_k(c')\,\hat{\mathbf{n}}_{c'}
+\label{eq:update_u}
+\end{multline}
 
-\subsection{Min w.r.t. $v$}
 
-\textbf{It is important to realize that here we do not regularize the actual deformation field (i.e. after interpolation), but the underlying raw parameter field. }
-
+\subsubsection{Minimization w.r.t. $v$}
 For the optimization w.r.t. $v$, the relevant energy writes
 \begin{align}
-E(v) &= \int v^T A v dx + \int \tr\{(\nabla v^T)^T B (\nabla v^T)\} dx\\
+E(v) &= \int v^T A v d\mathbf{x} + \int \tr\{(\nabla v^T)^T B (\nabla v^T)\} d\mathbf{x}\\
 &\quad + \langle \lambda, u-v \rangle + \frac{r}{2} \| u - v \|_2^2\nonumber
 \end{align}
-Let's assume the simplest, homogeneous isotropic case, $A = \alpha/2$ and $B = \beta/2$. The associated Euler-Lagrange equation is found as:
+\todo[inline]{Do not assume this}
+Let's assume the simplest, homogeneous isotropic case, $A = \alpha/2$ 
+and $B = \beta/2$. The associated Euler-Lagrange equation is found as:
 \begin{equation}
 \alpha v - \beta\Delta v + rv = ru + \lambda
 \end{equation}
@@ -404,13 +453,15 @@ where $\mathcal{I}$ denotes the identity operator.
 
 Here, we rewrite the Laplacian as a linear combination of the identity and shift operators:
 \begin{equation}
-\Delta = \mathcal{S}_x^- + \mathcal{S}_x^+ + \mathcal{S}_y^- + \mathcal{S}_y^+ - 4 \mathcal{I}
+\Delta = \sum\limits_d \mathcal{S}_d^- + \mathcal{S}_d^+ - 2 \mathcal{I}
 \end{equation}
-where $\mathcal{S}_{x,y}^{\pm}$ stands for the forward ($+$) and backward ($-$) shift operator along $x$ or $y$, respectively, of which the Fourier transform is found easily as
+where $\mathcal{S}_{d}^{\pm}$ stands for the forward ($+$) and backward ($-$) shift 
+operator along coordinates axis $d$, of which the Fourier transform is found easily as
 \begin{equation}
-\mathcal{F}\{\mathcal{S}_{x,y}^{\pm}\} = e^{\pm i\omega_{x,y}},
+\mathcal{F}\{\mathcal{S}_{d}^{\pm}\} = e^{\pm i\omega_{d}},
 \end{equation}
-where $\omega_{x,y}$ is the normalized pulsation along $x$- and $y$-direction. Accordingly, the Fourier transform of the discrete Laplacian is found as
+where $\omega_{d}$ is the normalized pulsation along $d$-direction. \todo{stop!} Accordingly, the 
+Fourier transform of the discrete Laplacian is found as
 \begin{align}
 \mathcal{F}\{\Delta\} &= e^{-i\omega_x } + e^{i\omega_x } + e^{-i\omega_y } + e^{i\omega_y } - 4\nonumber\\
 &= 2\left( \cos(\omega_x) + \cos(\omega_y) - 2 \right)
@@ -419,42 +470,14 @@ where $\omega_{x,y}$ is the normalized pulsation along $x$- and $y$-direction. A
 The remaining transforms are trivial or can be computed using FFT (as in \citep{estellers_efficient_2011}).
 
 
-\subsection{Lagrangian multiplier update}
+\subsubsection{Lagrangian multiplier update}
 At each iteration, the Lagrangian multipliers are updated as noted before:
 \begin{equation}
 \lambda^{t+1} = \lambda^t + \rho(u^{t+1}-v^{t+1})
 \end{equation}
 
-\subsection{Region descriptor reestimation}
+\subsubsection{Region descriptor reestimation}
 In regular intervals, i.e. after $n$ iterations, the parameters $\mu$ and $\Sigma$ of the involved regions need to be reestimated based on the shifted volumetric samples $w_j'$, $g_j'$ and $o_j'$.
 
-\subsection{Convergence}
+\subsubsection{Convergence}
 In order to ``fixate'' the evolution when close to convergence, it is advised to slightly increase the penalty weight $r$ at each iteration. Note that as can be seen in the above equations, $r$ governs the step-size or  leash-length at each iteration, i.e. the amount by which the new estimate $u$ may move away from the preceding $v$ and vice-versa. 
-
-
-\subsection{Alternative route: Gradient descent}
-If one absolutely wants to avoid the operator splitting and the augmented Lagrangians, then simple gradient descent may work as well (at least under the same simple model circumstances).
-
-At each iteration, we update the distortion along the steepest energy descent:
-\begin{equation}
-\frac{\partial u_k^t}{\partial t} = -\frac{\partial E(u)}{\partial u_k^t}
-\end{equation}
-At this point, we interpret the parameter field $u_k$ to be a continuous function $u(x)$, sampled at the locations $x_k$, and determine the gradient-descent equation\footnote{The same assumption was being made above in the minimization of the regularity terms}:
-\begin{align}
-\frac{\partial u^t}{\partial t} &= - \sum_{i=1}^{N_c} \left[(f(c_i')-\mu_g)^T\Sigma_g^{-1}(f(c_i')-\mu_g) - (f(c_i')-\mu_w)^T\Sigma_w^{-1}(f(c_i')-\mu_w)\right]\psi_{c_i}(x)N_{c_i'}\nonumber\\
-&\quad -\sum_{i=1}^{N_d} \left[(f(d_i')-\mu_o)^T\Sigma_o^{-1}(f(d_i')-\mu_o) - (f(d_i')-\mu_g)^T\Sigma_g^{-1}(f(d_i')-\mu_g)\right]\psi_{d_i}(x)N_{d_i'}\\
-&\quad -\alpha u + \beta\Delta u\nonumber
-\end{align}
-where we have swapped $\psi_k(c_i')$ into $\psi_{c_i}(x)$.
-
-This gradient descent step can be efficiently tackled by discretizing the time in a forward Euler scheme, and making the right hand side semi-implicit in the regularization terms:
-\begin{align}
-\frac{u^{t+1}-u^t}{\tau} &= - \sum_{i=1}^{N_c} \left[(f(c_i')-\mu_g)^T\Sigma_g^{-1}(f(c_i')-\mu_g) - (f(c_i')-\mu_w)^T\Sigma_w^{-1}(f(c_i')-\mu_w)\right]\psi_{c_i}(x)N_{c_i'}\nonumber\\
-&\quad -\sum_{i=1}^{N_d} \left[(f(d_i')-\mu_o)^T\Sigma_o^{-1}(f(d_i')-\mu_o) - (f(d_i')-\mu_g)^T\Sigma_g^{-1}(f(d_i')-\mu_g)\right]\psi_{d_i}(x)N_{d_i'}\nonumber\\
-&\quad -\alpha u^{t+1} + \beta\Delta u^{t+1}
-\end{align}
-where the data terms remain functions of the current estimate $u^t$, i.e. all $c_i' = c_i'(u^t)$ and $d_i' = d_i'(u^t)$. Again, we propose a spectral approach to solve this implicit scheme:
-\begin{equation}
-u^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{u^t/\delta - \sum_{i=1}^{N_c}(\ldots) - \sum_{i=1}^{N_d}(\ldots)  \}}{\mathcal{F}\{(1/\delta+\alpha)\mathcal{I}-\beta\Delta\}} \right\}
-\end{equation}
-It is easily verified, that the same update can be obtained by plugging the AL-update w.r.t. $u$ into the AL-update w.r.t. $v$, and by identifying $r = 1/\delta$ (the only exception is the distortion on which the data-term is being evaluated).
