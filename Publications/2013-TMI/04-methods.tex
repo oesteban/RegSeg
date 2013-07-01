@@ -60,7 +60,7 @@ multiphase label function as level set function ($\Phi_L$) that improves registr
 results.
 
 Naming $\Phi_G$ a generic objective function, a dense deformation field of vectors 
-$u: \mathbb{R}^n \to \mathbb{R}^n$ (tipically $n = \{ 2, 3 \}$) is introduced. 
+$u: \mathbb{R}^n \to \mathbb{R}^n$ (typically $n = \{ 2, 3 \}$) is introduced. 
 Then, the conservation of the morphological description is assumed, such as
 $\Phi_G(\mathbf{x},t) = \Phi_G( \mathbf{x} + du, t + dt ) \implies d\Phi_G(\mathbf{x},t) = 0$, where $d\Phi_G$ is
 the total derivative of $\Phi_G$. Using the chain rule, it can be rewritten as the 
@@ -77,16 +77,37 @@ Therefore, the position of the level set function $\Phi_G$ at time $t$ is given 
 deformation field $u(\mathbf{x},t)$ and the initial level set function $\Phi_G(\mathbf{x},0)$, yielding:
 \begin{equation}
 \frac{\partial u(\mathbf{x},t)}{\partial t} = - \nu( \Phi_G(\mathbf{x} + u(\mathbf{x},t), 0) ) N_{\Phi_G}.
+\label{eq:active_deformation_fields}
 \end{equation}
 
-Here, we propose an active deformation field framework with some differences in
-the formulation of the problem. The main diverging points with respect to
+Here, we propose an \gls{adf} -like framework with some differences in
+the inspiration of the solution. Even though the historical evolution
+of joint segmentation and registration procedures is strongly linked
+to the level sets approximation, our work is based in derivations of
+the \gls{acwe} framework \citep{chan_active_2001}, more specifically 
+\citep{le_guyader_combined_2011}.
+The main diverging points with respect to
 \citep{gorthi_active_2011} are: 1) there is no need for an explicit level set function
 $\Phi_G$, as we replace the level set gradient computation $N_{\Phi_G}$ with shape
 gradients \citep{jehan-besson_dream2s:_2003,herbulot_segmentation_2006}; 2) 
 \todo[inline]{regularization is also based on linear diffusion smoothing REF-thirion,
-but they use a Gaussian filtering)}; 3) optimization is applied in the spectral
+but they use a Gaussian filtering). Maybe \citep{le_guyader_combined_2011} contains
+more regarding this difference, given that they use the same regularization as us. But,
+currently, I do not have enough background to write this second difference}
+\textbf{}; 3) optimization is applied in the spectral
 domain, observing anisotropic and inhomogeneous mappings along each direction.
+With respect \citep{le_guyader_combined_2011}, the main differences are
+the distance function, and the spectral solution to the optimization updates,
+as we shall cover in \autoref{sec:numerical_implementation}.
+
+\todo[inline]{Disclaimer: I've been exploring the joint registration-segmentation
+applications starting from Gorthi's paper. Later, Dominique pointed me out that
+the main inspiration of the design comes from the ACWE world. If one takes a quick
+look on \citep{le_guyader_combined_2011} this is clear. But I did not have time
+yet to read this paper in depth. Fortunately, it does not seem to contain a lot
+of references to literature, so I hope it will be ease to re-formulate this
+section with its contents. Also, the highlighted differences will require an
+update once I fully understand that method}
 
 
 \subsection{Bridging segmentation frameworks}
@@ -261,9 +282,8 @@ P(U) = \underset{\mathbf{x}}\prod \left[ p_0(\mathbf{u}) \, p_1(\mathbf{u}) \rig
 \end{equation}
 
 
-
-
 \subsection{Numerical Implementation}
+\label{sec:numerical_implementation}
 %
 Let us denote $\{c_i\}_{i=1 \ldots N_c}$ the nodes of one or several shape-prior
 surface(s). In our application, precise tissue interfaces of interest 
@@ -302,7 +322,7 @@ Thus, we now estimate region descriptors of the \gls{dwi} features
 $f(\mathbf{x})$ of the regions defined by the priors in \gls{dwi} space.
 %
 Using the region descriptors derived in \autoref{sec:methods_map}, we propose
-an \gls{acwe}-like, piece-wise constant, variational image segmentation
+an \gls{adf}-like, \gls{acwe}-based, piece-wise constant, image segmentation
 model (where the unknown is the deformation field)
 \cite{chan_active_2001} with the energy functional obtained in 
 \eqref{eq:final_map_energy}. This inverse problem is ill-posed
@@ -321,8 +341,33 @@ These regularity terms ensure that the segmenting contours in
 \gls{dwi} space are still close to their native shape. The model
 easily allows to incorporate inhomogeneous and anisotropic 
 regularization \cite{nagel_investigation_1986} to better regularize
-the \gls{epi} distortion. \\
-%
+the \gls{epi} distortion.
+
+
+\subsubsection{Shape gradients}
+To compute the gradient-descent of the data-term domain integrals
+in \eqref{eq:complete_energy} with respect to the underlying 
+deformation field, we use shape gradients 
+\cite{jehan-besson_dream2s:_2003,herbulot_segmentation_2006}.
+
+Let $\Omega$ be an image domain and $d\Omega$ its boundary. Further, 
+$r(\mathbf{x})$ is an ``arbitrary'' function over the image domain. 
+We now derive the domain integral w.r.t. the contour evolution 
+parameter $t$ (time):
+\begin{equation}
+\frac{\partial}{\partial t} \int_\Omega r(\mathbf{x}) d\mathbf{x} = \int_\Omega \frac{\partial r}{\partial t}(\mathbf{x}) d\mathbf{x} - \int_{d\Omega} r(\mathbf{x}) \left\langle \frac{\partial{d\Omega}}{\partial t}, N_{d\Omega}\right\rangle d\mathbf{x}
+\label{eq:shape_gradients}
+\end{equation}
+where $\left\langle\frac{\partial{d\Omega}}{\partial t}, N_{d\Omega}\right\rangle$ is 
+the projection of the boundary movement on the unit inward normal. We recall
+here that equation \eqref{eq:shape_gradients} stands the bridge between the 
+explicit level set formulations surveyed in \autoref{sec:methods_background}
+by updating the distortion along the steepest energy descent:
+\begin{equation}
+\frac{\partial u(\mathbf{x},t)}{\partial t} = - \frac{\partial E(u)}{\partial u},
+\end{equation}
+what closes the loop with the general expression of the \glspl{adf} introduced in
+\eqref{eq:active_deformation_fields}.
 
 \subsubsection{Operator splitting}
 In order to make the energy minimization computationally more tractable, 
@@ -360,26 +405,6 @@ v^{t+1} &=& \argmin_{v} AL(u^{t+1},v,\lambda^t,r)\\
 where typically $0 < \rho < r$. The two sub-minimization problems will 
 now be much easier to handle than the original complete problem.
 
-\subsubsection{Shape gradients}
-To compute the gradient-descent of the data-term domain integrals with 
-respect to the underlying deformation field, we use shape gradients 
-\cite{jehan-besson_dream2s:_2003,herbulot_segmentation_2006}. A little 
-bit of theory is therefore in order.
-
-Let $\Omega$ be an image domain and $d\Omega$ its boundary. Further, $r(\mathbf{x})$ 
-is an ``arbitrary'' function over the image domain. We now derive the domain 
-integral w.r.t. the contour evolution parameter $t$ (time):
-\begin{equation}
-\frac{\partial}{\partial t} \int_\Omega r(\mathbf{x}) d\mathbf{x} = \int_\Omega \frac{\partial r}{\partial t}(\mathbf{x}) d\mathbf{x} - \int_{d\Omega} r(\mathbf{x}) \left\langle \frac{\partial{d\Omega}}{\partial t}, N_{d\Omega}\right\rangle d\mathbf{x}
-\label{eq:shape_gradients}
-\end{equation}
-where $\left\langle\frac{\partial{d\Omega}}{\partial t}, N_{d\Omega}\right\rangle$ is 
-the projection of the boundary movement on the unit inward normal. We recall
-here that equation \eqref{eq:shape_gradients} stands the bridge between the 
-explicit level set formulations surveyed in \autoref{sec:methods_background} 
-with the presented approach in setting up the velocity function.
-
-
 \subsubsection{Minimization w.r.t. $u$}
 The first minimization problem optimizes the data-term. The problem is equivalent 
 to minimizing the following energy:
@@ -404,31 +429,36 @@ and penalty terms:
 \end{multline}
 where $O(l)$ is a function that returns the neighboring region at $\mathbf{x}$ (i.e.
 the region \emph{outside} the current location in the contour). For the shake of
-simple notation, we will refer as $c'$ to the positions of points belonging to
-any of the existing contours $d\Omega_l$.
+simple notation, we will refer as $c_i$ to the positions 
+of points belonging to any of the existing contours $d\Omega_l$ (with 
+$i \in [1 \ldots N_c]$ and $N_c$ the total number of control points).
 Given the deformation field interpolation stated in \autoref{sec:deformation_field}, 
 the boundary moves according to
 \begin{equation}
-\frac{\partial c'}{\partial u_k} = \psi_k(c')\,e_a
+\frac{\partial c_i}{\partial u_k} = \psi_k(c_i)\,e_a
 \end{equation}
 where $e_a$ is the unit vector along direction $a \in \mathbb{R}^n$ and $n$ the dimension
-of the image. Thus
+of the image. Thus, if we name the inward unit normal of the corresponding transformed 
+contour at position $c'_i$ as $\hat{\mathbf{n}}_{c'_i}$,
 \begin{equation}
-\left\langle\frac{\partial c'}{\partial u_k}, N_{c'}\right\rangle = \psi_k(c')\,\hat{\mathbf{n}}_{c'}
+\left\langle\frac{\partial c_i}{\partial u_k}, N_{c_i}\right\rangle = \psi_k(c_i)\,\hat{\mathbf{n}}_{c'_i}.
 \end{equation}
 The discrete implementation of \eqref{eq:energy_gradient} is straightforward as
 we have a triangularized mesh representation of the interfacing surfaces:
 \begin{multline}
-\frac{\partial E}{\partial u_k} = \sum\limits_l \sum\limits_{c'} \left[ \Delta^2_{O(l)} (\mathbf{f}) - \Delta^2_l (\mathbf{f}) \right]
-\, \psi_l(c')\,\hat{\mathbf{n}}_{c'} \\
-+ \lambda_k + r(u_k - v_k) = 0
+\frac{\partial E}{\partial u_k} = \sum\limits_{N_c} \left[ \Delta^2_{O(l)} (\mathbf{f}) - \Delta^2_l (\mathbf{f}) \right]
+\, \psi_{c_i}(\mathbf{x}_k)\,\hat{\mathbf{n}}_{c'_i} \\
++ \lambda_k + r(u_k - v_k) = 0,
 \label{eq:discrete_energy_gradient}
 \end{multline}
-The optimal distortion $u_k$ is found at each iteration as:
+where we have swapped $\psi_k(c_i)$ by $\psi_{c_i}(\mathbf{x}_k)$ for
+convenience in implementation, taking the advantage that they are
+equivalent. Subsequently, the optimal distortion $u_k$ 
+is found at each iteration as:
 \begin{multline}
 u_k^{t+1} = v_k^t - \frac{1}{r}\lambda_k^{t} \\
-- \frac{1}{r} \sum\limits_l \sum\limits_{c'} \left[ \Delta^2_{O(l)} (\mathbf{f}) - \Delta^2_l (\mathbf{f}) \right]
-\, \psi_k(c')\,\hat{\mathbf{n}}_{c'}
+- \frac{1}{r} \sum\limits_{N_c} \left[ \Delta^2_{O(l)} (\mathbf{f}) - \Delta^2_l (\mathbf{f}) \right]
+\, \psi_{c_i}(\mathbf{x}_k)\,\hat{\mathbf{n}}_{c'_i}
 \label{eq:update_u}
 \end{multline}
 
@@ -439,15 +469,13 @@ For the optimization w.r.t. $v$, the relevant energy writes
 E(v) &= \int v^T A v d\mathbf{x} + \int \tr\{(\nabla v^T)^T B (\nabla v^T)\} d\mathbf{x}\\
 &\quad + \langle \lambda, u-v \rangle + \frac{r}{2} \| u - v \|_2^2\nonumber
 \end{align}
-\todo[inline]{Do not assume this}
-Let's assume the simplest, homogeneous isotropic case, $A = \alpha/2$ 
-and $B = \beta/2$. The associated Euler-Lagrange equation is found as:
+The associated Euler-Lagrange equation is found as:
 \begin{equation}
-\alpha v - \beta\Delta v + rv = ru + \lambda
+2 ( A v - B \Delta v ) + rv = ru + \lambda
 \end{equation}
 which easily translates into Fourier domain:
 \begin{equation}
-v^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{ru + \lambda\}}{\mathcal{F}\{(\alpha+r)\mathcal{I}-\beta\Delta\}} \right\}
+v^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{ru + \lambda\}}{\mathcal{F}\{( 2 A+r)\mathcal{I}-2 B \Delta\}} \right\}
 \end{equation}
 where $\mathcal{I}$ denotes the identity operator.
 
@@ -460,14 +488,14 @@ operator along coordinates axis $d$, of which the Fourier transform is found eas
 \begin{equation}
 \mathcal{F}\{\mathcal{S}_{d}^{\pm}\} = e^{\pm i\omega_{d}},
 \end{equation}
-where $\omega_{d}$ is the normalized pulsation along $d$-direction. \todo{stop!} Accordingly, the 
+where $\omega_{d}$ is the normalized pulsation along $d$-direction. Accordingly, the 
 Fourier transform of the discrete Laplacian is found as
-\begin{align}
-\mathcal{F}\{\Delta\} &= e^{-i\omega_x } + e^{i\omega_x } + e^{-i\omega_y } + e^{i\omega_y } - 4\nonumber\\
-&= 2\left( \cos(\omega_x) + \cos(\omega_y) - 2 \right)
-\end{align}
+\begin{equation}
+\mathcal{F}\{\Delta\} = \sum\limits_d e^{-i\omega_d } + e^{i\omega_d } - 2 = \sum\limits_d \left( 2\cos(\omega_d) - 2 \right)
+\end{equation}
 
-The remaining transforms are trivial or can be computed using FFT (as in \citep{estellers_efficient_2011}).
+The remaining transforms are trivial or can be computed using the \gls{fft} 
+as in \citep{estellers_efficient_2011}.
 
 
 \subsubsection{Lagrangian multiplier update}
@@ -477,7 +505,26 @@ At each iteration, the Lagrangian multipliers are updated as noted before:
 \end{equation}
 
 \subsubsection{Region descriptor reestimation}
-In regular intervals, i.e. after $n$ iterations, the parameters $\mu$ and $\Sigma$ of the involved regions need to be reestimated based on the shifted volumetric samples $w_j'$, $g_j'$ and $o_j'$.
+In regular intervals, after certain number of iterations,
+the parameters $\Theta_l$ of the regions can be reestimated 
+based on the shifted volumetric samples 
+$\mathbf{x}' = \mathbf{x_0} + u(\mathbf{x})$.
 
 \subsubsection{Convergence}
-In order to ``fixate'' the evolution when close to convergence, it is advised to slightly increase the penalty weight $r$ at each iteration. Note that as can be seen in the above equations, $r$ governs the step-size or  leash-length at each iteration, i.e. the amount by which the new estimate $u$ may move away from the preceding $v$ and vice-versa. 
+In order to ``fixate'' the evolution when close to convergence,
+it is advised to slightly increase the penalty weight $r$ at each 
+iteration. Note that as can be seen in the above equations, $r$ 
+governs the step-size or leash-length at each iteration, i.e. the 
+amount by which the new estimate $u$ may move away from the preceding 
+$v$ and vice-versa. 
+
+\subsubsection{Efficient field densification}
+As long as the dense deformation field is iteratively interpolated
+from the same set of control points that define the $L-1$ contours,
+it is possible to pre-cache all the $\psi_k(c_i)$ weights into a
+sparse matrix for fast densification. As well, we achieve a 
+diffeomorphic transform by ... 
+\todo[inline]{this is actually false (IMHO), so far :(. We will need
+to add some more conditions to the interopolating kernel so that
+the original values of the transform in $c_i$ can be recovered from 
+interpolated values of $u_k$}
