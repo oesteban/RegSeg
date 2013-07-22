@@ -142,6 +142,7 @@ public:
 
 	inline VectorType GetControlPointData( const size_t id );
 	inline VectorType GetGridPointData( const size_t id );
+	inline VectorType GetCoefficient( const size_t id );
 	inline bool SetControlPointData( const size_t id, VectorType pi );
 	inline bool SetGridPointData( const size_t id, VectorType pi );
 
@@ -211,7 +212,8 @@ protected:
 	PointsList m_GridPoints;    // Serialized k points in a grid
 
 	DimensionVector m_ControlPointsData[3]; // Nc points in the mesh
-	DimensionVector m_GridPointsData[3];    // Serialized k points in a grid
+	DimensionVector m_GridPointsData[3];    // Serialized k values in a grid
+	DimensionVector m_Coeff[3];             // Serialized k coefficients in the grid
 
 	WeightsMatrix   m_Phi;
 	WeightsMatrix   m_S;
@@ -222,6 +224,7 @@ protected:
 	vnl_sparse_lu* m_System;
 
 	typename KernelFunctionType::Pointer  m_KernelFunction;
+	ScalarType m_KernelNorm;
 	ArrayType m_Sigma;
 
 	bool            m_GridDataChanged;
