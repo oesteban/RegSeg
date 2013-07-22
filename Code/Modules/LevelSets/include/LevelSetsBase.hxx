@@ -263,8 +263,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			pid = p_it.Index();
 
 			// Interpolate the value of the field in the point
-			desp = interp->Evaluate( currentPoint );
-			desp_back = this->m_FieldInterpolator->GetGridPointData( gpid );
+			desp_back = interp->Evaluate( currentPoint );
+			desp = this->m_FieldInterpolator->GetGridPointData( gpid );
 			norm = desp.GetNorm();
 			// Add vector to the point
 			if( norm > 1.0e-3 ) {

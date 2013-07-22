@@ -12,6 +12,7 @@
 #include <itkImage.h>
 #include "SparseMatrixTransform.h"
 #include "DisplacementFieldFileWriter.h"
+#include "DisplacementFieldComponentsFileWriter.h"
 
 using namespace rstk;
 
@@ -27,7 +28,7 @@ typedef itk::Vector<ScalarType, 3 > VectorType;
 typedef itk::Image< VectorType, 3 > FieldType;
 typedef SparseMatrixTransform<ScalarType, 3> Transform;
 typedef Transform::Pointer                   TPointer;
-typedef rstk::DisplacementFieldFileWriter<FieldType> Writer;
+typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> Writer;
 
 namespace rstk {
 
@@ -35,9 +36,10 @@ class TransformTests : public ::testing::Test {
 public:
 	virtual void SetUp() {
 		m_N = 3;
-		m_Sigma[0] = 2.1;
-		m_Sigma[1] = 2.1;
-		m_Sigma[2] = 2.1;
+
+		m_Sigma[0] = 4.1;
+		m_Sigma[1] = 4.1;
+		m_Sigma[2] = 4.1;
 
 		m_field = FieldType::New();
 		double origin[3] = { 0.0, 0.0, 0.0 };
@@ -64,9 +66,9 @@ public:
 		m_transform->SetK( m_K );
 		m_transform->SetSigma( m_Sigma );
 
-		m_cp[0][0] = 5.7;
-		m_cp[0][1] = 12.2;
-		m_cp[0][2] = 3.4;
+		m_cp[0][0] = 2.0;
+		m_cp[0][1] = 2.0;
+		m_cp[0][2] = 2.0;
 		m_vectors[0][0] = -10.5;
 		m_vectors[0][1] = 7.0;
 		m_vectors[0][2] = -3.0;
@@ -84,6 +86,7 @@ public:
 		m_vectors[2][0] = -12.0;
 		m_vectors[2][1] = 27.0;
 		m_vectors[2][2] = 13.0;
+
 
 		for( size_t i = 0; i<m_N; i++ ) {
 			m_transform->SetControlPoint    (i,m_cp[i]);
@@ -137,16 +140,20 @@ TEST_F( TransformTests, SparseMatrixBackwardIDWTransformTest ) {
 	bool is_equal = true;
 
 	m_transform->ComputeGridPoints();
-
-	for( size_t i = 0; i<m_N; i++ ){
-		v[i] = m_transform->GetControlPointData(i);
-		std::cout << v[i] << " vs. " << this->m_vectors[i] << std::endl;
-	}
-
-	for( size_t i = 0; i<m_K; i++ ){
-		m_transform->SetGridPointData(i,m_field->GetPixel( m_field->ComputeIndex(i)));
-	}
 	m_transform->ComputeControlPoints();
+
+	VectorType v2;
+	for( size_t i = 0; i<m_K; i++ ){
+		v2 = m_transform->GetCoefficient(i);
+		if (v2.GetNorm() > 0.0 ) {
+			m_field->SetPixel( m_field->ComputeIndex(i), v2);
+		}
+	}
+
+	Writer::Pointer w = Writer::New();
+	w->SetInput( m_field );
+	w->SetFileName( "coefficients_field.nii.gz");
+	w->Update();
 
 	for( size_t i = 0; i<m_N; i++ ){
 		v[i] = m_transform->GetControlPointData(i);
