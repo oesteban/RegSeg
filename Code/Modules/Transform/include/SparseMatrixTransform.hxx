@@ -152,10 +152,11 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
 			if (wi > 0.0) {
 				this->m_Phi.put(row, col, wi);
-				this->m_InvertPhi.put( col, row, wi);
+				this->m_InvertPhi.put( col, row, wi );
 			}
 		}
 	}
+	//this->m_Phi.normalize_rows();
 }
 
 template< class TScalarType, unsigned int NDimensions >

@@ -37,9 +37,9 @@ public:
 	virtual void SetUp() {
 		m_N = 3;
 
-		m_Sigma[0] = 4.1;
-		m_Sigma[1] = 4.1;
-		m_Sigma[2] = 4.1;
+		m_Sigma[0] = 8.1;
+		m_Sigma[1] = 8.1;
+		m_Sigma[2] = 8.1;
 
 		m_field = FieldType::New();
 		double origin[3] = { 0.0, 0.0, 0.0 };
