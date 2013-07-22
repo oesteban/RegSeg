@@ -56,6 +56,7 @@
 #include <vnl/vnl_sparse_matrix.h>
 #include <vnl/vnl_vector.h>
 #include <vnl/vnl_matrix.h>
+#include <vnl/algo/vnl_sparse_lu.h>
 
 namespace rstk {
 
@@ -204,6 +205,7 @@ protected:
 
 
 	void ComputePhi( void );
+	void ComputeS( void );
 
 	PointsList m_ControlPoints; // Nc points in the mesh
 	PointsList m_GridPoints;    // Serialized k points in a grid
@@ -212,9 +214,12 @@ protected:
 	DimensionVector m_GridPointsData[3];    // Serialized k points in a grid
 
 	WeightsMatrix   m_Phi;
+	WeightsMatrix   m_S;
 	WeightsMatrix   m_InvertPhi;
 	size_t          m_N;
 	size_t          m_K;
+
+	vnl_sparse_lu* m_System;
 
 	typename KernelFunctionType::Pointer  m_KernelFunction;
 	ArrayType m_Sigma;
