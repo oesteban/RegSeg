@@ -42,16 +42,20 @@ public:
 		m_field = FieldType::New();
 		double origin[3] = { 0.0, 0.0, 0.0 };
 		FieldType::SizeType size;
-		size.Fill( 20 );
+		size.Fill( 10 );
 		FieldType::DirectionType dir;
 		dir.SetIdentity();
+
+		VectorType zero;
+		zero.Fill( 0.0 );
 
 		m_field->SetOrigin( origin );
 		m_field->SetRegions( size );
 		m_field->SetDirection( dir );
+		m_field->SetSpacing( 2.0 );
 
 		m_field->Allocate();
-		m_field->FillBuffer( itk::NumericTraits<VectorType>::Zero );
+		m_field->FillBuffer( zero );
 
 		m_K = m_field->GetLargestPossibleRegion().GetNumberOfPixels();
 
@@ -63,23 +67,23 @@ public:
 		m_cp[0][0] = 5.7;
 		m_cp[0][1] = 12.2;
 		m_cp[0][2] = 3.4;
-		m_vectors[0][0] = -1.5;
-		m_vectors[0][1] = 0.7;
-		m_vectors[0][2] = -0.3;
+		m_vectors[0][0] = -10.5;
+		m_vectors[0][1] = 7.0;
+		m_vectors[0][2] = -3.0;
 
 		m_cp[1][0] = 15.7;
 		m_cp[1][1] = 2.2;
 		m_cp[1][2] = 3.4;
-		m_vectors[1][0] = 1.5;
-		m_vectors[1][1] = 0.7;
-		m_vectors[1][2] = 0.3;
+		m_vectors[1][0] = 15.0;
+		m_vectors[1][1] = 7.0;
+		m_vectors[1][2] = 3.0;
 
 		m_cp[2][0] = 3.7;
 		m_cp[2][1] = 5.2;
 		m_cp[2][2] = 13.4;
-		m_vectors[2][0] = -1.2;
-		m_vectors[2][1] = 2.7;
-		m_vectors[2][2] = 1.3;
+		m_vectors[2][0] = -12.0;
+		m_vectors[2][1] = 27.0;
+		m_vectors[2][2] = 13.0;
 
 		for( size_t i = 0; i<m_N; i++ ) {
 			m_transform->SetControlPoint    (i,m_cp[i]);
@@ -110,8 +114,12 @@ public:
 TEST_F( TransformTests, SparseMatrixForwardIDWTransformTest ) {
 	m_transform->ComputeGridPoints();
 
+	VectorType v;
 	for( size_t i = 0; i<m_K; i++ ){
-		m_field->SetPixel( m_field->ComputeIndex(i), m_transform->GetGridPointData(i));
+		v = m_transform->GetGridPointData(i);
+		if (v.GetNorm() > 1.0e-3 ) {
+			m_field->SetPixel( m_field->ComputeIndex(i), v);
+		}
 	}
 
 	Writer::Pointer w = Writer::New();
@@ -133,6 +141,10 @@ TEST_F( TransformTests, SparseMatrixBackwardIDWTransformTest ) {
 	for( size_t i = 0; i<m_N; i++ ){
 		v[i] = m_transform->GetControlPointData(i);
 		std::cout << v[i] << " vs. " << this->m_vectors[i] << std::endl;
+	}
+
+	for( size_t i = 0; i<m_K; i++ ){
+		m_transform->SetGridPointData(i,m_field->GetPixel( m_field->ComputeIndex(i)));
 	}
 	m_transform->ComputeControlPoints();
 

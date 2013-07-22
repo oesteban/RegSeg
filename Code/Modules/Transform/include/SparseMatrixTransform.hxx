@@ -72,7 +72,6 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		this->m_ControlPointsData[dim] = DimensionVector(N);
 		this->m_ControlPointsData[dim].fill( 0.0 );
 	}
-
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -90,6 +89,38 @@ SparseMatrixTransform<TScalarType,NDimensions>
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
+::ComputeS() {
+	PointType s, x;
+	ScalarType wi;
+	size_t row, col;
+	VectorType r;
+
+	this->m_S = WeightsMatrix(this->m_K,this->m_K);
+
+	for( row = 0; row < this->m_K; row++ ) {
+		s = this->m_GridPoints[row];
+
+		for ( col=0; col < this->m_K; col++) {
+			wi=1.0;
+			x = this->m_GridPoints[col];
+			r = s - x;
+			for (size_t i = 0; i<Dimension; i++) {
+				wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
+				if( wi < vnl_math::eps ) break;
+			}
+
+			if (wi > 1e-3) {
+				this->m_S.put(row, col, wi);
+			}
+		}
+	}
+
+	this->m_System = new vnl_sparse_lu( this->m_S, vnl_sparse_lu::estimate_condition);
+}
+
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputePhi() {
 	this->m_Phi = WeightsMatrix(this->m_K, this->m_N);
 	this->m_InvertPhi = WeightsMatrix( this->m_N, this->m_K );
@@ -97,7 +128,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	ScalarType wi, norm;
 	PointType ci, pi;
 	size_t row, col;
-	VectorType dist;
+	VectorType r;
 
 	// Walk the grid region
 	for( row = 0; row < this->m_K; row++ ) {
@@ -106,9 +137,9 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		for ( col=0; col < this->m_N; col++) {
 			wi=1.0;
 			ci = this->m_ControlPoints[col];
-			dist = ci - pi;
+			r = ci - pi;
 			for (size_t i = 0; i<Dimension; i++) {
-				wi*= this->m_KernelFunction->Evaluate( fabs( dist[i] ) / m_Sigma[i] );
+				wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
 				if( wi < vnl_math::eps ) break;
 			}
 
@@ -119,7 +150,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		}
 	}
 
-	this->m_InvertPhi.normalize_rows();
+	//this->m_InvertPhi.normalize_rows();
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -156,12 +187,24 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
 	// TODO Check if GridPointsData changed
 
+	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
+		this->ComputeS();
+	}
+
+	// Compute coefficients
+	DimensionVector coeff[3];
+
+	for( size_t i = 0; i < Dimension; i++ ) {
+		coeff[i] = DimensionVector(this->m_K);
+		this->m_System->solve( this->m_GridPointsData[i], &coeff[i] );
+	}
+
 	for (size_t i = 0; i < Dimension; i++ ) {
 		this->m_ControlPointsData[i].fill(0.0);
 	}
 
     for ( size_t i = 0; i < Dimension; i++ ) {
-    	this->m_InvertPhi.mult(this->m_GridPointsData[i], this->m_ControlPointsData[i] );
+    	this->m_InvertPhi.mult( coeff[i], this->m_ControlPointsData[i] );
     	//this->m_Phi.pre_mult( this->m_GridPointsData[i], this->m_ControlPointsData[i] );
     }
 
