@@ -49,7 +49,7 @@ LevelSetsOptimizer<TLevelSetsFunction>::LevelSetsOptimizer() {
 	this->m_CurrentIteration   = 0;
 	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
-	this->m_GridSize.Fill( 40 );
+	this->m_GridSize.Fill( 15 );
 }
 
 template< typename TLevelSetsFunction >

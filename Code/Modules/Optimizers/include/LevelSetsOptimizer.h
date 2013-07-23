@@ -142,6 +142,8 @@ public:
 
 	itkSetMacro( GridSize, GridSizeType );
 
+	void SetGridSize( double val ) { this->m_GridSize.Fill(val); }
+
 	/** Get the number of iterations. */
 	itkGetConstReferenceMacro(NumberOfIterations, SizeValueType);
 
