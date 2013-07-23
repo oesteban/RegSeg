@@ -67,11 +67,11 @@ void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
 	// Set number of control points in the sparse-dense interpolator
-	size_t nControlPoints = 0;
+	size_t nPoints = 0;
 	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-		nControlPoints+= this->m_CurrentContourPosition[contid]->GetNumberOfPoints();
+		nPoints+= this->m_CurrentContourPosition[contid]->GetNumberOfPoints();
 	}
-	this->m_FieldInterpolator->SetN(nControlPoints);
+	this->m_FieldInterpolator->SetN(nPoints);
 
 
 	// Initialize corresponding ROI /////////////////////////////
@@ -101,7 +101,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	size_t cpid = 0;
 	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
 		ContourOuterRegions outerVect;
-		ControlPointsVector controlPoints;
+		PointsVector points;
 
 		// Compute mesh of normals
 		NormalFilterPointer normalsFilter = NormalFilterType::New();
@@ -110,7 +110,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 		ContourPointer normals = normalsFilter->GetOutput();
 		outerVect.resize( normals->GetNumberOfPoints() );
-		controlPoints.resize( normals->GetNumberOfPoints() );
+		points.resize( normals->GetNumberOfPoints() );
 
 		typename ContourType::PointsContainerConstIterator c_it  = normals->GetPoints()->Begin();
 		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
@@ -123,8 +123,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		while( c_it != c_end ) {
 			pid = c_it.Index();
 			p = normals->GetPoint(pid);
-			controlPoints[pid] = p;
-			this->m_FieldInterpolator->SetControlPoint( cpid, p );
+			points[pid] = p;
+			this->m_FieldInterpolator->SetPoint( cpid, p );
 
 			if( this->m_NumberOfContours>1 )
 				normals->GetPointData( pid, &ni );
@@ -132,7 +132,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			++c_it;
 			cpid++;
 		}
-		this->m_ShapePrior.push_back( controlPoints );
+		this->m_ShapePrior.push_back( points );
 
 		if( this->m_NumberOfContours>1 )
 			this->m_OuterList.push_back( outerVect );
@@ -150,12 +150,12 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	// Set up grid points in the sparse-dense interpolator
 	if( this->m_GradientMap.IsNotNull() ) {
 		PointType p;
-		size_t nGridPoints = this->m_GradientMap->GetLargestPossibleRegion().GetNumberOfPixels();
-		this->m_FieldInterpolator->SetK( nGridPoints );
+		size_t nNodes = this->m_GradientMap->GetLargestPossibleRegion().GetNumberOfPixels();
+		this->m_FieldInterpolator->SetK( nNodes );
 
-		for ( size_t gid = 0; gid < nGridPoints; gid++ ) {
+		for ( size_t gid = 0; gid < nNodes; gid++ ) {
 			this->m_GradientMap->TransformIndexToPhysicalPoint( this->m_GradientMap->ComputeIndex( gid ), p );
-			this->m_FieldInterpolator->SetGridPoint( gid, p );
+			this->m_FieldInterpolator->SetNode( gid, p );
 		}
 	} else {
 		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
@@ -226,14 +226,14 @@ typename LevelSetsBase<TReferenceImageType, TCoordRepType>::MeasureType
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::UpdateContour(const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::FieldType* newField ) {
 	// Copy newField values to interpolator
-	size_t nGridPoints = newField->GetLargestPossibleRegion().GetNumberOfPixels();
-	const VectorType* gridPointsBuffer = newField->GetBufferPointer();
+	size_t nNodes = newField->GetLargestPossibleRegion().GetNumberOfPixels();
+	const VectorType* NodesBuffer = newField->GetBufferPointer();
 	VectorType v;
 	MeasureType maxNorm = 0.0;
-	for( size_t gpid = 0; gpid < nGridPoints; gpid++ ) {
-		v =  *( gridPointsBuffer + gpid );
+	for( size_t gpid = 0; gpid < nNodes; gpid++ ) {
+		v =  *( NodesBuffer + gpid );
 		if ( v.GetNorm()>0 ) {
-			this->m_FieldInterpolator->SetGridPointData( gpid, v );
+			this->m_FieldInterpolator->SetNodeData( gpid, v );
 
 			if( v.GetNorm()>maxNorm) maxNorm=v.GetNorm();
 		}
@@ -244,7 +244,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 #endif
 
 
-	this->m_FieldInterpolator->ComputeControlPoints();
+	this->m_FieldInterpolator->Interpolate();
 
 	MeasureType norm;
 	MeasureType meanNorm = 0.0;
@@ -277,7 +277,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 			// Interpolate the value of the field in the point
 			desp_back = interp->Evaluate( currentPoint );
-			desp = this->m_FieldInterpolator->GetGridPointData( gpid );
+			desp = this->m_FieldInterpolator->GetNodeData( gpid );
 			norm = desp.GetNorm();
 			// Add vector to the point
 			if( norm > 1.0e-3 ) {
@@ -391,7 +391,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
 			ni*= gradient;
 			normals->SetPointData( pid, ni );
-			this->m_FieldInterpolator->SetControlPointData(cpid, ni);
+			this->m_FieldInterpolator->SetPointData(cpid, ni);
 			++c_it;
 			cpid++;
 
@@ -407,7 +407,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 #endif
 
 	// Interpolate sparse velocity field to targetDeformation
-	this->m_FieldInterpolator->ComputeGridPoints();
+	this->m_FieldInterpolator->ComputeNodes();
 
 	VectorType* gmBuffer = this->m_GradientMap->GetBufferPointer();
 	size_t nPoints = this->m_GradientMap->GetLargestPossibleRegion().GetNumberOfPixels();
@@ -415,7 +415,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	sumGradient = 0.0;
 	for( size_t gpid = 0; gpid<nPoints; gpid++ ) {
-		v = this->m_FieldInterpolator->GetGridPointData( gpid );
+		v = this->m_FieldInterpolator->GetNodeData( gpid );
 		if ( v.GetNorm() > 0 ) {
 			this->m_GradientMap->SetPixel( this->m_GradientMap->ComputeIndex(gpid), v);
 			sumGradient+=v.GetNorm();

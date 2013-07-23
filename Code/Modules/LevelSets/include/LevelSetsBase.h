@@ -204,8 +204,8 @@ public:
 
 	typedef typename std::vector< ROIPixelType >             ContourOuterRegions;
 	typedef typename std::vector< ContourOuterRegions >      ContourOuterRegionsList;
-	typedef typename std::vector< PointType >                ControlPointsVector;
-	typedef typename std::vector< ControlPointsVector >      ControlPointsList;
+	typedef typename std::vector< PointType >                PointsVector;
+	typedef typename std::vector< PointsVector >             PointsList;
 
 	void CopyInformation( const FieldType* field);
 
@@ -266,7 +266,7 @@ protected:
 	DisplacementTransformPointer m_Transform;
 	ReferenceImageConstPointer m_ReferenceImage;
 	ContourOuterRegionsList m_OuterList;
-	ControlPointsList m_ShapePrior;
+	PointsList m_ShapePrior;
 	bool m_Modified;
 	bool m_RegionsModified;
 	size_t m_NumberOfContours;

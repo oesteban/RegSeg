@@ -134,17 +134,17 @@ public:
     	this->SetK( K );
     }
 
-	void ComputeGridPoints( void );
-	void ComputeControlPoints( void );
+    DimensionVector ComputeNodes( void );
+	void Interpolate( void );
 
-	inline void SetControlPoint( size_t id, const PointType pi );
-	inline void SetGridPoint   ( size_t id, const PointType pi );
+	inline void SetPoint( size_t id, const PointType pi );
+	inline void SetNode   ( size_t id, const PointType pi );
 
-	inline VectorType GetControlPointData( const size_t id );
-	inline VectorType GetGridPointData( const size_t id );
+	inline VectorType GetPointData( const size_t id );
+	inline VectorType GetNodeData( const size_t id );
 	inline VectorType GetCoefficient( const size_t id );
-	inline bool SetControlPointData( const size_t id, VectorType pi );
-	inline bool SetGridPointData( const size_t id, VectorType pi );
+	inline bool SetPointData( const size_t id, VectorType pi );
+	inline bool SetNodeData( const size_t id, VectorType pi );
 
 	// Virtual members inherited from Transform
 	virtual void SetParameters(const ParametersType & parameters);
@@ -208,11 +208,11 @@ protected:
 	void ComputePhi( void );
 	void ComputeS( void );
 
-	PointsList m_ControlPoints; // Nc points in the mesh
-	PointsList m_GridPoints;    // Serialized k points in a grid
+	PointsList m_Points; // Nc points in the mesh
+	PointsList m_Nodes;    // Serialized k points in a grid
 
-	DimensionVector m_ControlPointsData[3]; // Nc points in the mesh
-	DimensionVector m_GridPointsData[3];    // Serialized k values in a grid
+	DimensionVector m_PointsData[3]; // Nc points in the mesh
+	DimensionVector m_NodesData[3];    // Serialized k values in a grid
 	DimensionVector m_Coeff[3];             // Serialized k coefficients in the grid
 
 	WeightsMatrix   m_Phi;
