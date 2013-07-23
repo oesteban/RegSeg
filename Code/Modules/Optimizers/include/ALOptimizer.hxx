@@ -51,6 +51,7 @@
 #include <cmath>
 #include <itkComplexToRealImageFilter.h>
 #include "DisplacementFieldFileWriter.h"
+#include "DisplacementFieldComponentsFileWriter.h"
 #include <itkMeshFileWriter.h>
 #include <sstream>
 #include <iostream>
@@ -68,7 +69,7 @@ ALOptimizer<TLevelSetsFunction>::ALOptimizer() {
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_R =  1.0e3;
+	this->m_R =  1.0e2;
 	this->m_A.SetIdentity();
 	this->m_A(0,0) = 0.0e-1;
 	this->m_A(1,1) = 0.0e-1;
@@ -77,7 +78,7 @@ ALOptimizer<TLevelSetsFunction>::ALOptimizer() {
 	this->m_B(0,0) = 0.0e-1;
 	this->m_B(1,1) = 0.0e-1;
 	this->m_B(2,2) = 0.0e-1;
-	this->m_Rho = 0.75 * this->m_R; // 0 < rho < r
+	this->m_Rho = 0.01 * this->m_R; // 0 < rho < r
 }
 
 template< typename TLevelSetsFunction >
@@ -197,7 +198,7 @@ void ALOptimizer<TLevelSetsFunction>::Resume() {
 			ss.str("");
 			ss << "field_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
 			p->SetFileName( ss.str().c_str() );
-			p->SetInput( this->m_uField );
+			p->SetInput( this->m_uFieldNext );
 			p->Update();
 
 			typedef itk::ImageFileWriter< typename TLevelSetsFunction::ProbabilityMapType > MapWriter;
@@ -268,6 +269,18 @@ void ALOptimizer<TLevelSetsFunction>::UpdateU(){
 	}
 
 	DeformationFieldConstPointer shapeGradient = this->m_LevelSetsFunction->GetGradientMap();
+
+#ifndef NDEBUG
+			typedef rstk::DisplacementFieldComponentsFileWriter<DeformationFieldType> Writer;
+			typename Writer::Pointer p = Writer::New();
+			std::stringstream ss;
+			ss.str("");
+			ss << "gradient_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+			p->SetFileName( ss.str().c_str() );
+			p->SetInput( shapeGradient );
+			p->Update();
+#endif
+
 	VectorType* uFieldBuffer = this->m_uFieldNext->GetBufferPointer();
 	const VectorType* vFieldBuffer = this->m_vField->GetBufferPointer();
 	const VectorType* lFieldBuffer = this->m_lambdaField->GetBufferPointer();

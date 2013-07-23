@@ -228,14 +228,27 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	// Copy newField values to interpolator
 	size_t nGridPoints = newField->GetLargestPossibleRegion().GetNumberOfPixels();
 	const VectorType* gridPointsBuffer = newField->GetBufferPointer();
-	for( size_t gpid = 0; gpid < nGridPoints; gpid++ )
-		this->m_FieldInterpolator->SetGridPointData( gpid, *( gridPointsBuffer + gpid ) );
+	VectorType v;
+	MeasureType maxNorm = 0.0;
+	for( size_t gpid = 0; gpid < nGridPoints; gpid++ ) {
+		v =  *( gridPointsBuffer + gpid );
+		if ( v.GetNorm()>0 ) {
+			this->m_FieldInterpolator->SetGridPointData( gpid, v );
+
+			if( v.GetNorm()>maxNorm) maxNorm=v.GetNorm();
+		}
+	}
+
+#ifndef NDEBUG
+	std::cout << "Field maxNorm=" << maxNorm << "mm." << std::endl;
+#endif
+
 
 	this->m_FieldInterpolator->ComputeControlPoints();
 
 	MeasureType norm;
 	MeasureType meanNorm = 0.0;
-	MeasureType maxNorm = 0.0;
+	maxNorm = 0.0;
 	VectorType meanDesp;
 	meanDesp.Fill(0.0);
 
@@ -400,12 +413,20 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	size_t nPoints = this->m_GradientMap->GetLargestPossibleRegion().GetNumberOfPixels();
 	VectorType v;
 
+	sumGradient = 0.0;
 	for( size_t gpid = 0; gpid<nPoints; gpid++ ) {
 		v = this->m_FieldInterpolator->GetGridPointData( gpid );
 		if ( v.GetNorm() > 0 ) {
 			this->m_GradientMap->SetPixel( this->m_GradientMap->ComputeIndex(gpid), v);
+			sumGradient+=v.GetNorm();
+			if (v.GetNorm()>maxGradient) maxGradient=v.GetNorm();
 		}
 	}
+
+#ifndef NDEBUG
+	std::cout << "max_interpolated_gradient=" << maxGradient << ", avg=" << ( sumGradient/ nPoints ) << "." << std::endl;
+#endif
+
 
 }
 
