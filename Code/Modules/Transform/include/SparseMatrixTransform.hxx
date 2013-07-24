@@ -83,7 +83,9 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	this->m_Nodes.resize(K);
 	for( size_t dim = 0; dim<Dimension; dim++ ) {
 		this->m_NodesData[dim] = DimensionVector(K);
+		this->m_TempNodesData[dim] = DimensionVector(K);
 		this->m_NodesData[dim].fill( 0.0 );
+		this->m_TempNodesData[dim].fill( 0.0 );
 	}
 }
 
@@ -159,11 +161,10 @@ SparseMatrixTransform<TScalarType,NDimensions>
 }
 
 template< class TScalarType, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalarType,NDimensions>::DimensionVector
+void
 SparseMatrixTransform<TScalarType,NDimensions>
-::ComputeNodes() {
-	DimensionVector result(this->m_K);
-	result.fill(0.0);
+::ComputeWeights() {
+
 
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
@@ -171,9 +172,10 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	}
 
     for ( size_t i = 0; i < Dimension; i++ ) {
-    	this->m_InvertPhi.mult(this->m_PointsData[i], result );
+    	this->m_TempNodesData[i] = DimensionVector(this->m_K);
+    	this->m_TempNodesData[i].fill(0.0);
+    	this->m_InvertPhi.mult(this->m_PointsData[i], this->m_TempNodesData[i] );
     }
-    return result;
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -289,6 +291,18 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		if( std::isnan( gi[dim] )) gi[dim] = 0;
 	}
 
+	return gi;
+}
+
+template< class TScalarType, unsigned int NDimensions >
+inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType
+SparseMatrixTransform<TScalarType,NDimensions>
+::GetNodeWeight( const size_t id ) {
+	VectorType gi;
+	for( size_t dim = 0; dim < Dimension; dim++){
+		gi[dim] = this->m_TempNodesData[dim][id];
+		if( std::isnan( gi[dim] )) gi[dim] = 0;
+	}
 	return gi;
 }
 

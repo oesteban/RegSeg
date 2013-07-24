@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
-	opt->SetGridSize( 15 );
+	opt->SetGridSize( 8 );
 	opt->SetLevelSetsFunction( ls );
 	opt->SetNumberOfIterations(8);
 

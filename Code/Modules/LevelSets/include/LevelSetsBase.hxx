@@ -252,13 +252,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	VectorType meanDesp;
 	meanDesp.Fill(0.0);
 
-	// Set-up a linear interpolator for the vector field
-	VectorInterpolatorPointer interp = VectorInterpolatorType::New();
-	interp->SetInputImage( newField );
-
 	ContinuousIndex point_idx;
 	size_t changed = 0;
-
 	size_t gpid = 0;
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
 		typename ContourType::PointsContainerPointer curr_points = this->m_CurrentContourPosition[contid]->GetPoints();
@@ -276,8 +271,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			pid = p_it.Index();
 
 			// Interpolate the value of the field in the point
-			desp_back = interp->Evaluate( currentPoint );
-			desp = this->m_FieldInterpolator->GetNodeData( gpid );
+			desp = this->m_FieldInterpolator->GetPointData( gpid );
 			norm = desp.GetNorm();
 			// Add vector to the point
 			if( norm > 1.0e-3 ) {
@@ -407,7 +401,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 #endif
 
 	// Interpolate sparse velocity field to targetDeformation
-	this->m_FieldInterpolator->ComputeNodes();
+	this->m_FieldInterpolator->ComputeWeights();
 
 	VectorType* gmBuffer = this->m_GradientMap->GetBufferPointer();
 	size_t nPoints = this->m_GradientMap->GetLargestPossibleRegion().GetNumberOfPixels();
@@ -415,9 +409,10 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	sumGradient = 0.0;
 	for( size_t gpid = 0; gpid<nPoints; gpid++ ) {
-		v = this->m_FieldInterpolator->GetNodeData( gpid );
-		if ( v.GetNorm() > 0 ) {
-			this->m_GradientMap->SetPixel( this->m_GradientMap->ComputeIndex(gpid), v);
+		v = this->m_FieldInterpolator->GetNodeWeight(gpid);
+		if ( v.GetNorm() > 1.0e-4 ) {
+			*( gmBuffer + gpid ) = v;
+			//this->m_GradientMap->SetPixel( this->m_GradientMap->ComputeIndex(gpid), v);
 			sumGradient+=v.GetNorm();
 			if (v.GetNorm()>maxGradient) maxGradient=v.GetNorm();
 		}
