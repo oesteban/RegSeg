@@ -156,14 +156,14 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Resume() {
 	while( ! this->m_Stop )	{
 		/* Compute metric value/derivative. */
 		try	{
-			this->m_LevelSetsFunction->ComputeGradient();
+			this->m_LevelSetsFunction->ComputeDerivative();
 #ifndef NDEBUG
 			typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;
 			typename Writer::Pointer p = Writer::New();
 			std::stringstream ss2;
 			ss2 << "gradient_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
 			p->SetFileName( ss2.str().c_str() );
-			p->SetInput( this->m_LevelSetsFunction->GetGradientMap() );
+			p->SetInput( this->m_LevelSetsFunction->GetDerivative() );
 			p->Update();
 #endif
 		}
@@ -296,7 +296,7 @@ void GradientDescentLevelSetsOptimizer<TLevelSetsFunction>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
 	double min_val = 1.0e-5;
 
-	DeformationFieldConstPointer shapeGradient = this->m_LevelSetsFunction->GetGradientMap();
+	DeformationFieldConstPointer shapeGradient = this->m_LevelSetsFunction->GetDerivative();
 
 #ifndef NDEBUG
 	typedef rstk::DisplacementFieldFileWriter<DeformationFieldType> Writer;

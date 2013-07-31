@@ -50,6 +50,7 @@
 #include <vnl/vnl_diag_matrix.h>
 #include <cmath>
 #include <itkComplexToRealImageFilter.h>
+#include <itkComplexToImaginaryImageFilter.h>
 #include "DisplacementFieldFileWriter.h"
 #include "DisplacementFieldComponentsFileWriter.h"
 #include <itkMeshFileWriter.h>
@@ -69,17 +70,18 @@ ALOptimizer<TLevelSetsFunction>::ALOptimizer() {
 	this->m_MaximumStepSizeInPhysicalUnits = itk::NumericTraits<InternalComputationValueType>::Zero;
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_R =  1.0e4;
+	this->m_StepSize =  1.0;
+	this->m_LearningRate = 1.0e-3;
 	this->m_A.SetIdentity();
 	this->m_A(0,0) = 1.0;
 	this->m_A(1,1) = 1.0;
 	this->m_A(2,2) = 1.0;
-	this->m_A*= 2.0;
+	this->m_A*= 10.0;
 	this->m_B.SetIdentity();
-	this->m_B(0,0) = 0.0e-1;
-	this->m_B(1,1) = 0.0e-1;
-	this->m_B(2,2) = 0.0e-1;
-	this->m_Rho = 0.01 * this->m_R; // 0 < rho < r
+	this->m_B(0,0) = 0.0;
+	this->m_B(1,1) = 0.0;
+	this->m_B(2,2) = 0.0;
+	this->m_Rho = 0.80 * (1.0/this->m_StepSize); // 0 < rho < r
 }
 
 template< typename TLevelSetsFunction >
@@ -264,23 +266,12 @@ void ALOptimizer<TLevelSetsFunction>::UpdateU(){
 	}
 	catch ( itk::ExceptionObject & err ) {
 		this->m_StopCondition = Superclass::COSTFUNCTION_ERROR;
-		this->m_StopConditionDescription << "LevelSets error during optimization";
+		this->m_StopConditionDescription << "Error computing shape-gradient";
 		this->Stop();
 		throw err;  // Pass exception to caller
 	}
 
 	DeformationFieldConstPointer shapeGradient = this->m_LevelSetsFunction->GetGradientMap();
-
-#ifndef NDEBUG
-			typedef rstk::DisplacementFieldComponentsFileWriter<DeformationFieldType> Writer;
-			typename Writer::Pointer p = Writer::New();
-			std::stringstream ss;
-			ss.str("");
-			ss << "gradient_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
-			p->SetFileName( ss.str().c_str() );
-			p->SetInput( shapeGradient );
-			p->Update();
-#endif
 
 	VectorType* uFieldBuffer = this->m_uFieldNext->GetBufferPointer();
 	const VectorType* vFieldBuffer = this->m_vField->GetBufferPointer();
@@ -289,8 +280,23 @@ void ALOptimizer<TLevelSetsFunction>::UpdateU(){
 	size_t nPix = this->m_uFieldNext->GetLargestPossibleRegion().GetNumberOfPixels();
 
 	for ( size_t p = 0; p<nPix; p++ ) {
-		*( uFieldBuffer + p ) = *( vFieldBuffer+p ) - *( lFieldBuffer+p ) * (1.0/this->m_R) - *( sFieldBuffer+p ) * (1.0/this->m_R);
+		*( uFieldBuffer + p ) = *( vFieldBuffer+p ) - *( lFieldBuffer+p ) * this->m_StepSize - *( sFieldBuffer+p ) * this->m_StepSize * this->m_LearningRate;
 	}
+
+#ifndef NDEBUG
+	typedef rstk::DisplacementFieldComponentsFileWriter<DeformationFieldType> Writer;
+	typename Writer::Pointer p = Writer::New();
+	std::stringstream ss;
+	ss << "gradient_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+	p->SetFileName( ss.str().c_str() );
+	p->SetInput( shapeGradient );
+	p->Update();
+	ss.str("");
+	ss << "nextu_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+	p->SetFileName( ss.str().c_str() );
+	p->SetInput( this->m_uFieldNext );
+	p->Update();
+#endif
 
 }
 
@@ -302,26 +308,43 @@ void ALOptimizer<TLevelSetsFunction>::UpdateV() {
 	// Get deformation fields pointers
 	const VectorType* uFieldBuffer = this->m_uFieldNext->GetBufferPointer();
 	const VectorType* lFieldBuffer = this->m_lambdaField->GetBufferPointer();
+	VectorType* nextVbuffer = this->m_vFieldNext->GetBufferPointer();
 
 	// Create container for deformation field components
 	DeformationComponentPointer fieldComponent = DeformationComponentType::New();
 	fieldComponent->SetDirection( this->m_uField->GetDirection() );
 	fieldComponent->SetRegions( this->m_uField->GetLargestPossibleRegion() );
+	fieldComponent->SetSpacing( this->m_uField->GetSpacing() );
+	fieldComponent->SetOrigin( this->m_uField->GetOrigin());
 	fieldComponent->Allocate();
 	PointValueType* dCompBuffer = fieldComponent->GetBufferPointer();
 
 	ComplexFieldPointer fftNum;
 
 	size_t nPix = fieldComponent->GetLargestPossibleRegion().GetNumberOfPixels();
+	double r = 1.0/this->m_StepSize;
+	VectorType u,l;
+
 	for( size_t d = 0; d < Dimension; d++ ) {
-		// Get component from vector image
-		size_t comp, idx2;
-		PointValueType u,l;
+
 		for(size_t pix = 0; pix< nPix; pix++) {
-			u = (*(uFieldBuffer+pix))[d];
-			l = (*(lFieldBuffer+pix))[d];
-			*(dCompBuffer+pix) = ( u * this->m_R ) - l; // ATTENTION: the + symbol depends on the definition of the normal
-		}                                                         // OUTWARDS-> + ; INWARDS-> -.
+			u = *(uFieldBuffer+pix);
+			l = *(lFieldBuffer+pix);
+			*(dCompBuffer+pix) =  u[d] * r + l[d];
+		}
+
+#ifndef NDEBUG
+		typedef itk::ImageFileWriter<DeformationComponentType> ComponentWriter;
+		typename ComponentWriter::Pointer p = ComponentWriter::New();
+		std::stringstream ss;
+		ss.str("");
+		ss << "cmp" << d << "_nextnum_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+		p->SetFileName( ss.str().c_str() );
+		p->SetInput( fieldComponent );
+		p->Update();
+#endif
+
+
 
 		FFTPointer fftFilter = FFTType::New();
 		fftFilter->SetInput( fieldComponent );
@@ -349,8 +372,6 @@ void ALOptimizer<TLevelSetsFunction>::UpdateV() {
 
 	this->ApplyRegularizationTerm( fftNum );
 
-
-	VectorType* nextFieldBuffer = this->m_vFieldNext->GetBufferPointer();
 	for( size_t d = 0; d < Dimension; d++ ) {
 		// Take out fourier component
 		FTDomainPointer fftComponent = FTDomainType::New();
@@ -366,6 +387,35 @@ void ALOptimizer<TLevelSetsFunction>::UpdateV() {
 			*(fftCompBuffer+fr) = (*(fftBuffer+fr))[d];
 		}
 
+//#ifndef NDEBUG
+//		typedef itk::Image< float, Dimension > FilterFTType;
+//		typedef itk::ImageFileWriter< FilterFTType > WW;
+//		std::stringstream ss;
+//
+//
+//		typedef itk::ComplexToRealImageFilter<typename FFTType::OutputImageType, FilterFTType > RealFilterType;
+//		typename RealFilterType::Pointer rF = RealFilterType::New();
+//		rF->SetInput( fftComponent );
+//		rF->Update();
+//
+//		ss <<"filtered_" << d << "_R.nii.gz";
+//		typename WW::Pointer w2 = WW::New();
+//		w2->SetFileName( ss.str().c_str() );
+//		w2->SetInput( rF->GetOutput() );
+//		w2->Update();
+//
+//		typedef itk::ComplexToImaginaryImageFilter<typename FFTType::OutputImageType, FilterFTType > ImaginaryFilterType;
+//		typename ImaginaryFilterType::Pointer rF2 = ImaginaryFilterType::New();
+//		rF2->SetInput( fftComponent );
+//		rF2->Update();
+//
+//		ss.str("");
+//		ss <<"filtered_" << d << "_I.nii.gz";
+//		typename WW::Pointer w3 = WW::New();
+//		w3->SetFileName( ss.str().c_str() );
+//		w3->SetInput( rF2->GetOutput() );
+//		w3->Update();
+//#endif
 
 		IFFTPointer ifft = IFFTType::New();
 		ifft->SetInput( fftComponent );
@@ -386,11 +436,24 @@ void ALOptimizer<TLevelSetsFunction>::UpdateV() {
 		PointValueType val;
 		for(size_t pix = 0; pix< nPix; pix++) {
 			val = *(resultBuffer+pix);
-			(*(nextFieldBuffer+pix))[d] = ( fabs(val) > min_val )?val:0.0;
+			(*(nextVbuffer+pix))[d] = ( fabs(val) > min_val )?val:0.0;
 		}
-
 	}
 
+#ifndef NDEBUG
+	typedef rstk::DisplacementFieldComponentsFileWriter<DeformationFieldType> Writer;
+	typename Writer::Pointer p = Writer::New();
+	std::stringstream ss;
+	ss << "nextv_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+	p->SetFileName( ss.str().c_str() );
+	p->SetInput( this->m_vFieldNext );
+	p->Update();
+	ss.str("");
+	ss << "nextu2_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+	p->SetFileName( ss.str().c_str() );
+	p->SetInput( this->m_uFieldNext );
+	p->Update();
+#endif
 }
 
 template< typename TLevelSetsFunction >
@@ -401,9 +464,21 @@ void ALOptimizer<TLevelSetsFunction>::UpdateLambda() {
 	const VectorType* lFieldBuffer = this->m_lambdaField->GetBufferPointer();
 	size_t nPix = this->m_uFieldNext->GetLargestPossibleRegion().GetNumberOfPixels();
 
+	VectorType diff;
 	for ( size_t p = 0; p<nPix; p++ ) {
-		*( lFieldNextBuffer+p ) = *( lFieldBuffer+p ) + ( *( uFieldBuffer+p ) - *( vFieldBuffer+p ) ) * this->m_Rho;
+		diff = ( *( uFieldBuffer+p ) - *( vFieldBuffer+p ) );
+		*( lFieldNextBuffer+p ) = *( lFieldBuffer+p ) + diff * this->m_Rho;
 	}
+
+#ifndef NDEBUG
+	typedef rstk::DisplacementFieldComponentsFileWriter<DeformationFieldType> Writer;
+	typename Writer::Pointer p = Writer::New();
+	std::stringstream ss;
+	ss << "nextlambda_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+	p->SetFileName( ss.str().c_str() );
+	p->SetInput( this->m_lambdaFieldNext );
+	p->Update();
+#endif
 
 }
 
@@ -417,7 +492,7 @@ void ALOptimizer<TLevelSetsFunction>
 
 	// Fill reference buffer with elements updated with the filter
 	ComplexFieldValue* nBuffer = reference->GetBufferPointer();
-	MatrixType* dBuffer = this->m_Denominator->GetBufferPointer();
+	const MatrixType* dBuffer = this->m_Denominator->GetBufferPointer();
 	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
 	ComplexFieldValue curval;
 	VectorType realval;
@@ -440,7 +515,6 @@ void ALOptimizer<TLevelSetsFunction>
 			curval[i] = ComplexType(realval[i], imagval[i]);
 		}
 
-
 		*(nBuffer+pix) = curval;
 	}
 }
@@ -449,34 +523,113 @@ template< typename TLevelSetsFunction >
 void ALOptimizer<TLevelSetsFunction>
 ::InitializeDenominator( typename ALOptimizer<TLevelSetsFunction>::ComplexFieldType* reference ){
 	double pi2 = 2* vnl_math::pi;
+	double tfFactor = this->m_uField->GetLargestPossibleRegion().GetNumberOfPixels();
+	double singular_threshold = 1.0e-9;
 	MatrixType I, t;
 	I.SetIdentity();
-	MatrixType C = ( I * this->m_R + I * m_A ) * pi2;
-
 
 	this->m_Denominator = TensorFieldType::New();
 	this->m_Denominator->SetSpacing(   reference->GetSpacing() );
 	this->m_Denominator->SetDirection( reference->GetDirection() );
 	this->m_Denominator->SetRegions( reference->GetLargestPossibleRegion().GetSize() );
 	this->m_Denominator->Allocate();
-	this->m_Denominator->FillBuffer( I );
 
-	typename TensorFieldType::SizeType size = this->m_Denominator->GetLargestPossibleRegion().GetSize();
 	MatrixType* buffer = this->m_Denominator->GetBufferPointer();
+
+	MatrixType C = ( I * (1.0/this->m_StepSize) + m_A ) * tfFactor;
+
+	// Check that C is not singular
+	vnl_matrix_inverse< ComplexValueType > inv_C( C.GetVnlMatrix() );
+	double detC = inv_C.determinant_magnitude();
+
+	if( detC <= singular_threshold ) {
+		itkExceptionMacro( << "norm penalizer is singular.")
+	}
+
+	t = MatrixType(inv_C);
+	this->m_Denominator->FillBuffer( t );
+
 	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
 
-	// Fill Buffer with denominator data
-	double lag_el; // accumulates the FT{lagrange operator}.
-	typename TensorFieldType::IndexType idx;
-	for (size_t pix = 0; pix < nPix; pix++ ) {
-		lag_el = 0.0;
-		idx = this->m_Denominator->ComputeIndex( pix );
-		for(size_t d = 0; d < Dimension; d++ ) {
-			lag_el+= 2.0 * cos( (pi2*idx[d])/size[d]) - 2.0;
+	// Check that B is not singular
+	vnl_matrix_inverse< ComplexValueType > inv_B( m_B.GetVnlMatrix() );
+	double detB = inv_B.determinant_magnitude();
+
+	if( detB > singular_threshold ) {
+		typename TensorFieldType::SizeType size = this->m_Denominator->GetLargestPossibleRegion().GetSize();
+
+		// Fill Buffer with denominator data
+		double lag_el; // accumulates the FT{lagrange operator}.
+		typename TensorFieldType::IndexType idx;
+		for (size_t pix = 0; pix < nPix; pix++ ) {
+			lag_el = 0.0;
+			idx = this->m_Denominator->ComputeIndex( pix );
+			for(size_t d = 0; d < Dimension; d++ ) {
+				lag_el+= 2.0 * cos( (pi2*idx[d])/size[d]) - 2.0;
+			}
+			t = C - m_B * lag_el * (-1.0) * tfFactor;
+
+			*(buffer+pix) = t.GetInverse();
 		}
-		t = C + m_B * lag_el * (-1.0);
-		*(buffer+pix) = t.GetInverse();
 	}
+//#ifndef NDEBUG
+//	double val;
+//	typedef itk::Image< float, Dimension > FilterFTType;
+//	typedef itk::ImageFileWriter< FilterFTType > WW;
+//
+//	DeformationComponentPointer fieldComponent = DeformationComponentType::New();
+//	fieldComponent->SetDirection( this->m_uField->GetDirection() );
+//	fieldComponent->SetRegions( this->m_uField->GetLargestPossibleRegion() );
+//	fieldComponent->Allocate();
+//	fieldComponent->FillBuffer( 1.0 );
+//	FFTPointer fftFilter = FFTType::New();
+//	fftFilter->SetInput( fieldComponent );
+//	fftFilter->Update();  // This is required for computing the denominator for first time
+//	FTDomainPointer fftComponent =  fftFilter->GetOutput();
+//
+//	typedef itk::ComplexToRealImageFilter<typename FFTType::OutputImageType, FilterFTType > RealFilterType;
+//	typename RealFilterType::Pointer rF = RealFilterType::New();
+//	rF->SetInput( fftComponent );
+//	rF->Update();
+//
+//	typename WW::Pointer w2 = WW::New();
+//	w2->SetFileName( "ddorREF.nii.gz" );
+//	w2->SetInput( rF->GetOutput() );
+//	w2->Update();
+//
+//	typedef itk::ComplexToImaginaryImageFilter<typename FFTType::OutputImageType, FilterFTType > ImaginaryFilterType;
+//	typename ImaginaryFilterType::Pointer rF2 = ImaginaryFilterType::New();
+//	rF2->SetInput( fftComponent );
+//	rF2->Update();
+//
+//	typename WW::Pointer w3 = WW::New();
+//	w3->SetFileName( "ddorREF2.nii.gz" );
+//	w3->SetInput( rF2->GetOutput() );
+//	w3->Update();
+//
+//
+//	for ( size_t dim = 0; dim < Dimension; dim++ ) {
+//		typename FilterFTType::Pointer comp = FilterFTType::New();
+//		comp->SetSpacing(   reference->GetSpacing() );
+//		comp->SetDirection( reference->GetDirection() );
+//		comp->SetRegions( reference->GetLargestPossibleRegion().GetSize() );
+//		comp->Allocate();
+//		comp->FillBuffer( 0.0 );
+//		float* bufComp = comp->GetBufferPointer();
+//
+//		for( size_t pix = 0; pix<nPix; pix++ ) {
+//			t = *(buffer + pix);
+//			*(bufComp + pix) = t(dim,dim);
+//		}
+//		typename WW::Pointer w = WW::New();
+//		std::stringstream ss;
+//		ss << "ddor" << dim << ".nii.gz";
+//		w->SetFileName( ss.str().c_str() );
+//		w->SetInput( comp );
+//		w->Update();
+//
+//	}
+//#endif
 }
 
 template< typename TLevelSetsFunction >
@@ -563,7 +716,6 @@ ALOptimizer<TLevelSetsFunction>::InitializeFields(
 
 template< typename TLevelSetsFunction >
 void ALOptimizer<TLevelSetsFunction>::SetUpdate(){
-
 	const VectorType* uNext = this->m_uFieldNext->GetBufferPointer();
 	const VectorType* vNext = this->m_vFieldNext->GetBufferPointer();
 	const VectorType* lNext = this->m_lambdaFieldNext->GetBufferPointer();

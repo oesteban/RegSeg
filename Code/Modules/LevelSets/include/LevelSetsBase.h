@@ -211,7 +211,7 @@ public:
 
 	MeasureType GetValue();
 
-	void ComputeGradient( void );
+	void ComputeDerivative( void );
 
 	MeasureType UpdateContour( const FieldType* newField );
 
@@ -227,8 +227,8 @@ public:
 
 	itkGetMacro(CurrentContourPosition, ContourList);
 
-	itkSetObjectMacro(GradientMap, FieldType);
-	itkGetConstObjectMacro(GradientMap, FieldType);
+	itkSetObjectMacro(Derivative, FieldType);
+	itkGetConstObjectMacro(Derivative, FieldType);
 
 	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
@@ -251,7 +251,7 @@ protected:
 	//bool CheckExtents( const ContourType* prior ) const;
 
 	mutable MeasureType m_Value;
-	FieldPointer m_GradientMap;
+	FieldPointer m_Derivative;
 	FieldPointer m_ReferenceSamplingGrid;
 	ContourList m_CurrentContourPosition;
 	NormalFilterList m_NormalFilter;
@@ -270,6 +270,9 @@ protected:
 	bool m_Modified;
 	bool m_RegionsModified;
 	size_t m_NumberOfContours;
+
+	size_t m_NumberOfPoints;
+	size_t m_NumberOfNodes;
 
 private:
 	LevelSetsBase(const Self &);  //purposely not implemented

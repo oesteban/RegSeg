@@ -55,7 +55,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::LevelSetsBase() {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_FieldInterpolator = FieldInterpolatorType::New();
-	this->m_GradientMap = FieldType::New();
+	this->m_Derivative = FieldType::New();
 	this->m_EnergyResampler = DisplacementResamplerType::New();
 	this->m_Modified = false;
 	this->m_RegionsModified = false;
@@ -138,6 +138,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			this->m_OuterList.push_back( outerVect );
 	}
 
+	this->m_NumberOfPoints = cpid + 1;
+
 	if( this->m_NumberOfContours == 1 ) {
 		ContourOuterRegions outerVect;
 		outerVect.resize(this->m_CurrentContourPosition[0]->GetNumberOfPoints());
@@ -145,23 +147,21 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		this->m_OuterList.push_back( outerVect );
 	}
 
-
-
 	// Set up grid points in the sparse-dense interpolator
-	if( this->m_GradientMap.IsNotNull() ) {
+	if( this->m_Derivative.IsNotNull() ) {
 		PointType p;
-		size_t nNodes = this->m_GradientMap->GetLargestPossibleRegion().GetNumberOfPixels();
-		this->m_FieldInterpolator->SetK( nNodes );
+		this->m_NumberOfNodes = this->m_Derivative->GetLargestPossibleRegion().GetNumberOfPixels();
+		this->m_FieldInterpolator->SetK( this->m_NumberOfNodes );
 
-		for ( size_t gid = 0; gid < nNodes; gid++ ) {
-			this->m_GradientMap->TransformIndexToPhysicalPoint( this->m_GradientMap->ComputeIndex( gid ), p );
+		for ( size_t gid = 0; gid < this->m_NumberOfNodes; gid++ ) {
+			this->m_Derivative->TransformIndexToPhysicalPoint( this->m_Derivative->ComputeIndex( gid ), p );
 			this->m_FieldInterpolator->SetNode( gid, p );
 		}
 	} else {
 		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
 	}
 
-	typename FieldType::SpacingType sigma = this->m_GradientMap->GetSpacing();
+	typename FieldType::SpacingType sigma = this->m_Derivative->GetSpacing();
 	this->m_FieldInterpolator->SetSigma( sigma*2.0 );
 
 #ifndef DNDEBUG
@@ -226,11 +226,10 @@ typename LevelSetsBase<TReferenceImageType, TCoordRepType>::MeasureType
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::UpdateContour(const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::FieldType* newField ) {
 	// Copy newField values to interpolator
-	size_t nNodes = newField->GetLargestPossibleRegion().GetNumberOfPixels();
 	const VectorType* NodesBuffer = newField->GetBufferPointer();
 	VectorType v;
 	MeasureType maxNorm = 0.0;
-	for( size_t gpid = 0; gpid < nNodes; gpid++ ) {
+	for( size_t gpid = 0; gpid < this->m_NumberOfNodes; gpid++ ) {
 		v =  *( NodesBuffer + gpid );
 		if ( v.GetNorm()>0 ) {
 			this->m_FieldInterpolator->SetNodeData( gpid, v );
@@ -328,7 +327,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
-::ComputeGradient() {
+::ComputeDerivative() {
 	size_t cpid = 0;
 
 	NormalFilterPointer normalsFilter;
@@ -339,7 +338,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 #endif
 
 	VectorType zerov; zerov.Fill(0.0);
-	this->m_GradientMap->FillBuffer( zerov );
+	this->m_Derivative->FillBuffer( zerov );
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		// Compute mesh of normals
@@ -403,23 +402,22 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	// Interpolate sparse velocity field to targetDeformation
 	this->m_FieldInterpolator->ComputeWeights();
 
-	VectorType* gmBuffer = this->m_GradientMap->GetBufferPointer();
-	size_t nPoints = this->m_GradientMap->GetLargestPossibleRegion().GetNumberOfPixels();
+	VectorType* gmBuffer = this->m_Derivative->GetBufferPointer();
 	VectorType v;
 
 	sumGradient = 0.0;
-	for( size_t gpid = 0; gpid<nPoints; gpid++ ) {
+	for( size_t gpid = 0; gpid<this->m_NumberOfNodes; gpid++ ) {
 		v = this->m_FieldInterpolator->GetNodeWeight(gpid);
 		if ( v.GetNorm() > 1.0e-4 ) {
-			*( gmBuffer + gpid ) = v;
-			//this->m_GradientMap->SetPixel( this->m_GradientMap->ComputeIndex(gpid), v);
-			sumGradient+=v.GetNorm();
-			if (v.GetNorm()>maxGradient) maxGradient=v.GetNorm();
+			*( gmBuffer + gpid ) = v; // * (1.0/this->m_NumberOfPoints);
+			//this->m_Derivative->SetPixel( this->m_Derivative->ComputeIndex(gpid), v);
+			sumGradient+=(*( gmBuffer + gpid )).GetNorm();
+			if (v.GetNorm()>maxGradient) maxGradient=(*( gmBuffer + gpid )).GetNorm();
 		}
 	}
 
 #ifndef NDEBUG
-	std::cout << "max_interpolated_gradient=" << maxGradient << ", avg=" << ( sumGradient/ nPoints ) << "." << std::endl;
+	std::cout << "max_interpolated_gradient=" << maxGradient << ", avg=" << ( sumGradient/ this->m_NumberOfNodes ) << "." << std::endl;
 #endif
 
 
@@ -591,11 +589,11 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::CopyInformation( const FieldType* field) {
-	this->m_GradientMap->SetDirection( field->GetDirection() );
-	this->m_GradientMap->SetOrigin   ( field->GetOrigin() );
-	this->m_GradientMap->SetSpacing  ( field->GetSpacing() );
-	this->m_GradientMap->SetRegions  ( field->GetRequestedRegion().GetSize());
-	this->m_GradientMap->Allocate();
+	this->m_Derivative->SetDirection( field->GetDirection() );
+	this->m_Derivative->SetOrigin   ( field->GetOrigin() );
+	this->m_Derivative->SetSpacing  ( field->GetSpacing() );
+	this->m_Derivative->SetRegions  ( field->GetRequestedRegion().GetSize());
+	this->m_Derivative->Allocate();
 }
 
 }
