@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 	typedef LevelSetsType::FieldType                             DeformationFieldType;
 
 	typedef SpectralGradientDescentOptimizer< LevelSetsType >   Optimizer;
-	//typedef SpectralADMMOptimizer< LevelSetsType >   Optimizer;
+	//typedef SpectralADMMOptimizer< LevelSetsType >              Optimizer;
 
 	typedef typename Optimizer::Pointer                          OptimizerPointer;
 
