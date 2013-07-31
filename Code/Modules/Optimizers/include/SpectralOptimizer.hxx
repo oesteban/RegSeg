@@ -49,12 +49,13 @@
 #include <vnl/vnl_diag_matrix.h>
 #include <cmath>
 #include <itkComplexToRealImageFilter.h>
-#include "DisplacementFieldFileWriter.h"
-#include <itkMeshFileWriter.h>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
 using namespace std;
+
+#include "DisplacementFieldFileWriter.h"
+#include "DisplacementFieldComponentsFileWriter.h"
 
 namespace rstk {
 
@@ -191,6 +192,29 @@ void SpectralOptimizer<TFunctional>::Resume() {
 		//	this->m_CurrentBestValue = this->m_CurrentValue;
 		//	this->m_BestParameters = this->GetCurrentPosition( );
 		//}
+
+#ifndef NDEBUG
+		size_t nContours =this->m_Functional->GetCurrentContourPosition().size();
+
+		typedef rstk::DisplacementFieldComponentsFileWriter<ParametersType> Writer;
+		typename Writer::Pointer p = Writer::New();
+		std::stringstream ss;
+		ss.str("");
+		ss << "parameters_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+		p->SetFileName( ss.str().c_str() );
+		p->SetInput( this->m_Parameters );
+		p->Update();
+
+		typedef itk::ImageFileWriter< typename FunctionalType::ProbabilityMapType > MapWriter;
+		for( size_t r = 0; r <= nContours; r++){
+			ss.str("");
+			ss << "region_" << r << "_it" << std::setfill('0')<<std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+			typename MapWriter::Pointer wr = MapWriter::New();
+			wr->SetInput( this->m_Functional->GetCurrentMap(r));
+			wr->SetFileName(ss.str().c_str() );
+			wr->Update();
+		}
+#endif
 
 
 		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentValue << " | " << updateNorm << " | " << this->m_Functional->GetValue() << std::endl;
