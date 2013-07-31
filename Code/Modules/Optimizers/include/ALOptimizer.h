@@ -173,8 +173,8 @@ public:
 	itkSetMacro( B, MatrixType );
 	itkGetConstMacro( B, MatrixType );
 
-	itkSetMacro( R, InternalComputationValueType );
-	itkGetConstMacro( R, InternalComputationValueType );
+	itkSetMacro( StepSize, InternalComputationValueType );
+	itkGetConstMacro( StepSize, InternalComputationValueType );
 
 	/** Start and run the optimization */
 	virtual void Start();
@@ -223,7 +223,7 @@ protected:
 //	bool m_ReturnBestParametersAndValue;
 
 	/** Particular parameter definitions from our method */
-	InternalComputationValueType m_R; // Step-size is tau in the formulations
+	InternalComputationValueType m_StepSize; // step-size= 1/r .Step-size is tau in the formulations
 	InternalComputationValueType m_Rho;
 	MatrixType m_A;
 	MatrixType m_B;

@@ -56,8 +56,10 @@
 #include <itkDisplacementFieldTransform.h>
 #include <itkResampleImageFilter.h>
 #include "MahalanobisLevelSets.h"
-#include "GradientDescentLevelSetsOptimizer.h"
-#include "ALOptimizer.h"
+#include "SpectralGradientDescentOptimizer.h"
+#include "SpectralADMMOptimizer.h"
+//#include "GradientDescentLevelSetsOptimizer.h"
+//#include "ALOptimizer.h"
 
 using namespace rstk;
 
@@ -74,8 +76,9 @@ int main(int argc, char *argv[]) {
 	typedef LevelSetsType::CovarianceType                        CovarianceType;
 	typedef LevelSetsType::FieldType                             DeformationFieldType;
 
-	typedef ALOptimizer< LevelSetsType >   Optimizer;
-	//typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
+	typedef SpectralGradientDescentOptimizer< LevelSetsType >   Optimizer;
+	//typedef SpectralADMMOptimizer< LevelSetsType >   Optimizer;
+
 	typedef typename Optimizer::Pointer                          OptimizerPointer;
 
 	typedef itk::VTKPolyDataReader< ContourType >     ReaderType;
@@ -122,21 +125,22 @@ int main(int argc, char *argv[]) {
 	polyDataReader0->Update();
 	ls->AddShapePrior( polyDataReader0->GetOutput() );
 
-	ReaderType::Pointer polyDataReader1 = ReaderType::New();
-	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "fixed.wm.vtk" );
-	polyDataReader1->Update();
-	ls->AddShapePrior( polyDataReader1->GetOutput() );
-    
-	ReaderType::Pointer polyDataReader2 = ReaderType::New();
-	polyDataReader2->SetFileName( std::string( DATA_DIR ) + "fixed.gm.vtk" );
-	polyDataReader2->Update();
-	ls->AddShapePrior( polyDataReader2->GetOutput() );
+	//ReaderType::Pointer polyDataReader1 = ReaderType::New();
+	//polyDataReader1->SetFileName( std::string( DATA_DIR ) + "fixed.wm.vtk" );
+	//polyDataReader1->Update();
+	//ls->AddShapePrior( polyDataReader1->GetOutput() );
+    //
+	//ReaderType::Pointer polyDataReader2 = ReaderType::New();
+	//polyDataReader2->SetFileName( std::string( DATA_DIR ) + "fixed.gm.vtk" );
+	//polyDataReader2->Update();
+	//ls->AddShapePrior( polyDataReader2->GetOutput() );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
-	opt->SetGridSize( 8 );
-	opt->SetLevelSetsFunction( ls );
+	opt->SetGridSize( 6 );
+	opt->SetFunctional( ls );
 	opt->SetNumberOfIterations(8);
+	opt->SetAlpha( 0.1 );
 
 	// Start
 	opt->Start();
