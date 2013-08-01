@@ -50,9 +50,6 @@
 #include <itkDefaultStaticMeshTraits.h>
 #include <itkKernelFunctionBase.h>
 
-#include "RadialBasisFunction.h"
-#include "VectorIDWBasisFunction.h"
-
 #include <vnl/vnl_sparse_matrix.h>
 #include <vnl/vnl_vector.h>
 #include <vnl/vnl_matrix.h>
@@ -82,13 +79,6 @@ public:
 	typedef itk::Vector< ScalarType, Dimension >     VectorType;
 
     typedef itk::KernelFunctionBase<ScalarType>      KernelFunctionType;
-
-
-	typedef RBF::RadialBasisFunction
-			< PointType, TScalarType, NDimensions >  RBFType;
-
-	typedef RBF::VectorIDWBasisFunction
-			< PointType, TScalarType, NDimensions >  DefaultRBFType;
 
 	typedef vnl_sparse_matrix< ScalarType >          WeightsMatrix;
 	typedef vnl_vector< ScalarType >                 DimensionVector;

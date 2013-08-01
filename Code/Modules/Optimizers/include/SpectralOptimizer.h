@@ -307,7 +307,7 @@ protected:
 	FunctionalPointer m_Functional;
 
 	ParametersPointer m_LastField;
-	ParametersPointer m_CurrentField;
+	//ParametersPointer m_CurrentField;
 
 	/* Common variables for optimization control and reporting */
 	bool                          m_Stop;

@@ -58,8 +58,11 @@
 #include <itkBSplineInterpolateImageFunction.h>
 #include <itkDisplacementFieldTransform.h>
 #include <itkResampleImageFilter.h>
+
+
 #include "MahalanobisLevelSets.h"
-#include "GradientDescentLevelSetsOptimizer.h"
+#include "SpectralGradientDescentOptimizer.h"
+#include "SpectralADMMOptimizer.h"
 
 using namespace rstk;
 
@@ -76,7 +79,7 @@ int main(int argc, char *argv[]) {
 	typedef LevelSetsType::CovarianceType                        CovarianceType;
 	typedef LevelSetsType::FieldType                             DeformationFieldType;
 
-	typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
+	typedef SpectralGradientDescentOptimizer< LevelSetsType >   Optimizer;
 	typedef typename Optimizer::Pointer                          OptimizerPointer;
 
 	typedef itk::MeshFileReader< ContourType >                   ReaderType;
@@ -124,7 +127,7 @@ int main(int argc, char *argv[]) {
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
-	opt->SetLevelSetsFunction( ls );
+	opt->SetFunctional( ls );
 	opt->SetNumberOfIterations(15);
 
 	std::string fnames[3] = { "init.csf.vtk", "init.lh.white.vtk", "init.lh.pial.vtk" };
@@ -147,7 +150,7 @@ int main(int argc, char *argv[]) {
 	polyDataWriter->Update();
 
 	DisplacementResamplerType::Pointer disResampler = DisplacementResamplerType::New();
-	disResampler->SetInput(opt->GetDeformationField() );
+	disResampler->SetInput(ls->GetCurrentDisplacementField() );
 	disResampler->SetOutputOrigin(    im->GetOrigin()  );
 	disResampler->SetOutputSpacing(   im->GetSpacing() );
 	disResampler->SetSize(            im->GetLargestPossibleRegion().GetSize() );

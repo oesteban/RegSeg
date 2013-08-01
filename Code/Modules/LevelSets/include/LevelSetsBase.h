@@ -61,7 +61,7 @@
 
 //#include "SparseToDenseFieldResampleFilter.h"
 
-#include "VectorIDWBasisFunction.h"
+//#include "VectorIDWBasisFunction.h"
 #include "SparseMatrixTransform.h"
 #include "DownsampleAveragingFilter.h"
 
@@ -182,8 +182,6 @@ public:
 			       < ContourSpatialObject, ROIType >         SpatialObjectToImageFilterType;
 	typedef typename SpatialObjectToImageFilterType::Pointer SpatialObjectToImageFilterPointer;
 
-
-	typedef RBF::VectorIDWBasisFunction< PointType, TCoordRepType, Dimension > RBFType;
 	typedef SparseMatrixTransform<TCoordRepType, Dimension > FieldInterpolatorType;
 	typedef typename FieldInterpolatorType::Pointer FieldInterpolatorPointer;
 
@@ -213,7 +211,7 @@ public:
 
 	void ComputeDerivative( void );
 
-	MeasureType UpdateContour( const FieldType* newField );
+	void UpdateContour( const FieldType* newField );
 
 	virtual void Initialize( void );
 
@@ -222,6 +220,7 @@ public:
 
 	const ProbabilityMapType* GetCurrentMap( size_t idx );
 
+
 	size_t AddShapePrior( ContourType* prior );
 	//itkGetMacro(ShapePrior, ContourList);
 
@@ -229,6 +228,9 @@ public:
 
 	itkSetObjectMacro(Derivative, FieldType);
 	itkGetConstObjectMacro(Derivative, FieldType);
+
+	itkSetObjectMacro(CurrentDisplacementField, FieldType);
+	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
 
 	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
@@ -253,6 +255,7 @@ protected:
 	mutable MeasureType m_Value;
 	FieldPointer m_Derivative;
 	FieldPointer m_ReferenceSamplingGrid;
+	FieldPointer m_CurrentDisplacementField;
 	ContourList m_CurrentContourPosition;
 	NormalFilterList m_NormalFilter;
 	ContourCopyPointer m_ContourCopier;

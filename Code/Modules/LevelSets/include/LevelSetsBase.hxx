@@ -56,6 +56,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_FieldInterpolator = FieldInterpolatorType::New();
 	this->m_Derivative = FieldType::New();
+	this->m_CurrentDisplacementField = FieldType::New();
 	this->m_EnergyResampler = DisplacementResamplerType::New();
 	this->m_Modified = false;
 	this->m_RegionsModified = false;
@@ -220,19 +221,16 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-typename LevelSetsBase<TReferenceImageType, TCoordRepType>::MeasureType
+void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::UpdateContour(const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::FieldType* newField ) {
 	// Copy newField values to interpolator
 	const VectorType* NodesBuffer = newField->GetBufferPointer();
 	VectorType v;
-	MeasureType maxNorm = 0.0;
 	for( size_t gpid = 0; gpid < this->m_NumberOfNodes; gpid++ ) {
 		v =  *( NodesBuffer + gpid );
 		if ( v.GetNorm()>0 ) {
 			this->m_FieldInterpolator->SetCoefficient( gpid, v );
-
-			if( v.GetNorm()>maxNorm) maxNorm=v.GetNorm();
 		}
 	}
 
@@ -240,7 +238,6 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	MeasureType norm;
 	MeasureType meanNorm = 0.0;
-	maxNorm = 0.0;
 	VectorType meanDesp;
 	meanDesp.Fill(0.0);
 
@@ -267,9 +264,6 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 			norm = desp.GetNorm();
 			// Add vector to the point
 			if( norm > 1.0e-3 ) {
-				if ( norm > maxNorm ) maxNorm = norm;
-				meanDesp += desp;
-				meanNorm += norm;
 				p = this->m_ShapePrior[contid][pid] + desp;
 				newPoint.SetPoint( p );
 				newPoint.SetEdge( currentPoint.GetEdge() );
@@ -290,11 +284,14 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	this->m_RegionsModified = (changed>0);
 
-//#ifndef NDEBUG
-//	std::cout << "MeanNorm=" << (meanNorm/changed) << "mm.; maxNorm=" << maxNorm << "mm.;" << " meanDesp=" << (meanDesp/changed) << std::endl;
-//#endif
 
-	return (meanNorm/changed);
+	this->m_FieldInterpolator->ComputeNodesData();
+
+	VectorType* fBuffer = this->m_CurrentDisplacementField->GetBufferPointer();
+
+	for( size_t i = 0; i<this->m_NumberOfNodes; i++) {
+		*(fBuffer+i) = this->m_FieldInterpolator->GetNodeData(i);
+	}
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -587,6 +584,12 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	this->m_Derivative->SetSpacing  ( field->GetSpacing() );
 	this->m_Derivative->SetRegions  ( field->GetRequestedRegion().GetSize());
 	this->m_Derivative->Allocate();
+
+	this->m_CurrentDisplacementField->SetDirection( field->GetDirection() );
+	this->m_CurrentDisplacementField->SetOrigin   ( field->GetOrigin() );
+	this->m_CurrentDisplacementField->SetSpacing  ( field->GetSpacing() );
+	this->m_CurrentDisplacementField->SetRegions  ( field->GetRequestedRegion().GetSize());
+	this->m_CurrentDisplacementField->Allocate();
 }
 
 }
