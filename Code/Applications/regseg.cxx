@@ -40,7 +40,12 @@ int main(int argc, char *argv[]) {
 			("fixed-images,F", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
 			("moving-surfaces,M", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken()->required(),	"moving image file")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
-			("output-all", bpo::bool_switch(&outImages),"output intermediate images");
+			("output-all", bpo::bool_switch(&outImages),"output intermediate images")
+			("alpha,a", bpo::value< float > (), "alpha value in regularization")
+			("beta,b", bpo::value< float > (), "beta value in regularization")
+			("step-size,s", bpo::value< float > (), "step-size value in optimization")
+			("iterations,i", bpo::value< int > (), "number of iterations")
+			("grid-size,g", bpo::value< int > (), "grid size");
 	bpo::positional_options_description pdesc;
 	bpo::variables_map vmap;
 	bpo::store(
@@ -68,45 +73,57 @@ int main(int argc, char *argv[]) {
 	// Read fixed image(s) --------------------------------------------------------------
 	clock_t preProcessStart = clock();
 
-	ImageVectorType::ConstPointer fixedImages;
-	if ( fixedImageNames.size() == 1 ) {
-		ImageReader::Pointer fixedImageReader = ImageReader::New();
-		fixedImageReader->SetFileName(fixedImageNames[0]);
-		fixedImageReader->Update();
-		fixedImages = fixedImageReader->GetOutput();
-		logfile << " * Loaded unique input " << ": " << fixedImageNames[0] << "." << std::endl;
-	} else {
-		std::vector< const ImageComponentType* > fixedImagesVector;
 
-		ImageToVectorFilterType::Pointer inputVectorFilter = ImageToVectorFilterType::New();
-		for (size_t i = 0; i < fixedImageNames.size(); i++ ) {
-			ImageComponentReader::Pointer fixedImageReader = ImageComponentReader::New();
-			fixedImageReader->SetFileName(fixedImageNames[i]);
-			fixedImageReader->Update();
-			//fixedImagesVector.push_back( fixedImageReader->GetOutput() );
-			inputVectorFilter->SetNthInput(i, fixedImageReader->GetOutput() );
-			inputVectorFilter->Update();
-			logfile << " * Loaded input " << i << ": " << fixedImageNames[i] << "." << std::endl;
-		}
-		fixedImages = inputVectorFilter->GetOutput();
+	// Initialize LevelSet function
+	LevelSetsType::Pointer functional = LevelSetsType::New();
+	// Connect Optimizer
+	OptimizerPointer opt = Optimizer::New();
+	opt->SetFunctional( functional );
 
-		logfile << " * Number of Components= " << fixedImages->GetNumberOfComponentsPerPixel() << "." << std::endl;
+
+	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
+	logfile << " * Target feature, number of components= " << fixedImageNames.size() << "." << std::endl;
+	for (size_t i = 0; i < fixedImageNames.size(); i++ ) {
+		ImageReader::Pointer r = ImageReader::New();
+		r->SetFileName( fixedImageNames[i] );
+		r->Update();
+		comb->SetInput(i,r->GetOutput());
+
+		logfile << "\t* Input " << i << ": " << fixedImageNames[i] << "." << std::endl;
 	}
 
-	// QUESTION Read fixed image parameters -------------------------------------------------
+	ChannelType::DirectionType dir; dir.SetIdentity();
+	comb->Update();
+	ImageType::Pointer im = comb->GetOutput();
+	im->SetDirection( dir );
+	functional->SetReferenceImage( im );
 
 
 	// Read moving surface(s) -----------------------------------------------------------
-	SurfaceVector movingSurfaces;
+	logfile << " * Number of moving surfaces= " << movingSurfaceNames.size() << "." << std::endl;
 	for (size_t i = 0; i < movingSurfaceNames.size(); i++) {
-		SurfaceReader::Pointer surfReader = SurfaceReader::New();
-		surfReader->SetFileName( movingSurfaceNames[i] );
-		surfReader->Update();
-		movingSurfaces.push_back( surfReader->GetOutput() );
+		ReaderType::Pointer polyDataReader = ReaderType::New();
+		polyDataReader->SetFileName( movingSurfaceNames[i] );
+		polyDataReader->Update();
+		functional->AddShapePrior( polyDataReader->GetOutput() );
+
+		logfile << "\t* Mesh " << i << ": " << movingSurfaceNames[i] << "." << std::endl;
 	}
 
-
 	// Set up registration ------------------------------------------------------------
+	if (vmap.count("grid-size,s")) {
+		opt->SetGridSize( vmap["grid-size,g"].as<int>() );
+	}
+	if (vmap.count("iterations,i")) {
+		opt->SetNumberOfIterations( vmap["iterations,i"].as<int>() );
+	}
+	if (vmap.count("step-size,s")) {
+		opt->SetStepSize( vmap["step-size,s"].as<float>() );
+
+	}
+	if (vmap.count("alpha,a")) {
+		opt->SetAlpha( vmap["alpha,a"].as<float>() );
+	}
 
 	clock_t preProcessStop = clock();
 	float pre_tot_t = (float) (((double) (preProcessStop - preProcessStart))
@@ -120,11 +137,14 @@ int main(int argc, char *argv[]) {
 	sprintf(pre_time, "\t* Pre-processing Total Time = %02d:%02d:%02d hours\n",
 			h, min, sec);
 
+
 	// Start registration -------------------------------------------------------------
 	clock_t initTime = clock();
-	// ...
+
+	opt->Start();
 
 	clock_t finishTime = clock();
+
 	float tot_t = (float) (((double) (finishTime - initTime)) / CLOCKS_PER_SEC);
 	h = (tot_t / 3600);
 	min = (((int) tot_t) % 3600) / 60;
@@ -136,6 +156,19 @@ int main(int argc, char *argv[]) {
 
 	logfile << pre_time << std::endl;
 	logfile << reg_time << std::endl;
+
+
+	// Write out final results ---------------------------------------------------------
+    size_t nCont = functional->GetCurrentContourPosition().size();
+    for ( size_t contid = 0; contid < nCont; contid++) {
+        std::stringstream ss;
+        ss << "final-cont0" << contid << ".vtk";
+    	WriterType::Pointer polyDataWriter = WriterType::New();
+    	polyDataWriter->SetInput( functional->GetCurrentContourPosition()[contid] );
+    	polyDataWriter->SetFileName( "deformed2-wm.vtk" );
+    	polyDataWriter->Update();
+    }
+
 
 	return EXIT_SUCCESS;
 }

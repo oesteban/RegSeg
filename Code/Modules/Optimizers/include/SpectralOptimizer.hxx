@@ -43,6 +43,8 @@
 #ifndef SPECTRALOPTIMIZER_HXX_
 #define SPECTRALOPTIMIZER_HXX_
 
+#include "SpectralOptimizer.h"
+
 #include <vector>
 #include <vnl/vnl_math.h>
 #include <vnl/vnl_matrix.h>
@@ -177,7 +179,7 @@ void SpectralOptimizer<TFunctional>::Resume() {
 
 		this->InvokeEvent( itk::IterationEvent() );
 
-		this->ComputeIterationChange();
+		//this->ComputeIterationChange();
 
 		/* Update the level sets contour and deformation field */
 		InternalComputationValueType updateNorm = this->m_Functional->UpdateContour( this->m_NextParameters );
@@ -458,6 +460,9 @@ void SpectralOptimizer<TFunctional>
 
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::ComputeIterationChange() {
+
+
+
 	VectorType* fnextBuffer = this->m_NextParameters->GetBufferPointer();
 	VectorType* fBuffer = this->m_Parameters->GetBufferPointer();
 	size_t nPix = this->m_NextParameters->GetLargestPossibleRegion().GetNumberOfPixels();
@@ -513,6 +518,22 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	this->m_NextParameters->SetOrigin( this->m_Parameters->GetOrigin() );
 	this->m_NextParameters->Allocate();
 	this->m_NextParameters->FillBuffer( zerov );
+
+
+	this->m_LastField = ParametersType::New();
+	this->m_LastField->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
+	this->m_LastField->SetSpacing( this->m_Parameters->GetSpacing() );
+	this->m_LastField->SetDirection( this->m_Parameters->GetDirection() );
+	this->m_LastField->SetOrigin( this->m_Parameters->GetOrigin() );
+	this->m_LastField->Allocate();
+	this->m_LastField->FillBuffer( zerov );
+	this->m_CurrentField = ParametersType::New();
+	this->m_CurrentField->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
+	this->m_CurrentField->SetSpacing( this->m_Parameters->GetSpacing() );
+	this->m_CurrentField->SetDirection( this->m_Parameters->GetDirection() );
+	this->m_CurrentField->SetOrigin( this->m_Parameters->GetOrigin() );
+	this->m_CurrentField->Allocate();
+	this->m_CurrentField->FillBuffer( zerov );
 }
 
 } // end namespace rstk

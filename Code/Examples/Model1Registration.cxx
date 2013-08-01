@@ -140,7 +140,8 @@ int main(int argc, char *argv[]) {
 	opt->SetGridSize( 6 );
 	opt->SetFunctional( ls );
 	opt->SetNumberOfIterations(8);
-	opt->SetAlpha( 0.1 );
+	opt->SetAlpha( 1.0e2 );
+	opt->SetStepSize( 1.0 );
 
 	// Start
 	opt->Start();

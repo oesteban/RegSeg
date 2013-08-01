@@ -47,6 +47,7 @@ SET( TRANSFORM_LIB "RSTKTransform" )
 
 ADD_SUBDIRECTORY( Examples/ )
 
+ADD_SUBDIRECTORY( Applications/ )
 
 #######################################
 # if(WIN32 OR NOT EXISTS /dev/urandom)

@@ -135,6 +135,7 @@ public:
     }
 
     void ComputeWeights( void );
+    void ComputeNodesData( void );
 	void Interpolate( void );
 
 	inline void SetPoint( size_t id, const PointType pi );
@@ -147,6 +148,7 @@ public:
 
 	inline bool SetPointData( const size_t id, VectorType pi );
 	inline bool SetNodeData( const size_t id, VectorType pi );
+	inline bool SetCoefficient( const size_t id, VectorType pi );
 
 	// Virtual members inherited from Transform
 	virtual void SetParameters(const ParametersType & parameters);

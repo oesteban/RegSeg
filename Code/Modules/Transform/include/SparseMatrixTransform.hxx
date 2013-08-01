@@ -84,8 +84,10 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	for( size_t dim = 0; dim<Dimension; dim++ ) {
 		this->m_NodesData[dim] = DimensionVector(K);
 		this->m_TempNodesData[dim] = DimensionVector(K);
+		this->m_Coeff[dim] = DimensionVector(K);
 		this->m_NodesData[dim].fill( 0.0 );
 		this->m_TempNodesData[dim].fill( 0.0 );
+		this->m_Coeff[dim].fill( 0.0 );
 	}
 }
 
@@ -189,7 +191,22 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		this->ComputePhi();
 	}
 
-	// TODO Check if NodesData changed
+	for( size_t i = 0; i < Dimension; i++ ) {
+		this->m_PointsData[i].fill(0.0);
+		// Interpolate
+		this->m_Phi.mult( this->m_Coeff[i], this->m_PointsData[i] );
+	}
+
+}
+
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::ComputeNodesData(void) {
+	// Check m_Phi and initializations
+	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
+		this->ComputePhi();
+	}
 
 	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
 		this->ComputeS();
@@ -197,15 +214,39 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
 
 	for( size_t i = 0; i < Dimension; i++ ) {
-		this->m_Coeff[i] = DimensionVector(this->m_K);
-		this->m_PointsData[i].fill(0.0);
-		// Compute coefficients
-		this->m_Coeff[i] = this->m_System->solve( this->m_NodesData[i] );
+		this->m_NodesData[i].fill(0.0);
 		// Interpolate
-		this->m_Phi.mult( this->m_Coeff[i], this->m_PointsData[i] );
+		this->m_S.mult( this->m_Coeff[i], this->m_NodesData[i] );
 	}
 
 }
+
+//template< class TScalarType, unsigned int NDimensions >
+//void
+//SparseMatrixTransform<TScalarType,NDimensions>
+//::Interpolate(void) {
+//	// Check m_Phi and initializations
+//	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
+//		this->ComputePhi();
+//	}
+//
+//	// TODO Check if NodesData changed
+//
+//	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
+//		this->ComputeS();
+//	}
+//
+//
+//	for( size_t i = 0; i < Dimension; i++ ) {
+//		this->m_Coeff[i] = DimensionVector(this->m_K);
+//		this->m_PointsData[i].fill(0.0);
+//		// Compute coefficients
+//		this->m_Coeff[i] = this->m_System->solve( this->m_NodesData[i] );
+//		// Interpolate
+//		this->m_Phi.mult( this->m_Coeff[i], this->m_PointsData[i] );
+//	}
+//
+//}
 
 
 template< class TScalarType, unsigned int NDimensions >
@@ -352,7 +393,22 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	return changed;
 }
 
+
+template< class TScalarType, unsigned int NDimensions >
+inline bool
+SparseMatrixTransform<TScalarType,NDimensions>
+::SetCoefficient( const size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType pi ) {
+	bool changed = false;
+	for( size_t dim = 0; dim < Dimension; dim++) {
+		if( std::isnan( pi[dim] )) pi[dim] = 0;
+		if( this->m_Coeff[dim][id] != pi[dim] ) {
+			this->m_Coeff[dim][id] = pi[dim];
+			changed = true;
+		}
+	}
+	return changed;
 }
 
+}
 
 #endif /* SPARSEMATRIXTRANSFORM_HXX_ */
