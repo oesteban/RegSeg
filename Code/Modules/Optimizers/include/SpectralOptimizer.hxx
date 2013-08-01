@@ -179,11 +179,11 @@ void SpectralOptimizer<TFunctional>::Resume() {
 
 		this->InvokeEvent( itk::IterationEvent() );
 
-		//this->ComputeIterationChange();
 
 		/* Update the level sets contour and deformation field */
-		InternalComputationValueType updateNorm = this->m_Functional->UpdateContour( this->m_NextParameters );
+		this->m_Functional->UpdateContour( this->m_NextParameters );
 
+		this->ComputeIterationChange();
 
 		this->SetUpdate();
 
@@ -219,7 +219,7 @@ void SpectralOptimizer<TFunctional>::Resume() {
 #endif
 
 
-		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentValue << " | " << updateNorm << " | " << this->m_Functional->GetValue() << std::endl;
+		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentValue << " | " << this->m_Functional->GetValue() << std::endl;
 
 		/*
 		 * Check the convergence by WindowConvergenceMonitoringFunction.
@@ -460,18 +460,32 @@ void SpectralOptimizer<TFunctional>
 
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::ComputeIterationChange() {
+	const VectorType* fnextBuffer = this->m_Functional->GetCurrentDisplacementField()->GetBufferPointer();
 
+#ifndef NDEBUG
+		typedef rstk::DisplacementFieldFileWriter<typename FunctionalType::FieldType> Writer;
+		typename Writer::Pointer p = Writer::New();
+		std::stringstream ss;
+		ss.str("");
+		ss << "field_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
+		p->SetFileName( ss.str().c_str() );
+		p->SetInput( this->m_Functional->GetCurrentDisplacementField() );
+		p->Update();
+#endif
 
+	VectorType* fBuffer = this->m_LastField->GetBufferPointer();
+	size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
 
-	VectorType* fnextBuffer = this->m_NextParameters->GetBufferPointer();
-	VectorType* fBuffer = this->m_Parameters->GetBufferPointer();
-	size_t nPix = this->m_NextParameters->GetLargestPossibleRegion().GetNumberOfPixels();
 	InternalComputationValueType totalNorm = 0;
 	VectorType t0,t1;
+	InternalComputationValueType diff = 0.0;
 	for (size_t pix = 0; pix < nPix; pix++ ) {
 		t0 = *(fBuffer+pix);
 		t1 = *(fnextBuffer+pix);
-		totalNorm += ( t1 - t0 ).GetNorm();
+		diff = ( t1 - t0 ).GetNorm();
+		totalNorm += diff;
+
+		*(fBuffer+pix) = t1; // Copy current to last, once evaluated
 	}
 
 	this->m_CurrentValue = totalNorm/nPix;
@@ -527,13 +541,13 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	this->m_LastField->SetOrigin( this->m_Parameters->GetOrigin() );
 	this->m_LastField->Allocate();
 	this->m_LastField->FillBuffer( zerov );
-	this->m_CurrentField = ParametersType::New();
-	this->m_CurrentField->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
-	this->m_CurrentField->SetSpacing( this->m_Parameters->GetSpacing() );
-	this->m_CurrentField->SetDirection( this->m_Parameters->GetDirection() );
-	this->m_CurrentField->SetOrigin( this->m_Parameters->GetOrigin() );
-	this->m_CurrentField->Allocate();
-	this->m_CurrentField->FillBuffer( zerov );
+	//this->m_CurrentField = ParametersType::New();
+	//this->m_CurrentField->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
+	//this->m_CurrentField->SetSpacing( this->m_Parameters->GetSpacing() );
+	//this->m_CurrentField->SetDirection( this->m_Parameters->GetDirection() );
+	//this->m_CurrentField->SetOrigin( this->m_Parameters->GetOrigin() );
+	//this->m_CurrentField->Allocate();
+	//this->m_CurrentField->FillBuffer( zerov );
 }
 
 } // end namespace rstk
