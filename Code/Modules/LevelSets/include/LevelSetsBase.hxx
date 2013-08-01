@@ -67,11 +67,11 @@ void
 LevelSetsBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
 	// Set number of control points in the sparse-dense interpolator
-	size_t nPoints = 0;
+	this->m_NumberOfPoints = 0;
 	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-		nPoints+= this->m_CurrentContourPosition[contid]->GetNumberOfPoints();
+		this->m_NumberOfPoints+= this->m_CurrentContourPosition[contid]->GetNumberOfPoints();
 	}
-	this->m_FieldInterpolator->SetN(nPoints);
+	this->m_FieldInterpolator->SetN(this->m_NumberOfPoints);
 
 
 	// Initialize corresponding ROI /////////////////////////////
@@ -137,8 +137,6 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 		if( this->m_NumberOfContours>1 )
 			this->m_OuterList.push_back( outerVect );
 	}
-
-	this->m_NumberOfPoints = cpid + 1;
 
 	if( this->m_NumberOfContours == 1 ) {
 		ContourOuterRegions outerVect;
@@ -232,16 +230,11 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 	for( size_t gpid = 0; gpid < this->m_NumberOfNodes; gpid++ ) {
 		v =  *( NodesBuffer + gpid );
 		if ( v.GetNorm()>0 ) {
-			this->m_FieldInterpolator->SetNodeData( gpid, v );
+			this->m_FieldInterpolator->SetCoefficient( gpid, v );
 
 			if( v.GetNorm()>maxNorm) maxNorm=v.GetNorm();
 		}
 	}
-
-#ifndef NDEBUG
-	std::cout << "Field maxNorm=" << maxNorm << "mm." << std::endl;
-#endif
-
 
 	this->m_FieldInterpolator->Interpolate();
 
@@ -297,9 +290,9 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 	this->m_RegionsModified = (changed>0);
 
-#ifndef NDEBUG
-	std::cout << "MeanNorm=" << (meanNorm/changed) << "mm.; maxNorm=" << maxNorm << "mm.;" << " meanDesp=" << (meanDesp/changed) << std::endl;
-#endif
+//#ifndef NDEBUG
+//	std::cout << "MeanNorm=" << (meanNorm/changed) << "mm.; maxNorm=" << maxNorm << "mm.;" << " meanDesp=" << (meanDesp/changed) << std::endl;
+//#endif
 
 	return (meanNorm/changed);
 }

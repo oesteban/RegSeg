@@ -47,31 +47,63 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
 
-#include <itkImage.h>
+#include <itkVector.h>
 #include <itkVectorImage.h>
+#include <itkImage.h>
 #include <itkImageFileReader.h>
 #include <itkImageFileWriter.h>
-#include <itkMesh.h>
-#include <itkMeshFileReader.h>
-#include <itkImageToVectorImageFilter.h>
+#include <itkQuadEdgeMesh.h>
+#include <itkVTKPolyDataReader.h>
+#include <itkVTKPolyDataWriter.h>
+#include <itkVectorImageToImageAdaptor.h>
+#include <itkComposeImageFilter.h>
+#include <itkVectorResampleImageFilter.h>
+#include <itkBSplineInterpolateImageFunction.h>
+#include <itkDisplacementFieldTransform.h>
+#include <itkResampleImageFilter.h>
+#include "MahalanobisLevelSets.h"
+#include "SpectralGradientDescentOptimizer.h"
+#include "SpectralADMMOptimizer.h"
+//#include "GradientDescentLevelSetsOptimizer.h"
+//#include "ALOptimizer.h"
+
+using namespace rstk;
 
 
 namespace bpo = boost::program_options;
 
-typedef float       PixelType;
-const unsigned int Dimension = 3;
-typedef itk::VectorImage< PixelType, Dimension >    ImageVectorType;
-typedef itk::ImageFileReader< ImageVectorType >     ImageReader;
-typedef itk::ImageFileWriter< ImageVectorType >     ImageWriter;
+typedef itk::Image<float, 3u>                                ChannelType;
+typedef itk::Vector<float, 2u>                               VectorPixelType;
+typedef itk::Image<VectorPixelType, 3u>                      ImageType;
+typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
-typedef itk::Image< PixelType, Dimension >          ImageComponentType;
-typedef itk::ImageFileReader<ImageComponentType>    ImageComponentReader;
-typedef itk::ImageToVectorImageFilter
-		          < ImageComponentType >            ImageToVectorFilterType;
+typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
+typedef LevelSetsType::ContourType                           ContourType;
+typedef ContourType::Pointer                                 ContourDisplacementFieldPointer;
+typedef LevelSetsType::MeanType                              MeanType;
+typedef LevelSetsType::CovarianceType                        CovarianceType;
+typedef LevelSetsType::FieldType                             DeformationFieldType;
 
-typedef itk::Mesh< PixelType, Dimension >           SurfaceType;
-typedef itk::MeshFileReader< SurfaceType >          SurfaceReader;
-typedef std::vector< const SurfaceType* >           SurfaceVector;
+typedef SpectralGradientDescentOptimizer< LevelSetsType >   Optimizer;
+//typedef SpectralADMMOptimizer< LevelSetsType >              Optimizer;
+
+typedef typename Optimizer::Pointer                          OptimizerPointer;
+
+typedef itk::VTKPolyDataReader< ContourType >     ReaderType;
+typedef itk::VTKPolyDataWriter< ContourType >     WriterType;
+typedef itk::ImageFileReader<ChannelType>                      ImageReader;
+typedef itk::ImageFileWriter<ChannelType>                      ImageWriter;
+typedef itk::ImageFileWriter<DeformationFieldType>           DeformationWriter;
+
+typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
+typedef itk::VectorResampleImageFilter
+		<DeformationFieldType,DeformationFieldType,double>   DisplacementResamplerType;
+typedef itk::BSplineInterpolateImageFunction
+		                <DeformationFieldType>               InterpolatorFunction;
+typedef itk::DisplacementFieldTransform<float, 3u>           TransformType;
+
+typedef itk::ResampleImageFilter<ChannelType,ChannelType,float>    ResamplerType;
+
 
 
 int main(int argc, char *argv[]);
