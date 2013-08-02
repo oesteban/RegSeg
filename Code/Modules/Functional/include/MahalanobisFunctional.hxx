@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------
-// File:             MahalanobisLevelSets.hxx
+// File:             MahalanobisFunctional.hxx
 // Date:             27/10/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
@@ -38,7 +38,7 @@
 #ifndef MAHALANOBISLEVELSETS_HXX_
 #define MAHALANOBISLEVELSETS_HXX_
 
-#include "MahalanobisLevelSets.h"
+#include "MahalanobisFunctional.h"
 #include <vnl/vnl_matrix.h>
 #include <vnl/vnl_diag_matrix.h>
 #include <vnl/algo/vnl_symmetric_eigensystem.h>
@@ -49,15 +49,15 @@
 
 namespace rstk {
 template <typename TReferenceImageType, typename TCoordRepType>
-MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::MahalanobisLevelSets() {
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
+::MahalanobisFunctional() {
 	this->m_Interp = InterpolatorType::New();
 
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
 void
-MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::PrintSelf( std::ostream& os, itk::Indent indent) const {
 	Superclass::PrintSelf(os, indent);
 
@@ -66,7 +66,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 template <typename TReferenceImageType, typename TCoordRepType>
 void
-MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::Initialize() {
 	Superclass::Initialize();
 
@@ -83,15 +83,15 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
-inline typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::MeasureType
-MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::GetEnergyAtPoint( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::PointType & point, size_t roi ) {
+inline typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::MeasureType
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
+::GetEnergyAtPoint( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::PointType & point, size_t roi ) {
 	ReferencePixelType dist = this->m_Interp->Evaluate( point ) - this->m_Parameters[roi].mean;
 	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() );
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
-void MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::ComputeParameters() {
 	// Update regions
 	for( size_t roi = 0; roi < this->m_Parameters.size(); roi++ ) {
@@ -111,8 +111,8 @@ void MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
-typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType
-MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersType
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::UpdateParametersOfRegion( const size_t idx ) {
 	ParametersType newParameters;
 
@@ -166,17 +166,17 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 template <typename TReferenceImageType, typename TCoordRepType>
 size_t
-MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::AddShapePrior( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ContourType* prior,
-		         typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType& params){
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
+::AddShapePrior( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ContourType* prior,
+		         typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersType& params){
 	size_t id = this->AddShapePrior( prior );
 	this->SetParameters( id, params );
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
 size_t
-MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
-::AddShapePrior( typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ContourType* prior ){
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
+::AddShapePrior( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ContourType* prior ){
 	this->Superclass::AddShapePrior( prior );
 
 	size_t id = this->m_Parameters.size();
@@ -188,9 +188,9 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 template <typename TReferenceImageType, typename TCoordRepType>
 void
-MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::SetParameters( size_t roi,
-		         typename MahalanobisLevelSets<TReferenceImageType,TCoordRepType>::ParametersType& params ) {
+		         typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersType& params ) {
 
 	this->m_Parameters[roi].mean = params.mean;
 
@@ -269,7 +269,7 @@ MahalanobisLevelSets<TReferenceImageType,TCoordRepType>
 
 template< typename TReferenceImageType, typename TCoordRepType >
 bool
-MahalanobisLevelSets<TReferenceImageType, TCoordRepType>
+MahalanobisFunctional<TReferenceImageType, TCoordRepType>
 ::ParametersInitialized() const {
 	for ( size_t i = 0; i < this->m_Parameters.size(); i++ ) {
 		if ( ! this->m_Parameters[i].initialized ) return false;

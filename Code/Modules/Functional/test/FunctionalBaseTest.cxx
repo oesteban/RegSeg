@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------------
-// File:          LevelSetsBaseTest.cxx
+// File:          FunctionalBaseTest.cxx
 // Date:          Jun 4, 2013
 // Author:        code@oscaresteban.es (Oscar Esteban)
 // Version:       1.0 beta
@@ -25,7 +25,7 @@
 #include <itkMeshFileWriter.h>
 #include <itkVectorImageToImageAdaptor.h>
 
-#include "MahalanobisLevelSets.h"
+#include "MahalanobisFunctional.h"
 
 using namespace rstk;
 
@@ -36,13 +36,13 @@ int main(int argc, char **argv) {
 
 typedef itk::Vector<float, 1u>               VectorPixelType;
 typedef itk::Image<VectorPixelType, 3u>      ImageType;
-typedef MahalanobisLevelSets<ImageType>      LevelSetsType;
+typedef MahalanobisFunctional<ImageType>      FunctionalType;
 
-typedef LevelSetsType::ContourType     ContourType;
+typedef FunctionalType::ContourType     ContourType;
 typedef ContourType::Pointer           ContourDisplacementFieldPointer;
-typedef LevelSetsType::MeanType                   MeanType;
-typedef LevelSetsType::CovarianceType             CovarianceType;
-typedef LevelSetsType::DeformationFieldType       DeformationFieldType;
+typedef FunctionalType::MeanType                   MeanType;
+typedef FunctionalType::CovarianceType             CovarianceType;
+typedef FunctionalType::DeformationFieldType       DeformationFieldType;
 
 typedef itk::MeshFileReader< ContourType >        ReaderType;
 typedef itk::MeshFileWriter< ContourType >        WriterType;
@@ -54,7 +54,7 @@ typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
 
 
 
-class MahalanobisLevelSetsTest : public ::testing::Test {
+class MahalanobisFunctionalTest : public ::testing::Test {
 public:
 	virtual void SetUp() {
 		ImageReader::Pointer r = ImageReader::New();
@@ -71,7 +71,7 @@ public:
 		prior = polyDataReader->GetOutput();
 
 
-		ls = LevelSetsType::New();
+		ls = FunctionalType::New();
 		ls->SetReferenceImage( reference );
 		ls->AddShapePrior( prior );
 		ls->Initialize();
@@ -79,10 +79,10 @@ public:
 
 	ImageType::Pointer reference;
 	ContourDisplacementFieldPointer prior;
-	LevelSetsType::Pointer ls;
+	FunctionalType::Pointer ls;
 };
 
 
-TEST_F( MahalanobisLevelSetsTest, DeformationParametersGridExtent ) {
+TEST_F( MahalanobisFunctionalTest, DeformationParametersGridExtent ) {
 	ASSERT_TRUE( true );
 }

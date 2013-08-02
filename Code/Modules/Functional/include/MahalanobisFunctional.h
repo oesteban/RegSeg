@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------
-// File:             MahalanobisLevelSets.h
+// File:             MahalanobisFunctional.h
 // Date:             27/10/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
@@ -38,7 +38,7 @@
 #ifndef MAHALANOBISLEVELSETS_H_
 #define MAHALANOBISLEVELSETS_H_
 
-#include "LevelSetsBase.h"
+#include "FunctionalBase.h"
 
 // Include headers
 #include <itkObject.h>
@@ -49,26 +49,26 @@
 
 // Namespace declaration
 namespace rstk {
-/** \class MahalanobisLevelSets
- *  \brief This class implements a LevelSets function for registration based on
+/** \class MahalanobisFunctional
+ *  \brief This class implements a Functional function for registration based on
  *         Mahalanobis distance
  *
- *  MahalanobisLevelSets provides the implementation for using the Mahalanobis
- *  distance as distance function in the LevelSets environment
+ *  MahalanobisFunctional provides the implementation for using the Mahalanobis
+ *  distance as distance function in the Functional environment
  *
  *  \ingroup
  */
 template <typename TReferenceImageType, typename TCoordRepType = double>
-class MahalanobisLevelSets: public rstk::LevelSetsBase< TReferenceImageType, TCoordRepType > {
+class MahalanobisFunctional: public rstk::FunctionalBase< TReferenceImageType, TCoordRepType > {
 public:
-	typedef MahalanobisLevelSets                         Self;
-	typedef rstk::LevelSetsBase
+	typedef MahalanobisFunctional                         Self;
+	typedef rstk::FunctionalBase
 		< TReferenceImageType, TCoordRepType>            Superclass;
 	typedef itk::SmartPointer<Self>                      Pointer;
 	typedef itk::SmartPointer<const Self>                ConstPointer;
 
 	/** Run-time type information (and related methods). */
-	itkTypeMacro( MahalanobisLevelSets, rstk::LevelSetsBase );
+	itkTypeMacro( MahalanobisFunctional, rstk::FunctionalBase );
 	itkNewMacro( Self );
 
 	typedef typename Superclass::MeasureType                 MeasureType;
@@ -147,8 +147,8 @@ public:
 	void Initialize( void );
 
 protected:
-	MahalanobisLevelSets();
-	~MahalanobisLevelSets() {}
+	MahalanobisFunctional();
+	~MahalanobisFunctional() {}
 
 	void PrintSelf( std::ostream& os, itk::Indent indent) const;
 
@@ -162,18 +162,18 @@ protected:
 	ParametersList m_Parameters;
 
 private:
-	MahalanobisLevelSets( const Self &); // purposely not implemented
+	MahalanobisFunctional( const Self &); // purposely not implemented
 	void operator=(const Self &); // purposely not implemented
 
 	bool ParametersInitialized() const;
 
 	InterpolatorPointer m_Interp;
 
-}; // End of class MahalanobisLevelSets
+}; // End of class MahalanobisFunctional
 } // End of namespace
 
 #ifndef ITK_MANUAL_INSTANTIATION
-#include "MahalanobisLevelSets.hxx"
+#include "MahalanobisFunctional.hxx"
 #endif
 
 #endif /* MAHALANOBISLEVELSETS_H_ */

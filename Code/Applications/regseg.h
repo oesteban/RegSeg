@@ -61,10 +61,10 @@
 #include <itkBSplineInterpolateImageFunction.h>
 #include <itkDisplacementFieldTransform.h>
 #include <itkResampleImageFilter.h>
-#include "MahalanobisLevelSets.h"
+#include "MahalanobisFunctional.h"
 #include "SpectralGradientDescentOptimizer.h"
 #include "SpectralADMMOptimizer.h"
-//#include "GradientDescentLevelSetsOptimizer.h"
+//#include "GradientDescentFunctionalOptimizer.h"
 //#include "ALOptimizer.h"
 
 using namespace rstk;
@@ -77,15 +77,15 @@ typedef itk::Vector<float, 2u>                               VectorPixelType;
 typedef itk::Image<VectorPixelType, 3u>                      ImageType;
 typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
-typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
-typedef LevelSetsType::ContourType                           ContourType;
+typedef MahalanobisFunctional<ImageType>                      FunctionalType;
+typedef FunctionalType::ContourType                           ContourType;
 typedef ContourType::Pointer                                 ContourDisplacementFieldPointer;
-typedef LevelSetsType::MeanType                              MeanType;
-typedef LevelSetsType::CovarianceType                        CovarianceType;
-typedef LevelSetsType::FieldType                             DeformationFieldType;
+typedef FunctionalType::MeanType                              MeanType;
+typedef FunctionalType::CovarianceType                        CovarianceType;
+typedef FunctionalType::FieldType                             DeformationFieldType;
 
-typedef SpectralGradientDescentOptimizer< LevelSetsType >   Optimizer;
-//typedef SpectralADMMOptimizer< LevelSetsType >              Optimizer;
+typedef SpectralGradientDescentOptimizer< FunctionalType >   Optimizer;
+//typedef SpectralADMMOptimizer< FunctionalType >              Optimizer;
 
 typedef typename Optimizer::Pointer                          OptimizerPointer;
 

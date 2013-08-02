@@ -160,7 +160,7 @@ void SpectralOptimizer<TFunctional>::Resume() {
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = COSTFUNCTION_ERROR;
-			this->m_StopConditionDescription << "LevelSets error during optimization";
+			this->m_StopConditionDescription << "Functional error during optimization";
 			this->Stop();
 			throw err;  // Pass exception to caller
 		}

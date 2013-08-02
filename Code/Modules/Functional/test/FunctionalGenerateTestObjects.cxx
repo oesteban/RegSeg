@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------
-// File:             LevelSetsGenerateTestObjects.cxx
+// File:             FunctionalGenerateTestObjects.cxx
 // Date:             31/10/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
@@ -55,7 +55,7 @@
 #include <itkSpatialObjectToImageFilter.h>
 #include <itkBinaryMask3DMeshSource.h>
 #include <itkAddImageFilter.h>
-#include "MahalanobisLevelSets.h"
+#include "MahalanobisFunctional.h"
 
 using namespace rstk;
 
@@ -66,11 +66,11 @@ int main(int argc, char *argv[]) {
 	typedef float                                PixelType;
 	typedef itk::Vector<float, 2u>               VectorPixelType;
 	typedef itk::Image<PixelType, Dimension>            ImageType;
-	typedef MahalanobisLevelSets<itk::Image<VectorPixelType, Dimension> >      LevelSetsType;
+	typedef MahalanobisFunctional<itk::Image<VectorPixelType, Dimension> >      FunctionalType;
 
-	typedef typename LevelSetsType::ContourType     ContourType;
+	typedef typename FunctionalType::ContourType     ContourType;
 	typedef typename ContourType::Pointer           ContourDeformationPointer;
-	typedef typename LevelSetsType::PointType                 PointType;
+	typedef typename FunctionalType::PointType                 PointType;
 
 	typedef itk::BinaryMask3DMeshSource< itk::Image<PixelType, 3u>, ContourType > MeshSource;
 	typedef itk::AddImageFilter<ImageType, ImageType, ImageType > Add;
