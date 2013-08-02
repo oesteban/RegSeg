@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Set up registration ------------------------------------------------------------
-	if (vmap.count("grid-size,s")) {
+	if (vmap.count("grid-size,g")) {
 		opt->SetGridSize( vmap["grid-size,g"].as<int>() );
 	}
 	if (vmap.count("iterations,i")) {
