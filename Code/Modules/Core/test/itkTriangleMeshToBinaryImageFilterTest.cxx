@@ -29,8 +29,8 @@
 #include <itkBSplineInterpolateImageFunction.h>
 #include <itkDisplacementFieldTransform.h>
 #include <itkResampleImageFilter.h>
-#include "MahalanobisLevelSets.h"
-#include "GradientDescentLevelSetsOptimizer.h"
+#include "MahalanobisFunctional.h"
+#include "GradientDescentFunctionalOptimizer.h"
 
 #include <itkTriangleMeshToBinaryImageFilter.h>
 
@@ -42,15 +42,15 @@ int main(int argc, char *argv[]) {
 	typedef itk::Image<VectorPixelType, 3u>                      ImageType;
 	typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
-	typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
-	typedef LevelSetsType::ContourDeformationType                ContourDeformationType;
+	typedef MahalanobisFunctional<ImageType>                      FunctionalType;
+	typedef FunctionalType::ContourDeformationType                ContourDeformationType;
 	typedef ContourDeformationType::Pointer                      ContourDisplacementFieldPointer;
-	typedef LevelSetsType::PointType                             PointType;
-	typedef LevelSetsType::MeanType                              MeanType;
-	typedef LevelSetsType::CovarianceType                        CovarianceType;
-	typedef LevelSetsType::DeformationFieldType                  DeformationFieldType;
+	typedef FunctionalType::PointType                             PointType;
+	typedef FunctionalType::MeanType                              MeanType;
+	typedef FunctionalType::CovarianceType                        CovarianceType;
+	typedef FunctionalType::DeformationFieldType                  DeformationFieldType;
 
-	typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
+	typedef GradientDescentFunctionalOptimizer< FunctionalType >   Optimizer;
 	typedef typename Optimizer::Pointer                          OptimizerPointer;
 
 	typedef itk::MeshFileReader< ContourDeformationType >        ReaderType;

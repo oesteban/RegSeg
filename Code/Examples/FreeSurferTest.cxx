@@ -60,7 +60,7 @@
 #include <itkResampleImageFilter.h>
 
 
-#include "MahalanobisLevelSets.h"
+#include "MahalanobisFunctional.h"
 #include "SpectralGradientDescentOptimizer.h"
 #include "SpectralADMMOptimizer.h"
 
@@ -72,14 +72,14 @@ int main(int argc, char *argv[]) {
 	typedef itk::Image<VectorPixelType, 3u>                      ImageType;
 	typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
-	typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
-	typedef LevelSetsType::ContourType                           ContourType;
+	typedef MahalanobisFunctional<ImageType>                      FunctionalType;
+	typedef FunctionalType::ContourType                           ContourType;
 	typedef ContourType::Pointer                                 ContourDisplacementFieldPointer;
-	typedef LevelSetsType::MeanType                              MeanType;
-	typedef LevelSetsType::CovarianceType                        CovarianceType;
-	typedef LevelSetsType::FieldType                             DeformationFieldType;
+	typedef FunctionalType::MeanType                              MeanType;
+	typedef FunctionalType::CovarianceType                        CovarianceType;
+	typedef FunctionalType::FieldType                             DeformationFieldType;
 
-	typedef SpectralGradientDescentOptimizer< LevelSetsType >   Optimizer;
+	typedef SpectralGradientDescentOptimizer< FunctionalType >   Optimizer;
 	typedef typename Optimizer::Pointer                          OptimizerPointer;
 
 	typedef itk::MeshFileReader< ContourType >                   ReaderType;
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 	ChannelType::Pointer im = r->GetOutput();
 
 	// Initialize LevelSet function
-	LevelSetsType::Pointer ls = LevelSetsType::New();
+	FunctionalType::Pointer ls = FunctionalType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
 	//ls->AddShapePrior( initialContour2 );
 	//ls->AddShapePrior( initialContour3 );

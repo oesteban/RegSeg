@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------
-// File:             LevelSetsBase.hxx
+// File:             FunctionalBase.hxx
 // Date:             06/11/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
@@ -38,7 +38,7 @@
 #ifndef LEVELSETSBASE_HXX_
 #define LEVELSETSBASE_HXX_
 
-#include "LevelSetsBase.h"
+#include "FunctionalBase.h"
 
 #include <iostream>
 #include <iomanip>
@@ -51,8 +51,8 @@ namespace rstk {
 
 
 template< typename TReferenceImageType, typename TCoordRepType >
-LevelSetsBase<TReferenceImageType, TCoordRepType>
-::LevelSetsBase() {
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::FunctionalBase() {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_FieldInterpolator = FieldInterpolatorType::New();
 	this->m_Derivative = FieldType::New();
@@ -65,7 +65,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
-LevelSetsBase<TReferenceImageType, TCoordRepType>
+FunctionalBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
 	// Set number of control points in the sparse-dense interpolator
 	this->m_NumberOfPoints = 0;
@@ -184,8 +184,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 template< typename TReferenceImageType, typename TCoordRepType >
 size_t
-LevelSetsBase<TReferenceImageType, TCoordRepType>
-::AddShapePrior( typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContourType* prior ) {
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::AddShapePrior( typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContourType* prior ) {
 	this->m_CurrentContourPosition.push_back( prior );
 	this->m_NumberOfContours++;
     this->m_ROIs.resize( this->m_NumberOfContours+1 );
@@ -195,8 +195,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-typename LevelSetsBase<TReferenceImageType, TCoordRepType>::MeasureType
-LevelSetsBase<TReferenceImageType, TCoordRepType>
+typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
+FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetValue() {
 	this->m_Value = 0.0;
 
@@ -222,8 +222,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
-LevelSetsBase<TReferenceImageType, TCoordRepType>
-::UpdateContour(const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::FieldType* newField ) {
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::UpdateContour(const typename FunctionalBase<TReferenceImageType, TCoordRepType>::FieldType* newField ) {
 	// Copy newField values to interpolator
 	const VectorType* NodesBuffer = newField->GetBufferPointer();
 	VectorType v;
@@ -296,8 +296,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 template< typename TReferenceImageType, typename TCoordRepType >
 inline bool
-LevelSetsBase<TReferenceImageType, TCoordRepType>
-::IsInside( const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::PointType p, typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::IsInside( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType p, typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
 	bool isInside = this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex( p, idx );
 #ifndef NDEBUG
 	if(!isInside) {
@@ -316,7 +316,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
-LevelSetsBase<TReferenceImageType, TCoordRepType>
+FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeDerivative() {
 	size_t cpid = 0;
 
@@ -414,8 +414,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
-LevelSetsBase<TReferenceImageType, TCoordRepType>
+typename FunctionalBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
+FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetCurrentRegion( size_t idx ) {
 	if(this->m_RegionsModified )
 		this->ComputeCurrentRegions();
@@ -424,8 +424,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-const typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ProbabilityMapType*
-LevelSetsBase<TReferenceImageType, TCoordRepType>
+const typename FunctionalBase<TReferenceImageType, TCoordRepType>::ProbabilityMapType*
+FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetCurrentMap( size_t idx ) {
 	if(this->m_RegionsModified ) {
 		this->ComputeCurrentRegions();
@@ -465,8 +465,8 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 
 template< typename TReferenceImageType, typename TCoordRepType >
-typename LevelSetsBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
-LevelSetsBase<TReferenceImageType, TCoordRepType>
+typename FunctionalBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
+FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetCurrentRegions() {
 	return this->m_CurrentRegions;
 }
@@ -474,7 +474,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
-LevelSetsBase<TReferenceImageType, TCoordRepType>
+FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeCurrentRegions() {
 	ROIPixelType unassigned = itk::NumericTraits< ROIPixelType >::max();
 	this->m_CurrentRegions->FillBuffer(unassigned);
@@ -523,7 +523,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
-LevelSetsBase<TReferenceImageType, TCoordRepType>
+FunctionalBase<TReferenceImageType, TCoordRepType>
 ::InitializeSamplingGrid() {
 	this->m_ReferenceSamplingGrid = FieldType::New();
 	typename ReferenceImageType::SpacingType sp = this->m_ReferenceImage->GetSpacing();
@@ -577,7 +577,7 @@ LevelSetsBase<TReferenceImageType, TCoordRepType>
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
-LevelSetsBase<TReferenceImageType, TCoordRepType>
+FunctionalBase<TReferenceImageType, TCoordRepType>
 ::CopyInformation( const FieldType* field) {
 	this->m_Derivative->SetDirection( field->GetDirection() );
 	this->m_Derivative->SetOrigin   ( field->GetOrigin() );

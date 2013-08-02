@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 
 
 	// Initialize LevelSet function
-	LevelSetsType::Pointer functional = LevelSetsType::New();
+	FunctionalType::Pointer functional = FunctionalType::New();
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetFunctional( functional );

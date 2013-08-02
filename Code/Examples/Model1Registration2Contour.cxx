@@ -55,8 +55,8 @@
 #include <itkBSplineInterpolateImageFunction.h>
 #include <itkDisplacementFieldTransform.h>
 #include <itkResampleImageFilter.h>
-#include "MahalanobisLevelSets.h"
-#include "GradientDescentLevelSetsOptimizer.h"
+#include "MahalanobisFunctional.h"
+#include "GradientDescentFunctionalOptimizer.h"
 
 using namespace rstk;
 
@@ -66,15 +66,15 @@ int main(int argc, char *argv[]) {
 	typedef itk::Image<VectorPixelType, 3u>                      ImageType;
 	typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
-	typedef MahalanobisLevelSets<ImageType>                      LevelSetsType;
-	typedef LevelSetsType::ContourType                ContourType;
+	typedef MahalanobisFunctional<ImageType>                      FunctionalType;
+	typedef FunctionalType::ContourType                ContourType;
 	typedef ContourType::Pointer                      ContourDisplacementFieldPointer;
-	typedef LevelSetsType::VectorType                            VectorType;
-	typedef LevelSetsType::MeanType                              MeanType;
-	typedef LevelSetsType::CovarianceType                        CovarianceType;
-	typedef LevelSetsType::DeformationFieldType                  DeformationFieldType;
+	typedef FunctionalType::VectorType                            VectorType;
+	typedef FunctionalType::MeanType                              MeanType;
+	typedef FunctionalType::CovarianceType                        CovarianceType;
+	typedef FunctionalType::DeformationFieldType                  DeformationFieldType;
 
-	typedef GradientDescentLevelSetsOptimizer< LevelSetsType >   Optimizer;
+	typedef GradientDescentFunctionalOptimizer< FunctionalType >   Optimizer;
 	typedef typename Optimizer::Pointer                          OptimizerPointer;
 
 	typedef itk::VTKPolyDataReader< ContourType >     ReaderType;
@@ -166,13 +166,13 @@ int main(int argc, char *argv[]) {
 	cov3(1,0) =  2.22414814e-07;
 	cov3(1,1) =  1.56537816e-08;
 
-	typename LevelSetsType::ParametersType params1;
+	typename FunctionalType::ParametersType params1;
 	params1.mean[0] = mean2;
 	params1.mean[1] = mean1;
 	params1.iCovariance[0] = cov2;
 	params1.iCovariance[1] = cov1;
 
-	typename LevelSetsType::ParametersType params2;
+	typename FunctionalType::ParametersType params2;
 	params2.mean[0] = mean3;
 	params2.mean[1] = mean2;
 	params2.iCovariance[0] = cov3;
@@ -191,14 +191,14 @@ int main(int argc, char *argv[]) {
 	df->FillBuffer( itk::NumericTraits<DeformationFieldType::PixelType>::Zero );
 
 	// Initialize LevelSet function
-	LevelSetsType::Pointer ls = LevelSetsType::New();
+	FunctionalType::Pointer ls = FunctionalType::New();
 	ls->SetReferenceImage( comb->GetOutput() );
 	ls->AddShapePrior( initialContour1, params1 );
 	ls->AddShapePrior( initialContour2, params2 );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
-	opt->SetLevelSetsFunction( ls );
+	opt->SetFunctionalFunction( ls );
 	opt->SetNumberOfIterations(5000);
 	//opt->SetAlpha( 1e-3 );
 	//opt->SetBeta( 1e-3 );

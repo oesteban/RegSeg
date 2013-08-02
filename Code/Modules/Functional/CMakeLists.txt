@@ -1,5 +1,5 @@
-project(RSTKLevelSets)
-set(RSTKLevelSets_LIBRARIES RSTKLevelSets)
+project(RSTKFunctional)
+set(RSTKFunctional_LIBRARIES RSTKFunctional)
 
 ADD_SUBDIRECTORY( test/ )
 #ADD_SUBDIRECTORY( src/ )

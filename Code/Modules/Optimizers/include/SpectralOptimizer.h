@@ -165,7 +165,7 @@ public:
 
 	/** Minimum convergence value for convergence checking.
 	 *  The convergence checker calculates convergence value by fitting to
-	 *  a window of the LevelSets profile. When the convergence value reaches
+	 *  a window of the Functional profile. When the convergence value reaches
 	 *  a small value, it would be treated as converged.
 	 *
 	 *  The default m_MinimumConvergenceValue is set to 1e-8 to pass all
@@ -176,7 +176,7 @@ public:
 
 	/** Window size for the convergence checker.
 	 *  The convergence checker calculates convergence value by fitting to
-	 *  a window of the LevelSets (metric value) profile.
+	 *  a window of the Functional (metric value) profile.
 	 *
 	 *  The default m_ConvergenceWindowSize is set to 50 to pass all
 	 *  tests. It is suggested to use 10 for less stringent convergence
@@ -257,14 +257,14 @@ protected:
 
 	/** Minimum convergence value for convergence checking.
 	 *  The convergence checker calculates convergence value by fitting to
-	 *  a window of the LevelSets profile. When the convergence value reaches
+	 *  a window of the Functional profile. When the convergence value reaches
 	 *  a small value, such as 1e-8, it would be treated as converged.
 	 */
 	InternalComputationValueType m_MinimumConvergenceValue;
 
 	/** Window size for the convergence checker.
 	 *  The convergence checker calculates convergence value by fitting to
-	 *  a window of the LevelSets (metric value) profile.
+	 *  a window of the Functional (metric value) profile.
 	 */
 	SizeValueType m_ConvergenceWindowSize;
 

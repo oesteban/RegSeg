@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------
-// File:             MahalanobisLevelSetsTest.cxx
+// File:             MahalanobisFunctionalTest.cxx
 // Date:             30/10/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
@@ -51,7 +51,7 @@
 #include <itkVTKPolyDataReader.h>
 #include <itkVTKPolyDataWriter.h>
 #include <itkVectorImageToImageAdaptor.h>
-#include "MahalanobisLevelSets.h"
+#include "MahalanobisFunctional.h"
 #include "DisplacementFieldFileWriter.h"
 
 using namespace rstk;
@@ -59,14 +59,14 @@ using namespace rstk;
 int main(int argc, char *argv[]) {
 	typedef itk::Vector<float, 1u>               VectorPixelType;
 	typedef itk::Image<VectorPixelType, 3u>      ImageType;
-	typedef MahalanobisLevelSets<ImageType>      LevelSetsType;
+	typedef MahalanobisFunctional<ImageType>      FunctionalType;
 
-	typedef LevelSetsType::ContourType     ContourType;
+	typedef FunctionalType::ContourType     ContourType;
 	typedef ContourType::Pointer           ContourDisplacementFieldPointer;
-	typedef LevelSetsType::PointType                 PointType;
-	typedef LevelSetsType::MeanType                   MeanType;
-	typedef LevelSetsType::CovarianceType             CovarianceType;
-	typedef LevelSetsType::DeformationFieldType       DeformationFieldType;
+	typedef FunctionalType::PointType                 PointType;
+	typedef FunctionalType::MeanType                   MeanType;
+	typedef FunctionalType::CovarianceType             CovarianceType;
+	typedef FunctionalType::DeformationFieldType       DeformationFieldType;
 
 	typedef itk::VTKPolyDataReader< ContourType >     ReaderType;
 	typedef itk::VTKPolyDataWriter< ContourType >     WriterType;
@@ -113,10 +113,10 @@ int main(int argc, char *argv[]) {
 	std::cout << "Number Of Parameters=" << df->GetLargestPossibleRegion().GetNumberOfPixels() << std::endl;
 
 
-	LevelSetsType::Pointer ls = LevelSetsType::New();
+	FunctionalType::Pointer ls = FunctionalType::New();
 	ls->SetReferenceImage( im );
 
-	//typename LevelSetsType::ParametersType params;
+	//typename FunctionalType::ParametersType params;
 	//params.mean[0] = 255;
 	//params.mean[1] = 127;
 	//params.cov = cov;

@@ -1,9 +1,9 @@
 #set(RSTKCoreTests
-#  GradientDescentLevelSetsOptimizerTest.cxx
+#  GradientDescentFunctionalOptimizerTest.cxx
 #)
 #
-#ADD_EXECUTABLE(GradientDescentLevelSetsOptimizerTest GradientDescentLevelSetsOptimizerTest.cxx ) 
-#TARGET_LINK_LIBRARIES(GradientDescentLevelSetsOptimizerTest ${ITK_LIBRARIES} )
+#ADD_EXECUTABLE(GradientDescentFunctionalOptimizerTest GradientDescentFunctionalOptimizerTest.cxx ) 
+#TARGET_LINK_LIBRARIES(GradientDescentFunctionalOptimizerTest ${ITK_LIBRARIES} )
 
 #add_library(RSTKOptimizers ${RSTKOptimizers_SRC})
 #target_link_libraries(RSTKOptimizers

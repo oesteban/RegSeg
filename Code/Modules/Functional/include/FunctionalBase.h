@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------
-// File:             LevelSetsBase.h
+// File:             FunctionalBase.h
 // Date:             27/10/2012
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
@@ -59,44 +59,41 @@
 #include <itkDisplacementFieldJacobianDeterminantFilter.h>
 #include <itkDisplacementFieldTransform.h>
 
-//#include "SparseToDenseFieldResampleFilter.h"
-
-//#include "VectorIDWBasisFunction.h"
 #include "SparseMatrixTransform.h"
 #include "DownsampleAveragingFilter.h"
 
 namespace rstk {
-/** \class LevelSetsBase
- *  \brief This class is a base for LevelSets definitions in the RSTK framework
+/** \class FunctionalBase
+ *  \brief This class is a base for Functional definitions in the RSTK framework
  *
- *  This class is meant to provide an interface for LevelSets definitions. Given
+ *  This class is meant to provide an interface for Functional definitions. Given
  *  that RSTK is a registration framework, it provides the necessary elements to
- *  use the LevelSets function as a metric for non-linear registration.
+ *  use the Functional function as a metric for non-linear registration.
  *
- *  LevelSetsBase requires the instantiation with a target image (DWI), a moving contour
+ *  FunctionalBase requires the instantiation with a target image (DWI), a moving contour
  *  (surface) from T1 space and deformation fields definitions for fixed and moving
  *  objects. This implies to have a dense deformation field for DWI space and a sparse
  *  deformation field for the contour.
  *
  *  Derived classes must provide implementation for
  *  GetValue
- *  GetLevelSetsMap
+ *  GetFunctionalMap
  *
- *  \ingroup LevelSets
+ *  \ingroup Functional
  *  \ingroup RSTK
  */
 
 
 template <typename TReferenceImageType, typename TCoordRepType = double>
-class LevelSetsBase: public itk::Object {
+class FunctionalBase: public itk::Object {
 public:
-	typedef LevelSetsBase                    Self;
+	typedef FunctionalBase                    Self;
 	typedef itk::Object                      Superclass;
 	typedef itk::SmartPointer<Self>          Pointer;
 	typedef itk::SmartPointer< const Self >  ConstPointer;
 
 	/** Run-time type information (and related methods). */
-	itkTypeMacro(LevelSetsBase, itk::Object);
+	itkTypeMacro(FunctionalBase, itk::Object);
 
 	itkStaticConstMacro( Dimension, unsigned int, TReferenceImageType::ImageDimension );
 
@@ -190,10 +187,6 @@ public:
 	typedef typename ResampleROIFilterType::Pointer          ResampleROIFilterPointer;
 	typedef std::vector< ResampleROIFilterPointer >          ResampleROIFilterList;
 
-	//typedef SparseToDenseFieldResampleFilter
-	//	<ContourType, FieldType>       SparseToDenseFieldResampleType;
-	//typedef typename SparseToDenseFieldResampleType::Pointer SparseToDenseFieldResamplePointer;
-
 	typedef typename itk::WarpMeshFilter
 			< ContourType,
 			  ContourType,
@@ -236,8 +229,8 @@ public:
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
 
 protected:
-	LevelSetsBase();
-	virtual ~LevelSetsBase() {}
+	FunctionalBase();
+	virtual ~FunctionalBase() {}
 
 	void PrintSelf(std::ostream & os, itk::Indent indent) const {
 		Superclass::PrintSelf(os, indent);
@@ -278,17 +271,17 @@ protected:
 	size_t m_NumberOfNodes;
 
 private:
-	LevelSetsBase(const Self &);  //purposely not implemented
+	FunctionalBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented
 
 	void ComputeCurrentRegions( void );
 
 
-}; // end LevelSetsBase Class
+}; // end FunctionalBase Class
 } // end namespace rstk
 
 #ifndef ITK_MANUAL_INSTANTIATION
-#include "LevelSetsBase.hxx"
+#include "FunctionalBase.hxx"
 #endif
 
 #endif /* LEVELSETSBASE_H_ */
