@@ -127,15 +127,16 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			points[pid] = p;
 			this->m_FieldInterpolator->SetPoint( cpid, p );
 
-			if( this->m_NumberOfContours>1 )
+			if( contid > 0 ) {
 				normals->GetPointData( pid, &ni );
 				outerVect[pid] =  interp->Evaluate( p - ni*0.5 );
+			}
 			++c_it;
 			cpid++;
 		}
 		this->m_ShapePrior.push_back( points );
 
-		if( this->m_NumberOfContours>1 )
+		if( contid > 0 )
 			this->m_OuterList.push_back( outerVect );
 	}
 
@@ -235,6 +236,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 	this->m_FieldInterpolator->Interpolate();
+	this->m_FieldInterpolator->ComputeNodesData();
+
+	VectorType* fBuffer = this->m_CurrentDisplacementField->GetBufferPointer();
+
+	for( size_t i = 0; i<this->m_NumberOfNodes; i++) {
+		*(fBuffer+i) = this->m_FieldInterpolator->GetNodeData(i);
+	}
 
 	MeasureType norm;
 	MeasureType meanNorm = 0.0;
@@ -283,15 +291,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 	this->m_RegionsModified = (changed>0);
-
-
-	this->m_FieldInterpolator->ComputeNodesData();
-
-	VectorType* fBuffer = this->m_CurrentDisplacementField->GetBufferPointer();
-
-	for( size_t i = 0; i<this->m_NumberOfNodes; i++) {
-		*(fBuffer+i) = this->m_FieldInterpolator->GetNodeData(i);
-	}
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -386,7 +385,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 #ifndef NDEBUG
-	std::cout << "max_gradient=" << maxGradient << ", avg=" << ( sumGradient/ cpid ) << "." << std::endl;
+	std::cout << "Gradient: avg=" << ( sumGradient/ cpid ) << ", max=" << maxGradient << "." << std::endl;
 #endif
 
 	// Interpolate sparse velocity field to targetDeformation
@@ -407,7 +406,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 #ifndef NDEBUG
-	std::cout << "max_interpolated_gradient=" << maxGradient << ", avg=" << ( sumGradient/ this->m_NumberOfNodes ) << "." << std::endl;
+	std::cout << "Gradient_projected: avg="<< ( sumGradient/ this->m_NumberOfNodes ) << "; max=" << maxGradient << "." << std::endl;
 #endif
 
 
