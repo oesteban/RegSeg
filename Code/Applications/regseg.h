@@ -67,6 +67,8 @@
 //#include "GradientDescentFunctionalOptimizer.h"
 //#include "ALOptimizer.h"
 
+#include <itkCommand.h>
+
 using namespace rstk;
 
 
@@ -104,7 +106,7 @@ typedef itk::DisplacementFieldTransform<float, 3u>           TransformType;
 
 typedef itk::ResampleImageFilter<ChannelType,ChannelType,float>    ResamplerType;
 
-
+typedef itk::SimpleMemberCommand< Optimizer >  ObserverType;
 
 int main(int argc, char *argv[]);
 

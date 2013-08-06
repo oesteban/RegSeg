@@ -85,6 +85,10 @@ int main(int argc, char *argv[]) {
 	opt->SetFunctional( functional );
 
 
+	//typename ObserverType::Pointer o = ObserverType::New();
+	//o->SetCallbackFunction( opt, & PrintIteration );
+	//o->AddObserver( itk::IterationEvent(), o );
+
 	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
 	logfile << " * Target feature, number of components= " << fixedImageNames.size() << "." << std::endl;
 	for (size_t i = 0; i < fixedImageNames.size(); i++ ) {
