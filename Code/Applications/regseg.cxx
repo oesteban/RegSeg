@@ -32,7 +32,9 @@
 int main(int argc, char *argv[]) {
 	std::string outPrefix;
 	std::vector< std::string > fixedImageNames, movingSurfaceNames;
+	std::string logFileName = "regseg.log";
 	bool outImages = false;
+	size_t verbosity = 1;
 
 	bpo::options_description desc("Usage");
 	desc.add_options()
@@ -45,7 +47,9 @@ int main(int argc, char *argv[]) {
 			("beta,b", bpo::value< float > (), "beta value in regularization")
 			("step-size,s", bpo::value< float > (), "step-size value in optimization")
 			("iterations,i", bpo::value< int > (), "number of iterations")
-			("grid-size,g", bpo::value< int > (), "grid size");
+			("grid-size,g", bpo::value< int > (), "grid size")
+			("logfile,l", bpo::value<std::string>(&logFileName), "log filename")
+			("verbosity,V", bpo::value<size_t>(&verbosity), "verbosity level ( 0 = no output; 5 = verbose )");
 	bpo::positional_options_description pdesc;
 	bpo::variables_map vmap;
 	bpo::store(
@@ -68,7 +72,7 @@ int main(int argc, char *argv[]) {
 
 
 	// Set up log file
-	std::ofstream logfile((outPrefix + "regseg.log").c_str());
+	std::ofstream logfile((outPrefix + logFileName ).c_str());
 
 	// Read fixed image(s) --------------------------------------------------------------
 	clock_t preProcessStart = clock();
@@ -139,11 +143,18 @@ int main(int argc, char *argv[]) {
 
 
 	// Start registration -------------------------------------------------------------
+	logfile << " --------------------------------- Starting registration process." << std::endl;
 	clock_t initTime = clock();
 
 	opt->Start();
 
 	clock_t finishTime = clock();
+	logfile << " --------------------------------- Finished registration process." << std::endl;
+
+	logfile << "\n Summary:" << std::endl;
+
+	logfile << "\t* Final energy = " << functional->GetValue() << "." << std::endl;
+
 
 	float tot_t = (float) (((double) (finishTime - initTime)) / CLOCKS_PER_SEC);
 	h = (tot_t / 3600);
