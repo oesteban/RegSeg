@@ -219,7 +219,8 @@ void SpectralOptimizer<TFunctional>::Resume() {
 #endif
 
 
-		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentValue << " | " << this->m_Functional->GetValue() << std::endl;
+		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentValue << " | " << this->m_Functional->GetValue()
+				<< " | " << this->GetCurrentRegularizationEnergy() << std::endl;
 
 		/*
 		 * Check the convergence by WindowConvergenceMonitoringFunction.
@@ -259,6 +260,30 @@ void SpectralOptimizer<TFunctional>::Resume() {
 			break;
 		}
 	} //while (!m_Stop)
+}
+
+
+template< typename TFunctional >
+typename SpectralOptimizer<TFunctional>::MeasureType
+SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
+	this->m_RegularizationEnergy=0;
+	const VectorType* fBuffer = this->m_LastField->GetBufferPointer();
+	size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	VectorType u;
+
+	for ( size_t pix = 0; pix<nPix; pix++) {
+		u = *(fBuffer+pix);
+		this->m_RegularizationEnergy+= dot_product(u.GetVnlVector(), this->m_A.GetVnlMatrix() * u.GetVnlVector() );
+	}
+
+	double normalizer = 1.0;
+
+	for( size_t i = 0; i<Dimension; i++ ) {
+		normalizer*= this->m_LastField->GetSpacing()[i];
+	}
+
+	return normalizer * this->m_RegularizationEnergy;
 }
 
 template< typename TFunctional >

@@ -249,6 +249,8 @@ public:
 
 	void ComputeIterationChange();
 
+	MeasureType GetCurrentRegularizationEnergy();
+
 protected:
 	/** Manual learning rate to apply. It is overridden by
 	 * automatic learning rate estimation if enabled. See main documentation.
@@ -305,6 +307,7 @@ protected:
 	MeasureType m_CurrentValue;
 
 	FunctionalPointer m_Functional;
+	MeasureType m_RegularizationEnergy;
 
 	ParametersPointer m_LastField;
 	//ParametersPointer m_CurrentField;
