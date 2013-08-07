@@ -201,6 +201,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetValue() {
 	this->m_Value = 0.0;
 
+	double normalizer = 1.0;
+
+	for(size_t i = 0; i<Dimension; i++)
+		normalizer *= m_ReferenceImage->GetSpacing()[i];
+
 	for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
 		ProbabilityMapConstPointer roipm = this->GetCurrentMap( roi );
 
@@ -218,7 +223,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			}
 		}
 	}
-	return this->m_Value;
+	return normalizer*this->m_Value;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >

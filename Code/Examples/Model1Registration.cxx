@@ -137,11 +137,11 @@ int main(int argc, char *argv[]) {
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
-	opt->SetGridSize( 40 );
+	opt->SetGridSize( 6 );
 	opt->SetFunctional( ls );
-	opt->SetNumberOfIterations(1000);
-	opt->SetAlpha( 1.0 );
-	opt->SetStepSize( 0.01 );
+	opt->SetNumberOfIterations(10);
+	opt->SetAlpha( 0.01 );
+	opt->SetStepSize( 0.1 );
 
 	// Start
 	opt->Start();
