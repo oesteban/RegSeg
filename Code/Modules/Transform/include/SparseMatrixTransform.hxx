@@ -45,8 +45,8 @@
 
 #include "SparseMatrixTransform.h"
 #include <itkGaussianKernelFunction.h>
-#include <itkGaussianKernelFunction.h>
 #include <itkBSplineKernelFunction.h>
+#include <itkBSplineDerivativeKernelFunction.h>
 
 namespace rstk {
 
@@ -60,6 +60,8 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	this->m_ControlDataChanged = false;
 	this->m_KernelFunction  = dynamic_cast< KernelFunctionType * >(
 	    itk::BSplineKernelFunction<3u, ScalarType>::New().GetPointer() );
+	this->m_KernelDerivativeFunction  = dynamic_cast< KernelFunctionType * >(
+		    itk::BSplineDerivativeKernelFunction<3u, ScalarType>::New().GetPointer() );
 	this->m_KernelNorm = pow( 1.0/this->m_KernelFunction->Evaluate( 0.0 ), (double) Dimension );
 }
 
@@ -85,9 +87,12 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		this->m_NodesData[dim] = DimensionVector(K);
 		this->m_TempNodesData[dim] = DimensionVector(K);
 		this->m_Coeff[dim] = DimensionVector(K);
+		this->m_NodesDerivative[dim] = DimensionVector(K);
+
 		this->m_NodesData[dim].fill( 0.0 );
 		this->m_TempNodesData[dim].fill( 0.0 );
 		this->m_Coeff[dim].fill( 0.0 );
+		this->m_NodesDerivative[dim].fill( 0.0 );
 	}
 }
 
@@ -122,8 +127,50 @@ SparseMatrixTransform<TScalarType,NDimensions>
 			}
 		}
 	}
-
 	//this->m_System = new vnl_sparse_lu( this->m_S, vnl_sparse_lu::estimate_condition);
+}
+
+
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::ComputeSPrime( ) {
+	PointType s, x;
+	ScalarType wi;
+	size_t row, col;
+	VectorType r;
+
+	for ( size_t dim = 0; dim < Dimension; dim++ ) {
+		this->m_SPrime[dim] = WeightsMatrix(this->m_NumberOfParameters,this->m_NumberOfParameters);
+	}
+
+	for( row = 0; row < this->m_NumberOfParameters; row++ ) {
+		s = this->m_Nodes[row];
+
+		for ( col=0; col < this->m_NumberOfParameters; col++) {
+			x = this->m_Nodes[col];
+			r = s - x;
+			for ( size_t dim = 0; dim < Dimension; dim++ ) {
+				wi=1.0;
+				for (size_t i = 0; i<Dimension; i++) {
+					if( dim == i ) {
+						wi*= this->m_KernelDerivativeFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
+					} else {
+						wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
+					}
+
+					if( wi < vnl_math::eps ) {
+						wi = 0.0;
+						break;
+					}
+				}
+
+				if (wi > 0.0) {
+					this->m_SPrime[dim].put(row, col, this->m_KernelNorm * wi);
+				}
+			}
+		}
+	}
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -201,22 +248,30 @@ template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputeNodesData( ) {
-	// Check m_Phi and initializations
-	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
-		this->ComputePhi();
-	}
-
 	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
 		this->ComputeS();
 	}
-
 
 	for( size_t i = 0; i < Dimension; i++ ) {
 		this->m_NodesData[i].fill(0.0);
 		// Interpolate
 		this->m_S.mult( this->m_Coeff[i], this->m_NodesData[i] );
 	}
+}
 
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::ComputeGradient( ) {
+	if( this->m_SPrime[0].rows() == 0 || this->m_SPrime[0].cols() == 0 ) {
+		this->ComputeSPrime();
+	}
+
+	for( size_t i = 0; i < Dimension; i++ ) {
+		this->m_NodesDerivative[i].fill(0.0);
+		// Interpolate
+		this->m_S[i].mult( this->m_Coeff[i], this->m_NodesDerivative[i] );
+	}
 }
 
 //template< class TScalarType, unsigned int NDimensions >
