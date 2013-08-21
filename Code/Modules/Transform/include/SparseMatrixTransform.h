@@ -126,7 +126,8 @@ public:
     itkGetConstMacro(NumberOfParameters, size_t );
 
     void ComputeWeights( void );
-    void ComputeNodesData( );
+    void ComputeNodesData( void );
+    void ComputeGradient( void );
 	void Interpolate( void );
 
 	inline void SetPoint( size_t id, const PointType pi );
@@ -210,6 +211,7 @@ protected:
 	DimensionVector m_PointsData[Dimension];     // Nc points in the mesh
 	DimensionVector m_NodesData[Dimension];      // Serialized k values in a grid
 	DimensionVector m_Coeff[Dimension];          // Serialized k coefficients in the grid
+	DimensionVector m_NodesDerivative[Dimension];// Serialized k values in a grid
 	DimensionVector m_TempNodesData[Dimension];  // Serialized k values in a grid
 
 	WeightsMatrix   m_Phi;
@@ -222,6 +224,7 @@ protected:
 	//vnl_sparse_lu* m_System;
 
 	typename KernelFunctionType::Pointer  m_KernelFunction;
+	typename KernelFunctionType::Pointer  m_KernelDerivativeFunction;
 	ScalarType m_KernelNorm;
 	ArrayType m_Sigma;
 
