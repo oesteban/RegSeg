@@ -151,7 +151,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	if( this->m_Derivative.IsNotNull() ) {
 		PointType p;
 		this->m_NumberOfNodes = this->m_Derivative->GetLargestPossibleRegion().GetNumberOfPixels();
-		this->m_FieldInterpolator->SetK( this->m_NumberOfNodes );
+		this->m_FieldInterpolator->SetNumberOfParameters( this->m_NumberOfNodes );
 
 		for ( size_t gid = 0; gid < this->m_NumberOfNodes; gid++ ) {
 			this->m_Derivative->TransformIndexToPhysicalPoint( this->m_Derivative->ComputeIndex( gid ), p );

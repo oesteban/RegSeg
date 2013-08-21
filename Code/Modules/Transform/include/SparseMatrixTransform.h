@@ -117,15 +117,16 @@ public:
     itkSetMacro(Sigma, ArrayType);
     itkGetConstReferenceMacro(Sigma, ArrayType);
 
+
+
     void SetN( size_t N );
-    void SetK( size_t K );
-    void SetNumberOfParameters( size_t N, size_t K ) {
-    	this->SetN( N );
-    	this->SetK( K );
-    }
+    itkGetConstMacro(N, size_t );
+
+    void SetNumberOfParameters( size_t K );
+    itkGetConstMacro(NumberOfParameters, size_t );
 
     void ComputeWeights( void );
-    void ComputeNodesData( void );
+    void ComputeNodesData( );
 	void Interpolate( void );
 
 	inline void SetPoint( size_t id, const PointType pi );
@@ -200,23 +201,25 @@ protected:
 
 
 	void ComputePhi( void );
-	void ComputeS( void );
+	void ComputeS( );
+	void ComputeSPrime( );
 
 	PointsList m_Points; // Nc points in the mesh
 	PointsList m_Nodes;    // Serialized k points in a grid
 
-	DimensionVector m_PointsData[3];     // Nc points in the mesh
-	DimensionVector m_NodesData[3];      // Serialized k values in a grid
-	DimensionVector m_Coeff[3];          // Serialized k coefficients in the grid
-	DimensionVector m_TempNodesData[3];  // Serialized k values in a grid
+	DimensionVector m_PointsData[Dimension];     // Nc points in the mesh
+	DimensionVector m_NodesData[Dimension];      // Serialized k values in a grid
+	DimensionVector m_Coeff[Dimension];          // Serialized k coefficients in the grid
+	DimensionVector m_TempNodesData[Dimension];  // Serialized k values in a grid
 
 	WeightsMatrix   m_Phi;
 	WeightsMatrix   m_S;
+	WeightsMatrix   m_SPrime[Dimension];
 	WeightsMatrix   m_InvertPhi;
 	size_t          m_N;
-	size_t          m_K;
+	size_t          m_NumberOfParameters;
 
-	vnl_sparse_lu* m_System;
+	//vnl_sparse_lu* m_System;
 
 	typename KernelFunctionType::Pointer  m_KernelFunction;
 	ScalarType m_KernelNorm;
