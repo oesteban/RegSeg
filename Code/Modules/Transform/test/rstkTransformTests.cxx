@@ -59,7 +59,7 @@ public:
 
 
 		m_transform = Transform::New();
-		m_transform->SetK( m_K );
+		m_transform->SetNumberOfParameters( m_K );
 		m_transform->SetSigma( m_Sigma );
 
 

@@ -54,7 +54,7 @@ template< class TScalarType, unsigned int NDimensions >
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SparseMatrixTransform(): Superclass(NDimensions) {
 	this->m_N = 0;
-	this->m_K = 0;
+	this->m_NumberOfParameters = 0;
 	this->m_Sigma.Fill(2.0);
 	this->m_GridDataChanged = false;
 	this->m_ControlDataChanged = false;
@@ -78,8 +78,8 @@ SparseMatrixTransform<TScalarType,NDimensions>
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
-::SetK( size_t K ) {
-	this->m_K = K;
+::SetNumberOfParameters( size_t K ) {
+	this->m_NumberOfParameters = K;
 	this->m_Nodes.resize(K);
 	for( size_t dim = 0; dim<Dimension; dim++ ) {
 		this->m_NodesData[dim] = DimensionVector(K);
@@ -94,13 +94,13 @@ SparseMatrixTransform<TScalarType,NDimensions>
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
-::ComputeS() {
+::ComputeS( ) {
 	PointType s, x;
 	ScalarType wi;
 	size_t row, col;
 	VectorType r;
 
-	this->m_S = WeightsMatrix(this->m_K,this->m_K);
+	this->m_S = WeightsMatrix(this->m_NumberOfParameters,this->m_NumberOfParameters);
 
 	for( row = 0; row < this->m_S.rows(); row++ ) {
 		s = this->m_Nodes[row];
@@ -123,15 +123,15 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		}
 	}
 
-	this->m_System = new vnl_sparse_lu( this->m_S, vnl_sparse_lu::estimate_condition);
+	//this->m_System = new vnl_sparse_lu( this->m_S, vnl_sparse_lu::estimate_condition);
 }
 
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputePhi() {
-	this->m_Phi = WeightsMatrix(this->m_N, this->m_K);
-	this->m_InvertPhi = WeightsMatrix( this->m_K, this->m_N );
+	this->m_Phi = WeightsMatrix(this->m_N, this->m_NumberOfParameters);
+	this->m_InvertPhi = WeightsMatrix( this->m_NumberOfParameters, this->m_N );
 
 	ScalarType wi;
 	PointType ci, xk;
@@ -168,15 +168,13 @@ template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputeWeights() {
-
-
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
 		this->ComputePhi();
 	}
 
     for ( size_t i = 0; i < Dimension; i++ ) {
-    	this->m_TempNodesData[i] = DimensionVector(this->m_K);
+    	this->m_TempNodesData[i] = DimensionVector(this->m_NumberOfParameters);
     	this->m_TempNodesData[i].fill(0.0);
     	this->m_InvertPhi.mult(this->m_PointsData[i], this->m_TempNodesData[i] );
     }
@@ -202,7 +200,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
-::ComputeNodesData(void) {
+::ComputeNodesData( ) {
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
 		this->ComputePhi();
@@ -238,7 +236,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 //
 //
 //	for( size_t i = 0; i < Dimension; i++ ) {
-//		this->m_Coeff[i] = DimensionVector(this->m_K);
+//		this->m_Coeff[i] = DimensionVector(this->m_NumberOfParameters);
 //		this->m_PointsData[i].fill(0.0);
 //		// Compute coefficients
 //		this->m_Coeff[i] = this->m_System->solve( this->m_NodesData[i] );
