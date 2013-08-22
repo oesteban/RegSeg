@@ -85,12 +85,15 @@ public:
 
 	typedef std::vector< PointType >                 PointsList;
 
+	typedef typename Superclass::JacobianType        JacobianType;
+	typedef std::vector< JacobianType >              JacobianVector;
+
 
 	typedef itk::DefaultStaticMeshTraits<TScalarType, NDimensions, NDimensions, TScalarType, TScalarType> PointSetTraitsType;
 	typedef itk::PointSet<PointType, NDimensions, PointSetTraitsType>                                     PointSetType;
 	typedef typename PointSetType::Pointer           PointSetPointer;
 
-	typedef typename Superclass::JacobianType JacobianType;
+
 
     /** Standard coordinate point type for this class. */
     typedef typename Superclass::InputPointType  InputPointType;
@@ -137,6 +140,7 @@ public:
 	inline VectorType GetNodeData   ( const size_t id );
 	inline VectorType GetNodeWeight ( const size_t id );
 	inline VectorType GetCoefficient( const size_t id );
+	inline JacobianType GetJacobian ( const size_t id );
 
 	inline bool SetPointData( const size_t id, VectorType pi );
 	inline bool SetNodeData( const size_t id, VectorType pi );
@@ -211,8 +215,9 @@ protected:
 	DimensionVector m_PointsData[Dimension];     // Nc points in the mesh
 	DimensionVector m_NodesData[Dimension];      // Serialized k values in a grid
 	DimensionVector m_Coeff[Dimension];          // Serialized k coefficients in the grid
-	DimensionVector m_NodesDerivative[Dimension];// Serialized k values in a grid
 	DimensionVector m_TempNodesData[Dimension];  // Serialized k values in a grid
+
+	DimensionVector m_Jacobian[Dimension][Dimension]; // Serialized k dimxdim matrices in a grid
 
 	WeightsMatrix   m_Phi;
 	WeightsMatrix   m_S;
