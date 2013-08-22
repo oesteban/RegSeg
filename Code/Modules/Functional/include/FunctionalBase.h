@@ -228,6 +228,9 @@ public:
 	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
 
+	itkSetObjectMacro(FieldInterpolator, FieldInterpolatorType);
+	itkGetObjectMacro(FieldInterpolator, FieldInterpolatorType);
+
 protected:
 	FunctionalBase();
 	virtual ~FunctionalBase() {}

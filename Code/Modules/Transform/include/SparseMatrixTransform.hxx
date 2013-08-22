@@ -265,7 +265,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
-::ComputeGradient( ) {
+::ComputeJacobian( ) {
 	if( this->m_SPrime[0].rows() == 0 || this->m_SPrime[0].cols() == 0 ) {
 		this->ComputeSPrime();
 	}

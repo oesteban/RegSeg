@@ -283,6 +283,20 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 		normalizer*= this->m_LastField->GetSpacing()[i];
 	}
 
+	this->m_Functional->GetFieldInterpolator()->ComputeJacobian();
+
+	typedef typename FunctionalType::FieldInterpolatorType::JacobianType JacobianType;
+	JacobianType j;
+	JacobianType M;
+
+	for ( size_t pix = 0; pix<nPix; pix++) {
+		j = this->m_Functional->GetFieldInterpolator()->GetJacobian(pix);
+		M = (j * m_B) * j.GetTranspose();
+		for ( size_t i = 0; i<Dimension; i++ )
+			this->m_RegularizationEnergy+= M(i,i);
+	}
+
+
 	return normalizer * this->m_RegularizationEnergy;
 }
 

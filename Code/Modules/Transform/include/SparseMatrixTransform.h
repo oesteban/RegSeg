@@ -46,6 +46,7 @@
 #include <itkTransform.h>
 #include <itkPoint.h>
 #include <itkVector.h>
+#include <itkMatrix.h>
 #include <itkPointSet.h>
 #include <itkDefaultStaticMeshTraits.h>
 #include <itkKernelFunctionBase.h>
@@ -85,8 +86,7 @@ public:
 
 	typedef std::vector< PointType >                 PointsList;
 
-	typedef typename Superclass::JacobianType        JacobianType;
-	typedef std::vector< JacobianType >              JacobianVector;
+	typedef itk::Matrix< ScalarType, Dimension, Dimension >        JacobianType;
 
 
 	typedef itk::DefaultStaticMeshTraits<TScalarType, NDimensions, NDimensions, TScalarType, TScalarType> PointSetTraitsType;
@@ -130,7 +130,7 @@ public:
 
     void ComputeWeights( void );
     void ComputeNodesData( void );
-    void ComputeGradient( void );
+    void ComputeJacobian( void );
 	void Interpolate( void );
 
 	inline void SetPoint( size_t id, const PointType pi );
