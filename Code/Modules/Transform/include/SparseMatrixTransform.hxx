@@ -87,12 +87,15 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		this->m_NodesData[dim] = DimensionVector(K);
 		this->m_TempNodesData[dim] = DimensionVector(K);
 		this->m_Coeff[dim] = DimensionVector(K);
-		this->m_NodesDerivative[dim] = DimensionVector(K);
 
 		this->m_NodesData[dim].fill( 0.0 );
 		this->m_TempNodesData[dim].fill( 0.0 );
 		this->m_Coeff[dim].fill( 0.0 );
-		this->m_NodesDerivative[dim].fill( 0.0 );
+
+		for (size_t dim2 = 0; dim2<Dimension; dim2++ ) {
+			this->m_Jacobian[dim][dim2] = DimensionVector(K);
+			this->m_Jacobian[dim][dim2].fill( 0.0 );
+		}
 	}
 }
 
@@ -268,9 +271,9 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	}
 
 	for( size_t i = 0; i < Dimension; i++ ) {
-		this->m_NodesDerivative[i].fill(0.0);
-		// Interpolate
-		this->m_S[i].mult( this->m_Coeff[i], this->m_NodesDerivative[i] );
+		for( size_t j = 0; j < Dimension; j++ ) {
+			this->m_SPrime[i].mult( this->m_Coeff[j], this->m_Jacobian[i][j] );
+		}
 	}
 }
 
@@ -387,6 +390,22 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		if( std::isnan( gi[dim] )) gi[dim] = 0;
 	}
 
+	return gi;
+}
+
+template< class TScalarType, unsigned int NDimensions >
+inline typename SparseMatrixTransform<TScalarType,NDimensions>::JacobianType
+SparseMatrixTransform<TScalarType,NDimensions>
+::GetJacobian( const size_t id ) {
+	JacobianType gi;
+	gi.Fill( 0.0 );
+
+	for( size_t i = 0; i < Dimension; i++){
+		for( size_t j = 0; j < Dimension; j++){
+			gi(i,j) = this->m_Jacobian[j][i][id]; // Attention to transposition
+			if( std::isnan( gi(i,j) )) gi(i,j) = 0;
+		}
+	}
 	return gi;
 }
 
