@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
 	root["summary"]["energy"]["total"] = opt->GetCurrentMetricValue();
 	root["summary"]["energy"]["data"] = functional->GetValue();
 	root["summary"]["energy"]["regularization"] = opt->GetCurrentRegularizationEnergy();
-	root["summary"]["iterations"] = opt->GetCurrentIteration();
+	root["summary"]["iterations"] = Json::Int (opt->GetCurrentIteration());
 	root["summary"]["conv_status"] = opt->GetStopCondition();
 	root["summary"]["stop_msg"] = opt->GetStopConditionDescription();
 
