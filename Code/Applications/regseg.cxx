@@ -123,7 +123,6 @@ int main(int argc, char *argv[]) {
 		polyDataReader->SetFileName( movingSurfaceNames[i] );
 		polyDataReader->Update();
 		functional->AddShapePrior( polyDataReader->GetOutput() );
-
 		movingjson.append( movingSurfaceNames[i] );
 	}
 	root["inputs"]["moving"]["components"] = movingjson;
@@ -198,6 +197,10 @@ int main(int argc, char *argv[]) {
 	root["summary"]["iterations"] = Json::Int (opt->GetCurrentIteration());
 	root["summary"]["conv_status"] = opt->GetStopCondition();
 	root["summary"]["stop_msg"] = opt->GetStopConditionDescription();
+	Json::Value dumbArray(Json::arrayValue);
+	root["summary"]["energy"]["evolution_tot"] = dumbArray;
+	root["summary"]["energy"]["evolution_dat"] = dumbArray;
+	root["summary"]["energy"]["evolution_reg"] = dumbArray;
 
 	// Set-up & write out log file
 	std::ofstream logfile((outPrefix + logFileName ).c_str());
