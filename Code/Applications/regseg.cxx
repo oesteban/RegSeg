@@ -156,10 +156,6 @@ int main(int argc, char *argv[]) {
 	clock_t finishTime = clock();
 	std::cout << " --------------------------------- Finished registration process." << std::endl;
 
-	root["summary"]["energy"]["total"] = opt->GetCurrentMetricValue();
-	root["summary"]["energy"]["data"] = functional->GetValue();
-	root["summary"]["energy"]["regularization"] = 0.0;
-
 	float tot_t = (float) (((double) (finishTime - initTime)) / CLOCKS_PER_SEC);
 	root["time"]["processing"] = tot_t;
 
@@ -188,13 +184,22 @@ int main(int argc, char *argv[]) {
     	w->Update();
     }
 
+    // Last ROI (excluded region)
 	typename ROIWriter::Pointer w = ROIWriter::New();
 	w->SetInput( functional->GetCurrentRegion(nCont) );
 	w->SetFileName( (outPrefix + "_roi_background.nii.gz" ).c_str() );
 	w->Update();
 
 
-	// Set up log file
+	// JSON Summary
+	root["summary"]["energy"]["total"] = opt->GetCurrentMetricValue();
+	root["summary"]["energy"]["data"] = functional->GetValue();
+	root["summary"]["energy"]["regularization"] = opt->GetCurrentRegularizationEnergy();
+	root["summary"]["iterations"] = opt->GetCurrentIteration();
+	root["summary"]["conv_status"] = opt->GetStopCondition();
+	root["summary"]["stop_msg"] = opt->GetStopConditionDescription();
+
+	// Set-up & write out log file
 	std::ofstream logfile((outPrefix + logFileName ).c_str());
 	logfile << root;
 
