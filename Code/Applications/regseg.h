@@ -46,6 +46,9 @@
 #include <boost/program_options.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
+#include <boost/filesystem.hpp>
+
+#include <jsoncpp/json/json.h>
 
 #include <itkVector.h>
 #include <itkVectorImage.h>
@@ -64,6 +67,10 @@
 #include "MahalanobisFunctional.h"
 #include "SpectralGradientDescentOptimizer.h"
 #include "SpectralADMMOptimizer.h"
+#include "DisplacementFieldFileWriter.h"
+#include "DisplacementFieldComponentsFileWriter.h"
+
+
 //#include "GradientDescentFunctionalOptimizer.h"
 //#include "ALOptimizer.h"
 
@@ -73,6 +80,7 @@ using namespace rstk;
 
 
 namespace bpo = boost::program_options;
+namespace bfs = boost::filesystem;
 
 typedef itk::Image<float, 3u>                                ChannelType;
 typedef itk::Vector<float, 2u>                               VectorPixelType;
@@ -84,29 +92,31 @@ typedef FunctionalType::ContourType                           ContourType;
 typedef ContourType::Pointer                                 ContourDisplacementFieldPointer;
 typedef FunctionalType::MeanType                              MeanType;
 typedef FunctionalType::CovarianceType                        CovarianceType;
-typedef FunctionalType::FieldType                             DeformationFieldType;
+typedef FunctionalType::FieldType                             FieldType;
+typedef FunctionalType::ROIType                               ROIType;
 
 typedef SpectralGradientDescentOptimizer< FunctionalType >   Optimizer;
 //typedef SpectralADMMOptimizer< FunctionalType >              Optimizer;
 
 typedef typename Optimizer::Pointer                          OptimizerPointer;
 
-typedef itk::VTKPolyDataReader< ContourType >     ReaderType;
-typedef itk::VTKPolyDataWriter< ContourType >     WriterType;
-typedef itk::ImageFileReader<ChannelType>                      ImageReader;
-typedef itk::ImageFileWriter<ChannelType>                      ImageWriter;
-typedef itk::ImageFileWriter<DeformationFieldType>           DeformationWriter;
+typedef itk::VTKPolyDataReader< ContourType >                ReaderType;
+typedef itk::VTKPolyDataWriter< ContourType >                WriterType;
+typedef itk::ImageFileReader<ChannelType>                    ImageReader;
+typedef itk::ImageFileWriter<ChannelType>                    ImageWriter;
+typedef rstk::DisplacementFieldFileWriter<FieldType>         DisplacementFieldWriter;
+typedef itk::ImageFileWriter< ROIType >                      ROIWriter;
 
-typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
-typedef itk::VectorResampleImageFilter
-		<DeformationFieldType,DeformationFieldType,double>   DisplacementResamplerType;
-typedef itk::BSplineInterpolateImageFunction
-		                <DeformationFieldType>               InterpolatorFunction;
-typedef itk::DisplacementFieldTransform<float, 3u>           TransformType;
-
-typedef itk::ResampleImageFilter<ChannelType,ChannelType,float>    ResamplerType;
-
-typedef itk::SimpleMemberCommand< Optimizer >  ObserverType;
+//typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
+//typedef itk::VectorResampleImageFilter
+//		<DeformationFieldType,DeformationFieldType,double>   DisplacementResamplerType;
+//typedef itk::BSplineInterpolateImageFunction
+//		                <DeformationFieldType>               InterpolatorFunction;
+//typedef itk::DisplacementFieldTransform<float, 3u>           TransformType;
+//
+//typedef itk::ResampleImageFilter<ChannelType,ChannelType,float>    ResamplerType;
+//
+//typedef itk::SimpleMemberCommand< Optimizer >  ObserverType;
 
 int main(int argc, char *argv[]);
 
