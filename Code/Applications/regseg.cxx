@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2012, Oscar Esteban - oesteban@die.upm.es
+ Copyright (c) 2012, Oscar Esteban - oesteban@dionte.upm.es
  with Biomedical Image Technology, UPM (BIT-UPM)
  All rights reserved.
 
@@ -32,13 +32,13 @@
 int main(int argc, char *argv[]) {
 	std::string outPrefix;
 	std::vector< std::string > fixedImageNames, movingSurfaceNames;
-	std::string logFileName = "regseg.log";
+	std::string logFileName = ".log";
 	bool outImages = false;
 	size_t verbosity = 1;
 
 	bpo::options_description desc("Usage");
 	desc.add_options()
-			("help", "show help message")
+			("help,h", "show help message")
 			("fixed-images,F", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
 			("moving-surfaces,M", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken()->required(),	"moving image file")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
@@ -70,9 +70,11 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-
-	// Set up log file
-	std::ofstream logfile((outPrefix + logFileName ).c_str());
+	// Create the JSON output object
+	Json::Value root;
+	root["description"] = "RSTK Summary File";
+	std::time_t time;
+	root["information"] = std::ctime( &time );
 
 	// Read fixed image(s) --------------------------------------------------------------
 	clock_t preProcessStart = clock();
@@ -89,16 +91,21 @@ int main(int argc, char *argv[]) {
 	//o->SetCallbackFunction( opt, & PrintIteration );
 	//o->AddObserver( itk::IterationEvent(), o );
 
+	// Read target feature(s) -----------------------------------------------------------
+	root["inputs"]["target"]["components"]["size"] = Json::Int (fixedImageNames.size());
+	root["inputs"]["target"]["components"]["type"] = std::string("feature");
+	Json::Value targetjson(Json::arrayValue);
+
 	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
-	logfile << " * Target feature, number of components= " << fixedImageNames.size() << "." << std::endl;
 	for (size_t i = 0; i < fixedImageNames.size(); i++ ) {
 		ImageReader::Pointer r = ImageReader::New();
 		r->SetFileName( fixedImageNames[i] );
 		r->Update();
 		comb->SetInput(i,r->GetOutput());
 
-		logfile << "\t* Input " << i << ": " << fixedImageNames[i] << "." << std::endl;
+		targetjson.append( fixedImageNames[i]);
 	}
+	root["inputs"]["target"]["components"] = targetjson;
 
 	ChannelType::DirectionType dir; dir.SetIdentity();
 	comb->Update();
@@ -106,84 +113,90 @@ int main(int argc, char *argv[]) {
 	im->SetDirection( dir );
 	functional->SetReferenceImage( im );
 
-
 	// Read moving surface(s) -----------------------------------------------------------
-	logfile << " * Number of moving surfaces= " << movingSurfaceNames.size() << "." << std::endl;
+	root["inputs"]["moving"]["components"]["size"] = Json::Int (movingSurfaceNames.size());
+	root["inputs"]["moving"]["components"]["type"] = std::string("surface");
+	Json::Value movingjson(Json::arrayValue);
+
 	for (size_t i = 0; i < movingSurfaceNames.size(); i++) {
 		ReaderType::Pointer polyDataReader = ReaderType::New();
 		polyDataReader->SetFileName( movingSurfaceNames[i] );
 		polyDataReader->Update();
 		functional->AddShapePrior( polyDataReader->GetOutput() );
 
-		logfile << "\t* Mesh " << i << ": " << movingSurfaceNames[i] << "." << std::endl;
+		movingjson.append( movingSurfaceNames[i] );
 	}
+	root["inputs"]["moving"]["components"] = movingjson;
 
 	// Set up registration ------------------------------------------------------------
-	if (vmap.count("grid-size,g")) {
-		opt->SetGridSize( vmap["grid-size,g"].as<int>() );
+	if (vmap.count("grid-size")) {
+		opt->SetGridSize( vmap["grid-size"].as<int>() );
 	}
-	if (vmap.count("iterations,i")) {
-		opt->SetNumberOfIterations( vmap["iterations,i"].as<int>() );
+	if (vmap.count("iterations")) {
+		opt->SetNumberOfIterations( vmap["iterations"].as<int>() );
 	}
-	if (vmap.count("step-size,s")) {
-		opt->SetStepSize( vmap["step-size,s"].as<float>() );
+	if (vmap.count("step-size")) {
+		opt->SetStepSize( vmap["step-size"].as<float>() );
 
 	}
-	if (vmap.count("alpha,a")) {
-		opt->SetAlpha( vmap["alpha,a"].as<float>() );
+	if (vmap.count("alpha")) {
+		opt->SetAlpha( vmap["alpha"].as<float>() );
 	}
 
 	clock_t preProcessStop = clock();
-	float pre_tot_t = (float) (((double) (preProcessStop - preProcessStart))
-			/ CLOCKS_PER_SEC);
-	int h, min, sec;
-	h = (pre_tot_t / 3600);
-	min = (((int) pre_tot_t) % 3600) / 60;
-	sec = (((int) pre_tot_t) % 3600) % 60;
-
-	char pre_time[50];
-	sprintf(pre_time, "\t* Pre-processing Total Time = %02d:%02d:%02d hours\n",
-			h, min, sec);
-
+	float pre_tot_t = (float) (((double) (preProcessStop - preProcessStart)) / CLOCKS_PER_SEC);
+	root["time"]["preprocessing"] = pre_tot_t;
 
 	// Start registration -------------------------------------------------------------
-	logfile << " --------------------------------- Starting registration process." << std::endl;
+	std::cout << " --------------------------------- Starting registration process." << std::endl;
 	clock_t initTime = clock();
 
 	opt->Start();
 
 	clock_t finishTime = clock();
-	logfile << " --------------------------------- Finished registration process." << std::endl;
+	std::cout << " --------------------------------- Finished registration process." << std::endl;
 
-	logfile << "\n Summary:" << std::endl;
-
-	logfile << "\t* Final energy = " << functional->GetValue() << "." << std::endl;
-
+	root["summary"]["energy"]["total"] = opt->GetCurrentMetricValue();
+	root["summary"]["energy"]["data"] = functional->GetValue();
+	root["summary"]["energy"]["regularization"] = 0.0;
 
 	float tot_t = (float) (((double) (finishTime - initTime)) / CLOCKS_PER_SEC);
-	h = (tot_t / 3600);
-	min = (((int) tot_t) % 3600) / 60;
-	sec = (((int) tot_t) % 3600) % 60;
+	root["time"]["processing"] = tot_t;
 
-	char reg_time[50];
-	sprintf(reg_time, "\t* Registration Total Time = %02d:%02d:%02d hours\n", h,
-			min, sec);
-
-	logfile << pre_time << std::endl;
-	logfile << reg_time << std::endl;
-
-
+	//
 	// Write out final results ---------------------------------------------------------
+	//
+
+	// Displacementfield
+	typename DisplacementFieldWriter::Pointer p = DisplacementFieldWriter::New();
+	p->SetFileName( (outPrefix + "_field.nii.gz" ).c_str() );
+	p->SetInput( functional->GetCurrentDisplacementField() );
+	p->Update();
+
+	// Contours and regions
     size_t nCont = functional->GetCurrentContourPosition().size();
     for ( size_t contid = 0; contid < nCont; contid++) {
-        std::stringstream ss;
-        ss << "final-cont0" << contid << ".vtk";
+    	bfs::path contPath(movingSurfaceNames[contid]);
     	WriterType::Pointer polyDataWriter = WriterType::New();
     	polyDataWriter->SetInput( functional->GetCurrentContourPosition()[contid] );
-    	polyDataWriter->SetFileName( "deformed2-wm.vtk" );
+    	polyDataWriter->SetFileName( (outPrefix + "_" + contPath.filename().string()).c_str() );
     	polyDataWriter->Update();
+
+    	typename ROIWriter::Pointer w = ROIWriter::New();
+    	w->SetInput( functional->GetCurrentRegion(contid) );
+    	w->SetFileName( (outPrefix + "_roi_" + contPath.stem().string() + ".nii.gz" ).c_str() );
+    	w->Update();
     }
 
+	typename ROIWriter::Pointer w = ROIWriter::New();
+	w->SetInput( functional->GetCurrentRegion(nCont) );
+	w->SetFileName( (outPrefix + "_roi_background.nii.gz" ).c_str() );
+	w->Update();
+
+
+	// Set up log file
+	std::ofstream logfile((outPrefix + logFileName ).c_str());
+	logfile << root;
 
 	return EXIT_SUCCESS;
 }
