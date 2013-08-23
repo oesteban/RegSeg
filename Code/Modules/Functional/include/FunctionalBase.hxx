@@ -391,6 +391,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 #ifndef NDEBUG
 	std::cout << "Gradient: avg=" << ( sumGradient/ cpid ) << ", max=" << maxGradient << "." << std::endl;
+	sumGradient = 0.0;
 #endif
 
 	// Interpolate sparse velocity field to targetDeformation
@@ -399,21 +400,21 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	VectorType* gmBuffer = this->m_Derivative->GetBufferPointer();
 	VectorType v;
 
-	sumGradient = 0.0;
 	for( size_t gpid = 0; gpid<this->m_NumberOfNodes; gpid++ ) {
 		v = this->m_FieldInterpolator->GetNodeWeight(gpid);
 		if ( v.GetNorm() > 1.0e-4 ) {
 			*( gmBuffer + gpid ) = v; // * (1.0/this->m_NumberOfPoints);
 			//this->m_Derivative->SetPixel( this->m_Derivative->ComputeIndex(gpid), v);
+#ifndef NDEBUG
 			sumGradient+=(*( gmBuffer + gpid )).GetNorm();
 			if (v.GetNorm()>maxGradient) maxGradient=(*( gmBuffer + gpid )).GetNorm();
+#endif
 		}
 	}
 
 #ifndef NDEBUG
 	std::cout << "Gradient_projected: avg="<< ( sumGradient/ this->m_NumberOfNodes ) << "; max=" << maxGradient << "." << std::endl;
 #endif
-
 
 }
 
