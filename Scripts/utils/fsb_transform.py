@@ -30,7 +30,8 @@ def mri_info( fname, argument ):
     cmd_info = "mri_info --%s %s" % (argument, fname)
     proc = sp.Popen( cmd_info, stdout=sp.PIPE, shell=True )
     data = bytearray( proc.stdout.read() )
-    result = np.reshape( np.fromstring(data.decode("utf-8"), sep='\n' ), (4,-1) )
+    mstring =  np.fromstring(data.decode("utf-8"), sep='\n' )
+    result = np.reshape(mstring, (4,-1) )
     return result
 
 
@@ -109,8 +110,11 @@ def transformSurface(origin, mov_path, tar_path, tfmfile, out_file="", use_parav
     # Load transform components
     mov_ras2vox_tkr = mri_info( mov_path, "ras2vox-tkr" )
     tar_vox2ras_tkr = mri_info( tar_path, "vox2ras-tkr" )
-    ac = nib.load( tar_path ).get_affine() 
-    reg = np.genfromtxt( tfmfile ,skiprows=4,comments='r')
+    ac = nib.load( tar_path ).get_affine()
+    if op.exists( tfmfile ): 
+        reg = np.genfromtxt( tfmfile ,skiprows=4,comments='r')
+    else:
+        reg = np.identity(4)
 
     # Compute transformation
     target_to_tkr = np.dot( tar_vox2ras_tkr, np.linalg.inv( ac ) )
