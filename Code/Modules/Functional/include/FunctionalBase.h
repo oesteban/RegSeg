@@ -169,8 +169,7 @@ public:
 	typedef typename ProbabilityMapType::ConstPointer        ProbabilityMapConstPointer;
 	typedef std::vector< ProbabilityMapPointer >             ProbabilityMapList;
 
-	typedef typename itk::MeshSpatialObject
-			                   <ContourType>      ContourSpatialObject;
+	typedef typename itk::MeshSpatialObject<ContourType>     ContourSpatialObject;
 	typedef typename ContourSpatialObject::Pointer           ContourSpatialPointer;
 	typedef typename ContourSpatialObject::ConstPointer      ContourSpatialConstPointer;
 	typedef typename std::vector<ContourSpatialPointer>      SpatialObjectsVector;

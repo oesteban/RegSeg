@@ -96,6 +96,7 @@ int main(int argc, char *argv[]) {
 	root["inputs"]["target"]["components"]["type"] = std::string("feature");
 	Json::Value targetjson(Json::arrayValue);
 
+	ImageType::DirectionType dir; dir.SetIdentity();
 	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
 	for (size_t i = 0; i < fixedImageNames.size(); i++ ) {
 		ImageReader::Pointer r = ImageReader::New();
@@ -107,10 +108,14 @@ int main(int argc, char *argv[]) {
 	}
 	root["inputs"]["target"]["components"] = targetjson;
 
-	ChannelType::DirectionType dir; dir.SetIdentity();
-	comb->Update();
-	ImageType::Pointer im = comb->GetOutput();
-	im->SetDirection( dir );
+	// Reorient image
+	ReorientFilterType::Pointer reorient = ReorientFilterType::New();
+	reorient->UseImageDirectionOn();
+	reorient->SetDesiredCoordinateDirection(dir);
+	reorient->SetInput( comb->GetOutput() );
+	reorient->Update();
+
+	ImageType::Pointer im = reorient->GetOutput();
 	functional->SetReferenceImage( im );
 
 	// Read moving surface(s) -----------------------------------------------------------
