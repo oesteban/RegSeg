@@ -74,7 +74,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 	this->m_FieldInterpolator->SetN(this->m_NumberOfPoints);
 
-
 	// Initialize corresponding ROI /////////////////////////////
 	// Check that high-res reference sampling grid has been initialized
 	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
