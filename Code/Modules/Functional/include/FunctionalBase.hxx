@@ -46,6 +46,7 @@
 
 #include <itkMeshFileWriter.h>
 #include <itkImageAlgorithm.h>
+#include <itkOrientImageFilter.h>
 
 namespace rstk {
 
@@ -491,11 +492,24 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		ROIPointer tempROI;
 
 		if ( idx < this->m_CurrentROIs.size() - 1 ) {
+			// ReorientFilter computes the new extent of the image if the directions
+			// matrix is identity. This is necessary to be able to binarize the contours
+			// (that are given in physical coordinates).
+			// See https://github.com/oesteban/ACWE-Registration/issues/92
+			typedef itk::OrientImageFilter< FieldType, FieldType >       ReorientFilterType;
+			typename FieldType::DirectionType dir; dir.SetIdentity();
+			typename ReorientFilterType::Pointer reorient = ReorientFilterType::New();
+			reorient->UseImageDirectionOn();
+			reorient->SetDesiredCoordinateDirection(dir);
+			reorient->SetInput( this->m_ReferenceSamplingGrid );
+			reorient->Update();
+			FieldPointer reoriented = reorient->GetOutput();
+
 			BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
-			meshFilter->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-			meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-			meshFilter->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-			meshFilter->SetSize(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+			meshFilter->SetSpacing(   reoriented->GetSpacing() );
+			meshFilter->SetDirection( reoriented->GetDirection() );
+			meshFilter->SetOrigin(    reoriented->GetOrigin() );
+			meshFilter->SetSize(      reoriented->GetLargestPossibleRegion().GetSize() );
 			meshFilter->SetInput(     this->m_CurrentContourPosition[idx]);
 			meshFilter->Update();
 			tempROI = meshFilter->GetOutput();
@@ -504,7 +518,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			tempROI->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
 			tempROI->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
 			tempROI->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-			tempROI->SetRegions(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+			tempROI->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
 			tempROI->Allocate();
 			tempROI->FillBuffer( 1 );
 		}

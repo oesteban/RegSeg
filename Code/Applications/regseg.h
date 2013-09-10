@@ -64,7 +64,6 @@
 #include <itkBSplineInterpolateImageFunction.h>
 #include <itkDisplacementFieldTransform.h>
 #include <itkResampleImageFilter.h>
-#include <itkOrientImageFilter.h>
 
 #include "MahalanobisFunctional.h"
 #include "SpectralGradientDescentOptimizer.h"
@@ -88,7 +87,6 @@ typedef itk::Image<float, 3u>                                ChannelType;
 typedef itk::Vector<float, 2u>                               VectorPixelType;
 typedef itk::Image<VectorPixelType, 3u>                      ImageType;
 typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
-typedef itk::OrientImageFilter< ImageType, ImageType >       ReorientFilterType;
 
 typedef MahalanobisFunctional<ImageType>                     FunctionalType;
 typedef FunctionalType::ContourType                          ContourType;

@@ -145,7 +145,7 @@ public:
 	typedef typename DisplacementResamplerType::Pointer      DisplacementResamplerPointer;
 
 	typedef itk::DisplacementFieldJacobianDeterminantFilter
-		< FieldType >                             ModulateFilterType;
+		< FieldType >                                        ModulateFilterType;
 	typedef typename ModulateFilterType::Pointer             ModulateFilterPointer;
 
 
@@ -179,7 +179,7 @@ public:
 	typedef typename SpatialObjectToImageFilterType::Pointer SpatialObjectToImageFilterPointer;
 
 	typedef SparseMatrixTransform<TCoordRepType, Dimension > FieldInterpolatorType;
-	typedef typename FieldInterpolatorType::Pointer FieldInterpolatorPointer;
+	typedef typename FieldInterpolatorType::Pointer          FieldInterpolatorPointer;
 
 	typedef DownsampleAveragingFilter
 			                 <ROIType, ProbabilityMapType >  ResampleROIFilterType;

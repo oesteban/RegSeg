@@ -108,14 +108,7 @@ int main(int argc, char *argv[]) {
 	}
 	root["inputs"]["target"]["components"] = targetjson;
 
-	// Reorient image
-	ReorientFilterType::Pointer reorient = ReorientFilterType::New();
-	reorient->UseImageDirectionOn();
-	reorient->SetDesiredCoordinateDirection(dir);
-	reorient->SetInput( comb->GetOutput() );
-	reorient->Update();
-
-	ImageType::Pointer im = reorient->GetOutput();
+	ImageType::Pointer im = comb->GetOutput();
 	functional->SetReferenceImage( im );
 
 	// Read moving surface(s) -----------------------------------------------------------
