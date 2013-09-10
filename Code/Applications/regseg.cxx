@@ -96,7 +96,6 @@ int main(int argc, char *argv[]) {
 	root["inputs"]["target"]["components"]["type"] = std::string("feature");
 	Json::Value targetjson(Json::arrayValue);
 
-	ImageType::DirectionType dir; dir.SetIdentity();
 	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
 	for (size_t i = 0; i < fixedImageNames.size(); i++ ) {
 		ImageReader::Pointer r = ImageReader::New();
@@ -108,6 +107,7 @@ int main(int argc, char *argv[]) {
 	}
 	root["inputs"]["target"]["components"] = targetjson;
 
+    comb->Update();
 	ImageType::Pointer im = comb->GetOutput();
 	functional->SetReferenceImage( im );
 
