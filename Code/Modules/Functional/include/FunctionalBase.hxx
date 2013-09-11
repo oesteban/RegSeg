@@ -97,6 +97,15 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
 	interp->SetInputImage( this->m_CurrentRegions );
 
+#ifndef NDEBUG
+	ROIPointer debugROI = ROIType::New();
+	debugROI->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+	debugROI->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+	debugROI->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
+	debugROI->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+	debugROI->Allocate();
+	debugROI->FillBuffer( 0 );
+#endif
 
 	// Set up outer regions AND control points in the interpolator
 	size_t cpid = 0;
@@ -133,12 +142,26 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			}
 			++c_it;
 			cpid++;
+#ifndef NDEBUG
+			typename ROIType::IndexType idx;
+			debugROI->TransformPhysicalPointToIndex( p, idx );
+			debugROI->SetPixel( idx, contid+1 );
+#endif
+
 		}
 		this->m_ShapePrior.push_back( points );
 
 		if( contid > 0 )
 			this->m_OuterList.push_back( outerVect );
 	}
+
+#ifndef NDEBUG
+	typedef itk::ImageFileWriter< ROIType >  ROIWriter;
+	typename ROIWriter::Pointer ww = ROIWriter::New();
+	ww->SetInput( debugROI );
+	ww->SetFileName( "debugROI.nii.gz" );
+	ww->Update();
+#endif
 
 	if( this->m_NumberOfContours == 1 ) {
 		ContourOuterRegions outerVect;
@@ -209,19 +232,46 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
 		ProbabilityMapConstPointer roipm = this->GetCurrentMap( roi );
 
+#ifndef NDEBUG
+		ProbabilityMapPointer tmpmap = ProbabilityMapType::New();
+		tmpmap->SetOrigin( roipm->GetOrigin() );
+		tmpmap->SetRegions( roipm->GetLargestPossibleRegion() );
+		tmpmap->SetDirection( roipm->GetDirection() );
+		tmpmap->SetSpacing( roipm->GetSpacing() );
+		tmpmap->Allocate();
+		tmpmap->FillBuffer( 0.0 );
+
+		typename ProbabilityMapType::IndexType index;
+#endif
+
 		const typename ProbabilityMapType::PixelType* roiBuffer = roipm->GetBufferPointer();
 
 		size_t nPix = roipm->GetLargestPossibleRegion().GetNumberOfPixels();
-		ReferencePointType pos, targetPos;
+		ReferencePointType pos;
 		typename ProbabilityMapType::PixelType w;
 
 		for( size_t i = 0; i < nPix; i++) {
 			w = *( roiBuffer + i );
 			if ( w > 0.0 ) {
 				roipm->TransformIndexToPhysicalPoint( roipm->ComputeIndex(i), pos);
-				this->m_Value +=  w * this->GetEnergyAtPoint( targetPos, roi );
+				this->m_Value +=  w * this->GetEnergyAtPoint( pos, roi );
+
+#ifndef NDEBUG
+				tmpmap->TransformPhysicalPointToIndex( pos, index );
+				tmpmap->SetPixel( index, w );
+#endif
 			}
 		}
+
+#ifndef NDEBUG
+		typedef typename itk::ImageFileWriter< ProbabilityMapType > W;
+		typename W::Pointer writer = W::New();
+		writer->SetInput(tmpmap);
+		std::stringstream ss;
+		ss << "region_energy_" << roi << ".nii.gz";
+		writer->SetFileName( ss.str().c_str() );
+		writer->Update();
+#endif
 	}
 	return normalizer*this->m_Value;
 }
@@ -485,6 +535,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_CurrentRegions->FillBuffer(unassigned);
 	size_t nPix = this->m_CurrentRegions->GetLargestPossibleRegion().GetNumberOfPixels();
 
+	// ReorientFilter computes the new extent of the image if the directions
+	// matrix is identity. This is necessary to be able to binarize the contours
+	// (that are given in physical coordinates).
+	// See https://github.com/oesteban/ACWE-Registration/issues/92
+	typedef itk::OrientImageFilter< FieldType, FieldType >   ReorientFilterType;
+	typedef itk::OrientImageFilter< ROIType, ROIType >       ReorientROIType;
+	typename FieldType::DirectionType dir; dir.SetIdentity();
+
 
 	ROIPixelType* regionsBuffer = this->m_CurrentRegions->GetBufferPointer();
 
@@ -492,12 +550,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		ROIPointer tempROI;
 
 		if ( idx < this->m_CurrentROIs.size() - 1 ) {
-			// ReorientFilter computes the new extent of the image if the directions
-			// matrix is identity. This is necessary to be able to binarize the contours
-			// (that are given in physical coordinates).
-			// See https://github.com/oesteban/ACWE-Registration/issues/92
-			typedef itk::OrientImageFilter< FieldType, FieldType >       ReorientFilterType;
-			typename FieldType::DirectionType dir; dir.SetIdentity();
 			typename ReorientFilterType::Pointer reorient = ReorientFilterType::New();
 			reorient->UseImageDirectionOn();
 			reorient->SetDesiredCoordinateDirection(dir);
@@ -512,7 +564,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			meshFilter->SetSize(      reoriented->GetLargestPossibleRegion().GetSize() );
 			meshFilter->SetInput(     this->m_CurrentContourPosition[idx]);
 			meshFilter->Update();
-			tempROI = meshFilter->GetOutput();
+
+			typename ReorientROIType::Pointer reorientROI = ReorientROIType::New();
+			reorientROI->UseImageDirectionOn();
+			reorientROI->SetDesiredCoordinateDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+			reorientROI->SetInput( meshFilter->GetOutput() );
+			reorientROI->Update();
+			tempROI = reorientROI->GetOutput();
 		} else {
 			tempROI = ROIType::New();
 			tempROI->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
