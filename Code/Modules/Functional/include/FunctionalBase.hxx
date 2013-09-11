@@ -292,7 +292,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	double normalizer = 1.0;
 
 	for(size_t i = 0; i<Dimension; i++)
-		normalizer *= m_ReferenceImage->GetSpacing()[i];
+		normalizer *= this->GetCurrentMap(0)->GetSpacing()[i];
 
 	for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
 		ProbabilityMapConstPointer roipm = this->GetCurrentMap( roi );
@@ -310,6 +310,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 #endif
 
 		const typename ProbabilityMapType::PixelType* roiBuffer = roipm->GetBufferPointer();
+		const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
 
 		size_t nPix = roipm->GetLargestPossibleRegion().GetNumberOfPixels();
 		ReferencePointType pos;
@@ -319,10 +320,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		for( size_t i = 0; i < nPix; i++) {
 			w = *( roiBuffer + i );
 			if ( w > 0.0 ) {
-				indexOrig = roipm->ComputeIndex(i);
-				roipm->TransformIndexToPhysicalPoint( indexOrig, pos);
-				this->m_Value +=  w * this->GetEnergyAtPoint( pos, roi, val );
-
+				//roipm->TransformIndexToPhysicalPoint( indexOrig, pos);
+				//this->m_Value +=  w * this->GetEnergyAtPoint( pos, roi, val );
+				val = *(refBuffer+i);
+				this->m_Value +=  w * this->GetEnergyOfSample( val, roi );
 #ifndef NDEBUG
 				tmpmap->SetPixel( indexOrig, val[0] );
 #endif

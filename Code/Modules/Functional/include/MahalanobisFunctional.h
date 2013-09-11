@@ -154,6 +154,7 @@ protected:
 
 	//void InitializeSamplingGrid( void );
 
+	inline MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roi );
 	inline MeasureType GetEnergyAtPoint( PointType& point, size_t roi );
 	inline MeasureType GetEnergyAtPoint( PointType& point, size_t roi, ReferencePixelType& value );
 

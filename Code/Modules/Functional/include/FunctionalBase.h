@@ -244,6 +244,8 @@ protected:
 	}
 
 	void InitializeSamplingGrid( void );
+
+	inline virtual MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roi ) = 0;
 	inline virtual MeasureType GetEnergyAtPoint( PointType& point, size_t roi ) = 0;
 	inline virtual MeasureType GetEnergyAtPoint( PointType& point, size_t roi, ReferencePixelType& value ) = 0;
 
