@@ -306,7 +306,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		tmpmap->Allocate();
 		tmpmap->FillBuffer( 0.0 );
 
-		typename ProbabilityMapType::IndexType index, indexOrig;
+		typename ProbabilityMapType::PixelType* tmpBuffer = tmpmap->GetBufferPointer();
 #endif
 
 		const typename ProbabilityMapType::PixelType* roiBuffer = roipm->GetBufferPointer();
@@ -325,7 +325,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				val = *(refBuffer+i);
 				this->m_Value +=  w * this->GetEnergyOfSample( val, roi );
 #ifndef NDEBUG
-				tmpmap->SetPixel( indexOrig, val[0] );
+				*(tmpBuffer+i) = val[0];
 #endif
 			}
 		}

@@ -118,12 +118,12 @@ void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 		ParametersType param = this->UpdateParametersOfRegion(roi);
 		this->SetParameters(roi, param);
 
-#ifndef DNDEBUG
-		std::cout << "Region " << roi << ":" << std::endl;
-		std::cout << "\tMean = " << this->m_Parameters[roi].mean << std::endl;
-		std::cout << "\tCovariance Matrix " << std::endl << this->m_Parameters[roi].cov << std::endl;
-		std::cout << "\tCovariance Matrix^-1" << std::endl << this->m_Parameters[roi].invcov << std::endl;
-#endif
+//#ifndef DNDEBUG
+//		std::cout << "Region " << roi << ":" << std::endl;
+//		std::cout << "\tMean = " << this->m_Parameters[roi].mean << std::endl;
+//		std::cout << "\tCovariance Matrix " << std::endl << this->m_Parameters[roi].cov << std::endl;
+//		std::cout << "\tCovariance Matrix^-1" << std::endl << this->m_Parameters[roi].invcov << std::endl;
+//#endif
 	}
 
 
