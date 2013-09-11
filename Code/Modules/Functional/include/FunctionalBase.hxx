@@ -161,16 +161,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
 	interp->SetInputImage( this->m_CurrentRegions );
 
-#ifndef NDEBUG
-	ROIPointer debugROI = ROIType::New();
-	debugROI->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-	debugROI->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-	debugROI->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-	debugROI->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-	debugROI->Allocate();
-	debugROI->FillBuffer( 0 );
-#endif
-
 	// Set up outer regions AND control points in the interpolator
 	size_t cpid = 0;
 	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
@@ -186,10 +176,29 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		outerVect.resize( normals->GetNumberOfPoints() );
 		points.resize( normals->GetNumberOfPoints() );
 
+
+#ifndef NDEBUG
+		ContourCopyPointer copy = ContourCopyType::New();
+		copy->SetInput( normals );
+		copy->Update();
+		ContourPointer tmpContour = copy->GetOutput();
+
+		ROIPointer debugROI = ROIType::New();
+		debugROI->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+		debugROI->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+		debugROI->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
+		debugROI->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+		debugROI->Allocate();
+		debugROI->FillBuffer( 0 );
+
+		InterpolatorPointer tmpInterp = InterpolatorType::New();
+		tmpInterp->SetInputImage( this->m_ReferenceImage );
+#endif
+
 		typename ContourType::PointsContainerConstIterator c_it  = normals->GetPoints()->Begin();
 		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
-		PointType p;
+		typename ContourType::PointType p;
 		VectorType v;
 		VectorType ni;
 
@@ -204,27 +213,46 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				normals->GetPointData( pid, &ni );
 				outerVect[pid] =  interp->Evaluate( p - ni*0.5 );
 			}
-			++c_it;
-			cpid++;
+
 #ifndef NDEBUG
 			typename ROIType::IndexType idx;
 			debugROI->TransformPhysicalPointToIndex( p, idx );
-			debugROI->SetPixel( idx, contid+1 );
+			debugROI->SetPixel( idx, tmpInterp->Evaluate(p)[0] );
+			p-= ni*0.5;
+			tmpContour->SetPoint( pid, p );
 #endif
 
+			++c_it;
+			cpid++;
 		}
 		this->m_ShapePrior.push_back( points );
 
 		if( contid > 0 )
 			this->m_OuterList.push_back( outerVect );
+
+
+#ifndef NDEBUG
+		typedef itk::ImageFileWriter< ROIType >  ROIWriter;
+		typename ROIWriter::Pointer ww = ROIWriter::New();
+		ww->SetInput( debugROI );
+		std::stringstream ss1;
+		ss1 << "debugROI_" << std::setfill('0') << std::setw(2) << contid << ".nii.gz";
+		ww->SetFileName( ss1.str() );
+		ww->Update();
+
+
+		typedef itk::MeshFileWriter< ContourType >     MeshWriterType;
+		typename MeshWriterType::Pointer w = MeshWriterType::New();
+		w->SetInput( tmpContour );
+		std::stringstream ss;
+		ss << "normals_" << std::setfill('0') << std::setw(2) << contid << ".vtk";
+		w->SetFileName( ss.str() );
+		w->Update();
+#endif
 	}
 
 #ifndef NDEBUG
-	typedef itk::ImageFileWriter< ROIType >  ROIWriter;
-	typename ROIWriter::Pointer ww = ROIWriter::New();
-	ww->SetInput( debugROI );
-	ww->SetFileName( "debugROI.nii.gz" );
-	ww->Update();
+
 #endif
 
 	if( this->m_NumberOfContours == 1 ) {
@@ -322,8 +350,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		for( size_t i = 0; i < nPix; i++) {
 			w = *( roiBuffer + i );
 			if ( w > 0.0 ) {
-				//roipm->TransformIndexToPhysicalPoint( indexOrig, pos);
-				//this->m_Value +=  w * this->GetEnergyAtPoint( pos, roi, val );
 				val = *(refBuffer+i);
 				this->m_Value +=  w * this->GetEnergyOfSample( val, roi );
 #ifndef NDEBUG
@@ -459,16 +485,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		normalsFilter->SetInput( this->m_CurrentContourPosition[contid] );
 		normalsFilter->Update();
 		ContourPointer normals = normalsFilter->GetOutput();
-
-#ifndef NDEBUG
-		typedef itk::MeshFileWriter< ContourType >     MeshWriterType;
-		typename MeshWriterType::Pointer w = MeshWriterType::New();
-		w->SetInput( this->m_CurrentContourPosition[contid] );
-		std::stringstream ss;
-		ss << "normals_" << std::setfill('0') << std::setw(2) << contid << ".vtk";
-		w->SetFileName( ss.str() );
-		w->Update();
-#endif
 
 		typename ContourType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
 		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
