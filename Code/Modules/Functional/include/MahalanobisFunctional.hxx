@@ -85,6 +85,15 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 inline typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::MeasureType
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
+::GetEnergyOfSample( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ReferencePixelType value, size_t roi ) {
+	ReferencePixelType dist = value - this->m_Parameters[roi].mean;
+	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() );
+}
+
+
+template <typename TReferenceImageType, typename TCoordRepType>
+inline typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::MeasureType
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::GetEnergyAtPoint( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::PointType & point, size_t roi ) {
 	ReferencePixelType dist = this->m_Interp->Evaluate( point ) - this->m_Parameters[roi].mean;
 	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() );
