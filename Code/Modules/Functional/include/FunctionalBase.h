@@ -245,6 +245,7 @@ protected:
 
 	void InitializeSamplingGrid( void );
 	inline virtual MeasureType GetEnergyAtPoint( PointType& point, size_t roi ) = 0;
+	inline virtual MeasureType GetEnergyAtPoint( PointType& point, size_t roi, ReferencePixelType& value ) = 0;
 
 
 	inline bool IsInside( const PointType p, ContinuousIndex& idx ) const;

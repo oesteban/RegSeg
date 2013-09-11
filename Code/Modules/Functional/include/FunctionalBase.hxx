@@ -306,24 +306,25 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		tmpmap->Allocate();
 		tmpmap->FillBuffer( 0.0 );
 
-		typename ProbabilityMapType::IndexType index;
+		typename ProbabilityMapType::IndexType index, indexOrig;
 #endif
 
 		const typename ProbabilityMapType::PixelType* roiBuffer = roipm->GetBufferPointer();
 
 		size_t nPix = roipm->GetLargestPossibleRegion().GetNumberOfPixels();
 		ReferencePointType pos;
+		ReferencePixelType val;
 		typename ProbabilityMapType::PixelType w;
 
 		for( size_t i = 0; i < nPix; i++) {
 			w = *( roiBuffer + i );
 			if ( w > 0.0 ) {
-				roipm->TransformIndexToPhysicalPoint( roipm->ComputeIndex(i), pos);
-				this->m_Value +=  w * this->GetEnergyAtPoint( pos, roi );
+				indexOrig = roipm->ComputeIndex(i);
+				roipm->TransformIndexToPhysicalPoint( indexOrig, pos);
+				this->m_Value +=  w * this->GetEnergyAtPoint( pos, roi, val );
 
 #ifndef NDEBUG
-				tmpmap->TransformPhysicalPointToIndex( pos, index );
-				tmpmap->SetPixel( index, w );
+				tmpmap->SetPixel( indexOrig, val[0] );
 #endif
 			}
 		}
@@ -553,7 +554,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	if( this->m_CurrentMaps[idx].IsNull() ) {
 		this->m_CurrentMaps[idx] = ProbabilityMapType::New();
-		this->m_CurrentMaps[idx]->SetRegions(      this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
+		this->m_CurrentMaps[idx]->SetRegions(   this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
 		this->m_CurrentMaps[idx]->SetOrigin(    this->m_ReferenceImage->GetOrigin() );
 		this->m_CurrentMaps[idx]->SetDirection( this->m_ReferenceImage->GetDirection() );
 		this->m_CurrentMaps[idx]->SetSpacing(   this->m_ReferenceImage->GetSpacing() );

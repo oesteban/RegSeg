@@ -155,6 +155,7 @@ protected:
 	//void InitializeSamplingGrid( void );
 
 	inline MeasureType GetEnergyAtPoint( PointType& point, size_t roi );
+	inline MeasureType GetEnergyAtPoint( PointType& point, size_t roi, ReferencePixelType& value );
 
 	ParametersType UpdateParametersOfRegion( const size_t idx );
 	void ComputeParameters( void );
