@@ -118,12 +118,12 @@ void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 		ParametersType param = this->UpdateParametersOfRegion(roi);
 		this->SetParameters(roi, param);
 
-//#ifndef DNDEBUG
-//		std::cout << "Region " << roi << ":" << std::endl;
-//		std::cout << "\tMean = " << this->m_Parameters[roi].mean << std::endl;
-//		std::cout << "\tCovariance Matrix " << std::endl << this->m_Parameters[roi].cov << std::endl;
-//		std::cout << "\tCovariance Matrix^-1" << std::endl << this->m_Parameters[roi].invcov << std::endl;
-//#endif
+#ifndef DNDEBUG
+		std::cout << "Region " << roi << ":" << std::endl;
+		std::cout << "\tMean = " << this->m_Parameters[roi].mean << std::endl;
+		std::cout << "\tCovariance Matrix " << std::endl << this->m_Parameters[roi].cov << std::endl;
+		std::cout << "\tCovariance Matrix^-1" << std::endl << this->m_Parameters[roi].invcov << std::endl;
+#endif
 	}
 
 
@@ -135,20 +135,7 @@ typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersTyp
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::UpdateParametersOfRegion( const size_t idx ) {
 	ParametersType newParameters;
-
-	ROIConstPointer map = this->GetCurrentRegion( idx );
-
-	// Resample to reference image resolution
-	ResampleROIFilterPointer resampleFilter = ResampleROIFilterType::New();
-	resampleFilter->SetInput( map );
-	resampleFilter->SetSize( this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
-	resampleFilter->SetOutputOrigin(    this->m_ReferenceImage->GetOrigin() );
-	resampleFilter->SetOutputSpacing(   this->m_ReferenceImage->GetSpacing() );
-	resampleFilter->SetOutputDirection( this->m_ReferenceImage->GetDirection() );
-	resampleFilter->SetDefaultPixelValue( 0.0 );
-	resampleFilter->Update();
-
-	ProbabilityMapConstPointer roipm = resampleFilter->GetOutput();
+	ProbabilityMapConstPointer roipm = this->GetCurrentMap( idx );
 
 	// Apply weighted mean/covariance estimators from ITK
 	typename CovarianceFilter::WeightArrayType weights;
