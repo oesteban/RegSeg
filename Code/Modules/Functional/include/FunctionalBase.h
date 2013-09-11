@@ -47,7 +47,6 @@
 #include <itkVectorLinearInterpolateImageFunction.h>
 #include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkQuadEdgeMesh.h>
-#include <itkQuadEdgeMeshToQuadEdgeMeshFilter.h>
 #include <itkNormalQuadEdgeMeshFilter.h>
 #include <itkWarpMeshFilter.h>
 #include <itkMeshSpatialObject.h>
@@ -59,6 +58,7 @@
 #include <itkDisplacementFieldJacobianDeterminantFilter.h>
 #include <itkDisplacementFieldTransform.h>
 
+#include "CopyQuadEdgeMeshFilter.h"
 #include "SparseMatrixTransform.h"
 #include "DownsampleAveragingFilter.h"
 
@@ -109,6 +109,7 @@ public:
 	typedef typename ReferenceImageType::PixelType           ReferencePixelType;
 	typedef typename ReferencePixelType::ValueType           ReferenceValueType;
 	typedef typename ReferenceImageType::PointType           ReferencePointType;
+	typedef typename ReferenceImageType::DirectionType       DirectionType;
 
 	typedef itk::VectorLinearInterpolateImageFunction
 			< ReferenceImageType >                           InterpolatorType;
@@ -120,14 +121,16 @@ public:
 	typedef typename ContourType::ConstPointer               ContourConstPointer;
 	typedef typename std::vector<ContourPointer>             ContourList;
 	typedef typename ContourType::PointDataContainerPointer  PointDataContainerPointer;
+	typedef typename ContourType::PointsContainerIterator    PointsIterator;
+	typedef typename ContourType::PointsContainerConstIterator    PointsConstIterator;
 
 	typedef itk::NormalQuadEdgeMeshFilter
 			< ContourType, ContourType >                     NormalFilterType;
 	typedef typename NormalFilterType::Pointer               NormalFilterPointer;
 	typedef std::vector< NormalFilterPointer >               NormalFilterList;
 
-	typedef typename itk::QuadEdgeMeshToQuadEdgeMeshFilter
-			<ContourType,ContourType>  ContourCopyType;
+	typedef typename itk::CopyQuadEdgeMeshFilter
+			                  <ContourType,ContourType>      ContourCopyType;
 	typedef typename ContourCopyType::Pointer                ContourCopyPointer;
 
 	typedef itk::Image< VectorType, Dimension >              FieldType;
@@ -252,6 +255,7 @@ protected:
 	FieldPointer m_ReferenceSamplingGrid;
 	FieldPointer m_CurrentDisplacementField;
 	ContourList m_CurrentContourPosition;
+	ContourList m_OriginalContours;
 	NormalFilterList m_NormalFilter;
 	ContourCopyPointer m_ContourCopier;
 	WarpContourPointer m_ContourUpdater;
@@ -272,6 +276,8 @@ protected:
 	size_t m_NumberOfPoints;
 	size_t m_NumberOfNodes;
 
+	ReferencePointType m_Origin, m_End;
+	DirectionType m_Direction;
 private:
 	FunctionalBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented

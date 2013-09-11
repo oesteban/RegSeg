@@ -68,12 +68,76 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
+	// Cache image properties
+	this->m_Origin    = this->m_ReferenceImage->GetOrigin();
+	this->m_Direction = this->m_ReferenceImage->GetDirection();
+
+	typename ReferenceImageType::IndexType endIdx;
+	for ( size_t d = 0; d<Dimension; d++)
+		endIdx[d] = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize()[d] -1;
+	this->m_ReferenceImage->TransformIndexToPhysicalPoint( endIdx, this->m_End );
+	DirectionType idDir; idDir.SetIdentity();
+
+
 	// Set number of control points in the sparse-dense interpolator
 	this->m_NumberOfPoints = 0;
 	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-		this->m_NumberOfPoints+= this->m_CurrentContourPosition[contid]->GetNumberOfPoints();
+		this->m_NumberOfPoints+= this->m_OriginalContours[contid]->GetNumberOfPoints();
 	}
 	this->m_FieldInterpolator->SetN(this->m_NumberOfPoints);
+
+	// Reorient contours to image direction in order that allowing pixel-wise computations
+	// ReorientFilter computes the new extent of the image if the directions
+	// matrix is identity. This is necessary to be able to binarize the contours
+	// (that are given in physical coordinates).
+	// See https://github.com/oesteban/ACWE-Registration/issues/92
+	if ( this->m_Direction != idDir ) {
+		typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >   ReorientFilterType;
+		typename ReorientFilterType::Pointer reorient = ReorientFilterType::New();
+		reorient->UseImageDirectionOn();
+		reorient->SetDesiredCoordinateDirection(idDir);
+		reorient->SetInput( this->m_ReferenceImage );
+		reorient->Update();
+		ReferenceImagePointer reoriented = reorient->GetOutput();
+		ReferencePointType newOrigin = reoriented->GetOrigin();
+
+
+		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+			ContourCopyPointer copy = ContourCopyType::New();
+			copy->SetInput( this->m_OriginalContours[contid] );
+			copy->Update();
+			this->m_CurrentContourPosition[contid] = copy->GetOutput();
+			ContourPointer c = this->m_CurrentContourPosition[contid];
+			PointsIterator c_it  = c->GetPoints()->Begin();
+			PointsIterator c_end = c->GetPoints()->End();
+
+			VectorType v;
+			VectorType ni;
+			typename ContourType::PointType p, pnew;
+
+			size_t pid;
+			while( c_it != c_end ) {
+				pid = c_it.Index();
+				p = this->m_CurrentContourPosition[contid]->GetPoint(pid);
+				pnew = (this->m_Direction* ( p - this->m_Origin.GetVectorFromOrigin() )) + newOrigin.GetVectorFromOrigin();
+				this->m_CurrentContourPosition[contid]->SetPoint( pid, pnew );
+				++c_it;
+			}
+#ifndef NDEBUG
+			typedef itk::MeshFileWriter< ContourType >     MeshWriterType;
+			typename MeshWriterType::Pointer w = MeshWriterType::New();
+			w->SetInput( c );
+			std::stringstream ss;
+			ss << "reoriented_" << std::setfill('0') << std::setw(2) << contid << ".vtk";
+			w->SetFileName( ss.str() );
+			w->Update();
+#endif
+		}
+	} else {
+		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+			this->m_CurrentContourPosition[contid] = this->m_OriginalContours[contid];
+		}
+	}
 
 	// Initialize corresponding ROI /////////////////////////////
 	// Check that high-res reference sampling grid has been initialized
@@ -210,8 +274,9 @@ template< typename TReferenceImageType, typename TCoordRepType >
 size_t
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::AddShapePrior( typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContourType* prior ) {
-	this->m_CurrentContourPosition.push_back( prior );
+	this->m_OriginalContours.push_back( prior );
 	this->m_NumberOfContours++;
+	this->m_CurrentContourPosition.resize( this->m_NumberOfContours );
     this->m_ROIs.resize( this->m_NumberOfContours+1 );
     this->m_CurrentROIs.resize( this->m_NumberOfContours+1 );
     this->m_CurrentMaps.resize( this->m_NumberOfContours+1 );
@@ -535,42 +600,20 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_CurrentRegions->FillBuffer(unassigned);
 	size_t nPix = this->m_CurrentRegions->GetLargestPossibleRegion().GetNumberOfPixels();
 
-	// ReorientFilter computes the new extent of the image if the directions
-	// matrix is identity. This is necessary to be able to binarize the contours
-	// (that are given in physical coordinates).
-	// See https://github.com/oesteban/ACWE-Registration/issues/92
-	typedef itk::OrientImageFilter< FieldType, FieldType >   ReorientFilterType;
-	typedef itk::OrientImageFilter< ROIType, ROIType >       ReorientROIType;
-	typename FieldType::DirectionType dir; dir.SetIdentity();
-
-
 	ROIPixelType* regionsBuffer = this->m_CurrentRegions->GetBufferPointer();
 
 	for (ROIPixelType idx = 0; idx < this->m_CurrentROIs.size(); idx++ ) {
 		ROIPointer tempROI;
 
 		if ( idx < this->m_CurrentROIs.size() - 1 ) {
-			typename ReorientFilterType::Pointer reorient = ReorientFilterType::New();
-			reorient->UseImageDirectionOn();
-			reorient->SetDesiredCoordinateDirection(dir);
-			reorient->SetInput( this->m_ReferenceSamplingGrid );
-			reorient->Update();
-			FieldPointer reoriented = reorient->GetOutput();
-
 			BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
-			meshFilter->SetSpacing(   reoriented->GetSpacing() );
-			meshFilter->SetDirection( reoriented->GetDirection() );
-			meshFilter->SetOrigin(    reoriented->GetOrigin() );
-			meshFilter->SetSize(      reoriented->GetLargestPossibleRegion().GetSize() );
+			meshFilter->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+			meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+			meshFilter->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
+			meshFilter->SetSize(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
 			meshFilter->SetInput(     this->m_CurrentContourPosition[idx]);
 			meshFilter->Update();
-
-			typename ReorientROIType::Pointer reorientROI = ReorientROIType::New();
-			reorientROI->UseImageDirectionOn();
-			reorientROI->SetDesiredCoordinateDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-			reorientROI->SetInput( meshFilter->GetOutput() );
-			reorientROI->Update();
-			tempROI = reorientROI->GetOutput();
+			tempROI = meshFilter->GetOutput();
 		} else {
 			tempROI = ROIType::New();
 			tempROI->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
