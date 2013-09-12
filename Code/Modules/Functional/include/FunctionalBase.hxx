@@ -104,8 +104,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	w->SetInput( this->m_CurrentRegions );
 	w->SetFileName( "regions.nii.gz" );
 	w->Update();
-
-	std::cout << "Initial Energy=" << this->GetValue() << "." << std::endl;
 #endif
 }
 

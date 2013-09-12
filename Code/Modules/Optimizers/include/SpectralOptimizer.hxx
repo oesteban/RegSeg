@@ -121,7 +121,9 @@ void SpectralOptimizer<TFunctional>::Start() {
 	this->m_Functional->CopyInformation( this->m_Parameters );
 	this->m_Functional->Initialize();
 
-	this->m_CurrentIteration = 0;
+	std::cout << "[" << this->m_CurrentIteration << "] " << this->m_Functional->GetValue() << std::endl;
+
+	this->m_CurrentIteration = 1;
 	this->Resume();
 }
 
