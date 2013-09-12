@@ -253,14 +253,14 @@ void SpectralOptimizer<TFunctional>::Resume() {
 		*/
 
 		/* Update and check iteration count */
-		this->m_CurrentIteration++;
-
 		if ( this->m_CurrentIteration >= this->m_NumberOfIterations ) {
 			this->m_StopConditionDescription << "Maximum number of iterations (" << this->m_NumberOfIterations << ") exceeded.";
 			this->m_StopCondition = MAXIMUM_NUMBER_OF_ITERATIONS;
 			this->Stop();
 			break;
 		}
+
+		this->m_CurrentIteration++;
 	} //while (!m_Stop)
 }
 
