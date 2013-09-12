@@ -196,7 +196,7 @@ void SpectralOptimizer<TFunctional>::Resume() {
 		//}
 
 #ifndef NDEBUG
-		size_t nContours =this->m_Functional->GetCurrentContourPosition().size();
+		size_t nContours =this->m_Functional->GetCurrentContours().size();
 
 		typedef rstk::DisplacementFieldComponentsFileWriter<ParametersType> Writer;
 		typename Writer::Pointer p = Writer::New();

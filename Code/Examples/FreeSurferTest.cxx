@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
 
 	// Write final result out
 	WriterType::Pointer polyDataWriter = WriterType::New();
-	polyDataWriter->SetInput( ls->GetCurrentContourPosition()[0] );
+	polyDataWriter->SetInput( ls->GetCurrentContours()[0] );
 	polyDataWriter->SetFileName( "registered.white.vtk" );
 	polyDataWriter->Update();
 

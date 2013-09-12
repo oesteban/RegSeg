@@ -120,6 +120,7 @@ public:
 	typedef typename ContourType::PointType                  ContourPointType;
 	typedef typename ContourType::ConstPointer               ContourConstPointer;
 	typedef typename std::vector<ContourPointer>             ContourList;
+	typedef typename std::vector<ContourConstPointer>        ConstContourList;
 	typedef typename ContourType::PointDataContainerPointer  PointDataContainerPointer;
 	typedef typename ContourType::PointsContainerIterator    PointsIterator;
 	typedef typename ContourType::PointsContainerConstIterator    PointsConstIterator;
@@ -216,10 +217,10 @@ public:
 	const ProbabilityMapType* GetCurrentMap( size_t idx );
 
 
-	size_t AddShapePrior( ContourType* prior );
+	size_t AddShapePrior( const ContourType* prior );
 	//itkGetMacro(ShapePrior, ContourList);
 
-	itkGetMacro(CurrentContourPosition, ContourList);
+	itkGetMacro(CurrentContours, ContourList);
 
 	itkSetObjectMacro(Derivative, FieldType);
 	itkGetConstObjectMacro(Derivative, FieldType);
@@ -257,8 +258,8 @@ protected:
 	FieldPointer m_Derivative;
 	FieldPointer m_ReferenceSamplingGrid;
 	FieldPointer m_CurrentDisplacementField;
-	ContourList m_CurrentContourPosition;
-	ContourList m_OriginalContours;
+	ContourList m_CurrentContours;
+	ConstContourList m_Priors;
 	NormalFilterList m_NormalFilter;
 	ContourCopyPointer m_ContourCopier;
 	WarpContourPointer m_ContourUpdater;
@@ -286,6 +287,9 @@ private:
 	void operator=(const Self &); //purposely not implemented
 
 	void ComputeCurrentRegions( void );
+	void ComputeOuterRegions( void );
+	void InitializeCurrentContours( void );
+	void InitializeInterpolatorGrid( void );
 
 
 }; // end FunctionalBase Class

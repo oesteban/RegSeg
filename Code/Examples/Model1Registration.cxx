@@ -147,12 +147,12 @@ int main(int argc, char *argv[]) {
 	opt->Start();
 
 	// Write final result out
-    size_t nCont = ls->GetCurrentContourPosition().size();
+    size_t nCont = ls->GetCurrentContours().size();
     for ( size_t contid = 0; contid < nCont; contid++) {
         std::stringstream ss;
         ss << "final-cont0" << contid << ".vtk";
     	WriterType::Pointer polyDataWriter = WriterType::New();
-    	polyDataWriter->SetInput( ls->GetCurrentContourPosition()[contid] );
+    	polyDataWriter->SetInput( ls->GetCurrentContours()[contid] );
     	polyDataWriter->SetFileName( "deformed2-wm.vtk" );
     	polyDataWriter->Update();
     }
