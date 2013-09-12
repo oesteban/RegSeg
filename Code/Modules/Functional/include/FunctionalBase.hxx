@@ -611,6 +611,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		size_t cpid = 0;
 		while( c_it != c_end ) {
 			pid = c_it.Index();
+			p = c->GetPoint( pid );
 			points[pid] = p;
 			this->m_FieldInterpolator->SetPoint( cpid, p );
 			++c_it;
