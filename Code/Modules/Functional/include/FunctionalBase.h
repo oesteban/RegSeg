@@ -272,7 +272,6 @@ protected:
 	DisplacementTransformPointer m_Transform;
 	ReferenceImageConstPointer m_ReferenceImage;
 	ContourOuterRegionsList m_OuterList;
-	PointsList m_ShapePrior;
 	bool m_Modified;
 	bool m_RegionsModified;
 	size_t m_NumberOfContours;

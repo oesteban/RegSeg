@@ -320,6 +320,8 @@ protected:
 	SizeValueType                 m_CurrentIteration;
 	GridSizeType                  m_GridSize;
 
+	bool                          m_TrackEnergy;
+
 private:
 	SpectralOptimizer( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
