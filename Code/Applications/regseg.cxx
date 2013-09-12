@@ -167,11 +167,11 @@ int main(int argc, char *argv[]) {
 	p->Update();
 
 	// Contours and regions
-    size_t nCont = functional->GetCurrentContourPosition().size();
+    size_t nCont = functional->GetCurrentContours().size();
     for ( size_t contid = 0; contid < nCont; contid++) {
     	bfs::path contPath(movingSurfaceNames[contid]);
     	WriterType::Pointer polyDataWriter = WriterType::New();
-    	polyDataWriter->SetInput( functional->GetCurrentContourPosition()[contid] );
+    	polyDataWriter->SetInput( functional->GetCurrentContours()[contid] );
     	polyDataWriter->SetFileName( (outPrefix + "_" + contPath.filename().string()).c_str() );
     	polyDataWriter->Update();
 

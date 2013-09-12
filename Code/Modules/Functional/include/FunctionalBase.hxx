@@ -68,216 +68,26 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
-	// Cache image properties
-	this->m_Origin    = this->m_ReferenceImage->GetOrigin();
-	this->m_Direction = this->m_ReferenceImage->GetDirection();
-
-	typename ReferenceImageType::IndexType endIdx;
-	for ( size_t d = 0; d<Dimension; d++)
-		endIdx[d] = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize()[d] -1;
-	this->m_ReferenceImage->TransformIndexToPhysicalPoint( endIdx, this->m_End );
-	DirectionType idDir; idDir.SetIdentity();
-
-
-	// Set number of control points in the sparse-dense interpolator
-	this->m_NumberOfPoints = 0;
-	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-		this->m_NumberOfPoints+= this->m_OriginalContours[contid]->GetNumberOfPoints();
-	}
-	this->m_FieldInterpolator->SetN(this->m_NumberOfPoints);
-
-	// Reorient contours to image direction in order that allowing pixel-wise computations
-	// ReorientFilter computes the new extent of the image if the directions
-	// matrix is identity. This is necessary to be able to binarize the contours
-	// (that are given in physical coordinates).
-	// See https://github.com/oesteban/ACWE-Registration/issues/92
-	if ( this->m_Direction != idDir ) {
-		typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >   ReorientFilterType;
-		typename ReorientFilterType::Pointer reorient = ReorientFilterType::New();
-		reorient->UseImageDirectionOn();
-		reorient->SetDesiredCoordinateDirection(idDir);
-		reorient->SetInput( this->m_ReferenceImage );
-		reorient->Update();
-		ReferenceImagePointer reoriented = reorient->GetOutput();
-		ReferencePointType newOrigin = reoriented->GetOrigin();
-
-
-		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-			ContourCopyPointer copy = ContourCopyType::New();
-			copy->SetInput( this->m_OriginalContours[contid] );
-			copy->Update();
-			this->m_CurrentContourPosition[contid] = copy->GetOutput();
-			ContourPointer c = this->m_CurrentContourPosition[contid];
-			PointsIterator c_it  = c->GetPoints()->Begin();
-			PointsIterator c_end = c->GetPoints()->End();
-
-			VectorType v;
-			VectorType ni;
-			typename ContourType::PointType p, pnew;
-
-			size_t pid;
-			while( c_it != c_end ) {
-				pid = c_it.Index();
-				p = this->m_CurrentContourPosition[contid]->GetPoint(pid);
-				pnew = (this->m_Direction* ( p - this->m_Origin.GetVectorFromOrigin() )) + newOrigin.GetVectorFromOrigin();
-				this->m_CurrentContourPosition[contid]->SetPoint( pid, pnew );
-				++c_it;
-			}
-#ifndef NDEBUG
-			typedef itk::MeshFileWriter< ContourType >     MeshWriterType;
-			typename MeshWriterType::Pointer w = MeshWriterType::New();
-			w->SetInput( c );
-			std::stringstream ss;
-			ss << "reoriented_" << std::setfill('0') << std::setw(2) << contid << ".vtk";
-			w->SetFileName( ss.str() );
-			w->Update();
-#endif
-		}
-	} else {
-		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-			this->m_CurrentContourPosition[contid] = this->m_OriginalContours[contid];
-		}
-	}
+	this->InitializeCurrentContours();
 
 	// Initialize corresponding ROI /////////////////////////////
 	// Check that high-res reference sampling grid has been initialized
 	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
 			this->InitializeSamplingGrid();
-			this->m_CurrentRegions = ROIType::New();
-			this->m_CurrentRegions->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-			this->m_CurrentRegions->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-			this->m_CurrentRegions->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-			this->m_CurrentRegions->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-			this->m_CurrentRegions->Allocate();
 	}
 
-	// Compute and set regions
+	// Compute and set regions in m_ROIs
 	this->ComputeCurrentRegions();
 	for( size_t id = 0; id < m_ROIs.size(); id++) {
 		this->m_ROIs[id] = this->m_CurrentROIs[id];
 	}
 
-	// Set up ROI interpolator
-	typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
-	interp->SetInputImage( this->m_CurrentRegions );
-
-	// Set up outer regions AND control points in the interpolator
-	size_t cpid = 0;
-	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-		ContourOuterRegions outerVect;
-		PointsVector points;
-
-		// Compute mesh of normals
-		NormalFilterPointer normalsFilter = NormalFilterType::New();
-		normalsFilter->SetInput( this->m_CurrentContourPosition[contid] );
-		normalsFilter->Update();
-
-		ContourPointer normals = normalsFilter->GetOutput();
-		outerVect.resize( normals->GetNumberOfPoints() );
-		points.resize( normals->GetNumberOfPoints() );
-
-
-#ifndef NDEBUG
-		ContourCopyPointer copy = ContourCopyType::New();
-		copy->SetInput( normals );
-		copy->Update();
-		ContourPointer tmpContour = copy->GetOutput();
-
-		ROIPointer debugROI = ROIType::New();
-		debugROI->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-		debugROI->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-		debugROI->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-		debugROI->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-		debugROI->Allocate();
-		debugROI->FillBuffer( 0 );
-
-		InterpolatorPointer tmpInterp = InterpolatorType::New();
-		tmpInterp->SetInputImage( this->m_ReferenceImage );
-#endif
-
-		typename ContourType::PointsContainerConstIterator c_it  = normals->GetPoints()->Begin();
-		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
-
-		typename ContourType::PointType p;
-		VectorType v;
-		VectorType ni;
-
-		long unsigned int pid;
-		while( c_it != c_end ) {
-			pid = c_it.Index();
-			p = normals->GetPoint(pid);
-			points[pid] = p;
-			this->m_FieldInterpolator->SetPoint( cpid, p );
-
-			if( contid > 0 ) {
-				normals->GetPointData( pid, &ni );
-				outerVect[pid] =  interp->Evaluate( p - ni*0.5 );
-			}
-
-#ifndef NDEBUG
-			typename ROIType::IndexType idx;
-			debugROI->TransformPhysicalPointToIndex( p, idx );
-			debugROI->SetPixel( idx, tmpInterp->Evaluate(p)[0] );
-			p-= ni*0.5;
-			tmpContour->SetPoint( pid, p );
-#endif
-
-			++c_it;
-			cpid++;
-		}
-		this->m_ShapePrior.push_back( points );
-
-		if( contid > 0 )
-			this->m_OuterList.push_back( outerVect );
-
-
-#ifndef NDEBUG
-		typedef itk::ImageFileWriter< ROIType >  ROIWriter;
-		typename ROIWriter::Pointer ww = ROIWriter::New();
-		ww->SetInput( debugROI );
-		std::stringstream ss1;
-		ss1 << "debugROI_" << std::setfill('0') << std::setw(2) << contid << ".nii.gz";
-		ww->SetFileName( ss1.str() );
-		ww->Update();
-
-
-		typedef itk::MeshFileWriter< ContourType >     MeshWriterType;
-		typename MeshWriterType::Pointer w = MeshWriterType::New();
-		w->SetInput( tmpContour );
-		std::stringstream ss;
-		ss << "normals_" << std::setfill('0') << std::setw(2) << contid << ".vtk";
-		w->SetFileName( ss.str() );
-		w->Update();
-#endif
-	}
-
-#ifndef NDEBUG
-
-#endif
-
-	if( this->m_NumberOfContours == 1 ) {
-		ContourOuterRegions outerVect;
-		outerVect.resize(this->m_CurrentContourPosition[0]->GetNumberOfPoints());
-		std::fill( outerVect.begin(), outerVect.end(), 1 );
-		this->m_OuterList.push_back( outerVect );
-	}
+	// Compute the outer region in each vertex
+	this->ComputeOuterRegions();
 
 	// Set up grid points in the sparse-dense interpolator
-	if( this->m_Derivative.IsNotNull() ) {
-		PointType p;
-		this->m_NumberOfNodes = this->m_Derivative->GetLargestPossibleRegion().GetNumberOfPixels();
-		this->m_FieldInterpolator->SetNumberOfParameters( this->m_NumberOfNodes );
+	this->InitializeInterpolatorGrid();
 
-		for ( size_t gid = 0; gid < this->m_NumberOfNodes; gid++ ) {
-			this->m_Derivative->TransformIndexToPhysicalPoint( this->m_Derivative->ComputeIndex( gid ), p );
-			this->m_FieldInterpolator->SetNode( gid, p );
-		}
-	} else {
-		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
-	}
-
-	typename FieldType::SpacingType sigma = this->m_Derivative->GetSpacing();
-	this->m_FieldInterpolator->SetSigma( sigma*2.0 );
 
 #ifndef DNDEBUG
 	for( size_t id = 0; id < m_ROIs.size(); id++) {
@@ -303,13 +113,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 size_t
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::AddShapePrior( typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContourType* prior ) {
-	this->m_OriginalContours.push_back( prior );
+::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContourType* prior ) {
+	this->m_Priors.push_back( prior );
 	this->m_NumberOfContours++;
-	this->m_CurrentContourPosition.resize( this->m_NumberOfContours );
     this->m_ROIs.resize( this->m_NumberOfContours+1 );
     this->m_CurrentROIs.resize( this->m_NumberOfContours+1 );
     this->m_CurrentMaps.resize( this->m_NumberOfContours+1 );
+
 	return this->m_NumberOfContours-1;
 }
 
@@ -403,7 +213,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	size_t changed = 0;
 	size_t gpid = 0;
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
-		typename ContourType::PointsContainerPointer curr_points = this->m_CurrentContourPosition[contid]->GetPoints();
+		typename ContourType::PointsContainerPointer curr_points = this->m_CurrentContours[contid]->GetPoints();
 		typename ContourType::PointsContainerIterator p_it = curr_points->Begin();
 		typename ContourType::PointsContainerIterator p_end = curr_points->End();
 
@@ -431,7 +241,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 						"\tMoving vertex [" << contid << "," << pid << "] from " << this->m_ShapePrior[contid][pid] << " to " << p << " norm="  << desp.GetNorm() << "mm.\n");
 				}
 
-				this->m_CurrentContourPosition[contid]->SetPoint( p_it.Index(), newPoint );
+				this->m_CurrentContours[contid]->SetPoint( p_it.Index(), newPoint );
 				changed++;
 				gpid++;
 			}
@@ -482,7 +292,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		// Compute mesh of normals
 		normalsFilter = NormalFilterType::New();
-		normalsFilter->SetInput( this->m_CurrentContourPosition[contid] );
+		normalsFilter->SetInput( this->m_CurrentContours[contid] );
 		normalsFilter->Update();
 		ContourPointer normals = normalsFilter->GetOutput();
 
@@ -615,54 +425,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::ComputeCurrentRegions() {
-	ROIPixelType unassigned = itk::NumericTraits< ROIPixelType >::max();
-	this->m_CurrentRegions->FillBuffer(unassigned);
-	size_t nPix = this->m_CurrentRegions->GetLargestPossibleRegion().GetNumberOfPixels();
-
-	ROIPixelType* regionsBuffer = this->m_CurrentRegions->GetBufferPointer();
-
-	for (ROIPixelType idx = 0; idx < this->m_CurrentROIs.size(); idx++ ) {
-		ROIPointer tempROI;
-
-		if ( idx < this->m_CurrentROIs.size() - 1 ) {
-			BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
-			meshFilter->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-			meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-			meshFilter->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-			meshFilter->SetSize(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-			meshFilter->SetInput(     this->m_CurrentContourPosition[idx]);
-			meshFilter->Update();
-			tempROI = meshFilter->GetOutput();
-		} else {
-			tempROI = ROIType::New();
-			tempROI->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-			tempROI->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-			tempROI->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-			tempROI->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-			tempROI->Allocate();
-			tempROI->FillBuffer( 1 );
-		}
-
-		ROIPixelType* roiBuffer = tempROI->GetBufferPointer();
-
-		for( size_t pix = 0; pix < nPix; pix++ ) {
-			if( *(regionsBuffer+pix) == unassigned && *( roiBuffer + pix )==1 ) {
-				*(regionsBuffer+pix) = idx;
-			} else {
-				*( roiBuffer + pix ) = 0;
-			}
-		}
-
-		this->m_CurrentROIs[idx] = tempROI;
-	}
-
-	this->m_RegionsModified = false;
-}
-
-template< typename TReferenceImageType, typename TCoordRepType >
-void
-FunctionalBase<TReferenceImageType, TCoordRepType>
 ::InitializeSamplingGrid() {
 	this->m_ReferenceSamplingGrid = FieldType::New();
 	typename ReferenceImageType::SpacingType sp = this->m_ReferenceImage->GetSpacing();
@@ -695,6 +457,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_ReferenceSamplingGrid->SetRegions( size );
 	this->m_ReferenceSamplingGrid->SetSpacing( sp );
 	this->m_ReferenceSamplingGrid->Allocate();
+
+	this->m_CurrentRegions = ROIType::New();
+	this->m_CurrentRegions->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+	this->m_CurrentRegions->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+	this->m_CurrentRegions->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
+	this->m_CurrentRegions->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+	this->m_CurrentRegions->Allocate();
 
 #ifndef NDEBUG
 	typedef itk::VectorResampleImageFilter< ReferenceImageType, ReferenceImageType > Int;
@@ -729,6 +498,241 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_CurrentDisplacementField->SetSpacing  ( field->GetSpacing() );
 	this->m_CurrentDisplacementField->SetRegions  ( field->GetRequestedRegion().GetSize());
 	this->m_CurrentDisplacementField->Allocate();
+}
+
+
+// Reorient contours to image direction in order that allowing pixel-wise computations
+// ReorientFilter computes the new extent of the image if the directions
+// matrix is identity. This is necessary to be able to binarize the contours
+// (that are given in physical coordinates).
+// See https://github.com/oesteban/ACWE-Registration/issues/92
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::InitializeCurrentContours() {
+	// Set number of control points in the sparse-dense interpolator
+	this->m_NumberOfPoints = 0;
+	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+		this->m_NumberOfPoints+= this->m_Priors[contid]->GetNumberOfPoints();
+	}
+	this->m_FieldInterpolator->SetN(this->m_NumberOfPoints);
+
+	// Copy contours
+	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+		ContourCopyPointer copy = ContourCopyType::New();
+		copy->SetInput( this->m_Priors[contid] );
+		copy->Update();
+		this->m_CurrentContours.push_back( copy->GetOutput() );
+	}
+
+	// Cache image properties
+	this->m_Origin    = this->m_ReferenceImage->GetOrigin();
+	this->m_Direction = this->m_ReferenceImage->GetDirection();
+
+	typename ReferenceImageType::IndexType endIdx;
+	for ( size_t d = 0; d<Dimension; d++)
+		endIdx[d] = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize()[d] -1;
+	this->m_ReferenceImage->TransformIndexToPhysicalPoint( endIdx, this->m_End );
+	DirectionType idDir; idDir.SetIdentity();
+
+#ifndef NDEBUG
+	ProbabilityMapPointer dbg = ProbabilityMapType::New();
+	dbg->SetRegions(   this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
+	dbg->SetOrigin(    this->m_ReferenceImage->GetOrigin() );
+	dbg->SetDirection( this->m_ReferenceImage->GetDirection() );
+	dbg->SetSpacing(   this->m_ReferenceImage->GetSpacing() );
+	dbg->Allocate();
+	dbg->FillBuffer( 0.0 );
+
+	typename ProbabilityMapType::IndexType idx;
+	typename ProbabilityMapType::PixelType pix;
+#endif
+
+	if ( this->m_Direction != idDir ) {
+		typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >   ReorientFilterType;
+		typename ReorientFilterType::Pointer reorient = ReorientFilterType::New();
+		reorient->UseImageDirectionOn();
+		reorient->SetDesiredCoordinateDirection(idDir);
+		reorient->SetInput( this->m_ReferenceImage );
+		reorient->Update();
+		ReferenceImagePointer reoriented = reorient->GetOutput();
+		ReferencePointType newOrigin = reoriented->GetOrigin();
+
+		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+			ContourPointer c = this->m_CurrentContours[contid];
+			PointsIterator c_it  = c->GetPoints()->Begin();
+			PointsIterator c_end = c->GetPoints()->End();
+			typename ContourType::PointType p, pnew;
+			size_t pid;
+			while( c_it != c_end ) {
+				pid = c_it.Index();
+				p = this->m_CurrentContours[contid]->GetPoint(pid);
+				pnew = (this->m_Direction* ( p - this->m_Origin.GetVectorFromOrigin() )) + newOrigin.GetVectorFromOrigin();
+				c->SetPoint( pid, pnew );
+#ifndef NDEBUG
+				dbg->TransformPhysicalPointToIndex(pnew,idx);
+				pix = this->m_ReferenceImage->GetPixel(idx)[0];
+				dbg->SetPixel(idx, pix );
+#endif
+				++c_it;
+			}
+		}
+
+
+
+#ifndef NDEBUG
+		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+			typedef itk::MeshFileWriter< ContourType >     MeshWriterType;
+			typename MeshWriterType::Pointer w = MeshWriterType::New();
+			w->SetInput( this->m_CurrentContours[contid] );
+			std::stringstream ss;
+			ss << "reoriented_" << std::setfill('0') << std::setw(2) << contid << ".vtk";
+			w->SetFileName( ss.str() );
+			w->Update();
+		}
+
+		typedef itk::ImageFileWriter< ProbabilityMapType > DebugWriter;
+		typename DebugWriter::Pointer ww = DebugWriter::New();
+		ww->SetInput( dbg );
+		ww->SetFileName( "debug.nii.gz" );
+		ww->Update();
+#endif
+
+
+	}
+
+	// Fill in m_ShapePrior and interpolator
+	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+		ContourPointer c = this->m_CurrentContours[contid];
+		PointsIterator c_it  = c->GetPoints()->Begin();
+		PointsIterator c_end = c->GetPoints()->End();
+		PointsVector points;
+		points.resize( c->GetNumberOfPoints() );
+		PointType p;
+		size_t pid;
+		size_t cpid = 0;
+		while( c_it != c_end ) {
+			pid = c_it.Index();
+			points[pid] = p;
+			this->m_FieldInterpolator->SetPoint( cpid, p );
+			++c_it;
+			cpid++;
+		}
+		this->m_ShapePrior.push_back( points );
+	}
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::ComputeCurrentRegions() {
+	ROIPixelType unassigned = itk::NumericTraits< ROIPixelType >::max();
+	this->m_CurrentRegions->FillBuffer(unassigned);
+	size_t nPix = this->m_CurrentRegions->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	ROIPixelType* regionsBuffer = this->m_CurrentRegions->GetBufferPointer();
+
+	for (ROIPixelType idx = 0; idx < this->m_CurrentROIs.size(); idx++ ) {
+		ROIPointer tempROI;
+
+		if ( idx < this->m_CurrentROIs.size() - 1 ) {
+			BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
+			meshFilter->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+			meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+			meshFilter->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
+			meshFilter->SetSize(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+			meshFilter->SetInput(     this->m_CurrentContours[idx]);
+			meshFilter->Update();
+			tempROI = meshFilter->GetOutput();
+		} else {
+			tempROI = ROIType::New();
+			tempROI->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+			tempROI->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+			tempROI->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
+			tempROI->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+			tempROI->Allocate();
+			tempROI->FillBuffer( 1 );
+		}
+
+		ROIPixelType* roiBuffer = tempROI->GetBufferPointer();
+
+		for( size_t pix = 0; pix < nPix; pix++ ) {
+			if( *(regionsBuffer+pix) == unassigned && *( roiBuffer + pix )==1 ) {
+				*(regionsBuffer+pix) = idx;
+			} else {
+				*( roiBuffer + pix ) = 0;
+			}
+		}
+
+		this->m_CurrentROIs[idx] = tempROI;
+	}
+
+	this->m_RegionsModified = false;
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::ComputeOuterRegions() {
+	ContourOuterRegions outerVect;
+
+	if( this->m_NumberOfContours>1 ) {
+		// Set up ROI interpolator
+		typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
+		interp->SetInputImage( this->m_CurrentRegions );
+
+		// Set up outer regions
+		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+			// Compute mesh of normals
+			NormalFilterPointer normalsFilter = NormalFilterType::New();
+			normalsFilter->SetInput( this->m_Priors[contid] );
+			normalsFilter->Update();
+			ContourPointer normals = normalsFilter->GetOutput();
+			outerVect.resize( normals->GetNumberOfPoints() );
+
+			typename ContourType::PointsContainerConstIterator c_it  = normals->GetPoints()->Begin();
+			typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
+
+			typename ContourType::PointType p;
+			VectorType v;
+			VectorType ni;
+
+			size_t pid;
+			while( c_it != c_end ) {
+				pid = c_it.Index();
+				p = normals->GetPoint(pid);
+				normals->GetPointData( pid, &ni );
+				outerVect[pid] =  interp->Evaluate( p - ni * 0.5 );
+				++c_it;
+			}
+			this->m_OuterList.push_back( outerVect );
+		}
+	} else {
+		outerVect.resize(this->m_CurrentContours[0]->GetNumberOfPoints());
+		std::fill( outerVect.begin(), outerVect.end(), 1 );
+		this->m_OuterList.push_back( outerVect );
+	}
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::InitializeInterpolatorGrid() {
+	if( this->m_Derivative.IsNotNull() ) {
+		PointType p;
+		this->m_NumberOfNodes = this->m_Derivative->GetLargestPossibleRegion().GetNumberOfPixels();
+		this->m_FieldInterpolator->SetNumberOfParameters( this->m_NumberOfNodes );
+
+		for ( size_t gid = 0; gid < this->m_NumberOfNodes; gid++ ) {
+			this->m_Derivative->TransformIndexToPhysicalPoint( this->m_Derivative->ComputeIndex( gid ), p );
+			this->m_FieldInterpolator->SetNode( gid, p );
+		}
+	} else {
+		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
+	}
+
+	typename FieldType::SpacingType sigma = this->m_Derivative->GetSpacing();
+	this->m_FieldInterpolator->SetSigma( sigma*2.0 );
 }
 
 }
