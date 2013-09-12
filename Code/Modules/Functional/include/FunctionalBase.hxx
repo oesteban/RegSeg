@@ -42,6 +42,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <math.h>
 #include "DisplacementFieldFileWriter.h"
 
 #include <itkMeshFileWriter.h>
@@ -211,39 +212,33 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	size_t changed = 0;
 	size_t gpid = 0;
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
-		typename ContourType::PointsContainerPointer curr_points = this->m_CurrentContours[contid]->GetPoints();
-		typename ContourType::PointsContainerIterator p_it = curr_points->Begin();
-		typename ContourType::PointsContainerIterator p_end = curr_points->End();
+		typename ContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
+		typename ContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
+
+		ContourPointType ci, ci_prime;
+		VectorType desp;
+		size_t pid;
 
 		// For all the points in the mesh
-		PointType p;
-		VectorType desp, desp_back;
-		typename ContourType::PointType currentPoint,newPoint;
-		long unsigned int pid;
-
 		while ( p_it != p_end ) {
-			currentPoint = p_it.Value();
+			ci = p_it.Value();
 			pid = p_it.Index();
-
 			// Interpolate the value of the field in the point
 			desp = this->m_FieldInterpolator->GetPointData( gpid );
 			norm = desp.GetNorm();
 			// Add vector to the point
 			if( norm > 1.0e-3 ) {
-				p = this->m_ShapePrior[contid][pid] + desp;
-				newPoint.SetPoint( p );
-				newPoint.SetEdge( currentPoint.GetEdge() );
+				ci_prime = ci + desp;
 
-				if( ! this->IsInside(p,point_idx) ) {
+				if( ! this->IsInside(ci_prime,point_idx) ) {
 					itkExceptionMacro( << "Contour is outside image regions after update.\n" <<
-						"\tMoving vertex [" << contid << "," << pid << "] from " << this->m_ShapePrior[contid][pid] << " to " << p << " norm="  << desp.GetNorm() << "mm.\n");
+						"\tMoving vertex [" << contid << "," << pid << "] from " << ci << " to " << ci_prime << " norm="  << desp.GetNorm() << "mm.\n");
 				}
 
-				this->m_CurrentContours[contid]->SetPoint( p_it.Index(), newPoint );
+				this->m_CurrentContours[contid]->SetPoint( pid, ci_prime );
 				changed++;
 				gpid++;
 			}
-
 			++p_it;
 		}
 	}
@@ -298,7 +293,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
 		PointValueType gradient;
-		PointType  ci, ci_prime;
+		PointType  ci_prime;
 		VectorType ni;
 		typename ContourType::PointIdentifier pid;
 		ReferencePixelType dist[2];
@@ -317,6 +312,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				gradient = 0.0;
 			}
 
+#ifndef NDEBUG
+			if ( fabs(gradient) > fabs(maxGradient) ) {
+				maxGradient = gradient;
+			}
+			sumGradient+=gradient;
+#endif
+
 			// project to normal, updating transform
 			normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
 			ni*= gradient;
@@ -324,11 +326,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			this->m_FieldInterpolator->SetPointData(cpid, ni);
 			++c_it;
 			cpid++;
-
-#ifndef NDEBUG
-			if ( gradient > maxGradient ) maxGradient = gradient;
-			sumGradient+=gradient;
-#endif
 		}
 	}
 
@@ -560,15 +557,15 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			ContourPointer c = this->m_CurrentContours[contid];
 			PointsIterator c_it  = c->GetPoints()->Begin();
 			PointsIterator c_end = c->GetPoints()->End();
-			typename ContourType::PointType p, pnew;
+			ContourPointType ci, ci_new;
 			size_t pid;
 			while( c_it != c_end ) {
 				pid = c_it.Index();
-				p = this->m_CurrentContours[contid]->GetPoint(pid);
-				pnew = (this->m_Direction* ( p - this->m_Origin.GetVectorFromOrigin() )) + newOrigin.GetVectorFromOrigin();
-				c->SetPoint( pid, pnew );
+				ci = c_it.Value();
+				ci_new = (this->m_Direction* ( ci - this->m_Origin.GetVectorFromOrigin() )) + newOrigin.GetVectorFromOrigin();
+				c->SetPoint( pid, ci_new );
 #ifndef NDEBUG
-				dbg->TransformPhysicalPointToIndex(pnew,idx);
+				dbg->TransformPhysicalPointToIndex(ci_new,idx);
 				pix = this->m_ReferenceImage->GetPixel(idx)[0];
 				dbg->SetPixel(idx, pix );
 #endif
@@ -599,25 +596,20 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	}
 
-	// Fill in m_ShapePrior and interpolator
+	// Fill in interpolator points
 	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-		ContourPointer c = this->m_CurrentContours[contid];
-		PointsIterator c_it  = c->GetPoints()->Begin();
-		PointsIterator c_end = c->GetPoints()->End();
-		PointsVector points;
-		points.resize( c->GetNumberOfPoints() );
-		PointType p;
+		PointsIterator c_it  = this->m_CurrentContours[contid]->GetPoints()->Begin();
+		PointsIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
+		PointType ci;
 		size_t pid;
 		size_t cpid = 0;
 		while( c_it != c_end ) {
 			pid = c_it.Index();
-			p = c->GetPoint( pid );
-			points[pid] = p;
-			this->m_FieldInterpolator->SetPoint( cpid, p );
+			ci = c_it.Value();
+			this->m_FieldInterpolator->SetPoint( cpid, ci );
 			++c_it;
 			cpid++;
 		}
-		this->m_ShapePrior.push_back( points );
 	}
 }
 
@@ -692,16 +684,17 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			typename ContourType::PointsContainerConstIterator c_it  = normals->GetPoints()->Begin();
 			typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
-			typename ContourType::PointType p;
+			ContourPointType ci;
 			VectorType v;
 			VectorType ni;
 
 			size_t pid;
 			while( c_it != c_end ) {
 				pid = c_it.Index();
-				p = normals->GetPoint(pid);
+				ci = c_it.Value();
+				//ci = normals->GetPoint(pid);
 				normals->GetPointData( pid, &ni );
-				outerVect[pid] =  interp->Evaluate( p - ni * 0.5 );
+				outerVect[pid] =  interp->Evaluate( ci - ni * 0.5 );
 				++c_it;
 			}
 			this->m_OuterList.push_back( outerVect );
@@ -718,13 +711,13 @@ void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::InitializeInterpolatorGrid() {
 	if( this->m_Derivative.IsNotNull() ) {
-		PointType p;
+		PointType uk;
 		this->m_NumberOfNodes = this->m_Derivative->GetLargestPossibleRegion().GetNumberOfPixels();
 		this->m_FieldInterpolator->SetNumberOfParameters( this->m_NumberOfNodes );
 
 		for ( size_t gid = 0; gid < this->m_NumberOfNodes; gid++ ) {
-			this->m_Derivative->TransformIndexToPhysicalPoint( this->m_Derivative->ComputeIndex( gid ), p );
-			this->m_FieldInterpolator->SetNode( gid, p );
+			this->m_Derivative->TransformIndexToPhysicalPoint( this->m_Derivative->ComputeIndex( gid ), uk );
+			this->m_FieldInterpolator->SetNode( gid, uk );
 		}
 	} else {
 		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");

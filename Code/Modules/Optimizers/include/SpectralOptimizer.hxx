@@ -70,7 +70,7 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer() {
 	this->m_CurrentValue = itk::NumericTraits<MeasureType>::infinity();
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize =  1.0;
+	this->m_StepSize =  1.0e-3;
 	this->SetAlpha( 2.0 );
 	this->SetBeta( 0.0 );
 
@@ -79,6 +79,7 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer() {
 	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 15 );
+	this->m_TrackEnergy = false;
 }
 
 template< typename TFunctional >
@@ -121,7 +122,9 @@ void SpectralOptimizer<TFunctional>::Start() {
 	this->m_Functional->CopyInformation( this->m_Parameters );
 	this->m_Functional->Initialize();
 
-	std::cout << "[" << this->m_CurrentIteration << "] " << this->m_Functional->GetValue() << std::endl;
+	if ( this->m_TrackEnergy ) {
+		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_Functional->GetValue() << std::endl;
+	}
 
 	this->m_CurrentIteration = 1;
 	this->Resume();
@@ -221,8 +224,12 @@ void SpectralOptimizer<TFunctional>::Resume() {
 #endif
 
 
-		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentValue << " | " << this->m_Functional->GetValue()
-				<< " | " << this->GetCurrentRegularizationEnergy() << std::endl;
+		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentValue << " | ";
+		if ( this->m_TrackEnergy ) {
+			std::cout << this->m_Functional->GetValue() << " | " << this->GetCurrentRegularizationEnergy();
+		}
+		std::cout << std::endl;
+
 
 		/*
 		 * Check the convergence by WindowConvergenceMonitoringFunction.
