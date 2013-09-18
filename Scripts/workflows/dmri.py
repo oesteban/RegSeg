@@ -4,42 +4,84 @@
 
 import os.path as op
 
-import nipype.interfaces.io as nio           # Data i/o
-import nipype.interfaces.utility as niu      # utility
-import nipype.pipeline.engine as pe          # pypeline engine
-import nipype.interfaces.fsl as fsl          # fsl
-import nipype.interfaces.freesurfer as fs    # freesurfer
+import nipype.interfaces.io as nio              # Data i/o
+import nipype.interfaces.utility as niu         # utility
+import nipype.pipeline.engine as pe             # pypeline engine
+import nipype.interfaces.fsl as fsl             # fsl
+import nipype.interfaces.freesurfer as fs       # freesurfer
+import nipype.interfaces.ants as ants           # ANTS
+
+
 import nipype.interfaces.diffusion_toolkit as dtk
 import nipype.interfaces.mrtrix as mrtrix    #<---- The important new part!
 import nipype.interfaces.camino as camino
 
 
-def t2_registation_correct( name="T2_Registration" ):
+def t2_registration_correct( name="T2_Registration" ):
     pipeline = pe.Workflow( name=name )
     
     inputnode = pe.Node( niu.IdentityInterface( fields=['in_file',
                                                         'in_t2',
-                                                        'in_mask']
+                                                        'in_mask_dwi',
+                                                        'in_mask_t2']
                          ), name='inputnode' )
 
     outputnode = pe.Node( niu.IdentityInterface( fields=['epi_corrected']),
                           name='outputnode' )
 
-    get_b0 = pe.Node(fsl.utils.ExtractROI(
-        t_size=1, t_min=0), name="getB0")
+    get_b0 = pe.Node(fsl.ExtractROI( t_size=1, t_min=0 ), name="getB0")
 
-    registration = pe.Node( ANTS , name='B0-to-T2' )
+    mask_t2 = pe.Node( fsl.ApplyMask(), name='maskT2' )
+    mask_b0 = pe.Node( fsl.ApplyMask(), name='maskB0' )
 
-    dwi_split = pe.Node(niu.Function(input_names=['in_file'], output_names=['out_files'], function=_split_dwi), name='split_DWI')
-    applytfm = pe.MapNode( , iterfield=[''], name='AntsInverseTf')
-    dwi_merge = pe.Node(fsl.utils.Merge(dimension='t'), name='merge_DWI')
+    reg = pe.Node( ants.Registration() , name='B0-to-T2' )
+
+    reg.inputs.transforms = ['SyN']
+    reg.inputs.transform_parameters = [(0.25, 3.0, 0.0)]
+    reg.inputs.number_of_iterations = [[100, 50, 30]]
+    reg.inputs.dimension = 3
+    reg.inputs.write_composite_transform = True
+
+    reg.inputs.metric = ['Mattes']
+    reg.inputs.metric_weight = [[1]] # Default (value ignored currently by ANTs)
+    reg.inputs.radius_or_number_of_bins = [64]
+    reg.inputs.sampling_strategy = ['Random']
+    reg.inputs.sampling_percentage = [0.1]
+    reg.inputs.convergence_threshold = [1.e-9]
+    reg.inputs.convergence_window_size = [20]
+    reg.inputs.smoothing_sigmas = [[2,1,0]]
+    reg.inputs.sigma_units = ['vox']
+    reg.inputs.shrink_factors = [[3,2,1]]
+    reg.inputs.use_estimate_learning_rate_once = [True]
+    reg.inputs.use_histogram_matching = [True] # This is the default
+#    reg.inputs.output_warped_image = 'output_warped_image.nii.gz'
+#    reg.inputs.output_transform_prefix = "output_"
+#    reg.inputs.collapse_output_transforms = False
+    applytfm = pe.Node( ants.WarpTimeSeriesImageMultiTransform(), name='ApplyTfm' )
+
+#    dwi_split = pe.Node(niu.Function(input_names=['in_file'], output_names=['out_files'], function=_split_dwi), name='split_DWI')
+#    applytfm = pe.MapNode( , iterfield=[''], name='AntsInverseTf')
+#    dwi_merge = pe.Node(fsl.Merge(dimension='t'), name='merge_DWI')
+
+
 
     pipeline.connect( [
-                         (inputnode,      get_b0, [ ('in_file','in_file') ] )
-                        ,(get_b0,        mask_b0, [ ('roi_file','') ] )
-                        ,(inputnode,     mask_t2, [ ('in_t2','') ] )
+                         (inputnode,      get_b0, [ ('in_file','in_file') ])
+                        #,(inputnode,   dwi_split, [ ('in_file','in_files') ]
+                        ,(inputnode,     mask_b0, [ ('in_mask_dwi', 'mask_file' ) ])
+                        ,(inputnode,     mask_t2, [ ('in_mask_t2', 'mask_file' ) ])
+                        ,(get_b0,        mask_b0, [ ('roi_file','in_file') ])
+                        ,(inputnode,     mask_t2, [ ('in_t2','in_file') ])
+                        ,(mask_t2,           reg, [ ( ('out_file',_aslist),'fixed_image') ])
+                        ,(mask_b0,           reg, [ ( ('out_file',_aslist),'moving_image') ])
+                        ,(inputnode,    applytfm, [ ('in_file','input_image'),('in_t2','reference_image') ])
+                        ,(reg,          applytfm, [ ('forward_transforms','transformation_series') ])
+                        ,(applytfm,   outputnode, [ ('output_image','epi_corrected') ])
+                      ])
 
-                      ]
+    return pipeline
+
+
 
 def fugue_all_workflow(name="Fugue_WarpDWIs"):
     pipeline = pe.Workflow(name=name)
@@ -287,7 +329,10 @@ def demean( in_file, in_mask, out_file=None ):
     return out_file
 
 def _ms2sec(val):
-    return val*1e-3;
+    return val*1e-3
 
 def _sec2ms(val):
-    return val*1e3;
+    return val*1e3
+
+def _aslist( val ):
+    return [ val ]
