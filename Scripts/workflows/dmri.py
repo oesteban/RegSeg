@@ -37,7 +37,7 @@ def t2_registration_correct( name="T2_Registration" ):
     reg = pe.Node( ants.Registration() , name='B0-to-T2' )
 
     reg.inputs.transforms = ['SyN']
-    reg.inputs.transform_parameters = [(0.25, 3.0, 0.0)]
+    reg.inputs.transform_parameters = [(0.25, 5.0, 10.0)]
     reg.inputs.number_of_iterations = [[100, 50, 30]]
     reg.inputs.dimension = 3
     reg.inputs.write_composite_transform = True
