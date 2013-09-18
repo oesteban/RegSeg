@@ -13,6 +13,34 @@ import nipype.interfaces.diffusion_toolkit as dtk
 import nipype.interfaces.mrtrix as mrtrix    #<---- The important new part!
 import nipype.interfaces.camino as camino
 
+
+def t2_registation_correct( name="T2_Registration" ):
+    pipeline = pe.Workflow( name=name )
+    
+    inputnode = pe.Node( niu.IdentityInterface( fields=['in_file',
+                                                        'in_t2',
+                                                        'in_mask']
+                         ), name='inputnode' )
+
+    outputnode = pe.Node( niu.IdentityInterface( fields=['epi_corrected']),
+                          name='outputnode' )
+
+    get_b0 = pe.Node(fsl.utils.ExtractROI(
+        t_size=1, t_min=0), name="getB0")
+
+    registration = pe.Node( ANTS , name='B0-to-T2' )
+
+    dwi_split = pe.Node(niu.Function(input_names=['in_file'], output_names=['out_files'], function=_split_dwi), name='split_DWI')
+    applytfm = pe.MapNode( , iterfield=[''], name='AntsInverseTf')
+    dwi_merge = pe.Node(fsl.utils.Merge(dimension='t'), name='merge_DWI')
+
+    pipeline.connect( [
+                         (inputnode,      get_b0, [ ('in_file','in_file') ] )
+                        ,(get_b0,        mask_b0, [ ('roi_file','') ] )
+                        ,(inputnode,     mask_t2, [ ('in_t2','') ] )
+
+                      ]
+
 def fugue_all_workflow(name="Fugue_WarpDWIs"):
     pipeline = pe.Workflow(name=name)
     
