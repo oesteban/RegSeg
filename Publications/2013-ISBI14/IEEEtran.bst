@@ -1266,30 +1266,38 @@ FUNCTION {format.editors}
 %% date
 
 FUNCTION {format.date}
-{
-  month "month" bibinfo.check duplicate$ empty$
-  year  "year" bibinfo.check duplicate$ empty$
-    { swap$ 'skip$
-        { this.to.prev.status
-          this.status.std
-          cap.status.std
-         "there's a month but no year in " cite$ * warning$ }
-      if$
-      *
-    }
-    { this.to.prev.status
-      this.status.std
-      cap.status.std
-      swap$ 'skip$
-        {
-          swap$
-          " " * swap$
-        }
-      if$
-      *
-    }
+{ year duplicate$ empty$
+    { "empty year in " cite$ * warning$
+       pop$ "" }
+    'skip$
   if$
 }
+
+%FUNCTION {format.date}
+%{
+%  month "month" bibinfo.check duplicate$ empty$
+%  year  "year" bibinfo.check duplicate$ empty$
+%    { swap$ 'skip$
+%        { this.to.prev.status
+%          this.status.std
+%          cap.status.std
+%         "there's a month but no year in " cite$ * warning$ }
+%      if$
+%      *
+%    }
+%    { this.to.prev.status
+%      this.status.std
+%      cap.status.std
+%      swap$ 'skip$
+%        {
+%          swap$
+%          " " * swap$
+%        }
+%      if$
+%      *
+%    }
+%  if$
+%}
 
 FUNCTION {format.date.electronic}
 { month "month" bibinfo.check duplicate$ empty$
