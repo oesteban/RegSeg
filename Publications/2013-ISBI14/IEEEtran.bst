@@ -1916,7 +1916,7 @@ FUNCTION {format.url}
 FUNCTION {article}
 { std.status.using.comma
   start.entry
-  if.url.alt.interword.spacing
+%  if.url.alt.interword.spacing
   format.authors "author" output.warn
   name.or.dash
   format.article.title "title" output.warn
@@ -1925,16 +1925,16 @@ FUNCTION {article}
   format.number.if.use.for.article output
   format.pages output
   format.date "year" output.warn
-  format.note output
-  format.url output
+%  format.note output
+%  format.url output
   fin.entry
-  if.url.std.interword.spacing
+%  if.url.std.interword.spacing
 }
 
 FUNCTION {book}
 { std.status.using.comma
   start.entry
-  if.url.alt.interword.spacing
+%  if.url.alt.interword.spacing
   author empty$
     { format.editors "author and editor" output.warn }
     { format.authors output.nonnull }
@@ -1949,16 +1949,16 @@ FUNCTION {book}
   format.address.publisher.date output
   format.volume output
   format.number output
-  format.note output
-  format.url output
+%  format.note output
+%  format.url output
   fin.entry
-  if.url.std.interword.spacing
+%  if.url.std.interword.spacing
 }
 
 FUNCTION {booklet}
 { std.status.using.comma
   start.entry
-  if.url.alt.interword.spacing
+%  if.url.alt.interword.spacing
   format.authors output
   name.or.dash
   format.article.title "title" output.warn
@@ -1966,10 +1966,10 @@ FUNCTION {booklet}
   format.organization "organization" bibinfo.check output
   format.address "address" bibinfo.check output
   format.date output
-  format.note output
-  format.url output
+%  format.note output
+%  format.url output
   fin.entry
-  if.url.std.interword.spacing
+%  if.url.std.interword.spacing
 }
 
 FUNCTION {electronic}
@@ -1993,7 +1993,7 @@ FUNCTION {electronic}
 FUNCTION {inbook}
 { std.status.using.comma
   start.entry
-  if.url.alt.interword.spacing
+%  if.url.alt.interword.spacing
   author empty$
     { format.editors "author and editor" output.warn }
     { format.authors output.nonnull }
@@ -2006,16 +2006,16 @@ FUNCTION {inbook}
   format.number output
   format.chapter output
   format.pages output
-  format.note output
-  format.url output
+%  format.note output
+%  format.url output
   fin.entry
-  if.url.std.interword.spacing
+%  if.url.std.interword.spacing
 }
 
 FUNCTION {incollection}
 { std.status.using.comma
   start.entry
-  if.url.alt.interword.spacing
+%  if.url.alt.interword.spacing
   format.authors "author" output.warn
   name.or.dash
   format.article.title "title" output.warn
@@ -2027,16 +2027,16 @@ FUNCTION {incollection}
   format.number output
   format.chapter output
   format.pages output
-  format.note output
-  format.url output
+%  format.note output
+%  format.url output
   fin.entry
-  if.url.std.interword.spacing
+%  if.url.std.interword.spacing
 }
 
 FUNCTION {inproceedings}
 { std.status.using.comma
   start.entry
-  if.url.alt.interword.spacing
+%  if.url.alt.interword.spacing
   format.authors "author" output.warn
   name.or.dash
   format.article.title "title" output.warn
@@ -2053,10 +2053,10 @@ FUNCTION {inproceedings}
   if$
   format.paper output
   format.pages output
-  format.note output
-  format.url output
+%  format.note output
+%  format.url output
   fin.entry
-  if.url.std.interword.spacing
+%  if.url.std.interword.spacing
 }
 
 FUNCTION {manual}
