@@ -6,8 +6,8 @@ suffers from distortions originated by the standard
 are present at interfaces between tissues, due to the inhomogeneity
 of the field derived from the discontinuity of magnetic
 susceptibility. As a result, registered signal shows characteristic
-geometrical deformations and signal destruction. Thus, the artifact
-is a significant pitfall that limits the success of tractography 
+geometrical deformations and signal destruction. These artifacts
+suppose a significant pitfall that limits the success of tractography 
 algorithms.
 
 Several retrospective correction techniques are readily
@@ -20,9 +20,12 @@ on \gls*{dmri} and more precisely on the resulting
 tractography.
 
 In this work, we use a renowned digital phantom designed
-for assessing tractography algorithms and subject it to
-a theoretically correct and plausible deformation. We corrected
-data with several available methodologies and provide
-a ranking based on the accuracy of the resulting tractographies.
+for assessing tractography algorithms, and subject it to
+a ``theoretically correct'' and plausible deformation. We
+corrected data back, with several available techniques 
+(namely fieldmap-based, reversed encoding-based, 
+registration-based). Finally, we ranked the methods 
+based on the geometrical accuracy, the dropout compensation, 
+and the impact on the resulting tractography.
 
 \end{abstract}

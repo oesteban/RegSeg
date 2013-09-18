@@ -1,12 +1,51 @@
-\section{PROCEDURE FOR PAPER SUBMISSION}
+\section{METHODS}
 
-\subsection{Selecting a Template (Heading 2)}
+\subsection{Digital Phantom}
+We modified the digital phantom provided with the
+\emph{\gls*{hardi} reconstruction challenge} held
+in ISBI 2013, San Francisco, US. This model is
+built upon high-resolution \glspl*{tpm}, from which
+\gls*{dmri} signal can be simulated with different
+\glspl*{snr}. The new version of the phantom includes
+a \gls*{csf} distribution, which was not simulated
+in the version available for the contest. For this paper,
+with these new \glspl*{tpm} we produced \gls*{dti} at
+typical low-resolution, and corresponding \gls*{t1} and 
+\gls*{t2} images at high-resolution. All the
+modalities where numerically simulated, using previously
+reported \gls*{mri} typical parameters.
 
-First, confirm that you have the correct template for your paper size. This template has been tailored for output on the US-letter paper size. 
-It may be used for A4 paper size if the paper size setting is suitably modified.
 
-\subsection{Maintaining the Integrity of the Specifications}
+\begin{table}[h]
+\caption{Simulated \gls*{mri} modalities}
+\label{table:phantom}
+\begin{center}
+\begin{tabular}{c|c}
+\hline
+Modality & Descrition \\
+\hline
+\gls*{dti} & 30 directions, \\
+\hline
+\gls*{t1} & \\
+\hline
+\gls*{t2} & \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
 
-The template is used to format your paper and style the text. All margins, column widths, line spaces, and text fonts are prescribed; please do not alter them. You may note peculiarities. For example, the head margin in this template measures proportionately more than is customary. This measurement and others are deliberate, using specifications that anticipate your paper as one part of the entire proceedings, and not as an independent document. Please do not revise any of the current designations
+
+\subsection{Theory-based synthetic distortion}
+
+   \begin{figure}[thpb]
+      \centering
+      \framebox{\parbox{3in}{Figure of the phantom}}
+      %\includegraphics[scale=1.0]{figurefile}
+      \caption{Original and distorted digital phantom}
+      \label{fig:label}
+   \end{figure}
+   
+
+\subsection{Evaluation workflows}
 
 
