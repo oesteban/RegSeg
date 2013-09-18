@@ -30,7 +30,7 @@ def fugue_all_workflow(name="Fugue_WarpDWIs"):
             out_files.append(out_file)
         return out_files
     
-    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'in_vsm' ]), name='inputnode' )
+    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'in_vsm','unwarp_direction' ]), name='inputnode' )
     dwi_split = pe.Node(niu.Function(input_names=['in_file'], output_names=['out_files'], function=_split_dwi), name='split_DWI')
     vsm_fwd = pe.MapNode(fsl.FUGUE(forward_warping=True), iterfield=['in_file'], name='Fugue_Warp')
     dwi_merge = pe.Node(fsl.utils.Merge(dimension='t'), name='merge_DWI')
@@ -39,7 +39,7 @@ def fugue_all_workflow(name="Fugue_WarpDWIs"):
     pipeline.connect([
                        (inputnode,  dwi_split, [('in_file', 'in_file')])
                       ,(dwi_split,    vsm_fwd, [('out_files', 'in_file')])
-                      ,(inputnode,    vsm_fwd, [('in_mask', 'mask_file'),('in_vsm','shift_in_file')])
+                      ,(inputnode,    vsm_fwd, [('in_mask', 'mask_file'),('in_vsm','shift_in_file'),('unwarp_direction','unwarp_direction') ])
                       ,(vsm_fwd,    dwi_merge, [('warped_file', 'in_files')])
                       ,(dwi_merge, outputnode, [('merged_file', 'out_file')])
                     ])    
@@ -49,11 +49,9 @@ def fugue_all_workflow(name="Fugue_WarpDWIs"):
 def distortion_workflow(name="synthetic_distortion"):
     pipeline = pe.Workflow(name=name)
     
-    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'te_incr', 'echospacing' ]), name='inputnode' )
-    phmap = pe.Node( niu.Function(input_names=['in_file'],output_names=['out_file'], function=generate_phmap ), name='gen_PhaseDiffMap' )
-    maskgen = pe.Node( niu.Function(input_names=['in_file'],output_names=['out_file'], function=genmask ), name='gen_Mask' )
-    prelude = pe.Node(fsl.PRELUDE(process3d=True), name='PhaseUnwrap')
-    prepare = pe.Node(niu.Function(input_names=['in_file','in_mask','te_incr'], output_names=['out_file'], function=rad2radsec ), name='PhaseRadSec' )
+    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'te_incr', 'echospacing','encoding_direction' ]), name='inputnode' )
+    phmap_siemens = pe.Node( niu.Function(input_names=['in_file'],output_names=['out_file'], function=generate_siemens_phmap ), name='gen_siemens_PhaseDiffMap' )
+    prepare = pe.Node( fsl.PrepareFieldmap(), name='fsl_prepare_fieldmap' )
     vsm = pe.Node(fsl.FUGUE(save_shift=True), name="gen_VSM")
     dm = pe.Node( niu.Function(input_names=['in_file','in_mask'],output_names=['out_file'], function=demean ), name='demean' )
     applyWarp = fugue_all_workflow()
@@ -64,25 +62,21 @@ def distortion_workflow(name="synthetic_distortion"):
     
     
     pipeline.connect([
-                       (inputnode,      phmap, [('in_mask', 'in_file')] )
-                      ,(inputnode,    maskgen, [('in_mask', 'in_file')] )
-                      ,(inputnode,    prelude, [('in_mask','magnitude_file')] )
-                      ,(phmap,        prelude, [('out_file', 'phase_file')] )
-                      ,(prelude,      prepare, [('unwrapped_phase_file','in_file')])
-                      ,(inputnode,    prepare, [('in_mask','in_mask'),('te_incr','te_incr')])
-                      ,(maskgen,          vsm, [('out_file','mask_file')])
-                      ,(prepare,          vsm, [('out_file','phasemap_file')])
-                      ,(inputnode,        vsm, [('in_mask','in_file'),('te_incr','asym_se_time'),('echospacing','dwell_time')])
-                      ,(vsm,               dm, [('shift_out_file', 'in_file')])
-                      ,(inputnode,         dm, [('in_mask','in_mask')])
-                      ,(inputnode,vsm_fwd_mask,[('in_mask','in_file'),('in_mask','mask_file')])
-                      ,(dm,      vsm_fwd_mask, [('out_file','shift_in_file')])
-                      ,(dm,         applyWarp, [('out_file', 'inputnode.in_vsm')])
-                      ,(inputnode,  applyWarp, [('in_file', 'inputnode.in_file'),('in_mask', 'inputnode.in_mask')])
-                      ,(dm,        outputnode, [('out_file', 'out_vsm')])
-                      ,(applyWarp, outputnode, [('outputnode.out_file', 'out_file')])
-                      ,(vsm_fwd_mask,binarize, [('warped_file','in_file')])
-                      ,(binarize,  outputnode, [('binary_file','out_mask')])
+                       (inputnode,phmap_siemens, [('in_mask', 'in_file')] )
+                      ,(phmap_siemens,  prepare, [('out_file','in_phase') ])
+                      ,(inputnode,      prepare, [('in_mask','in_magnitude'),(('te_incr',_sec2ms),'delta_TE')])
+                      ,(prepare,            vsm, [('out_fieldmap','phasemap_file')])
+                      ,(inputnode,          vsm, [('in_mask','in_file'),('in_mask','mask_file'),('te_incr','asym_se_time'),('echospacing','dwell_time')])
+                      ,(vsm,                 dm, [('shift_out_file', 'in_file')])
+                      ,(inputnode,           dm, [('in_mask','in_mask')])
+                      ,(inputnode, vsm_fwd_mask, [('in_mask','in_file'),('in_mask','mask_file')])
+                      ,(dm,        vsm_fwd_mask, [('out_file','shift_in_file')])
+                      ,(dm,           applyWarp, [('out_file', 'inputnode.in_vsm')])
+                      ,(inputnode,    applyWarp, [('in_file', 'inputnode.in_file'),('in_mask', 'inputnode.in_mask'),('encoding_direction','inputnode.unwarp_direction') ])
+                      ,(dm,          outputnode, [('out_file', 'out_vsm')])
+                      ,(applyWarp,   outputnode, [('outputnode.out_file', 'out_file')])
+                      ,(vsm_fwd_mask,  binarize, [('warped_file','in_file')])
+                      ,(binarize,    outputnode, [('binary_file','out_mask')])
                       ])
     
     return pipeline
@@ -115,13 +109,20 @@ def fsl_fitting_workflow(name="DTIFit", out_dir=None ):
 # HELPER FUNCTIONS ------------------------------------------------------------------------------------
 #
 
-def generate_phmap( in_file, out_file=None ):
+def generate_siemens_phmap( in_file, out_file=None ):
     import nibabel as nib
     from scipy.ndimage import binary_erosion
     from scipy.ndimage.filters import gaussian_filter
     import numpy as np
     import os.path as op
     import math
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_siemens.nii.gz' % fname)
+
 
     msk = nib.load( in_file )
     mskdata = msk.get_data()
@@ -133,28 +134,56 @@ def generate_phmap( in_file, out_file=None ):
     y = ( int(0.4*imshape[1]), int( imshape[1] ) )
 
     slice1 = np.zeros( shape=imshape )
-    slice1[x[0]:x[1],y[0]:y[1],int(0.65*imshape[2])]  = 0.8
+    slice1[x[0]:x[1],y[0]:y[1],int(0.65*imshape[2])]  = -0.5
 
     slice2 = np.zeros( shape=imshape )
-    slice2[x[0]:x[1],y[0]:y[1],int(0.35*imshape[2])]  = -0.6
+    slice2[x[0]:x[1],y[0]:y[1],int(0.35*imshape[2])]  = 1.0
     distortionfront = boundary * ( slice1 + slice2 )
 
-    phasefield = gaussian_filter( distortionfront, sigma=5 )
+    phasefield = gaussian_filter( distortionfront, sigma=8 )
+    phasefield = np.ma.array( phasefield, mask=1-mskdata )
+    median = np.ma.median( phasefield )
+    phasefield = phasefield - median
 
-    maxval = np.amax(phasefield)
-    minval = np.amin(phasefield)
+    maxvalue = np.ma.max( phasefield.reshape(-1) )
+    if np.fabs( np.ma.min(phasefield.reshape(-1) ) )>maxvalue:
+        maxvalue =np.fabs( np.ma.min(phasefield.reshape(-1) ) )
 
-    phasefield = np.pi * (((phasefield + math.fabs(minval) ) / (maxval-minval)*2) - 1)
-    phasefield = phasefield * 0.0005
-    
+    normalizer = 0.001 / maxvalue
+
+    noisesrc = 2.0 * np.random.random_sample( size=np.shape(phasefield) ) - 1.0
+    noisesrc[mskdata>0] = 0.0
+    phasefield[mskdata==0] = 0.0
+    phasefield= phasefield * normalizer + noisesrc
+    phasefield = phasefield * 2047.5
+
+    hdr = msk.get_header()
+    hdr.set_data_dtype( 16 )
+    nib.save( nib.Nifti1Image( phasefield, msk.get_affine(), hdr ), out_file ) 
+    return out_file
+
+
+
+def generate_phmap( in_file, out_file=None ):
+    import nibabel as nib
+    from scipy.ndimage import binary_erosion
+    from scipy.ndimage.filters import gaussian_filter
+    import numpy as np
+    import os.path as op
+    import math
+
     if out_file is None:
         fname, fext = op.splitext(op.basename(in_file))
         if fext == '.gz':
             fname, _ = op.splitext(fname)
         out_file = op.abspath('./%s_ph_unwrap_rads.nii.gz' % fname)
 
-    nib.save( nib.Nifti1Image( phasefield, msk.get_affine(), msk.get_header() ), out_file )
-    
+    msk = nib.load( in_file )
+    data = msk.get_data().astype(float)
+    data = np.pi * data * (1.0/2048)
+    hdr = msk.get_header()
+    hdr.set_data_dtype( 16 )
+    nib.save( nib.Nifti1Image( data, msk.get_affine(), hdr ), out_file ) 
     return out_file
     
 def rad2radsec( in_file, in_mask, te_incr=2.46e-3, out_file=None ):
@@ -228,3 +257,9 @@ def demean( in_file, in_mask, out_file=None ):
     nib.save( nib.Nifti1Image( data, im.get_affine(), im.get_header() ), out_file )
     
     return out_file
+
+def _ms2sec(val):
+    return val*1e-3;
+
+def _sec2ms(val):
+    return val*1e3;
