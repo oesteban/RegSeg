@@ -43,8 +43,8 @@ def t2_registration_correct( name="T2_Registration" ):
     reg.inputs.write_composite_transform = True
 
     reg.inputs.metric = ['Mattes']
-    reg.inputs.metric_weight = [[1]] # Default (value ignored currently by ANTs)
-    reg.inputs.radius_or_number_of_bins = [64]
+    reg.inputs.metric_weight = [1] # Default (value ignored currently by ANTs)
+#    reg.inputs.radius_or_number_of_bins = 64
     reg.inputs.sampling_strategy = ['Random']
     reg.inputs.sampling_percentage = [0.1]
     reg.inputs.convergence_threshold = [1.e-9]
@@ -57,11 +57,12 @@ def t2_registration_correct( name="T2_Registration" ):
 #    reg.inputs.output_warped_image = 'output_warped_image.nii.gz'
 #    reg.inputs.output_transform_prefix = "output_"
 #    reg.inputs.collapse_output_transforms = False
-    applytfm = pe.Node( ants.WarpTimeSeriesImageMultiTransform(), name='ApplyTfm' )
 
-#    dwi_split = pe.Node(niu.Function(input_names=['in_file'], output_names=['out_files'], function=_split_dwi), name='split_DWI')
-#    applytfm = pe.MapNode( , iterfield=[''], name='AntsInverseTf')
-#    dwi_merge = pe.Node(fsl.Merge(dimension='t'), name='merge_DWI')
+    applytfm = pe.Node( ants.WarpTimeSeriesImageMultiTransform(), name='ApplyTfm' )
+    jacobian = pe.Node( ants.JacobianDeterminant(dimension=3,use_log=0), name='Jacobian' )
+    dwi_split = pe.Node(niu.Function(input_names=['in_file'], output_names=['out_files'], function=_split_dwi), name='split_DWI')
+    applyjacobian = pe.MapNode( ants.MultiplyImages(dimension=3), iterfield=['first_input'], name='ApplyJacobian')
+    dwi_merge = pe.Node(fsl.Merge(dimension='t'), name='merge_DWI')
 
 
 
@@ -76,7 +77,12 @@ def t2_registration_correct( name="T2_Registration" ):
                         ,(mask_b0,           reg, [ ( ('out_file',_aslist),'moving_image') ])
                         ,(inputnode,    applytfm, [ ('in_file','input_image'),('in_t2','reference_image') ])
                         ,(reg,          applytfm, [ ('forward_transforms','transformation_series') ])
-                        ,(applytfm,   outputnode, [ ('output_image','epi_corrected') ])
+                        ,(applytfm,    dwi_split, [ ('output_image','in_file') ])
+                        ,(reg,          jacobian, [ (('forward_transforms',_pickupWarp),'warp_file') ])
+                        ,(jacobian,applyjacobian, [ ('jacobian_image','second_input') ])
+                        ,(dwi_split,applyjacobian,[ ('out_files','first_input')])
+                        ,(applyjacobian,dwi_merge,[ ('output_product_image', 'in_files') ])
+                        ,(dwi_merge,  outputnode, [ ('merged_file','epi_corrected') ])
                       ])
 
     return pipeline
@@ -336,3 +342,21 @@ def _sec2ms(val):
 
 def _aslist( val ):
     return [ val ]
+
+def _pickupWarp( val ):
+    return val[0]
+
+
+def _split_dwi(in_file):
+    import nibabel as nib
+    import os
+    out_files = []
+    frames = nib.funcs.four_to_three(nib.load(in_file))
+    name, fext = os.path.splitext(os.path.basename(in_file))
+    if fext == '.gz':
+        name, _ = os.path.splitext(name)
+    for i, frame in enumerate(frames):
+        out_file = os.path.abspath('./%s_%03d.nii.gz' % (name, i))
+        nib.save(frame, out_file)
+        out_files.append(out_file)
+    return out_files
