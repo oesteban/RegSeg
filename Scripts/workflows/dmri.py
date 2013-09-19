@@ -157,29 +157,56 @@ def distortion_workflow(name="synthetic_distortion"):
     
     return pipeline
 
-def fsl_fitting_workflow(name="DTIFit", out_dir=None ):
+
+# def fsl_fitting_workflow(name="DTIFit", out_dir=None ):
+#     pipeline = pe.Workflow(name=name)
+# 
+#     if out_dir is None:
+#         out_dir = op.abspath( './' )
+#     
+#     inputnode = pe.Node( niu.IdentityInterface( fields=['in_file', 'in_mask', 
+#                 'in_bvec','in_bval']), name='inputnode' )
+#     
+#     fsmask = pe.Node( fs.ApplyMask(), name='MaskRawData' )
+#     dtifit = pe.Node( fsl.DTIFit(), name='TensorFitting' )
+# 
+#     datasink = pe.Node( nio.DataSink( base_directory=out_dir,
+#                         parameterization=False, container='results'),
+#                         name='sinker')
+#     # connect nodes
+#     pipeline.connect([
+#                        (inputnode, fsmask, [('in_file','in_file'),('in_mask','mask_file') ])
+#                       ,(inputnode, dtifit, [('in_file','dwi'),('in_mask','mask'),('in_bvec','bvec'),('in_bval','bval') ])
+#                       ,(dtifit,datasink, [( 'FA','@FA'), ('MD','@ADC') ] )
+#                      ])
+#     return pipeline
+
+def dtk_tractography_workflow( name='DTK_tractography' ):
     pipeline = pe.Workflow(name=name)
 
-    if out_dir is None:
-        out_dir = op.abspath( './' )
-    
-    inputnode = pe.Node( niu.IdentityInterface( fields=['in_file', 'in_mask', 
-                'in_bvec','in_bval']), name='inputnode' )
-    
-    fsmask = pe.Node( fs.ApplyMask(), name='MaskRawData' )
-    dtifit = pe.Node( fsl.DTIFit(), name='TensorFitting' )
+    inputnode = pe.Node(  niu.IdentityInterface( 
+                          fields=['in_dwi','in_bvec','in_bval','in_mask' ] ), 
+                          name='inputnode' )
 
-    datasink = pe.Node( nio.DataSink( base_directory=out_dir,
-                        parameterization=False, container='results'),
-                        name='sinker')
-    # connect nodes
+    outputnode = pe.Node( niu.IdentityInterface(
+                          fields=['tensor','track_file','smoothed_track_file'] ),
+                          name='outputnode' )
+
+    dtifit = pe.Node(dtk.DTIRecon(),name='dtifit')
+    dtk_tracker = pe.Node(dtk.DTITracker(invert_x=True), name="dtk_tracker")
+    smooth_trk = pe.Node(interface=dtk.SplineFilter(step_length=0.5), name="smooth_trk")
+    
     pipeline.connect([
-                       (inputnode, fsmask, [('in_file','in_file'),('in_mask','mask_file') ])
-                      ,(inputnode, dtifit, [('in_file','dwi'),('in_mask','mask'),('in_bvec','bvec'),('in_bval','bval') ])
-                      ,(dtifit,datasink, [( 'FA','@FA'), ('MD','@ADC') ] )
+                         (inputnode,        dtifit, [('in_dwi','DWI'),('in_bvec','bvecs'),('in_bval','bvals')])
+                        ,(inputnode,   dtk_tracker, [('in_mask','mask1_file')])
+                        ,(dtifit,      dtk_tracker, [('tensor','tensor_file')])
+                        ,(dtk_tracker,  smooth_trk, [('track_file', 'track_file')])
+                        ,(dtifit,       outputnode, [('tensor', 'tensor') ])
+                        ,(dtk_tracker,  outputnode, [('track_file', 'track_file')])
+                        ,(smooth_trk,   outputnode, [('smoothed_track_file','smoothed_track_file')])
                      ])
-    return pipeline
 
+    return pipeline
 
 #
 # HELPER FUNCTIONS ------------------------------------------------------------------------------------
