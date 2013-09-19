@@ -37,8 +37,8 @@ def t2_registration_correct( name="T2_Registration" ):
     reg = pe.Node( ants.Registration() , name='B0-to-T2' )
 
     reg.inputs.transforms = ['SyN']
-    reg.inputs.transform_parameters = [(0.25, 5.0, 10.0)]
-    reg.inputs.number_of_iterations = [[100, 50, 30]]
+    reg.inputs.transform_parameters = [(1.0, 1.5, 6.0) ]
+    reg.inputs.number_of_iterations = [[300,200, 20]]
     reg.inputs.dimension = 3
     reg.inputs.write_composite_transform = True
 
@@ -48,7 +48,7 @@ def t2_registration_correct( name="T2_Registration" ):
     reg.inputs.sampling_strategy = ['Random']
     reg.inputs.sampling_percentage = [0.1]
     reg.inputs.convergence_threshold = [1.e-9]
-    reg.inputs.convergence_window_size = [20]
+    reg.inputs.convergence_window_size = [40,30,20]
     reg.inputs.smoothing_sigmas = [[2,1,0]]
     reg.inputs.sigma_units = ['vox']
     reg.inputs.shrink_factors = [[3,2,1]]
