@@ -22,7 +22,7 @@ reported \gls*{mri} typical parameters.
 \begin{center}
 \begin{tabular}{c|c}
 \hline
-Modality & Descrition \\
+Modality & Description \\
 \hline
 \gls*{dti} & 30 directions, \\
 \hline
@@ -37,15 +37,120 @@ Modality & Descrition \\
 
 \subsection{Theory-based synthetic distortion}
 
-   \begin{figure}[thpb]
-      \centering
-      \framebox{\parbox{3in}{Figure of the phantom}}
-      %\includegraphics[scale=1.0]{figurefile}
-      \caption{Original and distorted digital phantom}
-      \label{fig:label}
-   \end{figure}
-   
+Fieldmap-based correction methodologies
+\cite{jezzard_correction_1995} use a map
+of the field in the scanner. More precisely, the
+phase difference between two subsequent samplings
+of the fieldmap. With that information, it is possible
+to compute the theoretical displacements that each
+voxel is to suffer, the so-called \gls*{vsm}. The
+most prominent feature of this \gls*{vsm} is that all
+the shifts have the same orientation (parallel to the
+phase-encoding direction of the \gls*{epi}) and their
+magnitude and direction depend on the \gls*{epi} 
+gradient increments (or \emph{blips}), and the actual
+phase difference at the voxel.
 
-\subsection{Evaluation workflows}
+In order to create a realistic distortion, we started
+by generating a synthetic phase-difference map 
+consistent with the phantom.  We defined two regions 
+of smooth phase inhomogeneity and computed the 
+corresponding \gls*{vsm} using the tools distributed 
+with the \texttt{FSL} package \cite{jenkinson_fsl_2012}.
+
+Then, it is straightforward to use the \gls*{vsm} to 
+produce the deformation of the original phantom data,
+using the \texttt{fugue} tool included in
+\cite{jenkinson_fsl_2012}. With the same procedure,
+just setting the opposite encoding direction, we obtained
+the corresponding reversed encoding ``acquisition'' of
+the same phantom, in order to use it in evaluating the
+second family of correction methods.
+
+In this simple manner, we generated a full gold-standard
+protocol, containing realistic \gls*{t1} and \gls*{t2}
+at high resolution, \gls*{dti} data acquired in two
+different phase encoding directions, and the ground-truth
+\gls*{dti} data that is not available for real datasets.
 
 
+\begin{figure}[thpb]
+   \centering
+   \includegraphics[width=0.8\columnwidth]{Fig01-Phantom}
+   \caption{Original and distorted digital phantom (sagittal
+   planes). A) T2-weighted image; B) undistorted B0 volume;
+   C and D) distorted B0 volumes with opposed phase encoding 
+   directions.}
+   \label{fig:label}
+\end{figure}
+
+\subsection{Correction methods}
+
+\paragraph{\Gls*{fmb}} As it was previously described,
+this family of correction technologies infer a \gls*{vsm}
+from the phase difference map. In this work, we use the
+tool \texttt{fugue} \cite{jenkinson_fsl_2012} aforementioned.
+
+\paragraph{\Gls*{reb}} We use the tool
+\texttt{topup} from \cite{jenkinson_fsl_2012} to correct
+using the B0 of a reverse-encoding simulation of the \gls*{dti}.
+In this second case, the \gls*{vsm} is inferred from the
+differences between the two corresponding B0. This technique
+also uses least-squares-fitting to interpolate the undistorted
+signal, and therefore provides with a robust dropout correction.
+
+\paragraph{\Gls*{t2b}} For this last methodology
+we fine-tuned the \texttt{ANTs} tool \cite{avants_ants:_2013},
+in order that registering the B0 to the T2. Additionally,
+undistorted images are corrected for dropout using the determinant
+of the Jacobian of the deformation field.
+
+\subsection{Evaluation}
+
+\paragraph*{Proposed workflows}
+We used \texttt{nipype} \cite{gorgolewski_nipype:_2011}
+to conveniently integrate the correction methods in
+comprehensive evaluation workflows:
+
+\begin{itemize}
+\item \textbf{Phantom deformation}: We release the pipeline
+that generates the gold-standard, along with
+distorted versions of the \glspl*{tpm} for
+evaluation purposes.
+\item \textbf{Correction workflow}: A high-level pipeline
+integrates the three proposed correction methods,
+ensuring that all the requirements for inputs are
+met. As outputs this workflow produces the different
+corrected versions of the phantom (\gls*{fmb}, \gls*{reb}
+and \gls*{t2b}) alongside corrected versions of the
+distorted \glspl*{tpm}.
+\item \textbf{Reconstruction workflow}: This pipeline uses
+the Diffusion Toolkit \cite{wang_diffusion_2007}, 
+to produce deterministic tractography
+from \gls*{dmri} data at the input. Therefore,
+tractographies of original, and recovered data
+are produced for comparison.
+\item \textbf{Benchmarking workflow}: The final processing
+element collects all the outputs from the previous
+workflows and extracts the evaluation scores.
+\end{itemize}
+General-purpose 
+workflows have been contributed to the upstream code
+of the tool, under the branch \texttt{nipype.workflows.dmri}.
+Testing-specific workflows are also publicly released.
+
+\paragraph*{Evaluation scores}
+In order to assess the geometrical correctness of the
+recovered phantoms, we report overlap indices, specifically
+the fuzzy Jaccard index as proposed in
+\cite{crum_generalized_2006} weighted by the volumes of
+labels. The recovered signal \emph{sanity} (dropout 
+correction) is evaluated with correlation maps, averaged
+along the time axis to take into account all the volumes
+existing on the \gls*{dmri} data. This checkpoint
+assumes that geometrical distortion is precisely
+corrected. Finally, we report the impact on tractography
+using the \gls*{frr}, that informs the number of recovered
+fibers versus the gold-standard number for a specific
+reconstruction method, and the error on the resulting
+connectivity matrices.

@@ -13,7 +13,9 @@
 % on the last page of the document
 
 % The following packages can be found on http:\\www.ctan.org
-%\usepackage{graphics} % for pdf, bitmapped graphics files
+\usepackage[pdftex]{graphicx} % for pdf, bitmapped graphics files
+\graphicspath{{Figures/}}
+\pdfminorversion=7
 %\usepackage{epsfig} % for postscript graphics files
 %\usepackage{mathptmx} % assumes new font selection scheme installed
 %\usepackage{times} % assumes new font selection scheme installed
@@ -28,7 +30,8 @@ Impact of susceptibility distortions in connectivity analysis using dMRI
 }
 
 
-\author{Oscar Esteban$^{1,2}$, Alessandro Daducci$^{2}$, Emmanuel Caruyer$^{3}$, and ...% <-this % stops a space
+\author{Oscar Esteban$^{1,2}$, Alessandro Daducci$^{2}$, Emmanuel Caruyer$^{3}$, Kieran O'Brien, 
+Meritxell Bach-Cuadra, and ...% <-this % stops a space
 \thanks{$^{1}$Oscar Esteban is with ... 
         {\tt\small oesteban@die.upm.es}}%
 \thanks{$^{2}$Blah blah.}%
