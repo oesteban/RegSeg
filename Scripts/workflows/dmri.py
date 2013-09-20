@@ -189,7 +189,8 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
                           name='inputnode' )
 
     outputnode = pe.Node( niu.IdentityInterface(
-                          fields=['tensor','track_file','smoothed_track_file'] ),
+                          fields=['tensor','track_file','smoothed_track_file',
+                                  'ADC','FA' ] ),
                           name='outputnode' )
 
     dtifit = pe.Node(dtk.DTIRecon(),name='dtifit')
@@ -201,8 +202,8 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
                         ,(inputnode,   dtk_tracker, [('in_mask','mask1_file')])
                         ,(dtifit,      dtk_tracker, [('tensor','tensor_file')])
                         ,(dtk_tracker,  smooth_trk, [('track_file', 'track_file')])
-                        ,(dtifit,       outputnode, [('tensor', 'tensor') ])
-                        ,(dtk_tracker,  outputnode, [('track_file', 'track_file')])
+                        ,(dtifit,       outputnode, [('tensor', 'tensor'),('ADC','ADC'),('FA','FA') ])
+                        ,(dtk_tracker,  outputnode, [('track_file', 'track_file') ])
                         ,(smooth_trk,   outputnode, [('smoothed_track_file','smoothed_track_file')])
                      ])
 
