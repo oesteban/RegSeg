@@ -15,6 +15,7 @@ import nipype.interfaces.ants as ants           # ANTS
 import nipype.interfaces.diffusion_toolkit as dtk
 import nipype.interfaces.mrtrix as mrtrix    #<---- The important new part!
 import nipype.interfaces.camino as camino
+import nipype.interfaces.camino2trackvis as cam2trk
 
 
 def t2_registration_correct( name="T2_Registration" ):
@@ -89,39 +90,6 @@ def t2_registration_correct( name="T2_Registration" ):
 
 
 
-def fugue_all_workflow(name="Fugue_WarpDWIs"):
-    pipeline = pe.Workflow(name=name)
-    
-    def _split_dwi(in_file):
-        import nibabel as nib
-        import os.path as op
-        out_files = []
-        frames = nib.funcs.four_to_three(nib.load(in_file))
-        name, fext = op.splitext(op.basename(in_file))
-        if fext == '.gz':
-            name, _ = op.splitext(name)
-        for i, frame in enumerate(frames):
-            out_file = op.abspath('./%s_%03d.nii.gz' % (name, i))
-            nib.save(frame, out_file)
-            out_files.append(out_file)
-        return out_files
-    
-    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'in_vsm','unwarp_direction' ]), name='inputnode' )
-    dwi_split = pe.Node(niu.Function(input_names=['in_file'], output_names=['out_files'], function=_split_dwi), name='split_DWI')
-    vsm_fwd = pe.MapNode(fsl.FUGUE(forward_warping=True), iterfield=['in_file'], name='Fugue_Warp')
-    dwi_merge = pe.Node(fsl.utils.Merge(dimension='t'), name='merge_DWI')
-    
-    outputnode = pe.Node(interface=niu.IdentityInterface(fields=['out_file' ]), name='outputnode' )
-    pipeline.connect([
-                       (inputnode,  dwi_split, [('in_file', 'in_file')])
-                      ,(dwi_split,    vsm_fwd, [('out_files', 'in_file')])
-                      ,(inputnode,    vsm_fwd, [('in_mask', 'mask_file'),('in_vsm','shift_in_file'),('unwarp_direction','unwarp_direction') ])
-                      ,(vsm_fwd,    dwi_merge, [('warped_file', 'in_files')])
-                      ,(dwi_merge, outputnode, [('merged_file', 'out_file')])
-                    ])    
-    
-    return pipeline
-
 def distortion_workflow(name="synthetic_distortion"):
     pipeline = pe.Workflow(name=name)
     
@@ -157,45 +125,26 @@ def distortion_workflow(name="synthetic_distortion"):
     
     return pipeline
 
-
-# def fsl_fitting_workflow(name="DTIFit", out_dir=None ):
-#     pipeline = pe.Workflow(name=name)
-# 
-#     if out_dir is None:
-#         out_dir = op.abspath( './' )
-#     
-#     inputnode = pe.Node( niu.IdentityInterface( fields=['in_file', 'in_mask', 
-#                 'in_bvec','in_bval']), name='inputnode' )
-#     
-#     fsmask = pe.Node( fs.ApplyMask(), name='MaskRawData' )
-#     dtifit = pe.Node( fsl.DTIFit(), name='TensorFitting' )
-# 
-#     datasink = pe.Node( nio.DataSink( base_directory=out_dir,
-#                         parameterization=False, container='results'),
-#                         name='sinker')
-#     # connect nodes
-#     pipeline.connect([
-#                        (inputnode, fsmask, [('in_file','in_file'),('in_mask','mask_file') ])
-#                       ,(inputnode, dtifit, [('in_file','dwi'),('in_mask','mask'),('in_bvec','bvec'),('in_bval','bval') ])
-#                       ,(dtifit,datasink, [( 'FA','@FA'), ('MD','@ADC') ] )
-#                      ])
-#     return pipeline
-
 def dtk_tractography_workflow( name='DTK_tractography' ):
     pipeline = pe.Workflow(name=name)
 
     inputnode = pe.Node(  niu.IdentityInterface( 
-                          fields=['in_dwi','in_bvec','in_bval','in_mask' ] ), 
+                          fields=['in_dwi','in_bvec','in_bval','in_mask',
+                                  'roi_file' ] ), 
                           name='inputnode' )
 
     outputnode = pe.Node( niu.IdentityInterface(
                           fields=['tensor','track_file','smoothed_track_file',
-                                  'ADC','FA' ] ),
+                                  'ADC','FA','connectome' ] ),
                           name='outputnode' )
 
     dtifit = pe.Node(dtk.DTIRecon(),name='dtifit')
     dtk_tracker = pe.Node(dtk.DTITracker(invert_x=True), name="dtk_tracker")
     smooth_trk = pe.Node(interface=dtk.SplineFilter(step_length=0.5), name="smooth_trk")
+
+    trk2camino = pe.Node(cam2trk.Trackvis2Camino(), name="trk2camino")
+
+    connectome = pe.Node(camino.Conmap(), name="Connectivity")
     
     pipeline.connect([
                          (inputnode,        dtifit, [('in_dwi','DWI'),('in_bvec','bvecs'),('in_bval','bvals')])
@@ -205,9 +154,55 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
                         ,(dtifit,       outputnode, [('tensor', 'tensor'),('ADC','ADC'),('FA','FA') ])
                         ,(dtk_tracker,  outputnode, [('track_file', 'track_file') ])
                         ,(smooth_trk,   outputnode, [('smoothed_track_file','smoothed_track_file')])
+                        ,(smooth_trk,   trk2camino, [('smoothed_track_file','in_file' ) ])
+                        ,(trk2camino,   connectome, [('camino','in_file')] )
+                        ,(inputnode,    connectome, [('roi_file','roi_file')])
+                        ,(connectome,   outputnode, [('conmap_txt','connectome')])
                      ])
 
     return pipeline
+
+
+
+#
+# AUXILIARY FUGUE ALL WORKFLOW ---------------------------------------------------------------------------------
+#
+
+def fugue_all_workflow(name="Fugue_WarpDWIs"):
+    pipeline = pe.Workflow(name=name)
+    
+    def _split_dwi(in_file):
+        import nibabel as nib
+        import os.path as op
+        out_files = []
+        frames = nib.funcs.four_to_three(nib.load(in_file))
+        name, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            name, _ = op.splitext(name)
+        for i, frame in enumerate(frames):
+            out_file = op.abspath('./%s_%03d.nii.gz' % (name, i))
+            nib.save(frame, out_file)
+            out_files.append(out_file)
+        return out_files
+    
+    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'in_vsm','unwarp_direction' ]), name='inputnode' )
+    dwi_split = pe.Node(niu.Function(input_names=['in_file'], output_names=['out_files'], function=_split_dwi), name='split_DWI')
+    vsm_fwd = pe.MapNode(fsl.FUGUE(forward_warping=True), iterfield=['in_file'], name='Fugue_Warp')
+    dwi_merge = pe.Node(fsl.utils.Merge(dimension='t'), name='merge_DWI')
+    
+    outputnode = pe.Node(interface=niu.IdentityInterface(fields=['out_file' ]), name='outputnode' )
+    pipeline.connect([
+                       (inputnode,  dwi_split, [('in_file', 'in_file')])
+                      ,(dwi_split,    vsm_fwd, [('out_files', 'in_file')])
+                      ,(inputnode,    vsm_fwd, [('in_mask', 'mask_file'),('in_vsm','shift_in_file'),('unwarp_direction','unwarp_direction') ])
+                      ,(vsm_fwd,    dwi_merge, [('warped_file', 'in_files')])
+                      ,(dwi_merge, outputnode, [('merged_file', 'out_file')])
+                    ])    
+    
+    return pipeline
+
+
+
 
 #
 # HELPER FUNCTIONS ------------------------------------------------------------------------------------
