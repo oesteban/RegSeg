@@ -27,7 +27,7 @@ def t2_registration_correct( name="T2_Registration" ):
                                                         'in_mask_t2']
                          ), name='inputnode' )
 
-    outputnode = pe.Node( niu.IdentityInterface( fields=['epi_corrected']),
+    outputnode = pe.Node( niu.IdentityInterface( fields=['epi_corrected','out_mask']),
                           name='outputnode' )
 
     get_b0 = pe.Node(fsl.ExtractROI( t_size=1, t_min=0 ), name="getB0")
@@ -66,6 +66,7 @@ def t2_registration_correct( name="T2_Registration" ):
     dwi_merge = pe.Node(fsl.Merge(dimension='t'), name='merge_DWI')
 
 
+    applytfm_msk = pe.Node( ants.WarpImageMultiTransform(use_nearest=True), name='ApplyTfmMsk' )
 
     pipeline.connect( [
                          (inputnode,      get_b0, [ ('in_file','in_file') ])
@@ -84,6 +85,9 @@ def t2_registration_correct( name="T2_Registration" ):
                         ,(dwi_split,applyjacobian,[ ('out_files','first_input')])
                         ,(applyjacobian,dwi_merge,[ ('output_product_image', 'in_files') ])
                         ,(dwi_merge,  outputnode, [ ('merged_file','epi_corrected') ])
+                        ,(inputnode,applytfm_msk, [ ('in_mask_dwi','input_image'),('in_t2','reference_image') ])
+                        ,(reg,      applytfm_msk, [ ('forward_transforms','transformation_series') ])
+                        ,(applytfm_msk,outputnode,[ ('output_image','out_mask') ])
                       ])
 
     return pipeline
