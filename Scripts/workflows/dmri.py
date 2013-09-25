@@ -103,7 +103,7 @@ def t2_registration_correct( name="T2_Registration" ):
 def distortion_workflow(name="synthetic_distortion"):
     pipeline = pe.Workflow(name=name)
     
-    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'te_incr', 'echospacing','encoding_direction','intensity','sigma' ]), name='inputnode' )
+    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'te_incr', 'echospacing','encoding_direction','intensity','sigma', 'in_tpms' ]), name='inputnode' )
     phmap_siemens = pe.Node( niu.Function(input_names=['in_file','intensity','sigma'],output_names=['out_file'], function=generate_siemens_phmap ), name='gen_siemens_PhaseDiffMap' )
     prepare = pe.Node( fsl.PrepareFieldmap(), name='fsl_prepare_fieldmap' )
     vsm = pe.Node(fsl.FUGUE(save_shift=True), name="gen_VSM")
@@ -112,7 +112,7 @@ def distortion_workflow(name="synthetic_distortion"):
     vsm_fwd_mask = pe.Node(fsl.FUGUE(forward_warping=True), name='Fugue_WarpMask')
     binarize = pe.Node( fs.Binarize( min=0.00001 ), name="binarize" )
     
-    outputnode = pe.Node(interface=niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_phdiff_map' ]), name='outputnode' )
+    outputnode = pe.Node(interface=niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_phdiff_map', 'out_tpms' ]), name='outputnode' )
     
     
     pipeline.connect([
@@ -133,6 +133,20 @@ def distortion_workflow(name="synthetic_distortion"):
                       ,(binarize,    outputnode, [('binary_file','out_mask')])
                       ,(phmap_siemens,outputnode,[('out_file','out_phdiff_map') ])
                       ])
+
+    resample= pe.MapNode( fs.MRIConvert(out_type='niigz'), iterfield=['in_file'], name='Resample')
+    warpimages = pe.MapNode( fsl.FUGUE(forward_mapping=True), iterfield=['in_file'], name='WarpImages' )
+    normalize = pe.Node( niu.Function( input_names='in_files', out_names='out_files', function=_normalize ), name='Normalize' )
+
+    pipeline.connect([
+                     (inputnode,    resample, [('in_tpms','in_file'),(('in_file',_get_vox_size),'vox_size') ])
+                    ,(resample,   warpimages, [('out_file','in_file') ])
+                    ,(dm      ,   warpimages, [('out_file','shift_in_file') ])
+                    ,(inputonode, warpimages, [('in_mask', 'mask_file'),('encoding_direction','unwarp_direction') ])
+                    ,(warpimage,   normalize, [('warped_file','in_files')])
+                    ,(normalize,  outputnode, [('out_files','out_tpms')]
+    ])
+
     
     return pipeline
 
@@ -226,6 +240,35 @@ def _get_vox_size( in_file ):
     import nibabel as nib
     pixdim = nib.load( in_file ).get_header()['pixdim']
     return (pixdim[1],pixdim[2],pixdim[3])
+
+def _normalize( in_files ):
+    import nibabel as nib
+    import numpy as np
+    import os.path as op
+    
+    out_files = []
+    
+    imgs = [ nib.load(fim) for fim in in_files ]
+    img_data = np.swapaxes( np.array( [ im.get_data() for im in imgs ] ), 0,3 )
+    weights = np.sum( img_data, axis=3 )
+    
+    for finname,img in zip( in_files, imgs ):
+        fname,fext = op.splitext( op.basename( finname ) )
+        if fext == '.gz':
+            fname,fext2 = op.splitext( fname )
+            fext = fext2 + fext
+        
+        out_file = fname+'_norm'+fext 
+        out_files+= [ out_file ]
+        data = img.get_data()
+        normalized = np.zeros( shape=data.shape )
+        normalized[data>0] = data[data>0] / weights[data>0]
+        hdr = img.get_header()
+        hdr['data_type']= 16
+        hdr.set_data_dtype( 'float32' )   
+        nib.save( nib.Nifti1Image( normalized.astype( 'f32' ), im.get_affine(), hdr ), out_file )
+    return out_files
+
 
 def generate_siemens_phmap( in_file, intensity=1.0, sigma=8.0, out_file=None ):
     import nibabel as nib

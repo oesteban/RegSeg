@@ -71,8 +71,8 @@ def evaluation_workflow( name="Evaluation" ):
     
     evaluation.connect([
         # Connect the distortion workflows
-         (inputnode,      dist1_wf, [ ('in_dwi','inputnode.in_file'),('in_dwi_mask','inputnode.in_mask') ])
-        ,(inputnode,      dist2_wf, [ ('in_dwi','inputnode.in_file'),('in_dwi_mask','inputnode.in_mask') ])
+         (inputnode,      dist1_wf, [ ('in_dwi','inputnode.in_file'),('in_dwi_mask','inputnode.in_mask'),('in_tpms','inputnode.in_tpms') ])
+        ,(inputnode,      dist2_wf, [ ('in_dwi','inputnode.in_file'),('in_dwi_mask','inputnode.in_mask'),('in_tpms','inputnode.in_tpms') ])
         # Similarity after distortion
         ,(dist1_wf,           sim1, [ ('outputnode.out_file','inputnode.in_test') ])
         ,(inputnode,          sim1, [ ('in_dwi', 'inputnode.in_ref'),('in_dwi_mask','inputnode.in_mask'),('out_csv','inputnode.out_csv') ])
