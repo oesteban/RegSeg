@@ -35,6 +35,8 @@ def t2_registration_correct( name="T2_Registration" ):
     mask_t2 = pe.Node( fsl.ApplyMask(), name='maskT2' )
     mask_b0 = pe.Node( fsl.ApplyMask(), name='maskB0' )
 
+    resample= pe.Node( fs.MRIConvert(out_type='niigz'),name='ResampleT2')
+
     reg = pe.Node( ants.Registration() , name='B0-to-T2' )
 
     reg.inputs.transforms = ['SyN']
@@ -70,6 +72,8 @@ def t2_registration_correct( name="T2_Registration" ):
 
     pipeline.connect( [
                          (inputnode,      get_b0, [ ('in_file','in_file') ])
+                        ,(inputnode,    resample, [ ('in_t2', 'in_file'), ])
+                        ,(get_b0,       resample, [(('roi_file',_get_vox_size),'vox_size') ])
                         #,(inputnode,   dwi_split, [ ('in_file','in_files') ]
                         ,(inputnode,     mask_b0, [ ('in_mask_dwi', 'mask_file' ) ])
                         ,(inputnode,     mask_t2, [ ('in_mask_t2', 'mask_file' ) ])
@@ -77,7 +81,8 @@ def t2_registration_correct( name="T2_Registration" ):
                         ,(inputnode,     mask_t2, [ ('in_t2','in_file') ])
                         ,(mask_t2,           reg, [ ( ('out_file',_aslist),'fixed_image') ])
                         ,(mask_b0,           reg, [ ( ('out_file',_aslist),'moving_image') ])
-                        ,(inputnode,    applytfm, [ ('in_file','input_image'),('in_t2','reference_image') ])
+                        ,(inputnode,    applytfm, [ ('in_file','input_image') ])
+                        ,(resample,     applytfm, [ ('out_file','reference_image') ])
                         ,(reg,          applytfm, [ ('forward_transforms','transformation_series') ])
                         ,(applytfm,    dwi_split, [ ('output_image','in_file') ])
                         ,(reg,          jacobian, [ (('forward_transforms',_pickupWarp),'warp_file') ])
@@ -85,7 +90,8 @@ def t2_registration_correct( name="T2_Registration" ):
                         ,(dwi_split,applyjacobian,[ ('out_files','first_input')])
                         ,(applyjacobian,dwi_merge,[ ('output_product_image', 'in_files') ])
                         ,(dwi_merge,  outputnode, [ ('merged_file','epi_corrected') ])
-                        ,(inputnode,applytfm_msk, [ ('in_mask_dwi','input_image'),('in_t2','reference_image') ])
+                        ,(inputnode,applytfm_msk, [ ('in_mask_dwi','input_image') ])
+                        ,(resample, applytfm_msk, [ ('out_file','reference_image') ])
                         ,(reg,      applytfm_msk, [ ('forward_transforms','transformation_series') ])
                         ,(applytfm_msk,outputnode,[ ('output_image','out_mask') ])
                       ])
@@ -215,6 +221,11 @@ def fugue_all_workflow(name="Fugue_WarpDWIs"):
 #
 # HELPER FUNCTIONS ------------------------------------------------------------------------------------
 #
+
+def _get_vox_size( in_file ):
+    import nibabel as nib
+    pixdim = nib.load( in_file ).get_header()['pixdim']
+    return (pixdim[1],pixdim[2],pixdim[3])
 
 def generate_siemens_phmap( in_file, out_file=None ):
     import nibabel as nib
