@@ -106,7 +106,7 @@ def distortion_workflow(name="synthetic_distortion"):
     vsm_fwd_mask = pe.Node(fsl.FUGUE(forward_warping=True), name='Fugue_WarpMask')
     binarize = pe.Node( fs.Binarize( min=0.00001 ), name="binarize" )
     
-    outputnode = pe.Node(interface=niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask' ]), name='outputnode' )
+    outputnode = pe.Node(interface=niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_phdiff_map' ]), name='outputnode' )
     
     
     pipeline.connect([
@@ -125,6 +125,7 @@ def distortion_workflow(name="synthetic_distortion"):
                       ,(applyWarp,   outputnode, [('outputnode.out_file', 'out_file')])
                       ,(vsm_fwd_mask,  binarize, [('warped_file','in_file')])
                       ,(binarize,    outputnode, [('binary_file','out_mask')])
+                      ,(phmap_siemens,outputnode,[('out_file','out_phdiff_map') ])
                       ])
     
     return pipeline
