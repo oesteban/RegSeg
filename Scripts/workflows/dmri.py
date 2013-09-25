@@ -13,10 +13,10 @@ import nipype.interfaces.ants as ants           # ANTS
 
 
 import nipype.interfaces.diffusion_toolkit as dtk
-import nipype.interfaces.mrtrix as mrtrix    #<---- The important new part!
+import nipype.interfaces.cmtk as cmtk
 import nipype.interfaces.camino as camino
 import nipype.interfaces.camino2trackvis as cam2trk
-
+from tracks import ConnectivityMatrix
 
 def t2_registration_correct( name="T2_Registration" ):
     pipeline = pe.Workflow( name=name )
@@ -135,16 +135,16 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
 
     outputnode = pe.Node( niu.IdentityInterface(
                           fields=['tensor','track_file','smoothed_track_file',
-                                  'ADC','FA','connectome' ] ),
+                                  'ADC','FA','connectome','avglen_map','filter_tracks' ] ),
                           name='outputnode' )
 
     dtifit = pe.Node(dtk.DTIRecon(),name='dtifit')
     dtk_tracker = pe.Node(dtk.DTITracker(invert_x=True), name="dtk_tracker")
-    smooth_trk = pe.Node(interface=dtk.SplineFilter(step_length=0.5), name="smooth_trk")
+    smooth_trk = pe.Node(dtk.SplineFilter(step_length=0.5), name="smooth_trk")
+    matrix = pe.Node( ConnectivityMatrix(), name='BuildMatrix' )
 
-    trk2camino = pe.Node(cam2trk.Trackvis2Camino(), name="trk2camino")
-
-    connectome = pe.Node(camino.Conmap(), name="Connectivity")
+    # trk2camino = pe.Node(cam2trk.Trackvis2Camino(), name="trk2camino")
+    # connectome = pe.Node(camino.Conmat(), name="Connectivity")
     
     pipeline.connect([
                          (inputnode,        dtifit, [('in_dwi','DWI'),('in_bvec','bvecs'),('in_bval','bvals')])
@@ -154,10 +154,13 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
                         ,(dtifit,       outputnode, [('tensor', 'tensor'),('ADC','ADC'),('FA','FA') ])
                         ,(dtk_tracker,  outputnode, [('track_file', 'track_file') ])
                         ,(smooth_trk,   outputnode, [('smoothed_track_file','smoothed_track_file')])
-                        ,(smooth_trk,   trk2camino, [('smoothed_track_file','in_file' ) ])
-                        ,(trk2camino,   connectome, [('camino','in_file')] )
-                        ,(inputnode,    connectome, [('roi_file','roi_file')])
-                        ,(connectome,   outputnode, [('conmap_txt','connectome')])
+                        ,(smooth_trk,       matrix, [('smoothed_track_file','in_file')])
+                        ,(inputnode,        matrix, [('roi_file','roi_file')])
+                        ,(matrix,       outputnode, [('out_conmat','connectome'),('out_lenmat','avglen_map'),('out_tracks','filter_tracks') ])
+                        # ,(smooth_trk,   trk2camino, [('smoothed_track_file','in_file' ) ])
+                        # ,(trk2camino,   connectome, [('camino','in_file')] )
+                        # ,(inputnode,    connectome, [('roi_file','roi_file')])
+                        # ,(connectome,   outputnode, [('out_file','connectome')])
                      ])
 
     return pipeline
