@@ -9,31 +9,47 @@ import os
 import nipype.pipeline.engine as pe
 import dmri as dmri
 import nipype.interfaces.utility as niu
+import nipype.interfaces.nipy as nipy
 import nipype.workflows.dmri.fsl as wf
 
 
 def evaluation_workflow( name="Evaluation" ):
-    evaluation = pe.Workflow( name='ISBI2014_Evaluation' )
+    evaluation = pe.Workflow( name=name )
     
     inputnode = pe.Node( niu.IdentityInterface( fields=['in_dwi','in_dwi_mask',
                                                         'in_t2', 'in_t2_mask',
                                                         'in_bvec','in_bval',
-                                                        'in_rois','wm_mask' ] ),
+                                                        'in_rois','wm_mask',
+                                                        'out_csv' ] ),
                          name='inputnode' )
     
     te_incr = 2.46e-3 # secs
     dwell_time = 0.77e-3 # secs
+    intensity = 0.75
+    sigma = 6.0
     
     dist1_wf = dmri.distortion_workflow( name='Distortion_Y' )
     dist1_wf.inputs.inputnode.te_incr = te_incr
     dist1_wf.inputs.inputnode.echospacing = dwell_time
     dist1_wf.inputs.inputnode.encoding_direction = 'y'
+    dist1_wf.inputs.inputnode.intensity = intensity
+    dist1_wf.inputs.inputnode.sigma = sigma
+
+    sim1 = compare_dwis( name="Sim_dist" )
+    sim1.inputs.inputnode.name='dist' 
+    sim2 = compare_dwis( name="Sim_fmap" )
+    sim2.inputs.inputnode.name='fmap' 
+    sim3 = compare_dwis( name="Sim_reve" )
+    sim3.inputs.inputnode.name='reve' 
+    sim4 = compare_dwis( name="Sim_t2re" )
+    sim4.inputs.inputnode.name='t2re' 
 
     dist2_wf = dmri.distortion_workflow( name='Distortion_Yrev' )
     dist2_wf.inputs.inputnode.te_incr = te_incr
     dist2_wf.inputs.inputnode.echospacing = dwell_time
     dist2_wf.inputs.inputnode.encoding_direction = 'y-'
-            
+    dist2_wf.inputs.inputnode.intensity = intensity
+    dist2_wf.inputs.inputnode.sigma = sigma
             
     fmap_wf = wf.fieldmap_correction()
     fmap_wf.inputs.inputnode.te_diff = te_incr*1e3 # in ms.
@@ -57,15 +73,27 @@ def evaluation_workflow( name="Evaluation" ):
         # Connect the distortion workflows
          (inputnode,      dist1_wf, [ ('in_dwi','inputnode.in_file'),('in_dwi_mask','inputnode.in_mask') ])
         ,(inputnode,      dist2_wf, [ ('in_dwi','inputnode.in_file'),('in_dwi_mask','inputnode.in_mask') ])
-        # Correct with fieldmap and perform tractography
+        # Similarity after distortion
+        ,(dist1_wf,           sim1, [ ('outputnode.out_file','inputnode.in_test') ])
+        ,(inputnode,          sim1, [ ('in_dwi', 'inputnode.in_ref'),('in_dwi_mask','inputnode.in_mask'),('out_csv','inputnode.out_csv') ])
+        # Correct with fieldmap
         ,(dist1_wf,        fmap_wf, [ ('outputnode.out_file','inputnode.in_file'),('outputnode.out_phdiff_map','inputnode.fieldmap_pha') ])
         ,(inputnode,       fmap_wf, [ ('in_dwi_mask','inputnode.in_mask'),('in_dwi_mask','inputnode.fieldmap_mag' ) ])
+        # Similarity after fieldmap
+        ,(fmap_wf,            sim2, [ ('outputnode.epi_corrected','inputnode.in_test') ])
+        ,(inputnode,          sim2, [ ('in_dwi', 'inputnode.in_ref'),('in_dwi_mask','inputnode.in_mask'),('out_csv','inputnode.out_csv') ])
         # Correct with topup
         ,(dist1_wf,       topup_wf, [ ('outputnode.out_file','inputnode.in_file_dir') ])
         ,(dist2_wf,       topup_wf, [ ('outputnode.out_file','inputnode.in_file_rev') ])
+        # Similarity after topup
+        ,(topup_wf,           sim3, [ ('outputnode.epi_corrected','inputnode.in_test') ])
+        ,(inputnode,          sim3, [ ('in_dwi', 'inputnode.in_ref'),('in_dwi_mask','inputnode.in_mask'),('out_csv','inputnode.out_csv') ])
         # Correct with registration
         ,(dist1_wf,       t2reg_wf, [ ('outputnode.out_file','inputnode.in_file'),('outputnode.out_mask','inputnode.in_mask_dwi') ])
         ,(inputnode,      t2reg_wf, [ ('in_t2','inputnode.in_t2'),('in_t2_mask','inputnode.in_mask_t2')])
+        # Similarity after t2 registration
+        ,(t2reg_wf,           sim4, [ ('outputnode.epi_corrected','inputnode.in_test') ])
+        ,(inputnode,          sim4, [ ('in_dwi', 'inputnode.in_ref'),('in_dwi_mask','inputnode.in_mask'),('out_csv','inputnode.out_csv') ])
         #
         # Tractographies
         #
@@ -92,6 +120,29 @@ def evaluation_workflow( name="Evaluation" ):
     return evaluation
 
 
+def compare_dwis( name='CompareDWIs' ):
+    wf = pe.Workflow( name=name )
+
+    inputnode = pe.Node( niu.IdentityInterface( fields=['in_test','in_ref','in_mask','out_csv','name'] ), name='inputnode' )
+    outputnode = pe.Node( niu.IdentityInterface( fields=['similarity'] ), name='outputnode' )
+    similarity = pe.Node( nipy.Similarity(metric='crl1'), name='Similarity' )
+    savecsv = pe.Node( niu.Function( input_names=['fname','row','rowname'], output_names=[], function=_append_csv ), name='AddCSVrow' )
+
+    wf.connect([
+         (inputnode,   similarity, [('in_test','volume2'),('in_ref','volume1'),('in_mask','mask1'),('in_mask','mask2') ] )
+        ,(inputnode,      savecsv, [('out_csv','fname'),('name','rowname')])
+        ,(similarity,  outputnode, [('similarity','similarity') ])
+        ,(similarity,     savecsv, [('similarity','row') ])
+    ])
+    return wf
+
+def _append_csv( fname, row, rowname ):
+    import csv
+    row = [ rowname ] + row
+    with open( fname, 'a' ) as f:
+        w = csv.writer( f )
+        w.writerow( row )
+
 if __name__ == '__main__':
     root_dir='/home/oesteban/workspace/ACWE-Reg/'
     data_dir= op.join( root_dir, 'Data' )
@@ -105,9 +156,16 @@ if __name__ == '__main__':
     
     if not op.exists( working_dir ):
         os.makedirs( working_dir )
+
     
     evaluation = evaluation_workflow()
-    evaluation.base_dir = op.join( working_dir, 'evaluation' )
+    evaluation.base_dir = working_dir
+
+
+    sim_file = op.join( working_dir, evaluation.name, 'similarity.csv' )
+    if op.exists( sim_file ):
+        os.remove( sim_file )
+
     evaluation.inputs.inputnode.in_dwi = op.join( model_dir, 'DWIS_dti-scheme_no-noise.nii.gz' )
     evaluation.inputs.inputnode.in_dwi_mask = op.join( model_dir, 'signal_mask.nii.gz' )
     evaluation.inputs.inputnode.in_t2 = op.join( model_dir, "t2_weighted.nii.gz" )
@@ -116,6 +174,7 @@ if __name__ == '__main__':
     evaluation.inputs.inputnode.in_bval = op.join( model_dir, 'dti-scheme.bval' )
     evaluation.inputs.inputnode.in_rois = op.join( model_dir,'rois', 'seeding_regions.nii.gz' )
     evaluation.inputs.inputnode.wm_mask = op.join( model_dir, 'wm_mask.nii.gz' )
+    evaluation.inputs.inputnode.out_csv = sim_file
     evaluation.run()
     #evaluation.write_graph()
 

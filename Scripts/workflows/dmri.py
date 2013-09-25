@@ -103,8 +103,8 @@ def t2_registration_correct( name="T2_Registration" ):
 def distortion_workflow(name="synthetic_distortion"):
     pipeline = pe.Workflow(name=name)
     
-    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'te_incr', 'echospacing','encoding_direction' ]), name='inputnode' )
-    phmap_siemens = pe.Node( niu.Function(input_names=['in_file'],output_names=['out_file'], function=generate_siemens_phmap ), name='gen_siemens_PhaseDiffMap' )
+    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'te_incr', 'echospacing','encoding_direction','intensity','sigma' ]), name='inputnode' )
+    phmap_siemens = pe.Node( niu.Function(input_names=['in_file','intensity','sigma'],output_names=['out_file'], function=generate_siemens_phmap ), name='gen_siemens_PhaseDiffMap' )
     prepare = pe.Node( fsl.PrepareFieldmap(), name='fsl_prepare_fieldmap' )
     vsm = pe.Node(fsl.FUGUE(save_shift=True), name="gen_VSM")
     dm = pe.Node( niu.Function(input_names=['in_file','in_mask'],output_names=['out_file'], function=demean ), name='demean' )
@@ -116,7 +116,7 @@ def distortion_workflow(name="synthetic_distortion"):
     
     
     pipeline.connect([
-                       (inputnode,phmap_siemens, [('in_mask', 'in_file')] )
+                       (inputnode,phmap_siemens, [('in_mask', 'in_file'),('intensity','intensity'),('sigma','sigma') ] )
                       ,(phmap_siemens,  prepare, [('out_file','in_phase') ])
                       ,(inputnode,      prepare, [('in_mask','in_magnitude'),(('te_incr',_sec2ms),'delta_TE')])
                       ,(prepare,            vsm, [('out_fieldmap','phasemap_file')])
@@ -150,7 +150,7 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
                           name='outputnode' )
 
     dtifit = pe.Node(dtk.DTIRecon(),name='dtifit')
-    dtk_tracker = pe.Node(dtk.DTITracker(invert_x=True), name="dtk_tracker")
+    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=0.15,invert_x=True,mask2_threshold=0.15,args='-rseed 10'), name="dtk_tracker")
     smooth_trk = pe.Node(dtk.SplineFilter(step_length=0.5), name="smooth_trk")
     matrix = pe.Node( ConnectivityMatrix(), name='BuildMatrix' )
 
@@ -159,8 +159,8 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
     
     pipeline.connect([
                          (inputnode,        dtifit, [('in_dwi','DWI'),('in_bvec','bvecs'),('in_bval','bvals')])
-                        ,(inputnode,   dtk_tracker, [('in_mask','mask1_file')])
-                        ,(dtifit,      dtk_tracker, [('tensor','tensor_file')])
+                        #,(inputnode,   dtk_tracker, [('in_mask','mask1_file')])
+                        ,(dtifit,      dtk_tracker, [('tensor','tensor_file'),('FA','mask1_file'),('FA','mask2_file') ])
                         ,(dtk_tracker,  smooth_trk, [('track_file', 'track_file')])
                         ,(dtifit,       outputnode, [('tensor', 'tensor'),('ADC','ADC'),('FA','FA') ])
                         ,(dtk_tracker,  outputnode, [('track_file', 'track_file') ])
@@ -227,7 +227,7 @@ def _get_vox_size( in_file ):
     pixdim = nib.load( in_file ).get_header()['pixdim']
     return (pixdim[1],pixdim[2],pixdim[3])
 
-def generate_siemens_phmap( in_file, out_file=None ):
+def generate_siemens_phmap( in_file, intensity=1.0, sigma=8.0, out_file=None ):
     import nibabel as nib
     from scipy.ndimage import binary_erosion
     from scipy.ndimage.filters import gaussian_filter
@@ -252,13 +252,13 @@ def generate_siemens_phmap( in_file, out_file=None ):
     y = ( int(0.4*imshape[1]), int( imshape[1] ) )
 
     slice1 = np.zeros( shape=imshape )
-    slice1[x[0]:x[1],y[0]:y[1],int(0.65*imshape[2])]  = -0.5
+    slice1[x[0]:x[1],y[0]:y[1],int(0.65*imshape[2])]  = -0.5 * intensity
 
     slice2 = np.zeros( shape=imshape )
-    slice2[x[0]:x[1],y[0]:y[1],int(0.35*imshape[2])]  = 1.0
+    slice2[x[0]:x[1],y[0]:y[1],int(0.35*imshape[2])]  = 1.0 * intensity
     distortionfront = boundary * ( slice1 + slice2 )
 
-    phasefield = gaussian_filter( distortionfront, sigma=8 )
+    phasefield = gaussian_filter( distortionfront, sigma=sigma )
     phasefield = np.ma.array( phasefield, mask=1-mskdata )
     median = np.ma.median( phasefield )
     phasefield = phasefield - median
