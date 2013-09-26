@@ -33,7 +33,7 @@ def evaluation_workflow( name="Evaluation" ):
     te_incr = 2.46e-3 # secs
     dwell_time = 0.77e-3 # secs
     intensity = 0.75
-    sigma = 6.0
+    sigma = 8.0
     
     dist1_wf = dmri.distortion_workflow( name='Distortion_Y' )
     dist1_wf.inputs.inputnode.te_incr = te_incr

@@ -40,8 +40,8 @@ def t2_registration_correct( name="T2_Registration" ):
     reg = pe.Node( ants.Registration() , name='B0-to-T2' )
 
     reg.inputs.transforms = ['SyN']
-    reg.inputs.transform_parameters = [(0.80, 0.5, 0.5) ]
-    reg.inputs.number_of_iterations = [[300,100, 50]]
+    reg.inputs.transform_parameters = [(0.80, 0.5, 1.0) ]
+    reg.inputs.number_of_iterations = [[200,100, 50]]
     reg.inputs.dimension = 3
     reg.inputs.write_composite_transform = True
 
@@ -51,7 +51,7 @@ def t2_registration_correct( name="T2_Registration" ):
     reg.inputs.sampling_strategy = ['Random']
     reg.inputs.sampling_percentage = [0.1]
     reg.inputs.convergence_threshold = [1.e-9]
-    reg.inputs.convergence_window_size = [40,30,20]
+    reg.inputs.convergence_window_size = [20,10,6]
     reg.inputs.smoothing_sigmas = [[2,1,0]]
     reg.inputs.sigma_units = ['vox']
     reg.inputs.shrink_factors = [[3,2,1]]
@@ -62,10 +62,10 @@ def t2_registration_correct( name="T2_Registration" ):
 #    reg.inputs.collapse_output_transforms = False
 
     applytfm = pe.Node( ants.WarpTimeSeriesImageMultiTransform(), name='ApplyTfm' )
-    jacobian = pe.Node( ants.JacobianDeterminant(dimension=3,use_log=0), name='Jacobian' )
-    dwi_split = pe.Node(niu.Function(input_names=['in_file'], output_names=['out_files'], function=_split_dwi), name='split_DWI')
-    applyjacobian = pe.MapNode( ants.MultiplyImages(dimension=3), iterfield=['first_input'], name='ApplyJacobian')
-    dwi_merge = pe.Node(fsl.Merge(dimension='t'), name='merge_DWI')
+    #jacobian = pe.Node( ants.JacobianDeterminant(dimension=3,use_log=0), name='Jacobian' )
+    #dwi_split = pe.Node(niu.Function(input_names=['in_file'], output_names=['out_files'], function=_split_dwi), name='split_DWI')
+    #applyjacobian = pe.MapNode( ants.MultiplyImages(dimension=3), iterfield=['first_input'], name='ApplyJacobian')
+    #dwi_merge = pe.Node(fsl.Merge(dimension='t'), name='merge_DWI')
 
 
     applytfm_msk = pe.Node( ants.WarpImageMultiTransform(use_nearest=True), name='ApplyTfmMsk' )
@@ -84,12 +84,13 @@ def t2_registration_correct( name="T2_Registration" ):
                         ,(inputnode,    applytfm, [ ('in_file','input_image') ])
                         ,(resample,     applytfm, [ ('out_file','reference_image') ])
                         ,(reg,          applytfm, [ ('forward_transforms','transformation_series') ])
-                        ,(applytfm,    dwi_split, [ ('output_image','in_file') ])
-                        ,(reg,          jacobian, [ (('forward_transforms',_pickupWarp),'warp_file') ])
-                        ,(jacobian,applyjacobian, [ ('jacobian_image','second_input') ])
-                        ,(dwi_split,applyjacobian,[ ('out_files','first_input')])
-                        ,(applyjacobian,dwi_merge,[ ('output_product_image', 'in_files') ])
-                        ,(dwi_merge,  outputnode, [ ('merged_file','epi_corrected') ])
+                        ,(applytfm,   outputnode, [ ('output_image','epi_corrected' ) ])
+                        #,(applytfm,    dwi_split, [ ('output_image','in_file') ])
+                        #,(reg,          jacobian, [ (('forward_transforms',_pickupWarp),'warp_file') ])
+                        #,(jacobian,applyjacobian, [ ('jacobian_image','second_input') ])
+                        #,(dwi_split,applyjacobian,[ ('out_files','first_input')])
+                        #,(applyjacobian,dwi_merge,[ ('output_product_image', 'in_files') ])
+                        #,(dwi_merge,  outputnode, [ ('merged_file','epi_corrected') ])
                         ,(inputnode,applytfm_msk, [ ('in_mask_dwi','input_image') ])
                         ,(resample, applytfm_msk, [ ('out_file','reference_image') ])
                         ,(reg,      applytfm_msk, [ ('forward_transforms','transformation_series') ])
@@ -114,6 +115,8 @@ def distortion_workflow(name="synthetic_distortion"):
     binarize = pe.Node( fs.Binarize( min=0.00001 ), name="binarize" )
     warpimages = pe.MapNode( fsl.FUGUE(forward_warping=True,icorr=False), iterfield=['in_file'], name='WarpImages' )
     normalize_tpms = pe.Node( niu.Function( input_names=['in_files'], output_names=['out_files'], function=normalize ), name='Normalize' )
+    fixsignal = pe.Node( niu.Function( input_names=['in_reference','in_distorted','in_mask' ], output_names=['out_distorted'], function=sanitize ), name='FixSignal' )
+
 
     outputnode = pe.Node(interface=niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_phdiff_map', 'out_tpms' ]), name='outputnode' )
     
@@ -130,7 +133,11 @@ def distortion_workflow(name="synthetic_distortion"):
                       ,(dm,           applyWarp, [('out_file', 'inputnode.in_vsm')])
                       ,(inputnode,    applyWarp, [('in_file', 'inputnode.in_file'),('in_mask', 'inputnode.in_mask'),('encoding_direction','inputnode.unwarp_direction') ])
                       ,(dm,          outputnode, [('out_file', 'out_vsm')])
-                      ,(applyWarp,   outputnode, [('outputnode.out_file', 'out_file')])
+                      #,(applyWarp,   outputnode, [('outputnode.out_file', 'out_file')])
+                      ,(applyWarp,    fixsignal, [('outputnode.out_file', 'in_distorted')])
+                      ,(inputnode,    fixsignal, [('in_file','in_reference')])
+                      ,(vsm_fwd_mask, fixsignal, [('warped_file','in_mask')])
+                      ,(fixsignal,   outputnode, [('out_distorted','out_file')])
                       ,(vsm_fwd_mask,  binarize, [('warped_file','in_file')])
                       ,(binarize,    outputnode, [('binary_file','out_mask')])
                       ,(phmap_siemens,outputnode,[('out_file','out_phdiff_map') ])
@@ -160,7 +167,7 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
                           name='outputnode' )
 
     dtifit = pe.Node(dtk.DTIRecon(),name='dtifit')
-    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=0.45,invert_x=True,mask2_threshold=0.45,args='-rseed 10'), name="dtk_tracker")
+    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=0.25,invert_x=False,mask2_threshold=0.25,args='-rseed 10'), name="dtk_tracker")
     smooth_trk = pe.Node(dtk.SplineFilter(step_length=0.5), name="smooth_trk")
     matrix = pe.Node( ConnectivityMatrix(), name='BuildMatrix' )
 
@@ -250,9 +257,6 @@ def normalize( in_files ):
     img_data[img_data<0.0] = 0.0
     weights = np.sum( img_data, axis=0 )
 
-    print 'HOSTIA PUTA YA COÑO'
-    print np.shape( weights )
-    
     img_data[0][weights==0] = 1.0
     weights[weights==0] = 1.0
     
@@ -273,6 +277,34 @@ def normalize( in_files ):
         hdr.set_data_dtype( 'float32' )   
         nib.save( nib.Nifti1Image( data, imgs[i].get_affine(), hdr ), out_file )
     return out_files
+
+
+def sanitize( in_reference, in_distorted, in_mask, out_file=None ):
+    import nibabel as nib
+    import numpy as np
+    import os.path as op
+    import scipy.ndimage as ndimage
+
+    inc = 7e-2
+    msk_data = nib.load( in_mask ).get_data()
+    msk_data[msk_data<(1.0-inc)] = 0
+    msk_data[msk_data>(1.0+inc)] = 0
+    msk_data[msk_data!=0] = 1.0
+    msk_data = ndimage.binary_opening( msk_data ).astype( 'uint8' )
+    im = nib.load( in_distorted )
+    im_data = im.get_data()
+    ref_data = nib.load( in_reference ).get_data()
+        
+    for i in range(1,np.shape(im_data)[-1]):
+        im_data[:,:,:,i] = ref_data[:,:,:,i] * msk_data + im_data[:,:,:,i] * (1-msk_data) 
+       
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_distorted))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_fixed.nii.gz' % fname)
+    nib.save( nib.Nifti1Image( im_data, im.get_affine(), im.get_header() ), out_file )
+    return out_file
 
 
 def generate_siemens_phmap( in_file, intensity, sigma, out_file=None ):
