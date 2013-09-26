@@ -10,6 +10,7 @@ import nipype.pipeline.engine as pe
 import dmri as dmri
 import nipype.interfaces.utility as niu
 import nipype.interfaces.nipy as nipy
+import nipype.interfaces.freesurfer as fs
 import nipype.workflows.dmri.fsl as wf
 
 
@@ -20,9 +21,12 @@ def evaluation_workflow( name="Evaluation" ):
                                                         'in_t2', 'in_t2_mask',
                                                         'in_bvec','in_bval',
                                                         'in_rois','wm_mask',
-                                                        'out_csv' ] ),
+                                                        'out_csv','in_tpms' ] ),
                          name='inputnode' )
-    
+   
+    outputnode = pe.Node( niu.IdentityInterface( fields=['out_tpms_resampled'] ),
+                          name='outputnode' )
+ 
     te_incr = 2.46e-3 # secs
     dwell_time = 0.77e-3 # secs
     intensity = 0.75
@@ -34,6 +38,13 @@ def evaluation_workflow( name="Evaluation" ):
     dist1_wf.inputs.inputnode.encoding_direction = 'y'
     dist1_wf.inputs.inputnode.intensity = intensity
     dist1_wf.inputs.inputnode.sigma = sigma
+
+
+    resample= pe.MapNode( fs.MRIConvert(out_type='niigz'), iterfield=['in_file'], name='Resample')
+    normalize_tpms = pe.Node( niu.Function( input_names=['in_files'], output_names=['out_files'], function=dmri.normalize ), name='Normalize' )
+
+    sel1 = pe.Node( niu.Select(index=3 ), name='SelectWM' )
+    sel2 = pe.Node( niu.Select(index=3 ), name='SelectWM_dist' )
 
     sim1 = compare_dwis( name="Sim_dist" )
     sim1.inputs.inputnode.name='dist' 
@@ -70,9 +81,17 @@ def evaluation_workflow( name="Evaluation" ):
     trk_dist = trk_gold.clone('Tract_Dist' )
     
     evaluation.connect([
+        # Prepare tpms
+         (inputnode,       resample, [ ('in_tpms','in_file'),(('in_dwi',dmri.get_vox_size),'vox_size') ])
+        ,(resample,  normalize_tpms, [ ('out_file','in_files')])
+        ,(normalize_tpms,outputnode, [ ('out_files','out_tpms_resampled')])
+        ,(normalize_tpms,      sel1, [ ('out_files','inlist')])
         # Connect the distortion workflows
-         (inputnode,      dist1_wf, [ ('in_dwi','inputnode.in_file'),('in_dwi_mask','inputnode.in_mask'),('in_tpms','inputnode.in_tpms') ])
-        ,(inputnode,      dist2_wf, [ ('in_dwi','inputnode.in_file'),('in_dwi_mask','inputnode.in_mask'),('in_tpms','inputnode.in_tpms') ])
+        ,(inputnode,      dist1_wf, [ ('in_dwi','inputnode.in_file'),('in_dwi_mask','inputnode.in_mask') ])
+        ,(normalize_tpms, dist1_wf, [ ('out_files','inputnode.in_tpms') ])
+        ,(inputnode,      dist2_wf, [ ('in_dwi','inputnode.in_file'),('in_dwi_mask','inputnode.in_mask') ])
+        ,(normalize_tpms, dist2_wf, [ ('out_files','inputnode.in_tpms') ])
+        ,(dist1_wf,           sel2, [ ('outputnode.out_tpms','inlist')])
         # Similarity after distortion
         ,(dist1_wf,           sim1, [ ('outputnode.out_file','inputnode.in_test') ])
         ,(inputnode,          sim1, [ ('in_dwi', 'inputnode.in_ref'),('in_dwi_mask','inputnode.in_mask'),('out_csv','inputnode.out_csv') ])
@@ -98,12 +117,14 @@ def evaluation_workflow( name="Evaluation" ):
         # Tractographies
         #
         # Perform tractography on the original phantom
-        ,(inputnode,      trk_gold, [ ('in_dwi','inputnode.in_dwi'),('wm_mask','inputnode.in_mask' ), ('in_rois','inputnode.roi_file'),
+        ,(inputnode,      trk_gold, [ ('in_dwi','inputnode.in_dwi'),('in_rois','inputnode.roi_file'),
                                       ('in_bvec','inputnode.in_bvec'),('in_bval','inputnode.in_bval' ) ])
-        # Perform tractography on the fieldmap corrected
-        ,(inputnode,      trk_dist, [ ('wm_mask','inputnode.in_mask' ), ('in_rois','inputnode.roi_file'),
+        ,(sel1,           trk_gold, [ ('out','inputnode.in_mask') ])
+        # Perform tractography on the distorted phantom
+        ,(inputnode,      trk_dist, [ ('in_rois','inputnode.roi_file'),
                                       ('in_bvec','inputnode.in_bvec'),('in_bval','inputnode.in_bval' ) ])
         ,(dist1_wf,       trk_dist, [ ('outputnode.out_file','inputnode.in_dwi' ) ])
+        ,(sel2,           trk_dist, [ ('out','inputnode.in_mask') ])
         # Perform tractography on the fieldmap corrected
         ,(inputnode,      trk_fmap, [ ('wm_mask','inputnode.in_mask' ), ('in_rois','inputnode.roi_file'),
                                       ('in_bvec','inputnode.in_bvec'),('in_bval','inputnode.in_bval' ) ])
@@ -174,6 +195,7 @@ if __name__ == '__main__':
     evaluation.inputs.inputnode.in_bval = op.join( model_dir, 'dti-scheme.bval' )
     evaluation.inputs.inputnode.in_rois = op.join( model_dir,'rois', 'seeding_regions.nii.gz' )
     evaluation.inputs.inputnode.wm_mask = op.join( model_dir, 'wm_mask.nii.gz' )
+    evaluation.inputs.inputnode.in_tpms = [ op.join( model_dir, 'tpms', '%s_volume_fraction.nii.gz' % n ) for n in [ 'bg','csf','gm','wm' ] ]
     evaluation.inputs.inputnode.out_csv = sim_file
     evaluation.run()
     #evaluation.write_graph()

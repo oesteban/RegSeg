@@ -73,7 +73,7 @@ def t2_registration_correct( name="T2_Registration" ):
     pipeline.connect( [
                          (inputnode,      get_b0, [ ('in_file','in_file') ])
                         ,(inputnode,    resample, [ ('in_t2', 'in_file'), ])
-                        ,(get_b0,       resample, [(('roi_file',_get_vox_size),'vox_size') ])
+                        ,(get_b0,       resample, [(('roi_file',get_vox_size),'vox_size') ])
                         #,(inputnode,   dwi_split, [ ('in_file','in_files') ]
                         ,(inputnode,     mask_b0, [ ('in_mask_dwi', 'mask_file' ) ])
                         ,(inputnode,     mask_t2, [ ('in_mask_t2', 'mask_file' ) ])
@@ -111,9 +111,10 @@ def distortion_workflow(name="synthetic_distortion"):
     applyWarp = fugue_all_workflow()
     vsm_fwd_mask = pe.Node(fsl.FUGUE(forward_warping=True), name='Fugue_WarpMask')
     binarize = pe.Node( fs.Binarize( min=0.00001 ), name="binarize" )
-    
+    warpimages = pe.MapNode( fsl.FUGUE(forward_warping=True,icorr=False), iterfield=['in_file'], name='WarpImages' )
+    normalize_tpms = pe.Node( niu.Function( input_names=['in_files'], output_names=['out_files'], function=normalize ), name='Normalize' )
+
     outputnode = pe.Node(interface=niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_phdiff_map', 'out_tpms' ]), name='outputnode' )
-    
     
     pipeline.connect([
                        (inputnode,phmap_siemens, [('in_mask', 'in_file'),('intensity','intensity'),('sigma','sigma') ] )
@@ -132,19 +133,13 @@ def distortion_workflow(name="synthetic_distortion"):
                       ,(vsm_fwd_mask,  binarize, [('warped_file','in_file')])
                       ,(binarize,    outputnode, [('binary_file','out_mask')])
                       ,(phmap_siemens,outputnode,[('out_file','out_phdiff_map') ])
-                      ])
-
-    resample= pe.MapNode( fs.MRIConvert(out_type='niigz'), iterfield=['in_file'], name='Resample')
-    warpimages = pe.MapNode( fsl.FUGUE(forward_mapping=True), iterfield=['in_file'], name='WarpImages' )
-    normalize = pe.Node( niu.Function( input_names='in_files', out_names='out_files', function=_normalize ), name='Normalize' )
+                      ,(inputnode,  warpimages, [('in_tpms','in_file'),('in_mask', 'mask_file') ])
+                      ,(dm      ,   warpimages, [('out_file','shift_in_file') ])
+                      ,(warpimages,  normalize_tpms, [('warped_file','in_files')])
+                      ,(normalize_tpms,  outputnode, [('out_files','out_tpms')])
+    ])
 
     pipeline.connect([
-                     (inputnode,    resample, [('in_tpms','in_file'),(('in_file',_get_vox_size),'vox_size') ])
-                    ,(resample,   warpimages, [('out_file','in_file') ])
-                    ,(dm      ,   warpimages, [('out_file','shift_in_file') ])
-                    ,(inputonode, warpimages, [('in_mask', 'mask_file'),('encoding_direction','unwarp_direction') ])
-                    ,(warpimage,   normalize, [('warped_file','in_files')])
-                    ,(normalize,  outputnode, [('out_files','out_tpms')]
     ])
 
     
@@ -164,7 +159,7 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
                           name='outputnode' )
 
     dtifit = pe.Node(dtk.DTIRecon(),name='dtifit')
-    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=0.15,invert_x=True,mask2_threshold=0.15,args='-rseed 10'), name="dtk_tracker")
+    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=0.45,invert_x=True,mask2_threshold=0.45,args='-rseed 10'), name="dtk_tracker")
     smooth_trk = pe.Node(dtk.SplineFilter(step_length=0.5), name="smooth_trk")
     matrix = pe.Node( ConnectivityMatrix(), name='BuildMatrix' )
 
@@ -173,8 +168,8 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
     
     pipeline.connect([
                          (inputnode,        dtifit, [('in_dwi','DWI'),('in_bvec','bvecs'),('in_bval','bvals')])
-                        #,(inputnode,   dtk_tracker, [('in_mask','mask1_file')])
-                        ,(dtifit,      dtk_tracker, [('tensor','tensor_file'),('FA','mask1_file'),('FA','mask2_file') ])
+                        ,(inputnode,   dtk_tracker, [('in_mask','mask1_file'),('in_mask','mask2_file') ])
+                        ,(dtifit,      dtk_tracker, [('tensor','tensor_file') ])
                         ,(dtk_tracker,  smooth_trk, [('track_file', 'track_file')])
                         ,(dtifit,       outputnode, [('tensor', 'tensor'),('ADC','ADC'),('FA','FA') ])
                         ,(dtk_tracker,  outputnode, [('track_file', 'track_file') ])
@@ -236,37 +231,46 @@ def fugue_all_workflow(name="Fugue_WarpDWIs"):
 # HELPER FUNCTIONS ------------------------------------------------------------------------------------
 #
 
-def _get_vox_size( in_file ):
+def get_vox_size( in_file ):
     import nibabel as nib
     pixdim = nib.load( in_file ).get_header()['pixdim']
     return (pixdim[1],pixdim[2],pixdim[3])
 
-def _normalize( in_files ):
+def normalize( in_files ):
     import nibabel as nib
     import numpy as np
     import os.path as op
-    
+
     out_files = []
     
     imgs = [ nib.load(fim) for fim in in_files ]
-    img_data = np.swapaxes( np.array( [ im.get_data() for im in imgs ] ), 0,3 )
-    weights = np.sum( img_data, axis=3 )
+    img_data = np.array( [ im.get_data() for im in imgs ] ).astype( 'f32' )
+    img_data[img_data>1.0] = 1.0
+    img_data[img_data<0.0] = 0.0
+    weights = np.sum( img_data, axis=0 )
+
+    print 'HOSTIA PUTA YA COÑO'
+    print np.shape( weights )
     
-    for finname,img in zip( in_files, imgs ):
+    img_data[0][weights==0] = 1.0
+    weights[weights==0] = 1.0
+    
+
+    nib.save( nib.Nifti1Image( weights, im.get_affine(), im.get_header() ), op.abspath('w.nii.gz' ) )
+    
+    for i,finname in enumerate( in_files ):
         fname,fext = op.splitext( op.basename( finname ) )
         if fext == '.gz':
             fname,fext2 = op.splitext( fname )
             fext = fext2 + fext
-        
-        out_file = fname+'_norm'+fext 
+         
+        out_file = op.abspath( fname+'_norm'+fext )
         out_files+= [ out_file ]
-        data = img.get_data()
-        normalized = np.zeros( shape=data.shape )
-        normalized[data>0] = data[data>0] / weights[data>0]
-        hdr = img.get_header()
+        data = img_data[i] / weights
+        hdr = imgs[i].get_header()
         hdr['data_type']= 16
         hdr.set_data_dtype( 'float32' )   
-        nib.save( nib.Nifti1Image( normalized.astype( 'f32' ), im.get_affine(), hdr ), out_file )
+        nib.save( nib.Nifti1Image( data, imgs[i].get_affine(), hdr ), out_file )
     return out_files
 
 
