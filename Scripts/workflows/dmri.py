@@ -167,7 +167,7 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
                           name='outputnode' )
 
     dtifit = pe.Node(dtk.DTIRecon(),name='dtifit')
-    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=0.25,invert_x=False,mask2_threshold=0.25,args='-rseed 10'), name="dtk_tracker")
+    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=0.01,invert_x=False,random_seed=10), name="dtk_tracker")
     smooth_trk = pe.Node(dtk.SplineFilter(step_length=0.5), name="smooth_trk")
     matrix = pe.Node( ConnectivityMatrix(), name='BuildMatrix' )
 
@@ -176,7 +176,7 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
     
     pipeline.connect([
                          (inputnode,        dtifit, [('in_dwi','DWI'),('in_bvec','bvecs'),('in_bval','bvals')])
-                        ,(inputnode,   dtk_tracker, [('in_mask','mask1_file'),('in_mask','mask2_file') ])
+                        ,(inputnode,   dtk_tracker, [('in_mask','mask1_file'),('roi_file','mask_seed') ])
                         ,(dtifit,      dtk_tracker, [('tensor','tensor_file') ])
                         ,(dtk_tracker,  smooth_trk, [('track_file', 'track_file')])
                         ,(dtifit,       outputnode, [('tensor', 'tensor'),('ADC','ADC'),('FA','FA') ])

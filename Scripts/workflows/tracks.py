@@ -100,11 +100,23 @@ class ConnectivityMatrix(BaseInterface):
 
 
 def track_analyze( points, roidata, vox_size=(1.0,1.0,1.0) ):
-    nPoints = np.shape(points)[0]
     startval = 0
     startidx = -1
     vox_size=np.array( vox_size, dtype='f32' )
-    
+    im_idx = np.array( np.shape(roidata) )-1
+
+    invalid_idx = []
+    for i,point in enumerate(points):
+        vox = tuple( ( np.around( point / vox_size ) ).astype( 'uint16' ))
+        if np.any( vox > im_idx ):
+            invalid_idx+= [i]    
+
+    points = np.delete( points, invalid_idx, 0 )    
+    nPoints = np.shape(points)[0]
+
+    if nPoints == 0:
+        return (None,0)
+
     for i,point in enumerate(points):
         vox = tuple( ( np.around( point / vox_size ) ).astype( 'uint16' ))
         val = roidata[vox]
@@ -123,7 +135,6 @@ def track_analyze( points, roidata, vox_size=(1.0,1.0,1.0) ):
             endval=val
             endidx = nPoints-1-i
             break
-            
     
     length = 0.0
     
@@ -152,12 +163,15 @@ def filter_track( trkfile, roidata, trkhdr=None, min_length=3.0 ):
     
     for idx,trk in enumerate(streams):
         nt,tf = track_analyze( trk, roidata, vox_size )
-        tlen = tf[-1]
+
+        if nt is None:
+            continue
        
-        if tf[-1]>min_length and tf[0][0]!=tf[0][1]:
-            filtered_ft.append( tf )
-            new_trk = (np.array(nt), trkfile[idx][1],trkfile[idx][2])
-            out_trk.append(new_trk)
+        if tf[-1]>min_length:
+            if tf[0][0]!=tf[0][1]:
+                filtered_ft.append( tf )
+                new_trk = (np.array(nt), trkfile[idx][1],trkfile[idx][2])
+                out_trk.append(new_trk)
             
     return out_trk, filtered_ft
 
