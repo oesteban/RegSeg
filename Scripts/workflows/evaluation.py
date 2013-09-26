@@ -9,8 +9,11 @@ import os
 import nipype.pipeline.engine as pe
 import dmri as dmri
 import nipype.interfaces.utility as niu
+import nipype.algorithms.misc as misc
 import nipype.interfaces.nipy as nipy
 import nipype.interfaces.freesurfer as fs
+import nipype.interfaces.fsl as fsl
+import nipype.interfaces.ants as ants
 import nipype.workflows.dmri.fsl as wf
 
 
@@ -54,6 +57,11 @@ def evaluation_workflow( name="Evaluation" ):
     sim3.inputs.inputnode.name='reve' 
     sim4 = compare_dwis( name="Sim_t2re" )
     sim4.inputs.inputnode.name='t2re' 
+
+    ove1 = overlap_tpms_fmap()
+    ove2 = overlap_tpms_topup()
+    ove3 = overlap_tpms_t2reg()
+
 
     dist2_wf = dmri.distortion_workflow( name='Distortion_Yrev' )
     dist2_wf.inputs.inputnode.te_incr = te_incr
@@ -114,6 +122,22 @@ def evaluation_workflow( name="Evaluation" ):
         ,(t2reg_wf,           sim4, [ ('outputnode.epi_corrected','inputnode.in_test') ])
         ,(inputnode,          sim4, [ ('in_dwi', 'inputnode.in_ref'),('in_dwi_mask','inputnode.in_mask'),('out_csv','inputnode.out_csv') ])
         #
+        # Overlaps
+        #
+        ,(inputnode,          ove1, [ ('out_csv','inputnode.out_csv') ])
+        ,(normalize_tpms,     ove1, [ ('out_files','inputnode.in_ref') ])
+        ,(fmap_wf,            ove1, [ ('outputnode.out_vsm','inputnode.in_vsm') ])
+        ,(dist1_wf,           ove1, [ ('outputnode.out_tpms','inputnode.in_tpms' ) ])
+        ,(inputnode,          ove2, [ ('out_csv','inputnode.out_csv') ])
+        ,(normalize_tpms,     ove2, [ ('out_files','inputnode.in_ref') ])
+        ,(topup_wf,           ove2, [ ('outputnode.out_topup','inputnode.in_topup'),('outputnode.out_enc_file','inputnode.in_enc_file') ])
+        ,(dist1_wf,           ove2, [ ('outputnode.out_tpms','inputnode.in_tpms' ) ])
+        ,(dist2_wf,           ove2, [ ('outputnode.out_tpms','inputnode.in_tpms_rev') ])
+        ,(inputnode,          ove3, [ ('out_csv','inputnode.out_csv') ])
+        ,(normalize_tpms,     ove3, [ ('out_files','inputnode.in_ref') ])
+        ,(t2reg_wf,           ove3, [ ('outputnode.fwd_tfm','inputnode.in_tfm') ])
+        ,(dist1_wf,           ove3, [ ('outputnode.out_tpms','inputnode.in_tpms' ) ])
+        #
         # Tractographies
         #
         # Perform tractography on the original phantom
@@ -147,7 +171,8 @@ def compare_dwis( name='CompareDWIs' ):
     inputnode = pe.Node( niu.IdentityInterface( fields=['in_test','in_ref','in_mask','out_csv','name'] ), name='inputnode' )
     outputnode = pe.Node( niu.IdentityInterface( fields=['similarity'] ), name='outputnode' )
     similarity = pe.Node( nipy.Similarity(metric='crl1'), name='Similarity' )
-    savecsv = pe.Node( niu.Function( input_names=['fname','row','rowname'], output_names=[], function=_append_csv ), name='AddCSVrow' )
+    savecsv = pe.Node( niu.Function( input_names=['fname','row','rowname','feature'], output_names=[], function=_append_csv ), name='AddCSVrow' )
+    savecsv.inputs.feature = 'Similarity'
 
     wf.connect([
          (inputnode,   similarity, [('in_test','volume2'),('in_ref','volume1'),('in_mask','mask1'),('in_mask','mask2') ] )
@@ -157,9 +182,112 @@ def compare_dwis( name='CompareDWIs' ):
     ])
     return wf
 
-def _append_csv( fname, row, rowname ):
+
+def overlap_tpms_fmap( name='OverlapTpmsFmap' ):
+    wf = pe.Workflow( name=name )
+
+    inputnode= pe.Node( niu.IdentityInterface( fields=['in_tpms','in_ref','in_vsm','out_csv' ] ), name='inputnode' )
+    outputnode = pe.Node( niu.IdentityInterface( fields=['out_tpms'] ), name='outputnode' )
+    
+    fixTpms = pe.MapNode( fsl.FUGUE(icorr=False), iterfield=['in_file'], name='FixTpms' )
+    norm_tpms = pe.Node( niu.Function( input_names=['in_files'], output_names=['out_files'], function=dmri.normalize ), name='Normalize' )
+    jaccard = pe.Node( misc.FuzzyOverlap(weighting='volume'), name='Jaccard' )
+    merge = pe.Node( niu.Merge(2), name='merge' )
+    savecsv = pe.Node( niu.Function( input_names=['fname','row','rowname','feature'], output_names=[], function=_append_csv ), name='AddCSVrow' )
+    savecsv.inputs.feature='Overlap'
+    savecsv.inputs.rowname='fmap'
+
+
+    wf.connect([
+         (inputnode,      fixTpms, [ ('in_tpms','in_file'),('in_vsm', 'shift_in_file' ) ])
+        ,(inputnode,      jaccard, [ ('in_ref','in_ref' ) ])
+        ,(fixTpms,      norm_tpms, [ ('unwarped_file','in_files') ])
+        ,(norm_tpms,      jaccard, [ ('out_files','in_tst' ) ])
+        ,(norm_tpms,   outputnode, [ ('out_files','out_tpms' ) ])
+        ,(inputnode,      savecsv, [ ('out_csv','fname') ])
+        ,(jaccard,          merge, [ ('jaccard','in1'),('class_fji','in2' ) ])
+        ,(merge,          savecsv, [ ('out','row') ])
+    ])
+    return wf
+
+
+def overlap_tpms_topup( name='OverlapTpmsTopup' ):
+    wf = pe.Workflow( name=name )
+
+    inputnode= pe.Node( niu.IdentityInterface( fields=['in_tpms','in_tpms_rev','in_ref','in_topup','in_enc_file','out_csv' ] ), name='inputnode' )
+    outputnode = pe.Node( niu.IdentityInterface( fields=['out_tpms'] ), name='outputnode' )
+    merg_tpms = pe.Node( fsl.Merge(dimension='t'), name='MergeTpms' )
+    merg_rev = pe.Node( fsl.Merge(dimension='t'), name='MergeTpmsRev' )
+
+    combin = pe.Node( niu.Merge(2), name='MergeEnc' )    
+    applytopup = pe.Node( fsl.ApplyTOPUP(in_index=[1,2] ), name='applytopup' )
+
+    split = pe.Node( fsl.Split( dimension='t' ), name='SplitEnc' )
+    
+    norm_tpms = pe.Node( niu.Function( input_names=['in_files'], output_names=['out_files'], function=dmri.normalize ), name='Normalize' )
+    jaccard = pe.Node( misc.FuzzyOverlap(weighting='volume'), name='Jaccard' )
+    merge = pe.Node( niu.Merge(2), name='merge' )
+    savecsv = pe.Node( niu.Function( input_names=['fname','row','rowname','feature'], output_names=[], function=_append_csv ), name='AddCSVrow' )
+    savecsv.inputs.feature='Overlap'
+    savecsv.inputs.rowname='reve'
+
+
+    wf.connect([
+         (inputnode,    merg_tpms, [ ('in_tpms','in_files') ])
+        ,(inputnode,     merg_rev, [ ('in_tpms_rev','in_files' ) ])
+        ,(merg_tpms,       combin, [ ('merged_file','in1' ) ])
+        ,(merg_rev,        combin, [ ('merged_file','in2' ) ])
+        ,(inputnode,   applytopup, [ ('in_topup','in_topup'),('in_enc_file','encoding_file')])
+        ,(combin,      applytopup, [ ('out','in_files')] )
+        ,(applytopup,       split, [ ('out_corrected','in_file') ])
+        ,(inputnode,      jaccard, [ ('in_ref','in_ref' ) ])
+        ,(split,        norm_tpms, [ ('out_files','in_files') ])
+        ,(norm_tpms,      jaccard, [ ('out_files','in_tst' ) ])
+        ,(norm_tpms,   outputnode, [ ('out_files','out_tpms' ) ])
+        ,(inputnode,      savecsv, [ ('out_csv','fname') ])
+        ,(jaccard,          merge, [ ('jaccard','in1'),('class_fji','in2' ) ])
+        ,(merge,          savecsv, [ ('out','row') ])
+    ])
+
+    return wf
+
+def overlap_tpms_t2reg( name='OverlapTpmsT2Reg' ):
+    wf = pe.Workflow( name=name )
+
+    inputnode= pe.Node( niu.IdentityInterface( fields=['in_tpms','in_ref','in_tfm','out_csv' ] ), name='inputnode' )
+    outputnode = pe.Node( niu.IdentityInterface( fields=['out_tpms'] ), name='outputnode' )
+    
+    select = pe.Node( niu.Select(index=[0]), name='select_ref' )
+
+    applytfm = pe.MapNode( ants.WarpImageMultiTransform(), iterfield=['input_image'], name='ApplyTfm' ) 
+
+    norm_tpms = pe.Node( niu.Function( input_names=['in_files'], output_names=['out_files'], function=dmri.normalize ), name='Normalize' )
+    jaccard = pe.Node( misc.FuzzyOverlap(weighting='volume'), name='Jaccard' )
+    merge = pe.Node( niu.Merge(2), name='merge' )
+    savecsv = pe.Node( niu.Function( input_names=['fname','row','rowname','feature'], output_names=[], function=_append_csv ), name='AddCSVrow' )
+    savecsv.inputs.feature='Overlap'
+    savecsv.inputs.rowname='t2reg'
+
+
+    wf.connect([
+         (inputnode,       select, [ ('in_ref', 'inlist') ])
+        ,(select,        applytfm, [ ('out','reference_image') ])
+        ,(inputnode,     applytfm, [ ('in_tpms', 'input_image'),('in_tfm','transformation_series') ])
+        ,(inputnode,      jaccard, [ ('in_ref','in_ref' ) ])
+        ,(applytfm,     norm_tpms, [ ('output_image','in_files') ])
+        ,(norm_tpms,      jaccard, [ ('out_files','in_tst' ) ])
+        ,(norm_tpms,   outputnode, [ ('out_files','out_tpms' ) ])
+        ,(inputnode,      savecsv, [ ('out_csv','fname') ])
+        ,(jaccard,          merge, [ ('jaccard','in1'),('class_fji','in2' ) ])
+        ,(merge,          savecsv, [ ('out','row') ])
+    ])
+    return wf
+
+
+
+def _append_csv( fname, row, rowname, feature ):
     import csv
-    row = [ rowname ] + row
+    row = [ rowname ] + [ feature ] + row
     with open( fname, 'a' ) as f:
         w = csv.writer( f )
         w.writerow( row )
@@ -183,7 +311,7 @@ if __name__ == '__main__':
     evaluation.base_dir = working_dir
 
 
-    sim_file = op.join( working_dir, evaluation.name, 'similarity.csv' )
+    sim_file = op.join( working_dir, evaluation.name, 'results.csv' )
     if op.exists( sim_file ):
         os.remove( sim_file )
 

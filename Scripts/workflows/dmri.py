@@ -27,7 +27,7 @@ def t2_registration_correct( name="T2_Registration" ):
                                                         'in_mask_t2']
                          ), name='inputnode' )
 
-    outputnode = pe.Node( niu.IdentityInterface( fields=['epi_corrected','out_mask']),
+    outputnode = pe.Node( niu.IdentityInterface( fields=['epi_corrected','out_mask','fwd_tfm']),
                           name='outputnode' )
 
     get_b0 = pe.Node(fsl.ExtractROI( t_size=1, t_min=0 ), name="getB0")
@@ -40,8 +40,8 @@ def t2_registration_correct( name="T2_Registration" ):
     reg = pe.Node( ants.Registration() , name='B0-to-T2' )
 
     reg.inputs.transforms = ['SyN']
-    reg.inputs.transform_parameters = [(1.0, 1.5, 6.0) ]
-    reg.inputs.number_of_iterations = [[300,200, 20]]
+    reg.inputs.transform_parameters = [(0.80, 0.5, 0.5) ]
+    reg.inputs.number_of_iterations = [[300,100, 50]]
     reg.inputs.dimension = 3
     reg.inputs.write_composite_transform = True
 
@@ -94,6 +94,7 @@ def t2_registration_correct( name="T2_Registration" ):
                         ,(resample, applytfm_msk, [ ('out_file','reference_image') ])
                         ,(reg,      applytfm_msk, [ ('forward_transforms','transformation_series') ])
                         ,(applytfm_msk,outputnode,[ ('output_image','out_mask') ])
+                        ,(reg,        outputnode, [ ('forward_transforms','fwd_tfm') ])
                       ])
 
     return pipeline
@@ -210,7 +211,7 @@ def fugue_all_workflow(name="Fugue_WarpDWIs"):
     
     inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'in_vsm','unwarp_direction' ]), name='inputnode' )
     dwi_split = pe.Node(niu.Function(input_names=['in_file'], output_names=['out_files'], function=_split_dwi), name='split_DWI')
-    vsm_fwd = pe.MapNode(fsl.FUGUE(forward_warping=True), iterfield=['in_file'], name='Fugue_Warp')
+    vsm_fwd = pe.MapNode(fsl.FUGUE(forward_warping=True, icorr=False), iterfield=['in_file'], name='Fugue_Warp')
     dwi_merge = pe.Node(fsl.utils.Merge(dimension='t'), name='merge_DWI')
     
     outputnode = pe.Node(interface=niu.IdentityInterface(fields=['out_file' ]), name='outputnode' )
@@ -274,7 +275,7 @@ def normalize( in_files ):
     return out_files
 
 
-def generate_siemens_phmap( in_file, intensity=1.0, sigma=8.0, out_file=None ):
+def generate_siemens_phmap( in_file, intensity, sigma, out_file=None ):
     import nibabel as nib
     from scipy.ndimage import binary_erosion
     from scipy.ndimage.filters import gaussian_filter
