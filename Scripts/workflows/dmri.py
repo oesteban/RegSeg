@@ -166,8 +166,8 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
                                   'ADC','FA','connectome','avglen_map','filter_tracks' ] ),
                           name='outputnode' )
 
-    dtifit = pe.Node(dtk.DTIRecon(),name='dtifit')
-    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=0.01,invert_x=False,random_seed=10), name="dtk_tracker")
+    dtifit = pe.Node(dtk.DTIRecon(output_type='nii.gz'),name='dtifit')
+    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=[0.002,3.0], mask_seed_th=[0.5,27.5],invert_x=False,random_seed=10), name="dtk_tracker")
     smooth_trk = pe.Node(dtk.SplineFilter(step_length=0.5), name="smooth_trk")
     matrix = pe.Node( ConnectivityMatrix(), name='BuildMatrix' )
 

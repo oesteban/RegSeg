@@ -48,6 +48,9 @@ def evaluation_workflow( name="Evaluation" ):
 
     sel1 = pe.Node( niu.Select(index=3 ), name='SelectWM' )
     sel2 = pe.Node( niu.Select(index=3 ), name='SelectWM_dist' )
+    sel3 = pe.Node( niu.Select(index=3 ), name='SelectWM_fmap' )
+    sel4 = pe.Node( niu.Select(index=3 ), name='SelectWM_topup' )
+    sel5 = pe.Node( niu.Select(index=3 ), name='SelectWM_t2' )
 
     sim1 = compare_dwis( name="Sim_dist" )
     sim1.inputs.inputnode.name='dist' 
@@ -128,15 +131,18 @@ def evaluation_workflow( name="Evaluation" ):
         ,(normalize_tpms,     ove1, [ ('out_files','inputnode.in_ref') ])
         ,(fmap_wf,            ove1, [ ('outputnode.out_vsm','inputnode.in_vsm') ])
         ,(dist1_wf,           ove1, [ ('outputnode.out_tpms','inputnode.in_tpms' ) ])
+        ,(ove1,               sel3, [ ('outputnode.out_tpms','inlist')])
         ,(inputnode,          ove2, [ ('out_csv','inputnode.out_csv') ])
         ,(normalize_tpms,     ove2, [ ('out_files','inputnode.in_ref') ])
         ,(topup_wf,           ove2, [ ('outputnode.out_topup','inputnode.in_topup'),('outputnode.out_enc_file','inputnode.in_enc_file') ])
         ,(dist1_wf,           ove2, [ ('outputnode.out_tpms','inputnode.in_tpms' ) ])
         ,(dist2_wf,           ove2, [ ('outputnode.out_tpms','inputnode.in_tpms_rev') ])
+        ,(ove2,               sel4, [ ('outputnode.out_tpms','inlist')])
         ,(inputnode,          ove3, [ ('out_csv','inputnode.out_csv') ])
         ,(normalize_tpms,     ove3, [ ('out_files','inputnode.in_ref') ])
         ,(t2reg_wf,           ove3, [ ('outputnode.fwd_tfm','inputnode.in_tfm') ])
         ,(dist1_wf,           ove3, [ ('outputnode.out_tpms','inputnode.in_tpms' ) ])
+        ,(ove3,               sel5, [ ('outputnode.out_tpms','inlist')])
         #
         # Tractographies
         #
@@ -150,17 +156,20 @@ def evaluation_workflow( name="Evaluation" ):
         ,(dist1_wf,       trk_dist, [ ('outputnode.out_file','inputnode.in_dwi' ) ])
         ,(sel2,           trk_dist, [ ('out','inputnode.in_mask') ])
         # Perform tractography on the fieldmap corrected
-        ,(inputnode,      trk_fmap, [ ('wm_mask','inputnode.in_mask' ), ('in_rois','inputnode.roi_file'),
+        ,(inputnode,      trk_fmap, [ ('in_rois','inputnode.roi_file'),
                                       ('in_bvec','inputnode.in_bvec'),('in_bval','inputnode.in_bval' ) ])
         ,(fmap_wf,        trk_fmap, [ ('outputnode.epi_corrected','inputnode.in_dwi' ) ])
+        ,(sel3,           trk_fmap, [ ('out','inputnode.in_mask') ])
         # Perform tractography on the topup corrected
-        ,(inputnode,       trk_rev, [ ('wm_mask','inputnode.in_mask' ), ('in_rois','inputnode.roi_file'),
+        ,(inputnode,       trk_rev, [ ('in_rois','inputnode.roi_file'),
                                       ('in_bvec','inputnode.in_bvec'),('in_bval','inputnode.in_bval' ) ])
         ,(topup_wf,        trk_rev, [ ('outputnode.epi_corrected','inputnode.in_dwi' ) ])
+        ,(sel4,            trk_rev, [ ('out','inputnode.in_mask') ])
         # Perform tractography on the t2-registration corrected
-        ,(inputnode,      trk_t2re, [ ('wm_mask','inputnode.in_mask' ), ('in_rois','inputnode.roi_file'),
+        ,(inputnode,      trk_t2re, [ ('in_rois','inputnode.roi_file'),
                                       ('in_bvec','inputnode.in_bvec'),('in_bval','inputnode.in_bval' ) ])
         ,(t2reg_wf,       trk_t2re, [ ('outputnode.epi_corrected','inputnode.in_dwi' ) ])
+        ,(sel5,           trk_t2re, [ ('out','inputnode.in_mask') ])
     ])
     return evaluation
 
