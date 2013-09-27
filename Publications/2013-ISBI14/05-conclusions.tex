@@ -3,13 +3,18 @@
 This paper proposes an evaluation framework to
 comprehensively analyze the impact of susceptibility
 induced distortion on tractography from \gls*{dmri}
-data. Inaccuracy on tractography leads to significant
-errors in posterior connectivity analyses of the
-whole-brain, specially in distortion affected regions.
+data. Inaccuracy on tractography produce errors
+and increased variability in subsequent connectivity 
+analyses of the whole-brain. Specially, in regions 
+influenced by  significant distortion.
 We publicly release the framework and also contribute
-with the evaluation of three widely-used available
-correction methodologies. We conclude that the 
-\gls*{reb} method resulted the first method in the 
-proposed rankings (geometric correctness, signal loss
-recovery and tractography impact), with the drawback
-of demanding some extra \gls*{dmri} data.
+with the evaluation of the most widely-used and
+readily-available correction methodologies. 
+This work shows that \gls*{dmri} should be corrected
+for susceptibility-induced artifacts prior to tractography
+and connectivity analyses. In that sense, the \gls*{reb} 
+method was the best classified
+in two of the three rankings (geometric 
+correctness and signal recovery), whereas \gls*{fmb}
+achieved the lowest impact on the connectivity matrix
+extracted from tractography.

@@ -2049,16 +2049,16 @@ FUNCTION {inproceedings}
   name.or.dash
   format.article.title "title" output.warn
   format.in.booktitle "booktitle" output.warn
-  format.series output
-  format.editors output
+%  format.series output
+%  format.editors output
   format.volume output
   format.number output
-  publisher empty$
-    { format.address.organization.date output }
-    { format.organization "organization" bibinfo.check output
-      format.address.publisher.date output
-    }
-  if$
+%  publisher empty$
+%    { format.address.organization.date output }
+%    { format.organization "organization" bibinfo.check output
+%      format.address.publisher.date output
+%    }
+%  if$
   format.paper output
   format.pages output
 %  format.note output
