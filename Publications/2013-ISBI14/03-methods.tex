@@ -140,17 +140,21 @@ of the tool, under the branch \texttt{nipype.workflows.dmri}.
 Testing-specific workflows are also publicly released.
 
 \paragraph*{Evaluation scores}
-In order to assess the geometrical correctness of the
-recovered phantoms, we report overlap indices, specifically
-the fuzzy Jaccard index as proposed in
-\cite{crum_generalized_2006} weighted by the volumes of
-labels. The recovered signal \emph{sanity} (dropout 
-correction) is evaluated with correlation maps, averaged
-along the time axis to take into account all the volumes
-existing on the \gls*{dmri} data. This checkpoint
-assumes that geometrical distortion is precisely
-corrected. Finally, we report the impact on tractography
-using the \gls*{frr}, that informs the number of recovered
-fibers versus the gold-standard number for a specific
-reconstruction method, and the error on the resulting
-connectivity matrices.
+We evaluated three characteristics of the corrected
+phantom. First, we assessed the geometrical correctness
+and reported overlap indices of three \glspl*{tpm} 
+(namely \gls*{csf},\gls*{wm}, and \gls*{gm}).
+More precisely, we computed the \gls*{fji} as 
+proposed in \cite{crum_generalized_2006} weighted by 
+the volumes of labels. 
+Second, to evaluate the quality of the actual 
+signal \emph{sanity} after recovery (dropout 
+correction), we studied the signal similarity
+frame by frame computing the $\ell_1$-norm
+based correlation index. We report this score
+on the B0 and the average of the remaining 32 
+\glspl*{dwi}. Third, we report the 
+impact on tractography using the \gls*{frr}, that 
+informs the number of recovered fibers versus the 
+gold-standard number for a specific reconstruction
+method.
