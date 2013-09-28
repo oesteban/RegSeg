@@ -17,29 +17,25 @@ information about these connections is collected
 into a network matrix that can be subjected to
 the so-called ``connectome analysis''.
 
-However, such a complex workflow is prone to
-flaws that have been detailedly reported 
-\cite{jones_twenty-five_2010}.
-In order to enable reliable and robust connectome
-analyses of the brain, some weak processing points must
-be improved. One prominent source
-of inaccuracy are the susceptibility-derived artifacts,
+Among all the difficulties that such a complex workflow
+raises \cite{jones_twenty-five_2010}, we will
+address here the susceptibility-derived artifacts,
 for which \Gls*{epi} schemes are specially sensitive.
 As susceptibility changes at tissue interfaces,
-so does the magnetic field. The consequence of the 
-inhomogeneity of the field translates in a highly 
-distorted imaged anatomy and a significant signal 
-destruction of certain regions of the brain 
+so does the magnetic field. This inhomogeneities 
+of the field translate in a highly distorted imaged 
+anatomy and a significant signal  destruction of 
+certain regions of the brain 
 (e.g. the orbitofrontal lobe, for the proximity of the
 air surrounding sinuses). This artifact has been
-profoundly described, generally within \gls*{fmri}
-literature because they are usually acquired with 
+profoundly described, generally within the context of
+functional MRI because it is usually acquired with 
 \gls*{epi} as \gls*{dmri}. 
 
 First approaches to
 retrospective correction \cite{jezzard_correction_1995},
 relied on an extra \gls*{mri} acquisition (so-called
-field mapping), that probes the inhomogeneity of the field.
+\emph{field mapping}), that probes the inhomogeneity of the field.
 A second theory-based breed of methodologies acquire a 
 map of the \gls*{psf} of the \gls*{epi} readouts to correct 
 for the artifact \cite{robson_measurement_1997}. 
@@ -49,26 +45,27 @@ extra \gls*{epi} volumes
 with specific differences that enable correction, for instance
 the opposed direction of the phase encoding gradients 
 Finally, the last family of methodologies acquire an 
-extra \gls*{t2} image, and use its anatomical correctness 
+extra T2-weighted image, and use its anatomical correctness 
 as reference to find the deformation map through nonlinear 
 registration \cite{kybic_unwarping_2000,studholme_accurate_2000}.
 Registration-based methods usually map
-the \gls*{t2} image to the so-called baseline (B0) volume 
-of \gls*{dmri}. The choice of \gls*{t2} is due to the strong
+the T2 image to the so-called baseline (B0) volume 
+of \gls*{dmri}. The choice of T2 is due to the strong
 similarity of intensity distribution with the B0 of \gls*{dmri}
-datasets. More recent works report extensions of the existing
-techniques \cite{andersson_how_2003,holland_efficient_2010,
-andersson_comprehensive_2012}, and combined approaches
-\cite{zaitsev_point_2004}.
+datasets. More recent works report extensions or combined
+approaches of existing techniques
+\cite{andersson_how_2003,zaitsev_point_2004,%
+holland_efficient_2010,andersson_comprehensive_2012}.
 
 Even though aforementioned techniques for distortion correction
 have been studied \cite{zeng_image_2002,wu_comparison_2008},
 the lack of a gold-standard limits the possible benchmarking 
-strategies. \cite{irfanoglu_effects_2012} raised the question
+strategies. Recently, \cite{irfanoglu_effects_2012} raised the question
 of distortion-derived impacts in tractography.
 In this work, we propose an evaluation framework
-using a detailed digital phantom designed for tractography.
-Using this framework,
-we are able to compare several correction techniques and we
-provide results related to their performance in the task
-itself and their impact on subsequent tractography.
+using a digital phantom designed for connectivity assessment.
+This framework enabled us to compare several correction 
+techniques and characterize their geometrical accuracy 
+and the dropout compensation. Finally, we report their 
+impact on subsequent tractography and resulting connectivity
+matrices.

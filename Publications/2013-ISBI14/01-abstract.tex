@@ -1,24 +1,25 @@
 \begin{abstract}
-
-Connectivity analysis on \gls*{dmri} data of the whole-brain
+Connectivity analysis on diffusion MRI data of the whole-brain
 suffers from distortions originated by the standard 
-\gls*{epi} sequences used in acquisition. These artifacts
-are present at interfaces between tissues, due to the inhomogeneity
-of the field derived from the discontinuity of magnetic
-susceptibility. As a result, registered signal shows characteristic
-geometrical deformations and signal destruction. These artifacts
-suppose a significant pitfall that limits the success of tractography 
-algorithms.
+echo-planar imaging sequences used in acquisition. %
+%These artifacts are present at interfaces between tissues,
+%due to the inhomogeneity of the field derived from the 
+% discontinuity of magnetic susceptibility.
+These images show characteristic geometrical deformations
+and signal destruction that suppose a significant pitfall
+limiting the success of tractography algorithms.
 
 Several retrospective correction techniques are readily
-available. In this work, we use a renowned digital phantom 
-designed for evaluating tractography. We subject the phantom 
-to a ``theoretically correct'' and plausible deformation that
-resembles the artifact under investigation. We correct data back, 
-with three standard methodologies (namely fieldmap-based, 
-reversed encoding-based, and registration-based). 
-Finally, we rank the methods based on their geometrical 
-accuracy, the dropout compensation, and their impact on 
-the resulting tractography.
-
-\end{abstract}
+available. In this work, we use a digital phantom designed
+for the evaluation of connectivity pipelines. We subject
+the phantom to a ``theoretically correct'' and plausible
+deformation that resembles the artifact under investigation.
+We correct data back, with three standard methodologies
+(namely fieldmap-based, reversed encoding-based, and
+registration-based). Finally, we rank the methods based
+on their geometrical accuracy, the dropout compensation,
+and their impact on the resulting tractography.
+\end{abstract}%
+\begin{keywords}
+susceptibility artifacts, diffusion MRI, tractography, connectivity.
+\end{keywords}
