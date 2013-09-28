@@ -3,14 +3,12 @@
 %        1         2         3         4         5         6         7         8
 
 \documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
-
-\IEEEoverridecommandlockouts                              % This command is only needed if 
+%\IEEEoverridecommandlockouts                              % This command is only needed if 
                                                           % you want to use the \thanks command
-
-\overrideIEEEmargins                                      % Needed to meet printer requirements.
-
+%\overrideIEEEmargins                                      % Needed to meet printer requirements.
 % See the \addtolength command later in the file to balance the column lengths
 % on the last page of the document
+%\documentclass{article}
 
 % The following packages can be found on http:\\www.ctan.org
 \usepackage[pdftex]{graphicx} % for pdf, bitmapped graphics files
@@ -19,24 +17,51 @@
 %\usepackage{epsfig} % for postscript graphics files
 %\usepackage{mathptmx} % assumes new font selection scheme installed
 %\usepackage{times} % assumes new font selection scheme installed
-%\usepackage{amsmath} % assumes amsmath package installed
+\usepackage{amsmath} % assumes amsmath package installed
 %\usepackage{amssymb}  % assumes amsmath package installed
 %\usepackage[numbers,sort&compress]{natbib}
 %\usepackage{IEEEtran}
+
+
+\usepackage{spconf}
 \usepackage{glossaries}
 \usepackage[breaklinks,hidelinks]{hyperref}
 
-\title{\LARGE \bf
-Impact of susceptibility distortions in connectivity analysis using dMRI
+\title{Impact of susceptibility distortions in connectivity analysis}
+
+\name{%
+\shortstack{Oscar Esteban$^{1,2}$, %
+Alessandro Daducci$^{2}$, %
+Emmanuel Caruyer$^{3}$, %
+Kieran O'Brien$^{4}$,\\%
+Mar\'ia Jes\'us Ledesma-Carbayo$^{1}$, %
+Meritxell Bach-Cuadra$^{2}$, %
+and Andr\'es Santos$^{1}$}%
+}
+
+\address{%
+$^{1}$Biomedical Image Technologies (BIT), ETSI Telecom.,
+U. Polit\'ecnica de Madrid and CIBER-BBN, Spain. \\
+$^{2}$ Signal Processing Laboratory (LTS5), \'Ecole Polytechnique
+F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland. \\
+$^{3}$ Section of Biomedical Image Analysis, Dept. of Radiology,
+University of Pennsylvania, Philadelphia, PA, USA. \\
+$^{4}$  Department of Radiology, University of Geneva, Geneva, Switzerland.
 }
 
 
-\author{Oscar Esteban$^{1,2}$, Alessandro Daducci$^{2}$, Emmanuel Caruyer$^{3}$, Kieran O'Brien,\\
-Mar\'ia Jes\'us Ledesma-Carbayo, Meritxell Bach-Cuadra, and Andr\'es Santos% <-this % stops a space
-\thanks{$^{1}$Oscar Esteban is with ... 
-        {\tt\small oesteban@die.upm.es}}%
-\thanks{$^{2}$Blah blah.}%
-}
+%\name{Oscar Esteban$^{1,2}$, Alessandro Daducci$^{2}$, Emmanuel Caruyer$^{3}$, Kieran O'Brien,\\
+%Mar\'ia Jes\'us Ledesma-Carbayo, Meritxell Bach-Cuadra, and Andr\'es Santos% <-this % stops a space
+
+%\author{%
+%Oscar Esteban$^{1,2}$,%
+%Alessandro Daducci$^{2}$,%
+%Emmanuel Caruyer$^{3}$,%
+%Kieran O'Brien$^{4}$, \\%
+%Mar\'ia Jes\'us Ledesma-Carbayo$^{1}$,%
+%Meritxell Bach-Cuadra$^{2}$,%
+%and Andr\'es Santos$^{1}$
+%}
 
 \input{98-acronyms}
 

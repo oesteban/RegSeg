@@ -86,12 +86,12 @@ different phase encoding directions, and the ground-truth
 
 \subsection{Correction methods}
 
-\paragraph{\Gls*{fmb}} As it was previously described,
+\paragraph*{\Gls*{fmb}} As it was previously described,
 this family of correction technologies infer a \gls*{vsm}
 from the phase difference map. In this work, we use the
 tool \texttt{fugue} \cite{jenkinson_fsl_2012} aforementioned.
 
-\paragraph{\Gls*{reb}} We use the tool
+\paragraph*{\Gls*{reb}} We use the tool
 \texttt{topup} from \cite{jenkinson_fsl_2012} to correct
 using the B0 of a reverse-encoding simulation of the \gls*{dti}.
 In this second case, the \gls*{vsm} is inferred from the
@@ -99,7 +99,7 @@ differences between the two corresponding B0. This technique
 also uses least-squares-fitting to interpolate the undistorted
 signal, and therefore provides with a robust dropout correction.
 
-\paragraph{\Gls*{t2b}} For this last methodology
+\paragraph*{\Gls*{t2b}} For this last methodology
 we fine-tuned the \texttt{ANTs} tool \cite{avants_ants:_2013},
 in order that registering the B0 to the T2. Additionally,
 undistorted images are corrected for dropout using the determinant
