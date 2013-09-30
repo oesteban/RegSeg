@@ -32,27 +32,28 @@ profoundly described, generally within the context of
 functional MRI because it is usually acquired with 
 \gls*{epi} as \gls*{dmri}. 
 
-First approaches to
-retrospective correction \cite{jezzard_correction_1995},
-relied on an extra \gls*{mri} acquisition (so-called
-\emph{field mapping}), that probes the inhomogeneity of the field.
+\Gls*{fmb} methods supposed the first approach to retrospective
+correction \cite{jezzard_correction_1995}. They rely on one
+extra acquisition (\emph{field mapping}), that probes the 
+inhomogeneity of the field.
 A second theory-based breed of methodologies acquire a 
-map of the \gls*{psf} of the \gls*{epi} readouts to correct 
+map of the \acrlong*{psf} of the \gls*{epi} readouts to correct 
 for the artifact \cite{robson_measurement_1997}. 
 Next generation of methodologies \cite{cordes_geometric_2000,
 chiou_simple_2000}, make use of the acquisition of 
 extra \gls*{epi} volumes 
 with specific differences that enable correction, for instance
-the opposed direction of the phase encoding gradients 
+the opposed direction of the phase encoding gradients. We will
+refer to these methods as \gls*{reb}.
 Finally, the last family of methodologies acquire an 
 extra T2-weighted image, and use its anatomical correctness 
 as reference to find the deformation map through nonlinear 
 registration \cite{kybic_unwarping_2000,studholme_accurate_2000}.
-Registration-based methods usually map
-the T2 image to the so-called baseline (B0) volume 
+\gls*{t2b} methods usually map
+the T2 image to the \emph{baseline} volume or ``B0''
 of \gls*{dmri}. The choice of T2 is due to the strong
-similarity of intensity distribution with the B0 of \gls*{dmri}
-datasets. More recent works report extensions or combined
+similarity of intensity distribution with respect the B0.
+More recent works report extensions or combined
 approaches of existing techniques
 \cite{andersson_how_2003,zaitsev_point_2004,%
 holland_efficient_2010,andersson_comprehensive_2012}.
