@@ -8,20 +8,20 @@ reconstruction Challenge held in ISBI 2013
 (0.5mm isotropic) T1 (TE/TR=10/1500ms) and T2 
 (TE/TR=90/5000ms) images, as well as a \gls*{dmri}
 (1.0mm isotropic, $b$=1200, 32 evenly-distributed 
-directions, 1 B0 image) image.
+directions, 1 \textit{b0} image) image.
 The phantom includes \gls*{wm} fiber bundles, 
 \gls*{csf} and \gls*{gm}. Diffusion is modeled by a 
 restricted and a hindered compartment, similar to
 \cite{assaf_composite_2005}.
 
 \subsection{Theory-based synthetic distortion}
-
+\label{sec:distortion}
 \Gls*{fmb} methodologies use a map
 of the field in the scanner. More precisely, the
 phase difference between two subsequent samplings
 of the fieldmap. With that information, it is possible
 to compute the theoretical displacement that each
-voxel is to suffer, the so-called \gls*{vsm}. The
+voxel undergoes, the so-called \gls*{vsm}. The
 most prominent feature of this \gls*{vsm} is that all
 the shifts have the same orientation (parallel to the
 phase-encoding direction of the \gls*{epi}) and their
@@ -34,7 +34,7 @@ generated a synthetic phase-difference map
 consistent with the phantom.  We defined two regions 
 of smooth de-phasing (up to $0.05\pi$ rad. excursions) 
 and computed the corresponding \gls*{vsm}, using the 
-tools distributed with the \texttt{FSL} package 
+tools distributed with the \emph{FSL} package 
 \cite{jenkinson_fsl_2012}  and
 standard parameters ($\Delta$TE=2.46ms for the
 fieldmap and \emph{effective dwell time} of 
@@ -55,85 +55,85 @@ different phase encoding directions, and a ground-truth
 
 \begin{figure}[thpb]
    \centering
-   \includegraphics[width=0.8\columnwidth]{Fig01-Phantom}
-   \caption{Original and distorted digital phantom (sagittal
-   planes). A) T2-weighted image; B) undistorted B0 volume;
-   C and D) distorted B0 volumes with opposed phase encoding 
+   \includegraphics[width=0.95\columnwidth]{Fig01-Phantom}
+   \caption{Original and distorted digital phantom.
+   A) T2-weighted image; B) undistorted \textit{b0} volume;
+   C, D) distorted \textit{b0} volumes with opposed phase encoding 
    directions.}
    \label{fig:label}
 \end{figure}
 
 \subsection{Correction methods}
 
-\paragraph*{\Gls*{fmb}} As it was previously described,
-this family of correction technologies infer a \gls*{vsm}
-from the phase difference map. In this work, we use the
-tool \texttt{fugue} \cite{jenkinson_fsl_2012} aforementioned.
+Three out of four methods presented in \autoref{sec:intro}
+were tested on the evaluation framework.
 
-\paragraph*{\Gls*{reb}} We use the tool
-\texttt{topup} from \cite{jenkinson_fsl_2012} to correct
-using the B0 of a reverse-encoding simulation of the \gls*{dti}.
-In this second case, the \gls*{vsm} is inferred from the
-differences between the two corresponding B0. This technique
-also uses least-squares-fitting to interpolate the undistorted
-signal, and therefore provides with a robust dropout correction.
+\paragraph*{\Gls*{fmb}} In this case, the pipeline essentially
+the same as the one used for generating the distortion, but
+applying the \gls*{vsm} in the opposite direction.
 
-\paragraph*{\Gls*{t2b}} For this last methodology
-we fine-tuned the \texttt{ANTs} tool \cite{avants_ants:_2013},
-in order that registering the B0 to the T2. Additionally,
-undistorted images are corrected for dropout using the determinant
+\paragraph*{\Gls*{reb}} We made use of the implementation found
+in \emph{FSL} (called \texttt{topup}) to correct using the \textit{b0} of a
+reverse-encoding simulation of the \glspl*{dwi}. In this second
+case, a \gls*{vsm} is inferred from the differences between the 
+two corresponding \textit{b0}.
+
+\paragraph*{\Gls*{t2b}} For the last surveyed method,
+we fine-tuned \emph{ANTs} \cite{avants_ants:_2013},
+in order to register \textit{b0} to T2. To this end, we used a
+multi-resolution scheme with 3 levels of subsampling and smoothing,
+mutual information metric, and symmetric diffeomorphic transform 
+(\texttt{SyN}). Several configurations of kernel widths for the 
+regularization smoothers were tested, and finally selected 
+0.5/1.0 voxels (gradient/deformation fields, respectively) 
+for its best result. Additionally, undistorted images are 
+corrected for dropout using the determinant
 of the Jacobian of the deformation field.
 
 \subsection{Evaluation}
 
-\paragraph*{Proposed workflows}
-We used \texttt{nipype} \cite{gorgolewski_nipype:_2011}
-to conveniently integrate the correction methods in
-comprehensive evaluation workflows:
+The four modules described so far (namely, phantom
+deformation, \gls*{fmb} correction, \gls*{reb}
+correction and \gls*{t2b} correction) were conveniently
+integrated in second order workflows using
+\emph{nipype} \cite{gorgolewski_nipype:_2011}.
+The choice of this tool grants the reproducibility
+of the experiments, among other advantages.
 
-\begin{itemize}
-\item \textbf{Phantom deformation}: We release the pipeline
-that generates the gold-standard, along with
-distorted versions of the \glspl*{tpm} for
-evaluation purposes.
-\item \textbf{Correction workflow}: A high-level pipeline
-integrates the three proposed correction methods,
-ensuring that all the requirements for inputs are
-met. As outputs this workflow produces the different
-corrected versions of the phantom (\gls*{fmb}, \gls*{reb}
-and \gls*{t2b}) alongside corrected versions of the
-distorted \glspl*{tpm}.
-\item \textbf{Reconstruction workflow}: This pipeline uses
-the Diffusion Toolkit \cite{wang_diffusion_2007}, 
-to produce deterministic tractography
-from \gls*{dmri} data at the input. Therefore,
-tractographies of original, and recovered data
-are produced for comparison.
-\item \textbf{Benchmarking workflow}: The final processing
-element collects all the outputs from the previous
-workflows and extracts the evaluation scores.
-\end{itemize}
-General-purpose 
-workflows have been contributed to the upstream code
-of the tool, under the branch \texttt{nipype.workflows.dmri}.
-Testing-specific workflows are also publicly released.
+In order to enable the analysis of the influence of
+distortions on the final connectivity analyses,
+a intermediate step was also implemented to
+provide with deterministic tractography,
+using the \emph{Diffusion Toolkit} \cite{wang_diffusion_2007}.
+The original phantom, one distorted version, and
+the corrected instances are fed to this module.
+Additionally, the original tissue probability maps
+are also distorted and corrected, for computing overlap
+indices.
+Each tractography was restricted by its corresponding 
+\gls*{wm} mask (e.g. the distorted and corrected with
+fieldmap for the tractography that followed this method). 
+In all cases, we used 10 random seeds at each seeding
+voxel and the seeding voxels were taken from the 
+ground-truth, mimicking the procedure with real data
+(in which this regions are typically projected from the
+anatomically correct T1).
 
-\paragraph*{Evaluation scores}
-We evaluated three characteristics of the corrected
-phantom. First, we assessed the geometrical correctness
-and reported overlap indices of three \glspl*{tpm} 
-(namely \gls*{csf},\gls*{wm}, and \gls*{gm}).
-More precisely, we computed the \gls*{fji} as 
-proposed in \cite{crum_generalized_2006} weighted by 
-the volumes of labels. 
+Finally, the proposed workflows are connected to performance
+assessment modules. We evaluated three characteristics
+of the correction methods. 
+First, we assessed the geometrical correctness
+and reported overlap indices of three tissue
+probability maps (namely \gls*{csf}, \gls*{wm},
+and \gls*{gm}),
+weighting the average by the volumes of labels.
 Second, to evaluate the quality of the actual 
-signal \emph{sanity} after recovery (dropout 
-correction), we studied the signal similarity
-frame by frame computing the $\ell_1$-norm
-based correlation index. We report this score
-on the B0 and the average of the remaining 32 
-\glspl*{dwi}. Third, we report the 
-impact on tractography using the \gls*{frr}, that 
-informs the number of recovered fibers versus the 
-gold-standard number for a specific reconstruction
-method.
+signal dropout correction, we studied the 
+signal similarity frame by frame computing the $\ell_1$-norm
+correlation index. We report this score
+on the \textit{b0} and the average of the remaining 32 
+\glspl*{dwi}. Third, we studied the impact on the
+connectivity matrices reporting the number of
+false positives (inexistent connections in the
+gold-standard) and false negatives (or connections
+lost).

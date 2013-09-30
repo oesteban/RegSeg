@@ -1,11 +1,11 @@
 \section{INTRODUCTION}
-
+\label{sec:intro}
 In-vivo whole-brain connectivity analysis has been a
 research topic of high interest for the last
 5 years. 
 \Gls*{dmri} can be used to probe the
 orientation of fiber bundles within the brain,
-generally applying \gls*{epi} sequences.
+and is generally acquired with an \gls*{epi} sequence.
 After a signal reconstruction step, 
 tractography algorithms draw a map of the sampled 
 structures.
@@ -20,22 +20,22 @@ the so-called ``connectome analysis''.
 Among all the difficulties that such a complex workflow
 raises \cite{jones_twenty-five_2010}, we will
 address here the susceptibility-derived artifacts,
-for which \Gls*{epi} schemes are specially sensitive.
-As susceptibility changes at tissue interfaces,
-so does the magnetic field. This inhomogeneities 
-of the field translate in a highly distorted imaged 
-anatomy and a significant signal  destruction of 
+for which \Gls*{epi} schemes are especially sensitive.
+Magnetic susceptibility disturbs the magnetic field 
+close to tissue interfaces. This inhomogeneity 
+of the field translates in a highly distorted imaged 
+anatomy and a significant signal destruction of 
 certain regions of the brain 
 (e.g. the orbitofrontal lobe, for the proximity of the
 air surrounding sinuses). This artifact has been
 profoundly described, generally within the context of
-functional MRI because it is usually acquired with 
-\gls*{epi} as \gls*{dmri}. 
+functional MRI because they are also acquired with 
+\gls*{epi}. 
 
 \Gls*{fmb} methods supposed the first approach to retrospective
 correction \cite{jezzard_correction_1995}. They rely on one
 extra acquisition (\emph{field mapping}), that probes the 
-inhomogeneity of the field.
+inhomogeneity of the B0 field.
 A second theory-based breed of methodologies acquire a 
 map of the \acrlong*{psf} of the \gls*{epi} readouts to correct 
 for the artifact \cite{robson_measurement_1997}. 
@@ -50,9 +50,9 @@ extra T2-weighted image, and use its anatomical correctness
 as reference to find the deformation map through nonlinear 
 registration \cite{kybic_unwarping_2000,studholme_accurate_2000}.
 \gls*{t2b} methods usually map
-the T2 image to the \emph{baseline} volume or ``B0''
+the T2 image to the \emph{baseline} volume or \textit{b0}
 of \gls*{dmri}. The choice of T2 is due to the strong
-similarity of intensity distribution with respect the B0.
+similarity of intensity distribution with respect the \textit{b0}.
 More recent works report extensions or combined
 approaches of existing techniques
 \cite{andersson_how_2003,zaitsev_point_2004,%
