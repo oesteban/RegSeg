@@ -10,8 +10,8 @@ and interpretation of results.
 \begin{figure*}[tpb]
    \centering
    \includegraphics[width=0.9\textwidth]{Fig02-Results}
-   \caption{The three major stages of the evaluation framework,
-   along with the associated visual results. First row represents
+   \caption{Visual comparison of correction methods results. 
+   First row represents
    a coronal section of the \textit{b0} volume. In second row, the outcome
    of tractography, showing only tracks that connect two different
    network nodes. Third row shows the associated connectivity matrix. }
@@ -35,8 +35,7 @@ an appropriate method for susceptibility correction.
 
 \subsection{Signal loss recovery}
 
-A second workflow evaluated the different correction 
-methodologies to show the similarity of the recovered
+A second workflow investigated the similarity of the recovered
 signal with respect to the original (undistorted).
 In this second study, \gls*{reb} performed significantly
 better than the other two methods, as reported
@@ -67,7 +66,7 @@ but increasing the false connections count to 3.
 Finally, \gls*{t2b} presented 9 false and 3 lost connections.
 
 For the shake of completeness, we also document the outcome
-of tractography after each correction method. After distortion,
+of tractography at each step of the workflow. After distortion,
 we obtained 1750 tracks and a characteristic length of 
 $40.64\pm8.12$mm.
 \gls*{fmb} produced 1900 tracks/$40.53\pm8.07$mm., \gls*{reb}
@@ -75,7 +74,7 @@ obtained 2200 tracks/$41.15\pm7.60$mm., and 2500
 tracks/$40.60\pm7.81$mm. for \gls*{t2b}. Although track counting has
 been used as a measurement of success and as a weight of connectivity 
 strength, the number of tracks produced by tractography strongly rely
-on the seeding performed and the smoothing caused by interpolations 
+on the seeding performed and the smoothing caused by interpolation used
 within correction methodologies.
 
 \subsection{Discussion}
@@ -89,24 +88,26 @@ one of two lost connections after distortion. \Gls*{fmb} achieved
 very positive scores. Finally, the \gls*{t2b} method did not achieve
 the necessary high-standards to recommend its use. We understand
 that specific methods with anisotropic regularization that completely
-restrict deformations to the phase-encoding axis would perform
-significantly better as compares to the standard methods in this study.
+restrict deformations to the phase-encoding direction would perform
+significantly better compared to the standard method included
+in this study.
 
 One relevant limitation of this work is that the \gls*{fmb} is
 used both in distortion creation and correction, what could
 bias results. Nonetheless, \gls*{reb} performed better that \gls*{fmb}.
 A second limitation is found on the impossibility of integrating the
 point spread function-based methods for two reasons.
-First, the unmet need of a point spread function map consistent
-with the synthetic phase-difference map. Second, to our knowledge,
+Firstly, the unmet need of a point spread function map consistent
+with the synthetic phase-difference map. Secondly, to our knowledge,
 there are no implementations of the method readily available.
 In practice, this second limitation is narrowed down by the
 fact that typical acquisition protocols usually include one or more
 datasets among field mapping, reversed-encoding \textit{b0} or T2,
 but they do not include the point-spread function mapping.
 
-This work presents an evaluation framework that will be extended
-in order to evaluate numerous different susceptibility distortion
-configurations, better characterizing the phenomenon. Also, the
-framework can be used for studying the impact of other artifacts
-as subject's motion or eddy currents-derived distortions.
+Future extensions of this work will evaluate
+different realizations of the synthetic phase-difference map,
+better characterizing the phenomenon. Moreover, the
+framework can be enhanced for studying the impact of 
+other artifacts as subject's motion or eddy 
+currents-derived distortions.

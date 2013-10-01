@@ -2,13 +2,13 @@
 
 \subsection{Digital Phantom}
 Based on the fiber geometries of the digital phantom 
-created for the High angular resolution diffusion imaging 
-reconstruction Challenge held in ISBI 2013 
+created for the \emph{High angular resolution diffusion imaging 
+reconstruction Challenge} held in ISBI 2013 
 (San Francisco, US), we simulated high resolution 
 (0.5mm isotropic) T1 (TE/TR=10/1500ms) and T2 
 (TE/TR=90/5000ms) images, as well as a \gls*{dmri}
 (1.0mm isotropic, $b$=1200, 32 evenly-distributed 
-directions, 1 \textit{b0} image) image.
+directions, 1 \textit{b0} volume) image.
 The phantom includes \gls*{wm} fiber bundles, 
 \gls*{csf} and \gls*{gm}. Diffusion is modeled by a 
 restricted and a hindered compartment, similar to
@@ -44,10 +44,10 @@ Once a realistic \gls*{vsm} was available, we generated
 the corresponding distorted \glspl*{dwi}, in two opposed
 phase-gradient encoding directions. The second simulated
 ``acquisition'' of the same phantom was necessary 
-for evaluating the second family of correction methods.
+for evaluating \gls*{reb} methods.
 
-In this simple manner, we generated a full gold-standard
-containing realistic T1 and T2
+Therefore, following the described strategy we generated 
+a full gold-standard containing realistic T1 and T2
 at high resolution, \glspl*{dwi} acquired in two
 different phase encoding directions, and a ground-truth
 \gls*{dwi} data, which is not available for real datasets.
@@ -66,19 +66,18 @@ different phase encoding directions, and a ground-truth
 \subsection{Correction methods}
 
 Three out of four methods presented in \autoref{sec:intro}
-were tested on the evaluation framework.
+were tested on the evaluation framework. \Gls*{fmb} correction
+is essentially the same as the one used for generating the 
+distortion, using the synthetic fieldmap to infer a new \gls*{vsm}.
+For practical reasons (distortion on the mask, signal dropout), the
+method did not achieve a perfect geometrical correction as might be
+expected if the process was exactly inverse. For \Gls*{reb} correction,
+we made use of the implementation found in \emph{FSL} (\texttt{topup})
+that demands for the \textit{b0} of the reverse-encoding simulation.
+In this second case, the \gls*{vsm} is inferred from the differences
+between the two corresponding \textit{b0}.
 
-\paragraph*{\Gls*{fmb}} In this case, the pipeline essentially
-the same as the one used for generating the distortion, but
-applying the \gls*{vsm} in the opposite direction.
-
-\paragraph*{\Gls*{reb}} We made use of the implementation found
-in \emph{FSL} (called \texttt{topup}) to correct using the \textit{b0} of a
-reverse-encoding simulation of the \glspl*{dwi}. In this second
-case, a \gls*{vsm} is inferred from the differences between the 
-two corresponding \textit{b0}.
-
-\paragraph*{\Gls*{t2b}} For the last surveyed method,
+Finally, for evaluating \Gls*{t2b},
 we fine-tuned \emph{ANTs} \cite{avants_ants:_2013},
 in order to register \textit{b0} to T2. To this end, we used a
 multi-resolution scheme with 3 levels of subsampling and smoothing,
@@ -101,38 +100,37 @@ The choice of this tool grants the reproducibility
 of the experiments, among other advantages.
 
 In order to enable the analysis of the influence of
-distortions on the final connectivity analyses,
-a intermediate step was also implemented to
-provide with deterministic tractography,
+distortions on the final connectivity outcome,
+an intermediate step was also implemented to
+produce deterministic tractography,
 using the \emph{Diffusion Toolkit} \cite{wang_diffusion_2007}.
 The original phantom, one distorted version, and
 the corrected instances are fed to this module.
 Additionally, the original tissue probability maps
 are also distorted and corrected, for computing overlap
 indices.
-Each tractography was restricted by its corresponding 
-\gls*{wm} mask (e.g. the distorted and corrected with
-fieldmap for the tractography that followed this method). 
-In all cases, we used 10 random seeds at each seeding
+Each tractography was restricted to its corresponding 
+\gls*{wm} mask, after distortion and correction when
+applied. For all the cases, we used 10 random seeds at each seeding
 voxel and the seeding voxels were taken from the 
-ground-truth, mimicking the procedure with real data
-(in which this regions are typically projected from the
+ground-truth, mimicking the usual procedure on real data
+(where regions are typically mapped from the
 anatomically correct T1).
 
-Finally, the proposed workflows are connected to performance
+The evaluation framework is completed by automated 
 assessment modules. We evaluated three characteristics
 of the correction methods. 
-First, we assessed the geometrical correctness
-and reported overlap indices of three tissue
+Firstly, we assessed the geometrical correctness
+reporting overlap indices of three tissue
 probability maps (namely \gls*{csf}, \gls*{wm},
-and \gls*{gm}),
-weighting the average by the volumes of labels.
-Second, to evaluate the quality of the actual 
+and \gls*{gm}), weighting the average by tissue
+volumes.
+Secondly, to evaluate the quality of the actual 
 signal dropout correction, we studied the 
 signal similarity frame by frame computing the $\ell_1$-norm
 correlation index. We report this score
 on the \textit{b0} and the average of the remaining 32 
-\glspl*{dwi}. Third, we studied the impact on the
+\glspl*{dwi}. Thirdly, we studied the impact on the
 connectivity matrices reporting the number of
 false positives (inexistent connections in the
 gold-standard) and false negatives (or connections
