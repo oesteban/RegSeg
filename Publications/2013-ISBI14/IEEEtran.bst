@@ -1540,6 +1540,35 @@ FUNCTION {format.school}
 
 
 %% volume/number/series/chapter/pages
+FUNCTION {format.bpages}
+{ pages empty$ 'skip$
+    { pages is.multiple.pages
+        { n.dashify }
+        { skip$ }
+      if$
+    }
+  if$
+}
+
+
+
+FUNCTION {format.bvolume}
+{ volume empty.field.to.null.string
+  duplicate$ empty$ 'skip$
+    { this.to.prev.status
+      this.status.std
+      "volume" bibinfo.check 
+      number empty$ 'skip$
+         { "(" * number * ")" * }
+        if$
+      %pages empty$ 'skip$
+      %  { ":" * pages }
+      %  if$
+      cap.status.std
+    }
+  if$
+}
+
 
 FUNCTION {format.volume}
 { volume empty.field.to.null.string
@@ -1929,9 +1958,10 @@ FUNCTION {article}
   name.or.dash
   format.article.title "title" output.warn
   format.journal "journal" bibinfo.check "journal" output.warn
-  format.volume output
-  format.number.if.use.for.article output
-  format.pages output
+%  format.volume output
+%  format.number.if.use.for.article output
+  format.bvolume output
+%  format.pages output
   format.date "year" output.warn
 %  format.note output
 %  format.url output

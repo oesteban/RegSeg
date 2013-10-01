@@ -40,7 +40,8 @@ standard parameters ($\Delta$TE=2.46ms for the
 fieldmap and \emph{effective dwell time} of 
 0.77ms for the \gls*{epi}).
 
-Once a realistic \gls*{vsm} was available, we generated
+From this synthetic \gls*{vsm},
+we generated
 the corresponding distorted \glspl*{dwi}, in two opposed
 phase-gradient encoding directions. The second simulated
 ``acquisition'' of the same phantom was necessary 
@@ -66,13 +67,14 @@ different phase encoding directions, and a ground-truth
 \subsection{Correction methods}
 
 Three out of four methods presented in \autoref{sec:intro}
-were tested on the evaluation framework. \Gls*{fmb} correction
+were tested on the evaluation framework. 
+
+\Gls*{fmb} correction
 is essentially the same as the one used for generating the 
 distortion, using the synthetic fieldmap to infer a new \gls*{vsm}.
-For practical reasons (distortion on the mask, signal dropout), the
-method did not achieve a perfect geometrical correction as might be
-expected if the process was exactly inverse. For \Gls*{reb} correction,
-we made use of the implementation found in \emph{FSL} (\texttt{topup})
+
+For \Gls*{reb} correction, we made use of the implementation found 
+in \emph{FSL} (\texttt{topup})
 that demands for the \textit{b0} of the reverse-encoding simulation.
 In this second case, the \gls*{vsm} is inferred from the differences
 between the two corresponding \textit{b0}.
@@ -99,7 +101,7 @@ integrated in second order workflows using
 The choice of this tool grants the reproducibility
 of the experiments, among other advantages.
 
-In order to enable the analysis of the influence of
+To evaluate the influence of
 distortions on the final connectivity outcome,
 an intermediate step was also implemented to
 produce deterministic tractography,
@@ -127,7 +129,7 @@ and \gls*{gm}), weighting the average by tissue
 volumes.
 Secondly, to evaluate the quality of the actual 
 signal dropout correction, we studied the 
-signal similarity frame by frame computing the $\ell_1$-norm
+similarity volume by volume computing the $\ell_1$-norm
 correlation index. We report this score
 on the \textit{b0} and the average of the remaining 32 
 \glspl*{dwi}. Thirdly, we studied the impact on the

@@ -44,7 +44,7 @@ similarity index for the \textit{b0} volume and an average $97.65\%$
 for the remaining 31 \glspl*{dwi}. Again, the second
 qualified was \gls*{fmb}, which achieved very close results
 for the \glspl*{dwi} ($96.26\%$) but not as good for the \textit{b0}
-volume. Visual inspection of the recovered data confirm the 
+volume. Visual inspection of the recovered data confirms the 
 results presented in the Table (\autoref{fig:results}, first
 row). Finally, \gls*{t2b} confirmed that its correction
 can not be compared, even when using the intensity compensation
@@ -57,15 +57,16 @@ connecting regions, with an average length of $40.88\pm8.06$mm.
 The corresponding connectivity matrix presented 25 connections 
 between the total of 27 different seeding regions.
 
-The distortion of the phantom caused 2 false positives (inexistent 
-connections created by distortion) and 2 false negatives 
-(connections vanished). The correction methods had an adverse impact
+The distortion of the phantom caused 2 false connections 
+(positive connections that are not present on the ground-truth) 
+and 2 false negatives (connections vanished).
+The correction methods had an adverse impact
 on connectivity. Only \gls*{reb} could recover one lost connection
 but increasing the false connections count to 3.
 \gls*{fmb} ranked second, with 5 false and 2 lost connections.
 Finally, \gls*{t2b} presented 9 false and 3 lost connections.
 
-For the shake of completeness, we also document the outcome
+For the sake of completeness, we also document the outcome
 of tractography at each step of the workflow. After distortion,
 we obtained 1750 tracks and a characteristic length of 
 $40.64\pm8.12$mm.
@@ -94,7 +95,11 @@ in this study.
 
 One relevant limitation of this work is that the \gls*{fmb} is
 used both in distortion creation and correction, what could
-bias results. Nonetheless, \gls*{reb} performed better that \gls*{fmb}.
+bias results. For practical reasons (distortion on the mask, 
+signal dropout), the \gls*{fmb} can not achieve a perfect 
+geometrical correction as might be
+expected if the process was exactly inverse.
+Nonetheless, \gls*{reb} performed better that \gls*{fmb}.
 A second limitation is found on the impossibility of integrating the
 point spread function-based methods for two reasons.
 Firstly, the unmet need of a point spread function map consistent
