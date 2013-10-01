@@ -1561,9 +1561,9 @@ FUNCTION {format.bvolume}
       number empty$ 'skip$
          { "(" * number * ")" * }
         if$
-      %pages empty$ 'skip$
-      %  { ":" * pages }
-      %  if$
+      pages empty$ 'skip$
+        { ":" * pages * }
+        if$
       cap.status.std
     }
   if$
