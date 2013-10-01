@@ -115,7 +115,8 @@ indices.
 Each tractography was restricted to its corresponding 
 \gls*{wm} mask, after distortion and correction when
 applied. For all the cases, we used 10 random seeds at each seeding
-voxel and the seeding voxels were taken from the 
+voxel (belonging to one out of 27 different seeding regions).
+The seeding regions were taken from the 
 ground-truth, mimicking the usual procedure on real data
 (where regions are typically mapped from the
 anatomically correct T1).
@@ -133,7 +134,7 @@ signal dropout correction, we studied the
 similarity volume by volume computing the $\ell_1$-norm
 correlation index. We report this score
 on the \textit{b0} and the average of the remaining 32 
-\glspl*{dwi}. Thirdly, we studied the impact on the
+volumes. Thirdly, we studied the impact on the
 connectivity matrices reporting the number of
 false positives (inexistent connections in the
 gold-standard) and false negatives (or connections
