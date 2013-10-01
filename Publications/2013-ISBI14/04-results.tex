@@ -13,8 +13,11 @@ and interpretation of results.
    \caption{Visual comparison of correction methods results. 
    First row represents
    a coronal section of the \textit{b0} volume. In second row, the outcome
-   of tractography, showing only tracks that connect two different
-   network nodes. Third row shows the associated connectivity matrix. }
+   of tractography after filtering tracks that did not connect two regions.
+   Third row shows the associated connectivity matrices. First column shows
+   the ground-truth. For the remaining steps, false positives have been marked
+   in red color and false negatives in blue. Underlaying in gray color,
+   the true positive (correctly detected) connections. }
    \label{fig:results}
 \end{figure*}
 
@@ -55,6 +58,7 @@ based on the determinant of the deformation field.
 The gold-standard contained a total of 1800 valid tracks
 connecting regions, with an average length of $40.88\pm8.06$mm.
 The corresponding connectivity matrix presented 25 connections.
+Results are presented in last row of \autoref{fig:results}.
 
 The distortion of the phantom caused 2 false connections 
 (positive connections that are not present on the ground-truth) 
