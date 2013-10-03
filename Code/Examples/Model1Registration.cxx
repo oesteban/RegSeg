@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 	comb->SetInput(1,r2->GetOutput());
 	comb->Update();
 	ImageType::Pointer im = comb->GetOutput();
-	im->SetDirection( dir );
+	//im->SetDirection( dir );
 
 	ls->SetReferenceImage( im );
 
