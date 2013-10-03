@@ -113,9 +113,9 @@ def distortion_workflow(name="synthetic_distortion"):
     applyWarp = fugue_all_workflow()
     vsm_fwd_mask = pe.Node(fsl.FUGUE(forward_warping=True), name='Fugue_WarpMask')
     binarize = pe.Node( fs.Binarize( min=0.00001 ), name="binarize" )
-    warpimages = pe.MapNode( fsl.FUGUE(forward_warping=True,icorr=False), iterfield=['in_file'], name='WarpImages' )
+    warpimages = pe.MapNode( fsl.FUGUE(forward_warping=True,icorr=True), iterfield=['in_file'], name='WarpImages' )
     normalize_tpms = pe.Node( niu.Function( input_names=['in_files'], output_names=['out_files'], function=normalize ), name='Normalize' )
-    fixsignal = pe.Node( niu.Function( input_names=['in_reference','in_distorted','in_mask' ], output_names=['out_distorted'], function=sanitize ), name='FixSignal' )
+#    fixsignal = pe.Node( niu.Function( input_names=['in_reference','in_distorted','in_mask' ], output_names=['out_distorted'], function=sanitize ), name='FixSignal' )
 
 
     outputnode = pe.Node(interface=niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_phdiff_map', 'out_tpms' ]), name='outputnode' )
@@ -133,11 +133,11 @@ def distortion_workflow(name="synthetic_distortion"):
                       ,(dm,           applyWarp, [('out_file', 'inputnode.in_vsm')])
                       ,(inputnode,    applyWarp, [('in_file', 'inputnode.in_file'),('in_mask', 'inputnode.in_mask'),('encoding_direction','inputnode.unwarp_direction') ])
                       ,(dm,          outputnode, [('out_file', 'out_vsm')])
-                      #,(applyWarp,   outputnode, [('outputnode.out_file', 'out_file')])
-                      ,(applyWarp,    fixsignal, [('outputnode.out_file', 'in_distorted')])
-                      ,(inputnode,    fixsignal, [('in_file','in_reference')])
-                      ,(vsm_fwd_mask, fixsignal, [('warped_file','in_mask')])
-                      ,(fixsignal,   outputnode, [('out_distorted','out_file')])
+                      ,(applyWarp,   outputnode, [('outputnode.out_file', 'out_file')])
+                      #,(applyWarp,    fixsignal, [('outputnode.out_file', 'in_distorted')])
+                      #,(inputnode,    fixsignal, [('in_file','in_reference')])
+                      #,(vsm_fwd_mask, fixsignal, [('warped_file','in_mask')])
+                      #,(fixsignal,   outputnode, [('out_distorted','out_file')])
                       ,(vsm_fwd_mask,  binarize, [('warped_file','in_file')])
                       ,(binarize,    outputnode, [('binary_file','out_mask')])
                       ,(phmap_siemens,outputnode,[('out_file','out_phdiff_map') ])
@@ -167,7 +167,7 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
                           name='outputnode' )
 
     dtifit = pe.Node(dtk.DTIRecon(output_type='nii.gz'),name='dtifit')
-    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=[0.002,3.0], mask_seed_th=[0.5,27.5],invert_x=False,random_seed=10), name="dtk_tracker")
+    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=[0.002,3.0], mask_seed_th=[0.5,27.5],invert_x=False,invert_y=True,random_seed=10), name="dtk_tracker")
     smooth_trk = pe.Node(dtk.SplineFilter(step_length=0.5), name="smooth_trk")
     matrix = pe.Node( ConnectivityMatrix(), name='BuildMatrix' )
 
@@ -295,7 +295,7 @@ def sanitize( in_reference, in_distorted, in_mask, out_file=None ):
     im_data = im.get_data()
     ref_data = nib.load( in_reference ).get_data()
         
-    for i in range(1,np.shape(im_data)[-1]):
+    for i in range(0,np.shape(im_data)[-1]):
         im_data[:,:,:,i] = ref_data[:,:,:,i] * msk_data + im_data[:,:,:,i] * (1-msk_data) 
        
     if out_file is None:
@@ -307,9 +307,9 @@ def sanitize( in_reference, in_distorted, in_mask, out_file=None ):
     return out_file
 
 
-def generate_siemens_phmap( in_file, intensity, sigma, out_file=None ):
+def generate_siemens_phmap( in_file, intensity, sigma, w1=-0.5, w2=1.0, out_file=None ):
     import nibabel as nib
-    from scipy.ndimage import binary_erosion
+    from scipy.ndimage import (binary_erosion,binary_dilation)
     from scipy.ndimage.filters import gaussian_filter
     import numpy as np
     import os.path as op
@@ -328,26 +328,30 @@ def generate_siemens_phmap( in_file, intensity, sigma, out_file=None ):
     boundary = binary_erosion( mskdata ).astype(np.dtype('u1'))
     boundary = (( mskdata - boundary )).astype(float)
     
-    x = ( int(0.4*imshape[0]), int(0.6*imshape[0]) )
-    y = ( int(0.4*imshape[1]), int( imshape[1] ) )
+    x = ( int(0.65*imshape[0]),int(0.35*imshape[0]) )
+    y = ( int(0.4*imshape[1]), int(0.6*imshape[1]) )
+    z = ( int(0.4*imshape[2]), int( imshape[2] ) )
 
     slice1 = np.zeros( shape=imshape )
-    slice1[x[0]:x[1],y[0]:y[1],int(0.65*imshape[2])]  = -0.5 * intensity
+    slice1[x[0],y[0]:y[1],z[0]:z[1]]  = 1
+    slice1 = binary_dilation( slice1 * boundary ).astype( np.float32 )
 
     slice2 = np.zeros( shape=imshape )
-    slice2[x[0]:x[1],y[0]:y[1],int(0.35*imshape[2])]  = 1.0 * intensity
-    distortionfront = boundary * ( slice1 + slice2 )
+    slice2[x[1],y[0]:y[1],z[0]:z[1]]  = 1
+    slice2 = binary_dilation( slice2 * boundary ).astype( np.float32 )
+    distortionfront = intensity * ( slice1 * w1 + slice2 * w2 )
 
     phasefield = gaussian_filter( distortionfront, sigma=sigma )
-    phasefield = np.ma.array( phasefield, mask=1-mskdata )
-    median = np.ma.median( phasefield )
-    phasefield = phasefield - median
+   # phasefield = np.ma.array( phasefield, mask=1-mskdata )
+   # median = np.ma.median( phasefield )
+   # phasefield = phasefield - median
 
-    maxvalue = np.ma.max( phasefield.reshape(-1) )
-    if np.fabs( np.ma.min(phasefield.reshape(-1) ) )>maxvalue:
-        maxvalue =np.fabs( np.ma.min(phasefield.reshape(-1) ) )
+   # maxvalue = np.ma.max( phasefield.reshape(-1) )
+   # if np.fabs( np.ma.min(phasefield.reshape(-1) ) )>maxvalue:
+   #     maxvalue =np.fabs( np.ma.min(phasefield.reshape(-1) ) )
 
-    normalizer = 0.001 / maxvalue
+   # normalizer = 0.001 / maxvalue
+    normalizer = 1.0
 
     noisesrc = 2.0 * np.random.random_sample( size=np.shape(phasefield) ) - 1.0
     noisesrc[mskdata>0] = 0.0
@@ -356,10 +360,11 @@ def generate_siemens_phmap( in_file, intensity, sigma, out_file=None ):
     phasefield = phasefield * 2047.5
 
     hdr = msk.get_header()
-    hdr.set_data_dtype( 16 )
-    nib.save( nib.Nifti1Image( phasefield, msk.get_affine(), hdr ), out_file ) 
+    hdr['data_type'] = 16
+    hdr['qform_code'] = 2
+    hdr.set_data_dtype( np.float32 )
+    nib.save( nib.Nifti1Image( phasefield.astype( np.float32 ), msk.get_affine(), hdr ), out_file ) 
     return out_file
-
 
 
 def generate_phmap( in_file, out_file=None ):
