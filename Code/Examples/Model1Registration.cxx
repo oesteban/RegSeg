@@ -121,7 +121,8 @@ int main(int argc, char *argv[]) {
 	ls->SetReferenceImage( im );
 
 	ReaderType::Pointer polyDataReader0 = ReaderType::New();
-	polyDataReader0->SetFileName( std::string( DATA_DIR ) + "fixed.csf.vtk" );
+	//polyDataReader0->SetFileName( std::string( DATA_DIR ) + "fixed.csf.vtk" );
+	polyDataReader0->SetFileName( std::string( DATA_DIR ) + "surf/roi_csf_smoothed.nii_1_converted.vtk" );
 	polyDataReader0->Update();
 	ls->AddShapePrior( polyDataReader0->GetOutput() );
 
