@@ -247,9 +247,12 @@ public:
 
 	void Resume();
 
-	void ComputeIterationChange();
 
+	MeasureType ComputeIterationChange();
 	MeasureType GetCurrentRegularizationEnergy();
+	MeasureType GetCurrentEnergy();
+
+	itkGetConstMacro( CurrentValue, MeasureType );
 
 protected:
 	/** Manual learning rate to apply. It is overridden by
@@ -319,8 +322,6 @@ protected:
 	SizeValueType                 m_NumberOfIterations;
 	SizeValueType                 m_CurrentIteration;
 	GridSizeType                  m_GridSize;
-
-	bool                          m_TrackEnergy;
 
 private:
 	SpectralOptimizer( const Self & ); // purposely not implemented
