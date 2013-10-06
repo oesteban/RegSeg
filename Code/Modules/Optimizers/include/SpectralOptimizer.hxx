@@ -79,7 +79,6 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer() {
 	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 15 );
-	this->m_TrackEnergy = false;
 }
 
 template< typename TFunctional >
@@ -121,11 +120,6 @@ void SpectralOptimizer<TFunctional>::Start() {
 
 	this->m_Functional->CopyInformation( this->m_Parameters );
 	this->m_Functional->Initialize();
-
-	if ( this->m_TrackEnergy ) {
-		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_Functional->GetValue() << std::endl;
-	}
-
 	this->m_CurrentIteration = 1;
 	this->Resume();
 }
@@ -182,13 +176,10 @@ void SpectralOptimizer<TFunctional>::Resume() {
 		 * This will modify the gradient and update the transform. */
 		this->Iterate();
 
-		this->InvokeEvent( itk::IterationEvent() );
-
-
 		/* Update the level sets contour and deformation field */
 		this->m_Functional->UpdateContour( this->m_NextParameters );
 
-		this->ComputeIterationChange();
+		this->m_CurrentValue = this->ComputeIterationChange();
 
 		this->SetUpdate();
 
@@ -223,13 +214,7 @@ void SpectralOptimizer<TFunctional>::Resume() {
 		}
 #endif
 
-
-		std::cout << "[" << this->m_CurrentIteration << "] " << this->m_CurrentValue << " | ";
-		if ( this->m_TrackEnergy ) {
-			std::cout << this->m_Functional->GetValue() << " | " << this->GetCurrentRegularizationEnergy();
-		}
-		std::cout << std::endl;
-
+		this->InvokeEvent( itk::IterationEvent() );
 
 		/*
 		 * Check the convergence by WindowConvergenceMonitoringFunction.
@@ -507,7 +492,8 @@ void SpectralOptimizer<TFunctional>
 }
 
 template< typename TFunctional >
-void SpectralOptimizer<TFunctional>::ComputeIterationChange() {
+typename SpectralOptimizer<TFunctional>::MeasureType
+SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 	const VectorType* fnextBuffer = this->m_Functional->GetCurrentDisplacementField()->GetBufferPointer();
 
 #ifndef NDEBUG
@@ -536,7 +522,7 @@ void SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 		*(fBuffer+pix) = t1; // Copy current to last, once evaluated
 	}
 
-	this->m_CurrentValue = totalNorm/nPix;
+	return totalNorm/nPix;
 }
 
 
@@ -596,6 +582,12 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	//this->m_CurrentField->SetOrigin( this->m_Parameters->GetOrigin() );
 	//this->m_CurrentField->Allocate();
 	//this->m_CurrentField->FillBuffer( zerov );
+}
+
+template< typename TFunctional >
+typename SpectralOptimizer<TFunctional>::MeasureType
+SpectralOptimizer<TFunctional>::GetCurrentEnergy() {
+	return this->m_Functional->GetValue() + this->GetCurrentRegularizationEnergy();
 }
 
 } // end namespace rstk

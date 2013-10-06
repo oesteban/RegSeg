@@ -58,6 +58,7 @@
 #include "MahalanobisFunctional.h"
 #include "SpectralGradientDescentOptimizer.h"
 #include "SpectralADMMOptimizer.h"
+#include "IterationUpdate.h"
 //#include "GradientDescentFunctionalOptimizer.h"
 //#include "ALOptimizer.h"
 
@@ -78,8 +79,9 @@ int main(int argc, char *argv[]) {
 
 	typedef SpectralGradientDescentOptimizer< FunctionalType >   Optimizer;
 	//typedef SpectralADMMOptimizer< FunctionalType >              Optimizer;
-
 	typedef typename Optimizer::Pointer                          OptimizerPointer;
+	typedef IterationUpdate< Optimizer >                         IterationUpdateType;
+	typedef typename IterationUpdateType::Pointer                IterationUpdatePointer;
 
 	typedef itk::VTKPolyDataReader< ContourType >     ReaderType;
 	typedef itk::VTKPolyDataWriter< ContourType >     WriterType;
@@ -125,10 +127,10 @@ int main(int argc, char *argv[]) {
 	polyDataReader0->Update();
 	ls->AddShapePrior( polyDataReader0->GetOutput() );
 
-	ReaderType::Pointer polyDataReader1 = ReaderType::New();
-	polyDataReader1->SetFileName( std::string( DATA_DIR ) + "surfs/pial.vtk" );
-	polyDataReader1->Update();
-	ls->AddShapePrior( polyDataReader1->GetOutput() );
+	//ReaderType::Pointer polyDataReader1 = ReaderType::New();
+	//polyDataReader1->SetFileName( std::string( DATA_DIR ) + "surfs/pial.vtk" );
+	//polyDataReader1->Update();
+	//ls->AddShapePrior( polyDataReader1->GetOutput() );
 
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
@@ -137,6 +139,10 @@ int main(int argc, char *argv[]) {
 	opt->SetNumberOfIterations(10);
 	opt->SetAlpha( 0.01 );
 	opt->SetStepSize( 0.01 );
+
+	IterationUpdatePointer iup = IterationUpdateType::New();
+	iup->SetOptimizer( opt );
+	iup->SetTrackEnergy( true );
 
 	// Start
 	opt->Start();
