@@ -139,10 +139,6 @@ int main(int argc, char *argv[]) {
 		opt->SetAlpha( vmap["alpha"].as<float>() );
 	}
 
-	root["start"]["energy"]["total"] = opt->GetCurrentValue();
-	root["start"]["energy"]["data"] = functional->GetValue();
-	root["start"]["energy"]["regularization"] = opt->GetCurrentRegularizationEnergy();
-
 	IterationUpdatePointer iup = IterationUpdateType::New();
 	iup->SetOptimizer( opt );
 	iup->SetTrackEnergyOn();

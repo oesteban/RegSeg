@@ -60,8 +60,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Derivative = FieldType::New();
 	this->m_CurrentDisplacementField = FieldType::New();
 	this->m_EnergyResampler = DisplacementResamplerType::New();
-	this->m_Modified = false;
-	this->m_RegionsModified = false;
+	this->m_EnergyUpdated = false;
+	this->m_RegionsUpdated = false;
 	this->m_NumberOfContours = 0;
 }
 
@@ -126,58 +126,62 @@ template< typename TReferenceImageType, typename TCoordRepType >
 typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetValue() {
-	this->m_Value = 0.0;
+	if ( !this->m_EnergyUpdated ) {
+		this->m_Value = 0.0;
 
-	double normalizer = 1.0;
+		double normalizer = 1.0;
 
-	for(size_t i = 0; i<Dimension; i++)
-		normalizer *= this->GetCurrentMap(0)->GetSpacing()[i];
+		for(size_t i = 0; i<Dimension; i++)
+			normalizer *= this->GetCurrentMap(0)->GetSpacing()[i];
 
-	for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
-		ProbabilityMapConstPointer roipm = this->GetCurrentMap( roi );
+		for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
+			ProbabilityMapConstPointer roipm = this->GetCurrentMap( roi );
 
-#ifndef NDEBUG
-		ProbabilityMapPointer tmpmap = ProbabilityMapType::New();
-		tmpmap->SetOrigin( roipm->GetOrigin() );
-		tmpmap->SetRegions( roipm->GetLargestPossibleRegion() );
-		tmpmap->SetDirection( roipm->GetDirection() );
-		tmpmap->SetSpacing( roipm->GetSpacing() );
-		tmpmap->Allocate();
-		tmpmap->FillBuffer( 0.0 );
+	#ifndef NDEBUG
+			ProbabilityMapPointer tmpmap = ProbabilityMapType::New();
+			tmpmap->SetOrigin( roipm->GetOrigin() );
+			tmpmap->SetRegions( roipm->GetLargestPossibleRegion() );
+			tmpmap->SetDirection( roipm->GetDirection() );
+			tmpmap->SetSpacing( roipm->GetSpacing() );
+			tmpmap->Allocate();
+			tmpmap->FillBuffer( 0.0 );
 
-		typename ProbabilityMapType::PixelType* tmpBuffer = tmpmap->GetBufferPointer();
-#endif
+			typename ProbabilityMapType::PixelType* tmpBuffer = tmpmap->GetBufferPointer();
+	#endif
 
-		const typename ProbabilityMapType::PixelType* roiBuffer = roipm->GetBufferPointer();
-		const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
+			const typename ProbabilityMapType::PixelType* roiBuffer = roipm->GetBufferPointer();
+			const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
 
-		size_t nPix = roipm->GetLargestPossibleRegion().GetNumberOfPixels();
-		ReferencePointType pos;
-		ReferencePixelType val;
-		typename ProbabilityMapType::PixelType w;
+			size_t nPix = roipm->GetLargestPossibleRegion().GetNumberOfPixels();
+			ReferencePointType pos;
+			ReferencePixelType val;
+			typename ProbabilityMapType::PixelType w;
 
-		for( size_t i = 0; i < nPix; i++) {
-			w = *( roiBuffer + i );
-			if ( w > 0.0 ) {
-				val = *(refBuffer+i);
-				this->m_Value +=  w * this->GetEnergyOfSample( val, roi );
-#ifndef NDEBUG
-				*(tmpBuffer+i) = val[0];
-#endif
+			for( size_t i = 0; i < nPix; i++) {
+				w = *( roiBuffer + i );
+				if ( w > 0.0 ) {
+					val = *(refBuffer+i);
+					this->m_Value +=  w * this->GetEnergyOfSample( val, roi );
+	#ifndef NDEBUG
+					*(tmpBuffer+i) = val[0];
+	#endif
+				}
 			}
-		}
 
-#ifndef NDEBUG
-		typedef typename itk::ImageFileWriter< ProbabilityMapType > W;
-		typename W::Pointer writer = W::New();
-		writer->SetInput(tmpmap);
-		std::stringstream ss;
-		ss << "region_energy_" << roi << ".nii.gz";
-		writer->SetFileName( ss.str().c_str() );
-		writer->Update();
-#endif
+	#ifndef NDEBUG
+			typedef typename itk::ImageFileWriter< ProbabilityMapType > W;
+			typename W::Pointer writer = W::New();
+			writer->SetInput(tmpmap);
+			std::stringstream ss;
+			ss << "region_energy_" << roi << ".nii.gz";
+			writer->SetFileName( ss.str().c_str() );
+			writer->Update();
+	#endif
+		}
+		this->m_Value = normalizer*this->m_Value;
+		this->m_EnergyUpdated = true;
 	}
-	return normalizer*this->m_Value;
+	return this->m_Value;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -243,7 +247,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		}
 	}
 
-	this->m_RegionsModified = (changed>0);
+	this->m_RegionsUpdated = (changed==0);
+	this->m_EnergyUpdated = (changed==0);
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -362,7 +367,7 @@ template< typename TReferenceImageType, typename TCoordRepType >
 typename FunctionalBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetCurrentRegion( size_t idx ) {
-	if(this->m_RegionsModified )
+	if(!this->m_RegionsUpdated )
 		this->ComputeCurrentRegions();
 
 	return this->m_CurrentROIs[idx];
@@ -372,7 +377,7 @@ template< typename TReferenceImageType, typename TCoordRepType >
 const typename FunctionalBase<TReferenceImageType, TCoordRepType>::ProbabilityMapType*
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetCurrentMap( size_t idx ) {
-	if(this->m_RegionsModified ) {
+	if(!this->m_RegionsUpdated ) {
 		this->ComputeCurrentRegions();
 	}
 
@@ -658,7 +663,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		this->m_CurrentROIs[idx] = tempROI;
 	}
 
-	this->m_RegionsModified = false;
+	this->m_RegionsUpdated = true;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
