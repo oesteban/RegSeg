@@ -70,7 +70,7 @@
 #include "SpectralADMMOptimizer.h"
 #include "DisplacementFieldFileWriter.h"
 #include "DisplacementFieldComponentsFileWriter.h"
-
+#include "IterationJSONUpdate.h"
 
 //#include "GradientDescentFunctionalOptimizer.h"
 //#include "ALOptimizer.h"
@@ -100,6 +100,8 @@ typedef SpectralGradientDescentOptimizer< FunctionalType >   Optimizer;
 //typedef SpectralADMMOptimizer< FunctionalType >              Optimizer;
 
 typedef typename Optimizer::Pointer                          OptimizerPointer;
+typedef IterationJSONUpdate< Optimizer >                     IterationUpdateType;
+typedef typename IterationUpdateType::Pointer                IterationUpdatePointer;
 
 typedef itk::VTKPolyDataReader< ContourType >                ReaderType;
 typedef itk::VTKPolyDataWriter< ContourType >                WriterType;

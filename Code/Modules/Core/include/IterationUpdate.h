@@ -64,8 +64,9 @@ private:
 	IterationUpdate( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
 
-	bool m_TrackEnergy;
+
 	OptimizerPointer   m_Optimizer;
+	bool m_TrackEnergy;
 };
 
 } // end namespace rstk
