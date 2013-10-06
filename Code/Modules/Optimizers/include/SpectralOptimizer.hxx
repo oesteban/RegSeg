@@ -79,6 +79,9 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer() {
 	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 15 );
+
+	m_CurrentTotalEnergy = itk::NumericTraits<MeasureType>::infinity();
+	m_RegularizationEnergyUpdated = false;
 }
 
 template< typename TFunctional >
@@ -260,38 +263,42 @@ void SpectralOptimizer<TFunctional>::Resume() {
 template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
-	this->m_RegularizationEnergy=0;
-	const VectorType* fBuffer = this->m_LastField->GetBufferPointer();
-	size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
+	if (!this->m_RegularizationEnergyUpdated ){
+		this->m_RegularizationEnergy=0;
+		const VectorType* fBuffer = this->m_LastField->GetBufferPointer();
+		size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
 
-	VectorType u;
+		VectorType u;
 
-	for ( size_t pix = 0; pix<nPix; pix++) {
-		u = *(fBuffer+pix);
-		this->m_RegularizationEnergy+= dot_product(u.GetVnlVector(), this->m_A.GetVnlMatrix() * u.GetVnlVector() );
+		for ( size_t pix = 0; pix<nPix; pix++) {
+			u = *(fBuffer+pix);
+			this->m_RegularizationEnergy+= dot_product(u.GetVnlVector(), this->m_A.GetVnlMatrix() * u.GetVnlVector() );
+		}
+
+		double normalizer = 1.0;
+
+		for( size_t i = 0; i<Dimension; i++ ) {
+			normalizer*= this->m_LastField->GetSpacing()[i];
+		}
+
+		this->m_Functional->GetFieldInterpolator()->ComputeJacobian();
+
+		typedef typename FunctionalType::FieldInterpolatorType::JacobianType JacobianType;
+		JacobianType j;
+		JacobianType M;
+
+		for ( size_t pix = 0; pix<nPix; pix++) {
+			j = this->m_Functional->GetFieldInterpolator()->GetJacobian(pix);
+			M = (j * m_B) * j.GetTranspose();
+			for ( size_t i = 0; i<Dimension; i++ )
+				this->m_RegularizationEnergy+= M(i,i);
+		}
+
+
+		this->m_RegularizationEnergy = normalizer * this->m_RegularizationEnergy;
+		this->m_RegularizationEnergyUpdated = true;
 	}
-
-	double normalizer = 1.0;
-
-	for( size_t i = 0; i<Dimension; i++ ) {
-		normalizer*= this->m_LastField->GetSpacing()[i];
-	}
-
-	this->m_Functional->GetFieldInterpolator()->ComputeJacobian();
-
-	typedef typename FunctionalType::FieldInterpolatorType::JacobianType JacobianType;
-	JacobianType j;
-	JacobianType M;
-
-	for ( size_t pix = 0; pix<nPix; pix++) {
-		j = this->m_Functional->GetFieldInterpolator()->GetJacobian(pix);
-		M = (j * m_B) * j.GetTranspose();
-		for ( size_t i = 0; i<Dimension; i++ )
-			this->m_RegularizationEnergy+= M(i,i);
-	}
-
-
-	return normalizer * this->m_RegularizationEnergy;
+	return this->m_RegularizationEnergy;
 }
 
 template< typename TFunctional >
@@ -522,6 +529,8 @@ SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 		*(fBuffer+pix) = t1; // Copy current to last, once evaluated
 	}
 
+	this->m_RegularizationEnergyUpdated = (totalNorm==0);
+
 	return totalNorm/nPix;
 }
 
@@ -587,7 +596,8 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::GetCurrentEnergy() {
-	return this->m_Functional->GetValue() + this->GetCurrentRegularizationEnergy();
+	this->m_CurrentTotalEnergy = this->m_Functional->GetValue() + this->GetCurrentRegularizationEnergy();
+	return this->m_CurrentTotalEnergy;
 }
 
 } // end namespace rstk

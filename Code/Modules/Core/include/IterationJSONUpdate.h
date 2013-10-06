@@ -30,13 +30,26 @@ public:
 	itkNewMacro( Self );
 
     void Execute(const itk::Object * object, const itk::EventObject & event) {
+
+		Json::Value iteration( Json::objectValue );
+
+    	if( typeid( event ) == typeid( itk::StartEvent ) ) {
+    		if( this->GetTrackEnergy() ) {
+    			iteration["id"] = 0;
+				iteration["energy"]["total"] = this->m_Optimizer->GetCurrentValue();
+				iteration["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
+				iteration["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
+				iteration["norm"] = 0.0;
+				this->m_JSONRoot.append( iteration );
+    		}
+    	}
+
     	if( typeid( event ) == typeid( itk::IterationEvent ) ) {
-    		Json::Value iteration( Json::objectValue );
 
     		iteration["id"] = static_cast<Json::UInt64> (this->m_Optimizer->GetCurrentIteration());
     		if ( this->GetTrackEnergy() ) {
     			iteration["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
-    			iteration["energy"]["functional"] = this->m_Optimizer->GetFunctional()->GetValue();
+    			iteration["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
     			iteration["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
     		}
     		iteration["norm"] = this->m_Optimizer->GetCurrentValue();
@@ -50,6 +63,8 @@ public:
     void SetOptimizer( OptimizerType * optimizer ) {
       m_Optimizer = optimizer;
       m_Optimizer->AddObserver( itk::IterationEvent(), this );
+      m_Optimizer->AddObserver( itk::StartEvent(), this );
+      m_Optimizer->AddObserver( itk::EndEvent(), this );
     }
 
 protected:

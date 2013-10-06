@@ -311,6 +311,8 @@ protected:
 
 	FunctionalPointer m_Functional;
 	MeasureType m_RegularizationEnergy;
+	MeasureType m_CurrentTotalEnergy;
+	bool m_RegularizationEnergyUpdated;
 
 	ParametersPointer m_LastField;
 	//ParametersPointer m_CurrentField;
