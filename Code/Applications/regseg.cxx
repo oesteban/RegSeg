@@ -102,8 +102,7 @@ int main(int argc, char *argv[]) {
 		r->SetFileName( fixedImageNames[i] );
 		r->Update();
 		comb->SetInput(i,r->GetOutput());
-
-		targetjson.append( fixedImageNames[i]);
+		targetjson.append( fixedImageNames[i] );
 	}
 	root["inputs"]["target"]["components"] = targetjson;
 
@@ -139,6 +138,14 @@ int main(int argc, char *argv[]) {
 	if (vmap.count("alpha")) {
 		opt->SetAlpha( vmap["alpha"].as<float>() );
 	}
+
+	root["start"]["energy"]["total"] = opt->GetCurrentValue();
+	root["start"]["energy"]["data"] = functional->GetValue();
+	root["start"]["energy"]["regularization"] = opt->GetCurrentRegularizationEnergy();
+
+	IterationUpdatePointer iup = IterationUpdateType::New();
+	iup->SetOptimizer( opt );
+	iup->SetTrackEnergyOn();
 
 	clock_t preProcessStop = clock();
 	float pre_tot_t = (float) (((double) (preProcessStop - preProcessStart)) / CLOCKS_PER_SEC);
@@ -188,17 +195,14 @@ int main(int argc, char *argv[]) {
 	w->Update();
 
 
+	root["iterations"] = iup->GetJSONRoot();
 	// JSON Summary
-	root["summary"]["energy"]["total"] = opt->GetCurrentMetricValue();
+	root["summary"]["energy"]["total"] = opt->GetCurrentValue();
 	root["summary"]["energy"]["data"] = functional->GetValue();
 	root["summary"]["energy"]["regularization"] = opt->GetCurrentRegularizationEnergy();
 	root["summary"]["iterations"] = Json::Int (opt->GetCurrentIteration());
 	root["summary"]["conv_status"] = opt->GetStopCondition();
 	root["summary"]["stop_msg"] = opt->GetStopConditionDescription();
-	Json::Value dumbArray(Json::arrayValue);
-	root["summary"]["energy"]["evolution_tot"] = dumbArray;
-	root["summary"]["energy"]["evolution_dat"] = dumbArray;
-	root["summary"]["energy"]["evolution_reg"] = dumbArray;
 
 	// Set-up & write out log file
 	std::ofstream logfile((outPrefix + logFileName ).c_str());
