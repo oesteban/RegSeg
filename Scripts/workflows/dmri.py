@@ -47,7 +47,7 @@ def t2_registration_correct( name="T2_Registration" ):
 
     reg.inputs.metric = ['Mattes']
     reg.inputs.metric_weight = [1] # Default (value ignored currently by ANTs)
-#    reg.inputs.radius_or_number_of_bins = 64
+    reg.inputs.radius_or_number_of_bins = [64]
     reg.inputs.sampling_strategy = ['Random']
     reg.inputs.sampling_percentage = [0.1]
     reg.inputs.convergence_threshold = [1.e-9]
