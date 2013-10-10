@@ -54,44 +54,39 @@ for the \glspl*{dwi} ($96.26\%$) but not as good for the \textit{b0}
 volume. Visual inspection of the recovered data confirms the 
 presented numerical results (\autoref{fig:results}, first row).
 
+\input{042-results-tractography}
 
 \subsection{Impact on tractography and connectivity}
 
-Results derived from diffusion tensor imaging 
-(using 32 directions \glspl*{dwi})
-were completely hindered by the high complexity of the
-fibers contained in the phantom (crossing, fanning, etc.).
-The immediate conclusion is that, with highly complex anatomies,
-connectivity outcome is more sensitive to 
-reconstruction and tractography than distortions. Therefore,
-all results presented are based on the 64-directions dataset
-reconstructed with constrained spherical deconvolution.
+Connectivity matrices derived from diffusion tensor imaging 
+(using 32 directions \glspl*{dwi}) were completely
+hindered by the high complexity of the fibers contained
+in the phantom. Tractography discovered successfully only 4 out 
+of 27 existing connections from the original (undistorted) data,
+with more than 45 false connections.
+With the 64-directions dataset (reconstructed with constrained 
+spherical deconvolution) we found 23/27 connections,
+but we still observed 40 false positives. Therefore, the 
+experiments using the 32-directions phantom were discarded. The
+results presented in this subsection only refer to the 
+64-directions dataset.
 
-The gold-standard contained a total of 1800 valid tracks
-connecting regions, with an average length of $40.88\pm8.06$mm.
-The corresponding connectivity matrix presented 25 connections.
-Results are presented in last row of \autoref{fig:results}.
+Using the strongest distortion (maximum displacement of 7.60 mm),
+the number of detected connections
+remained the same (23/27), slightly increasing the number of
+false positives to 42. The immediate conclusion is that, with highly
+complex anatomies (crossing, fanning, etc.) and limited number of
+ground-truth connections, connectivity matrices are more sensitive 
+to reconstruction and tractography than to distortions.
 
-The distortion of the phantom caused 2 false connections 
-(positive connections that are not present on the ground-truth) 
-and 2 false negatives (connections vanished).
-The correction methods had an adverse impact
-on connectivity. Only \gls*{reb} could recover one lost connection
-but increasing the false connections count to 3.
-\gls*{fmb} ranked second, with 5 false and 2 lost connections.
-Finally, \gls*{t2b} presented 9 false and 3 lost connections.
+For the sake of completeness, \autoref{table:results-tractography}
+reports the characteristic features of the tractography results
+and connectivity matrices, for the fieldmap that caused a maximum
+displacement of 3.80 mm. Very similar results were obtained for
+7.60 mm, a distortion which is at the limit of the real case. This
+results, along with visual inspection (\autoref{fig:results}, second
+and third rows) might point to \gls*{fmb} as the best correction method.
 
-For the sake of completeness, we also document the outcome
-of tractography at each step of the workflow. After distortion,
-we obtained 1750 tracks and a characteristic length of 
-$40.64\pm8.12$mm.
-\gls*{fmb} produced 1900 tracks/$40.53\pm8.07$mm., \gls*{reb}
-obtained 2200 tracks/$41.15\pm7.60$mm., and 2500 
-tracks/$40.60\pm7.81$mm. for \gls*{t2b}. Although track counting has
-been used as a measurement of success and as a weight of connectivity 
-strength, the number of tracks produced by tractography strongly rely
-on the seeding performed and the smoothing caused by interpolation used
-within correction methodologies.
 
 \subsection{Discussion}
 
@@ -110,6 +105,11 @@ in this study.
 %Finally, \gls*{t2b} confirmed that its correction
 %can not be compared, even when using the intensity compensation
 %based on the determinant of the deformation field.
+%Although track counting has been used as a measurement of success and as a weight of connectivity 
+%strength, the number of tracks produced by tractography strongly rely
+%on the seeding performed and the smoothing caused by interpolation used
+%within correction methodologies.
+
 
 One relevant limitation of this work is that the \gls*{fmb} is
 used both in distortion creation and correction, which could

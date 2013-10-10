@@ -36,17 +36,22 @@ phase difference at the voxel.
 
 In order to create a realistic distortion, we
 generated a synthetic phase-difference map 
-consistent with the phantom.  We defined two regions 
-of smooth de-phasing (up to $2.7\times10^{-3}$~rad. excursions) 
-and computed the corresponding \gls*{vsm}, using the 
+consistent with the phantom, using the 
 tools distributed with the \emph{FSL} package 
 \cite{jenkinson_fsl_2012}  and
 standard parameters ($\Delta$TE=2.46~ms. for the
-fieldmap and \emph{effective dwell time} of 
+field mapping and \emph{effective dwell time} of 
 0.77~ms. for the \gls*{epi}).
+We defined two regions of smooth dephasing and 
+computed the corresponding \gls*{vsm}. Amplitude
+of the dephasing maps can be modulated, enabling
+us to evaluate the impact of the distortion magnitude.
+We generated several \glspl*{vsm} with maximum
+displacements raging from 3.80 mm to 7.60 mm. The
+latter maximum was chosen at the upper limit of the
+typical distortion observed in real datasets.
 
-From this synthetic \gls*{vsm},
-we generated
+From these synthetic \glspl*{vsm}, we generated
 the corresponding distorted \glspl*{dwi}, in two opposed
 phase-gradient encoding directions. The second simulated
 ``acquisition'' of the same phantom was necessary 
@@ -63,10 +68,10 @@ different phase encoding directions, and a ground-truth
 \begin{figure}[thpb]
    \centering
    \includegraphics[width=0.95\columnwidth]{Fig01-Phantom}
-   \caption{Original and distorted digital phantom.
+   \caption{Ground-truth digital phantom.
    A) T2-weighted image; B) undistorted \textit{b0} volume;
-   C, D) distorted \textit{b0} volumes with opposed phase encoding 
-   directions.}
+   C, D) distorted \textit{b0} volumes with opposed phase 
+   encoding directions, maximum displacement of 3.80 mm.}
    \label{fig:phantom}
 \end{figure}
 
