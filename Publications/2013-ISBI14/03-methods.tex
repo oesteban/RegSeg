@@ -2,17 +2,22 @@
 
 \subsection{Digital Phantom}
 Based on the fiber geometries of the digital phantom 
-created for the \emph{High angular resolution diffusion imaging 
-reconstruction Challenge} held in ISBI 2013 
+created for the High angular resolution diffusion imaging 
+reconstruction Challenge held in ISBI 2013 
 (San Francisco, US), we simulated high resolution 
 (0.5mm isotropic) T1 (TE/TR=10/1500ms) and T2 
-(TE/TR=90/5000ms) images, as well as a \gls*{dmri}
-(1.0mm isotropic, $b$=1200, 32 evenly-distributed 
-directions, 1 \textit{b0} volume) image.
-The phantom includes \gls*{wm} fiber bundles, 
-\gls*{csf} and \gls*{gm}. Diffusion is modeled by a 
-restricted and a hindered compartment, similar to
-\cite{assaf_composite_2005}.
+(TE/TR=90/5000ms) images, as well as a two \gls*{dmri}
+images (1.0mm isotropic, $b$=1200, 1 B0 image) with
+32 and 64 evenly-distributed directions.
+Diffusion is modeled by a restricted and a hindered
+compartment, similar to \cite{assaf_composite_2005}.
+The phantom includes \gls*{wm} fiber bundles,
+\gls*{gm} and \gls*{csf}. Physical properties
+(T1/T2 times in ms) used in simulation are
+($0.832\pm0.010$ / $79\times10^{-3}\pm0.6\times10^{-3}$)
+for \gls*{wm},
+($1.331\pm0.013$ / $110\times10^{-3}\pm2.0\times10^{-3}$) for
+\gls*{gm} and ($3.5\pm0.1$ / $0.25\pm0.01$) for \gls*{csf}.
 
 \subsection{Theory-based synthetic distortion}
 \label{sec:distortion}
@@ -66,13 +71,15 @@ different phase encoding directions, and a ground-truth
 \end{figure}
 
 \subsection{Correction methods}
-
+\label{sec:correction}
 Three out of four methods presented in \autoref{sec:intro}
 were tested on the evaluation framework. 
 
 \Gls*{fmb} correction
 is essentially the same as the one used for generating the 
-distortion, using the synthetic fieldmap to infer a new \gls*{vsm}.
+distortion, on the inverse direction. Normally distributed 
+noise was added to the fieldmap (for a signal-to-noise 
+ratio of 20dB) before correction.
 
 For \Gls*{reb} correction, we made use of the implementation found 
 in \emph{FSL} (\texttt{topup})
@@ -93,33 +100,29 @@ corrected for dropout using the determinant
 of the Jacobian of the deformation field.
 
 \subsection{Evaluation}
-
-The four modules described so far (namely, phantom
-deformation, \gls*{fmb} correction, \gls*{reb}
-correction and \gls*{t2b} correction) were conveniently
-integrated in second order workflows using
-\emph{nipype} \cite{gorgolewski_nipype:_2011}.
-The choice of this tool grants the reproducibility
-of the experiments, among other advantages.
-
-To evaluate the influence of
-distortions on the final connectivity outcome,
-an intermediate step was also implemented to
-produce deterministic tractography,
-using the \emph{Diffusion Toolkit} \cite{wang_diffusion_2007}.
+\label{sec:evaluation}
 The original phantom, one distorted version, and
-the corrected instances are fed to this module.
+the corrected instances are then connected to a
+\gls*{dwi} reconstruction and tractography pipeline.
 Additionally, the original tissue probability maps
-are also distorted and corrected, for computing overlap
-indices.
-Each tractography was restricted to its corresponding 
-\gls*{wm} mask, after distortion and correction when
-applied. For all the cases, we used 10 random seeds at each seeding
-voxel (belonging to one out of 27 different seeding regions).
-The seeding regions were taken from the 
-ground-truth, mimicking the usual procedure on real data
-(where regions are typically mapped from the
-anatomically correct T1).
+are also distorted and corrected to provide tractography
+with the required \gls*{wm} masks.
+These maps are also used in a final assessment module.
+
+The framework provides \gls*{dwi} reconstruction and
+deterministic tractography,
+with \emph{Diffusion Toolkit} \cite{wang_diffusion_2007}
+for diffusion tensor imaging (configured with 10 random
+seeds per voxel by default), and \emph{MRTrix}
+\cite{tournier_mrtrix:_2012} for high angular resolution
+diffusion tensor imaging (default parameters set to use
+constrained spherical deconvolution, maximum harmonic
+order of 6, 150000 desired tracks).
+For both options, the seeding regions can be set to use
+the distorted-corrected \gls*{wm} mask or the regions used
+to generate the ground-truth, this second case mimicking
+the usual procedure on real data (where regions are 
+typically mapped from the anatomically correct T1).
 
 The evaluation framework is completed by automated 
 assessment modules. We evaluated three characteristics

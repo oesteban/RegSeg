@@ -1,11 +1,15 @@
 \section{RESULTS}
 \label{sec:results}
+
+All the modules described in the previous Section were
+conveniently integrated in workflows using \emph{nipype}
+\cite{gorgolewski_nipype:_2011}. The choice of this tool
+grants the reproducibility of the experiments,
+and the evaluation workflow is publicly released.
 The results of the proposed experiments are summarized
 in \autoref{fig:results} and \autoref{table:results}.
 The remaining of this section provides extended descriptions
 and interpretation of results.
-
-\input{041-results-table}
 
 \begin{figure*}[tpb]
    \centering
@@ -22,7 +26,7 @@ and interpretation of results.
 \end{figure*}
 
 
-\subsection{Geometrical correctness}
+\subsection{Geometrical correctness and signal recovery}
 
 The three methods under study achieved good results in
 terms of geometrical accuracy, as it is shown in the first
@@ -36,7 +40,7 @@ matrix. The clear difference of accuracy between \gls*{reb} and \gls*{fmb}
 with respect to \gls*{t2b} infers the latter may not be
 an appropriate method for susceptibility correction.
 
-\subsection{Signal loss recovery}
+\input{041-results-table}
 
 A second workflow investigated the similarity of the recovered
 signal with respect to the original (undistorted).
@@ -48,12 +52,20 @@ for the remaining 31 \glspl*{dwi}. Again, the second
 qualified was \gls*{fmb}, which achieved very close results
 for the \glspl*{dwi} ($96.26\%$) but not as good for the \textit{b0}
 volume. Visual inspection of the recovered data confirms the 
-results presented in the Table (\autoref{fig:results}, first
-row). Finally, \gls*{t2b} confirmed that its correction
-can not be compared, even when using the intensity compensation
-based on the determinant of the deformation field.
+presented numerical results (\autoref{fig:results}, first row).
+
 
 \subsection{Impact on tractography and connectivity}
+
+Results derived from diffusion tensor imaging 
+(using 32 directions \glspl*{dwi})
+were completely hindered by the high complexity of the
+fibers contained in the phantom (crossing, fanning, etc.).
+The immediate conclusion is that, with highly complex anatomies,
+connectivity outcome is more sensitive to 
+reconstruction and tractography than distortions. Therefore,
+all results presented are based on the 64-directions dataset
+reconstructed with constrained spherical deconvolution.
 
 The gold-standard contained a total of 1800 valid tracks
 connecting regions, with an average length of $40.88\pm8.06$mm.
@@ -95,6 +107,9 @@ that specific methods with anisotropic regularization that completely
 restrict deformations to the phase-encoding direction would perform
 significantly better compared to the standard method included
 in this study.
+%Finally, \gls*{t2b} confirmed that its correction
+%can not be compared, even when using the intensity compensation
+%based on the determinant of the deformation field.
 
 One relevant limitation of this work is that the \gls*{fmb} is
 used both in distortion creation and correction, which could
