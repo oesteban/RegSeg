@@ -1,7 +1,7 @@
 \section{RESULTS}
 \label{sec:results}
 
-All the modules described in the previous Section were
+All the modules described in the previous section were
 conveniently integrated in workflows using \emph{nipype}
 \cite{gorgolewski_nipype:_2011}. The choice of this tool
 grants the reproducibility of the experiments,
@@ -9,36 +9,38 @@ and the evaluation workflow is publicly released.
 The results of the proposed experiments are summarized
 in \autoref{fig:results} and \autoref{table:results}.
 The remaining of this section provides extended descriptions
-and interpretation of results.
+and interpretation of the results.
 
 \begin{figure*}[tpb]
    \centering
    \includegraphics[width=0.9\textwidth]{Fig02-Results}
-   \caption{Visual comparison of correction methods results. 
-   First row represents
-   a coronal section of the \textit{b0} volume. In second row, the outcome
-   of tractography after filtering tracks that did not connect two regions.
-   Third row shows the associated connectivity matrices. First column shows
-   the ground-truth. For the remaining steps, false positives have been marked
-   in red color and false negatives in blue. Underlaying in gray color,
-   the true positive (correctly detected) connections. }
+   \caption{Visual evaluation of the correction methods.
+   First row represents a coronal section of the \textit{b0} volume. 
+   In second row, the outcome of tractography after filtering tracks
+   that did not connect two regions.
+   Third row shows the associated connectivity matrices. All the matrices
+   are compared to the ground-truth connections in the phantom. The existing
+   connections that were correctly detected at each step are depicted in white
+   color. False positives have been marked in red and false negatives in blue.
+   Gray color represents the true negatives (non-existent connections correctly detected).}
    \label{fig:results}
 \end{figure*}
 
 
 \subsection{Geometrical correctness and signal recovery}
 
-The three methods under study achieved good results in
-terms of geometrical accuracy, as it is shown in the first
-row of \autoref{fig:results}. The best numerical scores
-were obtained with the \gls*{reb} method (\autoref{table:results}),
-that achieved a weighted average overlap of $96.64\%$. Second
-best were obtained with \gls*{fmb}. Geometrical correctness
-is fundamental in connectivity analysis to spatially locate the
-\glspl*{roi} that will define the nodes of the final connectivity
-matrix. The clear difference of accuracy between \gls*{reb} and \gls*{fmb}
+A summary of quantitative results, computed for the \gls*{dti} 
+dataset with maximum shift of 3.80~mm,
+is provided in \autoref{table:results}.
+The best scores were obtained with the \gls*{reb} 
+method, followed by \gls*{fmb}. 
+The clear difference of accuracy between \gls*{reb} and \gls*{fmb}
 with respect to \gls*{t2b} infers the latter may not be
-an appropriate method for susceptibility correction.
+an appropriate method for susceptibility correction. 
+The described performance was constant for \gls*{fmb} 
+and \gls*{reb} along the different magnitudes of 
+distortion evaluated (maximum phase-encoding direction 
+shifts in the range of 3.80-7.60~mm).
 
 \input{041-results-table}
 
@@ -48,30 +50,30 @@ In this second study, \gls*{reb} performed
 better than the other two methods, as reported
 in \autoref{table:results}. \gls*{reb} scored a $91.0\%$
 similarity index for the \textit{b0} volume and an average $97.65\%$
-for the remaining 31 \glspl*{dwi}. Again, the second
+for the remaining \glspl*{dwi}. Again, the second
 qualified was \gls*{fmb}, which achieved very close results
 for the \glspl*{dwi} ($96.26\%$) but not as good for the \textit{b0}
 volume. Visual inspection of the recovered data confirms the 
-presented numerical results (\autoref{fig:results}, first row).
+presented quantitative results (\autoref{fig:results}, first row).
 
 \input{042-results-tractography}
 
 \subsection{Impact on tractography and connectivity}
 
-Connectivity matrices derived from diffusion tensor imaging 
-(using 32 directions \glspl*{dwi}) were completely
-hindered by the high complexity of the fibers contained
+Connectivity matrices derived from the \gls*{dti} dataset
+were completely hindered by the high complexity of the 
+fibers contained
 in the phantom. Tractography discovered successfully only 4 out 
 of 27 existing connections from the original (undistorted) data,
 with more than 45 false connections.
-With the 64-directions dataset (reconstructed with constrained 
+With the \gls*{hardi} dataset (reconstructed with constrained 
 spherical deconvolution) we found 23/27 connections,
 but we still observed 40 false positives. Therefore, the 
-experiments using the 32-directions phantom were discarded. The
+experiments using the \gls*{dti} phantom were discarded. The
 results presented in this subsection only refer to the 
-64-directions dataset.
+\gls*{hardi} dataset.
 
-Using the strongest distortion (maximum displacement of 7.60 mm),
+Using the strongest distortion (maximum shift of 7.60~mm),
 the number of detected connections
 remained the same (23/27), slightly increasing the number of
 false positives to 42. The immediate conclusion is that, with highly
@@ -82,55 +84,66 @@ to reconstruction and tractography than to distortions.
 For the sake of completeness, \autoref{table:results-tractography}
 reports the characteristic features of the tractography results
 and connectivity matrices, for the fieldmap that caused a maximum
-displacement of 3.80 mm. Very similar results were obtained for
-7.60 mm, a distortion which is at the limit of the real case. This
-results, along with visual inspection (\autoref{fig:results}, second
-and third rows) might point to \gls*{fmb} as the best correction method.
+shift of 3.80~mm. Very similar results were obtained for
+7.60~mm. This results, along with visual inspection
+(\autoref{fig:results}, second and third rows), might point
+to \gls*{fmb} as the best correction method.
 
 
 \subsection{Discussion}
 
 Even though all the surveyed methods produced visually 
 sound results, our study suggested that \gls*{reb} is the 
-most accurate methodology for correction of susceptibility-induced
-distortions in \gls*{dwi}. Moreover, \gls*{reb} also achieved
-the best results in terms of connectivity, being able to recover
-one of two lost connections after distortion. \Gls*{fmb} achieved 
-very positive scores. Finally, the \gls*{t2b} method did not achieve
-the necessary high-standards to recommend its use. We understand
-that specific methods with anisotropic regularization that completely
+most accurate method in terms of geometrical accuracy and
+signal dropout recovery. 
+The \gls*{t2b} method did not achieve the necessary high-standards
+to recommend its use. Nonetheless, we understand that specific
+methods with anisotropic regularization that completely
 restrict deformations to the phase-encoding direction would perform
-significantly better compared to the standard method included
-in this study.
-%Finally, \gls*{t2b} confirmed that its correction
-%can not be compared, even when using the intensity compensation
-%based on the determinant of the deformation field.
-%Although track counting has been used as a measurement of success and as a weight of connectivity 
-%strength, the number of tracks produced by tractography strongly rely
-%on the seeding performed and the smoothing caused by interpolation used
-%within correction methodologies.
+significantly better than the standard method presented.
+Geometrical correctness of \gls*{dwi} data is fundamental 
+in connectivity analysis to spatially locate the
+regions which will define the nodes of the final connectivity
+matrix.
 
+Regarding tractography, this study revealed that signal
+reconstruction and tractography algorithms masked the 
+impact of susceptibility distortion on the final connectivity
+matrices. Due to this effect, experiments performed on 
+the \gls*{dti} phantom were discarded for comparison.
+With the \gls*{hardi} dataset, the extracted 
+connectivity matrix slightly
+changed with distortion. Quantitative differences reported in
+\autoref{table:results-tractography} could be more related
+to the smoothing derived from interpolation implemented by
+each method. Visual results might suggest that \gls*{fmb}
+achieved better results.
 
-One relevant limitation of this work is that the \gls*{fmb} is
-used both in distortion creation and correction, which could
-bias the results. For practical reasons (distortion on the mask, 
-signal dropout), the \gls*{fmb} can not achieve a perfect 
-geometrical correction as might be
-expected if the process was exactly inverse.
-Nonetheless, \gls*{reb} performed better than \gls*{fmb}.
-A second limitation is found on the impossibility of integrating the
-point spread function-based methods for two reasons.
-Firstly, the unmet need of a point spread function map consistent
-with the synthetic phase-difference map. Secondly, to our knowledge,
-there are no implementations of the method readily available.
-In practice, this second limitation is narrowed down by the
-fact that typical acquisition protocols usually include one or more
-datasets among field mapping, reversed-encoding \textit{b0} or T2,
-but they do not include the point-spread function mapping.
+Although we found connectivity matrices rather invariant with
+respect distortion, they are suspected to be significantly
+impacted by the susceptibility artifact on real data 
+\cite{irfanoglu_effects_2012}.
+This hypothesis points to the need of more appropriate 
+phantoms with denser connectivity matrices.
+State of the art phantoms for tractography usually present a
+discrete set of simulated fiber bundles that translate in 
+very sparse fiber-endings regions and connectivity matrix.
+In the real case, the surface limiting the tracks is densely 
+covered by the regions mapped from the anatomical 
+dataset, what leads to larger sensitivity with respect 
+deformations.
 
-Future extensions of this work will evaluate
-different realizations of the synthetic phase-difference map,
-better characterizing the phenomenon. Moreover, the
-framework can be enhanced for studying the impact of 
-other artifacts as subject's motion or eddy 
-currents-derived distortions.
+A possible limitation of this work is that \gls*{fmb} is
+used for both synthesis and correction of the distortion.
+However, practical reasons (i.e. noise, signal dropout)
+impede perfect geometrical correction with \gls*{fmb}.
+Moreover, \gls*{reb} performed more accurately 
+than \gls*{fmb}.
+
+Future extensions of this work will include a 
+refined digital phantom. Additional lines for this
+work will evaluate different realizations of the 
+synthetic phase-difference map, to better characterize
+the phenomenon. Also, the framework can be enhanced 
+for studying the impact of other artifacts as 
+subject's motion or eddy currents-derived distortions.
