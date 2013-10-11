@@ -75,8 +75,10 @@ def evaluation_workflow( name="Evaluation",
     dist2_wf.inputs.inputnode.encoding_direction = direction + '-'
     dist2_wf.inputs.inputnode.intensity = intensity
     dist2_wf.inputs.inputnode.sigma = sigma
+
+    noise = pe.Node( misc.AddNoise(snr=30), name='AddNoise' )
             
-    fmap_wf = wf.fieldmap_correction()
+    fmap_wf = wf.fieldmap_correction(nocheck=True)
     fmap_wf.inputs.inputnode.te_diff = te_incr*1e3 # in ms.
     fmap_wf.inputs.inputnode.epi_echospacing = dwell_time*1e3 # in ms
     fmap_wf.inputs.inputnode.vsm_sigma = 2.0
@@ -111,7 +113,9 @@ def evaluation_workflow( name="Evaluation",
         ,(dist1_wf,           sim1, [ ('outputnode.out_file','inputnode.in_test') ])
         ,(inputnode,          sim1, [ ('in_dwi', 'inputnode.in_ref'),('in_dwi_mask','inputnode.in_mask'),('out_csv','inputnode.out_csv') ])
         # Correct with fieldmap
-        ,(dist1_wf,        fmap_wf, [ ('outputnode.out_file','inputnode.in_file'),('outputnode.out_phdiff_map','inputnode.fieldmap_pha') ])
+        ,(dist1_wf,        fmap_wf, [ ('outputnode.out_file','inputnode.in_file') ])
+        ,(dist1_wf,          noise, [ ('outputnode.out_phdiff_map','in_file') ])
+        ,(noise,           fmap_wf, [ ('out_file','inputnode.fieldmap_pha') ])
         ,(inputnode,       fmap_wf, [ ('in_dwi_mask','inputnode.in_mask'),('in_dwi_mask','inputnode.fieldmap_mag' ) ])
         # Similarity after fieldmap
         ,(fmap_wf,            sim2, [ ('outputnode.epi_corrected','inputnode.in_test') ])
@@ -374,7 +378,7 @@ if __name__ == '__main__':
     z = False
     root_dir='/home/oesteban/workspace/ACWE-Reg/'
     data_dir= op.join( root_dir, 'Data' )
-    mname = 'DigitalPhantomISBI'
+    mname = 'Phantom3'
     model_dir = op.join( data_dir, mname )
     tpms_dir = op.join( model_dir, 'tpms' )
     
@@ -388,8 +392,6 @@ if __name__ == '__main__':
     
     evaluation = evaluation_workflow( direction='z' )
     evaluation.base_dir = working_dir
-
-
     sim_file = op.join( working_dir, evaluation.name, 'results.csv' )
     if op.exists( sim_file ):
         os.remove( sim_file )
@@ -401,7 +403,7 @@ if __name__ == '__main__':
     in_dwi_mask = op.join( model_dir, 'rois', 'signal_mask.nii.gz' )
     in_t2 = op.join( model_dir, "t2_weighted.nii.gz" )
     in_t2_mask = op.join( model_dir, "tpms", "tpm_mask.nii.gz" )
-    in_rois = op.join( model_dir,'rois', 'seeding_regions.nii.gz' )
+    in_rois = op.join( model_dir,'rois', 'rois.nii.gz' )
     wm_mask = op.join( model_dir,'rois', 'fibers.nii.gz' )
     in_tpms = [ op.join( model_dir, 'tpms', '%s_volume_fraction.nii.gz' % n ) for n in [ 'csf','gm','wm' ] ]
     in_bvec = op.join( model_dir, 'dti-scheme.bvec' ) 

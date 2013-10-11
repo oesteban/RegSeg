@@ -98,8 +98,84 @@ class ConnectivityMatrix(BaseInterface):
         outputs["out_tracks"] = self.inputs.out_prefix + '_tracks.trk'
         return outputs
 
-
 def track_analyze( points, roidata, vox_size=(1.0,1.0,1.0) ):
+    startval = 0
+    startidx = -1
+    vox_size=np.array( vox_size, dtype='f32' )
+    im_idx = np.array( np.shape(roidata) )-1
+
+    invalid_idx = []
+    ltrack = []
+    length = 0.0
+    for i,point in enumerate(points):
+        vox = tuple( ( np.around( point / vox_size ) ).astype( 'uint16' ))
+        if np.any( vox > im_idx ):
+            invalid_idx+= [i]
+        else:
+            ltrack+= [ roidata[vox] ]
+
+    points = np.delete( points, invalid_idx, 0 )    
+    nPoints = np.shape(points)[0]
+
+    if nPoints < 3:
+        return (None,0)
+
+    m_idx = int( round((nPoints-1)*0.5) )
+    m_point = points[m_idx]
+    m_pix = tuple( ( np.around( m_point / vox_size ) ).astype( 'uint16' ))
+    m_val = roidata[ m_pix ]
+
+    startidx = m_idx
+    endidx = m_idx
+    startval = 0
+    endval = 0
+
+    isROI = False
+
+    if m_val!=0:
+        isROI= True
+        return (None,0)
+
+    else:
+        left_len = 0.0
+        righ_len = 0.0
+
+        prev_point = m_point
+        for i,point in enumerate(points[(m_idx+1):]):
+            vox = tuple( ( np.around( point / vox_size ) ).astype( 'uint16' ))
+            val = roidata[vox]
+            righ_len+= np.linalg.norm( point - prev_point )
+            if val>0:
+                endval = val
+                endidx = m_idx+i+1
+                break
+            prev_point = point
+
+
+        if endidx==m_idx:
+            return (None,0)
+
+        prev_point = m_point
+
+        for i,point in enumerate(reversed(points[:(m_idx-1)])):
+            vox = tuple( ( np.around( point / vox_size ) ).astype( 'uint16' ))
+            val = roidata[vox]
+            left_len+= np.linalg.norm( point - prev_point )
+            if val>0:
+                startval = val
+                startidx = m_idx-i-1
+                break
+            prev_point = point
+
+        if startidx==m_idx:
+            return (None,0)
+
+    length = left_len + righ_len
+    new_track = [ points[i] for i in range(int(startidx),int(endidx+1)) ]
+    track_features = [ (startval,endval), length ]
+    return (new_track, track_features)
+
+def track_analyze2( points, roidata, vox_size=(1.0,1.0,1.0) ):
     startval = 0
     startidx = -1
     vox_size=np.array( vox_size, dtype='f32' )

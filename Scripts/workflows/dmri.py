@@ -15,6 +15,7 @@ import nipype.interfaces.ants as ants           # ANTS
 import nipype.interfaces.diffusion_toolkit as dtk
 import nipype.interfaces.cmtk as cmtk
 import nipype.interfaces.camino as camino
+import nipype.interfaces.mrtrix as mrt
 import nipype.interfaces.camino2trackvis as cam2trk
 from tracks import ConnectivityMatrix
 
@@ -107,7 +108,7 @@ def distortion_workflow(name="synthetic_distortion"):
     
     inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'te_incr', 'echospacing','encoding_direction','intensity','sigma', 'in_tpms' ]), name='inputnode' )
     phmap_siemens = pe.Node( niu.Function(input_names=['in_file','intensity','sigma'],output_names=['out_file'], function=generate_siemens_phmap ), name='gen_siemens_PhaseDiffMap' )
-    prepare = pe.Node( fsl.PrepareFieldmap(), name='fsl_prepare_fieldmap' )
+    prepare = pe.Node( fsl.PrepareFieldmap(nocheck=True), name='fsl_prepare_fieldmap' )
     vsm = pe.Node(fsl.FUGUE(save_shift=True), name="gen_VSM")
     dm = pe.Node( niu.Function(input_names=['in_file','in_mask'],output_names=['out_file'], function=demean ), name='demean' )
     applyWarp = fugue_all_workflow()
@@ -118,7 +119,7 @@ def distortion_workflow(name="synthetic_distortion"):
 #    fixsignal = pe.Node( niu.Function( input_names=['in_reference','in_distorted','in_mask' ], output_names=['out_distorted'], function=sanitize ), name='FixSignal' )
 
 
-    outputnode = pe.Node(interface=niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_phdiff_map', 'out_tpms' ]), name='outputnode' )
+    outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_phdiff_map', 'out_tpms' ]), name='outputnode' )
     
     pipeline.connect([
                        (inputnode,phmap_siemens, [('in_mask', 'in_file'),('intensity','intensity'),('sigma','sigma') ] )
@@ -153,7 +154,67 @@ def distortion_workflow(name="synthetic_distortion"):
     
     return pipeline
 
-def dtk_tractography_workflow( name='DTK_tractography' ):
+
+def mrtrix_tractography_workflow( name='MRTrix_CSD_tracks', thres=0.5, seed='wm' ):
+    pipeline = pe.Workflow(name=name)
+
+    inputnode = pe.Node(  niu.IdentityInterface( 
+                          fields=['in_dwi','in_bvec','in_bval','in_mask',
+                                  'roi_file' ] ), 
+                          name='inputnode' )
+
+    outputnode = pe.Node( niu.IdentityInterface(
+                          fields=['track_file','matrix_tracks',
+                                  'connectome','avglen_map' ] ),
+                          name='outputnode' )
+
+
+    wmmask = pe.Node( fs.Binarize( min=thres ), name='BinWM' )
+    fsl2mrtrix = pe.Node(mrt.FSL2MRTrix(),name='fsl2mrtrix')
+    est_resp = pe.Node(mrt.EstimateResponseForSH(),name='est_resp')
+    est_resp.inputs.maximum_harmonic_order = 6
+    csdeconv = pe.Node(mrt.ConstrainedSphericalDeconvolution(),name='csdeconv')
+    csdeconv.inputs.maximum_harmonic_order = 6
+    track = pe.Node(mrt.SphericallyDeconvolutedStreamlineTrack(),name='CSDstreamtrack')
+    track.inputs.desired_number_of_tracks = 150000
+    tck2trk = pe.Node(mrt.MRTrix2TrackVis(),name='tck2trk')
+    matrix = pe.Node( ConnectivityMatrix(), name='BuildMatrix' )
+
+    pipeline.connect([
+                         (inputnode,    fsl2mrtrix, [("in_bvec", "bvec_file"),('in_bval','bval_file') ])
+                        ,(inputnode,        wmmask, [('in_mask','in_file')])
+                        ,(inputnode,      est_resp, [("in_dwi","in_file")])
+                        ,(fsl2mrtrix,     est_resp, [("encoding_file","encoding_file")])
+                        ,(wmmask,         est_resp, [("binary_file","mask_image")])
+                        ,(inputnode,      csdeconv, [("in_dwi","in_file")])
+                        ,(wmmask,         csdeconv, [("binary_file","mask_image")])
+                        ,(est_resp,       csdeconv, [("response","response_file")])
+                        ,(fsl2mrtrix,     csdeconv, [("encoding_file","encoding_file")])
+                        ,(csdeconv,          track, [("spherical_harmonics_image","in_file")])
+                        ,(track,           tck2trk, [('tracked','in_file')])
+                        ,(inputnode,       tck2trk, [('in_dwi','image_file')])
+                        ,(tck2trk,      outputnode, [('out_file', 'track_file') ])
+                        ,(tck2trk,          matrix, [('out_file','in_file')])
+                        ,(inputnode,        matrix, [('roi_file','roi_file')])
+                        ,(matrix,       outputnode, [('out_conmat','connectome'),('out_lenmat','avglen_map'),('out_tracks','matrix_tracks') ])
+                     ])
+
+
+    if seed=='wm':
+        pipeline.connect([ (wmmask,          track, [("binary_file","seed_file")]) ])
+    else:
+        seedbin = pe.Node( fs.Binarize( min=thres ), name='BinSM' )
+        pipeline.connect([ 
+                             (inputnode,    seedbin, [('roi_file','in_file')])
+                            ,(seedbin,        track, [("binary_file","seed_file")])
+                        ])
+
+    return pipeline
+
+
+
+
+def dtk_tractography_workflow( name='DTK_tractography', seed='wm' ):
     pipeline = pe.Workflow(name=name)
 
     inputnode = pe.Node(  niu.IdentityInterface( 
@@ -167,7 +228,8 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
                           name='outputnode' )
 
     dtifit = pe.Node(dtk.DTIRecon(output_type='nii.gz'),name='dtifit')
-    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=[0.002,3.0], mask_seed_th=[0.5,27.5],invert_x=False,invert_y=True,random_seed=10), name="dtk_tracker")
+    dtk_tracker = pe.Node(dtk.DTITracker(mask1_threshold=[0.002,3.0],invert_x=False,invert_y=True,random_seed=10), name="dtk_tracker")
+
     smooth_trk = pe.Node(dtk.SplineFilter(step_length=0.5), name="smooth_trk")
     matrix = pe.Node( ConnectivityMatrix(), name='BuildMatrix' )
 
@@ -176,7 +238,7 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
     
     pipeline.connect([
                          (inputnode,        dtifit, [('in_dwi','DWI'),('in_bvec','bvecs'),('in_bval','bvals')])
-                        ,(inputnode,   dtk_tracker, [('in_mask','mask1_file'),('roi_file','mask_seed') ])
+                        ,(inputnode,   dtk_tracker, [('in_mask','mask1_file') ])
                         ,(dtifit,      dtk_tracker, [('tensor','tensor_file') ])
                         ,(dtk_tracker,  smooth_trk, [('track_file', 'track_file')])
                         ,(dtifit,       outputnode, [('tensor', 'tensor'),('ADC','ADC'),('FA','FA') ])
@@ -190,6 +252,18 @@ def dtk_tractography_workflow( name='DTK_tractography' ):
                         # ,(inputnode,    connectome, [('roi_file','roi_file')])
                         # ,(connectome,   outputnode, [('out_file','connectome')])
                      ])
+
+    if seed=='gm':
+        mask_seed_th = [0.5, 54]
+        pipeline.connect([
+                         (inputnode,   dtk_tracker, [('roi_file','mask_seed') ])
+                        ])
+    else:
+        mask_seed_th = [0.001,3.0]
+        pipeline.connect([
+                         (inputnode,   dtk_tracker, [('in_mask','mask_seed') ])
+                        ])
+
 
     return pipeline
 
@@ -221,7 +295,7 @@ def fugue_all_workflow(name="Fugue_WarpDWIs"):
     vsm_fwd = pe.MapNode(fsl.FUGUE(forward_warping=True, icorr=False), iterfield=['in_file'], name='Fugue_Warp')
     dwi_merge = pe.Node(fsl.utils.Merge(dimension='t'), name='merge_DWI')
     
-    outputnode = pe.Node(interface=niu.IdentityInterface(fields=['out_file' ]), name='outputnode' )
+    outputnode = pe.Node(niu.IdentityInterface(fields=['out_file' ]), name='outputnode' )
     pipeline.connect([
                        (inputnode,  dwi_split, [('in_file', 'in_file')])
                       ,(dwi_split,    vsm_fwd, [('out_files', 'in_file')])
@@ -353,10 +427,10 @@ def generate_siemens_phmap( in_file, intensity, sigma, w1=-0.5, w2=1.0, out_file
    # normalizer = 0.001 / maxvalue
     normalizer = 1.0
 
-    noisesrc = 2.0 * np.random.random_sample( size=np.shape(phasefield) ) - 1.0
-    noisesrc[mskdata>0] = 0.0
-    phasefield[mskdata==0] = 0.0
-    phasefield= phasefield * normalizer + noisesrc
+   # noisesrc = 2.0 * np.random.random_sample( size=np.shape(phasefield) ) - 1.0
+   # noisesrc[mskdata>0] = 0.0
+   # phasefield[mskdata==0] = 0.0
+   # phasefield= phasefield * normalizer + noisesrc
     phasefield = phasefield * 2047.5
 
     hdr = msk.get_header()
