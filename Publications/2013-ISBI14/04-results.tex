@@ -6,10 +6,10 @@ conveniently integrated in workflows using \emph{nipype}
 \cite{gorgolewski_nipype:_2011}. The choice of this tool
 grants the reproducibility of the experiments,
 and the evaluation workflow is publicly released.
-The results of the proposed experiments are summarized
+The results of this study are summarized
 in \autoref{fig:results} and \autoref{table:results}.
 The remaining of this section provides extended descriptions
-and interpretation of the results.
+and interpretation of these findings.
 
 \begin{figure*}[tpb]
    \centering
@@ -39,10 +39,11 @@ with respect to \gls*{t2b} infers the latter may not be
 an appropriate method for susceptibility correction. 
 The described performance was constant for \gls*{fmb} 
 and \gls*{reb} along the different magnitudes of 
-distortion evaluated (maximum phase-encoding direction 
-shifts in the range of 3.80-7.60~mm).
+distortion evaluated (maximum shifts of 3.80-7.60~mm).
 
 \input{041-results-table}
+
+\input{042-results-tractography}
 
 A second workflow investigated the similarity of the recovered
 signal with respect to the original (undistorted).
@@ -56,7 +57,6 @@ for the \glspl*{dwi} ($96.26\%$) but not as good for the \textit{b0}
 volume. Visual inspection of the recovered data confirms the 
 presented quantitative results (\autoref{fig:results}, first row).
 
-\input{042-results-tractography}
 
 \subsection{Impact on tractography and connectivity}
 
@@ -66,8 +66,7 @@ fibers contained
 in the phantom. Tractography discovered successfully only 4 out 
 of 27 existing connections from the original (undistorted) data,
 with more than 45 false connections.
-With the \gls*{hardi} dataset (reconstructed with constrained 
-spherical deconvolution) we found 23/27 connections,
+With the \gls*{hardi} dataset we found 23/27 connections,
 but we still observed 40 false positives. Therefore, the 
 experiments using the \gls*{dti} phantom were discarded. The
 results presented in this subsection only refer to the 
@@ -84,8 +83,8 @@ to reconstruction and tractography than to distortions.
 For the sake of completeness, \autoref{table:results-tractography}
 reports the characteristic features of the tractography results
 and connectivity matrices, for the fieldmap that caused a maximum
-shift of 3.80~mm. Very similar results were obtained for
-7.60~mm. This results, along with visual inspection
+shift of 3.80~mm. A very similar outcome was obtained for
+7.60~mm. These results, along with visual inspection
 (\autoref{fig:results}, second and third rows), might point
 to \gls*{fmb} as the best correction method.
 
@@ -94,7 +93,7 @@ to \gls*{fmb} as the best correction method.
 
 Even though all the surveyed methods produced visually 
 sound results, our study suggested that \gls*{reb} is the 
-most accurate method in terms of geometrical accuracy and
+most accurate method in terms of geometrical agreement and
 signal dropout recovery. 
 The \gls*{t2b} method did not achieve the necessary high-standards
 to recommend its use. Nonetheless, we understand that specific

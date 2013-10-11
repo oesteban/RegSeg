@@ -2,13 +2,14 @@
 
 \subsection{Digital Phantom}
 Based on the fiber geometries of the digital phantom 
-created for the \gls*{hardi} 
-reconstruction Challenge held in ISBI 2013 
+created for the \emph{\Gls*{hardi} 
+Reconstruction Challenge} held in ISBI 2013 
 (San Francisco, US), we simulated high resolution 
 (0.5mm isotropic) T1 (TE/TR=10/1500ms) and T2 
 (TE/TR=90/5000ms) images, as well as two \gls*{dmri}
 images (1.0mm isotropic, $b$=1200, 1 B0 image) with
-32 and 64 evenly-distributed directions.
+32 and 64 evenly-distributed directions intended
+for \gls*{dti} and \gls*{hardi} reconstructions, respectively.
 Diffusion is modeled by a restricted and a hindered
 compartment, similar to \cite{assaf_composite_2005}.
 The phantom includes \gls*{wm} fiber bundles,
@@ -47,8 +48,9 @@ computed the corresponding \gls*{vsm}. Amplitude
 of the dephasing maps can be modulated, enabling
 us to evaluate the impact of the distortion magnitude.
 We generated several \glspl*{vsm} with increasing
-maximum shifts, ranging 3.80-7.60~mm, covering the
-typical range of distortion observed in real datasets.
+maximum shifts (from 3.80 to 7.60~mm), covering 
+the typical magnitudes of distortion observed 
+in real datasets.
 
 From these synthetic \glspl*{vsm}, we generated
 the corresponding distorted \glspl*{dwi}, in two opposed
@@ -113,7 +115,7 @@ are also distorted and corrected to provide tractography
 with the required \gls*{wm} masks.
 These maps are also used in a final assessment module.
 
-The framework provides two different options for
+The framework supports two different methods for
 \gls*{dwi} reconstruction and deterministic tractography.
 Firstly, \emph{Diffusion Toolkit} \cite{wang_diffusion_2007}
 for \gls*{dti}, is configured with 10 random
@@ -145,5 +147,4 @@ on the \textit{b0} and the average of the remaining \gls*{dwi}
 volumes. Thirdly, we studied the impact on the
 connectivity matrices reporting the number of
 false positives (inexistent connections in the
-gold-standard) and false negatives (or connections
-lost).
+gold-standard) and false negatives (or missed connections).
