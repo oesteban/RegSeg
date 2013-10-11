@@ -162,13 +162,13 @@ SparseMatrixTransform<TScalarType,NDimensions>
 						wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
 					}
 
-					if( wi < vnl_math::eps ) {
+					if( fabs(wi) < vnl_math::eps ) {
 						wi = 0.0;
 						break;
 					}
 				}
 
-				if (wi > 0.0) {
+				if ( fabs(wi) > 0.0) {
 					this->m_SPrime[dim].put(row, col, this->m_KernelNorm * wi);
 				}
 			}
