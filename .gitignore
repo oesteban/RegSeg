@@ -2,8 +2,7 @@ Debug/
 Release/
 .project
 .fuse*
-result*.vtk
-result*.nii.gz
+*.vtk
 *.aux
 *.bbl
 *.blg
@@ -46,3 +45,4 @@ Publications/2013-TMI/ACWE.bib
 papers/FINF-ITK
 temp/
 Data/Phantom*
+provenance.*
