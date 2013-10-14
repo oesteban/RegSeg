@@ -4,8 +4,7 @@
 \subsection{Related work}
 \label{sec:methods_background}
 
-\Gls{acwe} and level-set based formulations have been widely applied in image
-processing, as reviewed in \citep{suri_shape_2002}. We suggest clustering the 
+We suggest clustering the 
 current methodologies of template-based segmentation methods into three groups. 
 The first group typically adds a shape prior term to the energy functional of 
 an evolving active contour \citep{bresson_variational_2006,
@@ -25,11 +24,10 @@ pohl_bayesian_2006,wang_joint_2006}, where the prior
 imposes consistent voxel-based classification of contiguous regions.
 A comprehensive summary of the \gls{acwe}-derived methodologies with special attention
 to joint registration-segmentation methods is found in \citep{gorthi_active_2011}.
+\Gls{acwe} and level-set based formulations have been widely applied in image
+processing, as reviewed in \citep{suri_shape_2002}.
 
-Our joint registration and segmentation method is mainly inspired in the active
-deformation fields presented by \citep{gorthi_active_2011}, that is a generalization
-of the methodologies under second and third groups before. As it is described in
-their work, the first joint ``morphing''-segmentation approach (it was not a proper
+The first joint ``morphing''-segmentation approach (it was not a proper
 registration method) was proposed in \citep{bertalmio_morphing_2000}. The first
 registration framework is presented by \citep{yezzi_variational_2001} where the
 energy functional is defined simultaneously in the moving and target images with
@@ -42,245 +40,140 @@ combining ideas from both branches and proposed the propagation of the
 deformation field from the contours to the whole image definition. Finally,
 \citep{gorthi_active_2011} present a comprehensive generalization of the methodologies.
 
-All the surveyed frameworks are deduced from the general level set evolution equation
-introduced by \citep{osher_fronts_1988}:
-\begin{equation}
-\frac{\partial \Phi_D(\mathbf{x},t)}{\partial t} = \nu ( \Phi_D(\mathbf{x},t)) \, \left| \nabla \Phi_D(\mathbf{x},t) \right|
-\end{equation}
-where $\nu$ is the velocity of the flow or speed function that contains the local
-segmentation and contour regularization constraints, and $\Phi_D: \Omega \to \mathbb{R}$
-is the signed distance function often used to represent implicitly the active contour
-by its zero level. An early extension to image registration was proposed by 
-\citep{vemuri_joint_2003} but replacing $\Phi_D$ by the intensity function of the
-image to register, $\Phi_I: \Omega \to \mathbb{R}$ (the moving image). 
-\citep{bertalmio_morphing_2000,vemuri_joint_2003} then define the speed function as
-$\nu(\Phi_I(\mathbf{x},t)) = \Phi_I(\mathbf{x},t) - \Phi_T(\mathbf{x},t)$, where $\Phi_T(\mathbf{x})$ is the intensity
-function of the target image. Finally, \citep{gorthi_active_2011} propose a different
-multiphase label function as level set function ($\Phi_L$) that improves registration
-results.
-
-Naming $\Phi_G$ a generic objective function, a dense deformation field of vectors 
-$u: \mathbb{R}^n \to \mathbb{R}^n$ (typically $n = \{ 2, 3 \}$) is introduced. 
-Then, the conservation of the morphological description is assumed, such as
-$\Phi_G(\mathbf{x},t) = \Phi_G( \mathbf{x} + du, t + dt ) \implies d\Phi_G(\mathbf{x},t) = 0$, where $d\Phi_G$ is
-the total derivative of $\Phi_G$. Using the chain rule, it can be rewritten as the 
-evolution equation of a vector flow:
-\begin{equation}
-\frac{\partial u(\mathbf{x},t)}{\partial t}= - \frac{\Phi_G}{\left| \nabla \Phi_G \right|} N_{\Phi_G},
-\end{equation}
-where $N_{\Phi_G}$ is the normal of the level set. Finally, they introduce the general
-level set evolution equation into the vector flow to perform the registration task:
-\begin{equation}
-\frac{\partial u(\mathbf{x},t)}{\partial t} = - \nu( \Phi_G(\mathbf{x},t) ) N_{\Phi_G}.
-\end{equation}
-Therefore, the position of the level set function $\Phi_G$ at time $t$ is given by the
-deformation field $u(\mathbf{x},t)$ and the initial level set function $\Phi_G(\mathbf{x},0)$, yielding:
-\begin{equation}
-\frac{\partial u(\mathbf{x},t)}{\partial t} = - \nu( \Phi_G(\mathbf{x} + u(\mathbf{x},t), 0) ) N_{\Phi_G}.
-\label{eq:active_deformation_fields}
-\end{equation}
-
-Here, we propose an \gls{adf} -like framework with some differences in
-the inspiration of the solution. Even though the historical evolution
+Even though the historical evolution
 of joint segmentation and registration procedures is strongly linked
 to the level sets approximation, our work is based in derivations of
-the \gls{acwe} framework \citep{chan_active_2001}, more specifically 
+the \gls{acwe} framework \citep{chan_active_2001}, and related to
 \citep{le_guyader_combined_2011}.
-The main diverging points with respect to
+{\color{red} {The main diverging points with respect to
 \citep{gorthi_active_2011} are: 1) there is no need for an explicit level set function
 $\Phi_G$, as we replace the level set gradient computation $N_{\Phi_G}$ with shape
-gradients \citep{jehan-besson_dream2s:_2003,herbulot_segmentation_2006}; 2) 
-\todo[inline]{regularization is also based on linear diffusion smoothing REF-thirion,
-but they use a Gaussian filtering). Maybe \citep{le_guyader_combined_2011} contains
-more regarding this difference, given that they use the same regularization as us. But,
-currently, I do not have enough background to write this second difference}
-\textbf{}; 3) optimization is applied in the spectral
+gradients \citep{jehan-besson_dream2s:_2003,herbulot_segmentation_2006};
+2) regularization is also based on linear diffusion smoothing \citep{thirion_image_1998},
+but we replace the Gaussian filtering by other constraints
+studied in \citep{nagel_investigation_1986} to better the problem;
+3) optimization is applied in the spectral
 domain, observing anisotropic and inhomogeneous mappings along each direction.
 With respect \citep{le_guyader_combined_2011}, the main differences are
 the distance function, and the spectral solution to the optimization updates,
-as we shall cover in \autoref{sec:numerical_implementation}.
+as we shall cover in \autoref{sec:numerical_implementation}.}}
 
-\todo[inline]{Disclaimer: I've been exploring the joint registration-segmentation
-applications starting from Gorthi's paper. Later, Dominique pointed me out that
-the main inspiration of the design comes from the ACWE world. If one takes a quick
-look on \citep{le_guyader_combined_2011} this is clear. But I did not have time
-yet to read this paper in depth. Fortunately, it does not seem to contain a lot
-of references to literature, so I hope it will be ease to re-formulate this
-section with its contents. Also, the highlighted differences will require an
-update once I fully understand that method}
+\todo[inline]{The previous paragraphs in red color are marked by Dominique
+as ``to rework'', and I totally agree}
 
 
-\subsection{Bridging segmentation frameworks}
+\subsection{Proposed model}
 \label{sec:methods_map}
-%
-A widely used approach to image segmentation is derived from the
-Bayes' rule \eqref{eq:bayes_rule}. This framework seeks for a 
-partitioning of a certain observation of features $F: \mathbb{R}^n \to %
-\mathbb{R}^C$ (an $n$-dimensional \emph{image} comprising $C$ different 
-channels) in piecewise smooth regions $\Omega = \lbrace \Omega_l , 
-l\in\left[ 1 \ldots L \right] \rbrace$,  that maximize the \emph{a posteriori}
-probability $p(\Omega \mid F)$:
+In this paper we formulate the joint registration-segmentation
+problem as follows. We look for a spatial mapping (with, typically,
+$n=3$ for the 3-dimensional case):
+\begin{align*}
+U\colon T \subset \mathbb{R}^n &\to D \subset \mathbb{R}^n \\
+\mathbf{x} &\mapsto \mathbf{x}' =\mathbf{x}+u(\mathbf{x}),
+\end{align*}
+such that the known contours in anatomical space $T$ optimally segment
+the diffusion space $D$.
+
+In a Bayesian framework, different such mappings $U$ between ``T1-''
+and ``\gls*{dwi}-'' spaces are evaluated based on their posterior
+probability given the observed data $F$. Using the Bayes' rule, this
+posterior \emph{likelihood} can be computed as:
 \begin{equation}
-p(\Omega \mid F) = \frac{p(F \mid \Omega)\, p(\Omega)}{p(F)},
+P(U \mid F,\Gamma_{ij}) = \frac{P(F \mid U,\Gamma_{ij})\, P(U)}{P(F)},
 \label{eq:bayes_rule}
 \end{equation}
-where $p(F \mid \Omega)$ is the \emph{likelihood} of the realization 
-of $F$ given a certain region set $\Omega$. The second term, $p(\Omega)$,
-is the a-priori probability of the partitioning. Finally, $p(F)$ is the 
-probability of a certain image realization, and thus, it will remain 
-constant when computing the \gls{map}. Consequently, the Bayes' rule
-can be simplified for the optimization as follows:
-\begin{equation}
-p(\Omega \mid F) \propto p(F \mid \Omega)\, p(\Omega).
-\label{eq:bayes_rule_simplified}
-\end{equation}
+where $P(F \mid U,\Gamma_{ij})$ is the data-likelihood, and
+$\Gamma_{ij}$ are a set of contours in T1-space that correspond to
+two interfacing regions $\Omega$, such that 
+$\Gamma_{ij} = \partial \Omega_i \cap \partial \Omega_j$.
 
-In the simplest Bayesian segmentation framework, the unknown is the
-parameter set $\Theta_l$ of region-wise descriptors that minimize 
-\eqref{eq:bayes_rule}. Conversely, we can assume these descriptors as
-fixed (fulfilling the concept of conservation of morphological description
-mentioned before) and introduce a realization of a dense deformation field $U: %
-\mathbb{R}^n \to \mathbb{R}^n$ that maps the initial partition $\Omega_0$
-to the estimated one:
-\begin{equation}
-\Omega' = \Omega_0 + \hat{U}.
-\label{eq:omega_tf}
-\end{equation}
-
-Thus, \eqref{eq:bayes_rule_simplified} is rewritten as 
-$p(U \mid F) \propto p(F \mid U)\, p(U)$ that yields the
-following \gls{map} solution:
-
-\begin{equation}
-\hat{U} = \underset{U}{\argmax} \left\{ p(U \mid F) \right\} = 
-\underset{U}{\argmax} \left\{ p(F \mid U)\, p(U) \right\}.
+We are interested in a mapping $\hat{U}$ which maximizes this
+posterior probability (\gls*{map} estimate, \citep{bishop_pattern_2006}):
+\begin{align}
+\hat{U} &= \underset{U}{\argmax} \left\{ P(U \mid F,\Gamma_{ij}) \right\} \notag\\
+ &= \underset{U}{\argmax} \left\{ P(F \mid U,\Gamma_{ij})\, P(U) \right\}.
 \label{eq:map_u}
-\end{equation}
+\end{align}
 
+First, we assume independence between pixels, and thus break down the
+global data likelihood into a product of pixel-wise conditional probabilities:
 
-An extended assumption is that the feature vector realization $F$ is
-\emph{i.i.d.}, and thus, it is possible to write the a-posteriori
-probability $p(F \mid U)$ as a continuous product with $d\mathbf{x}$ the
-infinitesimal voxel size:
 \begin{equation}
-p(F \mid U) \, p(U) = \underset{l}{\prod} \underset{\mathbf{x}\in \Omega'_l}{\prod}
-p_l\left( F(\mathbf{x} + U(\mathbf{x})) \mid U(\mathbf{x}) \right)^{d\mathbf{x}}.
+P(F \mid U,\Gamma_{ij}) = 
+\underset{\mathbf{x}\in \Omega}{\prod} P\left( F(\mathbf{x}') \mid U(\Gamma_{ij}) \right).
 \label{eq:bayes_aposteriori}
 \end{equation}
-\todo[inline]{I'm not convinced about turning $p(\Omega)$ into $p(U)$.}
 
-A second widely-accepted assumption is the multivariate normal 
-distribution of the different tissues in \gls{mri} data. Therefore,
-the posterior probability of an infinitesimal voxel can be written as:
+Further, within each region $\Omega_k$ defined by the contours $\Gamma$
+trough duality, we assume the features to be i.i.d.:
 \begin{equation}
-p_l( F(\mathbf{x}) \mid U(\mathbf{x}) ) = \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_l (\mathbf{f}') \right)}}.
-\label{eq:bayes_mpdf}
-\end{equation}
-where we can identify the factor in the exponential as the squared \emph{Mahalanobis 
-distance} of the feature observed in the displaced position, $\mathbf{f}' = 
-F(\mathbf{x} + U(\mathbf{x}))$ with region descriptors
-$\Theta_l = \lbrace \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_l \rbrace$:
-\begin{equation}
-\Delta^2_l (\mathbf{f} \mid \Theta_l ) = (\mathbf{f} - \boldsymbol{\mu}_l)^T \, \boldsymbol{\Sigma}^{-1}_l \, (\mathbf{f} - \boldsymbol{\mu}_l).
-\label{eq:bayes_mahalanobis}
+P\left( F(\mathbf{x}') \mid U,\Gamma_{ij} \right) = p_k( F(\mathbf{x}')) \quad
+\forall \mathbf{x} \in \Omega_k.
+\label{eq:likelihood}
 \end{equation}
 
-Finally, we can turn the \gls{map} problem into a variational one
+For convenience, and because this has been shown to be an appropriate
+approximation \citep{bishop_pattern_2006}, each such region is modeled
+by a multivariate normal distribution with region descriptors
+$\Theta_k = \lbrace \boldsymbol{\mu}_k, \boldsymbol{\Sigma}_{k} \rbrace$:
+
+\begin{equation}
+p_k( F(\mathbf{x}') ) = \mathcal{N} ( f \mid \Theta_k ).
+\label{eq:multivariate_normal}
+\end{equation}
+
+\todo{I modified this slightly}
+Thus, defining the feature observed as $\mathbf{f}'=F(\mathbf{x}')$ and 
+the squared \emph{Mahalanobis distance} of $\mathbf{f}'$ with respect
+of the descriptors of region $k$ as
+$\Delta^2_k (\mathbf{f}' \mid \Theta_k ) = (\mathbf{f}' - \boldsymbol{\mu}_k)^T \, \boldsymbol{\Sigma}^{-1}_k \, (\mathbf{f}' - \boldsymbol{\mu}_k)$,
+we write:
+\begin{align}
+P( F \mid U, \Omega ) &= \underset{k}{\prod} \underset{\mathbf{x} \in \Omega_k}{\prod}
+\mathcal{N} ( f \mid \boldsymbol{\mu}_k, \boldsymbol{\Sigma}_{k} ) \notag\\
+&= \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_l (\mathbf{f}' \mid \Theta_k ) \right)}}.
+\label{eq:pdf}
+\end{align}
+
+We choose a Thikonov regularization prior as follows:
+
+\begin{equation*}
+P(U) = \underset{\mathbf{x}}{\prod} p(u)
+\end{equation*}
+with further:
+\begin{align*}
+p(u) &= p_0(u) \, p_1(u) \notag\\
+p_0(u) &= \mathcal{N}( u \mid 0, A^{-1}) \notag\\
+p_1(u) &= \mathcal{N}( Du \mid 0, B^{-1}),
+\end{align*}
+that consider that the distortion and its gradient have zero
+mean and variance governed by $A$ and $B$. Since the anisotropy
+is technically aligned with the imaging axes, these can
+be simplified:
+\begin{align}
+p_0(u) &= \underset{\mathbf{x}}{\sum} \mathcal{N}( u(\mathbf{x}) \mid 0, \frac{1}{\sqrt{\alpha_{x,y,z}}}) \notag\\
+p_1(u) &= \underset{\mathbf{x}}{\sum} \mathcal{N}( \nabla_{x,y,z}u(\mathbf{x}) \mid 0, \frac{1}{\sqrt{\beta_{x,y,z}}})
+\label{eq:priors}
+\end{align}
+
+Finally, we can turn the \gls{map} problem into 
+a variational one
 applying the following log-transform:
-\begin{multline}
-E(F \mid U)= -\log \left[ p(F \mid U) \, p(U) \right] = \\
-= -\log \left[ \underset{l}{\prod} \underset{\mathbf{x}\in \Omega'_l}{\prod}
-p_l( F(\mathbf{x}) \mid U(\mathbf{x}) )^{d\mathbf{x}} \right] = \\
-= \sum\limits_l \int_{\Omega'_l} -\log \left[ p_l(F(\mathbf{x}) \mid U(\mathbf{x} ) ) \right] \, d\mathbf{x},
-\label{eq:energy_1}
-\end{multline}
-and introducing the posterior probability term \eqref{eq:bayes_mpdf}, 
-we can express the functional in terms of the deformation field $U$ and
-the region descriptors $\Theta_l$:
-\begin{multline}
-E(U) = \\
-= \sum\limits_l \int_{\Omega'_l} -\log \left[ \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_l (\mathbf{f}) \right)}} \right] \, d\mathbf{x} = \\
-= \sum\limits_l \int_{\Omega'_l} \left[ \frac{1}{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right| \right)} + \frac{1}{2}  \Delta^2_l (\mathbf{f}) \right] \,d\mathbf{x}.
-\end{multline}
-Finally, after removing scaling factors and independent constants,
-we obtain:
 \begin{align}
-E(U) = \sum\limits_l \left[ \left|\Omega'_l\right|\,\log \left|\mathbf{\Sigma}_l \right| + \int_{\Omega'_l} \Delta^2_l (\mathbf{f}) \,d\mathbf{x} \right],
-\label{eq:map_energy}
+E(F \mid U) &= -\log \underset{k}{\prod}
+\underset{\mathbf{x} \in \Omega_k}{\prod} 
+p_k( \mathbf{f}')\,p_0( u(\mathbf{x}))\,p_1( u(\mathbf{x})) \notag\\
+&= C + \underset{k}{\sum}
+\underset{\mathbf{x} \in \Omega_k}{\sum}
+\Delta^2_k (\mathbf{f}' \mid \Theta_k ) \notag\\
+&+ \underset{d=\{x,y,z\}}{\sum} \alpha_d u^2_d
++ \underset{d=\{x,y,z\}}{\sum} \beta_d \|\nabla u_d\|^2,
+\label{eq:energy}
 \end{align}
-where we have a constant term scaled by the total volume of the partition $\Omega_l$ and 
-the determinant of the  covariance matrix of the partition $\left|\boldsymbol{\Sigma}_{l}\right|$,
-plus an energy term based on the squared \emph{Mahalanobis distance}.
-As long as this shape-based registration framework is designed to allow small changes
-between boundaries (and therefore, their volumes), and the shape descriptors should not
-change significantly due to the conservation principle, the first term can be optionally
-dismissed with respect the second one, what yields:
-\begin{align}
-E(U) = \sum\limits_l \int_{\Omega'_l} \Delta^2_l (\mathbf{f}) \,d\mathbf{x}.
-\label{eq:final_map_energy}
-\end{align}
-
-This latter expression resembles the Mumford-Shah functional 
-\citep{mumford_optimal_1989} which is at the background of all \gls{acwe}-based
-methods. In this case, \eqref{eq:final_map_energy} includes covariance as
-region descriptor, what modifies the original functional in a way that it 
-can deal with more general distributions. This is necessary to avoid the 
-assumption that regions $\Omega_l$ have a fixed covariance matrix on their 
-complete domain. One immediate advantage of this functional from the original 
-one is the possibility to distinguish regions with the same mean vector but 
-different covariance matrix \citep{brox_local_2009}. In this work, the 
-Mumford-Shah functional is derived for this extension as follows:
-\begin{multline}
-E(\Theta_l,\Omega_l) = \sum\limits_l \int_{\Omega_l} \left[ \log \left|\mathbf{\Sigma}_l\right| + \Delta^2_l (\mathbf{f}) \right] \,d\mathbf{x} \\
-+ \lambda \int_{\Omega_l - d\Omega_l}  ( \left| \nabla \mathbf{\mu} \right| ^2 + \left| \nabla \mathbf{\Sigma}_l \right| ^2 ) \, d\mathbf{x} 
-+ \nu |d\Omega_l|,
-\end{multline}
-that is easily identifiable with \eqref{eq:map_energy} when we apply 
-the so-called \emph{cartoon limit}, 
-for $\lambda \to \infty$:
-\begin{equation}
-E(\Theta_l,d\Omega_l) = \sum\limits_l \int_{\Omega_l} \left[ \log \left|\mathbf{\Sigma}_l\right| + \Delta^2_l (\mathbf{f}) \right] \,d\mathbf{x}
-+ \nu |d\Omega_l|.
-\end{equation}
-
-As long as we do not penalize the edge set $d\Omega_l$ length, $\nu = 0$ and
-the result is dual to \eqref{eq:map_energy}:
-\begin{equation}
-E(\Theta_l,d\Omega_l) = \sum\limits_l \int_{\Omega_l} \left[ \log \left|\mathbf{\Sigma}_l\right| + \Delta^2_l (\mathbf{f}) \right] \,d\mathbf{x}.
-\end{equation}
-
-
-\subsection{Introducing priors}
-\label{sec:priors}
-%
-By introducing $U$ in \eqref{eq:bayes_rule_simplified}, we transformed 
-the segmentation problem into a registration one provided with $\Omega_0$ 
-(the initial partition) is derived from the shape-priors given in reference 
-space. Therefore, the priors can be expressed in terms of the deformation
-field:
-\begin{equation}
-P(U) = \underset{\mathbf{x}}{\prod}\,p(U(\mathbf{x}))\,^{d\mathbf{x}}.
-\label{eq:prior_u}
-\end{equation}
-We define $P(U(\mathbf{x})) = p(\mathbf{u}) = \underset{d}\prod \, p_d(\mathbf{u})$ 
-with $d$ the order of the derivative. We also assume that an initial
-affine registration let us consider that the deformation field ($d=0$)
-and its derivatives up to some order ($d>0$) are all zero mean, and
-have some variance $\Sigma_d$. We restrict ourselves to $d=\lbrace 0,1 \rbrace$
-(the field and its gradient):
-\begin{subequations}
-\begin{equation}
-p_0(\mathbf{u}) = \mathcal{N}( \mathbf{u} \mid 0, \alpha^{-1}),
-\end{equation}
-\begin{equation}
-p_1(\mathbf{u}) = \mathcal{N}( \nabla \mathbf{u} \mid 0, {\Sigma_\beta}^{-1}), 
-\end{equation}
-\end{subequations}
-And therefore:
-\begin{equation}
-P(U) = \underset{\mathbf{x}}\prod \left[ p_0(\mathbf{u}) \, p_1(\mathbf{u}) \right]^{d\mathbf{x}}.
-\end{equation}
-
+that is the dual expression to the energy functional corresponding
+to a discrete \gls*{acwe} framework \citep{chan_active_2001}
+with anisotropic regularization as studied in
+\citep{nagel_investigation_1986}.
 
 \subsection{Numerical Implementation}
 \label{sec:numerical_implementation}

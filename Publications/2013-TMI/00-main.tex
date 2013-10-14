@@ -26,25 +26,6 @@
 %
 \usepackage[numbers,sort&compress]{natbib}
 %\usepackage{cite}
-% cite.sty was written by Donald Arseneau
-% V1.6 and later of IEEEtran pre-defines the format of the cite.sty package
-% \cite{} output to follow that of IEEE. Loading the cite package will
-% result in citation numbers being automatically sorted and properly
-% "compressed/ranged". e.g., [1], [9], [2], [7], [5], [6] without using
-% cite.sty will become [1], [2], [5]--[7], [9] using cite.sty. cite.sty's
-% \cite will automatically add leading space, if needed. Use cite.sty's
-% noadjust option (cite.sty V3.8 and later) if you want to turn this off
-% such as if a citation ever needs to be enclosed in parenthesis.
-% cite.sty is already installed on most LaTeX systems. Be sure and use
-% version 4.0 (2003-05-27) and later if using hyperref.sty. cite.sty does
-% not currently provide for hyperlinked citations.
-% The latest version can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/cite/
-% The documentation is contained in the cite.sty file itself.
-
-
-
-
 
 
 % *** GRAPHICS RELATED PACKAGES ***
@@ -548,7 +529,8 @@ diffusion MRI,~susceptibility~distortion,~segmentation,~registration,~parcellati
 % http://www.ctan.org/tex-archive/biblio/bibtex/contrib/doc/
 % The IEEEtran BibTeX style support page is at:
 % http://www.michaelshell.org/tex/ieeetran/bibtex/
-\bibliographystyle{IEEEtran}
+%\bibliographystyle{IEEEtran}
+\bibliographystyle{myplainnat}
 % argument is your BibTeX string definitions and bibliography database(s)
 \bibliography{ACWE}
 
@@ -563,11 +545,9 @@ diffusion MRI,~susceptibility~distortion,~segmentation,~registration,~parcellati
 % simpler here.)
 %\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{mshell}}]{Michael Shell}
 % or if you just want to reserve a space for a photo:
-
-\begin{IEEEbiography}{Oscar Esteban}
-Biography text here.
-\end{IEEEbiography}
-
+%\begin{IEEEbiography}{Oscar Esteban}
+%Biography text here.
+%\end{IEEEbiography}
 % if you will not have a photo at all:
 %\begin{IEEEbiographynophoto}{John Doe}
 %Biography text here.

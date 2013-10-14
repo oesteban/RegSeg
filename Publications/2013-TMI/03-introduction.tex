@@ -1,21 +1,6 @@
 \section{Introduction}
 \label{sec:introduction}
-% The very first letter is a 2 line initial drop letter followed
-% by the rest of the first word in caps.
-% 
-% form to use if the first word consists of a single letter:
-% \IEEEPARstart{A}{demo} file is ....
-% 
-% form to use if you need the single drop letter followed by
-% normal text (unknown if ever used by IEEE):
-% \IEEEPARstart{A}{}demo file is ....
-% 
-% Some journals put the first two words in caps:
-% \IEEEPARstart{T}{his demo} file is ....
-% 
-% Here we have the typical use of a "T" for an initial drop letter
-% and "HIS" in caps to complete the first word.
-%
+
 \IEEEPARstart{D}{iffusion} \gls{mri} is a widely used family
 of \gls{mri} techniques \citep{sundgren_diffusion_2004} which 
 accounts for a growing interest in its application to structural 
@@ -30,44 +15,35 @@ This comprehensive map of neural connections of the brain is called the
 analysis is a promising tool for neuroscience \citep{morgan_why_2013} and 
 for the clinical application \citep{griffa_structural_2013} as well.
 
+% REMOVE paragraph (Dom, 1st comment)
+%Early \gls{dwi} research mainly focused on the improvements of imaging 
+%methodologies by a better understanding of the diffusion effect, and improving
+%image reconstruction methodologies. Currently, the connectome extraction 
+%and analysis relies on a large chain of sophisticated computational techniques
+%including acquisition, reconstruction, modeling and model fitting, image segmentation
+%and registration, fibre tracking, connectivity mapping, visualization, statistical 
+%group studies, and inference \citep{daducci_connectome_2012}. This growing complexity 
+%has given rise to challenging issues towards reliable structural information about 
+%the neuronal tracts presented in, and also difficulties on the statistical analysis 
+%\citep{bullmore_complex_2009,meskaldji_comparing_2013}. To our knowledge, studies 
+%regarding the impact of the different sources of inaccuracy and variability along
+%the toolchain for connectivity analysis \citep{jones_twenty-five_2010,
+%cheng_characteristics_2012,jones_white_2013} are scarce.
 
-Early \gls{dwi} research mainly focused on the improvements of imaging 
-methodologies by a better understanding of the diffusion effect, and improving
-image reconstruction methodologies. Currently, the connectome extraction 
-and analysis relies on a large chain of sophisticated computational techniques
-including acquisition, reconstruction, modeling and model fitting, image segmentation
-and registration, fibre tracking, connectivity mapping, visualization, statistical 
-group studies, and inference \citep{daducci_connectome_2012}. This growing complexity 
-has given rise to challenging issues towards reliable structural information about 
-the neuronal tracts presented in, and also difficulties on the statistical analysis 
-\citep{bullmore_complex_2009,meskaldji_comparing_2013}. To our knowledge, studies 
-regarding the impact of the different sources of inaccuracy and variability along
-the toolchain for connectivity analysis \citep{jones_twenty-five_2010,
-cheng_characteristics_2012,jones_white_2013} are scarce.
-Here, we shall address three tasks included within  the image processing stage in 
-a unified approach: brain tissue segmentation in diffusion space 
-(\autoref{sec:dwi_segmentation}), 
-correction of geometrical distortions (\autoref{sec:distortion}), and structural 
-image registration to diffusion coordinate space (\autoref{sec:registration}). 
-These tasks are generally
-solved independently, or combined in pairs. However, there exist fundamental 
-coupling relationships that can be exploited to obtain a simultaneous solution to 
-the three problems. This joint approach satisfactory impacts the downstream
-outcomes of the whole pipeline with the increase of the internal consistency.
 
 \subsection{\Gls{dwi} data overview}
 \label{sec:dwi_overview}
-\gls{dwi} data are usually acquired with \gls{epi} sequences 
+\gls{dwi} data are usually acquired with \gls{epi} schemes
 as they allow for very fast acquisition of large sets of slices each
 acquired after a single excitation \citep{mukherjee_diffusion_2008,
 soares_hitchhikers_2013}. \Gls{epi} volumes are collected
 in sequence and each one represents one probed diffusion direction.
-This first acquisition is called \emph{raw} data or \emph{diffusion
-signal}. One or more volumes without directional encoding (so-called \emph{baseline},
-$b = 0$, \emph{low $b$}, or just \emph{B0} volumes) are interleaved as
-reference, at the least one is acquired at the beginning of the
-\gls{epi} dataset. These B0 are acquired without direction gradient,
-showing a T2-like contrast.
+%This first acquisition is called \emph{raw} data or \emph{diffusion
+%signal}. One or more volumes without directional encoding (so-called \emph{baseline},
+%$b = 0$, \emph{low $b$}, or just \emph{b0} volumes) are interleaved as
+%reference, at the least one is acquired at the beginning of the
+%\gls{epi} dataset. These B0 are acquired without direction gradient,
+%showing a T2-like contrast.
 
 \Gls{epi} are known to suffer from geometrical distortions and artifacts
 due to, mainly, three sources: the subject motion in between acquiring 
@@ -87,24 +63,59 @@ on the \emph{directionally dependent} raw data is not affordable. Thus,
 available algorithms. The outcome is a voxel-wise model of diffusion shape 
 (in \citep{daducci_isbi2013_2013} \todo{FIX ref} there is available a comprehensive review of 
 state-of-art methodologies). On top of the
-chosen model, some scalar maps describing tissue features is generally
-computed. For instance, the most popular \gls{dwi}-derived scalar map 
-is \gls{fa} which depicts the isotropy of water diffusion inside the brain.
-Another widely studied map is the \gls{adc} (or \gls{md} that has a dual definition),
-which reflects the intensity of the diffusion effect. Many other
-directionally invariant measurements have been defined. For a comprehensive study, 
-we refer to \citep{ennis_orthogonal_2006}.
+chosen model, some scalar maps describing tissue features are generally
+computed (e.g. \gls*{fa}, and \gls*{adc}).
+%For instance, the most popular \gls{dwi}-derived scalar map 
+%is \gls{fa} which depicts the isotropy of water diffusion inside the brain.
+%Another widely studied map is the \gls{adc} (or \gls{md} that has a dual definition),
+%which reflects the intensity of the diffusion effect. Many other
+%directionally invariant measurements have been defined. For a comprehensive study, 
+%we refer to \citep{ennis_orthogonal_2006}.
 
 Alongside distortions and direction dependency, \gls{dwi} data is strongly 
 affected by \glspl{pve} \citep{alexander_analysis_2001} that appears when
-several different tissues, or signal 
-emitters, are present in the same imaging unit, producing an averaged intensity. 
-The effect is directly related to the low resolution achievable with \gls{dwi} 
-(typically around $2.0\times2.0\times2.0mm^3$). An additional complication specific to
-\gls{dwi} is the \gls{csf} \emph{contamination} \citep{metzler-baddeley_how_2012},
-that is a particular \gls{pve} in which the signal sensed inside the affected voxel is 
-linear with respect the \gls{gm} and \gls{wm} contributions, but non-linear with
-respect \gls{csf}.
+several different tissues are present in the same imaging unit, producing
+an averaged intensity. The effect is directly related to the resolution,
+typically around $2.0\times2.0\times2.0mm^3$ for \gls{dwi}.
+
+% the low resolution achievable with \gls{dwi} 
+%(typically around ). An additional complication specific to
+%\gls{dwi} is the \gls{csf} \emph{contamination} \citep{metzler-baddeley_how_2012},
+%that is a particular \gls{pve} in which the signal sensed inside the affected voxel is 
+%linear with respect the \gls{gm} and \gls{wm} contributions, but non-linear with
+%respect \gls{csf}.
+
+\subsection{Correction for susceptibility distortions}
+\label{sec:distortion}
+
+One approach to correcting the susceptibility distortions was proposed
+with the earliest \gls{epi} sequences used in functional \gls{mri}, and
+relies on the acquisition of extra \gls{mri} data. Generally, a \gls{gre} is used to 
+obtain a map of magnitude and phase of the actual magnetic field inside the
+scanner. Based on this \emph{fieldmap} and the theory underlying the 
+distortion, \citep{jezzard_characterization_2005} proposed a correction 
+methodology. A number of forked and improved methodologies have been 
+developed to correct for the susceptibility distortion and received the
+generic name of ``fieldmap correction'' techniques \cite{hsu_correction_2009,
+reber_correction_2005}.
+
+Some other retrospective methodologies do not make use of the fieldmaps, 
+as explicitly modeling the distortion \citep{andersson_modeling_2001},
+registering with (anatomically correct) T2-weighted \gls{mri} 
+\citep{kybic_unwarping_2000,studholme_accurate_2000,li_accounting_2007,
+tao_variational_2009}, or acquiring an 
+extra B0 image with reversed phase encoding direction 
+\citep{andersson_how_2003,holland_efficient_2010}.
+
+A comparison of the diverse correction techniques is found in \citep{wu_comparison_2008}.
+This study claims that fieldmap correction methodologies are not entirely accurate
+and reliable, even though the method is correct in principle. The conclusion
+was later confirmed by \citep{tao_variational_2009}. Additional concerns regarding
+fieldmap correction are the requirement of an extra acquisition (that is not always
+met or it is impractical), or the accuracy of the measured fieldmap that is sensitive
+to various effects (such us respiration, blood flow, etc.). All these factors 
+have turned susceptibility distortion in \gls{epi} sequences an active field of 
+research for the last 10 years.
 
 
 \subsection{\Gls{dwi} segmentation}
@@ -146,9 +157,9 @@ voxel-based techniques are proposed using the most common diffusion tensor deriv
 Further developments of the probabilistic approach have been proposed adding more scalar maps
 as features and a more detailed treatment of \gls{pve} \citep{kumazawa_partial_2010}.
 
-A number of methods have been proposed using features not directly derived from \gls{dwi} data.
-Segmentation obtained by co-registering structural T1-weighted images will be covered in 
-\autoref{sec:registration}. 
+%A number of methods have been proposed using features not directly derived from \gls{dwi} data.
+%Segmentation obtained by co-registering structural T1-weighted images will be covered in 
+%\autoref{sec:registration}. 
 
 None of the presented methods have claimed for definite results, mainly due to the lack of 
 a \emph{gold-standard} evaluation methodology. Most of them are tested only on certain
@@ -161,39 +172,6 @@ task within reconstruction algorithms. Finally, some \emph{golden}-standard eval
 frameworks for task-based validation have been proposed for the segmentation results
 (e.g. lesion detection in visceral organs \citep{jha_task-based_2012}).
 \todo[inline]{reference to a summary table}
-
-\subsection{Correction for susceptibility distortions}
-\label{sec:distortion}
-
-One approach to correcting the susceptibility distortions was proposed
-with the earliest \gls{epi} sequences used in functional \gls{mri}, and
-relies on the acquisition of extra \gls{mri} data. Generally, a \gls{gre} is used to 
-obtain a map of magnitude and phase of the actual magnetic field inside the
-scanner. Based on this \emph{fieldmap} and the theory underlying the 
-distortion, \citep{jezzard_characterization_2005} proposed a correction 
-methodology. A number of forked and improved methodologies have been 
-developed to correct for the susceptibility distortion and received the
-generic name of ``fieldmap correction'' techniques \cite{hsu_correction_2009,
-reber_correction_2005}.
-
-Some other retrospective methodologies do not make use of the fieldmaps, 
-as explicitly modeling the distortion \citep{andersson_modeling_2001},
-registering with (anatomically correct) T2-weighted \gls{mri} 
-\citep{kybic_unwarping_2000,studholme_accurate_2000,li_accounting_2007,
-tao_variational_2009} (we shall cover these methods in 
-\autoref{sec:registration}), or acquiring an 
-extra B0 image with reversed phase encoding direction 
-\citep{andersson_how_2003,holland_efficient_2010}.
-
-A comparison of the diverse correction techniques is found in \citep{wu_comparison_2008}.
-This study claims that fieldmap correction methodologies are not entirely accurate
-and reliable, even though the method is correct in principle. The conclusion
-was later confirmed by \citep{tao_variational_2009}. Additional concerns regarding
-fieldmap correction are the requirement of an extra acquisition (that is not always
-met or it is impractical), or the accuracy of the measured fieldmap that is sensitive
-to various effects (such us respiration, blood flow, etc.). All these factors 
-have turned susceptibility distortion in \gls{epi} sequences an active field of 
-research for the last 10 years.
 
 
 \subsection{Structural information co-registration}
@@ -249,7 +227,7 @@ justifying the use of the shape prior information. To our knowledge, there is
 no study simultaneously taking advantage from segmentation or distortion correction
 tasks to be applied to the co-registration problem.
 
-\subsection{Summary}
+\subsection{Proposed model}
 \label{sec:contributions}
 
 All the available \gls{dwi}-derived models and scalar maps 
@@ -269,7 +247,19 @@ readily available in \gls{t1} space can simply be projected on to the
 \gls{dwi} data. Conversely, if a precise delineation in \gls{dwi} space 
 was achieved, the spatial mapping with \gls{t1}-space could be derived 
 from one-to-one correspondences on the contours. However, neither segmentation 
-nor registration can be performed flawlessly, if considered independently. 
+nor registration can be performed flawlessly, if considered independently.
+
+% Paragraph taken from first subsection to here
+Here, we shall address three tasks included within  the image processing stage in 
+a unified approach: brain tissue segmentation in diffusion space 
+(\autoref{sec:dwi_segmentation}), 
+correction of geometrical distortions (\autoref{sec:distortion}), and structural 
+image registration to diffusion coordinate space (\autoref{sec:registration}). 
+These tasks are generally
+solved independently, or combined in pairs. However, there exist fundamental 
+coupling relationships that can be exploited to obtain a simultaneous solution to 
+the three problems. This joint approach satisfactory impacts the downstream
+outcomes of the whole pipeline with the increase of the internal consistency.
 
 In this paper we propose a novel registration framework to simultaneously
 solving the segmentation, distortion and cortical parcellation challenges, 
@@ -284,7 +274,7 @@ Finally, we need to establish precise spatial correspondence between the
 surfaces in both spaces, including the tangential direction for parcellation.
 Therefore, we can reduce the problem to finding the differences of spatial 
 distortion in between anatomical and \gls{dwi} space.
-{\color{red} {We thus reformulate the segmentation problem as an inverse problem, where we 
+We thus reformulate the segmentation problem as an inverse problem, where we 
 seek for an underlying deformation field (the distortion) mapping 
 from the structural space into the diffusion space, such that the structural 
 contours segment optimally the \gls{dwi} data. In the process, the one-to-one 
@@ -306,4 +296,4 @@ The rest of this paper is organized as follows. First, in \autoref{sec:methods}
 we introduce our proposed model for joint multivariate segmentation-registration.
 Then we provide a more detailed description of the data and experimental setup in
 \autoref{sec:experiments}. We present results in \autoref{sec:results} and conclude 
-in \autoref{sec:conclusion}.}}
+in \autoref{sec:conclusion}.
