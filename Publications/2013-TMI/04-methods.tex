@@ -1,4 +1,4 @@
-\section{Methods}
+1\section{Methods}
 \label{sec:methods}
 %
 \subsection{Related work}
@@ -31,9 +31,9 @@ The first joint ``morphing''-segmentation approach (it was not a proper
 registration method) was proposed in \citep{bertalmio_morphing_2000}. The first
 registration framework is presented by \citep{yezzi_variational_2001} where the
 energy functional is defined simultaneously in the moving and target images with
-an affine transformation supporting the coordinates mapping (``2 PDEs approach'').
+an affine transformation supporting the coordinates mapping (``2 \glspl*{pde} approach'').
 \citep{vemuri_joint_2003} proposed the first atlas-based registration based on the 
-level set framework and using only one PDE. \citep{unal_coupled_2005} extended the 
+level set framework and using only one \gls*{pde}. \citep{unal_coupled_2005} extended the 
 idea of \citep{bertalmio_morphing_2000,yezzi_variational_2001} for non-linear 
 registration with a dense deformation field as mapping function. \citep{droske_mumfordshah_2009}
 combining ideas from both branches and proposed the propagation of the 
@@ -238,11 +238,11 @@ Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
 $\psi$ by the actual kernel function, the transformation writes
 %
 \begin{equation}
-c_i' = c_i + \sum_k \left[ \vec{u}_k \, \underset{x,y,x}{\prod} B_3(c_{i,d} - \vec{x}_{k,d}) \right].
+\vec{c}_i' = \vec{c}_i + \sum_k \left[ \vec{u}_k \, \underset{n}{\prod} B_3( (\vec{c}_i - \vec{x}_k) \cdot \hat{\mathbf{e}}_d ) \right].
 \label{eq:transformation}
 \end{equation} 
 
-Based on the current estimate of the distortion $u$, we can compute 
+Based on the current estimate of the distortion $\vec{u}$, we can compute 
 ``expected samples'' within the shape prior projected into the \gls{dwi}.
 Thus, we now estimate region descriptors of the \gls{dwi} features 
 $\vec{f}'$ of the regions defined by the priors in \gls{dwi} space.
@@ -250,9 +250,9 @@ $\vec{f}'$ of the regions defined by the priors in \gls{dwi} space.
 \subsubsection{Gradient descent}
 To find the minimum of the energy functional \eqref{eq:energy},
 we propose a gradient-descent approach with respect to the underlying 
-deformation field through the following partial differential equation:
+deformation field through the following \gls*{pde}:
 \begin{equation}
-\frac{\partial u(\vec{x},t)}{\partial t} \propto - \frac{\partial E(u)}{\partial u},
+\frac{\partial u(\vec{x},t)}{\partial t} \propto - \frac{\partial E(\vec{u})}{\partial \vec{u}},
 \label{eq:general_gradient_descent}
 \end{equation}
 with $t$ being an artificial time parameter of the contour
@@ -294,13 +294,12 @@ that $\frac{\partial}{\partial t} r(\vec{x}') = 0$ and thus:
 Therefore, we can apply a discretized interpretation of \eqref{eq:shape_gradients}
 to compute the data term in \eqref{eq:gradient_descent} as follows:
 \begin{align}
-\frac{\partial E_{data}(u)}{\partial \vec{u}_k} &=
-\underset{l}{\sum} \frac{ \partial }{\partial u^d_k} \lbrace
- \underset{\vec{x} \in \Omega_l}{\sum}
-{\mathcal{D}_l^2}^2 (\vec{f}') \rbrace \notag\\
-&= \underset{l,m}{\sum} \underset{\vec{c}' \in \Gamma_{l,m}}{\sum}
-\left[ \Delta^2_i (\vec{f}' ) - \Delta^2_j (\vec{f}')\right]
-\left\langle \frac{\partial \vec{c}'}{\partial {u^a_k}'}, \vec{n_i}'\right\rangle,
+\frac{\partial E_{data}(\vec{u})}{\partial \vec{u}_k} &=
+\underset{l}{\sum} \frac{ \partial }{\partial \vec{u}_k} \left\{
+ \underset{\vec{x} \in \Omega_l}{\sum} \mdist{f'}{l} \right\} \notag\\
+&= \underset{l,m}{\sum} \underset{i}{\sum}
+\left[ \mdist{f_i'}{l} - \mdist{f_i'}{m} \right]
+\left\langle \frac{\partial \vec{c}_i'}{\partial \vec{u}_k}, \vec{n_i}'\right\rangle,
 \label{eq:gradient_wshape}
 \end{align}
 in this case, the formulation has been adapted to the non-binary case, $l,m$
@@ -310,22 +309,22 @@ and $\vec{n_i}'$ is the unit inward normal to the contour at $c_i'$.
 
 Finally, we can compute:
 \begin{align}
-\frac{\partial}{\partial {\vec{u}_k}'}{\vec{c}_i}' &= \frac{\partial}{\partial {u^a_k}'} 
-\lbrace c_i + \sum_k \psi_k(\vec{c}_i) \vec{u}_k \rbrace
-= \psi_k(\vec{c_i})\, \hat{\vec{e}}^a
+\frac{\partial \vec{c}_i'}{\partial \vec{u}_k} &= \frac{\partial}{\partial \vec{u}_k} 
+\left\{ \vec{c}_i + \sum_k \psi_k(\vec{c}_i) \vec{u}_k \right\} 
+= \psi_k(\vec{c_i})\, \hat{\vec{e}}
 \end{align}
-where $\hat{\vec{e}}^a$ is the unit vector along direction $a$. Projecting
-this gradient onto the surface normal,
-$\left\langle \frac{\partial \vec{c}'}{\partial {u^a_k}'}, \vec{n_i}'\right\rangle
-= \psi_k(\vec{c_i})\, \hat{\vec{n}}_i^a$, the
+where $\hat{\vec{e}}$ is the coordinates system's unit vector.
+Projecting this gradient onto the surface normal,
+$\left\langle \frac{\partial}{\partial \vec{u}_k}{\vec{c}_i}', \vec{n_i}'\right\rangle
+= \psi_k(\vec{c_i})\, \hat{\vec{n}}_i$, then the
 full gradient evolution equation \eqref{eq:gradient_descent} yields:
 \begin{align}
-\frac{\partial E(u)}{\partial \vec{u}_k} 
-&= \underset{l,m}{\sum} \underset{\vec{c}' \in \Gamma_{l,m}}{\sum}
-\left[ \Delta^2_i (\vec{f}' ) - \Delta^2_j (\vec{f}')\right]
-\psi_k(\vec{c_i})\, \hat{\vec{n}}_i^a \notag\\
-&2\, \underset{x,y,z}{\sum} a_d u^a_{k,d}
--2\, \underset{x,y,z}{\sum} b_d \nabla u^a_{k,d},
+\frac{\partial E(\vec{u}_k)}{\partial \vec{u}_k} =
+&- \underset{l,m}{\sum} \underset{i}{\sum}
+\left[ \mdist{f_i'}{l} - \mdist{f_i'}{m} \right]
+\psi_k(\vec{c}_i)\, \hat{\vec{n}}_i \notag\\
+&+2\, \boldsymbol{\alpha} \vec{u}_k
+-2\, \boldsymbol{\beta} \Delta \vec{u}_k,
 \label{eq:gradient_final}
 \end{align}
 
@@ -333,27 +332,27 @@ full gradient evolution equation \eqref{eq:gradient_descent} yields:
 It is necessary to discretize $t$ in order to obtain a numerical
 implementation of the equation \eqref{eq:gradient_final}:
 \begin{align}
-\frac{u^{t+1}-u^{t}}{\tau} 
-&= - \underset{l,m}{\sum} \underset{\vec{c}' \in \Gamma_{l,m}}{\sum}
-\left[ \Delta^2_i (\vec{f}' ) - \Delta^2_j (\vec{f}')\right]
-\psi_k(\vec{c_i})\, \hat{\vec{n}}_i^a \notag\\
-&-2\, \underset{x,y,z}{\sum} a_d (u^a_{k,d})^{t+1}
-+2\, \underset{x,y,z}{\sum} b_d \nabla (u^a_{k,d})^{t+1}.
+\frac{\vec{u}_k^{t+1}-\vec{u}_k^t}{\tau} =
+&- \underset{l,m}{\sum} \underset{i}{\sum}
+\left[ \mdist{f_i'}{l} - \mdist{f_i'}{m}\right]
+\psi_k(\vec{c}_i)\, \hat{\vec{n}}_i \notag\\
+&+2\, \boldsymbol{\alpha} \vec{u}_k^{t+1}
+-2\, \boldsymbol{\beta} \Delta \vec{u}_k^{t+1}.
 \end{align}
 
 The associated Euler-Lagrange equation is found as:
 \begin{equation}
-(\tau^{-1} +2\, a_d - 2\, b_d \nabla )\,(u^a_{k,d})^{t+1} = 
-\tau^{-1} (u^a_{k,d})^{t} - \frac{\partial E_{data}(u)}{\partial u^d_k},
+(\tau^{-1} +2\, \boldsymbol{\alpha} - 2\, \boldsymbol{\beta} \Delta )\, \vec{u}_k^{t+1} = 
+\tau^{-1} \vec{u}_k^t - \frac{\partial}{\partial \vec{u}_k} E_{data}(\vec{u}_k^t),
 \end{equation}
 that is a linear system that we translate into Fourier domain,
-to obtain the next deformation field $(u^a_{k,d})^{t+1}$:
+to obtain the next deformation field $\vec{u}_k^{t+1}$:
 \begin{multline}
-(u^a_{k,d})^{t+1} = \\
+\vec{u}_k^{t+1} = \\
  \mathcal{F}^{-1} \left\lbrace
-\frac{\mathcal{F}\lbrace \tau^{-1} (u^a_{k,d})^{t} - \underset{l,m}{\sum} \underset{\vec{c}' \in \Gamma_{l,m}}{\sum}
-\left[ \Delta^2_i (\vec{f}' ) - \Delta^2_j (\vec{f}')\right] \rbrace}
-     {\mathcal{F}\lbrace (\tau^{-1} +2\,a_d)\mathcal{I} - 2\,b_d \Delta ) \rbrace}
+\frac{\mathcal{F}\lbrace \tau^{-1}\vec{u}_{k}^{t} - \underset{l,m}{\sum} \underset{i}{\sum}
+\left[ \mdist{f_i'}{l} - \mdist{f_i'}{m}\right] \rbrace}
+     {\mathcal{F}\lbrace (\tau^{-1} +2\,\boldsymbol{\alpha})\mathcal{I} - 2\,\boldsymbol{\beta} \Delta ) \rbrace}
      \right\rbrace
 \end{multline}
 
@@ -364,12 +363,12 @@ Here, we rewrite the Laplacian as a linear combination of the identity and shift
 where $\mathcal{S}_{d}^{\pm}$ stands for the forward ($+$) and backward ($-$) shift 
 operator along coordinates axis $d$, of which the Fourier transform is found easily as
 \begin{equation}
-\mathcal{F}\{\mathcal{S}_{d}^{\pm}\} = e^{\pm i\omega_{d}},
+\mathcal{F}\{\mathcal{S}_{d}^{\pm}\} = e^{\pm \vec{i}\omega_{d}},
 \end{equation}
 where $\omega_{d}$ is the normalized pulsation along $d$-direction. Accordingly, the 
 Fourier transform of the discrete Laplacian is found as
 \begin{equation}
-\mathcal{F}\{\Delta\} = \sum\limits_d e^{-i\omega_d } + e^{i\omega_d } - 2 = \sum\limits_d \left( 2\cos(\omega_d) - 2 \right)
+\mathcal{F}\{\Delta\} = \sum\limits_d e^{-\vec{i}\omega_d } + e^{\vec{i}\omega_d } - 2 = \sum\limits_d \left( 2\cos(\omega_d) - 2 \right)
 \end{equation}
 
 The remaining transforms are trivial or can be computed using the \gls{fft} 
