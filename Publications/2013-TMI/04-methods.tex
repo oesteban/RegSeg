@@ -67,10 +67,11 @@ as ``to rework'', and I totally agree}
 In this paper we formulate the joint registration-segmentation
 problem as follows. We look for a spatial mapping (with, typically,
 $n=3$ for the 3-dimensional case):
-\begin{align*}
-U\colon T \subset \mathbb{R}^n &\to D \subset \mathbb{R}^n \\
+\begin{align}
+U\colon T \subset \mathbb{R}^n &\to D \subset \mathbb{R}^n \notag\\
 \mathbf{x} &\mapsto \mathbf{x}' =\mathbf{x}+u(\mathbf{x}),
-\end{align*}
+\label{eq:deformation_field}
+\end{align}
 such that the known contours in anatomical space $T$ optimally segment
 the diffusion space $D$.
 
@@ -104,34 +105,34 @@ P(F \mid U,\Gamma_{ij}) =
 \label{eq:bayes_aposteriori}
 \end{equation}
 
-Further, within each region $\Omega_k$ defined by the contours $\Gamma$
+Further, within each region $\Omega_l$ defined by the contours $\Gamma$
 trough duality, we assume the features to be i.i.d.:
 \begin{equation}
-P\left( F(\mathbf{x}') \mid U,\Gamma_{ij} \right) = p_k( F(\mathbf{x}')) \quad
-\forall \mathbf{x} \in \Omega_k.
+P\left( F(\mathbf{x}') \mid U,\Gamma_{ij} \right) = p_l( F(\mathbf{x}')) \quad
+\forall \mathbf{x} \in \Omega_l.
 \label{eq:likelihood}
 \end{equation}
 
 For convenience, and because this has been shown to be an appropriate
 approximation \citep{bishop_pattern_2006}, each such region is modeled
 by a multivariate normal distribution with region descriptors
-$\Theta_k = \lbrace \boldsymbol{\mu}_k, \boldsymbol{\Sigma}_{k} \rbrace$:
+$\Theta_l = \lbrace \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} \rbrace$:
 
 \begin{equation}
-p_k( F(\mathbf{x}') ) = \mathcal{N} ( f \mid \Theta_k ).
+p_l( F(\mathbf{x}') ) = \mathcal{N} ( f \mid \Theta_l ).
 \label{eq:multivariate_normal}
 \end{equation}
 
 \todo{I modified this slightly}
 Thus, defining the feature observed as $\mathbf{f}'=F(\mathbf{x}')$ and 
 the squared \emph{Mahalanobis distance} of $\mathbf{f}'$ with respect
-of the descriptors of region $k$ as
-$\Delta^2_k (\mathbf{f}' \mid \Theta_k ) = (\mathbf{f}' - \boldsymbol{\mu}_k)^T \, \boldsymbol{\Sigma}^{-1}_k \, (\mathbf{f}' - \boldsymbol{\mu}_k)$,
+of the descriptors of region $l$ as
+$\Delta^2_l (\mathbf{f}' \mid \Theta_l ) = (\mathbf{f}' - \boldsymbol{\mu}_l)^T \, \boldsymbol{\Sigma}^{-1}_l \, (\mathbf{f}' - \boldsymbol{\mu}_l)$,
 we write:
 \begin{align}
-P( F \mid U, \Omega ) &= \underset{k}{\prod} \underset{\mathbf{x} \in \Omega_k}{\prod}
-\mathcal{N} ( f \mid \boldsymbol{\mu}_k, \boldsymbol{\Sigma}_{k} ) \notag\\
-&= \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_l (\mathbf{f}' \mid \Theta_k ) \right)}}.
+P( F \mid U, \Omega ) &= \underset{l}{\prod} \underset{\mathbf{x} \in \Omega_l}{\prod}
+\mathcal{N} ( f \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} ) \notag\\
+&= \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_l (\mathbf{f}' \mid \Theta_l ) \right)}}.
 \label{eq:pdf}
 \end{align}
 
@@ -151,8 +152,8 @@ mean and variance governed by $A$ and $B$. Since the anisotropy
 is technically aligned with the imaging axes, these can
 be simplified:
 \begin{align}
-p_0(u) &= \underset{\mathbf{x}}{\sum} \mathcal{N}( u(\mathbf{x}) \mid 0, \frac{1}{\sqrt{\alpha_{x,y,z}}}) \notag\\
-p_1(u) &= \underset{\mathbf{x}}{\sum} \mathcal{N}( \nabla_{x,y,z}u(\mathbf{x}) \mid 0, \frac{1}{\sqrt{\beta_{x,y,z}}})
+p_0(u) &= \underset{\mathbf{x}}{\sum} \mathcal{N}( u(\mathbf{x}) \mid 0, \frac{1}{\sqrt{a_{x,y,z}}}) \notag\\
+p_1(u) &= \underset{\mathbf{x}}{\sum} \mathcal{N}( \nabla_{x,y,z}u(\mathbf{x}) \mid 0, \frac{1}{\sqrt{b_{x,y,z}}})
 \label{eq:priors}
 \end{align}
 
@@ -160,14 +161,14 @@ Finally, we can turn the \gls{map} problem into
 a variational one
 applying the following log-transform:
 \begin{align}
-E(F \mid U) &= -\log \underset{k}{\prod}
-\underset{\mathbf{x} \in \Omega_k}{\prod} 
-p_k( \mathbf{f}')\,p_0( u(\mathbf{x}))\,p_1( u(\mathbf{x})) \notag\\
-&= C + \underset{k}{\sum}
-\underset{\mathbf{x} \in \Omega_k}{\sum}
-\Delta^2_k (\mathbf{f}' \mid \Theta_k ) \notag\\
-&+ \underset{d=\{x,y,z\}}{\sum} \alpha_d u^2_d
-+ \underset{d=\{x,y,z\}}{\sum} \beta_d \|\nabla u_d\|^2,
+E(F \mid U) &= -\log \underset{l}{\prod}
+\underset{\mathbf{x} \in \Omega_l}{\prod} 
+p_l( \mathbf{f}')\,p_0( u(\mathbf{x}))\,p_1( u(\mathbf{x})) \notag\\
+&= C + \underset{l}{\sum}
+\underset{\mathbf{x} \in \Omega_l}{\sum}
+\Delta^2_l (\mathbf{f}' \mid \Theta_l ) \notag\\
+&+ \underset{x,y,z}{\sum} a_d u^2_d
++ \underset{x,y,z}{\sum} b_d \|\nabla u_d\|^2,
 \label{eq:energy}
 \end{align}
 that is the dual expression to the energy functional corresponding
@@ -175,46 +176,7 @@ to a discrete \gls*{acwe} framework \citep{chan_active_2001}
 with anisotropic regularization as studied in
 \citep{nagel_investigation_1986}.
 
-\subsection{Numerical Implementation}
-\label{sec:numerical_implementation}
-%
-Let us denote $\{c_i\}_{i=1 \ldots N_c}$ the nodes of one or several shape-prior
-surface(s). In our application, precise tissue interfaces of interest 
-extracted from a high-resolution, anatomically correct reference volume. 
-On the other hand, we have a number of \gls{dwi}-derived features at each
-voxel of the volume. Let us denote by $\mathbf{x}$ the voxel and $f(\mathbf{x}) = 
-[ f_1, f_2, \ldots, f_N]^T(\mathbf{x})$ its associated feature vector.
-
-\subsubsection{Deformation field}
-\label{sec:deformation_field}
-The transformation from reference into \gls{dwi} coordinate space is 
-achieved through a dense deformation field $u(\mathbf{x})$, such that:
-\begin{equation}
-c_i' = T\{c_i\} = c_i + u(c_i),
-\end{equation}
-what is equivalent to \eqref{eq:omega_tf}. Since the nodes of the anatomical 
-surfaces might lay off-grid, it is required to derive $u(\mathbf{x})$ from a discrete 
-set of parameters $\{u_k\}_{k=1 \ldots K}$. Densification is achieved through 
-a set of associated basis functions $\psi_k$ (e.g. rbf, interpolation splines):
-%
-\begin{equation}
-u(\mathbf{x}) = \sum_k \psi_k(\mathbf{x}) u_k
-\end{equation}
-%
-In our implementation, $\psi_k$ is chosen to be a tensor-product B-Spline kernel.
-Then, the transformation writes
-%
-\begin{equation}
-\label{eq:transformation}
-c_i' = T\{c_i\} = c_i + u(c_i) = c_i + \sum_k \psi_k(c_i)\,u_k
-\end{equation} 
-
-Based on the current estimate of the distortion $u$, we can compute 
-``expected samples'' within the shape prior projected into the \gls{dwi}.
-Thus, we now estimate region descriptors of the \gls{dwi} features 
-$f(\mathbf{x})$ of the regions defined by the priors in \gls{dwi} space.
-%
-Using the region descriptors derived in \autoref{sec:methods_map}, we propose
+{\color{red} {Using the region descriptors derived in \autoref{sec:methods_map}, we propose
 an \gls{adf}-like, \gls{acwe}-based, piece-wise constant, image segmentation
 model (where the unknown is the deformation field)
 \cite{chan_active_2001} with the energy functional obtained in 
@@ -234,143 +196,165 @@ These regularity terms ensure that the segmenting contours in
 \gls{dwi} space are still close to their native shape. The model
 easily allows to incorporate inhomogeneous and anisotropic 
 regularization \cite{nagel_investigation_1986} to better regularize
-the \gls{epi} distortion.
+the \gls{epi} distortion.}}
 
+\todo[inline]{this last paragraphs in red color were located a bit
+further, but I think we can keep some of the refs and still reproduce
+the continuous version of the energy functional}
 
-\subsubsection{Shape gradients}
-To compute the gradient-descent of the data-term domain integrals
-in \eqref{eq:complete_energy} with respect to the underlying 
-deformation field, we use shape gradients 
-\cite{jehan-besson_dream2s:_2003,herbulot_segmentation_2006}.
+\subsection{Numerical Implementation}
+\label{sec:numerical_implementation}
+%
+Let us denote $\{c_i\}_{i=1 \ldots N_c}$ the nodes of one or several shape-prior
+surface(s). In our application, precise tissue interfaces of interest 
+extracted from a high-resolution, anatomically correct reference volume. 
+On the other hand, we have a number of \gls{dwi}-derived features at each
+voxel of the volume. Let us denote by $\mathbf{x}$ the voxel and $F(\mathbf{x}) = 
+[ f_1, f_2, \ldots, f_N]^T(\mathbf{x})$ its associated feature vector.
 
-Let $\Omega$ be an image domain and $d\Omega$ its boundary. Further, 
-$r(\mathbf{x})$ is an ``arbitrary'' function over the image domain. 
-We now derive the domain integral w.r.t. the contour evolution 
-parameter $t$ (time):
+\subsubsection{Deformation field}
+\label{sec:deformation_field}
+The transformation from ``T1-'' into ``\gls{dwi}-'' coordinate space is 
+achieved through a dense deformation field $u(\mathbf{x})$, such that:
 \begin{equation}
-\frac{\partial}{\partial t} \int_\Omega r(\mathbf{x}) d\mathbf{x} = \int_\Omega \frac{\partial r}{\partial t}(\mathbf{x}) d\mathbf{x} - \int_{d\Omega} r(\mathbf{x}) \left\langle \frac{\partial{d\Omega}}{\partial t}, N_{d\Omega}\right\rangle d\mathbf{x}
+c_i' = U\{c_i\} = c_i + u(c_i),
+\label{eq:nodes_tfm}
+\end{equation}
+where $U$ is defined in \eqref{eq:deformation_field}. Since the nodes of the anatomical 
+surfaces might lay off-grid, it is required to derive $u(\mathbf{x})$ from a discrete 
+set of parameters $\{u_k\}_{k=1 \ldots K}$. Densification is achieved through 
+a set of associated basis functions $\psi_k$:
+%
+\begin{equation}
+u(\mathbf{x}) = \sum_k \psi_k(\mathbf{x}) u_k
+\label{eq:intp_kernel}
+\end{equation}
+%
+In our implementation, $\psi_k$ is chosen to be a tensor-product B-Spline kernel
+of degree 3 ($B_3$).
+Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
+$\psi$ by the actual kernel function, the transformation writes
+%
+\begin{equation}
+c_i' = c_i + \sum_k \left[ u_k \, \underset{x,y,x}{\prod} B_3(c_{i,d} - \mathbf{x}_{k,d}) \right].
+\label{eq:transformation}
+\end{equation} 
+
+Based on the current estimate of the distortion $u$, we can compute 
+``expected samples'' within the shape prior projected into the \gls{dwi}.
+Thus, we now estimate region descriptors of the \gls{dwi} features 
+$\mathbf{f}'$ of the regions defined by the priors in \gls{dwi} space.
+
+\subsubsection{Gradient descent}
+To find the minimum of the energy functional \eqref{eq:energy},
+we propose a gradient-descent approach with respect to the underlying 
+deformation field through the following partial differential equation:
+\begin{equation}
+\frac{\partial u(\mathbf{x},t)}{\partial t} \propto - \frac{\partial E(u)}{\partial u},
+\label{eq:general_gradient_descent}
+\end{equation}
+with $t$ being an artificial time parameter of the contour
+evolution, included to express the iterative character of the approach.
+Now, we can introduce \eqref{eq:energy} in
+\eqref{eq:general_gradient_descent}:
+\begin{align}
+\frac{\partial E(u)}{\partial u^d_k} &=
+\frac{ \partial }{\partial u^d_k} \lbrace
+C + \underset{l}{\sum}
+\underset{\mathbf{x} \in \Omega_l}{\sum}
+\Delta^2_l (\mathbf{f}' \mid \Theta_l ) \notag\\
+&+ \underset{a}{\sum} a^d ({u^d})^2
++ \underset{a}{\sum} b^d \|\nabla u^d\|^2
+\rbrace
+\label{eq:gradient_descent}
+\end{align}
+
+Whereas related \glspl*{adf} introduced in \autoref{sec:methods_background}
+make use of explicit level-set formulations to solve \eqref{eq:gradient_descent},
+we alternatively use \emph{shape-gradients}
+\cite{jehan-besson_dream2s:_2003,herbulot_segmentation_2006}.
+Let $r(\mathbf{x})$ be an ``arbitrary'' function over the image domain,
+and $\Omega$ a certain image region with $\Gamma_{ij}$ its corresponding
+outer boundary as defined in \autoref{sec:methods_map}.
+We now derive the domain integral w.r.t. $t$:
+\begin{equation*}
+\frac{\partial}{\partial t} \int_\Omega r(\mathbf{x}') d\mathbf{x} = \int_\Omega \frac{\partial}{\partial t}r(\mathbf{x}') d\mathbf{x} - \int_{\Gamma_{ij}} r(\mathbf{x}') \left\langle \frac{\partial \Gamma_{ij} }{\partial t}, N_{\Gamma_{ij}}\right\rangle d\mathbf{x}
+\end{equation*}
+where $\left\langle\frac{\partial\Gamma_{ij}}{\partial t}, N_{\Gamma_{ij}}\right\rangle$ is 
+the projection of the boundary movement on the unit inward normal $N_{\Gamma_{ij}}$. Assuming
+that the region descriptors $\Theta_l$ vary slowly enough, we can consider
+that $\frac{\partial}{\partial t} r(\mathbf{x}') = 0$ and thus:
+\begin{equation}
+\frac{\partial}{\partial t} \int_\Omega r(\mathbf{x}') d\mathbf{x} = 
+- \int_{\Gamma_{ij}} r(\mathbf{x}') \left\langle \frac{\partial \Gamma_{ij} }{\partial t}, N_{\Gamma_{ij}}\right\rangle d\mathbf{x}
 \label{eq:shape_gradients}
 \end{equation}
-where $\left\langle\frac{\partial{d\Omega}}{\partial t}, N_{d\Omega}\right\rangle$ is 
-the projection of the boundary movement on the unit inward normal. We recall
-here that equation \eqref{eq:shape_gradients} stands the bridge between the 
-explicit level set formulations surveyed in \autoref{sec:methods_background}
-by updating the distortion along the steepest energy descent:
-\begin{equation}
-\frac{\partial u(\mathbf{x},t)}{\partial t} = - \frac{\partial E(u)}{\partial u},
-\end{equation}
-what closes the loop with the general expression of the \glspl{adf} introduced in
-\eqref{eq:active_deformation_fields}.
 
-\subsubsection{Operator splitting}
-In order to make the energy minimization computationally more tractable, 
-we propose the following operator splitting: Let us optimize the data terms 
-and the regularity terms on separate copies of the deformation field, 
-now called $u$ and $v$, constrained to be equal:
-\begin{multline}
-E(u,v) = \sum\limits_l \int_{\Omega'_l(u)} \Delta^2_l (\mathbf{f}) \,d\mathbf{x} \\
-+ \int v^T \, A \, v \, d\mathbf{x} + \int \tr\{(\nabla v^T)^T B (\nabla v^T)\} d\mathbf{x}
-\label{eq:operator_splitting}
-\end{multline}
-and now
-\begin{equation}
-\min_{u,v} \{ E \} \quad s.t. \quad u = v.
-\end{equation}
-
-In order to take the equality constraint into account, we may make use of 
-augmented Lagrangians (a combination of Lagrangian multipliers and penalty 
-terms on the constraint) \cite{bertsekas_multiplier_1976,
-glowinski_augmented_1989,nocedal_numerical_2006}:
-\begin{equation}
-AL(u,v,\lambda,r) = E(u,v) + \langle \lambda, u-v \rangle + \frac{r}{2} \| u - v \|_2^2
-\end{equation}
-
-To solve the constraint minimization problem, we may now optimize the 
-Augmented Lagrangian in an iterative way:
-\begin{equation}
-\left\lbrace 
-\begin{array}{rcl}
-u^{t+1} &=& \argmin_{u} AL(u,v^t,\lambda^t,r)\\
-v^{t+1} &=& \argmin_{v} AL(u^{t+1},v,\lambda^t,r)\\
-\lambda^{t+1} &=& \lambda^t + \rho(u^{t+1}-v^{t+1})
-\end{array}\right.
-\end{equation}
-where typically $0 < \rho < r$. The two sub-minimization problems will 
-now be much easier to handle than the original complete problem.
-
-\subsubsection{Minimization w.r.t. $u$}
-The first minimization problem optimizes the data-term. The problem is equivalent 
-to minimizing the following energy:
-\begin{multline}
-E(u,v) = \sum\limits_l \int_{\Omega'_l(u)} \Delta^2_l (\mathbf{f}) \,d\mathbf{x}
-+ \langle \lambda, u-v \rangle + \frac{r}{2} \| u - v \|_2^2
-\end{multline}
-where we identify one instance of domain integrals of the form $\int_\Omega r(\mathbf{x}) 
-d\mathbf{x}$ for each region $l$. Optimality requires the derivative of this energy 
-with respect to the parameters $u$ to be null. At this point, we decide to ignore 
-the influence of the boundary shift on the statistics of the regions (i.e. moving the 
-boundary does not significantly impact the $\mu$ and $\Sigma$ descriptors). This means 
-that we can drop the derivative of $r(\mathbf{x})$ w.r.t. contour evolution. 
-What remains are the surface integrals at the subdomain interfaces, plus the Lagrangian 
-and penalty terms:
-
-\begin{multline}
-\frac{\partial E}{\partial u_k} = \sum\limits_l \int_{d\Omega'_l} \left[ \Delta^2_{O(l)} (\mathbf{f}) - \Delta^2_l (\mathbf{f}) \right]
-\left\langle\frac{\partial{d\Omega'_l}}{\partial t}, N_{d\Omega'_l}\right\rangle \,d\mathbf{x} \\
-+ \lambda_k + r(u_k - v_k) = 0
-\label{eq:energy_gradient}
-\end{multline}
-where $O(l)$ is a function that returns the neighboring region at $\mathbf{x}$ (i.e.
-the region \emph{outside} the current location in the contour). For the shake of
-simple notation, we will refer as $c_i$ to the positions 
-of points belonging to any of the existing contours $d\Omega_l$ (with 
-$i \in [1 \ldots N_c]$ and $N_c$ the total number of control points).
-Given the deformation field interpolation stated in \autoref{sec:deformation_field}, 
-the boundary moves according to
-\begin{equation}
-\frac{\partial c_i}{\partial u_k} = \psi_k(c_i)\,e_a
-\end{equation}
-where $e_a$ is the unit vector along direction $a \in \mathbb{R}^n$ and $n$ the dimension
-of the image. Thus, if we name the inward unit normal of the corresponding transformed 
-contour at position $c'_i$ as $\hat{\mathbf{n}}_{c'_i}$,
-\begin{equation}
-\left\langle\frac{\partial c_i}{\partial u_k}, N_{c_i}\right\rangle = \psi_k(c_i)\,\hat{\mathbf{n}}_{c'_i}.
-\end{equation}
-The discrete implementation of \eqref{eq:energy_gradient} is straightforward as
-we have a triangularized mesh representation of the interfacing surfaces:
-\begin{multline}
-\frac{\partial E}{\partial u_k} = \sum\limits_{N_c} \left[ \Delta^2_{O(l)} (\mathbf{f}) - \Delta^2_l (\mathbf{f}) \right]
-\, \psi_{c_i}(\mathbf{x}_k)\,\hat{\mathbf{n}}_{c'_i} \\
-+ \lambda_k + r(u_k - v_k) = 0,
-\label{eq:discrete_energy_gradient}
-\end{multline}
-where we have swapped $\psi_k(c_i)$ by $\psi_{c_i}(\mathbf{x}_k)$ for
-convenience in implementation, taking the advantage that they are
-equivalent. Subsequently, the optimal distortion $u_k$ 
-is found at each iteration as:
-\begin{multline}
-u_k^{t+1} = v_k^t - \frac{1}{r}\lambda_k^{t} \\
-- \frac{1}{r} \sum\limits_{N_c} \left[ \Delta^2_{O(l)} (\mathbf{f}) - \Delta^2_l (\mathbf{f}) \right]
-\, \psi_{c_i}(\mathbf{x}_k)\,\hat{\mathbf{n}}_{c'_i}
-\label{eq:update_u}
-\end{multline}
-
-
-\subsubsection{Minimization w.r.t. $v$}
-For the optimization w.r.t. $v$, the relevant energy writes
+Therefore, we can apply a discretized interpretation of \eqref{eq:shape_gradients}
+to compute the data term in \eqref{eq:gradient_descent} as follows:
 \begin{align}
-E(v) &= \int v^T A v d\mathbf{x} + \int \tr\{(\nabla v^T)^T B (\nabla v^T)\} d\mathbf{x}\\
-&\quad + \langle \lambda, u-v \rangle + \frac{r}{2} \| u - v \|_2^2\nonumber
+\frac{\partial E_{data}(u)}{\partial u^d_k} &=
+\underset{l}{\sum} \frac{ \partial }{\partial u^d_k} \lbrace
+ \underset{\mathbf{x} \in \Omega_l}{\sum}
+\Delta^2_l (\mathbf{f}') \rbrace \notag\\
+&= \underset{ij}{\sum} \underset{\mathbf{c}' \in \Gamma_{ij}}{\sum}
+\left[ \Delta^2_i (\mathbf{f}' ) - \Delta^2_j (\mathbf{f}')\right]
+\left\langle \frac{\partial \mathbf{c}'}{\partial {u^a_k}'}, \mathbf{n_i}'\right\rangle,
+\label{eq:gradient_wshape}
 \end{align}
+in this case, the formulation has been adapted to the non-binary case, $ij$
+being any pair of neighboring regions, and $\Gamma_{ij}$ the contour separating
+them such that $\mathbf{x}' = \mathbf{c}' \in\Gamma_{ij} \iff \mathbf{x}\in \partial\Omega_i \cap \partial\Omega_j$
+and $\mathbf{n_i}'$ is the unit inward normal to the contour at $c_i'$.
+
+Finally, we can compute:
+\begin{align}
+\frac{\partial}{\partial {u^a_k}'}{\mathbf{c}_i}' &= \frac{\partial}{\partial {u^a_k}'} 
+\lbrace c_i + \sum_k \psi_k(\mathbf{c_i}) u_k \rbrace
+= \psi_k(\mathbf{c_i})\, \hat{\mathbf{e}}^a
+\end{align}
+where $\hat{\mathbf{e}}^a$ is the unit vector along direction $a$. Projecting
+this gradient onto the surface normal,
+$\left\langle \frac{\partial \mathbf{c}'}{\partial {u^a_k}'}, \mathbf{n_i}'\right\rangle
+= \psi_k(\mathbf{c_i})\, \hat{\mathbf{n}}_i^a$, the
+full gradient evolution equation \eqref{eq:gradient_descent} yields:
+\begin{align}
+\frac{\partial E(u)}{\partial u^d_k} 
+&= \underset{ij}{\sum} \underset{\mathbf{c}' \in \Gamma_{ij}}{\sum}
+\left[ \Delta^2_i (\mathbf{f}' ) - \Delta^2_j (\mathbf{f}')\right]
+\psi_k(\mathbf{c_i})\, \hat{\mathbf{n}}_i^a \notag\\
+&2\, \underset{x,y,z}{\sum} a_d u^a_{k,d}
+-2\, \underset{x,y,z}{\sum} b_d \nabla u^a_{k,d},
+\label{eq:gradient_final}
+\end{align}
+
+\subsubsection{Semi-implicit Euler-forward optimization}
+It is necessary to discretize $t$ in order to obtain a numerical
+implementation of the equation \eqref{eq:gradient_final}:
+\begin{align}
+\frac{u^{t+1}-u^{t}}{\tau} 
+&= - \underset{ij}{\sum} \underset{\mathbf{c}' \in \Gamma_{ij}}{\sum}
+\left[ \Delta^2_i (\mathbf{f}' ) - \Delta^2_j (\mathbf{f}')\right]
+\psi_k(\mathbf{c_i})\, \hat{\mathbf{n}}_i^a \notag\\
+&-2\, \underset{x,y,z}{\sum} a_d (u^a_{k,d})^{t+1}
++2\, \underset{x,y,z}{\sum} b_d \nabla (u^a_{k,d})^{t+1}.
+\end{align}
+
 The associated Euler-Lagrange equation is found as:
 \begin{equation}
-2 ( A v - B \Delta v ) + rv = ru + \lambda
+(\tau^{-1} +2\, a_d - 2\, b_d \nabla )\,(u^a_{k,d})^{t+1} = 
+\tau^{-1} (u^a_{k,d})^{t} - \frac{\partial E_{data}(u)}{\partial u^d_k},
 \end{equation}
-which easily translates into Fourier domain:
-\begin{equation}
-v^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{ru + \lambda\}}{\mathcal{F}\{( 2 A+r)\mathcal{I}-2 B \Delta\}} \right\}
-\end{equation}
-where $\mathcal{I}$ denotes the identity operator.
+that is a linear system that we translate into Fourier domain,
+to obtain the next deformation field $(u^a_{k,d})^{t+1}$:
+\begin{multline}
+(u^a_{k,d})^{t+1} = \\
+ \mathcal{F}^{-1} \left\lbrace
+\frac{\mathcal{F}\lbrace \tau^{-1} (u^a_{k,d})^{t} - \underset{ij}{\sum} \underset{\mathbf{c}' \in \Gamma_{ij}}{\sum}
+\left[ \Delta^2_i (\mathbf{f}' ) - \Delta^2_j (\mathbf{f}')\right] \rbrace}
+     {\mathcal{F}\lbrace (\tau^{-1} +2\,a_d)\mathcal{I} - 2\,b_d \Delta ) \rbrace}
+     \right\rbrace
+\end{multline}
 
 Here, we rewrite the Laplacian as a linear combination of the identity and shift operators:
 \begin{equation}
@@ -390,13 +374,6 @@ Fourier transform of the discrete Laplacian is found as
 The remaining transforms are trivial or can be computed using the \gls{fft} 
 as in \citep{estellers_efficient_2011}.
 
-
-\subsubsection{Lagrangian multiplier update}
-At each iteration, the Lagrangian multipliers are updated as noted before:
-\begin{equation}
-\lambda^{t+1} = \lambda^t + \rho(u^{t+1}-v^{t+1})
-\end{equation}
-
 \subsubsection{Region descriptor reestimation}
 In regular intervals, after certain number of iterations,
 the parameters $\Theta_l$ of the regions can be reestimated 
@@ -404,20 +381,11 @@ based on the shifted volumetric samples
 $\mathbf{x}' = \mathbf{x_0} + u(\mathbf{x})$.
 
 \subsubsection{Convergence}
-In order to ``fixate'' the evolution when close to convergence,
-it is advised to slightly increase the penalty weight $r$ at each 
-iteration. Note that as can be seen in the above equations, $r$ 
-governs the step-size or leash-length at each iteration, i.e. the 
-amount by which the new estimate $u$ may move away from the preceding 
-$v$ and vice-versa. 
+\todo[inline]{discuss choice of $\tau$, Courant-Friedrichs-Lewy (CFL) condition, etc.}
 
 \subsubsection{Efficient field densification}
 As long as the dense deformation field is iteratively interpolated
 from the same set of control points that define the $L-1$ contours,
 it is possible to pre-cache all the $\psi_k(c_i)$ weights into a
 sparse matrix for fast densification. As well, we achieve a 
-diffeomorphic transform by ... 
-\todo[inline]{this is actually false (IMHO), so far :(. We will need
-to add some more conditions to the interopolating kernel so that
-the original values of the transform in $c_i$ can be recovered from 
-interpolated values of $u_k$}
+diffeomorphic transform by
