@@ -99,7 +99,12 @@
 \DeclareMathOperator{\dist}{dist}
 \DeclareMathOperator{\const}{Const.}
 \providecommand{\e}[1]{\ensuremath{\times 10^{#1}}}
+\providecommand{\mdist}[2]{ \mathcal{D}_M^2(\mathbf{#1} \mid \Theta_#2) }
+\let\oldhat\hat
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\providecommand{\nvec}[1]{\hat{\mathbf{#1}}}
 
+%\newcommand{\Upd}{\operatorname{U}^{\mathrm{M}}}
 
 
 % *** SPECIALIZED LIST PACKAGES ***

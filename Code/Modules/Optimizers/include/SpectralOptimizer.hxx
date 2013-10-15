@@ -72,7 +72,7 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer() {
 	this->m_ConvergenceWindowSize = 30;
 	this->m_StepSize =  1.0e-3;
 	this->SetAlpha( 2.0 );
-	this->SetBeta( 0.0 );
+	this->SetBeta( 2.0 );
 
 	this->m_NumberOfIterations = 100;
 	this->m_CurrentIteration   = 0;

@@ -69,7 +69,7 @@ problem as follows. We look for a spatial mapping (with, typically,
 $n=3$ for the 3-dimensional case):
 \begin{align}
 U\colon T \subset \mathbb{R}^n &\to D \subset \mathbb{R}^n \notag\\
-\mathbf{x} &\mapsto \mathbf{x}' =\mathbf{x}+u(\mathbf{x}),
+\vec{x} &\mapsto \vec{x}' =\vec{x}+u(\vec{x}),
 \label{eq:deformation_field}
 \end{align}
 such that the known contours in anatomical space $T$ optimally segment
@@ -80,19 +80,19 @@ and ``\gls*{dwi}-'' spaces are evaluated based on their posterior
 probability given the observed data $F$. Using the Bayes' rule, this
 posterior \emph{likelihood} can be computed as:
 \begin{equation}
-P(U \mid F,\Gamma_{ij}) = \frac{P(F \mid U,\Gamma_{ij})\, P(U)}{P(F)},
+P(U \mid F,\Gamma_{l,m}) = \frac{P(F \mid U,\Gamma_{l,m})\, P(U)}{P(F)},
 \label{eq:bayes_rule}
 \end{equation}
-where $P(F \mid U,\Gamma_{ij})$ is the data-likelihood, and
-$\Gamma_{ij}$ are a set of contours in T1-space that correspond to
+where $P(F \mid U,\Gamma_{l,m})$ is the data-likelihood, and
+$\Gamma_{l,m}$ are a set of contours in T1-space that correspond to
 two interfacing regions $\Omega$, such that 
-$\Gamma_{ij} = \partial \Omega_i \cap \partial \Omega_j$.
+$\Gamma_{l,m} = \partial \Omega_l \cap \partial \Omega_m$.
 
 We are interested in a mapping $\hat{U}$ which maximizes this
 posterior probability (\gls*{map} estimate, \citep{bishop_pattern_2006}):
 \begin{align}
-\hat{U} &= \underset{U}{\argmax} \left\{ P(U \mid F,\Gamma_{ij}) \right\} \notag\\
- &= \underset{U}{\argmax} \left\{ P(F \mid U,\Gamma_{ij})\, P(U) \right\}.
+\hat{U} &= \underset{U}{\argmax} \left\{ P(U \mid F,\Gamma_{l,m}) \right\} \notag\\
+ &= \underset{U}{\argmax} \left\{ P(F \mid U,\Gamma_{l,m})\, P(U) \right\}.
 \label{eq:map_u}
 \end{align}
 
@@ -100,16 +100,16 @@ First, we assume independence between pixels, and thus break down the
 global data likelihood into a product of pixel-wise conditional probabilities:
 
 \begin{equation}
-P(F \mid U,\Gamma_{ij}) = 
-\underset{\mathbf{x}\in \Omega}{\prod} P\left( F(\mathbf{x}') \mid U(\Gamma_{ij}) \right).
+P(F \mid U,\Gamma_{l,m}) = 
+\underset{\vec{x}\in \Omega}{\prod} P\left( F(\vec{x}') \mid U(\Gamma_{l,m}) \right).
 \label{eq:bayes_aposteriori}
 \end{equation}
 
 Further, within each region $\Omega_l$ defined by the contours $\Gamma$
 trough duality, we assume the features to be i.i.d.:
 \begin{equation}
-P\left( F(\mathbf{x}') \mid U,\Gamma_{ij} \right) = p_l( F(\mathbf{x}')) \quad
-\forall \mathbf{x} \in \Omega_l.
+P\left( F(\vec{x}') \mid U,\Gamma_{l,m} \right) = p_l( F(\vec{x}')) \quad
+\forall \vec{x} \in \Omega_l.
 \label{eq:likelihood}
 \end{equation}
 
@@ -119,41 +119,43 @@ by a multivariate normal distribution with region descriptors
 $\Theta_l = \lbrace \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} \rbrace$:
 
 \begin{equation}
-p_l( F(\mathbf{x}') ) = \mathcal{N} ( f \mid \Theta_l ).
+p_l( F(\vec{x}') ) = \mathcal{N} \left( F(\vec{x}') \mid \Theta_l \right).
 \label{eq:multivariate_normal}
 \end{equation}
 
 \todo{I modified this slightly}
-Thus, defining the feature observed as $\mathbf{f}'=F(\mathbf{x}')$ and 
-the squared \emph{Mahalanobis distance} of $\mathbf{f}'$ with respect
+Thus, defining the feature observed as $\vec{f}=F(\vec{x})$ and 
+the squared \emph{Mahalanobis distance} of $\vec{f}$ with respect
 of the descriptors of region $l$ as
-$\Delta^2_l (\mathbf{f}' \mid \Theta_l ) = (\mathbf{f}' - \boldsymbol{\mu}_l)^T \, \boldsymbol{\Sigma}^{-1}_l \, (\mathbf{f}' - \boldsymbol{\mu}_l)$,
+\begin{equation}
+\mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l),
+\end{equation}
 we write:
 \begin{align}
-P( F \mid U, \Omega ) &= \underset{l}{\prod} \underset{\mathbf{x} \in \Omega_l}{\prod}
-\mathcal{N} ( f \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} ) \notag\\
-&= \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}  \Delta^2_l (\mathbf{f}' \mid \Theta_l ) \right)}}.
+P( F \mid U, \Omega ) &= \underset{l}{\prod} \underset{\vec{x} \in \Omega_l}{\prod}
+\mathcal{N} ( \vec{f} \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} ) \notag\\
+&= \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}
+\mdist{f'}{l} \right)}}.
 \label{eq:pdf}
 \end{align}
 
 We choose a Thikonov regularization prior as follows:
-
 \begin{equation*}
-P(U) = \underset{\mathbf{x}}{\prod} p(u)
+P(U) = \underset{\vec{x}}{\prod} p(u(\vec{x}))
 \end{equation*}
 with further:
 \begin{align*}
-p(u) &= p_0(u) \, p_1(u) \notag\\
-p_0(u) &= \mathcal{N}( u \mid 0, A^{-1}) \notag\\
-p_1(u) &= \mathcal{N}( Du \mid 0, B^{-1}),
+p(u(\vec{x})) &= p_0(u(\vec{x})) \, p_1(u(\vec{x})) \notag\\
+p_0(u(\vec{x})) &= \mathcal{N}( u(\vec{x}) \mid 0, A^{-1}) \notag\\
+p_1(u(\vec{x})) &= \mathcal{N}( Du(\vec{x}) \mid 0, B^{-1}),
 \end{align*}
 that consider that the distortion and its gradient have zero
 mean and variance governed by $A$ and $B$. Since the anisotropy
 is technically aligned with the imaging axes, these can
 be simplified:
 \begin{align}
-p_0(u) &= \underset{\mathbf{x}}{\sum} \mathcal{N}( u(\mathbf{x}) \mid 0, \frac{1}{\sqrt{a_{x,y,z}}}) \notag\\
-p_1(u) &= \underset{\mathbf{x}}{\sum} \mathcal{N}( \nabla_{x,y,z}u(\mathbf{x}) \mid 0, \frac{1}{\sqrt{b_{x,y,z}}})
+p_0(u(\vec{x})) &= \underset{\vec{x}}{\sum} \mathcal{N}( u(\vec{x}) \mid 0, (\boldsymbol{\alpha}^{\circ\frac12}\,\vec{I}_n)^{-1}) \notag\\
+p_1(u(\vec{x})) &= \underset{\vec{x}}{\sum} \mathcal{N}( \nabla \cdot u(\vec{x}) \mid 0, (\boldsymbol{\beta}^{\circ\frac12}\,\vec{I}_n)^{-1})
 \label{eq:priors}
 \end{align}
 
@@ -162,13 +164,13 @@ a variational one
 applying the following log-transform:
 \begin{align}
 E(F \mid U) &= -\log \underset{l}{\prod}
-\underset{\mathbf{x} \in \Omega_l}{\prod} 
-p_l( \mathbf{f}')\,p_0( u(\mathbf{x}))\,p_1( u(\mathbf{x})) \notag\\
+\underset{\vec{x} \in \Omega_l}{\prod} 
+p_l( \vec{f}')\,p_0( u(\vec{x}))\,p_1( u(\vec{x})) \notag\\
 &= C + \underset{l}{\sum}
-\underset{\mathbf{x} \in \Omega_l}{\sum}
-\Delta^2_l (\mathbf{f}' \mid \Theta_l ) \notag\\
-&+ \underset{x,y,z}{\sum} a_d u^2_d
-+ \underset{x,y,z}{\sum} b_d \|\nabla u_d\|^2,
+\underset{\vec{x} \in \Omega_l}{\sum}
+\mdist{f'}{l} \notag\\
+&+ \underset{\vec{x} \in \Omega}{\sum} \boldsymbol{\alpha} \cdot u(\vec{x})^{\circ2}
++ \underset{\vec{x} \in \Omega}{\sum} \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{x}))^{\circ2},
 \label{eq:energy}
 \end{align}
 that is the dual expression to the energy functional corresponding
@@ -187,8 +189,8 @@ problem well-posed, we include limiting and regularization terms into
 the energy functional \cite{morozov_linear_1975,tichonov_solution_1963}:
 %
 \begin{multline}
-E(u) = \sum\limits_l \int_{\Omega'_l} \Delta^2_l (\mathbf{f}) \,d\mathbf{x} \\
-+ \int u^T \, A \, u \, d\mathbf{x} + \int \tr\{(\nabla u^T)^T B (\nabla u^T)\} d\mathbf{x}
+E(u) = \sum\limits_l \int_{\Omega'_l} \mdist{f}{l} \,d\vec{x} \\
++ \int \vec{u}^T \, A \, \vec{u} \, d\vec{x} + \int \tr\{(\nabla \vec{u}^T)^T B (\nabla \vec{u}^T)\} d\vec{x}
 \label{eq:complete_energy}
 \end{multline}
 %
@@ -205,28 +207,28 @@ the continuous version of the energy functional}
 \subsection{Numerical Implementation}
 \label{sec:numerical_implementation}
 %
-Let us denote $\{c_i\}_{i=1 \ldots N_c}$ the nodes of one or several shape-prior
+Let us denote $\{\vec{c}_i\}_{i=1 \ldots N_c}$ the nodes of one or several shape-prior
 surface(s). In our application, precise tissue interfaces of interest 
 extracted from a high-resolution, anatomically correct reference volume. 
 On the other hand, we have a number of \gls{dwi}-derived features at each
-voxel of the volume. Let us denote by $\mathbf{x}$ the voxel and $F(\mathbf{x}) = 
-[ f_1, f_2, \ldots, f_N]^T(\mathbf{x})$ its associated feature vector.
+voxel of the volume. Let us denote by $\vec{x}$ the voxel and $F(\vec{x}) = 
+[ f_1, f_2, \ldots, f_N]^T(\vec{x})$ its associated feature vector.
 
 \subsubsection{Deformation field}
 \label{sec:deformation_field}
 The transformation from ``T1-'' into ``\gls{dwi}-'' coordinate space is 
-achieved through a dense deformation field $u(\mathbf{x})$, such that:
+achieved through a dense deformation field $u(\vec{x})$, such that:
 \begin{equation}
-c_i' = U\{c_i\} = c_i + u(c_i),
+\vec{c}_i' = U\{\vec{c}_i\} = \vec{c}_i + u(\vec{c}_i),
 \label{eq:nodes_tfm}
 \end{equation}
 where $U$ is defined in \eqref{eq:deformation_field}. Since the nodes of the anatomical 
-surfaces might lay off-grid, it is required to derive $u(\mathbf{x})$ from a discrete 
-set of parameters $\{u_k\}_{k=1 \ldots K}$. Densification is achieved through 
+surfaces might lay off-grid, it is required to derive $u(\vec{x})$ from a discrete 
+set of parameters $\{\vec{u}_k\}_{k=1 \ldots K}$. Densification is achieved through 
 a set of associated basis functions $\psi_k$:
 %
 \begin{equation}
-u(\mathbf{x}) = \sum_k \psi_k(\mathbf{x}) u_k
+u(\vec{x}) = \sum_k \psi_k(\vec{x}) \vec{u}_k
 \label{eq:intp_kernel}
 \end{equation}
 %
@@ -236,21 +238,21 @@ Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
 $\psi$ by the actual kernel function, the transformation writes
 %
 \begin{equation}
-c_i' = c_i + \sum_k \left[ u_k \, \underset{x,y,x}{\prod} B_3(c_{i,d} - \mathbf{x}_{k,d}) \right].
+c_i' = c_i + \sum_k \left[ \vec{u}_k \, \underset{x,y,x}{\prod} B_3(c_{i,d} - \vec{x}_{k,d}) \right].
 \label{eq:transformation}
 \end{equation} 
 
 Based on the current estimate of the distortion $u$, we can compute 
 ``expected samples'' within the shape prior projected into the \gls{dwi}.
 Thus, we now estimate region descriptors of the \gls{dwi} features 
-$\mathbf{f}'$ of the regions defined by the priors in \gls{dwi} space.
+$\vec{f}'$ of the regions defined by the priors in \gls{dwi} space.
 
 \subsubsection{Gradient descent}
 To find the minimum of the energy functional \eqref{eq:energy},
 we propose a gradient-descent approach with respect to the underlying 
 deformation field through the following partial differential equation:
 \begin{equation}
-\frac{\partial u(\mathbf{x},t)}{\partial t} \propto - \frac{\partial E(u)}{\partial u},
+\frac{\partial u(\vec{x},t)}{\partial t} \propto - \frac{\partial E(u)}{\partial u},
 \label{eq:general_gradient_descent}
 \end{equation}
 with $t$ being an artificial time parameter of the contour
@@ -258,14 +260,13 @@ evolution, included to express the iterative character of the approach.
 Now, we can introduce \eqref{eq:energy} in
 \eqref{eq:general_gradient_descent}:
 \begin{align}
-\frac{\partial E(u)}{\partial u^d_k} &=
-\frac{ \partial }{\partial u^d_k} \lbrace
+\frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
+\frac{ \partial }{\partial \vec{u}_k} \Big\{
 C + \underset{l}{\sum}
-\underset{\mathbf{x} \in \Omega_l}{\sum}
-\Delta^2_l (\mathbf{f}' \mid \Theta_l ) \notag\\
-&+ \underset{a}{\sum} a^d ({u^d})^2
-+ \underset{a}{\sum} b^d \|\nabla u^d\|^2
-\rbrace
+\underset{\vec{x} \in \Omega_l}{\sum} \mdist{f'}{l} \notag\\
+&+ \underset{\vec{x} \in \Omega}{\sum} \boldsymbol{\alpha} \cdot u(\vec{x})^{\circ2}
++ \underset{\vec{x} \in \Omega}{\sum} \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{x}))^{\circ2}
+\Big\}.
 \label{eq:gradient_descent}
 \end{align}
 
@@ -273,56 +274,56 @@ Whereas related \glspl*{adf} introduced in \autoref{sec:methods_background}
 make use of explicit level-set formulations to solve \eqref{eq:gradient_descent},
 we alternatively use \emph{shape-gradients}
 \cite{jehan-besson_dream2s:_2003,herbulot_segmentation_2006}.
-Let $r(\mathbf{x})$ be an ``arbitrary'' function over the image domain,
-and $\Omega$ a certain image region with $\Gamma_{ij}$ its corresponding
+Let $r(\vec{x})$ be an ``arbitrary'' function over the image domain,
+and $\Omega$ a certain image region with $\Gamma_{l,m}$ its corresponding
 outer boundary as defined in \autoref{sec:methods_map}.
 We now derive the domain integral w.r.t. $t$:
 \begin{equation*}
-\frac{\partial}{\partial t} \int_\Omega r(\mathbf{x}') d\mathbf{x} = \int_\Omega \frac{\partial}{\partial t}r(\mathbf{x}') d\mathbf{x} - \int_{\Gamma_{ij}} r(\mathbf{x}') \left\langle \frac{\partial \Gamma_{ij} }{\partial t}, N_{\Gamma_{ij}}\right\rangle d\mathbf{x}
+\frac{\partial}{\partial t} \int_\Omega r(\vec{x}') d\vec{x} = \int_\Omega \frac{\partial}{\partial t}r(\vec{x}') d\vec{x} - \int_{\Gamma_{l,m}} r(\vec{x}') \left\langle \frac{\partial \Gamma_{l,m} }{\partial t}, N_{\Gamma_{l,m}}\right\rangle d\vec{x}
 \end{equation*}
-where $\left\langle\frac{\partial\Gamma_{ij}}{\partial t}, N_{\Gamma_{ij}}\right\rangle$ is 
-the projection of the boundary movement on the unit inward normal $N_{\Gamma_{ij}}$. Assuming
+where $\left\langle\frac{\partial\Gamma_{l,m}}{\partial t}, N_{\Gamma_{l,m}}\right\rangle$ is 
+the projection of the boundary movement on the unit inward normal $N_{\Gamma_{l,m}}$. Assuming
 that the region descriptors $\Theta_l$ vary slowly enough, we can consider
-that $\frac{\partial}{\partial t} r(\mathbf{x}') = 0$ and thus:
+that $\frac{\partial}{\partial t} r(\vec{x}') = 0$ and thus:
 \begin{equation}
-\frac{\partial}{\partial t} \int_\Omega r(\mathbf{x}') d\mathbf{x} = 
-- \int_{\Gamma_{ij}} r(\mathbf{x}') \left\langle \frac{\partial \Gamma_{ij} }{\partial t}, N_{\Gamma_{ij}}\right\rangle d\mathbf{x}
+\frac{\partial}{\partial t} \int_\Omega r(\vec{x}') d\vec{x} = 
+- \int_{\Gamma_{l,m}} r(\vec{x}') \left\langle \frac{\partial \Gamma_{l,m} }{\partial t}, N_{\Gamma_{l,m}}\right\rangle d\vec{x}
 \label{eq:shape_gradients}
 \end{equation}
 
 Therefore, we can apply a discretized interpretation of \eqref{eq:shape_gradients}
 to compute the data term in \eqref{eq:gradient_descent} as follows:
 \begin{align}
-\frac{\partial E_{data}(u)}{\partial u^d_k} &=
+\frac{\partial E_{data}(u)}{\partial \vec{u}_k} &=
 \underset{l}{\sum} \frac{ \partial }{\partial u^d_k} \lbrace
- \underset{\mathbf{x} \in \Omega_l}{\sum}
-\Delta^2_l (\mathbf{f}') \rbrace \notag\\
-&= \underset{ij}{\sum} \underset{\mathbf{c}' \in \Gamma_{ij}}{\sum}
-\left[ \Delta^2_i (\mathbf{f}' ) - \Delta^2_j (\mathbf{f}')\right]
-\left\langle \frac{\partial \mathbf{c}'}{\partial {u^a_k}'}, \mathbf{n_i}'\right\rangle,
+ \underset{\vec{x} \in \Omega_l}{\sum}
+{\mathcal{D}_l^2}^2 (\vec{f}') \rbrace \notag\\
+&= \underset{l,m}{\sum} \underset{\vec{c}' \in \Gamma_{l,m}}{\sum}
+\left[ \Delta^2_i (\vec{f}' ) - \Delta^2_j (\vec{f}')\right]
+\left\langle \frac{\partial \vec{c}'}{\partial {u^a_k}'}, \vec{n_i}'\right\rangle,
 \label{eq:gradient_wshape}
 \end{align}
-in this case, the formulation has been adapted to the non-binary case, $ij$
-being any pair of neighboring regions, and $\Gamma_{ij}$ the contour separating
-them such that $\mathbf{x}' = \mathbf{c}' \in\Gamma_{ij} \iff \mathbf{x}\in \partial\Omega_i \cap \partial\Omega_j$
-and $\mathbf{n_i}'$ is the unit inward normal to the contour at $c_i'$.
+in this case, the formulation has been adapted to the non-binary case, $l,m$
+being any pair of neighboring regions, and $\Gamma_{l,m}$ the contour separating
+them such that $\vec{x}' = \vec{c}' \in\Gamma_{l,m} \iff \vec{x}\in \partial\Omega_i \cap \partial\Omega_j$
+and $\vec{n_i}'$ is the unit inward normal to the contour at $c_i'$.
 
 Finally, we can compute:
 \begin{align}
-\frac{\partial}{\partial {u^a_k}'}{\mathbf{c}_i}' &= \frac{\partial}{\partial {u^a_k}'} 
-\lbrace c_i + \sum_k \psi_k(\mathbf{c_i}) u_k \rbrace
-= \psi_k(\mathbf{c_i})\, \hat{\mathbf{e}}^a
+\frac{\partial}{\partial {\vec{u}_k}'}{\vec{c}_i}' &= \frac{\partial}{\partial {u^a_k}'} 
+\lbrace c_i + \sum_k \psi_k(\vec{c}_i) \vec{u}_k \rbrace
+= \psi_k(\vec{c_i})\, \hat{\vec{e}}^a
 \end{align}
-where $\hat{\mathbf{e}}^a$ is the unit vector along direction $a$. Projecting
+where $\hat{\vec{e}}^a$ is the unit vector along direction $a$. Projecting
 this gradient onto the surface normal,
-$\left\langle \frac{\partial \mathbf{c}'}{\partial {u^a_k}'}, \mathbf{n_i}'\right\rangle
-= \psi_k(\mathbf{c_i})\, \hat{\mathbf{n}}_i^a$, the
+$\left\langle \frac{\partial \vec{c}'}{\partial {u^a_k}'}, \vec{n_i}'\right\rangle
+= \psi_k(\vec{c_i})\, \hat{\vec{n}}_i^a$, the
 full gradient evolution equation \eqref{eq:gradient_descent} yields:
 \begin{align}
-\frac{\partial E(u)}{\partial u^d_k} 
-&= \underset{ij}{\sum} \underset{\mathbf{c}' \in \Gamma_{ij}}{\sum}
-\left[ \Delta^2_i (\mathbf{f}' ) - \Delta^2_j (\mathbf{f}')\right]
-\psi_k(\mathbf{c_i})\, \hat{\mathbf{n}}_i^a \notag\\
+\frac{\partial E(u)}{\partial \vec{u}_k} 
+&= \underset{l,m}{\sum} \underset{\vec{c}' \in \Gamma_{l,m}}{\sum}
+\left[ \Delta^2_i (\vec{f}' ) - \Delta^2_j (\vec{f}')\right]
+\psi_k(\vec{c_i})\, \hat{\vec{n}}_i^a \notag\\
 &2\, \underset{x,y,z}{\sum} a_d u^a_{k,d}
 -2\, \underset{x,y,z}{\sum} b_d \nabla u^a_{k,d},
 \label{eq:gradient_final}
@@ -333,9 +334,9 @@ It is necessary to discretize $t$ in order to obtain a numerical
 implementation of the equation \eqref{eq:gradient_final}:
 \begin{align}
 \frac{u^{t+1}-u^{t}}{\tau} 
-&= - \underset{ij}{\sum} \underset{\mathbf{c}' \in \Gamma_{ij}}{\sum}
-\left[ \Delta^2_i (\mathbf{f}' ) - \Delta^2_j (\mathbf{f}')\right]
-\psi_k(\mathbf{c_i})\, \hat{\mathbf{n}}_i^a \notag\\
+&= - \underset{l,m}{\sum} \underset{\vec{c}' \in \Gamma_{l,m}}{\sum}
+\left[ \Delta^2_i (\vec{f}' ) - \Delta^2_j (\vec{f}')\right]
+\psi_k(\vec{c_i})\, \hat{\vec{n}}_i^a \notag\\
 &-2\, \underset{x,y,z}{\sum} a_d (u^a_{k,d})^{t+1}
 +2\, \underset{x,y,z}{\sum} b_d \nabla (u^a_{k,d})^{t+1}.
 \end{align}
@@ -350,8 +351,8 @@ to obtain the next deformation field $(u^a_{k,d})^{t+1}$:
 \begin{multline}
 (u^a_{k,d})^{t+1} = \\
  \mathcal{F}^{-1} \left\lbrace
-\frac{\mathcal{F}\lbrace \tau^{-1} (u^a_{k,d})^{t} - \underset{ij}{\sum} \underset{\mathbf{c}' \in \Gamma_{ij}}{\sum}
-\left[ \Delta^2_i (\mathbf{f}' ) - \Delta^2_j (\mathbf{f}')\right] \rbrace}
+\frac{\mathcal{F}\lbrace \tau^{-1} (u^a_{k,d})^{t} - \underset{l,m}{\sum} \underset{\vec{c}' \in \Gamma_{l,m}}{\sum}
+\left[ \Delta^2_i (\vec{f}' ) - \Delta^2_j (\vec{f}')\right] \rbrace}
      {\mathcal{F}\lbrace (\tau^{-1} +2\,a_d)\mathcal{I} - 2\,b_d \Delta ) \rbrace}
      \right\rbrace
 \end{multline}
@@ -378,7 +379,7 @@ as in \citep{estellers_efficient_2011}.
 In regular intervals, after certain number of iterations,
 the parameters $\Theta_l$ of the regions can be reestimated 
 based on the shifted volumetric samples 
-$\mathbf{x}' = \mathbf{x_0} + u(\mathbf{x})$.
+$\vec{x}' = \vec{x_0} + u(\vec{x})$.
 
 \subsubsection{Convergence}
 \todo[inline]{discuss choice of $\tau$, Courant-Friedrichs-Lewy (CFL) condition, etc.}
