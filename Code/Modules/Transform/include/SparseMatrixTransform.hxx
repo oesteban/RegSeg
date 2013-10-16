@@ -126,7 +126,12 @@ SparseMatrixTransform<TScalarType,NDimensions>
 			}
 
 			if (wi > 0.0) {
-				this->m_S.put(row, col, this->m_KernelNorm * wi);
+				wi*= this->m_KernelNorm;
+				if ( fabs(1.0-wi) < 1e-5 ) {
+					wi = 1.0;
+				}
+
+				this->m_S.put(row, col, wi);
 			}
 		}
 	}
@@ -205,8 +210,11 @@ SparseMatrixTransform<TScalarType,NDimensions>
 			}
 
 			if (wi > 0.0) {
-				this->m_Phi.put(row, col, this->m_KernelNorm * wi);
-				this->m_InvertPhi.put( col, row, this->m_KernelNorm * wi );
+				wi *= this->m_KernelNorm;
+				assert(wi <= 1.0);
+
+				this->m_Phi.put(row, col, wi);
+				this->m_InvertPhi.put( col, row, wi );
 			}
 		}
 	}

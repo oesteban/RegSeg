@@ -177,6 +177,20 @@ void SpectralOptimizer<TFunctional>::Resume() {
 
 		/* Advance one step along the gradient.
 		 * This will modify the gradient and update the transform. */
+		this->m_CurrentSpeeds = this->m_Functional->GetDerivative();
+
+#ifndef NDEBUG
+		typedef rstk::DisplacementFieldComponentsFileWriter<ParametersType> ComponentsWriter;
+		typename ComponentsWriter::Pointer p = ComponentsWriter::New();
+		std::stringstream ss;
+		ss.str("");
+		ss << "speeds_" << std::setfill('0')  << std::setw(3) << this->GetCurrentIteration();
+		p->SetFileName( ss.str().c_str() );
+		p->SetInput( this->m_CurrentSpeeds );
+		p->Update();
+#endif
+
+
 		this->Iterate();
 
 		/* Update the level sets contour and deformation field */
