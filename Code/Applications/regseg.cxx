@@ -86,11 +86,6 @@ int main(int argc, char *argv[]) {
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetFunctional( functional );
 
-
-	//typename ObserverType::Pointer o = ObserverType::New();
-	//o->SetCallbackFunction( opt, & PrintIteration );
-	//o->AddObserver( itk::IterationEvent(), o );
-
 	// Read target feature(s) -----------------------------------------------------------
 	root["inputs"]["target"]["components"]["size"] = Json::Int (fixedImageNames.size());
 	root["inputs"]["target"]["components"]["type"] = std::string("feature");
@@ -139,9 +134,18 @@ int main(int argc, char *argv[]) {
 		opt->SetAlpha( vmap["alpha"].as<float>() );
 	}
 
+	if (vmap.count("beta")) {
+		opt->SetBeta( vmap["beta"].as<float>() );
+	}
+
 	IterationUpdatePointer iup = IterationUpdateType::New();
 	iup->SetOptimizer( opt );
-	iup->SetTrackEnergyOn();
+	//iup->SetTrackEnergyOn();
+#ifndef NDEBUG
+	IterationWriterUpdatePointer iwp = IterationWriterUpdate::New();
+	iwp->SetOptimizer( opt );
+	iwp->SetPrefix( outPrefix );
+#endif
 
 	clock_t preProcessStop = clock();
 	float pre_tot_t = (float) (((double) (preProcessStop - preProcessStart)) / CLOCKS_PER_SEC);

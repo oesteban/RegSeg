@@ -58,6 +58,7 @@
 #include <itkDisplacementFieldJacobianDeterminantFilter.h>
 #include <itkDisplacementFieldTransform.h>
 
+
 #include "CopyQuadEdgeMeshFilter.h"
 #include "SparseMatrixTransform.h"
 #include "DownsampleAveragingFilter.h"
@@ -281,6 +282,7 @@ protected:
 
 	ReferencePointType m_Origin, m_End;
 	DirectionType m_Direction;
+	unsigned int m_SamplingFactor;
 private:
 	FunctionalBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented

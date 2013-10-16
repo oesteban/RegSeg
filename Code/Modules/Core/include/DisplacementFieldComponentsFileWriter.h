@@ -109,7 +109,7 @@ public:
 
 		for( size_t comp=0; comp<Dimension; comp++) {
 			std::stringstream ss;
-			ss << "cmp" << comp << "_" << m_FileName;
+			ss << m_FileName << "_cmp" << comp << ".nii.gz";
 			typename itk::ImageFileWriter<FieldType>::Pointer w = itk::ImageFileWriter<FieldType>::New();
 			w->SetInput( out[comp] );
 			w->SetFileName( ss.str().c_str() );

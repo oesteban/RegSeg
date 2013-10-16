@@ -85,9 +85,6 @@ public:
 	/** Stop condition internal string type */
 	typedef typename Superclass::StopConditionDescriptionType     StopConditionDescriptionType;
 
-	/** Internal computation value type */
-	typedef typename Superclass::InternalComputationValueType     InternalComputationValueType;
-
 	/** Functional definitions */
 	typedef typename Superclass::FunctionalPointer                FunctionalPointer;
 	typedef typename Superclass::ParametersType                   ParametersType;
@@ -108,17 +105,20 @@ public:
 	typedef typename Superclass::FTDomainType                     FTDomainType;
 	typedef typename Superclass::FTDomainPointer                  FTDomainPointer;
 	typedef typename Superclass::ComplexType                      ComplexType;
-	typedef typename Superclass::ComplexValueType                 ComplexValueType;
+	typedef typename Superclass::InternalComputationValueType     InternalComputationValueType;
+	typedef typename Superclass::InternalVectorType               InternalVectorType;
+	typedef typename Superclass::InternalVectorFieldType          InternalVectorFieldType;
+	typedef typename Superclass::InternalVectorFieldPointer       InternalVectorFieldPointer;
+
 	typedef typename Superclass::IFFTType                         IFFTType;
 	typedef typename Superclass::IFFTPointer                      IFFTPointer;
 	typedef typename Superclass::RealPartType                     RealPartType;
-	typedef typename Superclass::ComplexValuesVector              ComplexValuesVector;
 	typedef typename Superclass::ComplexFieldValue                ComplexFieldValue;
 	typedef typename Superclass::ComplexFieldType                 ComplexFieldType;
 	typedef typename Superclass::ComplexFieldPointer              ComplexFieldPointer;
-	typedef typename Superclass::MatrixType                       MatrixType;
-	typedef typename Superclass::TensorFieldType                  TensorFieldType;
-	typedef typename Superclass::TensorFieldPointer               TensorFieldPointer;
+//	typedef typename Superclass::MatrixType                       MatrixType;
+//	typedef typename Superclass::TensorFieldType                  TensorFieldType;
+//	typedef typename Superclass::TensorFieldPointer               TensorFieldPointer;
 	typedef typename Superclass::SizeValueType                    SizeValueType;
 
 	/** Type for the convergence checker */

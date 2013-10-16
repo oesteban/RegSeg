@@ -103,8 +103,6 @@ public:
 	/** Stop condition internal string type */
 	typedef std::ostringstream                                      StopConditionDescriptionType;
 
-	/** Internal computation value type */
-	typedef double                                                  InternalComputationValueType;
 
 	/** Functional definitions */
 	typedef typename FunctionalType::Pointer                        FunctionalPointer;
@@ -130,23 +128,28 @@ public:
 	typedef typename FFTType::OutputImageType                       FTDomainType;
 	typedef typename FTDomainType::Pointer                          FTDomainPointer;
 	typedef typename FTDomainType::PixelType                        ComplexType;
-	typedef typename ComplexType::value_type                        ComplexValueType;
+
+	/** Internal computation value type */
+	typedef typename ComplexType::value_type                        InternalComputationValueType;
+	typedef itk::Vector< InternalComputationValueType, Dimension >  InternalVectorType;
+	typedef itk::Image< InternalVectorType, Dimension >             InternalVectorFieldType;
+	typedef typename InternalVectorFieldType::Pointer               InternalVectorFieldPointer;
+	typedef itk::ContinuousIndex< InternalComputationValueType, Dimension>
+																	ContinuousIndexType;
 
 	typedef itk::HalfHermitianToRealInverseFFTImageFilter
 			        <FTDomainType, ParametersComponentType>         IFFTType;
 	typedef typename IFFTType::Pointer                              IFFTPointer;
 
 
-	typedef itk::Image< ComplexValueType, Dimension >               RealPartType;
-	typedef itk::Vector< ComplexValueType, Dimension >              ComplexValuesVector;
-
+	typedef itk::Image< InternalComputationValueType, Dimension >   RealPartType;
 	typedef itk::Vector< ComplexType, Dimension >                   ComplexFieldValue;
 	typedef itk::Image< ComplexFieldValue, Dimension >              ComplexFieldType;
 	typedef typename ComplexFieldType::Pointer                      ComplexFieldPointer;
 
-	typedef itk::Matrix< ComplexValueType, Dimension, Dimension >   MatrixType;
-	typedef itk::Image< MatrixType, Dimension >                     TensorFieldType;
-	typedef typename TensorFieldType::Pointer                       TensorFieldPointer;
+	//typedef itk::Matrix< ComplexValueType, Dimension, Dimension >   MatrixType;
+	//typedef itk::Image< MatrixType, Dimension >                     TensorFieldType;
+	//typedef typename TensorFieldType::Pointer                       TensorFieldPointer;
 
 	typedef size_t SizeValueType;
 
@@ -202,23 +205,21 @@ public:
 //	itkGetConstReferenceMacro(ReturnBestParametersAndValue, bool);
 //	itkBooleanMacro(ReturnBestParametersAndValue);
 
-	itkSetMacro( A, MatrixType );
-	itkGetConstMacro( A, MatrixType );
+	itkSetMacro( Alpha, InternalVectorType );
+	itkGetConstMacro( Alpha, InternalVectorType );
 
-	itkSetMacro( B, MatrixType );
-	itkGetConstMacro( B, MatrixType );
+	itkSetMacro( Beta, InternalVectorType );
+	itkGetConstMacro( Beta, InternalVectorType );
 
 	itkSetMacro( StepSize, InternalComputationValueType );
 	itkGetConstMacro( StepSize, InternalComputationValueType );
 
-	void SetAlpha( InternalComputationValueType v ) {
-		this->m_A.SetIdentity();
-		this->m_A = this->m_A * 2.0 * v;
+	void SetAlpha(const InternalComputationValueType v ) {
+		this->m_Alpha.Fill(v);
 	}
 
-	void SetBeta( InternalComputationValueType v ) {
-		this->m_B.SetIdentity();
-		this->m_B = this->m_B * 2.0 * v;
+	void SetBeta(const InternalComputationValueType v ) {
+		this->m_Beta.Fill(v);
 	}
 
 	/** Get stop condition enum */
@@ -300,13 +301,13 @@ protected:
 
 	/** Particular parameter definitions from our method */
 	InternalComputationValueType m_StepSize; // Step-size is tau in the formulations
-	MatrixType m_A;
-	MatrixType m_B;
+	InternalVectorType m_Alpha;
+	InternalVectorType m_Beta;
 
 
 	ParametersPointer m_Parameters;
 	ParametersPointer m_NextParameters;
-	TensorFieldPointer m_Denominator;
+	InternalVectorFieldPointer m_Denominator;
 	MeasureType m_CurrentValue;
 
 	FunctionalPointer m_Functional;
