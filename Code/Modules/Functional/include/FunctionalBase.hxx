@@ -495,37 +495,37 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Origin    = this->m_ReferenceImage->GetOrigin();
 	this->m_Direction = this->m_ReferenceImage->GetDirection();
 
-	typename ReferenceImageType::IndexType endIdx;
-	for ( size_t d = 0; d<Dimension; d++)
-		endIdx[d] = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize()[d] -1;
-	this->m_ReferenceImage->TransformIndexToPhysicalPoint( endIdx, this->m_End );
-	DirectionType idDir; idDir.SetIdentity();
-
-	if ( this->m_Direction != idDir ) {
-		typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >   ReorientFilterType;
-		typename ReorientFilterType::Pointer reorient = ReorientFilterType::New();
-		reorient->UseImageDirectionOn();
-		reorient->SetDesiredCoordinateDirection(idDir);
-		reorient->SetInput( this->m_ReferenceImage );
-		reorient->Update();
-		ReferenceImagePointer reoriented = reorient->GetOutput();
-		ReferencePointType newOrigin = reoriented->GetOrigin();
-
-		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-			ContourPointer c = this->m_CurrentContours[contid];
-			PointsIterator c_it  = c->GetPoints()->Begin();
-			PointsIterator c_end = c->GetPoints()->End();
-			ContourPointType ci, ci_new;
-			size_t pid;
-			while( c_it != c_end ) {
-				pid = c_it.Index();
-				ci = c_it.Value();
-				ci_new = (this->m_Direction* ( ci - this->m_Origin.GetVectorFromOrigin() )) + newOrigin.GetVectorFromOrigin();
-				c->SetPoint( pid, ci_new );
-				++c_it;
-			}
-		}
-	}
+	//typename ReferenceImageType::IndexType endIdx;
+	//for ( size_t d = 0; d<Dimension; d++)
+	//	endIdx[d] = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize()[d] -1;
+	//this->m_ReferenceImage->TransformIndexToPhysicalPoint( endIdx, this->m_End );
+	//DirectionType idDir; idDir.SetIdentity();
+    //
+	//if ( this->m_Direction != idDir ) {
+	//	typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >   ReorientFilterType;
+	//	typename ReorientFilterType::Pointer reorient = ReorientFilterType::New();
+	//	reorient->UseImageDirectionOn();
+	//	reorient->SetDesiredCoordinateDirection(idDir);
+	//	reorient->SetInput( this->m_ReferenceImage );
+	//	reorient->Update();
+	//	ReferenceImagePointer reoriented = reorient->GetOutput();
+	//	ReferencePointType newOrigin = reoriented->GetOrigin();
+    //
+	//	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+	//		ContourPointer c = this->m_CurrentContours[contid];
+	//		PointsIterator c_it  = c->GetPoints()->Begin();
+	//		PointsIterator c_end = c->GetPoints()->End();
+	//		ContourPointType ci, ci_new;
+	//		size_t pid;
+	//		while( c_it != c_end ) {
+	//			pid = c_it.Index();
+	//			ci = c_it.Value();
+	//			ci_new = (this->m_Direction* ( ci - this->m_Origin.GetVectorFromOrigin() )) + newOrigin.GetVectorFromOrigin();
+	//			c->SetPoint( pid, ci_new );
+	//			++c_it;
+	//		}
+	//	}
+	//}
 
 	// Fill in interpolator points
 	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
