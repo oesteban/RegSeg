@@ -48,6 +48,7 @@
 #include <itkMeshFileWriter.h>
 #include <itkImageAlgorithm.h>
 #include <itkOrientImageFilter.h>
+#include <itkContinuousIndex.h>
 
 namespace rstk {
 
@@ -63,6 +64,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_EnergyUpdated = false;
 	this->m_RegionsUpdated = false;
 	this->m_NumberOfContours = 0;
+	this->m_SamplingFactor = 4;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -88,24 +90,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	// Set up grid points in the sparse-dense interpolator
 	this->InitializeInterpolatorGrid();
-
-
-#ifndef DNDEBUG
-	for( size_t id = 0; id < m_ROIs.size(); id++) {
-		typedef itk::ImageFileWriter< ROIType > ROIWriter;
-		typename ROIWriter::Pointer w = ROIWriter::New();
-		w->SetInput( this->m_ROIs[id] );
-		std::stringstream ss;
-		ss << "roi_" << std::setfill( '0' ) << std::setw(2) << id << ".nii.gz";
-		w->SetFileName( ss.str().c_str() );
-		w->Update();
-	}
-	typedef itk::ImageFileWriter< ROIType > ROIWriter;
-	typename ROIWriter::Pointer w = ROIWriter::New();
-	w->SetInput( this->m_CurrentRegions );
-	w->SetFileName( "regions.nii.gz" );
-	w->Update();
-#endif
 }
 
 
@@ -193,7 +177,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	VectorType v;
 	for( size_t gpid = 0; gpid < this->m_NumberOfNodes; gpid++ ) {
 		v =  *( NodesBuffer + gpid );
-		if ( v.GetNorm()>0 ) {
+		if ( v.GetNorm()> 1.0e-5 ) {
 			this->m_FieldInterpolator->SetCoefficient( gpid, v );
 		}
 	}
@@ -426,36 +410,35 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::InitializeSamplingGrid() {
+	typedef itk::ContinuousIndex< double, Dimension > ContinuousIndex;
+
+	typename FieldType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
+	typename FieldType::SizeType exp_size;
+
+	ContinuousIndex f_idx, l_idx;
+	f_idx.Fill( -0.5 );
+
+	for (size_t i = 0; i<Dimension; i++ ){
+		l_idx[i] = size[i]-0.5;
+		exp_size[i] = (unsigned int) (size[i]*this->m_SamplingFactor);
+	}
+
+	PointType first, last, origin, step;
+	typename FieldType::SpacingType spacing;
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( f_idx, first );
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( l_idx, last );
+
+	for (size_t i = 0; i<Dimension; i++ ){
+		step[i] = (last[i]-first[i])/(1.0*exp_size[i]);
+		spacing[i]= fabs( step[i] );
+		origin[i] = first[i] + 0.5 * step[i];
+	}
+
 	this->m_ReferenceSamplingGrid = FieldType::New();
-	typename ReferenceImageType::SpacingType sp = this->m_ReferenceImage->GetSpacing();
-	double spacing = itk::NumericTraits< double >::max();
-	double factor = 0.25;
-
-	for (size_t i = 0; i<Dimension; i++ ){
-		if (sp[i] < spacing )
-			spacing = sp[i];
-	}
-
-	sp.Fill( spacing * factor );
-
-	PointType origin = this->m_ReferenceImage->GetOrigin();
-	typename ReferenceImageType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
-	typename itk::ContinuousIndex<double, Dimension> idx;
-	for (size_t i = 0; i<Dimension; i++ ){
-		idx[i]=size[i];
-	}
-
-	PointType end;
-	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( idx, end );
-
-	for (size_t i = 0; i<Dimension; i++ ){
-		size[i]= (unsigned int) ( fabs( (end[i]-origin[i])/sp[i] ) );
-	}
-
 	this->m_ReferenceSamplingGrid->SetOrigin( origin );
 	this->m_ReferenceSamplingGrid->SetDirection( this->m_ReferenceImage->GetDirection() );
-	this->m_ReferenceSamplingGrid->SetRegions( size );
-	this->m_ReferenceSamplingGrid->SetSpacing( sp );
+	this->m_ReferenceSamplingGrid->SetRegions( exp_size );
+	this->m_ReferenceSamplingGrid->SetSpacing( spacing );
 	this->m_ReferenceSamplingGrid->Allocate();
 
 	this->m_CurrentRegions = ROIType::New();
@@ -464,23 +447,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_CurrentRegions->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
 	this->m_CurrentRegions->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
 	this->m_CurrentRegions->Allocate();
-
-#ifndef NDEBUG
-	typedef itk::VectorResampleImageFilter< ReferenceImageType, ReferenceImageType > Int;
-	typename Int::Pointer intp = Int::New();
-	intp->SetInput( this->m_ReferenceImage );
-	intp->SetOutputSpacing( this->m_ReferenceSamplingGrid->GetSpacing() );
-	intp->SetOutputDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-	intp->SetOutputOrigin( this->m_ReferenceSamplingGrid->GetOrigin() );
-	intp->SetSize( this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-	intp->Update();
-
-	typedef itk::ImageFileWriter< ReferenceImageType > W;
-	typename W::Pointer w = W::New();
-	w->SetInput( intp->GetOutput() );
-	w->SetFileName( "ReferenceSamplingGridTest.nii.gz" );
-	w->Update();
-#endif
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -535,19 +501,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_ReferenceImage->TransformIndexToPhysicalPoint( endIdx, this->m_End );
 	DirectionType idDir; idDir.SetIdentity();
 
-#ifndef NDEBUG
-	ProbabilityMapPointer dbg = ProbabilityMapType::New();
-	dbg->SetRegions(   this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
-	dbg->SetOrigin(    this->m_ReferenceImage->GetOrigin() );
-	dbg->SetDirection( this->m_ReferenceImage->GetDirection() );
-	dbg->SetSpacing(   this->m_ReferenceImage->GetSpacing() );
-	dbg->Allocate();
-	dbg->FillBuffer( 0.0 );
-
-	typename ProbabilityMapType::IndexType idx;
-	typename ProbabilityMapType::PixelType pix;
-#endif
-
 	if ( this->m_Direction != idDir ) {
 		typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >   ReorientFilterType;
 		typename ReorientFilterType::Pointer reorient = ReorientFilterType::New();
@@ -569,36 +522,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				ci = c_it.Value();
 				ci_new = (this->m_Direction* ( ci - this->m_Origin.GetVectorFromOrigin() )) + newOrigin.GetVectorFromOrigin();
 				c->SetPoint( pid, ci_new );
-#ifndef NDEBUG
-				dbg->TransformPhysicalPointToIndex(ci_new,idx);
-				pix = this->m_ReferenceImage->GetPixel(idx)[0];
-				dbg->SetPixel(idx, pix );
-#endif
 				++c_it;
 			}
 		}
-
-
-
-#ifndef NDEBUG
-		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-			typedef itk::MeshFileWriter< ContourType >     MeshWriterType;
-			typename MeshWriterType::Pointer w = MeshWriterType::New();
-			w->SetInput( this->m_CurrentContours[contid] );
-			std::stringstream ss;
-			ss << "reoriented_" << std::setfill('0') << std::setw(2) << contid << ".vtk";
-			w->SetFileName( ss.str() );
-			w->Update();
-		}
-
-		typedef itk::ImageFileWriter< ProbabilityMapType > DebugWriter;
-		typename DebugWriter::Pointer ww = DebugWriter::New();
-		ww->SetInput( dbg );
-		ww->SetFileName( "debug.nii.gz" );
-		ww->Update();
-#endif
-
-
 	}
 
 	// Fill in interpolator points
@@ -729,7 +655,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 	typename FieldType::SpacingType sigma = this->m_Derivative->GetSpacing();
-	this->m_FieldInterpolator->SetSigma( sigma*2.0 );
+	this->m_FieldInterpolator->SetSigma( sigma*0.5 );
 }
 
 }
