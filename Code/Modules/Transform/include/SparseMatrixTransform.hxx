@@ -127,14 +127,13 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
 			if (wi > 0.0) {
 				wi*= this->m_KernelNorm;
-				if ( fabs(1.0-wi) < 1e-5 ) {
-					wi = 1.0;
-				}
-
 				this->m_S.put(row, col, wi);
 			}
 		}
 	}
+
+	this->m_S.normalize_rows();
+
 	//this->m_System = new vnl_sparse_lu( this->m_S, vnl_sparse_lu::estimate_condition);
 }
 
@@ -196,10 +195,9 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	// Walk the grid region
 	for( row = 0; row < this->m_Phi.rows(); row++ ) {
 		ci = this->m_Points[row];
-
 		for ( col=0; col < this->m_Phi.cols(); col++) {
-			wi=1.0;
 			xk = this->m_Nodes[col];
+			wi=1.0;
 			r = xk - ci;
 			for (size_t i = 0; i<Dimension; i++) {
 				wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
@@ -218,8 +216,6 @@ SparseMatrixTransform<TScalarType,NDimensions>
 			}
 		}
 	}
-
-	this->m_InvertPhi.normalize_rows();
 }
 
 template< class TScalarType, unsigned int NDimensions >
