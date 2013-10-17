@@ -316,7 +316,7 @@ protected:
 	bool m_RegularizationEnergyUpdated;
 
 	ParametersPointer m_LastField;
-	//ParametersPointer m_CurrentField;
+	ParametersConstPointer m_CurrentSpeeds;
 
 	/* Common variables for optimization control and reporting */
 	bool                          m_Stop;
