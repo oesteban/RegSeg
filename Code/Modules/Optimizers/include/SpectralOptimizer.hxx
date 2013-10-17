@@ -70,15 +70,15 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer() {
 	this->m_CurrentValue = itk::NumericTraits<MeasureType>::infinity();
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize =  1.0;
-	this->m_Alpha.Fill( 10.0 );
-	this->m_Beta.Fill( 10.0 );
+	this->m_StepSize =  0.1;
+	this->m_Alpha.Fill( 5.0 );
+	this->m_Beta.Fill( 5.0 );
 
-	this->m_NumberOfIterations = 100;
+	this->m_NumberOfIterations = 150;
 	this->m_CurrentIteration   = 0;
 	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
-	this->m_GridSize.Fill( 16 );
+	this->m_GridSize.Fill( 20 );
 
 	m_CurrentTotalEnergy = itk::NumericTraits<MeasureType>::infinity();
 	m_RegularizationEnergyUpdated = false;
