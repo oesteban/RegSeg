@@ -107,6 +107,177 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::ComputeDerivative() {
+	size_t cpid = 0;
+
+	NormalFilterPointer normalsFilter;
+
+
+	VectorType zerov; zerov.Fill(0.0);
+	this->m_Derivative->FillBuffer( zerov );
+
+	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
+		// Compute mesh of normals
+		normalsFilter = NormalFilterType::New();
+		normalsFilter->SetInput( this->m_CurrentContours[contid] );
+		normalsFilter->Update();
+		ContourPointer normals = normalsFilter->GetOutput();
+
+		typename ContourType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
+		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
+
+		PointValueType gradient;
+		PointType  ci_prime;
+		VectorType ni;
+		typename ContourType::PointIdentifier pid;
+		ReferencePixelType dist[2];
+		size_t outer_contid;
+
+#ifndef NDEBUG
+		double maxGradient = 0.0;
+		double sumGradient = 0.0;
+#endif
+
+
+		// for all node in mesh
+		while (c_it!=c_end) {
+			pid = c_it.Index();
+			outer_contid = this->m_OuterList[contid][pid];
+
+			if ( contid != outer_contid ) {
+				ci_prime = c_it.Value();
+				gradient =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
+				assert( !std::isnan(gradient) );
+			} else {
+				gradient = 0.0;
+			}
+
+#ifndef NDEBUG
+			if ( fabs(gradient) > fabs(maxGradient) ) {
+				maxGradient = gradient;
+			}
+			sumGradient+=gradient;
+#endif
+
+			// project to normal, updating transform
+			normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
+			ni*= gradient;
+			normals->SetPointData( pid, ni );
+			this->m_FieldInterpolator->SetPointData(cpid, ni);
+			++c_it;
+			cpid++;
+		}
+
+#ifndef NDEBUG
+	std::cout << "Grad["<< contid << "]: avg=" << ( sumGradient/ (pid+1) ) << ", max=" << maxGradient << "." << std::endl;
+#endif
+	}
+
+	// Interpolate sparse velocity field to targetDeformation
+	this->m_FieldInterpolator->ComputeWeights();
+
+	VectorType* gmBuffer = this->m_Derivative->GetBufferPointer();
+	VectorType v;
+
+	for( size_t gpid = 0; gpid<this->m_NumberOfNodes; gpid++ ) {
+		v = this->m_FieldInterpolator->GetNodeWeight(gpid);
+		if ( v.GetNorm() > 1.0e-4 ) {
+			*( gmBuffer + gpid ) = v; // * (1.0/this->m_NumberOfPoints);
+		}
+	}
+
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::UpdateContour(const typename FunctionalBase<TReferenceImageType, TCoordRepType>::FieldType* newField ) {
+	// Copy newField values to interpolator
+	const VectorType* NodesBuffer = newField->GetBufferPointer();
+	VectorType v;
+	for( size_t gpid = 0; gpid < this->m_NumberOfNodes; gpid++ ) {
+		v =  *( NodesBuffer + gpid );
+		if ( v.GetNorm()> 1.0e-5 ) {
+			this->m_FieldInterpolator->SetCoefficient( gpid, v );
+		}
+	}
+
+	this->m_FieldInterpolator->Interpolate();
+	this->m_FieldInterpolator->ComputeNodesData();
+
+	VectorType* fBuffer = this->m_CurrentDisplacementField->GetBufferPointer();
+
+	for( size_t i = 0; i<this->m_NumberOfNodes; i++) {
+		*(fBuffer+i) = this->m_FieldInterpolator->GetNodeData(i);
+	}
+
+	MeasureType norm;
+	MeasureType meanNorm = 0.0;
+	VectorType meanDesp;
+	meanDesp.Fill(0.0);
+
+	ContinuousIndex point_idx;
+	size_t changed = 0;
+	size_t gpid = 0;
+
+	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
+		typename ContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
+		typename ContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
+
+		ContourPointType ci, ci_prime;
+		VectorType desp;
+		size_t pid;
+
+#ifndef NDEBUG
+	double maxDesp = 0.0;
+	double sumDesp = 0.0;
+	int position = -1;
+#endif
+
+		// For all the points in the mesh
+		while ( p_it != p_end ) {
+			ci = p_it.Value();
+			pid = p_it.Index();
+			// Interpolate the value of the field in the point
+			desp = this->m_FieldInterpolator->GetPointData( gpid );
+			norm = desp.GetNorm();
+			// Add vector to the point
+			if( norm > 1.0e-3 ) {
+				ci_prime = ci + desp;
+
+				if( ! this->IsInside(ci_prime,point_idx) ) {
+					itkExceptionMacro( << "Contour is outside image regions after update.\n" <<
+						"\tMoving vertex [" << contid << "," << pid << "] from " << ci << " to " << ci_prime << " norm="  << desp.GetNorm() << "mm.\n");
+				}
+
+				this->m_CurrentContours[contid]->SetPoint( pid, ci_prime );
+
+#ifndef NDEBUG
+				sumDesp+=desp.GetNorm();
+				if ( desp.GetNorm() > maxDesp ) {
+					maxDesp = desp.GetNorm();
+					position = pid;
+				}
+#endif
+				changed++;
+				gpid++;
+			}
+			++p_it;
+		}
+
+#ifndef NDEBUG
+		std::cout << "Disp[" << contid << "]: avg="<< ( sumDesp/ (pid+1) ) << "; max=" << maxDesp << "." << std::endl;
+#endif
+	}
+
+
+	this->m_RegionsUpdated = (changed==0);
+	this->m_EnergyUpdated = (changed==0);
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
 typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetValue() {
@@ -169,73 +340,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-void
-FunctionalBase<TReferenceImageType, TCoordRepType>
-::UpdateContour(const typename FunctionalBase<TReferenceImageType, TCoordRepType>::FieldType* newField ) {
-	// Copy newField values to interpolator
-	const VectorType* NodesBuffer = newField->GetBufferPointer();
-	VectorType v;
-	for( size_t gpid = 0; gpid < this->m_NumberOfNodes; gpid++ ) {
-		v =  *( NodesBuffer + gpid );
-		if ( v.GetNorm()> 1.0e-5 ) {
-			this->m_FieldInterpolator->SetCoefficient( gpid, v );
-		}
-	}
-
-	this->m_FieldInterpolator->Interpolate();
-	this->m_FieldInterpolator->ComputeNodesData();
-
-	VectorType* fBuffer = this->m_CurrentDisplacementField->GetBufferPointer();
-
-	for( size_t i = 0; i<this->m_NumberOfNodes; i++) {
-		*(fBuffer+i) = this->m_FieldInterpolator->GetNodeData(i);
-	}
-
-	MeasureType norm;
-	MeasureType meanNorm = 0.0;
-	VectorType meanDesp;
-	meanDesp.Fill(0.0);
-
-	ContinuousIndex point_idx;
-	size_t changed = 0;
-	size_t gpid = 0;
-	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
-		typename ContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
-		typename ContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
-
-		ContourPointType ci, ci_prime;
-		VectorType desp;
-		size_t pid;
-
-		// For all the points in the mesh
-		while ( p_it != p_end ) {
-			ci = p_it.Value();
-			pid = p_it.Index();
-			// Interpolate the value of the field in the point
-			desp = this->m_FieldInterpolator->GetPointData( gpid );
-			norm = desp.GetNorm();
-			// Add vector to the point
-			if( norm > 1.0e-3 ) {
-				ci_prime = ci + desp;
-
-				if( ! this->IsInside(ci_prime,point_idx) ) {
-					itkExceptionMacro( << "Contour is outside image regions after update.\n" <<
-						"\tMoving vertex [" << contid << "," << pid << "] from " << ci << " to " << ci_prime << " norm="  << desp.GetNorm() << "mm.\n");
-				}
-
-				this->m_CurrentContours[contid]->SetPoint( pid, ci_prime );
-				changed++;
-				gpid++;
-			}
-			++p_it;
-		}
-	}
-
-	this->m_RegionsUpdated = (changed==0);
-	this->m_EnergyUpdated = (changed==0);
-}
-
-template< typename TReferenceImageType, typename TCoordRepType >
 inline bool
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::IsInside( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType p, typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
@@ -253,98 +357,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 #endif
 	return isInside;
-}
-
-template< typename TReferenceImageType, typename TCoordRepType >
-void
-FunctionalBase<TReferenceImageType, TCoordRepType>
-::ComputeDerivative() {
-	size_t cpid = 0;
-
-	NormalFilterPointer normalsFilter;
-
-#ifndef NDEBUG
-	double maxGradient = 0.0;
-	double sumGradient = 0.0;
-#endif
-
-	VectorType zerov; zerov.Fill(0.0);
-	this->m_Derivative->FillBuffer( zerov );
-
-	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
-		// Compute mesh of normals
-		normalsFilter = NormalFilterType::New();
-		normalsFilter->SetInput( this->m_CurrentContours[contid] );
-		normalsFilter->Update();
-		ContourPointer normals = normalsFilter->GetOutput();
-
-		typename ContourType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
-		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
-
-		PointValueType gradient;
-		PointType  ci_prime;
-		VectorType ni;
-		typename ContourType::PointIdentifier pid;
-		ReferencePixelType dist[2];
-		size_t outer_contid;
-
-		// for all node in mesh
-		while (c_it!=c_end) {
-			pid = c_it.Index();
-			outer_contid = this->m_OuterList[contid][pid];
-
-			if ( contid != outer_contid ) {
-				ci_prime = c_it.Value();
-				gradient =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
-				assert( !std::isnan(gradient) );
-			} else {
-				gradient = 0.0;
-			}
-
-#ifndef NDEBUG
-			if ( fabs(gradient) > fabs(maxGradient) ) {
-				maxGradient = gradient;
-			}
-			sumGradient+=gradient;
-#endif
-
-			// project to normal, updating transform
-			normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
-			ni*= gradient;
-			normals->SetPointData( pid, ni );
-			this->m_FieldInterpolator->SetPointData(cpid, ni);
-			++c_it;
-			cpid++;
-		}
-	}
-
-#ifndef NDEBUG
-	std::cout << "Gradient: avg=" << ( sumGradient/ cpid ) << ", max=" << maxGradient << "." << std::endl;
-	sumGradient = 0.0;
-#endif
-
-	// Interpolate sparse velocity field to targetDeformation
-	this->m_FieldInterpolator->ComputeWeights();
-
-	VectorType* gmBuffer = this->m_Derivative->GetBufferPointer();
-	VectorType v;
-
-	for( size_t gpid = 0; gpid<this->m_NumberOfNodes; gpid++ ) {
-		v = this->m_FieldInterpolator->GetNodeWeight(gpid);
-		if ( v.GetNorm() > 1.0e-4 ) {
-			*( gmBuffer + gpid ) = v; // * (1.0/this->m_NumberOfPoints);
-			//this->m_Derivative->SetPixel( this->m_Derivative->ComputeIndex(gpid), v);
-#ifndef NDEBUG
-			sumGradient+=(*( gmBuffer + gpid )).GetNorm();
-			if (v.GetNorm()>maxGradient) maxGradient=(*( gmBuffer + gpid )).GetNorm();
-#endif
-		}
-	}
-
-#ifndef NDEBUG
-	std::cout << "Gradient_projected: avg="<< ( sumGradient/ this->m_NumberOfNodes ) << "; max=" << maxGradient << "." << std::endl;
-#endif
-
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -655,7 +667,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 	typename FieldType::SpacingType sigma = this->m_Derivative->GetSpacing();
-	this->m_FieldInterpolator->SetSigma( sigma*0.5 );
+	this->m_FieldInterpolator->SetSigma( sigma );
 }
 
 }
