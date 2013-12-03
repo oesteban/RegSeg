@@ -282,6 +282,7 @@ ENTRY
     publisher
     school
     series
+    shorttitle
     revision
     title
     type
@@ -1417,6 +1418,28 @@ FUNCTION {format.article.title}
   if$
 }
 
+FUNCTION {format.shorttitle}
+{ shorttitle duplicate$ empty$
+    { format.article.title "title" output.warn }
+    { this.to.prev.status
+      this.status.std
+      "t" change.case$
+    }
+  if$
+  "shorttitle" bibinfo.check
+  duplicate$ empty$ 'skip$
+    { quote.close 'this.status.quote :=
+      is.last.char.not.punct
+        { punct.std 'this.status.punct := }
+        { punct.no 'this.status.punct := }
+      if$
+      select.language
+      "``" swap$ *
+      cap.status.std
+    }
+  if$
+}
+
 FUNCTION {format.article.title.electronic}
 { title duplicate$ empty$ 'skip$
     { this.to.prev.status
@@ -1956,7 +1979,7 @@ FUNCTION {article}
 %  if.url.alt.interword.spacing
   format.authors "author" output.warn
   name.or.dash
-  format.article.title "title" output.warn
+  format.shorttitle "title" output.warn
   format.journal "journal" bibinfo.check "journal" output.warn
 %  format.volume output
 %  format.number.if.use.for.article output
@@ -2056,7 +2079,7 @@ FUNCTION {incollection}
 %  if.url.alt.interword.spacing
   format.authors "author" output.warn
   name.or.dash
-  format.article.title "title" output.warn
+  format.article.title output
   format.in.booktitle.edition "booktitle" output.warn
   format.series output
   format.editors output
@@ -2077,7 +2100,7 @@ FUNCTION {inproceedings}
 %  if.url.alt.interword.spacing
   format.authors "author" output.warn
   name.or.dash
-  format.article.title "title" output.warn
+  format.shorttitle output
   format.in.booktitle "booktitle" output.warn
 %  format.series output
 %  format.editors output
@@ -2093,6 +2116,7 @@ FUNCTION {inproceedings}
   format.pages output
 %  format.note output
 %  format.url output
+  format.date "year" output.warn
   fin.entry
 %  if.url.std.interword.spacing
 }

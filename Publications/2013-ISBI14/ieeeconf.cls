@@ -1889,10 +1889,10 @@
 \newcounter{IEEEsubequation}[equation]
 
 % as shown when called by user from \ref, \label and in table of contents
-\def\thesection{\Roman{section}}                             % I
-\def\thesubsection{\thesection-\Alph{subsection}}            % I-A
-\def\thesubsubsection{\thesubsection.\arabic{subsubsection}} % I-A.1
-\def\theparagraph{\thesubsubsection.\alph{paragraph}}        % I-A.1.a
+\def\thesection{\arabic{section}}                            % 1 - changed oesteban
+\def\thesubsection{\thesection.\Alph{subsection}}            % 1.A
+\def\thesubsubsection{\thesubsection.\arabic{subsubsection}} % 1.A.1
+\def\theparagraph{\thesubsubsection.\alph{paragraph}}        % 1.A.1.a
 \def\theequation{\arabic{equation}}                          % 1
 \def\theIEEEsubequation{\theequation\alph{IEEEsubequation}}  % 1a (used only by IEEEtran's IEEEeqnarray)
 
