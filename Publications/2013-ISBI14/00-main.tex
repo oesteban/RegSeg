@@ -2,8 +2,8 @@
 %2345678901234567890123456789012345678901234567890123456789012345678901234567890
 %        1         2         3         4         5         6         7         8
 
-%\documentclass[myspconf]{article}
-\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
+\documentclass[myspconf]{article}
+%\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
 %\IEEEoverridecommandlockouts                              % This command is only needed if 
                                                           % you want to use the \thanks command
 %\overrideIEEEmargins                                      % Needed to meet printer requirements.
@@ -28,8 +28,11 @@
 \usepackage{cite}
 \usepackage{glossaries}
 \usepackage[breaklinks,hidelinks]{hyperref}
-\usepackage{relsize}
-\renewcommand*{\UrlFont}{\ttfamily\smaller\relax}
+%\usepackage{relsize}
+%\renewcommand*{\UrlFont}{\ttfamily\smaller\relax}
+\usepackage[scaled=.7]{beramono}
+\usepackage{tabularx}
+\newcolumntype{Z}{>{\center\arraybackslash}X}
 
 \usepackage{balance}
 
@@ -124,7 +127,5 @@ $^{*}$Corresponding author (email: \texttt{oscar.esteban@upm.es})
 
 \bibliographystyle{IEEEtran}
 \bibliography{IEEEabrv,99-references}
-
-
 
 \end{document}

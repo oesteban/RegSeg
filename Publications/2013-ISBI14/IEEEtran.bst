@@ -96,7 +96,7 @@ FUNCTION {default.is.use.paper} { #1 }
 
 % #0 turns off the forced use of "et al."
 % #1 enables
-FUNCTION {default.is.forced.et.al} { #0 }
+FUNCTION {default.is.forced.et.al} { #1 }
 
 % The maximum number of names that can be present beyond which an "et al."
 % usage is forced. Be sure that num.names.shown.with.forced.et.al (below)
@@ -104,7 +104,7 @@ FUNCTION {default.is.forced.et.al} { #0 }
 % Note: There are many instances of references in IEEE journals which have
 % a very large number of authors as well as instances in which "et al." is
 % used profusely.
-FUNCTION {default.max.num.names.before.forced.et.al} { #10 }
+FUNCTION {default.max.num.names.before.forced.et.al} { #1 }
 
 % The number of names that will be shown with a forced "et al.".
 % Must be less than or equal to max.num.names.before.forced.et.al
@@ -1172,6 +1172,55 @@ FUNCTION {format.address.org.or.pub.date}
 }
 
 
+% FUNCTION {format.names}
+% { 's :=
+%   "" 't :=
+%   #1 'nameptr :=
+%   s num.names$ 'numnames :=
+%   numnames 'namesleft :=
+%     { namesleft #0 > }
+%     { s nameptr
+%       "{vv~}{ll}{, jj}{, f{.}.}"
+%       format.name$
+%       't :=
+%       nameptr #1 >
+%         {
+%           nameptr #1
+%           #1 + =
+%           numnames #3
+%           > and
+%             { "others" 't :=
+%               #1 'namesleft := }
+%             'skip$
+%           if$
+%           namesleft #1 >
+%             { ", " * t * }
+%             {
+%               s nameptr "{ll}" format.name$ duplicate$ "others" =
+%                 { 't := }
+%                 { pop$ }
+%               if$
+%               t "others" =
+%                 {
+%                   " et~al" *
+%                 }
+%                 {
+%                   " and "
+%                   * t *
+%                 }
+%               if$
+%             }
+%           if$
+%         }
+%         't
+%       if$
+%       nameptr #1 + 'nameptr :=
+%       namesleft #1 - 'namesleft :=
+%     }
+%   while$
+% }
+
+
 FUNCTION {format.names}
 { 'bibinfo :=
   duplicate$ empty$ 'skip$ {
@@ -1979,7 +2028,7 @@ FUNCTION {article}
 %  if.url.alt.interword.spacing
   format.authors "author" output.warn
   name.or.dash
-  format.shorttitle "title" output.warn
+  format.article.title "title" output.warn
   format.journal "journal" bibinfo.check "journal" output.warn
 %  format.volume output
 %  format.number.if.use.for.article output
@@ -2100,7 +2149,7 @@ FUNCTION {inproceedings}
 %  if.url.alt.interword.spacing
   format.authors "author" output.warn
   name.or.dash
-  format.shorttitle output
+  format.article.title "title" output.warn
   format.in.booktitle "booktitle" output.warn
 %  format.series output
 %  format.editors output
