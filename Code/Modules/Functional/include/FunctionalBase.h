@@ -202,6 +202,35 @@ public:
 	typedef typename std::vector< PointType >                PointsVector;
 	typedef typename std::vector< PointsVector >             PointsList;
 
+	struct GradientSample {
+		PointValueType grad;
+		size_t id;
+
+		GradientSample() {}
+		GradientSample( PointValueType g, size_t i ): grad(g), id(i) {}
+		GradientSample( const GradientSample &s ): grad(s.grad), id(s.id) {}
+
+		GradientSample operator+(const GradientSample& g) const {
+			return GradientSample( grad+g.grad, id );
+		}
+
+		GradientSample operator<(const GradientSample& g) const {
+			return grad < g.grad;
+		}
+
+		GradientSample operator>(const GradientSample& g) const {
+			return grad > g.grad;
+		}
+	};
+
+	struct by_grad {
+		bool operator()( GradientSample const &a, GradientSample const &b ) {
+			return a.grad < b.grad;
+		}
+	};
+	typedef typename std::vector< GradientSample >           SampleType;
+
+
 	void CopyInformation( const FieldType* field);
 
 	MeasureType GetValue();

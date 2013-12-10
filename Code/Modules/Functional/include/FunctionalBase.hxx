@@ -43,6 +43,8 @@
 #include <iostream>
 #include <iomanip>
 #include <math.h>
+#include <numeric>
+#include <vnl/vnl_random.h>
 #include "DisplacementFieldFileWriter.h"
 
 #include <itkMeshFileWriter.h>
@@ -111,14 +113,18 @@ void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeDerivative() {
 	size_t cpid = 0;
-
 	NormalFilterPointer normalsFilter;
+	SampleType sample;
 
 
 	VectorType zerov; zerov.Fill(0.0);
 	this->m_Derivative->FillBuffer( zerov );
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
+		GradientSample s;
+		PointValueType gradSum;
+		PointValueType scaler = 1.0;
+		sample.clear();
 		// Compute mesh of normals
 		normalsFilter = NormalFilterType::New();
 		normalsFilter->SetInput( this->m_CurrentContours[contid] );
@@ -132,17 +138,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		PointType  ci_prime;
 		VectorType ni;
 		typename ContourType::PointIdentifier pid;
-		ReferencePixelType dist[2];
 		size_t outer_contid;
 
-#ifndef NDEBUG
-		double maxGradient = 0.0;
-		double sumGradient = 0.0;
-#endif
-
-
-		// for all node in mesh
+		// for every node in the mesh
 		while (c_it!=c_end) {
+
 			pid = c_it.Index();
 			outer_contid = this->m_OuterList[contid][pid];
 
@@ -150,28 +150,100 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				ci_prime = c_it.Value();
 				gradient =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
 				assert( !std::isnan(gradient) );
+				gradSum+= gradient;
 			} else {
+				ni = zerov;
 				gradient = 0.0;
 			}
-
-#ifndef NDEBUG
-			if ( fabs(gradient) > fabs(maxGradient) ) {
-				maxGradient = gradient;
-			}
-			sumGradient+=gradient;
-#endif
-
-			// project to normal, updating transform
-			normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
-			ni*= gradient;
-			normals->SetPointData( pid, ni );
-			this->m_FieldInterpolator->SetPointData(cpid, ni);
+			s.grad = gradient;
+			s.id = pid;
+			sample.push_back( s );
 			++c_it;
-			cpid++;
+		}
+
+		std::sort(sample.begin(), sample.end(), by_grad() );
+
+		size_t q1 = floor( (sample.size()-1)*0.15 );
+		size_t q2 = round( (sample.size()-1)*0.50 );
+		size_t q3 = ceil ( (sample.size()-1)*0.85 );
+
+		PointValueType median= sample[q2].grad;
+		PointValueType quart1= sample[q1].grad;
+		PointValueType quart2= sample[q3].grad;
+
+		PointValueType maxq = ( fabs(quart1)>fabs(quart2) )?fabs(quart1):fabs(quart2);
+
+		if( maxq >= 5.0 ) {
+			scaler = 5.0 / maxq;
 		}
 
 #ifndef NDEBUG
-	std::cout << "Grad["<< contid << "]: avg=" << ( sumGradient/ (pid+1) ) << ", max=" << maxGradient << "." << std::endl;
+		PointValueType minGradient = (*( sample.begin() )).grad;
+		PointValueType maxGradient = (*( sample.end()-1 )).grad;
+		PointValueType average = gradSum / sample.size();
+		std::cout << "Grad["<< contid << "]: avg=" << average << ", max=" << maxGradient << ", min=" << minGradient << ", q1=" << quart1 << ", q2=" << quart2 << ", med=" << median << "." << std::endl;
+#endif
+
+		vnl_random rnd = vnl_random();
+		for( size_t i = 0; i<q1; i++ ){
+			ni = zerov;
+			gradient = sample[rnd.lrand32(q1,q2)].grad * scaler;
+			pid = sample[i].id;
+
+			if ( gradient > 0.0 ) {
+				// project to normal, updating transform
+				normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
+				ni*= gradient;
+			}
+			normals->SetPointData( pid, ni );
+			this->m_FieldInterpolator->SetPointData(cpid, ni);
+			cpid++;
+
+			sample[i].grad = gradient;
+		}
+
+		for( size_t i = q1; i<q3; i++ ){
+			ni = zerov;
+			gradient = sample[i].grad * scaler;
+			pid = sample[i].id;
+
+			if ( gradient > 1.0e-5 ) {
+				// project to normal, updating transform
+				normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
+				ni*= gradient;
+			}
+			normals->SetPointData( pid, ni );
+			this->m_FieldInterpolator->SetPointData(cpid, ni);
+			cpid++;
+
+			sample[i].grad = gradient;
+		}
+
+		for( size_t i = q3; i<sample.size(); i++ ){
+			ni = zerov;
+			gradient = sample[rnd.lrand32(q2,q3)].grad * scaler;
+			pid = sample[i].id;
+
+			if ( gradient > 0.0 ) {
+				// project to normal, updating transform
+				normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
+				ni*= gradient;
+			}
+			normals->SetPointData( pid, ni );
+			this->m_FieldInterpolator->SetPointData(cpid, ni);
+			cpid++;
+
+			sample[i].grad = gradient;
+		}
+#ifndef NDEBUG
+		std::sort(sample.begin(), sample.end(), by_grad() );
+		median= sample[q2].grad;
+		quart1= sample[q1].grad;
+		quart2= sample[q3].grad;
+		minGradient = (*( sample.begin() )).grad;
+		maxGradient = (*( sample.end()-1 )).grad;
+		average = gradSum / sample.size();
+		std::cout << "Grad["<< contid << "]: avg=" << average << ", max=" << maxGradient << ", min=" << minGradient << ", q1=" << quart1 << ", q2=" << quart2 << ", med=" << median << "." << std::endl;
 #endif
 	}
 
@@ -233,7 +305,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 #ifndef NDEBUG
 	double maxDesp = 0.0;
 	double sumDesp = 0.0;
-	int position = -1;
+	size_t position =-1;
 #endif
 
 		// For all the points in the mesh

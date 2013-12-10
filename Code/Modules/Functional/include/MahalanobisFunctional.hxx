@@ -178,6 +178,7 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 		         typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersType& params){
 	size_t id = this->AddShapePrior( prior );
 	this->SetParameters( id, params );
+	return id;
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
