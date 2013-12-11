@@ -7,7 +7,7 @@ accounts for a growing interest in its application to structural
 connectivity analyses of the brain at the macro-scale
 \citep{craddock_imaging_2013}. This emerging field exploits
 \gls{dwi} data to derive the local axonal structure at each imaging voxel 
-\citep{basser_microstructural_2011} and estimate a whole-brain mapping of fiber 
+\citep{basser_microstructural_1996} and estimate a whole-brain mapping of fiber 
 tracts \citep{hagmann_mr_2012,johansen-berg_using_2009} represented by 
 trajectories reconstructed from the local information.
 This comprehensive map of neural connections of the brain is called the 
@@ -61,7 +61,7 @@ After correcting for artifacts, the difficulty of performing analyses directly
 on the \emph{directionally dependent} raw data is not affordable. Thus, 
 \gls{dwi} data is reconstructed using one of a numerous set of readily 
 available algorithms. The outcome is a voxel-wise model of diffusion shape 
-(in \citep{daducci_isbi2013_2013} \todo{FIX ref} there is available a comprehensive review of 
+(\citep{daducci_quantitative_2013} contains a comprehensive review of 
 state-of-art methodologies). On top of the
 chosen model, some scalar maps describing tissue features are generally
 computed (e.g. \gls*{fa}, and \gls*{adc}).
@@ -93,11 +93,11 @@ with the earliest \gls{epi} sequences used in functional \gls{mri}, and
 relies on the acquisition of extra \gls{mri} data. Generally, a \gls{gre} is used to 
 obtain a map of magnitude and phase of the actual magnetic field inside the
 scanner. Based on this \emph{fieldmap} and the theory underlying the 
-distortion, \citep{jezzard_characterization_2005} proposed a correction 
+distortion, \citep{jezzard_correction_1995} proposed a correction 
 methodology. A number of forked and improved methodologies have been 
 developed to correct for the susceptibility distortion and received the
 generic name of ``fieldmap correction'' techniques \cite{hsu_correction_2009,
-reber_correction_2005}.
+reber_correction_1998}.
 
 Some other retrospective methodologies do not make use of the fieldmaps, 
 as explicitly modeling the distortion \citep{andersson_modeling_2001},
