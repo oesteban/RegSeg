@@ -150,7 +150,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				ci_prime = c_it.Value();
 				gradient =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
 				assert( !std::isnan(gradient) );
-				gradSum+= gradient;
 			} else {
 				ni = zerov;
 				gradient = 0.0;
@@ -177,13 +176,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			scaler = 5.0 / maxq;
 		}
 
-#ifndef NDEBUG
-		PointValueType minGradient = (*( sample.begin() )).grad;
-		PointValueType maxGradient = (*( sample.end()-1 )).grad;
-		PointValueType average = gradSum / sample.size();
-		std::cout << "Grad["<< contid << "]: avg=" << average << ", max=" << maxGradient << ", min=" << minGradient << ", q1=" << quart1 << ", q2=" << quart2 << ", med=" << median << "." << std::endl;
-#endif
-
 		vnl_random rnd = vnl_random();
 		for( size_t i = 0; i<q1; i++ ){
 			ni = zerov;
@@ -200,6 +192,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			cpid++;
 
 			sample[i].grad = gradient;
+			gradSum+= gradient;
 		}
 
 		for( size_t i = q1; i<q3; i++ ){
@@ -217,6 +210,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			cpid++;
 
 			sample[i].grad = gradient;
+			gradSum+= gradient;
 		}
 
 		for( size_t i = q3; i<sample.size(); i++ ){
@@ -234,8 +228,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			cpid++;
 
 			sample[i].grad = gradient;
+			gradSum+= gradient;
 		}
+
 #ifndef NDEBUG
+		PointValueType minGradient = (*( sample.begin() )).grad;
+		PointValueType maxGradient = (*( sample.end()-1 )).grad;
+		PointValueType average = gradSum / sample.size();
 		std::sort(sample.begin(), sample.end(), by_grad() );
 		median= sample[q2].grad;
 		quart1= sample[q1].grad;
