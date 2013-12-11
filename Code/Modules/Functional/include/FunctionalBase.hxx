@@ -52,6 +52,9 @@
 #include <itkOrientImageFilter.h>
 #include <itkContinuousIndex.h>
 
+#define MAX_GRADIENT 20.0
+#define MIN_GRADIENT 1.0e-5
+
 namespace rstk {
 
 
@@ -121,7 +124,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Derivative->FillBuffer( zerov );
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
-		GradientSample s;
 		PointValueType gradSum;
 		PointValueType scaler = 1.0;
 		sample.clear();
@@ -140,7 +142,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename ContourType::PointIdentifier pid;
 		size_t outer_contid;
 
-		// for every node in the mesh
+		// for every node in the mesh: compute gradient, assign cid and gid.
 		while (c_it!=c_end) {
 
 			pid = c_it.Index();
@@ -154,10 +156,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				ni = zerov;
 				gradient = 0.0;
 			}
-			s.grad = gradient;
-			s.id = pid;
-			sample.push_back( s );
+			sample.push_back( GradientSample( gradient, pid, cpid ) );
 			++c_it;
+			cpid++;
 		}
 
 		std::sort(sample.begin(), sample.end(), by_grad() );
@@ -172,64 +173,52 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		PointValueType maxq = ( fabs(quart1)>fabs(quart2) )?fabs(quart1):fabs(quart2);
 
-		if( maxq >= 5.0 ) {
-			scaler = 5.0 / maxq;
+		if( maxq >= MAX_GRADIENT ) {
+			scaler = MAX_GRADIENT / maxq;
 		}
 
-		vnl_random rnd = vnl_random();
-		for( size_t i = 0; i<q1; i++ ){
+		// Scale and correct middle quartiles
+		for( size_t i = q1; i<q3; i++ ){
 			ni = zerov;
-			gradient = sample[rnd.lrand32(q1,q2)].grad * scaler;
-			pid = sample[i].id;
-
-			if ( gradient > 0.0 ) {
+			gradient = sample[i].grad * scaler;
+			if ( gradient > MIN_GRADIENT ) {
 				// project to normal, updating transform
-				normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
+				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
 				ni*= gradient;
 			}
-			normals->SetPointData( pid, ni );
-			this->m_FieldInterpolator->SetPointData(cpid, ni);
-			cpid++;
-
+			this->m_FieldInterpolator->SetPointData(sample[i].gid, ni);
 			sample[i].grad = gradient;
 			gradSum+= gradient;
 		}
 
-		for( size_t i = q1; i<q3; i++ ){
-			ni = zerov;
-			gradient = sample[i].grad * scaler;
-			pid = sample[i].id;
 
-			if ( gradient > 1.0e-5 ) {
+		vnl_random rnd = vnl_random();
+		for( size_t i = 0; i<q1; i++ ){
+			ni = zerov;
+			gradient = sample[rnd.lrand32(q1,q2)].grad;
+			if ( gradient > MIN_GRADIENT ) {
 				// project to normal, updating transform
-				normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
+				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
 				ni*= gradient;
 			}
-			normals->SetPointData( pid, ni );
-			this->m_FieldInterpolator->SetPointData(cpid, ni);
-			cpid++;
-
+			this->m_FieldInterpolator->SetPointData(sample[i].gid, ni);
 			sample[i].grad = gradient;
 			gradSum+= gradient;
 		}
 
 		for( size_t i = q3; i<sample.size(); i++ ){
 			ni = zerov;
-			gradient = sample[rnd.lrand32(q2,q3)].grad * scaler;
-			pid = sample[i].id;
-
-			if ( gradient > 0.0 ) {
+			gradient = sample[rnd.lrand32(q2,q3-1)].grad;
+			if ( gradient > MIN_GRADIENT ) {
 				// project to normal, updating transform
-				normals->GetPointData( pid, &ni );         // Normal ni in point c'_i
+				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
 				ni*= gradient;
 			}
-			normals->SetPointData( pid, ni );
-			this->m_FieldInterpolator->SetPointData(cpid, ni);
-			cpid++;
-
+			this->m_FieldInterpolator->SetPointData(sample[i].gid, ni);
 			sample[i].grad = gradient;
 			gradSum+= gradient;
 		}
+
 
 #ifndef NDEBUG
 		PointValueType minGradient = (*( sample.begin() )).grad;
