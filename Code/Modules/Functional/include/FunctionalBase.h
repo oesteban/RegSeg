@@ -204,14 +204,15 @@ public:
 
 	struct GradientSample {
 		PointValueType grad;
-		size_t id;
+		size_t cid;
+		size_t gid;
 
 		GradientSample() {}
-		GradientSample( PointValueType g, size_t i ): grad(g), id(i) {}
-		GradientSample( const GradientSample &s ): grad(s.grad), id(s.id) {}
+		GradientSample( PointValueType g, size_t i, size_t j ): grad(g), cid(i), gid(j) {}
+		GradientSample( const GradientSample &s ): grad(s.grad), cid(s.cid), gid(s.gid) {}
 
 		GradientSample operator+(const GradientSample& g) const {
-			return GradientSample( grad+g.grad, id );
+			return GradientSample( grad+g.grad, cid, gid );
 		}
 
 		GradientSample operator<(const GradientSample& g) const {
