@@ -69,16 +69,16 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer() {
 	this->m_LearningRate = itk::NumericTraits<InternalComputationValueType>::One;
 	this->m_CurrentValue = itk::NumericTraits<MeasureType>::infinity();
 	this->m_MinimumConvergenceValue = 1e-8;
-	this->m_ConvergenceWindowSize = 30;
+	this->m_ConvergenceWindowSize = 50;
 	this->m_StepSize =  1.0;
-	this->m_Alpha.Fill( 0.1 );
-	this->m_Beta.Fill( 1.0 );
+	this->m_Alpha.Fill( 0.001 );
+	this->m_Beta.Fill( 0.001 );
 
-	this->m_NumberOfIterations = 150;
+	this->m_NumberOfIterations = 250;
 	this->m_CurrentIteration   = 0;
 	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
-	this->m_GridSize.Fill( 20 );
+	this->m_GridSize.Fill( 25 );
 
 	m_CurrentTotalEnergy = itk::NumericTraits<MeasureType>::infinity();
 	m_RegularizationEnergyUpdated = false;
@@ -194,7 +194,7 @@ void SpectralOptimizer<TFunctional>::Resume() {
 		this->Iterate();
 
 		/* Update the level sets contour and deformation field */
-		this->m_Functional->UpdateContour( this->m_NextParameters );
+		this->m_Functional->UpdateParameters( this->m_NextParameters );
 
 		this->m_CurrentValue = this->ComputeIterationChange();
 

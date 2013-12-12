@@ -379,7 +379,15 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	VectorType ci;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		ci[dim] = this->m_PointsData[dim][id];
-		if( std::isnan( ci[dim] )) ci[dim] = 0;
+
+		if( std::isnan( ci[dim] ) || std::isinf( ci[dim] )) {
+			ci[dim] = 0;
+		}
+
+		if( fabs(ci[dim]) > 20.0 ) {
+			itkWarningMacro( << "Setting a very long displacement...");
+			//ci[dim] = 0;
+		}
 	}
 
 	return ci;
@@ -478,6 +486,8 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	bool changed = false;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		if( std::isnan( pi[dim] )) pi[dim] = 0;
+
+		// TODO check for a minimum size (it was done outside).
 		if( this->m_Coeff[dim][id] != pi[dim] ) {
 			this->m_Coeff[dim][id] = pi[dim];
 			changed = true;
