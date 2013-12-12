@@ -71,7 +71,7 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer() {
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
 	this->m_StepSize =  1.0;
-	this->m_Alpha.Fill( 1.0 );
+	this->m_Alpha.Fill( 0.1 );
 	this->m_Beta.Fill( 1.0 );
 
 	this->m_NumberOfIterations = 150;
@@ -303,7 +303,7 @@ void SpectralOptimizer<TFunctional>::SpectralUpdate(
 {
 	itkDebugMacro("Optimizer Spectral Update");
 	InternalComputationValueType min_val = 1.0e-5;
-	InternalComputationValueType dir = (changeDirection)?(-1.0):1.0;
+	InternalComputationValueType dir = (changeDirection)?-1.0:1.0;
 
 	// Get deformation fields pointers
 	const VectorType* uFieldBuffer = parameters->GetBufferPointer();
