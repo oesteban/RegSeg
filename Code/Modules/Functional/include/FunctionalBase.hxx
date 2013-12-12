@@ -156,7 +156,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 			if ( contid != outer_contid ) {
 				ci_prime = c_it.Value();
-				gradient =  w * this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
+				gradient =  w * (this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid ));
 				assert( !std::isnan(gradient) );
 			} else {
 				ni = zerov;
