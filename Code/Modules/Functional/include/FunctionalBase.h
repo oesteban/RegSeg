@@ -245,7 +245,7 @@ public:
 
 	void ComputeDerivative( void );
 
-	void UpdateContour( const FieldType* newField );
+	void UpdateParameters( const FieldType* newField );
 
 	virtual void Initialize( void );
 
@@ -324,6 +324,7 @@ private:
 	FunctionalBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented
 
+	void UpdateContour();
 	void ComputeCurrentRegions( void );
 	void ComputeOuterRegions( void );
 	void InitializeCurrentContours( void );
