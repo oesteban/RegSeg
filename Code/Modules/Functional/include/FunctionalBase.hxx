@@ -70,6 +70,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_RegionsUpdated = false;
 	this->m_NumberOfContours = 0;
 	this->m_SamplingFactor = 4;
+	this->m_Scale = 10.0;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -124,9 +125,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Derivative->FillBuffer( zerov );
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
-		PointValueType gradSum;
-		PointValueType scaler = 1.0;
 		sample.clear();
+
+		PointValueType gradSum;
+		PointValueType scaler = this->m_Scale;
+		double w;
+		PointValueType totalArea = 0.0;
+
 		// Compute mesh of normals
 		normalsFilter = NormalFilterType::New();
 		normalsFilter->SetInput( this->m_CurrentContours[contid] );
@@ -144,13 +149,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		// for every node in the mesh: compute gradient, assign cid and gid.
 		while (c_it!=c_end) {
-
 			pid = c_it.Index();
 			outer_contid = this->m_OuterList[contid][pid];
+			w = this->ComputePointArea( pid, normals );
+			totalArea+=w;
 
 			if ( contid != outer_contid ) {
 				ci_prime = c_it.Value();
-				gradient =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
+				gradient =  w * this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
 				assert( !std::isnan(gradient) );
 			} else {
 				ni = zerov;
@@ -163,9 +169,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		std::sort(sample.begin(), sample.end(), by_grad() );
 
-		size_t q1 = floor( (sample.size()-1)*0.15 );
+		size_t q1 = floor( (sample.size()-1)*0.05 );
 		size_t q2 = round( (sample.size()-1)*0.50 );
-		size_t q3 = ceil ( (sample.size()-1)*0.85 );
+		size_t q3 = ceil ( (sample.size()-1)*0.95 );
 
 		PointValueType median= sample[q2].grad;
 		PointValueType quart1= sample[q1].grad;
@@ -173,9 +179,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		PointValueType maxq = ( fabs(quart1)>fabs(quart2) )?fabs(quart1):fabs(quart2);
 
-		if( maxq >= MAX_GRADIENT ) {
-			scaler = MAX_GRADIENT / maxq;
-		}
+		//if( maxq >= MAX_GRADIENT ) {
+		//	scaler*= (MAX_GRADIENT / maxq);
+		//}
+
+		scaler*= (1.0/totalArea);
 
 		// Scale and correct middle quartiles
 		for( size_t i = q1; i<q3; i++ ){
@@ -231,7 +239,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		minGradient = (*( sample.begin() )).grad;
 		maxGradient = (*( sample.end()-1 )).grad;
 		average = gradSum / sample.size();
-		std::cout << "Grad["<< contid << "]: avg=" << average << ", max=" << maxGradient << ", min=" << minGradient << ", q1=" << quart1 << ", q2=" << quart2 << ", med=" << median << "." << std::endl;
+		std::cout << "Grad["<< contid << "]: area=" << totalArea << ", avg=" << average << ", max=" << maxGradient << ", min=" << minGradient << ", q1=" << quart1 << ", q2=" << quart2 << ", med=" << median << "." << std::endl;
 #endif
 	}
 
@@ -729,6 +737,40 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	typename FieldType::SpacingType sigma = this->m_Derivative->GetSpacing();
 	this->m_FieldInterpolator->SetSigma( sigma );
 }
+
+template< typename TReferenceImageType, typename TCoordRepType >
+double
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::ComputePointArea(const PointIdentifier & iId, ContourType *mesh ) {
+	QEType* edge = mesh->FindEdge( iId );
+	QEType* temp = edge;
+	CellIdentifier cell_id(0);
+	double totalArea = 0.0;
+	ContourPointType pt[3];
+	typedef typename PolygonType::PointIdIterator PolygonPointIterator;
+
+	do {
+		cell_id = temp->GetLeft();
+
+		if ( cell_id != ContourType::m_NoFace ) {
+			PolygonType *poly = dynamic_cast< PolygonType * >(
+					mesh->GetCells()->GetElement(cell_id) );
+			PolygonPointIterator pit = poly->PointIdsBegin();
+
+			for(size_t k = 0; pit!= poly->PointIdsEnd(); ++pit, k++ ) {
+				pt[k] = mesh->GetPoint( *pit );
+			}
+
+			totalArea += TriangleType::ComputeArea(pt[0], pt[1], pt[2]);
+		}
+
+		temp = temp->GetOnext();
+	} while ( temp != edge );
+
+
+	return totalArea * 0.33;
+}
+
 
 }
 
