@@ -57,7 +57,8 @@
 #include <itkTriangleMeshToBinaryImageFilter.h>
 #include <itkDisplacementFieldJacobianDeterminantFilter.h>
 #include <itkDisplacementFieldTransform.h>
-
+#include <itkQuadEdgeMeshPolygonCell.h>
+#include <itkTriangleHelper.h>
 
 #include "CopyQuadEdgeMeshFilter.h"
 #include "SparseMatrixTransform.h"
@@ -125,6 +126,12 @@ public:
 	typedef typename ContourType::PointDataContainerPointer  PointDataContainerPointer;
 	typedef typename ContourType::PointsContainerIterator    PointsIterator;
 	typedef typename ContourType::PointsContainerConstIterator    PointsConstIterator;
+	typedef typename ContourType::PointIdentifier            PointIdentifier;
+	typedef typename ContourType::QEType                     QEType;
+	typedef typename ContourType::CellIdentifier             CellIdentifier;
+	typedef typename ContourType::CellType                   CellType;
+	typedef typename itk::QuadEdgeMeshPolygonCell<CellType>  PolygonType;
+	typedef itk::TriangleHelper< ContourPointType >          TriangleType;
 
 	typedef itk::NormalQuadEdgeMeshFilter
 			< ContourType, ContourType >                     NormalFilterType;
@@ -306,9 +313,9 @@ protected:
 	bool m_EnergyUpdated;
 	bool m_RegionsUpdated;
 	size_t m_NumberOfContours;
-
 	size_t m_NumberOfPoints;
 	size_t m_NumberOfNodes;
+	double m_Scale;
 
 	ReferencePointType m_Origin, m_End;
 	DirectionType m_Direction;
@@ -321,7 +328,7 @@ private:
 	void ComputeOuterRegions( void );
 	void InitializeCurrentContours( void );
 	void InitializeInterpolatorGrid( void );
-
+	double ComputePointArea( const PointIdentifier &iId, ContourType *mesh );
 
 }; // end FunctionalBase Class
 } // end namespace rstk

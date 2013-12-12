@@ -70,9 +70,9 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer() {
 	this->m_CurrentValue = itk::NumericTraits<MeasureType>::infinity();
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize =  0.1;
-	this->m_Alpha.Fill( 5.0 );
-	this->m_Beta.Fill( 5.0 );
+	this->m_StepSize =  1.0;
+	this->m_Alpha.Fill( 1.0 );
+	this->m_Beta.Fill( 1.0 );
 
 	this->m_NumberOfIterations = 150;
 	this->m_CurrentIteration   = 0;
