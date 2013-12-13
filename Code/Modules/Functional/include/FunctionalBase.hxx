@@ -123,7 +123,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	VectorType zerov; zerov.Fill(0.0);
 	this->m_Derivative->FillBuffer( zerov );
-	this->UpdateContour();
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		sample.clear();
@@ -265,17 +264,21 @@ void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::UpdateParameters(const typename FunctionalBase<TReferenceImageType, TCoordRepType>::FieldType* newField ) {
 	// Copy newField values to interpolator
-	const VectorType* NodesBuffer = newField->GetBufferPointer();
+	const VectorType* nodesBuffer = newField->GetBufferPointer();
 	VectorType v;
 	for( size_t gpid = 0; gpid < this->m_NumberOfNodes; gpid++ ) {
-		if( this->m_FieldInterpolator->SetCoefficient( gpid, v ) ){
+		v = *(nodesBuffer+gpid);
+		if( this->m_FieldInterpolator->SetCoefficient( gpid, v ) ) {
 			this->m_RegionsUpdated = false;
 			this->m_EnergyUpdated = false;
 		}
 	}
 
-	if ( !this->m_RegionsUpdated )
+	if ( !this->m_RegionsUpdated ) {
 		this->m_FieldInterpolator->Interpolate();
+		this->UpdateContour();
+	}
+
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -655,6 +658,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeOuterRegions() {
 	ContourOuterRegions outerVect;
 
+
 	if( this->m_NumberOfContours>1 ) {
 		// Set up ROI interpolator
 		typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
@@ -680,9 +684,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			while( c_it != c_end ) {
 				pid = c_it.Index();
 				ci = c_it.Value();
-				//ci = normals->GetPoint(pid);
 				normals->GetPointData( pid, &ni );
-				outerVect[pid] =  interp->Evaluate( ci - ni * 0.5 );
+				outerVect[pid] =  interp->Evaluate( ci - ni * 0.25 );
+				ROIPixelType v = interp->Evaluate( ci + ni * 0.25 );
+
+				if ( v == outerVect[pid] ) {
+					std::cout << "Warning [id=" << pid << ",contour=" << contid << "]: no gradient" << std::endl;
+				}
+
+				if ( contid == outerVect[pid] ) {
+					std::cout << "Warning [id=" << pid << ",contour=" << contid << "]: same region" << std::endl;
+				}
+
 				++c_it;
 			}
 			this->m_OuterList.push_back( outerVect );
