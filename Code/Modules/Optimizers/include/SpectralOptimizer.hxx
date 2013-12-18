@@ -193,11 +193,11 @@ void SpectralOptimizer<TFunctional>::Resume() {
 
 		this->Iterate();
 
-		/* Update the level sets contour and deformation field */
-		this->m_Functional->UpdateParameters( this->m_NextParameters );
+		/* Update the deformation field */
+		this->UpdateField();
 
+		//this->m_Functional->UpdateParameters( this->m_NextParameters );
 		this->m_CurrentValue = this->ComputeIterationChange();
-
 		this->SetUpdate();
 
 
@@ -465,10 +465,35 @@ void SpectralOptimizer<TFunctional>
 	}
 }
 
+
+template< typename TFunctional >
+void
+SpectralOptimizer<TFunctional>::UpdateField() {
+	bool update = false;
+	const VectorType* nodesBuffer = this->m_NextParameters->GetBufferPointer();
+	size_t nPix = this->m_NextParameters->GetLargestPossibleRegion().GetNumberOfPixels();
+	FieldInterpolatorPointer fintp = this->m_Functional->GetFieldInterpolator();
+	VectorType v;
+	for( size_t gpid = 0; gpid < nPix; gpid++ ) {
+		v = *(nodesBuffer+gpid);
+		update = update || fintp->SetCoefficient( gpid, v );
+	}
+
+	if (update) {
+		fintp->ComputeNodesData();
+
+		VectorType* dispBuffer = this->m_CurrentDisplacementField->GetBufferPointer();
+
+		for( size_t gpid = 0; gpid < nPix; gpid++ ) {
+			*(dispBuffer+gpid) = fintp->GetNodeData( gpid );
+		}
+	}
+}
+
 template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::ComputeIterationChange() {
-	const VectorType* fnextBuffer = this->m_Functional->GetCurrentDisplacementField()->GetBufferPointer();
+	const VectorType* fnextBuffer = this->m_CurrentDisplacementField->GetBufferPointer();
 	VectorType* fBuffer = this->m_LastField->GetBufferPointer();
 	size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
 
@@ -550,13 +575,14 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	this->m_LastField->SetOrigin( this->m_Parameters->GetOrigin() );
 	this->m_LastField->Allocate();
 	this->m_LastField->FillBuffer( zerov );
-	//this->m_CurrentField = ParametersType::New();
-	//this->m_CurrentField->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
-	//this->m_CurrentField->SetSpacing( this->m_Parameters->GetSpacing() );
-	//this->m_CurrentField->SetDirection( this->m_Parameters->GetDirection() );
-	//this->m_CurrentField->SetOrigin( this->m_Parameters->GetOrigin() );
-	//this->m_CurrentField->Allocate();
-	//this->m_CurrentField->FillBuffer( zerov );
+
+	this->m_CurrentDisplacementField = ParametersType::New();
+	this->m_CurrentDisplacementField->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
+	this->m_CurrentDisplacementField->SetSpacing( this->m_Parameters->GetSpacing() );
+	this->m_CurrentDisplacementField->SetDirection( this->m_Parameters->GetDirection() );
+	this->m_CurrentDisplacementField->SetOrigin( this->m_Parameters->GetOrigin() );
+	this->m_CurrentDisplacementField->Allocate();
+	this->m_CurrentDisplacementField->FillBuffer( zerov );
 }
 
 template< typename TFunctional >

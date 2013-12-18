@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
 	// Displacementfield
 	typename DisplacementFieldWriter::Pointer p = DisplacementFieldWriter::New();
 	p->SetFileName( (outPrefix + "_field.nii.gz" ).c_str() );
-	p->SetInput( functional->GetCurrentDisplacementField() );
+	p->SetInput( opt->GetCurrentDisplacementField() );
 	p->Update();
 
 	// Contours and regions

@@ -245,8 +245,6 @@ public:
 
 	void ComputeDerivative( void );
 
-	void UpdateParameters( const FieldType* newField );
-
 	virtual void Initialize( void );
 
 	ROIConstPointer GetCurrentRegion( size_t idx );
@@ -262,9 +260,6 @@ public:
 
 	itkSetObjectMacro(Derivative, FieldType);
 	itkGetConstObjectMacro(Derivative, FieldType);
-
-	itkSetObjectMacro(CurrentDisplacementField, FieldType);
-	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
 
 	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
@@ -295,7 +290,6 @@ protected:
 	mutable MeasureType m_Value;
 	FieldPointer m_Derivative;
 	FieldPointer m_ReferenceSamplingGrid;
-	FieldPointer m_CurrentDisplacementField;
 	ContourList m_CurrentContours;
 	ConstContourList m_Priors;
 	NormalFilterList m_NormalFilter;

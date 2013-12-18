@@ -66,7 +66,7 @@ public:
     		ss.str("");
     		ss << this->m_Prefix << "_field_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration();
     		f->SetFileName( ss.str().c_str() );
-    		f->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentDisplacementField() );
+    		f->SetInput( this->m_Optimizer->GetCurrentDisplacementField() );
     		f->Update();
     	}
     }
