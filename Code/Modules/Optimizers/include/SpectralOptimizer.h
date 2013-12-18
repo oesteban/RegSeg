@@ -114,6 +114,9 @@ public:
 	typedef typename FunctionalType::VectorType                     VectorType;
 	typedef typename FunctionalType::PointValueType                 PointValueType;
 
+	typedef typename FunctionalType::FieldInterpolatorType          FieldInterpolatorType;
+	typedef typename FieldInterpolatorType::Pointer                 FieldInterpolatorPointer;
+
 	typedef typename ParametersType::Pointer                        ParametersPointer;
 	typedef typename ParametersType::ConstPointer                   ParametersConstPointer;
 	typedef typename ParametersType::PointType                      ParametersPointType;
@@ -255,6 +258,9 @@ public:
 
 	itkGetConstMacro( CurrentValue, MeasureType );
 
+
+	itkGetConstObjectMacro(CurrentDisplacementField, ParametersType);
+
 protected:
 	/** Manual learning rate to apply. It is overridden by
 	 * automatic learning rate estimation if enabled. See main documentation.
@@ -316,7 +322,9 @@ protected:
 	bool m_RegularizationEnergyUpdated;
 
 	ParametersPointer m_LastField;
+	ParametersPointer m_CurrentDisplacementField;
 	ParametersConstPointer m_CurrentSpeeds;
+
 
 	/* Common variables for optimization control and reporting */
 	bool                          m_Stop;
@@ -333,6 +341,7 @@ private:
 	void ApplyRegularizationTerm( ComplexFieldType* reference );
 	void InitializeParameters( void );
 	void InitializeDenominator( ComplexFieldType* reference );
+	void UpdateField();
 }; // End of Class
 
 } // End of namespace rstk

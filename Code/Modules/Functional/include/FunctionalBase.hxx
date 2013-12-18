@@ -64,7 +64,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_FieldInterpolator = FieldInterpolatorType::New();
 	this->m_Derivative = FieldType::New();
-	this->m_CurrentDisplacementField = FieldType::New();
 	this->m_EnergyResampler = DisplacementResamplerType::New();
 	this->m_EnergyUpdated = false;
 	this->m_RegionsUpdated = false;
@@ -120,6 +119,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	NormalFilterPointer normalsFilter;
 	SampleType sample;
 
+	this->UpdateContour();
 
 	VectorType zerov; zerov.Fill(0.0);
 	this->m_Derivative->FillBuffer( zerov );
@@ -258,29 +258,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 }
 
-
-template< typename TReferenceImageType, typename TCoordRepType >
-void
-FunctionalBase<TReferenceImageType, TCoordRepType>
-::UpdateParameters(const typename FunctionalBase<TReferenceImageType, TCoordRepType>::FieldType* newField ) {
-	// Copy newField values to interpolator
-	const VectorType* nodesBuffer = newField->GetBufferPointer();
-	VectorType v;
-	for( size_t gpid = 0; gpid < this->m_NumberOfNodes; gpid++ ) {
-		v = *(nodesBuffer+gpid);
-		if( this->m_FieldInterpolator->SetCoefficient( gpid, v ) ) {
-			this->m_RegionsUpdated = false;
-			this->m_EnergyUpdated = false;
-		}
-	}
-
-	if ( !this->m_RegionsUpdated ) {
-		this->m_FieldInterpolator->Interpolate();
-		this->UpdateContour();
-	}
-
-}
-
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
@@ -293,6 +270,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	ContinuousIndex point_idx;
 	size_t changed = 0;
 	size_t gpid = 0;
+
+	this->m_FieldInterpolator->Interpolate();
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
 		typename ContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
@@ -323,6 +302,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			++p_it;
 		}
 	}
+
+	this->m_RegionsUpdated = (changed==0);
+	this->m_EnergyUpdated = (changed==0);
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -518,12 +500,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Derivative->SetSpacing  ( field->GetSpacing() );
 	this->m_Derivative->SetRegions  ( field->GetRequestedRegion().GetSize());
 	this->m_Derivative->Allocate();
-
-	this->m_CurrentDisplacementField->SetDirection( field->GetDirection() );
-	this->m_CurrentDisplacementField->SetOrigin   ( field->GetOrigin() );
-	this->m_CurrentDisplacementField->SetSpacing  ( field->GetSpacing() );
-	this->m_CurrentDisplacementField->SetRegions  ( field->GetRequestedRegion().GetSize());
-	this->m_CurrentDisplacementField->Allocate();
 }
 
 
