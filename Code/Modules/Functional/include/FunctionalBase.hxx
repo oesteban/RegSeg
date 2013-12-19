@@ -69,7 +69,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_RegionsUpdated = false;
 	this->m_NumberOfContours = 0;
 	this->m_SamplingFactor = 4;
-	this->m_Scale = 10.0;
+	this->m_Scale = 100.0;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >

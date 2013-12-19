@@ -48,6 +48,9 @@
 #include <itkBSplineKernelFunction.h>
 #include <itkBSplineDerivativeKernelFunction.h>
 
+#include <itkImage.h>
+#include <itkImageFileWriter.h>
+
 namespace rstk {
 
 template< class TScalarType, unsigned int NDimensions >
@@ -62,7 +65,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	    itk::BSplineKernelFunction<3u, ScalarType>::New().GetPointer() );
 	this->m_KernelDerivativeFunction  = dynamic_cast< KernelFunctionType * >(
 		    itk::BSplineDerivativeKernelFunction<3u, ScalarType>::New().GetPointer() );
-	//this->m_KernelNorm = pow( 1.0/this->m_KernelFunction->Evaluate( 0.0 ), (double) Dimension );
+	this->m_KernelNorm = pow( 1.0/this->m_KernelFunction->Evaluate( 0.0 ), (double) Dimension );
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -110,6 +113,13 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
 	this->m_S = WeightsMatrix(this->m_NumberOfParameters,this->m_NumberOfParameters);
 
+	typedef itk::Image< float, 2u > SImage;
+	SImage::Pointer im = SImage::New();
+	SImage::SizeType size; size.Fill( this->m_NumberOfParameters );
+	im->SetRegions( size );
+	im->Allocate();
+	im->FillBuffer( 0.0 );
+
 	for( row = 0; row < this->m_S.rows(); row++ ) {
 		s = this->m_OnGridPos[row];
 
@@ -128,12 +138,21 @@ SparseMatrixTransform<TScalarType,NDimensions>
 			if (wi > 0.0) {
 				//wi*= this->m_KernelNorm;
 				this->m_S.put(row, col, wi);
+				SImage::IndexType idx;
+				idx[0] = row;
+				idx[1] = col;
+				im->SetPixel( idx, wi );
 			}
 		}
 	}
 
-	this->m_S.normalize_rows();
+	typedef typename itk::ImageFileWriter< SImage > W;
+	W::Pointer w = W::New();
+	w->SetFileName("Smatrix.nii.gz");
+	w->SetInput( im );
+	w->Update();
 
+	//this->m_S.normalize_rows();
 	//this->m_System = new vnl_sparse_lu( this->m_S, vnl_sparse_lu::estimate_condition);
 }
 
