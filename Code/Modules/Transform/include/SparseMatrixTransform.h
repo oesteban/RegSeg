@@ -128,23 +128,37 @@ public:
     void SetNumberOfParameters( size_t K );
     itkGetConstMacro(NumberOfParameters, size_t );
 
-    void ComputeWeights( void );
-    void ComputeNodesData( void );
+    void Interpolate( void );
+    void ComputeOnGridValues( void );
+    void ComputeCoeffDerivatives( void );
     void ComputeJacobian( void );
-	void Interpolate( void );
 
-	inline void SetPoint( size_t id, const PointType pi );
-	inline void SetNode ( size_t id, const PointType pi );
 
-	inline VectorType GetPointData  ( const size_t id );
-	inline VectorType GetNodeData   ( const size_t id );
-	inline VectorType GetNodeWeight ( const size_t id );
-	inline VectorType GetCoefficient( const size_t id );
-	inline JacobianType GetJacobian ( const size_t id );
+	// Setters & Getters -----------------------------------------
+	// Physical positions
+	inline void SetOffGridPos  ( size_t id, const PointType pi );
+	inline void SetOnGridPos   ( size_t id, const PointType pi );
 
-	inline bool SetPointData( const size_t id, VectorType pi );
-	inline bool SetNodeData( const size_t id, VectorType pi );
-	inline bool SetCoefficient( const size_t id, VectorType pi );
+	// Values off-grid (displacement vector of a node)
+	inline bool       SetOffGridValue( const size_t id, VectorType pi );
+	inline VectorType GetOffGridValue( const size_t id );
+
+	// Values on-grid (diplacement vector of a grid point)
+	inline bool       SetOnGridValue ( const size_t id, VectorType pi );
+	inline VectorType GetOnGridValue ( const size_t id );
+
+	// Coefficients of the interpolating kernels
+	inline bool       SetCoefficient ( const size_t id, VectorType pi );
+	inline VectorType GetCoefficient ( const size_t id );
+
+	// Derivative of coefficients
+	inline VectorType GetCoeffDerivative ( const size_t id );
+
+	// Sparse matrix of kernel weights
+	//inline VectorType GetOffGridWeight ( const size_t id );
+	//inline VectorType GetOnGridWeight  ( const size_t id );
+
+	inline JacobianType GetJacobian    ( const size_t id );
 
 	// Virtual members inherited from Transform
 	virtual void SetParameters(const ParametersType & parameters);
@@ -209,13 +223,13 @@ protected:
 	void ComputeS( );
 	void ComputeSPrime( );
 
-	PointsList m_Points; // Nc points in the mesh
-	PointsList m_Nodes;    // Serialized k points in a grid
+	PointsList m_OffGridPos;                     // m_N points in the mesh
+	PointsList m_OnGridPos;    // Serialized k points in a grid
 
-	DimensionVector m_PointsData[Dimension];     // Nc points in the mesh
-	DimensionVector m_NodesData[Dimension];      // Serialized k values in a grid
+	DimensionVector m_OffGridValue[Dimension];   // m_N points in the mesh
+	DimensionVector m_OnGridValue[Dimension];      // Serialized k values in a grid
 	DimensionVector m_Coeff[Dimension];          // Serialized k coefficients in the grid
-	DimensionVector m_TempNodesData[Dimension];  // Serialized k values in a grid
+	DimensionVector m_CoeffDerivative[Dimension];  // Serialized k values in a grid
 
 	DimensionVector m_Jacobian[Dimension][Dimension]; // Serialized k dimxdim matrices in a grid
 
