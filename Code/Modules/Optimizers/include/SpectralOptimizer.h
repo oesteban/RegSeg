@@ -292,7 +292,7 @@ protected:
 
 	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 
-	void SpectralUpdate( ParametersPointer parameters, const ParametersType* lambda, ParametersPointer nextParameters, bool changeDirection = false );
+	void SpectralUpdate( ParametersType* parameters, const ParametersType* lambda, ParametersType* nextParameters, bool changeDirection = false );
 
 	virtual void InitializeAuxiliarParameters( void ) = 0;
 	virtual void SetUpdate() = 0;
@@ -313,7 +313,7 @@ protected:
 
 	ParametersPointer m_Parameters;
 	ParametersPointer m_NextParameters;
-	InternalVectorFieldPointer m_Denominator;
+	std::vector< ParametersComponentPointer > m_Denominator;
 	MeasureType m_CurrentValue;
 
 	FunctionalPointer m_Functional;
@@ -339,8 +339,9 @@ private:
 	void operator=( const Self & ); // purposely not implemented
 
 	void ApplyRegularizationTerm( ComplexFieldType* reference );
+	void ApplyRegularizationComponent( size_t d, FTDomainType *reference );
 	void InitializeParameters( void );
-	void InitializeDenominator( ComplexFieldType* reference );
+	void InitializeDenominator( itk::ImageBase<Dimension> *reference );
 	void UpdateField();
 }; // End of Class
 
