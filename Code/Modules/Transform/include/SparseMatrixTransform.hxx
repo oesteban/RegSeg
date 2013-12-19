@@ -62,7 +62,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	    itk::BSplineKernelFunction<3u, ScalarType>::New().GetPointer() );
 	this->m_KernelDerivativeFunction  = dynamic_cast< KernelFunctionType * >(
 		    itk::BSplineDerivativeKernelFunction<3u, ScalarType>::New().GetPointer() );
-	this->m_KernelNorm = pow( 1.0/this->m_KernelFunction->Evaluate( 0.0 ), (double) Dimension );
+	//this->m_KernelNorm = pow( 1.0/this->m_KernelFunction->Evaluate( 0.0 ), (double) Dimension );
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -70,10 +70,10 @@ void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetN( size_t N ) {
 	this->m_N = N;
-	this->m_Points.resize(N);
+	this->m_OffGridPos.resize(N);
 	for( size_t dim = 0; dim<Dimension; dim++ ) {
-		this->m_PointsData[dim] = DimensionVector(N);
-		this->m_PointsData[dim].fill( 0.0 );
+		this->m_OffGridValue[dim] = DimensionVector(N);
+		this->m_OffGridValue[dim].fill( 0.0 );
 	}
 }
 
@@ -82,14 +82,14 @@ void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetNumberOfParameters( size_t K ) {
 	this->m_NumberOfParameters = K;
-	this->m_Nodes.resize(K);
+	this->m_OnGridPos.resize(K);
 	for( size_t dim = 0; dim<Dimension; dim++ ) {
-		this->m_NodesData[dim] = DimensionVector(K);
-		this->m_TempNodesData[dim] = DimensionVector(K);
+		this->m_OnGridValue[dim] = DimensionVector(K);
+		this->m_CoeffDerivative[dim] = DimensionVector(K);
 		this->m_Coeff[dim] = DimensionVector(K);
 
-		this->m_NodesData[dim].fill( 0.0 );
-		this->m_TempNodesData[dim].fill( 0.0 );
+		this->m_OnGridValue[dim].fill( 0.0 );
+		this->m_CoeffDerivative[dim].fill( 0.0 );
 		this->m_Coeff[dim].fill( 0.0 );
 
 		for (size_t dim2 = 0; dim2<Dimension; dim2++ ) {
@@ -111,11 +111,11 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	this->m_S = WeightsMatrix(this->m_NumberOfParameters,this->m_NumberOfParameters);
 
 	for( row = 0; row < this->m_S.rows(); row++ ) {
-		s = this->m_Nodes[row];
+		s = this->m_OnGridPos[row];
 
 		for ( col=0; col < this->m_S.cols(); col++) {
 			wi=1.0;
-			x = this->m_Nodes[col];
+			x = this->m_OnGridPos[col];
 			r = s - x;
 			for (size_t i = 0; i<Dimension; i++) {
 				wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
@@ -152,10 +152,10 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	}
 
 	for( row = 0; row < this->m_NumberOfParameters; row++ ) {
-		s = this->m_Nodes[row];
+		s = this->m_OnGridPos[row];
 
 		for ( col=0; col < this->m_NumberOfParameters; col++) {
-			x = this->m_Nodes[col];
+			x = this->m_OnGridPos[col];
 			r = s - x;
 			for ( size_t dim = 0; dim < Dimension; dim++ ) {
 				wi=1.0;
@@ -195,9 +195,9 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
 	// Walk the grid region
 	for( row = 0; row < this->m_Phi.rows(); row++ ) {
-		ci = this->m_Points[row];
+		ci = this->m_OffGridPos[row];
 		for ( col=0; col < this->m_Phi.cols(); col++) {
-			xk = this->m_Nodes[col];
+			xk = this->m_OnGridPos[col];
 			wi=1.0;
 			r = xk - ci;
 			for (size_t i = 0; i<Dimension; i++) {
@@ -222,16 +222,15 @@ SparseMatrixTransform<TScalarType,NDimensions>
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
-::ComputeWeights() {
+::ComputeCoeffDerivatives() {
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
 		this->ComputePhi();
 	}
 
     for ( size_t i = 0; i < Dimension; i++ ) {
-    	this->m_TempNodesData[i] = DimensionVector(this->m_NumberOfParameters);
-    	this->m_TempNodesData[i].fill(0.0);
-    	this->m_InvertPhi.mult(this->m_PointsData[i], this->m_TempNodesData[i] );
+    	this->m_CoeffDerivative[i].fill(0.0);
+    	this->m_InvertPhi.mult(this->m_OffGridValue[i], this->m_CoeffDerivative[i] );
     }
 }
 
@@ -245,25 +244,24 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	}
 
 	for( size_t i = 0; i < Dimension; i++ ) {
-		this->m_PointsData[i].fill(0.0);
+		this->m_OffGridValue[i].fill(0.0);
 		// Interpolate
-		this->m_Phi.mult( this->m_Coeff[i], this->m_PointsData[i] );
+		this->m_Phi.mult( this->m_Coeff[i], this->m_OffGridValue[i] );
 	}
-
 }
 
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
-::ComputeNodesData( ) {
+::ComputeOnGridValues() {
 	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
 		this->ComputeS();
 	}
 
 	for( size_t i = 0; i < Dimension; i++ ) {
-		this->m_NodesData[i].fill(0.0);
+		this->m_OnGridValue[i].fill(0.0);
 		// Interpolate
-		this->m_S.mult( this->m_Coeff[i], this->m_NodesData[i] );
+		this->m_S.mult( this->m_Coeff[i], this->m_OnGridValue[i] );
 	}
 }
 
@@ -300,11 +298,11 @@ SparseMatrixTransform<TScalarType,NDimensions>
 //
 //	for( size_t i = 0; i < Dimension; i++ ) {
 //		this->m_Coeff[i] = DimensionVector(this->m_NumberOfParameters);
-//		this->m_PointsData[i].fill(0.0);
+//		this->m_OffGridValue[i].fill(0.0);
 //		// Compute coefficients
-//		this->m_Coeff[i] = this->m_System->solve( this->m_NodesData[i] );
+//		this->m_Coeff[i] = this->m_System->solve( this->m_OnGridValue[i] );
 //		// Interpolate
-//		this->m_Phi.mult( this->m_Coeff[i], this->m_PointsData[i] );
+//		this->m_Phi.mult( this->m_Coeff[i], this->m_OffGridValue[i] );
 //	}
 //
 //}
@@ -313,15 +311,15 @@ SparseMatrixTransform<TScalarType,NDimensions>
 template< class TScalarType, unsigned int NDimensions >
 inline void
 SparseMatrixTransform<TScalarType,NDimensions>
-::SetPoint(size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
-	this->m_Points[id] = pi;
+::SetOffGridPos(size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
+	this->m_OffGridPos[id] = pi;
 }
 
 template< class TScalarType, unsigned int NDimensions >
 inline void
 SparseMatrixTransform<TScalarType,NDimensions>
-::SetNode(size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
-	this->m_Nodes[id] = pi;
+::SetOnGridPos(size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
+	this->m_OnGridPos[id] = pi;
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -332,15 +330,15 @@ void SparseMatrixTransform<TScalarType,NDimensions>::SetParameters(
 		this->m_Parameters = parameters;
 	}
 
-	if( this->m_Points.size() == 0 ) {
+	if( this->m_OffGridPos.size() == 0 ) {
 		itkExceptionMacro( << "Control Points should be set first." );
 	}
 
-	if( this->m_N != this->m_Points.size() ) {
+	if( this->m_N != this->m_OffGridPos.size() ) {
 		if (! this->m_N == 0 ){
 			itkExceptionMacro( << "N and number of control points should match." );
 		} else {
-			this->m_N = this->m_Points.size();
+			this->m_N = this->m_OffGridPos.size();
 		}
 	}
 
@@ -349,10 +347,10 @@ void SparseMatrixTransform<TScalarType,NDimensions>::SetParameters(
 	}
 
 	for ( size_t dim = 0; dim<Dimension; dim++) {
-		if ( this->m_PointsData[dim].size() == 0 ) {
-			this->m_PointsData[dim]( this->m_N );
+		if ( this->m_OffGridValue[dim].size() == 0 ) {
+			this->m_OffGridValue[dim]( this->m_N );
 		}
-		else if ( this->m_PointsData[dim].size()!=this->m_N ) {
+		else if ( this->m_OffGridValue[dim].size()!=this->m_N ) {
 			itkExceptionMacro( << "N and number of slots for parameter data should match." );
 		}
 	}
@@ -361,7 +359,7 @@ void SparseMatrixTransform<TScalarType,NDimensions>::SetParameters(
 
 	while( didx < this->m_N ) {
 		for ( size_t dim = 0; dim< Dimension; dim++ ) {
-			this->m_PointsData[dim][didx] = parameters[didx+dim];
+			this->m_OffGridValue[dim][didx] = parameters[didx+dim];
 		}
 		didx++;
 	}
@@ -375,10 +373,10 @@ void SparseMatrixTransform<TScalarType,NDimensions>::SetParameters(
 template< class TScalarType, unsigned int NDimensions >
 inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType
 SparseMatrixTransform<TScalarType,NDimensions>
-::GetPointData( const size_t id ) {
+::GetOffGridValue( const size_t id ) {
 	VectorType ci;
 	for( size_t dim = 0; dim < Dimension; dim++) {
-		ci[dim] = this->m_PointsData[dim][id];
+		ci[dim] = this->m_OffGridValue[dim][id];
 
 		if( std::isnan( ci[dim] ) || std::isinf( ci[dim] )) {
 			ci[dim] = 0;
@@ -396,13 +394,12 @@ SparseMatrixTransform<TScalarType,NDimensions>
 template< class TScalarType, unsigned int NDimensions >
 inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType
 SparseMatrixTransform<TScalarType,NDimensions>
-::GetNodeData( const size_t id ) {
+::GetOnGridValue( const size_t id ) {
 	VectorType gi;
 	for( size_t dim = 0; dim < Dimension; dim++){
-		gi[dim] = this->m_NodesData[dim][id];
+		gi[dim] = this->m_OnGridValue[dim][id];
 		if( std::isnan( gi[dim] )) gi[dim] = 0;
 	}
-
 	return gi;
 }
 
@@ -422,18 +419,18 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	return gi;
 }
 
-template< class TScalarType, unsigned int NDimensions >
-inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType
-SparseMatrixTransform<TScalarType,NDimensions>
-::GetNodeWeight( const size_t id ) {
-	VectorType gi;
-	for( size_t dim = 0; dim < Dimension; dim++){
-		gi[dim] = this->m_TempNodesData[dim][id];
-		if( std::isnan( gi[dim] )) gi[dim] = 0;
-	}
-	return gi;
-}
-
+//template< class TScalarType, unsigned int NDimensions >
+//inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType
+//SparseMatrixTransform<TScalarType,NDimensions>
+//::GetOnGridWeight( const size_t id ) {
+//	VectorType gi;
+//	for( size_t dim = 0; dim < Dimension; dim++){
+//		gi[dim] = this->m_CoeffDerivative[dim][id];
+//		if( std::isnan( gi[dim] )) gi[dim] = 0;
+//	}
+//	return gi;
+//}
+//
 
 template< class TScalarType, unsigned int NDimensions >
 inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType
@@ -444,19 +441,30 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		gi[dim] = this->m_Coeff[dim][id];
 		if( std::isnan( gi[dim] )) gi[dim] = 0;
 	}
+	return gi;
+}
 
+template< class TScalarType, unsigned int NDimensions >
+inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType
+SparseMatrixTransform<TScalarType,NDimensions>
+::GetCoeffDerivative( const size_t id ) {
+	VectorType gi;
+	for( size_t dim = 0; dim < Dimension; dim++){
+		gi[dim] = this->m_CoeffDerivative[dim][id];
+		if( std::isnan( gi[dim] )) gi[dim] = 0;
+	}
 	return gi;
 }
 
 template< class TScalarType, unsigned int NDimensions >
 inline bool
 SparseMatrixTransform<TScalarType,NDimensions>
-::SetPointData( const size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType pi ) {
+::SetOffGridValue( const size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType pi ) {
 	bool changed = false;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		if( std::isnan( pi[dim] )) pi[dim] = 0;
-		if( this->m_PointsData[dim][id] != pi[dim] ) {
-			this->m_PointsData[dim][id] = pi[dim];
+		if( this->m_OffGridValue[dim][id] != pi[dim] ) {
+			this->m_OffGridValue[dim][id] = pi[dim];
 			changed = true;
 		}
 	}
@@ -466,12 +474,12 @@ SparseMatrixTransform<TScalarType,NDimensions>
 template< class TScalarType, unsigned int NDimensions >
 inline bool
 SparseMatrixTransform<TScalarType,NDimensions>
-::SetNodeData( const size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType pi ) {
+::SetOnGridValue( const size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType pi ) {
 	bool changed = false;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		if( std::isnan( pi[dim] )) pi[dim] = 0;
-		if( this->m_NodesData[dim][id] != pi[dim]) {
-			this->m_NodesData[dim][id] = pi[dim];
+		if( this->m_OnGridValue[dim][id] != pi[dim]) {
+			this->m_OnGridValue[dim][id] = pi[dim];
 			changed=true;
 		}
 	}

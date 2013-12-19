@@ -194,7 +194,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
 				ni*= gradient;
 			}
-			this->m_FieldInterpolator->SetPointData(sample[i].gid, ni);
+			this->m_FieldInterpolator->SetOffGridValue(sample[i].gid, ni);
 			sample[i].grad = gradient;
 			gradSum+= gradient;
 		}
@@ -209,7 +209,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
 				ni*= gradient;
 			}
-			this->m_FieldInterpolator->SetPointData(sample[i].gid, ni);
+			this->m_FieldInterpolator->SetOffGridValue(sample[i].gid, ni);
 			sample[i].grad = gradient;
 			gradSum+= gradient;
 		}
@@ -222,7 +222,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
 				ni*= gradient;
 			}
-			this->m_FieldInterpolator->SetPointData(sample[i].gid, ni);
+			this->m_FieldInterpolator->SetOffGridValue(sample[i].gid, ni);
 			sample[i].grad = gradient;
 			gradSum+= gradient;
 		}
@@ -244,18 +244,17 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 	// Interpolate sparse velocity field to targetDeformation
-	this->m_FieldInterpolator->ComputeWeights();
+	this->m_FieldInterpolator->ComputeCoeffDerivatives();
 
 	VectorType* gmBuffer = this->m_Derivative->GetBufferPointer();
 	VectorType v;
 
 	for( size_t gpid = 0; gpid<this->m_NumberOfNodes; gpid++ ) {
-		v = this->m_FieldInterpolator->GetNodeWeight(gpid);
+		v = this->m_FieldInterpolator->GetCoeffDerivative(gpid);
 		if ( v.GetNorm() > 1.0e-4 ) {
 			*( gmBuffer + gpid ) = v; // * (1.0/this->m_NumberOfPoints);
 		}
 	}
-
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -285,7 +284,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		while ( p_it != p_end ) {
 			ci = p_it.Value();
 			pid = p_it.Index();
-			disp = this->m_FieldInterpolator->GetPointData( gpid ); // Get the interpolated value of the field in the point
+			disp = this->m_FieldInterpolator->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
 			norm = disp.GetNorm();
 
 			if( norm > 0.0 ) {
@@ -573,7 +572,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		while( c_it != c_end ) {
 			pid = c_it.Index();
 			ci = c_it.Value();
-			this->m_FieldInterpolator->SetPoint( cpid, ci );
+			this->m_FieldInterpolator->SetOffGridPos( cpid, ci );
 			++c_it;
 			cpid++;
 		}
@@ -694,7 +693,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		for ( size_t gid = 0; gid < this->m_NumberOfNodes; gid++ ) {
 			this->m_Derivative->TransformIndexToPhysicalPoint( this->m_Derivative->ComputeIndex( gid ), uk );
-			this->m_FieldInterpolator->SetNode( gid, uk );
+			this->m_FieldInterpolator->SetOnGridPos( gid, uk );
 		}
 	} else {
 		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");

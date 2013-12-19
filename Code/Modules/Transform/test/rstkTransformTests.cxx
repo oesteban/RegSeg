@@ -67,8 +67,8 @@ public:
 		PointType p;
 		for( size_t i = 0; i<m_K; i++ ) {
 			m_field->TransformIndexToPhysicalPoint( m_field->ComputeIndex(i) ,p );
-			m_transform->SetNode    (i,p);
-			m_transform->SetNodeData(i,*( buffer + i));
+			m_transform->SetOnGridPos(i,p);
+			m_transform->SetOnGridValue(i,*( buffer + i));
 		}
 	}
 
@@ -123,7 +123,7 @@ TEST_F( TransformTests, SparseMatrixForwardIDWTransformTest ) {
 	PointType p;
 	for( size_t i = 0; i<m_N; i++ ) {
 		densefield->TransformIndexToPhysicalPoint( densefield->ComputeIndex(i) ,p );
-		m_transform->SetPoint    (i,p);
+		m_transform->SetOnGridPos(i,p);
 	}
 
 
@@ -131,7 +131,7 @@ TEST_F( TransformTests, SparseMatrixForwardIDWTransformTest ) {
 
 	VectorType v;
 	for( size_t i = 0; i<m_N; i++ ){
-		v = m_transform->GetPointData(i);
+		v = m_transform->GetOnGridValue(i);
 		densefield->SetPixel( densefield->ComputeIndex(i), v);
 	}
 

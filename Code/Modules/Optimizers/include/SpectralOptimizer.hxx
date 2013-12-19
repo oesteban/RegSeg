@@ -78,7 +78,7 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer() {
 	this->m_CurrentIteration   = 0;
 	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
-	this->m_GridSize.Fill( 25 );
+	this->m_GridSize.Fill( 8 );
 
 	m_CurrentTotalEnergy = itk::NumericTraits<MeasureType>::infinity();
 	m_RegularizationEnergyUpdated = false;
@@ -480,12 +480,10 @@ SpectralOptimizer<TFunctional>::UpdateField() {
 	}
 
 	if (update) {
-		fintp->ComputeNodesData();
-
+		fintp->ComputeOnGridValues();
 		VectorType* dispBuffer = this->m_CurrentDisplacementField->GetBufferPointer();
-
 		for( size_t gpid = 0; gpid < nPix; gpid++ ) {
-			*(dispBuffer+gpid) = fintp->GetNodeData( gpid );
+			*(dispBuffer+gpid) = fintp->GetOnGridValue( gpid );
 		}
 	}
 }
