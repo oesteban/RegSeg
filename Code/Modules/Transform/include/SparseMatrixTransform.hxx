@@ -228,7 +228,6 @@ SparseMatrixTransform<TScalarType,NDimensions>
 			}
 
 			if (wi > 0.0) {
-				// wi *= this->m_KernelNorm;
 				assert(wi <= 1.0);
 
 				this->m_Phi.put(row, col, wi);

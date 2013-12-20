@@ -71,8 +71,8 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer() {
 	this->m_MinimumConvergenceValue = 1e-8;
 	this->m_ConvergenceWindowSize = 50;
 	this->m_StepSize =  1.0;
-	this->m_Alpha.Fill( 0.0 );
-	this->m_Beta.Fill( 0.0 );
+	this->m_Alpha.Fill( 1.0 );
+	this->m_Beta.Fill( 10.0 );
 
 	this->m_NumberOfIterations = 250;
 	this->m_CurrentIteration   = 0;
@@ -452,7 +452,7 @@ SpectralOptimizer<TFunctional>::UpdateField() {
 	typename ComponentsWriter::Pointer p = ComponentsWriter::New();
 	std::stringstream ss;
 	ss.str("");
-	ss << "speedsFiltered_" << std::setfill('0')  << std::setw(3) << this->GetCurrentIteration();
+	ss << "coefficients_" << std::setfill('0')  << std::setw(3) << this->GetCurrentIteration();
 	p->SetFileName( ss.str().c_str() );
 	p->SetInput( this->m_NextParameters );
 	p->Update();
@@ -464,7 +464,7 @@ SpectralOptimizer<TFunctional>::UpdateField() {
 	VectorType v;
 	for( size_t gpid = 0; gpid < nPix; gpid++ ) {
 		v = *(nodesBuffer+gpid);
-		update = update || fintp->SetCoefficient( gpid, v );
+		update = fintp->SetCoefficient( gpid, v ) || update;
 	}
 
 	if (update) {

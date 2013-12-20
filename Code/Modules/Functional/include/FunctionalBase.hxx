@@ -270,6 +270,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	size_t changed = 0;
 	size_t gpid = 0;
 
+	SampleType sample;
+	double gradSum = 0.0;
+
 	this->m_FieldInterpolator->Interpolate();
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
@@ -287,6 +290,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			disp = this->m_FieldInterpolator->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
 			norm = disp.GetNorm();
 
+			sample.push_back( GradientSample( norm, pid, gpid ) );
+			gradSum+= norm;
+
 			if( norm > 0.0 ) {
 				ci_prime = ci + disp; // Add displacement vector to the point
 
@@ -296,10 +302,24 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				}
 				this->m_CurrentContours[contid]->SetPoint( pid, ci_prime );
 				changed++;
-				gpid++;
 			}
 			++p_it;
+			gpid++;
 		}
+#ifndef NDEBUG
+		size_t q1 = floor( (sample.size()-1)*0.05 );
+		size_t q2 = round( (sample.size()-1)*0.50 );
+		size_t q3 = ceil ( (sample.size()-1)*0.95 );
+
+		std::sort(sample.begin(), sample.end(), by_grad() );
+		PointValueType median= sample[q2].grad;
+		PointValueType quart1= sample[q1].grad;
+		PointValueType quart2= sample[q3].grad;
+		PointValueType minGradient = (*( sample.begin() )).grad;
+        PointValueType maxGradient = (*( sample.end()-1 )).grad;
+        PointValueType average = gradSum / sample.size();
+		std::cout << "Disp["<< contid << "]: avg=" << average << ", max=" << maxGradient << ", min=" << minGradient << ", q1=" << quart1 << ", q2=" << quart2 << ", med=" << median << "." << std::endl;
+#endif
 	}
 
 	this->m_RegionsUpdated = (changed==0);
