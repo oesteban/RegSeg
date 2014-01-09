@@ -61,8 +61,12 @@
 #include <itkTriangleHelper.h>
 
 #include "CopyQuadEdgeMeshFilter.h"
+#include "CopyQEMeshStructureFilter.h"
+
 #include "SparseMatrixTransform.h"
 #include "DownsampleAveragingFilter.h"
+#include "itkVTKPolyDataWriter.h"
+#include "itkQuadEdgeMeshScalarDataVTKPolyDataWriter.h"
 
 namespace rstk {
 /** \class FunctionalBase
@@ -123,6 +127,7 @@ public:
 	typedef typename ContourType::ConstPointer               ContourConstPointer;
 	typedef typename std::vector<ContourPointer>             ContourList;
 	typedef typename std::vector<ContourConstPointer>        ConstContourList;
+	typedef typename ContourType::PointsContainerPointer     PointsContainerPointer;
 	typedef typename ContourType::PointDataContainerPointer  PointDataContainerPointer;
 	typedef typename ContourType::PointsContainerIterator    PointsIterator;
 	typedef typename ContourType::PointsContainerConstIterator    PointsConstIterator;
@@ -209,6 +214,20 @@ public:
 	typedef typename std::vector< PointType >                PointsVector;
 	typedef typename std::vector< PointsVector >             PointsList;
 
+
+	typedef itk::QuadEdgeMesh< float, Dimension >            ShapeGradientType;
+	typedef typename ShapeGradientType::Pointer              ShapeGradientPointer;
+	typedef typename ShapeGradientType::PointDataContainer   ShapeGradientsContainer;
+    typedef typename ShapeGradientsContainer::Pointer        ShapeGradientsContainerPointer;
+	typedef typename std::vector<ShapeGradientPointer>       ShapeGradientList;
+	typedef typename itk::CopyQEMeshStructureFilter
+			                <ContourType,ShapeGradientType>  ShapeCopyType;
+	typedef typename ShapeCopyType::Pointer                  ShapeCopyPointer;
+
+
+	typedef itk::QuadEdgeMeshScalarDataVTKPolyDataWriter< ShapeGradientType >  ContourWriterType;
+	typedef typename ContourWriterType::Pointer    ContourWriterPointer;
+
 	struct GradientSample {
 		PointValueType grad;
 		size_t cid;
@@ -291,9 +310,9 @@ protected:
 	FieldPointer m_Derivative;
 	FieldPointer m_ReferenceSamplingGrid;
 	ContourList m_CurrentContours;
+	ShapeGradientList m_Gradients;
 	ConstContourList m_Priors;
 	NormalFilterList m_NormalFilter;
-	ContourCopyPointer m_ContourCopier;
 	WarpContourPointer m_ContourUpdater;
 	FieldInterpolatorPointer m_FieldInterpolator;
 	DisplacementResamplerPointer m_EnergyResampler;
@@ -314,6 +333,8 @@ protected:
 	ReferencePointType m_Origin, m_End;
 	DirectionType m_Direction;
 	unsigned int m_SamplingFactor;
+
+	VectorInterpolatorPointer m_LinearInterpolator;
 private:
 	FunctionalBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented
