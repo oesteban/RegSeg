@@ -46,6 +46,7 @@
 #include <numeric>
 #include <vnl/vnl_random.h>
 #include "DisplacementFieldFileWriter.h"
+#include "DisplacementFieldComponentsFileWriter.h"
 
 #include <itkMeshFileWriter.h>
 #include <itkImageAlgorithm.h>
@@ -64,12 +65,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_FieldInterpolator = FieldInterpolatorType::New();
 	this->m_Derivative = FieldType::New();
-	this->m_EnergyResampler = DisplacementResamplerType::New();
 	this->m_EnergyUpdated = false;
 	this->m_RegionsUpdated = false;
 	this->m_NumberOfContours = 0;
 	this->m_SamplingFactor = 4;
 	this->m_Scale = 100.0;
+
+	this->m_LinearInterpolator = VectorInterpolatorType::New();
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -179,56 +181,52 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		PointValueType maxq = ( fabs(quart1)>fabs(quart2) )?fabs(quart1):fabs(quart2);
 
-		//if( maxq >= MAX_GRADIENT ) {
-		//	scaler*= (MAX_GRADIENT / maxq);
-		//}
-
-		scaler*= (1.0/totalArea);
 
 		// Scale and correct middle quartiles
-		for( size_t i = q1; i<q3; i++ ){
-			ni = zerov;
-			gradient = sample[i].grad * scaler;
-			if ( gradient > MIN_GRADIENT ) {
-				// project to normal, updating transform
-				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
-				ni*= gradient;
-			}
-			this->m_FieldInterpolator->SetOffGridValue(sample[i].gid, ni);
-			sample[i].grad = gradient;
-			gradSum+= gradient;
-		}
-
-
 		vnl_random rnd = vnl_random();
 		for( size_t i = 0; i<q1; i++ ){
-			ni = zerov;
 			gradient = sample[rnd.lrand32(q1,q2)].grad;
-			if ( gradient > MIN_GRADIENT ) {
-				// project to normal, updating transform
-				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
-				ni*= gradient;
-			}
-			this->m_FieldInterpolator->SetOffGridValue(sample[i].gid, ni);
 			sample[i].grad = gradient;
-			gradSum+= gradient;
 		}
 
 		for( size_t i = q3; i<sample.size(); i++ ){
-			ni = zerov;
 			gradient = sample[rnd.lrand32(q2,q3-1)].grad;
+			sample[i].grad = gradient;
+		}
+
+
+		scaler*= (1.0/totalArea);
+		//if( maxq >= MAX_GRADIENT ) {
+		//	scaler*= (MAX_GRADIENT / maxq);
+		//}
+		ShapeGradientsContainerPointer grads = this->m_Gradients[contid]->GetPointData();
+		for( size_t i = 0; i< sample.size(); i++) {
+			gradient = scaler * sample[i].grad;
+			sample[i].grad = gradient;
+			gradSum+= gradient;
+
+
 			if ( gradient > MIN_GRADIENT ) {
 				// project to normal, updating transform
 				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
 				ni*= gradient;
+			} else {
+				ni = zerov;
 			}
+
+			grads->SetElement( sample[i].cid, sample[i].grad );
 			this->m_FieldInterpolator->SetOffGridValue(sample[i].gid, ni);
-			sample[i].grad = gradient;
-			gradSum+= gradient;
 		}
 
 
 #ifndef NDEBUG
+		ContourWriterPointer wc = ContourWriterType::New();
+		std::stringstream ss;
+		ss << "gradient_" << contid << ".vtk";
+		wc->SetFileName( ss.str().c_str() );
+		wc->SetInput( this->m_Gradients[contid] );
+		wc->Update();
+
 		PointValueType minGradient = (*( sample.begin() )).grad;
 		PointValueType maxGradient = (*( sample.end()-1 )).grad;
 		PointValueType average = gradSum / sample.size();
@@ -273,21 +271,41 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	SampleType sample;
 	double gradSum = 0.0;
 
+
+	FieldPointer updateField = FieldType::New();
+	updateField->SetDirection( this->m_Derivative->GetDirection() );
+	updateField->SetOrigin   ( this->m_Derivative->GetOrigin() );
+	updateField->SetSpacing  ( this->m_Derivative->GetSpacing() );
+	updateField->SetRegions  ( this->m_Derivative->GetRequestedRegion().GetSize());
+	updateField->Allocate();
+	VectorType d;
+	this->m_FieldInterpolator->ComputeOnGridValues();
+	VectorType* dispBuffer = updateField->GetBufferPointer();
+	size_t nPix = updateField->GetLargestPossibleRegion().GetNumberOfPixels();
+	for( size_t gpid = 0; gpid < nPix; gpid++ ) {
+		d = this->m_FieldInterpolator->GetOnGridValue( gpid );
+		*(dispBuffer+gpid) = d;
+	}
+	this->m_LinearInterpolator->SetInputImage( updateField );
+
+
 	this->m_FieldInterpolator->Interpolate();
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
 		typename ContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
 		typename ContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
+		PointsContainerPointer curPoints = this->m_CurrentContours[contid]->GetPoints();
 
 		ContourPointType ci, ci_prime;
-		VectorType disp;
+		VectorType disp, disp2;
 		size_t pid;
 
 		// For all the points in the mesh
 		while ( p_it != p_end ) {
 			ci = p_it.Value();
 			pid = p_it.Index();
-			disp = this->m_FieldInterpolator->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
+			disp = this->m_LinearInterpolator->Evaluate( ci );
+			disp2 = this->m_FieldInterpolator->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
 			norm = disp.GetNorm();
 
 			sample.push_back( GradientSample( norm, pid, gpid ) );
@@ -300,7 +318,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					itkExceptionMacro( << "Contour is outside image regions after update.\n" <<
 						"\tMoving vertex [" << contid << "," << pid << "] from " << ci << " to " << ci_prime << " norm="  << norm << "mm.\n");
 				}
-				this->m_CurrentContours[contid]->SetPoint( pid, ci_prime );
+				curPoints->SetElement( pid, ci_prime );
 				changed++;
 			}
 			++p_it;
@@ -320,6 +338,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
         PointValueType average = gradSum / sample.size();
 		std::cout << "Disp["<< contid << "]: avg=" << average << ", max=" << maxGradient << ", min=" << minGradient << ", q1=" << quart1 << ", q2=" << quart2 << ", med=" << median << "." << std::endl;
 #endif
+
+		ShapeCopyPointer copyShape = ShapeCopyType::New();
+		copyShape->SetInput( this->m_CurrentContours[contid] );
+		copyShape->Update();
+		this->m_Gradients[contid] = copyShape->GetOutput();
 	}
 
 	this->m_RegionsUpdated = (changed==0);
@@ -544,6 +567,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		copy->SetInput( this->m_Priors[contid] );
 		copy->Update();
 		this->m_CurrentContours.push_back( copy->GetOutput() );
+
+		ShapeCopyPointer copyShape = ShapeCopyType::New();
+		copyShape->SetInput( this->m_Priors[contid] );
+		copyShape->Update();
+		this->m_Gradients.push_back( copyShape->GetOutput() );
 	}
 
 	// Cache image properties
