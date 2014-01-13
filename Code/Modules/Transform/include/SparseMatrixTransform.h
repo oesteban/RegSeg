@@ -132,6 +132,7 @@ public:
     void ComputeOnGridValues( void );
     void ComputeCoeffDerivatives( void );
     void ComputeJacobian( void );
+    void ComputeCoefficients();
 
 
 	// Setters & Getters -----------------------------------------
@@ -236,7 +237,6 @@ protected:
 	WeightsMatrix   m_Phi;
 	WeightsMatrix   m_S;
 	WeightsMatrix   m_SPrime[Dimension];
-	WeightsMatrix   m_InvertPhi;
 	size_t          m_N;
 	size_t          m_NumberOfParameters;
 
