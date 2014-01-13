@@ -51,6 +51,8 @@
 #include <itkImage.h>
 #include <itkImageFileWriter.h>
 
+#include <vnl/algo/vnl_sparse_lu.h>
+
 namespace rstk {
 
 template< class TScalarType, unsigned int NDimensions >
@@ -113,13 +115,6 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
 	this->m_S = WeightsMatrix(this->m_NumberOfParameters,this->m_NumberOfParameters);
 
-	typedef itk::Image< float, 2u > SImage;
-	SImage::Pointer im = SImage::New();
-	SImage::SizeType size; size.Fill( this->m_NumberOfParameters );
-	im->SetRegions( size );
-	im->Allocate();
-	im->FillBuffer( 0.0 );
-
 	for( row = 0; row < this->m_S.rows(); row++ ) {
 		s = this->m_OnGridPos[row];
 
@@ -138,22 +133,9 @@ SparseMatrixTransform<TScalarType,NDimensions>
 			if (wi > 0.0) {
 				//wi*= this->m_KernelNorm;
 				this->m_S.put(row, col, wi);
-				SImage::IndexType idx;
-				idx[0] = row;
-				idx[1] = col;
-				im->SetPixel( idx, wi );
 			}
 		}
 	}
-
-	typedef typename itk::ImageFileWriter< SImage > W;
-	W::Pointer w = W::New();
-	w->SetFileName("Smatrix.nii.gz");
-	w->SetInput( im );
-	w->Update();
-
-	//this->m_S.normalize_rows();
-	//this->m_System = new vnl_sparse_lu( this->m_S, vnl_sparse_lu::estimate_condition);
 }
 
 
@@ -205,7 +187,6 @@ void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputePhi() {
 	this->m_Phi = WeightsMatrix(this->m_N, this->m_NumberOfParameters);
-	this->m_InvertPhi = WeightsMatrix( this->m_NumberOfParameters, this->m_N );
 
 	ScalarType wi;
 	PointType ci, xk;
@@ -229,9 +210,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
 			if (wi > 0.0) {
 				assert(wi <= 1.0);
-
 				this->m_Phi.put(row, col, wi);
-				this->m_InvertPhi.put( col, row, wi );
 			}
 		}
 	}
@@ -248,14 +227,15 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
     for ( size_t i = 0; i < Dimension; i++ ) {
     	this->m_CoeffDerivative[i].fill(0.0);
-    	this->m_InvertPhi.mult(this->m_OffGridValue[i], this->m_CoeffDerivative[i] );
+    	this->m_Phi.pre_mult(this->m_OffGridValue[i], this->m_CoeffDerivative[i] );
     }
 }
+
 
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
-::Interpolate(void) {
+::Interpolate() {
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
 		this->ComputePhi();
@@ -280,6 +260,22 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		this->m_OnGridValue[i].fill(0.0);
 		// Interpolate
 		this->m_S.mult( this->m_Coeff[i], this->m_OnGridValue[i] );
+	}
+}
+
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::ComputeCoefficients() {
+	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
+		this->ComputeS();
+	}
+
+	vnl_sparse_lu* system = new vnl_sparse_lu( this->m_S, vnl_sparse_lu::estimate_condition);
+
+	for( size_t i = 0; i < Dimension; i++ ) {
+		this->m_Coeff[i].fill( 0.0 );
+		this->m_Coeff[i] = system->solve( this->m_OnGridValue[i] );
 	}
 }
 
@@ -398,11 +394,6 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
 		if( std::isnan( ci[dim] ) || std::isinf( ci[dim] )) {
 			ci[dim] = 0;
-		}
-
-		if( fabs(ci[dim]) > 20.0 ) {
-			itkWarningMacro( << "Setting a very long displacement...");
-			//ci[dim] = 0;
 		}
 	}
 

@@ -304,8 +304,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		while ( p_it != p_end ) {
 			ci = p_it.Value();
 			pid = p_it.Index();
-			disp = this->m_LinearInterpolator->Evaluate( ci );
-			disp2 = this->m_FieldInterpolator->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
+			disp2 = this->m_LinearInterpolator->Evaluate( ci );
+			disp = this->m_FieldInterpolator->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
 			norm = disp.GetNorm();
 
 			sample.push_back( GradientSample( norm, pid, gpid ) );
