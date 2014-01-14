@@ -69,12 +69,11 @@ public:
 	typedef itk::SmartPointer< const Self >   ConstPointer;
 
 	itkTypeMacro( SparseMatrixTransform, Transform );
-	itkNewMacro( Self );
+	//itkNewMacro( Self );
 
 	itkStaticConstMacro( Dimension, unsigned int, NDimensions );
 
 	typedef typename Superclass::ScalarType ScalarType;
-	typedef typename Superclass::ParametersType ParametersType;
 
 	typedef itk::Point< ScalarType, Dimension >      PointType;
 	typedef itk::Vector< ScalarType, Dimension >     VectorType;
@@ -83,16 +82,15 @@ public:
 
 	typedef vnl_sparse_matrix< ScalarType >          WeightsMatrix;
 	typedef vnl_vector< ScalarType >                 DimensionVector;
+	typedef itk::FixedArray< DimensionVector, NDimensions > ParametersType;
 
 	typedef std::vector< PointType >                 PointsList;
 
 	typedef itk::Matrix< ScalarType, Dimension, Dimension >        JacobianType;
 
-
 	typedef itk::DefaultStaticMeshTraits<TScalarType, NDimensions, NDimensions, TScalarType, TScalarType> PointSetTraitsType;
 	typedef itk::PointSet<PointType, NDimensions, PointSetTraitsType>                                     PointSetType;
 	typedef typename PointSetType::Pointer           PointSetPointer;
-
 
 
     /** Standard coordinate point type for this class. */
@@ -113,14 +111,8 @@ public:
 
     typedef itk::FixedArray< ScalarType, itkGetStaticConstMacro(Dimension) >    ArrayType;
 
-
     itkSetObjectMacro(KernelFunction, KernelFunctionType);
     itkGetConstReferenceObjectMacro(KernelFunction, KernelFunctionType);
-
-    itkSetMacro(Sigma, ArrayType);
-    itkGetConstReferenceMacro(Sigma, ArrayType);
-
-
 
     void SetN( size_t N );
     itkGetConstMacro(N, size_t );
@@ -142,9 +134,9 @@ public:
 
 	// Values off-grid (displacement vector of a node)
 	inline bool       SetOffGridValue( const size_t id, VectorType pi );
-	inline VectorType GetOffGridValue( const size_t id );
+	inline VectorType GetOffGridValue( const size_t id ) const;
 
-	// Values on-grid (diplacement vector of a grid point)
+	// Values on-grid (displacement vector of a grid point)
 	inline bool       SetOnGridValue ( const size_t id, VectorType pi );
 	inline VectorType GetOnGridValue ( const size_t id );
 
@@ -210,42 +202,70 @@ public:
                          "for " << this->GetNameOfClass() );                          \
     }
 
+    const WeightsMatrix * GetPhi() const { return this->m_Phi; }
 
-//    void SetRadialBasisFunction( RBFType* rbf ) {
-//    	this->m_RadialBasisFunction = rbf;
-//    }
+    typedef itk::Image< ScalarType, Dimension >                      CoefficientsImageType;
+    typedef typename CoefficientsImageType::Pointer                  CoeffImagePointer;
+    typedef itk::FixedArray< CoeffImagePointer, Dimension >          CoefficientImageArray;
 
+    void SetCoefficientImages( const CoefficientImageArray & images );
+    /** Get the array of coefficient images. */
+    const CoefficientImageArray GetCoefficientImages() const {
+      return this->m_CoefficientImages;
+    }
+
+    /** Typedefs for specifying the extent of the grid. */
+    typedef itk::ImageBase< Dimension >                   DomainBase;
+    typedef typename DomainBase::Pointer                  DomainPointer;
+    typedef itk::ImageRegion< Dimension >                 RegionType;
+    typedef typename RegionType::IndexType                IndexType;
+    typedef typename RegionType::SizeType                 SizeType;
+    typedef typename CoefficientsImageType::SpacingType   SpacingType;
+    typedef typename CoefficientsImageType::DirectionType DirectionType;
+    typedef typename CoefficientsImageType::PointType     OriginType;
+    typedef typename CoefficientsImageType::SpacingType   PhysicalDimensionsType;
+    typedef itk::ContinuousIndex< ScalarType, Dimension>  ContinuousIndexType;
+
+    itkSetMacro( ControlPointsSize, SizeType );
+    itkGetConstMacro( ControlPointsSize, SizeType );
+
+    void SetPhysicalDomainInformation( const DomainBase* image );
 protected:
 	SparseMatrixTransform();
 	~SparseMatrixTransform(){};
 
 
-	void ComputePhi( void );
-	void ComputeS( );
-	void ComputeSPrime( );
+	void ComputePhi();
+	void ComputeS();
+	void ComputeSPrime();
 
-	PointsList m_OffGridPos;                     // m_N points in the mesh
-	PointsList m_OnGridPos;    // Serialized k points in a grid
+	virtual ScalarType Evaluate( VectorType r ) = 0;
 
-	DimensionVector m_OffGridValue[Dimension];   // m_N points in the mesh
-	DimensionVector m_OnGridValue[Dimension];      // Serialized k values in a grid
-	DimensionVector m_Coeff[Dimension];          // Serialized k coefficients in the grid
-	DimensionVector m_CoeffDerivative[Dimension];  // Serialized k values in a grid
+	/* Field domain definitions */
+	SizeType               m_ControlPointsSize;
+	SpacingType            m_ControlPointsSpacing;
+	OriginType             m_ControlPointsOrigin;
+	DirectionType          m_ControlPointsDirection;
+	DirectionType          m_ControlPointsDirectionInverse;
+
+	size_t                 m_NumberOfSamples;     // This is N mesh points
+	size_t                 m_NumberOfParameters;  // This is K nodes
+
+
+	PointsList m_OffGridPos;           // m_N points in the mesh
+
+	ParametersType m_OffGridValue;     // m_N points in the mesh
+	ParametersType m_OnGridValue;      // Serialized k values in a grid
+	ParametersType m_Coeff;            // Serialized k coefficients in the grid
+	ParametersType m_CoeffDerivative;  // Serialized k values in a grid
+	CoefficientImageArray m_CoefficientImages;
 
 	DimensionVector m_Jacobian[Dimension][Dimension]; // Serialized k dimxdim matrices in a grid
 
 	WeightsMatrix   m_Phi;
 	WeightsMatrix   m_S;
 	WeightsMatrix   m_SPrime[Dimension];
-	size_t          m_N;
-	size_t          m_NumberOfParameters;
 
-	//vnl_sparse_lu* m_System;
-
-	typename KernelFunctionType::Pointer  m_KernelFunction;
-	typename KernelFunctionType::Pointer  m_KernelDerivativeFunction;
-	ScalarType m_KernelNorm;
-	ArrayType m_Sigma;
 
 	bool            m_GridDataChanged;
 	bool            m_ControlDataChanged;

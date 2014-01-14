@@ -63,15 +63,15 @@ WarpQEMeshFilter< TInputMesh, TOutputMesh, TVectorField >
 ::SetField(const FieldType *field ) {
 	// const cast is needed because the pipeline is not const-correct.
 	FieldType *input = const_cast< FieldType* >( field );
-	this->ProcessObject::SetNthInput( 1, input );
+	this->itk::ProcessObject::SetNthInput( 1, input );
 }
 
 
 template< class TInputMesh, class TOutputMesh, class TVectorField >
 const typename WarpQEMeshFilter< TInputMesh, TOutputMesh, TVectorField >::FieldType *
 WarpQEMeshFilter< TInputMesh, TOutputMesh, TVectorField >
-::GetField() {
-	return itkDynamicCastInDebugMode< const FieldType* >( this->ProcessObject::GetInput(1) );
+::GetField() const {
+	return itkDynamicCastInDebugMode< const FieldType* >( this->itk::ProcessObject::GetInput(1) );
 }
 
 template< class TInputMesh, class TOutputMesh, class TVectorField >
@@ -116,16 +116,17 @@ WarpQEMeshFilter< TInputMesh, TOutputMesh, TVectorField >
 
 	typedef typename InputMeshType::PointType InputPointType;
 	typedef typename OutputMeshType::PointType OutputPointType;
-	typedef typename FieldType::IndexType IndexType;
-	IndexType index;
 
-	const unsigned int Dimension = field->GetImageDimension();
+	typename InputPointsContainer::ConstIterator inputPoint = inPoints->Begin();
+	typename OutputPointsContainer::Iterator outputPoint = outPoints->Begin();
 
-	const InputPointType p;
-	VectorType disp;
+	size_t id = 0;
+	FieldVectorType disp;
+
 	while (inputPoint != inPoints->End()) {
-		p = inputPoint.Value();
-		disp = field->GetOffGridValue( inputPoint.Index() );
+		const InputPointType& p = inputPoint.Value();
+		id = inputPoint.Index();
+		disp = field->GetOffGridValue( id );
 		outputPoint.Value() = p + disp;
 
 		++inputPoint;
@@ -144,7 +145,7 @@ WarpQEMeshFilter< TInputMesh, TOutputMesh, TVectorField >
 	typedef typename InputCellsContainer::ConstIterator InputCellsContainerConstIterator;
 	typedef typename TInputMesh::EdgeCellType InputEdgeCellType;
 
-	InputCellsContainerConstPointer inEdgeCells = in->GetEdgeCells();
+	InputCellsContainerConstPointer inEdgeCells = inputMesh->GetEdgeCells();
 
 	if (inEdgeCells) {
 		InputCellsContainerConstIterator ecIt = inEdgeCells->Begin();
@@ -154,7 +155,7 @@ WarpQEMeshFilter< TInputMesh, TOutputMesh, TVectorField >
 			InputEdgeCellType *pe =
 					dynamic_cast<InputEdgeCellType *>(ecIt.Value());
 			if (pe) {
-				out->AddEdgeWithSecurePointList(pe->GetQEGeom()->GetOrigin(),
+				outputMesh->AddEdgeWithSecurePointList(pe->GetQEGeom()->GetOrigin(),
 						pe->GetQEGeom()->GetDestination());
 			}
 			++ecIt;
