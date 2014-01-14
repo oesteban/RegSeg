@@ -62,6 +62,7 @@
 
 #include "CopyQuadEdgeMeshFilter.h"
 #include "CopyQEMeshStructureFilter.h"
+#include "WarpQEMeshFilter.h"
 
 #include "SparseMatrixTransform.h"
 #include "DownsampleAveragingFilter.h"
@@ -203,11 +204,17 @@ public:
 	typedef typename ResampleROIFilterType::Pointer          ResampleROIFilterPointer;
 	typedef std::vector< ResampleROIFilterPointer >          ResampleROIFilterList;
 
-	typedef typename itk::WarpMeshFilter
-			< ContourType,
-			  ContourType,
-			  FieldType>                                     WarpContourType;
-	typedef typename WarpContourType::Pointer                WarpContourPointer;
+
+	//typedef typename itk::WarpMeshFilter
+	//		< ContourType,
+	//		  ContourType,
+	//		  FieldType>                                     WarpContourType;
+
+	typedef WarpQEMeshFilter< ContourType, ContourType,
+			                         FieldInterpolatorType > WarpContourFilterType;
+	typedef typename WarpContourFilterType::Pointer          WarpContourPointer;
+	typedef std::vector< WarpContourPointer >                WarpContourFilterList;
+
 
 	typedef typename std::vector< ROIPixelType >             ContourOuterRegions;
 	typedef typename std::vector< ContourOuterRegions >      ContourOuterRegionsList;
@@ -335,6 +342,8 @@ protected:
 	unsigned int m_SamplingFactor;
 
 	VectorInterpolatorPointer m_LinearInterpolator;
+
+	WarpContourFilterList m_WarpContourFilter;
 private:
 	FunctionalBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented

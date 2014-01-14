@@ -58,23 +58,69 @@ namespace rstk {
 template< class TScalarType, unsigned int NDimensions >
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SparseMatrixTransform(): Superclass(NDimensions) {
-	this->m_N = 0;
+	this->m_NumberOfSamples = 0;
 	this->m_NumberOfParameters = 0;
-	this->m_Sigma.Fill(2.0);
+
+	this->m_ControlPointsSize.Fill(0);
+	this->m_ControlPointsOrigin.Fill(0.0);
+	this->m_ControlPointsSpacing.Fill(1.0);
+	this->m_ControlPointsDirection.SetIdentity();
+	this->m_ControlPointsDirectionInverse.SetIdentity();
+
+
 	this->m_GridDataChanged = false;
 	this->m_ControlDataChanged = false;
-	this->m_KernelFunction  = dynamic_cast< KernelFunctionType * >(
-	    itk::BSplineKernelFunction<3u, ScalarType>::New().GetPointer() );
-	this->m_KernelDerivativeFunction  = dynamic_cast< KernelFunctionType * >(
-		    itk::BSplineDerivativeKernelFunction<3u, ScalarType>::New().GetPointer() );
-	this->m_KernelNorm = pow( 1.0/this->m_KernelFunction->Evaluate( 0.0 ), (double) Dimension );
 }
+
+
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::SetPhysicalDomainInformation( const DomainBase* image ) {
+
+	ContinuousIndexType o_idx;
+	o_idx.Fill( -0.5 );
+
+	ContinuousIndexType e_idx;
+	for ( size_t dim=0; dim< Dimension; dim++ ) {
+		e_idx[dim] = image->GetLargestPossibleRegion().GetSize()[dim] - 0.5;
+	}
+
+	PointType first;
+	PointType last;
+
+	image->TransformContinuousIndexToPhysicalPoint( o_idx, first );
+	image->TransformContinuousIndexToPhysicalPoint( e_idx, last );
+
+	PointType orig,step;
+	typename ParametersType::SpacingType spacing;
+	for( size_t dim = 0; dim < Dimension; dim++ ) {
+		step[dim] = (last[dim]-first[dim])/(1.0*this->m_ControlPointsSize[dim]);
+		this->m_ControlPointsSpacing[dim] = fabs(step[dim]);
+		this->m_ControlPointsOrigin[dim] = first[dim] + 0.5 * step[dim];
+	}
+
+	this->m_ControlPointsDirection = image->GetDirection();
+	this->SetNumberOfParameters( image->GetLargestPossibleRegion().GetNumberOfPixels() );
+
+	for( size_t dim = 0; dim < Dimension; dim++ ) {
+		this->m_CoefficientImages[dim] = CoefficientsImageType::New();
+		this->m_CoefficientImages[dim]->SetRegions( this->m_ControlPointsSize );
+		this->m_CoefficientImages[dim]->SetOrigin( this->m_ControlPointsOrigin );
+		this->m_CoefficientImages[dim]->SetSpacing( this->m_ControlPointsSpacing );
+		this->m_CoefficientImages[dim]->SetDirection( this->m_ControlPointsDirection );
+		this->m_CoefficientImages[dim]->Allocate();
+		this->m_CoefficientImages[dim]->FillBuffer( 0.0 );
+	}
+
+}
+
 
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetN( size_t N ) {
-	this->m_N = N;
+	this->m_NumberOfSamples = N;
 	this->m_OffGridPos.resize(N);
 	for( size_t dim = 0; dim<Dimension; dim++ ) {
 		this->m_OffGridValue[dim] = DimensionVector(N);
@@ -87,7 +133,6 @@ void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetNumberOfParameters( size_t K ) {
 	this->m_NumberOfParameters = K;
-	this->m_OnGridPos.resize(K);
 	for( size_t dim = 0; dim<Dimension; dim++ ) {
 		this->m_OnGridValue[dim] = DimensionVector(K);
 		this->m_CoeffDerivative[dim] = DimensionVector(K);
@@ -107,89 +152,11 @@ SparseMatrixTransform<TScalarType,NDimensions>
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
-::ComputeS( ) {
-	PointType s, x;
-	ScalarType wi;
-	size_t row, col;
-	VectorType r;
-
-	this->m_S = WeightsMatrix(this->m_NumberOfParameters,this->m_NumberOfParameters);
-
-	for( row = 0; row < this->m_S.rows(); row++ ) {
-		s = this->m_OnGridPos[row];
-
-		for ( col=0; col < this->m_S.cols(); col++) {
-			wi=1.0;
-			x = this->m_OnGridPos[col];
-			r = s - x;
-			for (size_t i = 0; i<Dimension; i++) {
-				wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
-				if( wi < vnl_math::eps ) {
-					wi = 0.0;
-					break;
-				}
-			}
-
-			if (wi > 0.0) {
-				//wi*= this->m_KernelNorm;
-				this->m_S.put(row, col, wi);
-			}
-		}
-	}
-}
-
-
-template< class TScalarType, unsigned int NDimensions >
-void
-SparseMatrixTransform<TScalarType,NDimensions>
-::ComputeSPrime( ) {
-	PointType s, x;
-	ScalarType wi;
-	size_t row, col;
-	VectorType r;
-
-	for ( size_t dim = 0; dim < Dimension; dim++ ) {
-		this->m_SPrime[dim] = WeightsMatrix(this->m_NumberOfParameters,this->m_NumberOfParameters);
-	}
-
-	for( row = 0; row < this->m_NumberOfParameters; row++ ) {
-		s = this->m_OnGridPos[row];
-
-		for ( col=0; col < this->m_NumberOfParameters; col++) {
-			x = this->m_OnGridPos[col];
-			r = s - x;
-			for ( size_t dim = 0; dim < Dimension; dim++ ) {
-				wi=1.0;
-				for (size_t i = 0; i<Dimension; i++) {
-					if( dim == i ) {
-						wi*= this->m_KernelDerivativeFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
-					} else {
-						wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
-					}
-
-					if( fabs(wi) < vnl_math::eps ) {
-						wi = 0.0;
-						break;
-					}
-				}
-
-				if ( fabs(wi) > 0.0) {
-					//this->m_SPrime[dim].put(row, col, this->m_KernelNorm * wi);
-					this->m_SPrime[dim].put(row, col, wi);
-				}
-			}
-		}
-	}
-}
-
-template< class TScalarType, unsigned int NDimensions >
-void
-SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputePhi() {
 	this->m_Phi = WeightsMatrix(this->m_N, this->m_NumberOfParameters);
 
 	ScalarType wi;
-	PointType ci, xk;
+	PointType ci, uk;
 	size_t row, col;
 	VectorType r;
 
@@ -197,20 +164,39 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	for( row = 0; row < this->m_Phi.rows(); row++ ) {
 		ci = this->m_OffGridPos[row];
 		for ( col=0; col < this->m_Phi.cols(); col++) {
-			xk = this->m_OnGridPos[col];
-			wi=1.0;
+			this->m_CoefficientImages[0]->TransformIndexToPhysicalPoint( this->m_CoefficientImages[0]->ComputeIndex( row ), uk );
 			r = xk - ci;
-			for (size_t i = 0; i<Dimension; i++) {
-				wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
-				if( wi < vnl_math::eps ) {
-					wi = 0.0;
-					break;
-				}
-			}
+			wi = this->Evaluate( r );
 
 			if (wi > 0.0) {
-				assert(wi <= 1.0);
 				this->m_Phi.put(row, col, wi);
+			}
+		}
+	}
+}
+
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::ComputeS() {
+	PointType uk, uj;
+
+	ScalarType wi;
+	size_t row, col;
+	VectorType r;
+
+	this->m_S = WeightsMatrix(this->m_NumberOfParameters,this->m_NumberOfParameters);
+
+	for( row = 0; row < this->m_S.rows(); row++ ) {
+		this->m_CoefficientImages[0]->TransformIndexToPhysicalPoint( this->m_CoefficientImages[0]->ComputeIndex( row ), uk );
+
+		for ( col=0; col < this->m_S.cols(); col++) {
+			this->m_CoefficientImages[0]->TransformIndexToPhysicalPoint( this->m_CoefficientImages[0]->ComputeIndex( row ), uj );
+			r = uk - uj;
+			wi = this->Evaluate( r );
+
+			if (wi > 0.0) {
+				this->m_S.put(row, col, wi);
 			}
 		}
 	}
@@ -294,46 +280,11 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	}
 }
 
-//template< class TScalarType, unsigned int NDimensions >
-//void
-//SparseMatrixTransform<TScalarType,NDimensions>
-//::Interpolate(void) {
-//	// Check m_Phi and initializations
-//	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
-//		this->ComputePhi();
-//	}
-//
-//	// TODO Check if NodesData changed
-//
-//	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
-//		this->ComputeS();
-//	}
-//
-//
-//	for( size_t i = 0; i < Dimension; i++ ) {
-//		this->m_Coeff[i] = DimensionVector(this->m_NumberOfParameters);
-//		this->m_OffGridValue[i].fill(0.0);
-//		// Compute coefficients
-//		this->m_Coeff[i] = this->m_System->solve( this->m_OnGridValue[i] );
-//		// Interpolate
-//		this->m_Phi.mult( this->m_Coeff[i], this->m_OffGridValue[i] );
-//	}
-//
-//}
-
-
 template< class TScalarType, unsigned int NDimensions >
 inline void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetOffGridPos(size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
 	this->m_OffGridPos[id] = pi;
-}
-
-template< class TScalarType, unsigned int NDimensions >
-inline void
-SparseMatrixTransform<TScalarType,NDimensions>
-::SetOnGridPos(size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
-	this->m_OnGridPos[id] = pi;
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -387,14 +338,14 @@ void SparseMatrixTransform<TScalarType,NDimensions>::SetParameters(
 template< class TScalarType, unsigned int NDimensions >
 inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType
 SparseMatrixTransform<TScalarType,NDimensions>
-::GetOffGridValue( const size_t id ) {
+::GetOffGridValue( const size_t id ) const {
 	VectorType ci;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		ci[dim] = this->m_OffGridValue[dim][id];
 
-		if( std::isnan( ci[dim] ) || std::isinf( ci[dim] )) {
-			ci[dim] = 0;
-		}
+		//if( std::isnan( ci[dim] ) || std::isinf( ci[dim] )) {
+		//	ci[dim] = 0;
+		//}
 	}
 
 	return ci;
@@ -512,6 +463,50 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	}
 	return changed;
 }
+
+
+//template< class TScalarType, unsigned int NDimensions >
+//void
+//SparseMatrixTransform<TScalarType,NDimensions>
+//::ComputeSPrime( ) {
+//	PointType s, x;
+//	ScalarType wi;
+//	size_t row, col;
+//	VectorType r;
+//
+//	for ( size_t dim = 0; dim < Dimension; dim++ ) {
+//		this->m_SPrime[dim] = WeightsMatrix(this->m_NumberOfParameters,this->m_NumberOfParameters);
+//	}
+//
+//	for( row = 0; row < this->m_NumberOfParameters; row++ ) {
+//		s = this->m_OnGridPos[row];
+//
+//		for ( col=0; col < this->m_NumberOfParameters; col++) {
+//			x = this->m_OnGridPos[col];
+//			r = s - x;
+//			for ( size_t dim = 0; dim < Dimension; dim++ ) {
+//				wi=1.0;
+//				for (size_t i = 0; i<Dimension; i++) {
+//					if( dim == i ) {
+//						wi*= this->m_KernelDerivativeFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
+//					} else {
+//						wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
+//					}
+//
+//					if( fabs(wi) < vnl_math::eps ) {
+//						wi = 0.0;
+//						break;
+//					}
+//				}
+//
+//				if ( fabs(wi) > 0.0) {
+//					//this->m_SPrime[dim].put(row, col, this->m_KernelNorm * wi);
+//					this->m_SPrime[dim].put(row, col, wi);
+//				}
+//			}
+//		}
+//	}
+//}
 
 }
 

@@ -105,6 +105,13 @@ size_t
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContourType* prior ) {
 	this->m_Priors.push_back( prior );
+
+
+	WarpContourPointer wrp = WarpContourFilterType::New();
+	wrp->SetInput( prior );
+	this->m_WarpContourFilter.push_back( wrp );
+
+
 	this->m_NumberOfContours++;
     this->m_ROIs.resize( this->m_NumberOfContours+1 );
     this->m_CurrentROIs.resize( this->m_NumberOfContours+1 );
