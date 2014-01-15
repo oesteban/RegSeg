@@ -566,7 +566,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
 		this->m_NumberOfPoints+= this->m_Priors[contid]->GetNumberOfPoints();
 	}
-	this->m_FieldInterpolator->SetN(this->m_NumberOfPoints);
+	this->m_FieldInterpolator->SetNumberOfSamples(this->m_NumberOfPoints);
 
 	// Copy contours
 	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
@@ -748,14 +748,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		for ( size_t gid = 0; gid < this->m_NumberOfNodes; gid++ ) {
 			this->m_Derivative->TransformIndexToPhysicalPoint( this->m_Derivative->ComputeIndex( gid ), uk );
-			this->m_FieldInterpolator->SetOnGridPos( gid, uk );
 		}
 	} else {
 		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
 	}
 
-	typename FieldType::SpacingType sigma = this->m_Derivative->GetSpacing();
-	this->m_FieldInterpolator->SetSigma( sigma );
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >

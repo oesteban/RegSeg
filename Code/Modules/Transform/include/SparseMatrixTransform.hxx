@@ -77,6 +77,15 @@ template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetPhysicalDomainInformation( const DomainBase* image ) {
+	size_t N = 1.0;
+	for( size_t i=0; i<Dimension; i++) {
+		N*=this->m_ControlPointsSize[i];
+	}
+	this->SetNumberOfParameters( N );
+
+	if( N == 0 ){
+		itkExceptionMacro( << "ControlPointsSize must be set and valid to set parameters this way.")
+	}
 
 	ContinuousIndexType o_idx;
 	o_idx.Fill( -0.5 );
@@ -93,7 +102,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	image->TransformContinuousIndexToPhysicalPoint( e_idx, last );
 
 	PointType orig,step;
-	typename ParametersType::SpacingType spacing;
+	typename CoefficientsImageType::SpacingType spacing;
 	for( size_t dim = 0; dim < Dimension; dim++ ) {
 		step[dim] = (last[dim]-first[dim])/(1.0*this->m_ControlPointsSize[dim]);
 		this->m_ControlPointsSpacing[dim] = fabs(step[dim]);
@@ -101,29 +110,50 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	}
 
 	this->m_ControlPointsDirection = image->GetDirection();
-	this->SetNumberOfParameters( image->GetLargestPossibleRegion().GetNumberOfPixels() );
+	this->InitializeCoefficientImages();
+}
 
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::CopyGridInformation( const DomainBase* image ) {
+	this->m_ControlPointsSize      = image->GetLargestPossibleRegion().GetSize();
+	this->m_ControlPointsOrigin    = image->GetOrigin();
+	this->m_ControlPointsSpacing   = image->GetSpacing();
+	this->m_ControlPointsDirection = image->GetDirection();
+	this->SetNumberOfParameters( image->GetLargestPossibleRegion().GetNumberOfPixels() );
+	this->InitializeCoefficientImages();
+}
+
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::InitializeCoefficientImages() {
 	for( size_t dim = 0; dim < Dimension; dim++ ) {
 		this->m_CoefficientImages[dim] = CoefficientsImageType::New();
-		this->m_CoefficientImages[dim]->SetRegions( this->m_ControlPointsSize );
-		this->m_CoefficientImages[dim]->SetOrigin( this->m_ControlPointsOrigin );
-		this->m_CoefficientImages[dim]->SetSpacing( this->m_ControlPointsSpacing );
+		this->m_CoefficientImages[dim]->SetRegions(   this->m_ControlPointsSize );
+		this->m_CoefficientImages[dim]->SetOrigin(    this->m_ControlPointsOrigin );
+		this->m_CoefficientImages[dim]->SetSpacing(   this->m_ControlPointsSpacing );
 		this->m_CoefficientImages[dim]->SetDirection( this->m_ControlPointsDirection );
 		this->m_CoefficientImages[dim]->Allocate();
 		this->m_CoefficientImages[dim]->FillBuffer( 0.0 );
 	}
 
+	if ( this->m_NumberOfParameters != this->m_CoefficientImages[0]->GetLargestPossibleRegion().GetNumberOfPixels() ) {
+		itkExceptionMacro( << "inconsistent number of parameters.")
+	}
 }
+
 
 
 template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
-::SetN( size_t N ) {
-	this->m_NumberOfSamples = N;
-	this->m_OffGridPos.resize(N);
+::SetNumberOfSamples( size_t n ) {
+	this->m_NumberOfSamples = n;
+	this->m_OffGridPos.resize(n);
 	for( size_t dim = 0; dim<Dimension; dim++ ) {
-		this->m_OffGridValue[dim] = DimensionVector(N);
+		this->m_OffGridValue[dim] = DimensionVector(n);
 		this->m_OffGridValue[dim].fill( 0.0 );
 	}
 }
@@ -153,7 +183,7 @@ template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputePhi() {
-	this->m_Phi = WeightsMatrix(this->m_N, this->m_NumberOfParameters);
+	this->m_Phi = WeightsMatrix(this->m_NumberOfSamples, this->m_NumberOfParameters);
 
 	ScalarType wi;
 	PointType ci, uk;
@@ -165,7 +195,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		ci = this->m_OffGridPos[row];
 		for ( col=0; col < this->m_Phi.cols(); col++) {
 			this->m_CoefficientImages[0]->TransformIndexToPhysicalPoint( this->m_CoefficientImages[0]->ComputeIndex( row ), uk );
-			r = xk - ci;
+			r = uk - ci;
 			wi = this->Evaluate( r );
 
 			if (wi > 0.0) {
@@ -191,7 +221,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		this->m_CoefficientImages[0]->TransformIndexToPhysicalPoint( this->m_CoefficientImages[0]->ComputeIndex( row ), uk );
 
 		for ( col=0; col < this->m_S.cols(); col++) {
-			this->m_CoefficientImages[0]->TransformIndexToPhysicalPoint( this->m_CoefficientImages[0]->ComputeIndex( row ), uj );
+			this->m_CoefficientImages[0]->TransformIndexToPhysicalPoint( this->m_CoefficientImages[0]->ComputeIndex( col ), uj );
 			r = uk - uj;
 			wi = this->Evaluate( r );
 
@@ -262,23 +292,28 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	for( size_t i = 0; i < Dimension; i++ ) {
 		this->m_Coeff[i].fill( 0.0 );
 		this->m_Coeff[i] = system->solve( this->m_OnGridValue[i] );
-	}
-}
 
-template< class TScalarType, unsigned int NDimensions >
-void
-SparseMatrixTransform<TScalarType,NDimensions>
-::ComputeJacobian( ) {
-	if( this->m_SPrime[0].rows() == 0 || this->m_SPrime[0].cols() == 0 ) {
-		this->ComputeSPrime();
-	}
-
-	for( size_t i = 0; i < Dimension; i++ ) {
-		for( size_t j = 0; j < Dimension; j++ ) {
-			this->m_SPrime[i].mult( this->m_Coeff[j], this->m_Jacobian[i][j] );
+		ScalarType* cbuffer = this->m_CoefficientImages[i]->GetBufferPointer();
+		for( size_t k = 0; k<this->m_NumberOfParameters; k++) {
+			*( cbuffer + k ) = this->m_Coeff[i][k];
 		}
 	}
 }
+
+//template< class TScalarType, unsigned int NDimensions >
+//void
+//SparseMatrixTransform<TScalarType,NDimensions>
+//::ComputeJacobian( ) {
+//	if( this->m_SPrime[0].rows() == 0 || this->m_SPrime[0].cols() == 0 ) {
+//		this->ComputeSPrime();
+//	}
+//
+//	for( size_t i = 0; i < Dimension; i++ ) {
+//		for( size_t j = 0; j < Dimension; j++ ) {
+//			this->m_SPrime[i].mult( this->m_Coeff[j], this->m_Jacobian[i][j] );
+//		}
+//	}
+//}
 
 template< class TScalarType, unsigned int NDimensions >
 inline void
@@ -288,46 +323,47 @@ SparseMatrixTransform<TScalarType,NDimensions>
 }
 
 template< class TScalarType, unsigned int NDimensions >
-void SparseMatrixTransform<TScalarType,NDimensions>::SetParameters(
-		const ParametersType & parameters) {
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::SetParameters( const ParametersType & parameters ) {
 	// Save parameters. Needed for proper operation of TransformUpdateParameters.
-	if (&parameters != &(this->m_Parameters)) {
-		this->m_Parameters = parameters;
-	}
-
-	if( this->m_OffGridPos.size() == 0 ) {
-		itkExceptionMacro( << "Control Points should be set first." );
-	}
-
-	if( this->m_N != this->m_OffGridPos.size() ) {
-		if (! this->m_N == 0 ){
-			itkExceptionMacro( << "N and number of control points should match." );
-		} else {
-			this->m_N = this->m_OffGridPos.size();
-		}
-	}
-
-	if ( this->m_N != (parameters.Size() * Dimension) ) {
-		itkExceptionMacro( << "N and number of parameters should match." );
-	}
-
-	for ( size_t dim = 0; dim<Dimension; dim++) {
-		if ( this->m_OffGridValue[dim].size() == 0 ) {
-			this->m_OffGridValue[dim]( this->m_N );
-		}
-		else if ( this->m_OffGridValue[dim].size()!=this->m_N ) {
-			itkExceptionMacro( << "N and number of slots for parameter data should match." );
-		}
-	}
-
-	size_t didx = 0;
-
-	while( didx < this->m_N ) {
-		for ( size_t dim = 0; dim< Dimension; dim++ ) {
-			this->m_OffGridValue[dim][didx] = parameters[didx+dim];
-		}
-		didx++;
-	}
+	//if (&parameters != &(this->m_Parameters)) {
+	//	this->m_Parameters = parameters;
+	//}
+    //
+	//if( this->m_OffGridPos.size() == 0 ) {
+	//	itkExceptionMacro( << "Control Points should be set first." );
+	//}
+    //
+	//if( this->m_NumberOfSamples != this->m_OffGridPos.size() ) {
+	//	if (! this->m_NumberOfSamples == 0 ){
+	//		itkExceptionMacro( << "N and number of control points should match." );
+	//	} else {
+	//		this->m_NumberOfSamples = this->m_OffGridPos.size();
+	//	}
+	//}
+    //
+	//if ( this->m_NumberOfSamples != (parameters.Size() * Dimension) ) {
+	//	itkExceptionMacro( << "N and number of parameters should match." );
+	//}
+    //
+	//for ( size_t dim = 0; dim<Dimension; dim++) {
+	//	if ( this->m_OffGridValue[dim].size() == 0 ) {
+	//		this->m_OffGridValue[dim]( this->m_NumberOfSamples );
+	//	}
+	//	else if ( this->m_OffGridValue[dim].size()!=this->m_NumberOfSamples ) {
+	//		itkExceptionMacro( << "N and number of slots for parameter data should match." );
+	//	}
+	//}
+    //
+	//size_t didx = 0;
+    //
+	//while( didx < this->m_NumberOfSamples ) {
+	//	for ( size_t dim = 0; dim< Dimension; dim++ ) {
+	//		this->m_OffGridValue[dim][didx] = parameters[didx+dim];
+	//	}
+	//	didx++;
+	//}
 
 	// Modified is always called since we just have a pointer to the
 	// parameters and cannot know if the parameters have changed.
@@ -363,21 +399,21 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	return gi;
 }
 
-template< class TScalarType, unsigned int NDimensions >
-inline typename SparseMatrixTransform<TScalarType,NDimensions>::JacobianType
-SparseMatrixTransform<TScalarType,NDimensions>
-::GetJacobian( const size_t id ) {
-	JacobianType gi;
-	gi.Fill( 0.0 );
-
-	for( size_t i = 0; i < Dimension; i++){
-		for( size_t j = 0; j < Dimension; j++){
-			gi(i,j) = this->m_Jacobian[j][i][id]; // Attention to transposition
-			if( std::isnan( gi(i,j) )) gi(i,j) = 0;
-		}
-	}
-	return gi;
-}
+//template< class TScalarType, unsigned int NDimensions >
+//inline typename SparseMatrixTransform<TScalarType,NDimensions>::JacobianType
+//SparseMatrixTransform<TScalarType,NDimensions>
+//::GetJacobian( const size_t id ) {
+//	JacobianType gi;
+//	gi.Fill( 0.0 );
+//
+//	for( size_t i = 0; i < Dimension; i++){
+//		for( size_t j = 0; j < Dimension; j++){
+//			gi(i,j) = this->m_Jacobian[j][i][id]; // Attention to transposition
+//			if( std::isnan( gi(i,j) )) gi(i,j) = 0;
+//		}
+//	}
+//	return gi;
+//}
 
 //template< class TScalarType, unsigned int NDimensions >
 //inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType

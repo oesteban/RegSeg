@@ -252,41 +252,41 @@ template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 	if (!this->m_RegularizationEnergyUpdated ){
-		this->m_RegularizationEnergy=0;
-		const VectorType* fBuffer = this->m_LastField->GetBufferPointer();
-		size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
-
-		VectorType u;
-
-		for ( size_t pix = 0; pix<nPix; pix++) {
-			u = *(fBuffer+pix);
-			for ( size_t i = 0; i<Dimension; i++) {
-				u[i] = u[i]*u[i];
-			}
-			this->m_RegularizationEnergy+= this->m_Alpha * u;
-		}
-
-		double normalizer = 1.0;
-
-		for( size_t i = 0; i<Dimension; i++ ) {
-			normalizer*= this->m_LastField->GetSpacing()[i];
-		}
-
-		this->m_Functional->GetFieldInterpolator()->ComputeJacobian();
-
-		typedef typename FunctionalType::FieldInterpolatorType::JacobianType JacobianType;
-		JacobianType j;
-
-		for ( size_t pix = 0; pix<nPix; pix++) {
-			j = this->m_Functional->GetFieldInterpolator()->GetJacobian(pix);
-			for ( size_t i = 0; i<Dimension; i++) {
-				u[i] = j[i][i]*j[i][i];
-			}
-			this->m_RegularizationEnergy+= this->m_Beta * u;
-		}
-
-		this->m_RegularizationEnergy = normalizer * this->m_RegularizationEnergy;
-		this->m_RegularizationEnergyUpdated = true;
+		//this->m_RegularizationEnergy=0;
+		//const VectorType* fBuffer = this->m_LastField->GetBufferPointer();
+		//size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
+        //
+		//VectorType u;
+        //
+		//for ( size_t pix = 0; pix<nPix; pix++) {
+		//	u = *(fBuffer+pix);
+		//	for ( size_t i = 0; i<Dimension; i++) {
+		//		u[i] = u[i]*u[i];
+		//	}
+		//	this->m_RegularizationEnergy+= this->m_Alpha * u;
+		//}
+        //
+		//double normalizer = 1.0;
+        //
+		//for( size_t i = 0; i<Dimension; i++ ) {
+		//	normalizer*= this->m_LastField->GetSpacing()[i];
+		//}
+        //
+		//this->m_Functional->GetFieldInterpolator()->ComputeJacobian();
+        //
+		//typedef typename FunctionalType::FieldInterpolatorType::JacobianType JacobianType;
+		//JacobianType j;
+        //
+		//for ( size_t pix = 0; pix<nPix; pix++) {
+		//	j = this->m_Functional->GetFieldInterpolator()->GetJacobian(pix);
+		//	for ( size_t i = 0; i<Dimension; i++) {
+		//		u[i] = j[i][i]*j[i][i];
+		//	}
+		//	this->m_RegularizationEnergy+= this->m_Beta * u;
+		//}
+        //
+		//this->m_RegularizationEnergy = normalizer * this->m_RegularizationEnergy;
+		//this->m_RegularizationEnergyUpdated = true;
 	}
 	return this->m_RegularizationEnergy;
 }

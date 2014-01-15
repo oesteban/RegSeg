@@ -64,7 +64,7 @@
 #include "CopyQEMeshStructureFilter.h"
 #include "WarpQEMeshFilter.h"
 
-#include "SparseMatrixTransform.h"
+#include "BSplineSparseMatrixTransform.h"
 #include "DownsampleAveragingFilter.h"
 #include "itkVTKPolyDataWriter.h"
 #include "itkQuadEdgeMeshScalarDataVTKPolyDataWriter.h"
@@ -196,7 +196,7 @@ public:
 			       < ContourSpatialObject, ROIType >         SpatialObjectToImageFilterType;
 	typedef typename SpatialObjectToImageFilterType::Pointer SpatialObjectToImageFilterPointer;
 
-	typedef SparseMatrixTransform<TCoordRepType, Dimension > FieldInterpolatorType;
+	typedef BSplineSparseMatrixTransform<TCoordRepType, Dimension, 3 > FieldInterpolatorType;
 	typedef typename FieldInterpolatorType::Pointer          FieldInterpolatorPointer;
 
 	typedef DownsampleAveragingFilter

@@ -11,7 +11,7 @@
 #include <itkVector.h>
 #include <itkImage.h>
 #include <itkImageFileReader.h>
-#include "SparseMatrixTransform.h"
+#include "BSplineSparseMatrixTransform.h"
 #include "DisplacementFieldFileWriter.h"
 #include "DisplacementFieldComponentsFileWriter.h"
 
@@ -32,9 +32,13 @@ typedef itk::Point<ScalarType, 3> PointType;
 typedef itk::Vector<ScalarType, 3 > VectorType;
 typedef itk::Image< VectorType, 3 > FieldType;
 typedef itk::ImageFileReader< FieldType > FieldReader;
-typedef SparseMatrixTransform<ScalarType, 3> Transform;
+typedef BSplineSparseMatrixTransform<ScalarType, 3, 3> Transform;
 typedef Transform::Pointer                   TPointer;
 typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> Writer;
+
+typedef typename Transform::CoefficientsImageType CoefficientsType;
+typedef itk::ImageFileWriter< CoefficientsType >  CoefficientsWriterType;
+typedef CoefficientsWriterType::Pointer           CoefficientsWriterPointer;
 
 namespace rstk {
 
@@ -47,36 +51,38 @@ public:
 
 		Writer::Pointer w = Writer::New();
 		w->SetInput( r->GetOutput() );
-		w->SetFileName( "orig_field.nii.gz");
+		w->SetFileName( "orig_field");
 		w->Update();
 
 		m_field = r->GetOutput();
 		m_K = m_field->GetLargestPossibleRegion().GetNumberOfPixels();
 
-		FieldType::SpacingType s = m_field->GetSpacing();
-
-		for (size_t i = 0; i < 3; i++ ) m_Sigma[i] = s[i];
-
 		m_transform = Transform::New();
-		m_transform->SetNumberOfParameters( m_K );
-		m_transform->SetSigma( m_Sigma );
-
+		m_transform->CopyGridInformation( m_field );
 
 		const VectorType* buffer = m_field->GetBufferPointer();
 		PointType p;
 		for( size_t i = 0; i<m_K; i++ ) {
-			m_field->TransformIndexToPhysicalPoint( m_field->ComputeIndex(i) ,p );
-			m_transform->SetOnGridPos(i,p);
 			m_transform->SetOnGridValue(i,*( buffer + i));
 		}
 		m_transform->ComputeCoefficients();
+
+		for (size_t i = 0; i<3; i++ ) {
+			std::stringstream ss;
+			ss << "coefficients_" << i << ".nii.gz";
+			CoefficientsWriterPointer ww = CoefficientsWriterType::New();
+			ww->SetInput( m_transform->GetCoefficientImages()[0] );
+			ww->SetFileName( ss.str().c_str() );
+			ww->Update();
+		}
 	}
+
+
 
 	TPointer m_transform;
 	FieldType::Pointer m_field;
 	size_t m_N;
 	size_t m_K;
-	double m_Sigma[3];
 
 };
 
@@ -116,7 +122,7 @@ TEST_F( TransformTests, SparseMatrixForwardIDWTransformTest ) {
 	densefield->FillBuffer( zero );
 
 	m_N = densefield->GetLargestPossibleRegion().GetNumberOfPixels();
-	m_transform->SetN(m_N);
+	m_transform->SetNumberOfSamples(m_N);
 
 	PointType p;
 	for( size_t i = 0; i<m_N; i++ ) {
@@ -134,7 +140,7 @@ TEST_F( TransformTests, SparseMatrixForwardIDWTransformTest ) {
 
 	Writer::Pointer w = Writer::New();
 	w->SetInput( densefield );
-	w->SetFileName( "interpolated_field.nii.gz");
+	w->SetFileName( "interpolated_field");
 	w->Update();
 
 
@@ -175,7 +181,7 @@ TEST_F( TransformTests, SparseMatrixForwardIDWDumbTest ) {
 	densefield->FillBuffer( zero );
 
 	m_N = densefield->GetLargestPossibleRegion().GetNumberOfPixels();
-	m_transform->SetN(m_N);
+	m_transform->SetNumberOfSamples(m_N);
 
 	PointType p;
 	for( size_t i = 0; i<m_N; i++ ) {
@@ -210,13 +216,11 @@ TEST_F( TransformTests, SparseMatrixForwardIDWDumbTest ) {
 	w->Update();
 
 	TPointer tfm = Transform::New();
-	tfm->SetNumberOfParameters( m_K );
-	tfm->SetN( 200 );
-	tfm->SetSigma( m_Sigma );
+	tfm->SetNumberOfSamples( 200 );
+	tfm->CopyGridInformation( m_transform->GetCoefficientImages()[0] );
 
 	for( size_t i = 0; i<m_K; i++ ) {
 		m_field->TransformIndexToPhysicalPoint( m_field->ComputeIndex(i) ,p );
-		tfm->SetOnGridPos(i,p);
 		tfm->SetCoefficient( i, m_transform->GetCoefficient(i) );
 	}
 

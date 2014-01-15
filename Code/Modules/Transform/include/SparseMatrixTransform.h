@@ -69,20 +69,24 @@ public:
 	typedef itk::SmartPointer< const Self >   ConstPointer;
 
 	itkTypeMacro( SparseMatrixTransform, Transform );
+	itkCloneMacro(Self);
+
 	//itkNewMacro( Self );
 
 	itkStaticConstMacro( Dimension, unsigned int, NDimensions );
 
 	typedef typename Superclass::ScalarType ScalarType;
+	typedef typename Superclass::ParametersType ParametersType;
 
 	typedef itk::Point< ScalarType, Dimension >      PointType;
 	typedef itk::Vector< ScalarType, Dimension >     VectorType;
 
     typedef itk::KernelFunctionBase<ScalarType>      KernelFunctionType;
+    typedef typename KernelFunctionType::Pointer     KernelFunctionPointer;
 
 	typedef vnl_sparse_matrix< ScalarType >          WeightsMatrix;
 	typedef vnl_vector< ScalarType >                 DimensionVector;
-	typedef itk::FixedArray< DimensionVector, NDimensions > ParametersType;
+	typedef itk::FixedArray< DimensionVector, NDimensions > DimensionParametersContainer;
 
 	typedef std::vector< PointType >                 PointsList;
 
@@ -114,8 +118,8 @@ public:
     itkSetObjectMacro(KernelFunction, KernelFunctionType);
     itkGetConstReferenceObjectMacro(KernelFunction, KernelFunctionType);
 
-    void SetN( size_t N );
-    itkGetConstMacro(N, size_t );
+    void SetNumberOfSamples( size_t n);
+    itkGetConstMacro( NumberOfSamples, size_t );
 
     void SetNumberOfParameters( size_t K );
     itkGetConstMacro(NumberOfParameters, size_t );
@@ -123,14 +127,14 @@ public:
     void Interpolate( void );
     void ComputeOnGridValues( void );
     void ComputeCoeffDerivatives( void );
-    void ComputeJacobian( void );
+    //void ComputeJacobian( void );
     void ComputeCoefficients();
 
 
 	// Setters & Getters -----------------------------------------
 	// Physical positions
 	inline void SetOffGridPos  ( size_t id, const PointType pi );
-	inline void SetOnGridPos   ( size_t id, const PointType pi );
+	//inline void SetOnGridPos   ( size_t id, const PointType pi );
 
 	// Values off-grid (displacement vector of a node)
 	inline bool       SetOffGridValue( const size_t id, VectorType pi );
@@ -151,57 +155,7 @@ public:
 	//inline VectorType GetOffGridWeight ( const size_t id );
 	//inline VectorType GetOnGridWeight  ( const size_t id );
 
-	inline JacobianType GetJacobian    ( const size_t id );
-
-	// Virtual members inherited from Transform
-	virtual void SetParameters(const ParametersType & parameters);
-
-	virtual void SetFixedParameters(const ParametersType &)                       \
-		    {                                                                                             \
-		      itkExceptionMacro(                                                                          \
-		        << "TransformVector(const InputVectorType &) is not implemented for KernelTransform");    \
-		    }
-
-	virtual OutputPointType TransformPoint(const InputPointType  & point) const
-	{
-	  return point;
-	}
-
-	/** These vector transforms are not implemented for this transform */
-    using Superclass::TransformVector;
-    virtual OutputVectorType TransformVector(const InputVectorType &) const                       \
-    {                                                                                             \
-      itkExceptionMacro(                                                                          \
-        << "TransformVector(const InputVectorType &) is not implemented for KernelTransform");    \
-    }
-
-    virtual OutputVnlVectorType TransformVector(const InputVnlVectorType &) const                 \
-    {                                                                                             \
-      itkExceptionMacro(                                                                          \
-        << "TransformVector(const InputVnlVectorType &) is not implemented for KernelTransform"); \
-    }
-
-    /**  Method to transform a CovariantVector. */
-    using Superclass::TransformCovariantVector;
-    virtual OutputCovariantVectorType TransformCovariantVector(const InputCovariantVectorType &) const           \
-    {                                                                                                            \
-      itkExceptionMacro(                                                                                         \
-        << "TransformCovariantVector(const InputCovariantVectorType &) is not implemented for KernelTransform"); \
-    }
-    /** Compute the Jacobian Matrix of the transformation at one point */
-    virtual void ComputeJacobianWithRespectToParameters( const InputPointType  & p, JacobianType & jacobian) const           \
-    {                                                                                 \
-      itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented "  \
-                         "for " << this->GetNameOfClass() );                          \
-    }
-
-    virtual void ComputeJacobianWithRespectToPosition(const InputPointType &,
-                                                      JacobianType &) const           \
-    {                                                                                 \
-      itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented "  \
-                         "for " << this->GetNameOfClass() );                          \
-    }
-
+	//inline JacobianType GetJacobian    ( const size_t id );
     const WeightsMatrix * GetPhi() const { return this->m_Phi; }
 
     typedef itk::Image< ScalarType, Dimension >                      CoefficientsImageType;
@@ -219,7 +173,7 @@ public:
     typedef typename DomainBase::Pointer                  DomainPointer;
     typedef itk::ImageRegion< Dimension >                 RegionType;
     typedef typename RegionType::IndexType                IndexType;
-    typedef typename RegionType::SizeType                 SizeType;
+    typedef typename DomainBase::SizeType                 SizeType;
     typedef typename CoefficientsImageType::SpacingType   SpacingType;
     typedef typename CoefficientsImageType::DirectionType DirectionType;
     typedef typename CoefficientsImageType::PointType     OriginType;
@@ -230,6 +184,42 @@ public:
     itkGetConstMacro( ControlPointsSize, SizeType );
 
     void SetPhysicalDomainInformation( const DomainBase* image );
+    void CopyGridInformation( const DomainBase* image );
+
+	void SetParameters(const ParametersType & parameters);
+
+	void SetFixedParameters(const ParametersType &){
+		itkExceptionMacro(<< "TransformVector(const InputVectorType &) is not implemented for KernelTransform");
+	}
+
+	OutputPointType TransformPoint(const InputPointType  & point) const	{
+	  return point;
+	}
+
+	/** These vector transforms are not implemented for this transform */
+    using Superclass::TransformVector;
+    OutputVectorType TransformVector(const InputVectorType &) const {                                                                                             \
+      itkExceptionMacro(<< "TransformVector(const InputVectorType &) is not implemented for KernelTransform");
+    }
+
+    OutputVnlVectorType TransformVector(const InputVnlVectorType &) const {                                                                                             \
+      itkExceptionMacro(<< "TransformVector(const InputVnlVectorType &) is not implemented for KernelTransform");
+    }
+
+    /**  Method to transform a CovariantVector. */
+    using Superclass::TransformCovariantVector;
+    OutputCovariantVectorType TransformCovariantVector(const InputCovariantVectorType &) const {                                                                                                            \
+      itkExceptionMacro( << "TransformCovariantVector(const InputCovariantVectorType &) is not implemented for KernelTransform");
+    }
+    /** Compute the Jacobian Matrix of the transformation at one point */
+    void ComputeJacobianWithRespectToParameters( const InputPointType  & p, JacobianType & jacobian) const {                                                                                 \
+      itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented for " << this->GetNameOfClass() );
+    }
+
+    void ComputeJacobianWithRespectToPosition(const InputPointType &, JacobianType &) const {                                                                                 \
+      itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented for " << this->GetNameOfClass() );
+    }
+
 protected:
 	SparseMatrixTransform();
 	~SparseMatrixTransform(){};
@@ -238,8 +228,9 @@ protected:
 	void ComputePhi();
 	void ComputeS();
 	void ComputeSPrime();
+	void InitializeCoefficientImages();
 
-	virtual ScalarType Evaluate( VectorType r ) = 0;
+	virtual ScalarType Evaluate( const VectorType r ) const = 0;
 
 	/* Field domain definitions */
 	SizeType               m_ControlPointsSize;
@@ -254,10 +245,10 @@ protected:
 
 	PointsList m_OffGridPos;           // m_N points in the mesh
 
-	ParametersType m_OffGridValue;     // m_N points in the mesh
-	ParametersType m_OnGridValue;      // Serialized k values in a grid
-	ParametersType m_Coeff;            // Serialized k coefficients in the grid
-	ParametersType m_CoeffDerivative;  // Serialized k values in a grid
+	DimensionParametersContainer m_OffGridValue;     // m_N points in the mesh
+	DimensionParametersContainer m_OnGridValue;      // Serialized k values in a grid
+	DimensionParametersContainer m_Coeff;            // Serialized k coefficients in the grid
+	DimensionParametersContainer m_CoeffDerivative;  // Serialized k values in a grid
 	CoefficientImageArray m_CoefficientImages;
 
 	DimensionVector m_Jacobian[Dimension][Dimension]; // Serialized k dimxdim matrices in a grid
@@ -269,6 +260,8 @@ protected:
 
 	bool            m_GridDataChanged;
 	bool            m_ControlDataChanged;
+
+	KernelFunctionPointer m_KernelFunction;
 private:
 	SparseMatrixTransform( const Self & );
 	void operator=( const Self & );
