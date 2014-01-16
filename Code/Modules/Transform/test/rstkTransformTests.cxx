@@ -10,6 +10,9 @@
 #include <itkPoint.h>
 #include <itkVector.h>
 #include <itkImage.h>
+#include <itkVectorImage.h>
+#include <itkComposeImageFilter.h>
+#include <itkImageAlgorithm.h>
 #include <itkImageFileReader.h>
 #include "BSplineSparseMatrixTransform.h"
 #include "DisplacementFieldFileWriter.h"
@@ -30,8 +33,10 @@ int main(int argc, char **argv) {
 typedef double ScalarType;
 typedef itk::Point<ScalarType, 3> PointType;
 typedef itk::Vector<ScalarType, 3 > VectorType;
+typedef itk::Image<ScalarType, 3> ComponentType;
 typedef itk::Image< VectorType, 3 > FieldType;
-typedef itk::ImageFileReader< FieldType > FieldReader;
+typedef itk::ImageFileReader< ComponentType > FieldReader;
+typedef itk::ComposeImageFilter< ComponentType, FieldType > ComposeFilter;
 typedef BSplineSparseMatrixTransform<ScalarType, 3, 3> Transform;
 typedef Transform::Pointer                   TPointer;
 typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> Writer;
@@ -45,49 +50,92 @@ namespace rstk {
 class TransformTests : public ::testing::Test {
 public:
 	virtual void SetUp() {
-		FieldReader::Pointer r = FieldReader::New();
-		r->SetFileName( std::string( TEST_DATA_DIR ) + "field.nii.gz" );
-		r->Update();
 
-		Writer::Pointer w = Writer::New();
-		w->SetInput( r->GetOutput() );
-		w->SetFileName( "orig_field");
-		w->Update();
+		ComposeFilter::Pointer c = ComposeFilter::New();
 
-		m_field = r->GetOutput();
-		m_K = m_field->GetLargestPossibleRegion().GetNumberOfPixels();
+		for (size_t i = 0; i<3; i++) {
+			std::stringstream ss;
+			ss << TEST_DATA_DIR << "field_" << i << "_lr.nii.gz";
+			FieldReader::Pointer r = FieldReader::New();
+			r->SetFileName( ss.str().c_str() );
+			r->Update();
+			c->SetInput( i, r->GetOutput() );
+		}
+		c->Update();
+
+
+
+		m_K = c->GetOutput()->GetLargestPossibleRegion().GetNumberOfPixels();
+		m_orig_field = c->GetOutput();
+
+		m_field = FieldType::New();
+		m_field->SetRegions( m_orig_field->GetLargestPossibleRegion() );
+		m_field->SetSpacing( m_orig_field->GetSpacing() );
+		m_field->SetOrigin( m_orig_field->GetOrigin() );
+		m_field->SetDirection( m_orig_field->GetDirection() );
+		m_field->Allocate();
+
+		itk::ImageAlgorithm::Copy< FieldType,FieldType >(
+				m_orig_field, m_field,
+				m_orig_field->GetLargestPossibleRegion(),
+				m_field->GetLargestPossibleRegion()
+		);
+
 
 		m_transform = Transform::New();
 		m_transform->CopyGridInformation( m_field );
-
-		const VectorType* buffer = m_field->GetBufferPointer();
-		PointType p;
-		for( size_t i = 0; i<m_K; i++ ) {
-			m_transform->SetOnGridValue(i,*( buffer + i));
-		}
-		m_transform->ComputeCoefficients();
-
-		for (size_t i = 0; i<3; i++ ) {
-			std::stringstream ss;
-			ss << "coefficients_" << i << ".nii.gz";
-			CoefficientsWriterPointer ww = CoefficientsWriterType::New();
-			ww->SetInput( m_transform->GetCoefficientImages()[0] );
-			ww->SetFileName( ss.str().c_str() );
-			ww->Update();
-		}
+		m_transform->SetField( m_field );
 	}
 
-
-
 	TPointer m_transform;
-	FieldType::Pointer m_field;
+	FieldType::Pointer m_field, m_orig_field;
 	size_t m_N;
 	size_t m_K;
 
 };
 
+TEST_F( TransformTests, SparseMatrixComputeCoeffsTest ) {
+	Writer::Pointer w = Writer::New();
+	w->SetInput( m_field );
+	w->SetFileName( "orig_field");
+	w->Update();
 
-TEST_F( TransformTests, SparseMatrixForwardIDWTransformTest ) {
+	m_transform->ComputeCoefficients();
+	for (size_t i = 0; i<3; i++ ) {
+		std::stringstream ss;
+		ss << "coefficients_" << i << ".nii.gz";
+		CoefficientsWriterPointer ww = CoefficientsWriterType::New();
+		ww->SetInput( m_transform->GetCoefficientsImages()[i] );
+		ww->SetFileName( ss.str().c_str() );
+		ww->Update();
+	}
+
+	m_transform->UpdateField();
+
+	w->SetInput( m_field );
+	w->SetFileName( "updated_field");
+	w->Update();
+
+	const VectorType* rbuf = m_orig_field->GetBufferPointer();
+	const VectorType* tbuf = m_field->GetBufferPointer();
+
+	VectorType v1, v2;
+	double error;
+	for( size_t i = 0; i< this->m_K; i++ ) {
+		v1 = *( rbuf + i );
+		v2 = *( tbuf + i );
+
+		error+= ( v2 - v1 ).GetNorm();
+		EXPECT_NEAR( v2.GetNorm(), v1.GetNorm(), 1.0e-3 );
+	}
+	error = error * (1.0/this->m_K);
+
+	ASSERT_TRUE( error < 1.0e-3 );
+}
+
+
+TEST_F( TransformTests, SparseMatrixInterpolate ) {
+	m_transform->ComputeCoefficients();
 
 	VectorType zero;
 	zero.Fill(0.0);
@@ -101,12 +149,6 @@ TEST_F( TransformTests, SparseMatrixForwardIDWTransformTest ) {
 	}
 	m_field->TransformIndexToPhysicalPoint( lastIdx, refEnd );
 
-
-	FieldType::Pointer densefield = FieldType::New();
-	densefield->SetOrigin(    refOrigin );
-	densefield->SetDirection( m_field->GetDirection() );
-
-
 	FieldType::SizeType size;
 	FieldType::SpacingType spacing;
 
@@ -115,7 +157,9 @@ TEST_F( TransformTests, SparseMatrixForwardIDWTransformTest ) {
 		spacing[d] = (refEnd[d] - refOrigin[d])/ ((double) size[d] );
 	}
 
-
+	FieldType::Pointer densefield = FieldType::New();
+	densefield->SetOrigin(    refOrigin );
+	densefield->SetDirection( m_field->GetDirection() );
 	densefield->SetRegions( size );
 	densefield->SetSpacing( spacing );
 	densefield->Allocate();
@@ -204,26 +248,15 @@ TEST_F( TransformTests, SparseMatrixForwardIDWDumbTest ) {
 	w->Update();
 
 
-	m_transform->ComputeOnGridValues();
-
-	for( size_t i = 0; i<m_K; i++ ){
-		v = m_transform->GetOnGridValue(i);
-		m_field->SetPixel( m_field->ComputeIndex(i), v);
-	}
-
+	m_transform->UpdateField();
 	w->SetInput( m_field );
 	w->SetFileName( "dumb_test_low" );
 	w->Update();
 
 	TPointer tfm = Transform::New();
 	tfm->SetNumberOfSamples( 200 );
-	tfm->CopyGridInformation( m_transform->GetCoefficientImages()[0] );
-
-	for( size_t i = 0; i<m_K; i++ ) {
-		m_field->TransformIndexToPhysicalPoint( m_field->ComputeIndex(i) ,p );
-		tfm->SetCoefficient( i, m_transform->GetCoefficient(i) );
-	}
-
+	tfm->CopyGridInformation( m_transform->GetCoefficientsImages()[0] );
+	tfm->SetCoefficientsImages( m_transform->GetCoefficientsImages() );
 
 	int rindex = 0;
 	std::vector< int > subsample;
@@ -249,33 +282,5 @@ TEST_F( TransformTests, SparseMatrixForwardIDWDumbTest ) {
 
 	ASSERT_TRUE( isCorrect );
 }
-
-//TEST_F( TransformTests, SparseMatrixBackwardIDWTransformTest ) {
-//	VectorType v[3];
-//	bool is_equal = true;
-//
-//	m_transform->ComputeNodes();
-//	m_transform->ComputePoints();
-//
-//	VectorType v2;
-//	for( size_t i = 0; i<m_K; i++ ){
-//		v2 = m_transform->GetCoefficient(i);
-//		if (v2.GetNorm() > 0.0 ) {
-//			m_field->SetPixel( m_field->ComputeIndex(i), v2);
-//		}
-//	}
-//
-//	Writer::Pointer w = Writer::New();
-//	w->SetInput( m_field );
-//	w->SetFileName( "coefficients_field.nii.gz");
-//	w->Update();
-//
-//	for( size_t i = 0; i<m_N; i++ ){
-//		v[i] = m_transform->GetPointData(i);
-//		std::cout << v[i] << " vs. " << this->m_vectors[i] << std::endl;
-//	}
-//
-//	ASSERT_TRUE( true );
-//}
 
 }

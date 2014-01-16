@@ -249,13 +249,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 	// Interpolate sparse velocity field to targetDeformation
-	this->m_FieldInterpolator->ComputeCoeffDerivatives();
+	//this->m_FieldInterpolator->ComputeCoeffDerivatives();
 
 	VectorType* gmBuffer = this->m_Derivative->GetBufferPointer();
 	VectorType v;
 
 	for( size_t gpid = 0; gpid<this->m_NumberOfNodes; gpid++ ) {
-		v = this->m_FieldInterpolator->GetCoeffDerivative(gpid);
+		//v = this->m_FieldInterpolator->GetCoeffDerivative(gpid);
 		if ( v.GetNorm() > 1.0e-4 ) {
 			*( gmBuffer + gpid ) = v; // * (1.0/this->m_NumberOfPoints);
 		}
@@ -278,24 +278,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	SampleType sample;
 	double gradSum = 0.0;
 
+	this->m_FieldInterpolator->UpdateField();
+	FieldConstPointer updateField = this->m_FieldInterpolator->GetField();
 
-	FieldPointer updateField = FieldType::New();
-	updateField->SetDirection( this->m_Derivative->GetDirection() );
-	updateField->SetOrigin   ( this->m_Derivative->GetOrigin() );
-	updateField->SetSpacing  ( this->m_Derivative->GetSpacing() );
-	updateField->SetRegions  ( this->m_Derivative->GetRequestedRegion().GetSize());
-	updateField->Allocate();
-	VectorType d;
-	this->m_FieldInterpolator->ComputeOnGridValues();
-	VectorType* dispBuffer = updateField->GetBufferPointer();
-	size_t nPix = updateField->GetLargestPossibleRegion().GetNumberOfPixels();
-	for( size_t gpid = 0; gpid < nPix; gpid++ ) {
-		d = this->m_FieldInterpolator->GetOnGridValue( gpid );
-		*(dispBuffer+gpid) = d;
-	}
 	this->m_LinearInterpolator->SetInputImage( updateField );
-
-
 	this->m_FieldInterpolator->Interpolate();
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
@@ -741,17 +727,19 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::InitializeInterpolatorGrid() {
-	if( this->m_Derivative.IsNotNull() ) {
-		PointType uk;
-		this->m_NumberOfNodes = this->m_Derivative->GetLargestPossibleRegion().GetNumberOfPixels();
-		this->m_FieldInterpolator->SetNumberOfParameters( this->m_NumberOfNodes );
+	itkWarningMacro( << "Implementation broken.");
 
-		for ( size_t gid = 0; gid < this->m_NumberOfNodes; gid++ ) {
-			this->m_Derivative->TransformIndexToPhysicalPoint( this->m_Derivative->ComputeIndex( gid ), uk );
-		}
-	} else {
-		itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
-	}
+	//if( this->m_Derivative.IsNotNull() ) {
+	//	PointType uk;
+	//	this->m_NumberOfNodes = this->m_Derivative->GetLargestPossibleRegion().GetNumberOfPixels();
+	//	this->m_FieldInterpolator->SetNumberOfParameters( this->m_NumberOfNodes );
+    //
+	//	for ( size_t gid = 0; gid < this->m_NumberOfNodes; gid++ ) {
+	//		this->m_Derivative->TransformIndexToPhysicalPoint( this->m_Derivative->ComputeIndex( gid ), uk );
+	//	}
+	//} else {
+	//	itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
+	//}
 
 }
 

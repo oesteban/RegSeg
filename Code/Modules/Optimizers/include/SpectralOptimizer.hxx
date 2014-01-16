@@ -458,29 +458,18 @@ SpectralOptimizer<TFunctional>::UpdateField() {
 	p->Update();
 #endif
 
-	const VectorType* nodesBuffer = this->m_NextParameters->GetBufferPointer();
-	size_t nPix = this->m_NextParameters->GetLargestPossibleRegion().GetNumberOfPixels();
 	FieldInterpolatorPointer fintp = this->m_Functional->GetFieldInterpolator();
-	VectorType v;
-	for( size_t gpid = 0; gpid < nPix; gpid++ ) {
-		v = *(nodesBuffer+gpid);
-		update = fintp->SetCoefficient( gpid, v ) || update;
-	}
+	fintp->SetCoefficientsVectorImage( this->m_NextParameters );
 
 	if (update) {
-		double totalDisp = 0.0;
-		VectorType d;
-		fintp->ComputeOnGridValues();
-		VectorType* dispBuffer = this->m_CurrentDisplacementField->GetBufferPointer();
-		for( size_t gpid = 0; gpid < nPix; gpid++ ) {
-			d = fintp->GetOnGridValue( gpid );
-			*(dispBuffer+gpid) = d;
+		fintp->UpdateField();
+		typedef typename FieldInterpolatorType::FieldType FieldType;
+		typename FieldType::ConstPointer f = fintp->GetField();
 
-			totalDisp+= d.GetNorm();
-		}
-#ifndef NDEBUG
-		std::cout << "[" << this->m_CurrentIteration << "] " << (totalDisp/nPix) << std::endl;
-#endif
+		itk::ImageAlgorithm::Copy<FieldType, FieldType>(f, this->m_CurrentDisplacementField,
+			f->GetLargestPossibleRegion(),
+			this->m_CurrentDisplacementField->GetLargestPossibleRegion()
+	    );
 	}
 }
 
