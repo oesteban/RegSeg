@@ -97,18 +97,8 @@ protected:
     BSplineSparseMatrixTransform();
     ~BSplineSparseMatrixTransform() {}
 
-    ScalarType Evaluate( const VectorType r ) const {
-    	ScalarType wi=1.0;
-
-    	for (size_t i = 0; i<Dimension; i++) {
-    			wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / this->m_ControlPointsSpacing[i] );
-
-    		if( fabs(wi) < vnl_math::eps ) {
-    			wi = 0.0;
-    			break;
-    		}
-    	}
-    	return wi;
+    inline size_t GetSupport() const {
+    	return SplineOrder;
     }
 
 private:

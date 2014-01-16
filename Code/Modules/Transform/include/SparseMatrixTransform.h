@@ -121,12 +121,11 @@ public:
     void SetNumberOfSamples( size_t n);
     itkGetConstMacro( NumberOfSamples, size_t );
 
-    void SetNumberOfParameters( size_t K );
     itkGetConstMacro(NumberOfParameters, size_t );
 
-    void Interpolate( void );
-    void ComputeOnGridValues( void );
-    void ComputeCoeffDerivatives( void );
+    void Interpolate();
+    void UpdateField();
+    //void ComputeCoeffDerivatives( void );
     //void ComputeJacobian( void );
     void ComputeCoefficients();
 
@@ -134,22 +133,20 @@ public:
 	// Setters & Getters -----------------------------------------
 	// Physical positions
 	inline void SetOffGridPos  ( size_t id, const PointType pi );
-	//inline void SetOnGridPos   ( size_t id, const PointType pi );
 
 	// Values off-grid (displacement vector of a node)
 	inline bool       SetOffGridValue( const size_t id, VectorType pi );
 	inline VectorType GetOffGridValue( const size_t id ) const;
 
 	// Values on-grid (displacement vector of a grid point)
-	inline bool       SetOnGridValue ( const size_t id, VectorType pi );
-	inline VectorType GetOnGridValue ( const size_t id );
+	//inline bool       SetOnGridValue ( const size_t id, VectorType pi );
+	//inline VectorType GetOnGridValue ( const size_t id );
 
 	// Coefficients of the interpolating kernels
-	inline bool       SetCoefficient ( const size_t id, VectorType pi );
 	inline VectorType GetCoefficient ( const size_t id );
 
 	// Derivative of coefficients
-	inline VectorType GetCoeffDerivative ( const size_t id );
+	//inline VectorType GetCoeffDerivative ( const size_t id );
 
 	// Sparse matrix of kernel weights
 	//inline VectorType GetOffGridWeight ( const size_t id );
@@ -160,12 +157,13 @@ public:
 
     typedef itk::Image< ScalarType, Dimension >                      CoefficientsImageType;
     typedef typename CoefficientsImageType::Pointer                  CoeffImagePointer;
-    typedef itk::FixedArray< CoeffImagePointer, Dimension >          CoefficientImageArray;
+    typedef typename CoefficientsImageType::ConstPointer             CoeffImageConstPointer;
+    typedef itk::FixedArray< CoeffImagePointer, Dimension >          CoefficientsImageArray;
 
-    void SetCoefficientImages( const CoefficientImageArray & images );
+
     /** Get the array of coefficient images. */
-    const CoefficientImageArray GetCoefficientImages() const {
-      return this->m_CoefficientImages;
+    const CoefficientsImageArray GetCoefficientsImages() const {
+      return this->m_CoefficientsImages;
     }
 
     /** Typedefs for specifying the extent of the grid. */
@@ -180,8 +178,19 @@ public:
     typedef typename CoefficientsImageType::SpacingType   PhysicalDimensionsType;
     typedef itk::ContinuousIndex< ScalarType, Dimension>  ContinuousIndexType;
 
+    typedef itk::Image< VectorType, Dimension >           FieldType;
+    typedef typename FieldType::Pointer                   FieldPointer;
+    typedef typename FieldType::ConstPointer              FieldConstPointer;
+
     itkSetMacro( ControlPointsSize, SizeType );
     itkGetConstMacro( ControlPointsSize, SizeType );
+
+    itkSetObjectMacro( Field, FieldType );
+    itkGetConstObjectMacro( Field, FieldType );
+
+    void SetCoefficientsImages( const CoefficientsImageArray & images );
+    void SetCoefficientsImage( size_t dim, const CoefficientsImageType* c );
+    void SetCoefficientsVectorImage( const FieldType* f );
 
     void SetPhysicalDomainInformation( const DomainBase* image );
     void CopyGridInformation( const DomainBase* image );
@@ -228,9 +237,13 @@ protected:
 	void ComputePhi();
 	void ComputeS();
 	void ComputeSPrime();
-	void InitializeCoefficientImages();
+	void InitializeCoefficientsImages();
+	DimensionVector Vectorize( const CoefficientsImageType* image );
+	DimensionParametersContainer VectorizeField( const FieldType* image );
 
-	virtual ScalarType Evaluate( const VectorType r ) const = 0;
+
+	inline ScalarType Evaluate( const VectorType r ) const;
+	virtual size_t GetSupport() const = 0;
 
 	/* Field domain definitions */
 	SizeType               m_ControlPointsSize;
@@ -242,26 +255,26 @@ protected:
 	size_t                 m_NumberOfSamples;     // This is N mesh points
 	size_t                 m_NumberOfParameters;  // This is K nodes
 
-
 	PointsList m_OffGridPos;           // m_N points in the mesh
+	PointsList m_OnGridPos;
 
 	DimensionParametersContainer m_OffGridValue;     // m_N points in the mesh
-	DimensionParametersContainer m_OnGridValue;      // Serialized k values in a grid
-	DimensionParametersContainer m_Coeff;            // Serialized k coefficients in the grid
-	DimensionParametersContainer m_CoeffDerivative;  // Serialized k values in a grid
-	CoefficientImageArray m_CoefficientImages;
+	CoefficientsImageArray m_CoefficientsImages;
 
-	DimensionVector m_Jacobian[Dimension][Dimension]; // Serialized k dimxdim matrices in a grid
+
+	//DimensionParametersContainer m_CoeffDerivative;  // Serialized k values in a grid
+	//DimensionVector m_Jacobian[Dimension][Dimension]; // Serialized k dimxdim matrices in a grid
 
 	WeightsMatrix   m_Phi;
 	WeightsMatrix   m_S;
-	WeightsMatrix   m_SPrime[Dimension];
+	//WeightsMatrix   m_SPrime[Dimension];
 
 
 	bool            m_GridDataChanged;
 	bool            m_ControlDataChanged;
 
 	KernelFunctionPointer m_KernelFunction;
+	FieldPointer          m_Field;
 private:
 	SparseMatrixTransform( const Self & );
 	void operator=( const Self & );
