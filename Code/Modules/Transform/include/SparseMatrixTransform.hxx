@@ -71,6 +71,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
 	this->m_GridDataChanged = false;
 	this->m_ControlDataChanged = false;
+	this->m_UseImageOutput = false;
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -126,6 +127,36 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	this->m_ControlPointsDirection = image->GetDirection();
 
 	this->InitializeCoefficientsImages();
+}
+
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::SetOutputReference( const DomainBase* image ) {
+	this->m_UseImageOutput = true;
+	this->m_OutputField = FieldType::New();
+	this->m_OutputField->SetRegions( image->GetLargestPossibleRegion().GetSize() );
+	this->m_OutputField->SetOrigin( image->GetOrigin() );
+	this->m_OutputField->SetSpacing( image->GetSpacing() );
+	this->m_OutputField->SetDirection( image->GetDirection() );
+	this->m_OutputField->Allocate();
+	VectorType zerov; zerov.Fill( 0.0 );
+	this->m_OutputField->FillBuffer( zerov );
+
+	this->m_NumberOfSamples = image->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	// Initialize off-grid positions
+	PointType p;
+	for( size_t i = 0; i < this->m_NumberOfParameters; i++ ) {
+		image->TransformIndexToPhysicalPoint( image->ComputeIndex( i ), p );
+		this->m_OffGridPos.push_back( p );
+	}
+
+	// Initialize off-grid values
+	for( size_t dim = 0; dim<Dimension; dim++ ) {
+		this->m_OffGridValue[dim] = DimensionVector(this->m_NumberOfSamples);
+		this->m_OffGridValue[dim].fill( 0.0 );
+	}
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -285,10 +316,20 @@ SparseMatrixTransform<TScalarType,NDimensions>
 
 	for( size_t i = 0; i < Dimension; i++ ) {
 		DimensionVector coeff = this->Vectorize( this->m_CoefficientsImages[i] );
-
 		this->m_OffGridValue[i].fill(0.0);
 		// Interpolate
 		this->m_Phi.mult( coeff, this->m_OffGridValue[i] );
+	}
+
+	if( this->m_UseImageOutput ) {
+		VectorType* obuf = this->m_OutputField->GetBufferPointer();
+		VectorType v;
+		for( size_t j = 0; j<this->m_NumberOfSamples; j++ ) {
+			for( size_t i = 0; i<Dimension; i++ ) {
+				v[i] = this->m_OffGridValue[i][j];
+			}
+			*( obuf + j ) = v;
+		}
 	}
 }
 
@@ -424,10 +465,6 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	VectorType ci;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		ci[dim] = this->m_OffGridValue[dim][id];
-
-		//if( std::isnan( ci[dim] ) || std::isinf( ci[dim] )) {
-		//	ci[dim] = 0;
-		//}
 	}
 
 	return ci;

@@ -153,7 +153,8 @@ public:
 	//inline VectorType GetOnGridWeight  ( const size_t id );
 
 	//inline JacobianType GetJacobian    ( const size_t id );
-    const WeightsMatrix * GetPhi() const { return this->m_Phi; }
+    const WeightsMatrix GetPhi() const { return this->m_Phi; }
+    const WeightsMatrix GetS() const { return this->m_S; }
 
     typedef itk::Image< ScalarType, Dimension >                      CoefficientsImageType;
     typedef typename CoefficientsImageType::Pointer                  CoeffImagePointer;
@@ -194,6 +195,13 @@ public:
 
     void SetPhysicalDomainInformation( const DomainBase* image );
     void CopyGridInformation( const DomainBase* image );
+    void SetOutputReference( const DomainBase* image );
+    const FieldType* GetOutputField() const {
+    	if (!this->m_UseImageOutput){
+    		itkExceptionMacro( << "UseImageOutput is false, output field is not gridded" );
+    	}
+    	return this->m_OutputField;
+    }
 
 	void SetParameters(const ParametersType & parameters);
 
@@ -272,9 +280,11 @@ protected:
 
 	bool            m_GridDataChanged;
 	bool            m_ControlDataChanged;
+	bool            m_UseImageOutput;
 
 	KernelFunctionPointer m_KernelFunction;
 	FieldPointer          m_Field;
+	FieldPointer          m_OutputField;
 private:
 	SparseMatrixTransform( const Self & );
 	void operator=( const Self & );
