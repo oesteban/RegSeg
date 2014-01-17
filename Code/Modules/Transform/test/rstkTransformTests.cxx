@@ -12,8 +12,10 @@
 #include <itkImage.h>
 #include <itkVectorImage.h>
 #include <itkComposeImageFilter.h>
+#include <itkResampleImageFilter.h>
 #include <itkImageAlgorithm.h>
 #include <itkImageFileReader.h>
+#include <itkBSplineInterpolateImageFunction.h>
 #include "BSplineSparseMatrixTransform.h"
 #include "DisplacementFieldFileWriter.h"
 #include "DisplacementFieldComponentsFileWriter.h"
@@ -31,12 +33,17 @@ int main(int argc, char **argv) {
 
 
 typedef double ScalarType;
+typedef itk::ContinuousIndex< double, 3> CIndex;
+
 typedef itk::Point<ScalarType, 3> PointType;
 typedef itk::Vector<ScalarType, 3 > VectorType;
 typedef itk::Image<ScalarType, 3> ComponentType;
 typedef itk::Image< VectorType, 3 > FieldType;
 typedef itk::ImageFileReader< ComponentType > FieldReader;
 typedef itk::ComposeImageFilter< ComponentType, FieldType > ComposeFilter;
+typedef itk::ResampleImageFilter< ComponentType, ComponentType > ExpandFilter;
+typedef itk::BSplineInterpolateImageFunction< ComponentType, double, double > BSplineInterpolator;
+
 typedef BSplineSparseMatrixTransform<ScalarType, 3, 3> Transform;
 typedef Transform::Pointer                   TPointer;
 typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> Writer;
@@ -88,9 +95,66 @@ public:
 	}
 
 	TPointer m_transform;
-	FieldType::Pointer m_field, m_orig_field;
+	FieldType::Pointer m_field, m_orig_field, m_hr_field;
 	size_t m_N;
 	size_t m_K;
+
+	void InitHRField( float factor = 2.0 ) {
+		FieldType::DirectionType newDir = m_orig_field->GetDirection();
+		FieldType::SizeType     newSize = m_orig_field->GetLargestPossibleRegion().GetSize();
+		for ( size_t i = 0; i < 3; i++ ) newSize[i]= floor( factor* newSize[i] );
+
+		CIndex start; start.Fill( -0.5 );
+		CIndex end;
+		for ( size_t i = 0; i < 3; i++ )
+			end[i]= m_orig_field->GetLargestPossibleRegion().GetSize()[i] - 0.5;
+
+		PointType domS;
+		m_orig_field->TransformContinuousIndexToPhysicalPoint( start, domS );
+		PointType domE;
+		m_orig_field->TransformContinuousIndexToPhysicalPoint(   end, domE );
+
+		FieldType::SpacingType newSpacing;
+		VectorType extent = domE - domS;
+		VectorType oldExt = newDir * extent;
+		VectorType hSpacing;
+
+		for ( size_t i = 0; i < 3; i++ ) {
+			newSpacing[i] = fabs( oldExt[i] )/(1.0*newSize[i]);
+		}
+
+		PointType newOrigin = domS + newDir * newSpacing * 0.5;
+
+
+		ComposeFilter::Pointer c = ComposeFilter::New();
+		for (size_t i = 0; i<3; i++) {
+			std::stringstream ss;
+			ss << TEST_DATA_DIR << "field_" << i << "_lr.nii.gz";
+			FieldReader::Pointer r = FieldReader::New();
+			r->SetFileName( ss.str().c_str() );
+			r->Update();
+
+			ExpandFilter::Pointer e = ExpandFilter::New();
+			e->SetInput( r->GetOutput() );
+			e->SetInterpolator( BSplineInterpolator::New() );
+			e->SetOutputDirection( newDir );
+			e->SetOutputOrigin( newOrigin );
+			e->SetSize( newSize );
+			e->SetOutputSpacing( newSpacing );
+			e->Update();
+			c->SetInput( i, e->GetOutput() );
+
+		}
+		c->Update();
+		m_hr_field = c->GetOutput();
+
+		Writer::Pointer w = Writer::New();
+		w->SetInput( m_hr_field );
+		std::stringstream ss;
+		ss << "hr_field_" << factor;
+		w->SetFileName( ss.str().c_str() );
+		w->Update();
+	}
 
 };
 
@@ -112,10 +176,6 @@ TEST_F( TransformTests, SparseMatrixComputeCoeffsTest ) {
 
 	m_transform->UpdateField();
 
-	w->SetInput( m_field );
-	w->SetFileName( "updated_field");
-	w->Update();
-
 	const VectorType* rbuf = m_orig_field->GetBufferPointer();
 	const VectorType* tbuf = m_field->GetBufferPointer();
 
@@ -128,130 +188,55 @@ TEST_F( TransformTests, SparseMatrixComputeCoeffsTest ) {
 		error+= ( v2 - v1 ).GetNorm();
 		EXPECT_NEAR( v2.GetNorm(), v1.GetNorm(), 1.0e-3 );
 	}
-	error = error * (1.0/this->m_K);
+	error = error * (1.0/ m_transform->GetNumberOfParameters() );
 
-	ASSERT_TRUE( error < 1.0e-3 );
+	ASSERT_TRUE( error < 1.0e-5 );
 }
 
 
-TEST_F( TransformTests, SparseMatrixInterpolate ) {
+TEST_F( TransformTests, CompareBSplineInterpolation ) {
+	this->InitHRField( 10.0 );
+
 	m_transform->ComputeCoefficients();
-
-	VectorType zero;
-	zero.Fill(0.0);
-
-	FieldType::SizeType refSize = m_field->GetLargestPossibleRegion().GetSize();
-	PointType refOrigin = m_field->GetOrigin();
-	PointType refEnd;
-	FieldType::IndexType lastIdx;
-	for( size_t i = 0; i<3; i++ ) {
-		lastIdx[i] = refSize[i] - 1;
-	}
-	m_field->TransformIndexToPhysicalPoint( lastIdx, refEnd );
-
-	FieldType::SizeType size;
-	FieldType::SpacingType spacing;
-
-	for( size_t d = 0; d<3; d++ ) {
-		size[d] = (int) (2.75 * refSize[d]);
-		spacing[d] = (refEnd[d] - refOrigin[d])/ ((double) size[d] );
-	}
-
-	FieldType::Pointer densefield = FieldType::New();
-	densefield->SetOrigin(    refOrigin );
-	densefield->SetDirection( m_field->GetDirection() );
-	densefield->SetRegions( size );
-	densefield->SetSpacing( spacing );
-	densefield->Allocate();
-	densefield->FillBuffer( zero );
-
-	m_N = densefield->GetLargestPossibleRegion().GetNumberOfPixels();
-	m_transform->SetNumberOfSamples(m_N);
-
-	PointType p;
-	for( size_t i = 0; i<m_N; i++ ) {
-		densefield->TransformIndexToPhysicalPoint( densefield->ComputeIndex(i) ,p );
-		m_transform->SetOffGridPos(i,p);
-	}
-
+	m_transform->SetOutputReference( m_hr_field );
 	m_transform->Interpolate();
 
-	VectorType v;
-	for( size_t i = 0; i<m_N; i++ ){
-		v = m_transform->GetOffGridValue(i);
-		densefield->SetPixel( densefield->ComputeIndex(i), v);
-	}
-
 	Writer::Pointer w = Writer::New();
-	w->SetInput( densefield );
+	w->SetInput( m_transform->GetOutputField() );
 	w->SetFileName( "interpolated_field");
 	w->Update();
 
+	const VectorType* rbuf = m_hr_field->GetBufferPointer();
+	const VectorType* tbuf = m_transform->GetOutputField()->GetBufferPointer();
 
-	ASSERT_TRUE( true );
+	VectorType v1, v2;
+	double error;
+	for( size_t i = 0; i< m_transform->GetNumberOfSamples(); i++ ) {
+		v1 = *( rbuf + i );
+		v2 = *( tbuf + i );
+		error+= ( v2 - v1 ).GetNorm();
+	}
+	error = error * (1.0/ m_transform->GetNumberOfSamples() );
+	ASSERT_TRUE( error < 1.0e-3 );
+
 }
 
-TEST_F( TransformTests, SparseMatrixForwardIDWDumbTest ) {
-
-	VectorType zero;
-	zero.Fill(0.0);
-
-	FieldType::SizeType refSize = m_field->GetLargestPossibleRegion().GetSize();
-	PointType refOrigin = m_field->GetOrigin();
-	PointType refEnd;
-	FieldType::IndexType lastIdx;
-	for( size_t i = 0; i<3; i++ ) {
-		lastIdx[i] = refSize[i] - 1;
-	}
-	m_field->TransformIndexToPhysicalPoint( lastIdx, refEnd );
-
-	FieldType::Pointer densefield = FieldType::New();
-	densefield->SetOrigin(    refOrigin );
-	densefield->SetDirection( m_field->GetDirection() );
-
-
-	FieldType::SizeType size;
-	FieldType::SpacingType spacing;
-
-	for( size_t d = 0; d<3; d++ ) {
-		size[d] = (int) (3.27 * refSize[d]);
-		spacing[d] = (refEnd[d] - refOrigin[d])/ ((double) size[d] );
-	}
-
-
-	densefield->SetRegions( size );
-	densefield->SetSpacing( spacing );
-	densefield->Allocate();
-	densefield->FillBuffer( zero );
-
-	m_N = densefield->GetLargestPossibleRegion().GetNumberOfPixels();
-	m_transform->SetNumberOfSamples(m_N);
-
-	PointType p;
-	for( size_t i = 0; i<m_N; i++ ) {
-		densefield->TransformIndexToPhysicalPoint( densefield->ComputeIndex(i) ,p );
-		m_transform->SetOffGridPos(i,p);
-	}
-
-
-	m_transform->Interpolate();
-
-	VectorType v;
-	for( size_t i = 0; i<m_N; i++ ){
-		v = m_transform->GetOffGridValue(i);
-		densefield->SetPixel( densefield->ComputeIndex(i), v);
-	}
-
-	Writer::Pointer w = Writer::New();
-	w->SetInput( densefield );
-	w->SetFileName( "dumb_test");
-	w->Update();
-
-
+TEST_F( TransformTests, MatricesTest ) {
+	m_transform->ComputeCoefficients();
 	m_transform->UpdateField();
-	w->SetInput( m_field );
-	w->SetFileName( "dumb_test_low" );
-	w->Update();
+	m_transform->SetOutputReference( m_field );
+	m_transform->Interpolate();
+	ASSERT_TRUE( m_transform->GetPhi() == m_transform->GetS() );
+}
+
+TEST_F( TransformTests, RandomSampleTest ) {
+	this->InitHRField( 3.27 );
+
+	m_transform->ComputeCoefficients();
+	m_transform->UpdateField();
+
+	m_transform->SetOutputReference( m_hr_field );
+	m_transform->Interpolate();
 
 	TPointer tfm = Transform::New();
 	tfm->SetNumberOfSamples( 200 );
@@ -260,27 +245,29 @@ TEST_F( TransformTests, SparseMatrixForwardIDWDumbTest ) {
 
 	int rindex = 0;
 	std::vector< int > subsample;
+	Transform::PointType p;
 	for ( size_t i = 0; i<200; i++) {
-		rindex = rand() % (m_N + 1);
+		rindex = rand() % (m_transform->GetNumberOfSamples() + 1);
 		subsample.push_back( rindex );
-		densefield->TransformIndexToPhysicalPoint( densefield->ComputeIndex(rindex) ,p );
+		m_hr_field->TransformIndexToPhysicalPoint( m_hr_field->ComputeIndex(rindex) ,p );
 		tfm->SetOffGridPos( i, p );
 	}
 
 	tfm->Interpolate();
 
+	FieldType::ConstPointer field = m_transform->GetOutputField();
 
-	bool isCorrect = true;
+	double error = 0.0;
 	VectorType v1, v2;
 	for ( size_t i = 0; i<subsample.size(); i++ ) {
 		v1 = tfm->GetOffGridValue( i );
-		v2 = densefield->GetPixel( densefield->ComputeIndex( subsample[i] ) );
+		v2 = field->GetPixel( m_hr_field->ComputeIndex( subsample[i] ) );
 
-		isCorrect = ( (v1-v2).GetNorm() < 1.0e-5 ) &&  isCorrect;
+		EXPECT_NEAR( v2.GetNorm(), v1.GetNorm(), 1.0e-3 );
+
+		error+= (v1-v2).GetNorm();
 	}
-
-
-	ASSERT_TRUE( isCorrect );
+	ASSERT_TRUE( error < 1.0e-5 );
 }
 
 }
