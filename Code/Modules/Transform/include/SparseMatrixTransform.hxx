@@ -324,6 +324,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	if( this->m_UseImageOutput ) {
 		VectorType* obuf = this->m_OutputField->GetBufferPointer();
 		VectorType v;
+		v.Fill(0.0);
 		for( size_t j = 0; j<this->m_NumberOfSamples; j++ ) {
 			for( size_t i = 0; i<Dimension; i++ ) {
 				v[i] = this->m_OffGridValue[i][j];

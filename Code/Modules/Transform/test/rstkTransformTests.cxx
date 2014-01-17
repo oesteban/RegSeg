@@ -195,7 +195,7 @@ TEST_F( TransformTests, SparseMatrixComputeCoeffsTest ) {
 
 
 TEST_F( TransformTests, CompareBSplineInterpolation ) {
-	this->InitHRField( 10.0 );
+	this->InitHRField( 2.0 );
 
 	m_transform->ComputeCoefficients();
 	m_transform->SetOutputReference( m_hr_field );
