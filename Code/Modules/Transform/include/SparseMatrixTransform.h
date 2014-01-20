@@ -50,6 +50,7 @@
 #include <itkPointSet.h>
 #include <itkDefaultStaticMeshTraits.h>
 #include <itkKernelFunctionBase.h>
+#include <VNLSparseLUSolverTraits.h>
 
 #include <vnl/vnl_sparse_matrix.h>
 #include <vnl/vnl_vector.h>
@@ -84,8 +85,11 @@ public:
     typedef itk::KernelFunctionBase<ScalarType>      KernelFunctionType;
     typedef typename KernelFunctionType::Pointer     KernelFunctionPointer;
 
-	typedef vnl_sparse_matrix< ScalarType >          WeightsMatrix;
-	typedef vnl_vector< ScalarType >                 DimensionVector;
+    typedef VNLSparseLUSolverTraits< ScalarType >    SolverType;
+	typedef typename SolverType::MatrixType          WeightsMatrix;
+	typedef typename SolverType::VectorType          DimensionVector;
+	typedef typename WeightsMatrix::row              SparseVectorType;
+
 	typedef itk::FixedArray< DimensionVector, NDimensions > DimensionParametersContainer;
 
 	typedef std::vector< PointType >                 PointsList;
@@ -244,12 +248,13 @@ protected:
 
 	void ComputePhi();
 	void ComputeS();
+	WeightsMatrix ComputeMatrix( PointsList vrows, PointsList vcols );
 	void ComputeSPrime();
 	void InitializeCoefficientsImages();
 	DimensionVector Vectorize( const CoefficientsImageType* image );
 	WeightsMatrix VectorizeCoefficients();
 	DimensionParametersContainer VectorizeField( const FieldType* image );
-
+	WeightsMatrix MatrixField( const FieldType* image );
 
 	inline ScalarType Evaluate( const VectorType r ) const;
 	virtual size_t GetSupport() const = 0;
