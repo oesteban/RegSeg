@@ -102,7 +102,7 @@ public:
 	void InitHRField( float factor = 2.0 ) {
 		FieldType::DirectionType newDir = m_orig_field->GetDirection();
 		FieldType::SizeType     newSize = m_orig_field->GetLargestPossibleRegion().GetSize();
-		for ( size_t i = 0; i < 3; i++ ) newSize[i]= floor( factor* newSize[i] );
+		for ( size_t i = 0; i < 3; i++ ) newSize[i]= floor( factor * newSize[i] ) + 1;
 
 		CIndex start; start.Fill( -0.5 );
 		CIndex end;
@@ -186,6 +186,10 @@ TEST_F( TransformTests, SparseMatrixComputeCoeffsTest ) {
 
 	m_transform->UpdateField();
 
+	w->SetInput( m_field );
+	w->SetFileName( "orig_field_resampled");
+	w->Update();
+
 	const VectorType* rbuf = m_orig_field->GetBufferPointer();
 	const VectorType* tbuf = m_field->GetBufferPointer();
 
@@ -196,18 +200,177 @@ TEST_F( TransformTests, SparseMatrixComputeCoeffsTest ) {
 		v2 = *( tbuf + i );
 
 		error+= ( v2 - v1 ).GetNorm();
-		EXPECT_NEAR( v2.GetNorm(), v1.GetNorm(), 1.0e-3 );
 	}
 	error = error * (1.0/ m_transform->GetNumberOfParameters() );
 
 	ASSERT_NEAR( 0.0, error, 1.0e-5 );
 }
 
+TEST_F( TransformTests, InterpolateOneSample1 ) {
+	PointType p;
+	FieldType::IndexType idx;
+	FieldType::SizeType s = m_field->GetLargestPossibleRegion().GetSize();
+
+	for ( size_t i = 0; i<3; i++ ) {
+		idx[i] = floor( (s[i]-1)*0.5 );
+	}
+
+	m_field->TransformIndexToPhysicalPoint( idx, p );
+	VectorType v1 = m_field->GetPixel( idx );
+
+	m_transform->ComputeCoefficients();
+	m_transform->UpdateField();
+	m_transform->SetNumberOfSamples( 1 );
+	m_transform->SetOffGridPos( 0, p );
+
+	m_transform->Interpolate();
+
+	Transform::WeightsMatrix m = m_transform->GetPhi();
+	VectorType v2 = m_transform->GetOffGridValue( 0 );
+
+	ASSERT_NEAR( 0, (v1-v2).GetNorm(), 1.0e-5 );
+
+}
+
+TEST_F( TransformTests, InterpolateOneSample2 ) {
+	m_transform->ComputeCoefficients();
+	m_transform->UpdateField();
+	this->InitHRField( 2.0 );
+
+	PointType p;
+	FieldType::IndexType idx;
+	FieldType::SizeType s = m_hr_field->GetLargestPossibleRegion().GetSize();
+
+	for ( size_t i = 0; i<3; i++ ) {
+		idx[i] = floor( (s[i]-1)*0.5 );
+	}
+	m_hr_field->TransformIndexToPhysicalPoint( idx, p );
+
+	m_transform->SetNumberOfSamples( 1 );
+	m_transform->SetOffGridPos( 0, p );
+	m_transform->Interpolate();
+
+	Transform::WeightsMatrix m = m_transform->GetPhi();
+
+	VectorType v1 = m_hr_field->GetPixel( idx );
+	VectorType v2 = m_transform->GetOffGridValue( 0 );
+	ASSERT_NEAR( 0, (v1-v2).GetNorm(), 1.0e-5 );
+
+}
+
+TEST_F( TransformTests, InterpolateOneSample3 ) {
+	m_transform->ComputeCoefficients();
+	m_transform->UpdateField();
+	this->InitHRField( 2.3 );
+
+	PointType p;
+	FieldType::IndexType idx;
+	FieldType::SizeType s = m_hr_field->GetLargestPossibleRegion().GetSize();
+
+	for ( size_t i = 0; i<3; i++ ) {
+		idx[i] = floor( (s[i]-1)*0.5 );
+	}
+	m_hr_field->TransformIndexToPhysicalPoint( idx, p );
+
+	m_transform->SetNumberOfSamples( 1 );
+	m_transform->SetOffGridPos( 0, p );
+	m_transform->Interpolate();
+
+	VectorType v1 = m_hr_field->GetPixel( idx );
+	VectorType v2 = m_transform->GetOffGridValue( 0 );
+	ASSERT_NEAR( 0, (v1-v2).GetNorm(), 1.0e-5 );
+
+}
+
+TEST_F( TransformTests, InterpolateAllSamples1 ) {
+	m_transform->ComputeCoefficients();
+	m_transform->UpdateField();
+
+	this->InitHRField( 2.3 );
+	size_t nSamples =  m_hr_field->GetLargestPossibleRegion().GetNumberOfPixels();
+	m_transform->SetNumberOfSamples( nSamples );
+
+	PointType p;
+	FieldType::IndexType idx;
+
+	for ( size_t i = 0; i<nSamples; i++ ) {
+		idx = m_hr_field->ComputeIndex( i );
+		m_hr_field->TransformIndexToPhysicalPoint( idx, p );
+		m_transform->SetOffGridPos( i, p );
+	}
+
+	m_transform->Interpolate();
+
+	Transform::WeightsMatrix m = m_transform->GetPhi();
+	Transform::SparseVectorType row;
+
+	Transform::CoefficientsImageArray coeff = m_transform->GetCoefficientsImages();
+	size_t c;
+
+	VectorType v1;
+	VectorType v2;
+	double wi, coeffk;
+	double error = 0.0;
+	for( size_t r = 0; r<m.rows(); r++ ) {
+		row = m.get_row( r );
+		v2 = m_transform->GetOffGridValue( r );
+		v1.Fill( 0.0 );
+
+		for( size_t i = 0; i<row.size(); i++ ) {
+			c = row[i].first;
+			wi = row[i].second;
+
+			for( size_t j = 0; j<3; j++ ) {
+				coeffk = coeff[j]->GetPixel( coeff[j]->ComputeIndex(c) );
+				v1[j]+= coeffk * wi;
+			}
+		}
+		error+= (v1-v2).GetNorm();
+	}
+
+	error/=nSamples;
+
+	ASSERT_NEAR( 0, error, 1.0e-5 );
+
+}
+
+TEST_F( TransformTests, InterpolateAllSamples2 ) {
+	m_transform->ComputeCoefficients();
+	m_transform->UpdateField();
+
+	this->InitHRField( 2.0 );
+	size_t nSamples =  m_hr_field->GetLargestPossibleRegion().GetNumberOfPixels();
+	m_transform->SetNumberOfSamples( nSamples );
+
+	PointType p;
+	FieldType::IndexType idx;
+
+	for ( size_t i = 0; i<nSamples; i++ ) {
+		idx = m_hr_field->ComputeIndex( i );
+		m_hr_field->TransformIndexToPhysicalPoint( idx, p );
+		m_transform->SetOffGridPos( i, p );
+	}
+
+	m_transform->Interpolate();
+
+
+	VectorType v1, v2;
+	double error = 0.0;
+	for ( size_t i = 0; i<nSamples; i++ ) {
+		idx = m_hr_field->ComputeIndex( i );
+		v1 = m_hr_field->GetPixel( idx );
+		v2 = m_transform->GetOffGridValue( i );
+		error+= (v1-v2).GetNorm();
+	}
+	error/=nSamples;
+	ASSERT_NEAR( 0, error, 1.0e-5 );
+
+}
+
 
 TEST_F( TransformTests, CompareBSplineInterpolation ) {
 	this->InitHRField( 2.0 );
 	m_transform->ComputeCoefficients();
-
 	m_transform->SetOutputReference( m_hr_field );
 	m_transform->Interpolate();
 
@@ -226,7 +389,7 @@ TEST_F( TransformTests, CompareBSplineInterpolation ) {
 		v2 = *( tbuf + i );
 		error+= ( v2 - v1 ).GetNorm();
 	}
-	error = error * (1.0/ m_transform->GetNumberOfSamples() );
+	error*= (1.0/ m_transform->GetNumberOfSamples() );
 	ASSERT_NEAR( 0.0, error, 1.0e-3 );
 
 }
