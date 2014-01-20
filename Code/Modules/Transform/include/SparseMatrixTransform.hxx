@@ -143,19 +143,13 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	VectorType zerov; zerov.Fill( 0.0 );
 	this->m_OutputField->FillBuffer( zerov );
 
-	this->m_NumberOfSamples = image->GetLargestPossibleRegion().GetNumberOfPixels();
+	this->SetNumberOfSamples( image->GetLargestPossibleRegion().GetNumberOfPixels() );
 
 	// Initialize off-grid positions
 	PointType p;
 	for( size_t i = 0; i < this->m_NumberOfParameters; i++ ) {
 		image->TransformIndexToPhysicalPoint( image->ComputeIndex( i ), p );
-		this->m_OffGridPos.push_back( p );
-	}
-
-	// Initialize off-grid values
-	for( size_t dim = 0; dim<Dimension; dim++ ) {
-		this->m_OffGridValue[dim] = DimensionVector(this->m_NumberOfSamples);
-		this->m_OffGridValue[dim].fill( 0.0 );
+		this->m_OffGridPos[i] = p;
 	}
 }
 
@@ -212,30 +206,9 @@ SparseMatrixTransform<TScalarType,NDimensions>
 ::SetNumberOfSamples( size_t n ) {
 	this->m_NumberOfSamples = n;
 	this->m_OffGridPos.resize(n);
-	for( size_t dim = 0; dim<Dimension; dim++ ) {
-		this->m_OffGridValue[dim] = DimensionVector(n);
-		this->m_OffGridValue[dim].fill( 0.0 );
-	}
-}
 
-//template< class TScalarType, unsigned int NDimensions >
-//void
-//SparseMatrixTransform<TScalarType,NDimensions>
-//::SetNumberOfParameters( size_t K ) {
-//	this->m_NumberOfParameters = K;
-//	for( size_t dim = 0; dim<Dimension; dim++ ) {
-//		this->m_CoeffDerivative[dim] = DimensionVector(K);
-//		this->m_Coeff[dim] = DimensionVector(K);
-//
-//		this->m_CoeffDerivative[dim].fill( 0.0 );
-//		this->m_Coeff[dim].fill( 0.0 );
-//
-//		for (size_t dim2 = 0; dim2<Dimension; dim2++ ) {
-//			this->m_Jacobian[dim][dim2] = DimensionVector(K);
-//			this->m_Jacobian[dim][dim2].fill( 0.0 );
-//		}
-//	}
-//}
+	this->m_OffGridValueMatrix = WeightsMatrix ( n, Dimension );
+}
 
 template< class TScalarType, unsigned int NDimensions >
 void
@@ -314,22 +287,32 @@ SparseMatrixTransform<TScalarType,NDimensions>
 		this->ComputePhi();
 	}
 
-	for( size_t i = 0; i < Dimension; i++ ) {
-		DimensionVector coeff = this->Vectorize( this->m_CoefficientsImages[i] );
-		this->m_OffGridValue[i].fill(0.0);
-		// Interpolate
-		this->m_Phi.mult( coeff, this->m_OffGridValue[i] );
-	}
+	WeightsMatrix coeff = this->VectorizeCoefficients();
+	WeightsMatrix interpolated;
 
+	this->m_Phi.mult( coeff, interpolated );
+
+	typedef typename WeightsMatrix::row SparseVectorType;
+
+	SparseVectorType r;
 	if( this->m_UseImageOutput ) {
 		VectorType* obuf = this->m_OutputField->GetBufferPointer();
 		VectorType v;
-		v.Fill(0.0);
-		for( size_t j = 0; j<this->m_NumberOfSamples; j++ ) {
-			for( size_t i = 0; i<Dimension; i++ ) {
-				v[i] = this->m_OffGridValue[i][j];
+
+		for( size_t i = 0; i<this->m_NumberOfSamples; i++ ) {
+			r = interpolated.get_row( i );
+			for( size_t j = 0; j<Dimension; j++ ) {
+				v[j] = r[j].second;
+				this->m_OffGridValueMatrix.put( i, j, v[j] );
 			}
-			*( obuf + j ) = v;
+			*( obuf + i ) = v;
+		}
+	} else {
+		for( size_t i = 0; i<this->m_NumberOfSamples; i++ ) {
+			r = interpolated.get_row( i );
+			for( size_t j = 0; j<Dimension; j++ ) {
+				this->m_OffGridValueMatrix.put( i, j, r[j].second );
+			}
 		}
 	}
 }
@@ -465,7 +448,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 ::GetOffGridValue( const size_t id ) const {
 	VectorType ci;
 	for( size_t dim = 0; dim < Dimension; dim++) {
-		ci[dim] = this->m_OffGridValue[dim][id];
+		ci[dim] = this->m_OffGridValueMatrix.get( id, dim );
 	}
 
 	return ci;
@@ -517,8 +500,8 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	bool changed = false;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		if( std::isnan( pi[dim] )) pi[dim] = 0;
-		if( this->m_OffGridValue[dim][id] != pi[dim] ) {
-			this->m_OffGridValue[dim][id] = pi[dim];
+		if( this->m_OffGridValueMatrix.get(id, dim) != pi[dim] ) {
+			this->m_OffGridValueMatrix.put(id, dim, pi[dim] );
 			changed = true;
 		}
 	}
@@ -568,6 +551,30 @@ SparseMatrixTransform<TScalarType,NDimensions>
 			c->GetLargestPossibleRegion(),
 			this->m_CoefficientsImages[dim]->GetLargestPossibleRegion()
 	);
+}
+
+template< class TScalarType, unsigned int NDimensions >
+typename SparseMatrixTransform<TScalarType,NDimensions>::WeightsMatrix
+SparseMatrixTransform<TScalarType,NDimensions>
+::VectorizeCoefficients() {
+	WeightsMatrix m ( this->m_NumberOfParameters, Dimension );
+
+	std::vector< const ScalarType *> cbuffer;
+
+	for( size_t i = 0; i<Dimension; i++)
+		cbuffer.push_back( this->m_CoefficientsImages[i]->GetBufferPointer() );
+
+	ScalarType value;
+	for( size_t i = 0; i<this->m_NumberOfParameters; i++ ) {
+		for( size_t j = 0; j<Dimension; j++ ) {
+			value = *( cbuffer[j] + i );
+			if (value>0) {
+				m.put( i, j, value );
+			}
+		}
+
+	}
+	return m;
 }
 
 template< class TScalarType, unsigned int NDimensions >
