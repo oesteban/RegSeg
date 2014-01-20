@@ -158,6 +158,15 @@ public:
 
 };
 
+
+TEST_F( TransformTests, MatricesTest ) {
+	m_transform->ComputeCoefficients();
+	m_transform->UpdateField();
+	m_transform->SetOutputReference( m_field );
+	m_transform->Interpolate();
+	ASSERT_TRUE( m_transform->GetPhi() == m_transform->GetS() );
+}
+
 TEST_F( TransformTests, SparseMatrixComputeCoeffsTest ) {
 	Writer::Pointer w = Writer::New();
 	w->SetInput( m_field );
@@ -165,6 +174,7 @@ TEST_F( TransformTests, SparseMatrixComputeCoeffsTest ) {
 	w->Update();
 
 	m_transform->ComputeCoefficients();
+
 	for (size_t i = 0; i<3; i++ ) {
 		std::stringstream ss;
 		ss << "coefficients_" << i << ".nii.gz";
@@ -180,7 +190,7 @@ TEST_F( TransformTests, SparseMatrixComputeCoeffsTest ) {
 	const VectorType* tbuf = m_field->GetBufferPointer();
 
 	VectorType v1, v2;
-	double error;
+	double error = 0.0;
 	for( size_t i = 0; i< this->m_K; i++ ) {
 		v1 = *( rbuf + i );
 		v2 = *( tbuf + i );
@@ -190,14 +200,14 @@ TEST_F( TransformTests, SparseMatrixComputeCoeffsTest ) {
 	}
 	error = error * (1.0/ m_transform->GetNumberOfParameters() );
 
-	ASSERT_TRUE( error < 1.0e-5 );
+	ASSERT_NEAR( 0.0, error, 1.0e-5 );
 }
 
 
 TEST_F( TransformTests, CompareBSplineInterpolation ) {
 	this->InitHRField( 2.0 );
-
 	m_transform->ComputeCoefficients();
+
 	m_transform->SetOutputReference( m_hr_field );
 	m_transform->Interpolate();
 
@@ -210,24 +220,17 @@ TEST_F( TransformTests, CompareBSplineInterpolation ) {
 	const VectorType* tbuf = m_transform->GetOutputField()->GetBufferPointer();
 
 	VectorType v1, v2;
-	double error;
+	double error = 0.0;
 	for( size_t i = 0; i< m_transform->GetNumberOfSamples(); i++ ) {
 		v1 = *( rbuf + i );
 		v2 = *( tbuf + i );
 		error+= ( v2 - v1 ).GetNorm();
 	}
 	error = error * (1.0/ m_transform->GetNumberOfSamples() );
-	ASSERT_TRUE( error < 1.0e-3 );
+	ASSERT_NEAR( 0.0, error, 1.0e-3 );
 
 }
 
-TEST_F( TransformTests, MatricesTest ) {
-	m_transform->ComputeCoefficients();
-	m_transform->UpdateField();
-	m_transform->SetOutputReference( m_field );
-	m_transform->Interpolate();
-	ASSERT_TRUE( m_transform->GetPhi() == m_transform->GetS() );
-}
 
 TEST_F( TransformTests, RandomSampleTest ) {
 	this->InitHRField( 3.27 );
@@ -263,11 +266,10 @@ TEST_F( TransformTests, RandomSampleTest ) {
 		v1 = tfm->GetOffGridValue( i );
 		v2 = field->GetPixel( m_hr_field->ComputeIndex( subsample[i] ) );
 
-		EXPECT_NEAR( v2.GetNorm(), v1.GetNorm(), 1.0e-3 );
+		//EXPECT_NEAR( v2.GetNorm(), v1.GetNorm(), 1.0e-3 );
 
 		error+= (v1-v2).GetNorm();
 	}
-	ASSERT_TRUE( error < 1.0e-5 );
+	ASSERT_NEAR( 0.0, error, 1.0e-5 );
 }
-
-}
+} // namespace rstk

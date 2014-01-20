@@ -247,6 +247,7 @@ protected:
 	void ComputeSPrime();
 	void InitializeCoefficientsImages();
 	DimensionVector Vectorize( const CoefficientsImageType* image );
+	WeightsMatrix VectorizeCoefficients();
 	DimensionParametersContainer VectorizeField( const FieldType* image );
 
 
@@ -266,7 +267,7 @@ protected:
 	PointsList m_OffGridPos;           // m_N points in the mesh
 	PointsList m_OnGridPos;
 
-	DimensionParametersContainer m_OffGridValue;     // m_N points in the mesh
+	WeightsMatrix m_OffGridValueMatrix;     // m_N points in the mesh
 	CoefficientsImageArray m_CoefficientsImages;
 
 
