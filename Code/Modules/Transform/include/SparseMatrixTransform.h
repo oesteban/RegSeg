@@ -122,10 +122,10 @@ public:
     itkSetObjectMacro(KernelFunction, KernelFunctionType);
     itkGetConstReferenceObjectMacro(KernelFunction, KernelFunctionType);
 
-    void SetNumberOfSamples( size_t n);
     itkGetConstMacro( NumberOfSamples, size_t );
+    itkSetMacro( NumberOfSamples, size_t );
 
-    itkGetConstMacro(NumberOfParameters, size_t );
+    itkGetConstMacro( NumberOfParameters, size_t );
 
     void Interpolate();
     void UpdateField();
@@ -190,6 +190,8 @@ public:
 
     itkSetMacro( ControlPointsSize, SizeType );
     itkGetConstMacro( ControlPointsSize, SizeType );
+
+    void SetControlPointsSize( size_t s ) { this->m_ControlPointsSize.Fill( s ); }
 
     itkSetObjectMacro( Field, FieldType );
     itkGetConstObjectMacro( Field, FieldType );

@@ -72,6 +72,7 @@
 #include "DisplacementFieldComponentsFileWriter.h"
 #include "IterationJSONUpdate.h"
 #include "IterationResultsWriterUpdate.h"
+#include "BSplineSparseMatrixTransform.h"
 
 //#include "GradientDescentFunctionalOptimizer.h"
 //#include "ALOptimizer.h"
@@ -96,6 +97,10 @@ typedef FunctionalType::MeanType                             MeanType;
 typedef FunctionalType::CovarianceType                       CovarianceType;
 typedef FunctionalType::FieldType                            FieldType;
 typedef FunctionalType::ROIType                              ROIType;
+
+typedef BSplineSparseMatrixTransform<double, 3, 3>           TransformType;
+typedef TransformType::Pointer                               TransformPointer;
+typedef typename TransformType::CoefficientsImageType        CoefficientsType;
 
 typedef SpectralGradientDescentOptimizer< FunctionalType >   Optimizer;
 //typedef SpectralADMMOptimizer< FunctionalType >              Optimizer;

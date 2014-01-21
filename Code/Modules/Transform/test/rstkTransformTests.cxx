@@ -43,12 +43,12 @@ typedef itk::ImageFileReader< ComponentType > FieldReader;
 typedef itk::ComposeImageFilter< ComponentType, FieldType > ComposeFilter;
 typedef itk::ResampleImageFilter< ComponentType, ComponentType > ExpandFilter;
 typedef itk::BSplineInterpolateImageFunction< ComponentType, double, double > BSplineInterpolator;
-
-typedef BSplineSparseMatrixTransform<ScalarType, 3, 3> Transform;
-typedef Transform::Pointer                   TPointer;
 typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> Writer;
 
-typedef typename Transform::CoefficientsImageType CoefficientsType;
+typedef BSplineSparseMatrixTransform<ScalarType, 3, 3> Transform;
+typedef Transform::Pointer                             TPointer;
+typedef typename Transform::CoefficientsImageType      CoefficientsType;
+
 typedef itk::ImageFileWriter< CoefficientsType >  CoefficientsWriterType;
 typedef CoefficientsWriterType::Pointer           CoefficientsWriterPointer;
 

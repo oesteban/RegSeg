@@ -63,7 +63,7 @@ template< typename TReferenceImageType, typename TCoordRepType >
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::FunctionalBase() {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
-	this->m_FieldInterpolator = FieldInterpolatorType::New();
+	//this->m_FieldInterpolator = FieldInterpolatorType::New();
 	this->m_Derivative = FieldType::New();
 	this->m_EnergyUpdated = false;
 	this->m_RegionsUpdated = false;
