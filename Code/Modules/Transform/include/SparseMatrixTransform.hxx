@@ -63,7 +63,7 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	this->m_NumberOfSamples = 0;
 	this->m_NumberOfParameters = 0;
 
-	this->m_ControlPointsSize.Fill(0);
+	this->m_ControlPointsSize.Fill(10);
 	this->m_ControlPointsOrigin.Fill(0.0);
 	this->m_ControlPointsSpacing.Fill(1.0);
 	this->m_ControlPointsDirection.SetIdentity();
@@ -136,11 +136,11 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	this->m_OutputField->Allocate();
 	VectorType zerov; zerov.Fill( 0.0 );
 	this->m_OutputField->FillBuffer( zerov );
-	size_t nparam = image->GetLargestPossibleRegion().GetNumberOfPixels();
+	this->m_NumberOfSamples = image->GetLargestPossibleRegion().GetNumberOfPixels();
 
 	// Initialize off-grid positions
 	PointType p;
-	for( size_t i = 0; i < nparam; i++ ) {
+	for( size_t i = 0; i < this->m_NumberOfSamples; i++ ) {
 		image->TransformIndexToPhysicalPoint( image->ComputeIndex( i ), p );
 		this->m_OffGridPos.push_back( p );
 	}
@@ -192,14 +192,6 @@ SparseMatrixTransform<TScalarType,NDimensions>
 }
 
 
-
-template< class TScalarType, unsigned int NDimensions >
-void
-SparseMatrixTransform<TScalarType,NDimensions>
-::SetNumberOfSamples( size_t n ) {
-	this->m_OffGridPos.resize(n);
-}
-
 template< class TScalarType, unsigned int NDimensions >
 typename SparseMatrixTransform<TScalarType,NDimensions>::WeightsMatrix
 SparseMatrixTransform<TScalarType,NDimensions>
@@ -249,8 +241,11 @@ template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputePhi() {
-	this->m_NumberOfSamples = this->m_OffGridPos.size();
-	this->m_OffGridValueMatrix = WeightsMatrix ( this->m_OffGridPos.size(), Dimension );
+	if ( this->m_OffGridPos.size() != this->m_NumberOfSamples ) {
+		itkExceptionMacro(<< "OffGrid positions are not initialized");
+	}
+
+	this->m_OffGridValueMatrix = WeightsMatrix ( this->m_NumberOfSamples, Dimension );
 	this->m_Phi = this->ComputeMatrix( this->m_OffGridPos, this->m_OnGridPos );
 }
 
@@ -398,6 +393,12 @@ template< class TScalarType, unsigned int NDimensions >
 inline void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetOffGridPos(size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
+	if ( id >= this->m_NumberOfSamples ) {
+		itkExceptionMacro(<< "Trying to set sample with id " << id << ", when NumberOfSamples is set to " << this->m_NumberOfSamples );
+	}
+	if ( this->m_OffGridPos.size() == 0 ) {
+		this->m_OffGridPos.resize( this->m_NumberOfSamples );
+	}
 	this->m_OffGridPos[id] = pi;
 }
 
@@ -406,6 +407,7 @@ inline void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::AddOffGridPos(typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
 	this->m_OffGridPos.push_back( pi );
+	this->m_NumberOfSamples++;
 }
 
 

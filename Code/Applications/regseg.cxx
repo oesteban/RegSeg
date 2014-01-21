@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2012, Oscar Esteban - oesteban@dionte.upm.es
+ Copyright (c) 2012, Oscar Esteban - oesteban@die.upm.es
  with Biomedical Image Technology, UPM (BIT-UPM)
  All rights reserved.
 
@@ -86,6 +86,13 @@ int main(int argc, char *argv[]) {
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetFunctional( functional );
 
+	// Initialize Transform
+	TransformPointer transform = TransformType::New();
+	if (vmap.count("grid-size")) {
+		transform->SetControlPointsSize( vmap["grid-size"].as<size_t>() );
+	}
+
+
 	// Read target feature(s) -----------------------------------------------------------
 	root["inputs"]["target"]["components"]["size"] = Json::Int (fixedImageNames.size());
 	root["inputs"]["target"]["components"]["type"] = std::string("feature");
@@ -104,6 +111,7 @@ int main(int argc, char *argv[]) {
     comb->Update();
 	ImageType::Pointer im = comb->GetOutput();
 	functional->SetReferenceImage( im );
+	transform->SetPhysicalDomainInformation( im );
 
 	// Read moving surface(s) -----------------------------------------------------------
 	root["inputs"]["moving"]["components"]["size"] = Json::Int (movingSurfaceNames.size());
@@ -119,10 +127,8 @@ int main(int argc, char *argv[]) {
 	}
 	root["inputs"]["moving"]["components"] = movingjson;
 
+
 	// Set up registration ------------------------------------------------------------
-	if (vmap.count("grid-size")) {
-		opt->SetGridSize( vmap["grid-size"].as<int>() );
-	}
 	if (vmap.count("iterations")) {
 		opt->SetNumberOfIterations( vmap["iterations"].as<int>() );
 	}
