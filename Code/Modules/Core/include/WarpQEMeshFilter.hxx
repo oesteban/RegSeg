@@ -122,9 +122,10 @@ WarpQEMeshFilter< TInputMesh, TOutputMesh, TVectorField >
 
 	size_t id = 0;
 	FieldVectorType disp;
+	disp.Fill(0.0);
 
 	while (inputPoint != inPoints->End()) {
-		const InputPointType& p = inputPoint.Value();
+		const InputPointType p = inputPoint.Value();
 		id = inputPoint.Index();
 		disp = field->GetOffGridValue( id );
 		outputPoint.Value() = p + disp;
