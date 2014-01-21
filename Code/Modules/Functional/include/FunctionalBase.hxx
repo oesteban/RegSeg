@@ -608,10 +608,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		PointsIterator c_it  = this->m_CurrentContours[contid]->GetPoints()->Begin();
 		PointsIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
 		PointType ci;
-		size_t pid;
+		//size_t pid;
 		size_t cpid = 0;
 		while( c_it != c_end ) {
-			pid = c_it.Index();
+			//pid = c_it.Index();
 			ci = c_it.Value();
 			this->m_FieldInterpolator->SetOffGridPos( cpid, ci );
 			++c_it;

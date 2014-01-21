@@ -91,8 +91,8 @@ void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetPhysicalDomainInformation( const DomainBase* image ) {
 	for( size_t i=0; i<Dimension; i++) {
-		if( this->m_ControlPointsSize[i] == 0 ){
-			itkExceptionMacro( << "ControlPointsSize must be set and valid to set parameters this way.")
+		if( this->m_ControlPointsSize[i] < 4 ){
+			itkExceptionMacro( << "ControlPointsSize must be set and valid (>3) to set parameters this way.")
 		}
 	}
 
@@ -136,13 +136,13 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	this->m_OutputField->Allocate();
 	VectorType zerov; zerov.Fill( 0.0 );
 	this->m_OutputField->FillBuffer( zerov );
-	this->SetNumberOfSamples( image->GetLargestPossibleRegion().GetNumberOfPixels() );
+	size_t nparam = image->GetLargestPossibleRegion().GetNumberOfPixels();
 
 	// Initialize off-grid positions
 	PointType p;
-	for( size_t i = 0; i < this->m_NumberOfParameters; i++ ) {
+	for( size_t i = 0; i < nparam; i++ ) {
 		image->TransformIndexToPhysicalPoint( image->ComputeIndex( i ), p );
-		this->m_OffGridPos[i] = p;
+		this->m_OffGridPos.push_back( p );
 	}
 }
 
@@ -197,9 +197,7 @@ template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetNumberOfSamples( size_t n ) {
-	this->m_NumberOfSamples = n;
 	this->m_OffGridPos.resize(n);
-	this->m_OffGridValueMatrix = WeightsMatrix ( n, Dimension );
 }
 
 template< class TScalarType, unsigned int NDimensions >
@@ -251,6 +249,8 @@ template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputePhi() {
+	this->m_NumberOfSamples = this->m_OffGridPos.size();
+	this->m_OffGridValueMatrix = WeightsMatrix ( this->m_OffGridPos.size(), Dimension );
 	this->m_Phi = this->ComputeMatrix( this->m_OffGridPos, this->m_OnGridPos );
 }
 
@@ -402,6 +402,14 @@ SparseMatrixTransform<TScalarType,NDimensions>
 }
 
 template< class TScalarType, unsigned int NDimensions >
+inline void
+SparseMatrixTransform<TScalarType,NDimensions>
+::AddOffGridPos(typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
+	this->m_OffGridPos.push_back( pi );
+}
+
+
+template< class TScalarType, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetParameters( const ParametersType & parameters ) {
@@ -455,8 +463,12 @@ inline typename SparseMatrixTransform<TScalarType,NDimensions>::VectorType
 SparseMatrixTransform<TScalarType,NDimensions>
 ::GetOffGridValue( const size_t id ) const {
 	VectorType ci;
-	for( size_t dim = 0; dim < Dimension; dim++) {
-		ci[dim] = this->m_OffGridValueMatrix.get( id, dim );
+	ci.Fill( 0.0 );
+
+	if ( !this->m_OffGridValueMatrix.empty_row( id ) ) {
+		for( size_t d = 0; d < Dimension; d++) {
+			ci[d] = this->m_OffGridValueMatrix( id, d );
+		}
 	}
 
 	return ci;

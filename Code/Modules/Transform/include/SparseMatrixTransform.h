@@ -137,6 +137,7 @@ public:
 	// Setters & Getters -----------------------------------------
 	// Physical positions
 	inline void SetOffGridPos  ( size_t id, const PointType pi );
+	inline void AddOffGridPos  ( const PointType pi );
 
 	// Values off-grid (displacement vector of a node)
 	inline bool       SetOffGridValue( const size_t id, VectorType pi );
