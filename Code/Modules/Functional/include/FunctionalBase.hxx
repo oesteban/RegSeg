@@ -142,11 +142,15 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	this->UpdateContour();
 
-	for ( size_t i = 0; i<Dimension; i++)
+	typename CoefficientsImageType::PixelType* buff[Dimension];
+	for ( size_t i = 0; i<Dimension; i++) {
 		this->m_Derivative[i]->FillBuffer( 0.0 );
+		buff[i] = this->m_Derivative[i]->GetBufferPointer();
+	}
 
-	WeightsMatrix phi = this->m_Transform->GetPhi();
+	WeightsMatrix phi = this->m_Transform->GetPhi().transpose();
 	WeightsMatrix gradVector( this->m_NumberOfPoints, Dimension );
+	WeightsMatrix derivative( this->m_NumberOfNodes, Dimension );
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		sample.clear();
@@ -267,6 +271,17 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 	// Multiply phi and copy reshaped on this->m_Derivative
+	phi.mult( gradVector, derivative );
+
+	typename WeightsMatrix::row row;
+
+	for( size_t r = 0; r< this->m_NumberOfNodes; r++ ){
+		row = derivative.get_row( r );
+
+		for( size_t c = 0; c<row.size(); c++ ) {
+			*( buff[row[c].first] + r ) = row[c].second;
+		}
+	}
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
