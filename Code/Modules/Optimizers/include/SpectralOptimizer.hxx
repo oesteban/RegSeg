@@ -50,10 +50,13 @@
 #include <vnl/vnl_matrix.h>
 #include <vnl/vnl_diag_matrix.h>
 #include <cmath>
-#include <itkComplexToRealImageFilter.h>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+
+#include <itkComplexToRealImageFilter.h>
+#include <itkImageAlgorithm.h>
+
 using namespace std;
 
 #include "DisplacementFieldFileWriter.h"
@@ -65,23 +68,28 @@ namespace rstk {
  * Default constructor
  */
 template< typename TFunctional >
-SpectralOptimizer<TFunctional>::SpectralOptimizer() {
-	this->m_LearningRate = itk::NumericTraits<InternalComputationValueType>::One;
-	this->m_CurrentValue = itk::NumericTraits<MeasureType>::infinity();
-	this->m_MinimumConvergenceValue = 1e-8;
-	this->m_ConvergenceWindowSize = 50;
-	this->m_StepSize =  1.0;
+SpectralOptimizer<TFunctional>::SpectralOptimizer():
+m_Stop( false ),
+m_StepSize(1.0),
+m_CurrentIteration( 1 ),
+m_NumberOfIterations( 250 ),
+m_LearningRate( 1.0 ),
+m_ConvergenceWindowSize( 50 ),
+m_MinimumConvergenceValue( 1.0e-8 ),
+m_DenominatorCached( false )
+{
 	this->m_Alpha.Fill( 1.0 );
 	this->m_Beta.Fill( 10.0 );
-
-	this->m_NumberOfIterations = 250;
-	this->m_CurrentIteration   = 0;
 	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 20 );
 
-	m_CurrentTotalEnergy = itk::NumericTraits<MeasureType>::infinity();
-	m_RegularizationEnergyUpdated = false;
+	this->m_CurrentValue = itk::NumericTraits<MeasureType>::infinity();
+	this->m_CurrentTotalEnergy = itk::NumericTraits<MeasureType>::infinity();
+	this->m_RegularizationEnergyUpdated = false;
+
+	SplineTransformPointer defaultTransform = SplineTransformType::New();
+	this->m_Transform = itkDynamicCastInDebugMode< TransformType* >( defaultTransform.GetPointer() );
 }
 
 template< typename TFunctional >
@@ -94,7 +102,6 @@ void SpectralOptimizer<TFunctional>
 	os << indent << "Stop condition:" << this->m_StopCondition << std::endl;
 	os << indent << "Stop condition description: " << this->m_StopConditionDescription.str() << std::endl;
 }
-
 
 
 template< typename TFunctional >
@@ -120,10 +127,8 @@ void SpectralOptimizer<TFunctional>::Start() {
 //		this->m_CurrentBestValue = NumericTraits< MeasureType >::max();
 //	}
 
-	this->m_Functional->CopyInformation( this->m_Parameters );
 	this->m_Functional->Initialize();
 	this->InvokeEvent( itk::StartEvent() );
-	this->m_CurrentIteration = 1;
 	this->Resume();
 }
 
@@ -172,26 +177,29 @@ void SpectralOptimizer<TFunctional>::Resume() {
 			break;
 		}
 
-
 		/* Advance one step along the gradient.
 		 * This will modify the gradient and update the transform. */
-		this->m_CurrentSpeeds = this->m_Functional->GetDerivative();
+		this->m_DerivativeCoefficients = this->m_Functional->GetDerivative();
 
 #ifndef NDEBUG
-		typedef rstk::DisplacementFieldComponentsFileWriter<ParametersType> ComponentsWriter;
-		typename ComponentsWriter::Pointer p = ComponentsWriter::New();
-		std::stringstream ss;
-		ss.str("");
-		ss << "speeds_" << std::setfill('0')  << std::setw(3) << this->GetCurrentIteration();
-		p->SetFileName( ss.str().c_str() );
-		p->SetInput( this->m_CurrentSpeeds );
-		p->Update();
+		for ( size_t i = 0; i<Dimension; i++) {
+			typedef itk::ImageFileWriter< CoefficientsImageType > CoefficientsWriter;;
+			typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
+			std::stringstream ss;
+			ss.str("");
+			ss << "coeff_speeds_" << std::setfill('0')  << std::setw(3) << this->GetCurrentIteration() << std::setw(1) << "_cmp" << i << ".nii.gz";
+			p->SetFileName( ss.str().c_str() );
+			p->SetInput( this->m_DerivativeCoefficients[i] );
+			p->Update();
+		}
 #endif
-
 
 		this->Iterate();
 
 		/* Update the deformation field */
+		this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
+		this->m_Transform->UpdateField();
+
 		this->UpdateField();
 		this->m_CurrentValue = this->ComputeIterationChange();
 		this->SetUpdate();
@@ -272,13 +280,13 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 		//	normalizer*= this->m_LastField->GetSpacing()[i];
 		//}
         //
-		//this->m_Functional->GetFieldInterpolator()->ComputeJacobian();
+		//this->m_Functional->GetTransform()->ComputeJacobian();
         //
-		//typedef typename FunctionalType::FieldInterpolatorType::JacobianType JacobianType;
+		//typedef typename FunctionalType::TransformType::JacobianType JacobianType;
 		//JacobianType j;
         //
 		//for ( size_t pix = 0; pix<nPix; pix++) {
-		//	j = this->m_Functional->GetFieldInterpolator()->GetJacobian(pix);
+		//	j = this->m_Functional->GetTransform()->GetJacobian(pix);
 		//	for ( size_t i = 0; i<Dimension; i++) {
 		//		u[i] = j[i][i]*j[i][i];
 		//	}
@@ -293,59 +301,46 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::SpectralUpdate(
-		ParametersType* parameters,
-		const ParametersType* lambda,
-		ParametersType* nextParameters,
+		CoefficientsImageArray parameters,
+		const CoefficientsImageArray lambda,
+		CoefficientsImageArray nextParameters,
 		bool changeDirection )
 {
 	itkDebugMacro("Optimizer Spectral Update");
 
-	double min_val = 1.0e-9;
 	double dir = (changeDirection)?-1.0:1.0;
 	double r = 1.0/this->m_StepSize;
 
-	size_t nPix = parameters->GetLargestPossibleRegion().GetNumberOfPixels();
-
-
-	std::vector< ParametersComponentPointer > numComps;
-
-	for( size_t d = 0; d<Dimension; d++ ) {
-		// Create container for deformation field components
-		ParametersComponentPointer num = ParametersComponentType::New();
-		num->SetDirection( this->m_Parameters->GetDirection() );
-		num->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
-		num->SetSpacing( this->m_Parameters->GetSpacing() );
-		num->SetOrigin( this->m_Parameters->GetOrigin());
-		num->Allocate();
-		num->FillBuffer(0.0);
-		numComps.push_back( num );
-	}
-
-	// Prepare numerator
-	// Get deformation fields pointers
-	const VectorType* uFieldBuffer = parameters->GetBufferPointer();
-	const VectorType* lFieldBuffer = lambda->GetBufferPointer();
-	VectorType u, l, n;
-
-	for(size_t pix = 0; pix< nPix; pix++) {
-		u = *(uFieldBuffer+pix);
-		l = *(lFieldBuffer+pix);
-		n = u * r + dir * l;
-
-		if ( n.GetNorm()> 0.0 ) {
-
-			for( size_t d = 0; d<Dimension; d++ ) {
-				PointValueType* compBuffer = numComps[d]->GetBufferPointer();
-				*(compBuffer+pix) = n[d];
-			}
-		}
-	}
-
-	VectorType* nextBuffer = nextParameters->GetBufferPointer();
+	size_t nPix = this->m_Transform->GetNumberOfParameters();
 
 	for( size_t d = 0; d < Dimension; d++ ) {
+		CoefficientsImagePointer numerator = CoefficientsImageType::New();
+		numerator->SetDirection( parameters[d]->GetDirection() );
+		numerator->SetRegions(   parameters[d]->GetLargestPossibleRegion() );
+		numerator->SetSpacing(   parameters[d]->GetSpacing() );
+		numerator->SetOrigin(    parameters[d]->GetOrigin());
+		numerator->Allocate();
+		numerator->FillBuffer(0.0);
+
+		// Prepare numerator
+		// Get deformation fields pointers
+		const PointValueType* uFieldBuffer = parameters[d]->GetBufferPointer();
+		const PointValueType* lFieldBuffer = lambda[d]->GetBufferPointer();
+		PointValueType* numBuffer = numerator->GetBufferPointer();
+
+		PointValueType u, l, n;
+		for(size_t pix = 0; pix< nPix; pix++) {
+			u = *(uFieldBuffer+pix);
+			l = *(lFieldBuffer+pix);
+			n = u * r + dir * l;
+
+			if ( n != 0.0 ) {
+				*( numBuffer ) = n;
+			}
+		}
+
 		FFTPointer fftFilter = FFTType::New();
-		fftFilter->SetInput( numComps[d] );
+		fftFilter->SetInput( numerator );
 		fftFilter->Update();  // This is required for computing the denominator for first time
 		FTDomainPointer fftComponent =  fftFilter->GetOutput();
 
@@ -365,13 +360,24 @@ void SpectralOptimizer<TFunctional>::SpectralUpdate(
 			throw err;
 		}
 
-		// Set component on this->m_ParametersNext
-		const PointValueType* resultBuffer = ifft->GetOutput()->GetBufferPointer();
-		PointValueType val;
-		for(size_t pix = 0; pix< nPix; pix++) {
-			val = *(resultBuffer+pix);
-			(*(nextBuffer+pix))[d] = ( fabs(val) > min_val )?val:0.0;
-		}
+		// Set component in destination buffer of coefficients
+		itk::ImageAlgorithm::Copy< CoefficientsImageType, CoefficientsImageType >(
+			ifft->GetOutput(),
+			nextParameters[d],
+			ifft->GetOutput()->GetLargestPossibleRegion(),
+			nextParameters[d]->GetLargestPossibleRegion()
+		);
+
+#ifndef NDEBUG
+		typedef itk::ImageFileWriter< CoefficientsImageType > CoefficientsWriter;
+		typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
+		std::stringstream ss;
+		ss.str("");
+		ss << "coefficients_" << std::setfill('0')  << std::setw(3) << this->GetCurrentIteration() << "_cmp" << d << ".nii.gz";
+		p->SetFileName( ss.str().c_str() );
+		p->SetInput( this->m_NextCoefficients[d] );
+		p->Update();
+#endif
 	}
 }
 
@@ -379,9 +385,8 @@ template< typename TFunctional >
 void SpectralOptimizer<TFunctional>
 ::ApplyRegularizationComponent( size_t d, typename SpectralOptimizer<TFunctional>::FTDomainType* reference ){
 
-	if( this->m_Denominator.size() != Dimension ) { // If executed for first time, cache the map
+	if ( !this->m_DenominatorCached )
 		this->InitializeDenominator( reference );
-	}
 
 	size_t nPix = this->m_Denominator[d]->GetLargestPossibleRegion().GetNumberOfPixels();
 
@@ -406,15 +411,15 @@ void SpectralOptimizer<TFunctional>
 ::InitializeDenominator( itk::ImageBase<Dimension>* reference ){
 	PointValueType pi2 = 2* vnl_math::pi;
 	size_t nPix = reference->GetLargestPossibleRegion().GetNumberOfPixels();
-	typename ParametersComponentType::SizeType size = reference->GetLargestPossibleRegion().GetSize();
+	ControlPointsGridSizeType size = reference->GetLargestPossibleRegion().GetSize();
 
 	for (size_t i = 0; i<Dimension; i++) {
 		PointValueType initVal = (1.0/this->m_StepSize) + this->m_Alpha[i];
 
-		ParametersComponentPointer dimDdor = ParametersComponentType::New();
+		CoefficientsImagePointer dimDdor = CoefficientsImageType::New();
 		dimDdor->SetSpacing(   reference->GetSpacing() );
 		dimDdor->SetDirection( reference->GetDirection() );
-		dimDdor->SetRegions( reference->GetLargestPossibleRegion().GetSize() );
+		dimDdor->SetRegions(   reference->GetLargestPossibleRegion().GetSize() );
 		dimDdor->Allocate();
 
 		PointValueType* buffer = dimDdor->GetBufferPointer();
@@ -422,7 +427,7 @@ void SpectralOptimizer<TFunctional>
 		if( this->m_Beta.GetNorm() > 0.0 ) {
 			// Fill Buffer with denominator data
 			PointValueType lag_el; // accumulates the FT{lagrange operator}.
-			typename ParametersComponentType::IndexType idx;
+			typename CoefficientsImageType::IndexType idx;
 			for (size_t pix = 0; pix < nPix; pix++ ) {
 				lag_el = 0.0;
 				idx = dimDdor->ComputeIndex( pix );
@@ -437,40 +442,21 @@ void SpectralOptimizer<TFunctional>
 		}
 
 
-		this->m_Denominator.push_back( dimDdor );
+		this->m_Denominator[i] = dimDdor;
 	}
+	this->m_DenominatorCached = true;
 }
 
 
 template< typename TFunctional >
 void
 SpectralOptimizer<TFunctional>::UpdateField() {
-	bool update = false;
 
-#ifndef NDEBUG
-	typedef rstk::DisplacementFieldComponentsFileWriter<ParametersType> ComponentsWriter;
-	typename ComponentsWriter::Pointer p = ComponentsWriter::New();
-	std::stringstream ss;
-	ss.str("");
-	ss << "coefficients_" << std::setfill('0')  << std::setw(3) << this->GetCurrentIteration();
-	p->SetFileName( ss.str().c_str() );
-	p->SetInput( this->m_NextParameters );
-	p->Update();
-#endif
-
-	FieldInterpolatorPointer fintp = this->m_Functional->GetFieldInterpolator();
-	fintp->SetCoefficientsVectorImage( this->m_NextParameters );
-
-	if (update) {
-		fintp->UpdateField();
-		typedef typename FieldInterpolatorType::FieldType FieldType;
-		typename FieldType::ConstPointer f = fintp->GetField();
-
-		itk::ImageAlgorithm::Copy<FieldType, FieldType>(f, this->m_CurrentDisplacementField,
-			f->GetLargestPossibleRegion(),
-			this->m_CurrentDisplacementField->GetLargestPossibleRegion()
-	    );
-	}
+	itk::ImageAlgorithm::Copy<FieldType, FieldType>(
+		this->m_Transform->GetField(), this->m_CurrentDisplacementField,
+		this->m_Transform->GetField()->GetLargestPossibleRegion(),
+		this->m_CurrentDisplacementField->GetLargestPossibleRegion()
+	);
 }
 
 template< typename TFunctional >
@@ -500,67 +486,44 @@ SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::InitializeParameters() {
-	VectorType zerov;
-	zerov.Fill(0.0);
 
-	if (this->m_Parameters.IsNull()) {
-		ContinuousIndexType o_idx;
-		o_idx.Fill( -0.5 );
-
-		ContinuousIndexType e_idx;
-		for ( size_t dim=0; dim< Dimension; dim++ ) {
-			e_idx[dim] = this->m_Functional->GetReferenceImage()->GetLargestPossibleRegion().GetSize()[dim] - 0.5;
-		}
-
-		PointType first;
-		PointType last;
-
-		this->m_Functional->GetReferenceImage()->TransformContinuousIndexToPhysicalPoint( o_idx, first );
-		this->m_Functional->GetReferenceImage()->TransformContinuousIndexToPhysicalPoint( e_idx, last );
-
-		this->m_Parameters = ParametersType::New();
-
-
-		PointType orig,step;
-		typename ParametersType::SpacingType spacing;
-		for( size_t dim = 0; dim < Dimension; dim++ ) {
-			step[dim] = (last[dim]-first[dim])/(1.0*this->m_GridSize[dim]);
-			spacing[dim] = fabs(step[dim]);
-			orig[dim] = first[dim] + 0.5 * step[dim];
-		}
-
-		this->m_Parameters->SetRegions( this->m_GridSize );
-		this->m_Parameters->SetSpacing( spacing );
-		this->m_Parameters->SetDirection( this->m_Functional->GetReferenceImage()->GetDirection() );
-		this->m_Parameters->SetOrigin( orig );
-		this->m_Parameters->Allocate();
-		this->m_Parameters->FillBuffer( zerov );
-
+	// Check functional exists and hold a reference image
+	if ( this->m_Functional.IsNull() ) {
+		itkExceptionMacro( << "functional must be set." );
+	}
+	if ( this->m_Functional->GetReferenceImage() ) {
+		itkExceptionMacro( << "functional does not seem to hold a reference image." )
 	}
 
+	this->m_Transform->SetControlPointsSize( this->m_GridSize );
+	this->m_Transform->SetPhysicalDomainInformation( this->m_Functional->GetReferenceImage() );
+	CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
+
+	VectorType zerov; zerov.Fill( 0.0 );
 	/* Initialize next parameters */
-	this->m_NextParameters = ParametersType::New();
-	this->m_NextParameters->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
-	this->m_NextParameters->SetSpacing( this->m_Parameters->GetSpacing() );
-	this->m_NextParameters->SetDirection( this->m_Parameters->GetDirection() );
-	this->m_NextParameters->SetOrigin( this->m_Parameters->GetOrigin() );
-	this->m_NextParameters->Allocate();
-	this->m_NextParameters->FillBuffer( zerov );
+	for ( size_t i=0; i<coeff.Size(); i++ ) {
+		this->m_NextCoefficients[i] = CoefficientsImageType::New();
+		this->m_NextCoefficients[i]->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
+		this->m_NextCoefficients[i]->SetSpacing(   coeff[0]->GetSpacing() );
+		this->m_NextCoefficients[i]->SetDirection( coeff[0]->GetDirection() );
+		this->m_NextCoefficients[i]->SetOrigin(    coeff[0]->GetOrigin() );
+		this->m_NextCoefficients[i]->Allocate();
+		this->m_NextCoefficients[i]->FillBuffer( 0.0 );
+	}
 
-
-	this->m_LastField = ParametersType::New();
-	this->m_LastField->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
-	this->m_LastField->SetSpacing( this->m_Parameters->GetSpacing() );
-	this->m_LastField->SetDirection( this->m_Parameters->GetDirection() );
-	this->m_LastField->SetOrigin( this->m_Parameters->GetOrigin() );
+	this->m_LastField = FieldType::New();
+	this->m_LastField->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
+	this->m_LastField->SetSpacing(   coeff[0]->GetSpacing() );
+	this->m_LastField->SetDirection( coeff[0]->GetDirection() );
+	this->m_LastField->SetOrigin(    coeff[0]->GetOrigin() );
 	this->m_LastField->Allocate();
 	this->m_LastField->FillBuffer( zerov );
 
-	this->m_CurrentDisplacementField = ParametersType::New();
-	this->m_CurrentDisplacementField->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
-	this->m_CurrentDisplacementField->SetSpacing( this->m_Parameters->GetSpacing() );
-	this->m_CurrentDisplacementField->SetDirection( this->m_Parameters->GetDirection() );
-	this->m_CurrentDisplacementField->SetOrigin( this->m_Parameters->GetOrigin() );
+	this->m_CurrentDisplacementField = FieldType::New();
+	this->m_CurrentDisplacementField->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
+	this->m_CurrentDisplacementField->SetSpacing(   coeff[0]->GetSpacing() );
+	this->m_CurrentDisplacementField->SetDirection( coeff[0]->GetDirection() );
+	this->m_CurrentDisplacementField->SetOrigin(    coeff[0]->GetOrigin() );
 	this->m_CurrentDisplacementField->Allocate();
 	this->m_CurrentDisplacementField->FillBuffer( zerov );
 }

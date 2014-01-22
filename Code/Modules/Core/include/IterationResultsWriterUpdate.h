@@ -29,25 +29,32 @@ public:
 	typedef itk::SmartPointer<Self>                     Pointer;
 	typedef itk::SmartPointer< const Self >             ConstPointer;
 
-	typedef typename OptimizerType::ParametersType      ParametersType;
+	typedef typename OptimizerType::FieldType      FieldType;
+	typedef typename OptimizerType::CoefficientsImageType      CoefficientsImageType;
+	typedef typename OptimizerType::CoefficientsImageArray      CoefficientsImageArray;
 	typedef typename OptimizerType::FunctionalType      FunctionalType;
 	typedef typename FunctionalType::ProbabilityMapType ProbabilityMapType;
 
-	typedef rstk::DisplacementFieldComponentsFileWriter<ParametersType> ComponentsWriter;
+	typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> ComponentsWriter;
 	typedef itk::ImageFileWriter< ProbabilityMapType >  MapWriter;
+	typedef typename itk::ImageFileWriter< CoefficientsImageType > CoefficientsWriter;
 
 	itkTypeMacro( IterationResultWriterUpdate, IterationUpdate ); // Run-time type information (and related methods)
 	itkNewMacro( Self );
 
     void Execute(const itk::Object * object, const itk::EventObject & event) {
     	if( typeid( event ) == typeid( itk::IterationEvent ) ) {
-        	typename ComponentsWriter::Pointer p = ComponentsWriter::New();
-        	std::stringstream ss;
-        	ss.str("");
-        	ss << this->m_Prefix << "_parameters_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration();
-        	p->SetFileName( ss.str().c_str() );
-        	p->SetInput( this->m_Optimizer->GetParameters() );
-        	p->Update();
+    		std::stringstream ss;
+
+    		CoefficientsImageArray coeff = this->m_Optimizer->GetCoefficients();
+    		for ( size_t i = 0; i< coeff.Size(); i++) {
+				typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
+				ss.str("");
+				ss << this->m_Prefix << "_coeff_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
+				p->SetFileName( ss.str().c_str() );
+				p->SetInput( coeff[i] );
+				p->Update();
+    		}
 
      		typename ComponentsWriter::Pointer f = ComponentsWriter::New();
     		ss.str("");

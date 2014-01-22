@@ -88,18 +88,10 @@ public:
 	/** Functional definitions */
 	typedef typename Superclass::FunctionalPointer                FunctionalPointer;
 	typedef typename Superclass::ParametersType                   ParametersType;
-	typedef typename Superclass::DerivativeType                   DerivativeType;
 	typedef typename Superclass::MeasureType                      MeasureType;
 	typedef typename Superclass::PointType                        PointType;
 	typedef typename Superclass::VectorType                       VectorType;
 	typedef typename Superclass::PointValueType                   PointValueType;
-	typedef typename Superclass::ParametersPointer                ParametersPointer;
-	typedef typename Superclass::ParametersConstPointer           ParametersConstPointer;
-	typedef typename Superclass::ParametersPointType              ParametersPointType;
-	typedef typename Superclass::ParametersDirectionType          ParametersDirectionType;
-	typedef typename Superclass::GridSizeType                     GridSizeType;
-	typedef typename Superclass::ParametersComponentType          ParametersComponentType;
-	typedef typename Superclass::ParametersComponentPointer       ParametersComponentPointer;
 	typedef typename Superclass::FFTType                          FFTType;
 	typedef typename Superclass::FFTPointer                       FFTPointer;
 	typedef typename Superclass::FTDomainType                     FTDomainType;
@@ -124,6 +116,7 @@ public:
 	/** Type for the convergence checker */
 	typedef typename Superclass::ConvergenceMonitoringType        ConvergenceMonitoringType;
 
+	typedef typename Superclass::CoefficientsImageType            CoefficientsImageType;
 protected:
 	SpectralGradientDescentOptimizer();
 	~SpectralGradientDescentOptimizer() {}

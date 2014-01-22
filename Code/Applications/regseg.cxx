@@ -82,16 +82,10 @@ int main(int argc, char *argv[]) {
 
 	// Initialize LevelSet function
 	FunctionalType::Pointer functional = FunctionalType::New();
+
 	// Connect Optimizer
 	OptimizerPointer opt = Optimizer::New();
 	opt->SetFunctional( functional );
-
-	// Initialize Transform
-	TransformPointer transform = TransformType::New();
-	if (vmap.count("grid-size")) {
-		transform->SetControlPointsSize( vmap["grid-size"].as<size_t>() );
-	}
-
 
 	// Read target feature(s) -----------------------------------------------------------
 	root["inputs"]["target"]["components"]["size"] = Json::Int (fixedImageNames.size());
@@ -111,7 +105,6 @@ int main(int argc, char *argv[]) {
     comb->Update();
 	ImageType::Pointer im = comb->GetOutput();
 	functional->SetReferenceImage( im );
-	transform->SetPhysicalDomainInformation( im );
 
 	// Read moving surface(s) -----------------------------------------------------------
 	root["inputs"]["moving"]["components"]["size"] = Json::Int (movingSurfaceNames.size());
@@ -129,6 +122,10 @@ int main(int argc, char *argv[]) {
 
 
 	// Set up registration ------------------------------------------------------------
+	if (vmap.count("grid-size")) {
+		opt->SetGridSize( vmap["grid-size"].as<size_t>() );
+	}
+
 	if (vmap.count("iterations")) {
 		opt->SetNumberOfIterations( vmap["iterations"].as<int>() );
 	}
