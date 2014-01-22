@@ -82,6 +82,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 	CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
+	this->m_NumberOfNodes = coeff[0]->GetLargestPossibleRegion().GetNumberOfPixels();
+
 	for( size_t i = 0; i<Dimension; i++ ) {
 		this->m_Derivative[i] = CoefficientsImageType::New();
 		this->m_Derivative[i]->SetRegions(   coeff[i]->GetLargestPossibleRegion().GetSize() );
@@ -144,7 +146,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		this->m_Derivative[i]->FillBuffer( 0.0 );
 
 	WeightsMatrix phi = this->m_Transform->GetPhi();
-	WeightsMatrix gradVector( this->m_NumberOfNodes, Dimension );
+	WeightsMatrix gradVector( this->m_NumberOfPoints, Dimension );
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		sample.clear();

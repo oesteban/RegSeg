@@ -92,6 +92,7 @@ public:
 
 protected:
     IterationResultWriterUpdate(){}
+    ~IterationResultWriterUpdate(){}
 
 private:
     IterationResultWriterUpdate( const Self & ); // purposely not implemented
