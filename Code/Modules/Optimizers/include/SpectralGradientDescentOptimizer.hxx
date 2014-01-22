@@ -55,9 +55,7 @@ namespace rstk {
  * Default constructor
  */
 template< typename TFunctional >
-SpectralGradientDescentOptimizer<TFunctional>::SpectralGradientDescentOptimizer() {
-
-}
+SpectralGradientDescentOptimizer<TFunctional>::SpectralGradientDescentOptimizer() {}
 
 template< typename TFunctional >
 void SpectralGradientDescentOptimizer<TFunctional>

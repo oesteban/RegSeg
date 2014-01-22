@@ -69,13 +69,13 @@ namespace rstk {
  */
 template< typename TFunctional >
 SpectralOptimizer<TFunctional>::SpectralOptimizer():
-m_Stop( false ),
+m_LearningRate( 1.0 ),
+m_MinimumConvergenceValue( 1.0e-8 ),
+m_ConvergenceWindowSize( 50 ),
 m_StepSize(1.0),
+m_Stop( false ),
 m_CurrentIteration( 1 ),
 m_NumberOfIterations( 250 ),
-m_LearningRate( 1.0 ),
-m_ConvergenceWindowSize( 50 ),
-m_MinimumConvergenceValue( 1.0e-8 ),
 m_DenominatorCached( false )
 {
 	this->m_Alpha.Fill( 1.0 );
@@ -491,12 +491,11 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	if ( this->m_Functional.IsNull() ) {
 		itkExceptionMacro( << "functional must be set." );
 	}
-	if ( this->m_Functional->GetReferenceImage() ) {
-		itkExceptionMacro( << "functional does not seem to hold a reference image." )
-	}
 
 	this->m_Transform->SetControlPointsSize( this->m_GridSize );
 	this->m_Transform->SetPhysicalDomainInformation( this->m_Functional->GetReferenceImage() );
+	this->m_Functional->SetTransform( this->m_Transform );
+
 	CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
 
 	VectorType zerov; zerov.Fill( 0.0 );
