@@ -167,9 +167,9 @@ public:
 	typedef typename ModulateFilterType::Pointer             ModulateFilterPointer;
 
 
-	typedef itk::DisplacementFieldTransform<TCoordRepType, Dimension>
-															 DisplacementTransformType;
-	typedef typename DisplacementTransformType::Pointer      DisplacementTransformPointer;
+	//typedef itk::DisplacementFieldTransform<TCoordRepType, Dimension>
+	//														 DisplacementTransformType;
+	//typedef typename DisplacementTransformType::Pointer      DisplacementTransformPointer;
 
 	typedef unsigned char                                    ROIPixelType;
 	typedef itk::Image< ROIPixelType, Dimension >            ROIType;
@@ -196,8 +196,14 @@ public:
 			       < ContourSpatialObject, ROIType >         SpatialObjectToImageFilterType;
 	typedef typename SpatialObjectToImageFilterType::Pointer SpatialObjectToImageFilterPointer;
 
-	typedef SparseMatrixTransform<TCoordRepType, Dimension > FieldInterpolatorType;
-	typedef typename FieldInterpolatorType::Pointer          FieldInterpolatorPointer;
+	typedef SparseMatrixTransform<TCoordRepType, Dimension > TransformType;
+	typedef typename TransformType::Pointer                  TransformPointer;
+	typedef typename TransformType::SizeType                 TransformControlPointsSizeType;
+	typedef typename TransformType::CoefficientsImageType    CoefficientsImageType;
+	typedef typename TransformType::CoeffImagePointer        CoefficientsImagePointer;
+	typedef typename TransformType::CoefficientsImageArray   CoefficientsImageArray;
+	typedef typename TransformType::ParametersType           ParametersType;
+	typedef typename TransformType::WeightsMatrix            WeightsMatrix;
 
 	typedef DownsampleAveragingFilter
 			                 <ROIType, ProbabilityMapType >  ResampleROIFilterType;
@@ -211,7 +217,7 @@ public:
 	//		  FieldType>                                     WarpContourType;
 
 	typedef WarpQEMeshFilter< ContourType, ContourType,
-			                         FieldInterpolatorType > WarpContourFilterType;
+			                         TransformType > WarpContourFilterType;
 	typedef typename WarpContourFilterType::Pointer          WarpContourPointer;
 	typedef std::vector< WarpContourPointer >                WarpContourFilterList;
 
@@ -262,10 +268,18 @@ public:
 			return a.grad < b.grad;
 		}
 	};
+	struct by_gid {
+		bool operator()( GradientSample const &a, GradientSample const &b ) {
+			return a.gid < b.gid;
+		}
+	};
+	struct by_cid {
+		bool operator()( GradientSample const &a, GradientSample const &b ) {
+			return a.cid < b.cid;
+		}
+	};
+
 	typedef typename std::vector< GradientSample >           SampleType;
-
-
-	void CopyInformation( const FieldType* field);
 
 	MeasureType GetValue();
 
@@ -284,14 +298,14 @@ public:
 
 	itkGetMacro(CurrentContours, ContourList);
 
-	itkSetObjectMacro(Derivative, FieldType);
-	itkGetConstObjectMacro(Derivative, FieldType);
+	itkSetMacro(Derivative, CoefficientsImageArray);
+	itkGetConstMacro(Derivative, CoefficientsImageArray);
 
 	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
 
-	itkSetObjectMacro(FieldInterpolator, FieldInterpolatorType);
-	itkGetObjectMacro(FieldInterpolator, FieldInterpolatorType);
+	itkSetObjectMacro(Transform, TransformType);
+	itkGetObjectMacro(Transform, TransformType);
 
 protected:
 	FunctionalBase();
@@ -314,20 +328,19 @@ protected:
 	//bool CheckExtents( const ContourType* prior ) const;
 
 	mutable MeasureType m_Value;
-	FieldPointer m_Derivative;
+	CoefficientsImageArray m_Derivative;
 	FieldPointer m_ReferenceSamplingGrid;
 	ContourList m_CurrentContours;
 	ShapeGradientList m_Gradients;
 	ConstContourList m_Priors;
 	NormalFilterList m_NormalFilter;
 	WarpContourPointer m_ContourUpdater;
-	FieldInterpolatorPointer m_FieldInterpolator;
+	TransformPointer m_Transform;
 	DisplacementResamplerPointer m_EnergyResampler;
 	ROIList m_ROIs;
 	ROIList m_CurrentROIs;
 	ProbabilityMapList m_CurrentMaps;
 	ROIPointer m_CurrentRegions;
-	DisplacementTransformPointer m_Transform;
 	ReferenceImageConstPointer m_ReferenceImage;
 	ContourOuterRegionsList m_OuterList;
 	bool m_EnergyUpdated;

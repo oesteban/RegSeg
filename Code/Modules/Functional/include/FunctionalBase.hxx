@@ -63,14 +63,13 @@ template< typename TReferenceImageType, typename TCoordRepType >
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::FunctionalBase() {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
-	//this->m_FieldInterpolator = FieldInterpolatorType::New();
-	this->m_Derivative = FieldType::New();
 	this->m_EnergyUpdated = false;
 	this->m_RegionsUpdated = false;
 	this->m_NumberOfContours = 0;
+	this->m_NumberOfNodes = 0;
+	this->m_NumberOfPoints = 0;
 	this->m_SamplingFactor = 4;
 	this->m_Scale = 100.0;
-
 	this->m_LinearInterpolator = VectorInterpolatorType::New();
 }
 
@@ -78,6 +77,21 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
+	if ( this->m_Transform.IsNull() ) {
+		itkExceptionMacro( << "Initialization failed: no transform is set");
+	}
+
+	CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
+	for( size_t i = 0; i<Dimension; i++ ) {
+		this->m_Derivative[i] = CoefficientsImageType::New();
+		this->m_Derivative[i]->SetRegions(   coeff[i]->GetLargestPossibleRegion().GetSize() );
+		this->m_Derivative[i]->SetOrigin(    coeff[i]->GetOrigin() );
+		this->m_Derivative[i]->SetDirection( coeff[i]->GetDirection() );
+		this->m_Derivative[i]->SetSpacing(   coeff[i]->GetSpacing() );
+		this->m_Derivative[i]->Allocate();
+		this->m_Derivative[i]->FillBuffer( 0.0 );
+	}
+
 	this->InitializeCurrentContours();
 
 	// Initialize corresponding ROI /////////////////////////////
@@ -94,11 +108,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	// Compute the outer region in each vertex
 	this->ComputeOuterRegions();
-
-	// Set up grid points in the sparse-dense interpolator
-	this->InitializeInterpolatorGrid();
 }
-
 
 template< typename TReferenceImageType, typename TCoordRepType >
 size_t
@@ -106,17 +116,16 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContourType* prior ) {
 	this->m_Priors.push_back( prior );
 
+	// Increase number of off-grid nodes to set into the sparse-dense interpolator
+	this->m_NumberOfPoints+= prior->GetNumberOfPoints();
 
 	WarpContourPointer wrp = WarpContourFilterType::New();
 	wrp->SetInput( prior );
 	this->m_WarpContourFilter.push_back( wrp );
-
-
 	this->m_NumberOfContours++;
     this->m_ROIs.resize( this->m_NumberOfContours+1 );
     this->m_CurrentROIs.resize( this->m_NumberOfContours+1 );
     this->m_CurrentMaps.resize( this->m_NumberOfContours+1 );
-
 	return this->m_NumberOfContours-1;
 }
 
@@ -127,11 +136,15 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	size_t cpid = 0;
 	NormalFilterPointer normalsFilter;
 	SampleType sample;
+	VectorType zerov; zerov.Fill(0.0);
 
 	this->UpdateContour();
 
-	VectorType zerov; zerov.Fill(0.0);
-	this->m_Derivative->FillBuffer( zerov );
+	for ( size_t i = 0; i<Dimension; i++)
+		this->m_Derivative[i]->FillBuffer( 0.0 );
+
+	WeightsMatrix phi = this->m_Transform->GetPhi();
+	WeightsMatrix gradVector( this->m_NumberOfNodes, Dimension );
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		sample.clear();
@@ -217,12 +230,15 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				// project to normal, updating transform
 				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
 				ni*= gradient;
+
+				for( size_t dim = 0; dim<Dimension; dim++ ) {
+					gradVector.put( sample[i].gid, dim, ni[dim] );
+				}
 			} else {
 				ni = zerov;
 			}
 
 			grads->SetElement( sample[i].cid, sample[i].grad );
-			this->m_FieldInterpolator->SetOffGridValue(sample[i].gid, ni);
 		}
 
 
@@ -248,18 +264,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 #endif
 	}
 
-	// Interpolate sparse velocity field to targetDeformation
-	//this->m_FieldInterpolator->ComputeCoeffDerivatives();
-
-	VectorType* gmBuffer = this->m_Derivative->GetBufferPointer();
-	VectorType v;
-
-	for( size_t gpid = 0; gpid<this->m_NumberOfNodes; gpid++ ) {
-		//v = this->m_FieldInterpolator->GetCoeffDerivative(gpid);
-		if ( v.GetNorm() > 1.0e-4 ) {
-			*( gmBuffer + gpid ) = v; // * (1.0/this->m_NumberOfPoints);
-		}
-	}
+	// Multiply phi and copy reshaped on this->m_Derivative
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -278,11 +283,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	SampleType sample;
 	double gradSum = 0.0;
 
-	this->m_FieldInterpolator->UpdateField();
-	FieldConstPointer updateField = this->m_FieldInterpolator->GetField();
+	this->m_Transform->UpdateField();
+	FieldConstPointer updateField = this->m_Transform->GetField();
 
 	this->m_LinearInterpolator->SetInputImage( updateField );
-	this->m_FieldInterpolator->Interpolate();
+	this->m_Transform->Interpolate();
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
 		typename ContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
@@ -298,7 +303,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			ci = p_it.Value();
 			pid = p_it.Index();
 			disp2 = this->m_LinearInterpolator->Evaluate( ci );
-			disp = this->m_FieldInterpolator->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
+			disp = this->m_Transform->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
 			norm = disp.GetNorm();
 
 			sample.push_back( GradientSample( norm, pid, gpid ) );
@@ -526,17 +531,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_CurrentRegions->Allocate();
 }
 
-template< typename TReferenceImageType, typename TCoordRepType >
-void
-FunctionalBase<TReferenceImageType, TCoordRepType>
-::CopyInformation( const FieldType* field) {
-	this->m_Derivative->SetDirection( field->GetDirection() );
-	this->m_Derivative->SetOrigin   ( field->GetOrigin() );
-	this->m_Derivative->SetSpacing  ( field->GetSpacing() );
-	this->m_Derivative->SetRegions  ( field->GetRequestedRegion().GetSize());
-	this->m_Derivative->Allocate();
-}
-
 
 // Reorient contours to image direction in order that allowing pixel-wise computations
 // ReorientFilter computes the new extent of the image if the directions
@@ -547,13 +541,6 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::InitializeCurrentContours() {
-	// Set number of control points in the sparse-dense interpolator
-	this->m_NumberOfPoints = 0;
-	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-		this->m_NumberOfPoints+= this->m_Priors[contid]->GetNumberOfPoints();
-	}
-	this->m_FieldInterpolator->SetNumberOfSamples(this->m_NumberOfPoints);
-
 	// Copy contours
 	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
 		ContourCopyPointer copy = ContourCopyType::New();
@@ -609,14 +596,17 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		PointsIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
 		PointType ci;
 		//size_t pid;
-		size_t cpid = 0;
 		while( c_it != c_end ) {
-			//pid = c_it.Index();
 			ci = c_it.Value();
-			this->m_FieldInterpolator->SetOffGridPos( cpid, ci );
+			this->m_Transform->AddOffGridPos( ci );
 			++c_it;
-			cpid++;
 		}
+	}
+
+	if ( this->m_NumberOfPoints != this->m_Transform->GetNumberOfSamples() ) {
+		itkExceptionMacro( << "an error occurred initializing mesh points: NumberOfPoints in functional and" \
+				" NumberOfSamples in transform do not match" );
+
 	}
 }
 
@@ -721,26 +711,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		std::fill( outerVect.begin(), outerVect.end(), 1 );
 		this->m_OuterList.push_back( outerVect );
 	}
-}
-
-template< typename TReferenceImageType, typename TCoordRepType >
-void
-FunctionalBase<TReferenceImageType, TCoordRepType>
-::InitializeInterpolatorGrid() {
-	itkWarningMacro( << "Implementation broken.");
-
-	//if( this->m_Derivative.IsNotNull() ) {
-	//	PointType uk;
-	//	this->m_NumberOfNodes = this->m_Derivative->GetLargestPossibleRegion().GetNumberOfPixels();
-	//	this->m_FieldInterpolator->SetNumberOfParameters( this->m_NumberOfNodes );
-    //
-	//	for ( size_t gid = 0; gid < this->m_NumberOfNodes; gid++ ) {
-	//		this->m_Derivative->TransformIndexToPhysicalPoint( this->m_Derivative->ComputeIndex( gid ), uk );
-	//	}
-	//} else {
-	//	itkWarningMacro( << "No parametrization (deformation field grid) was defined.");
-	//}
-
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >

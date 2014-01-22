@@ -56,6 +56,9 @@
 #include <itkImageIteratorWithIndex.h>
 #include <itkImageAlgorithm.h>
 
+
+#include "BSplineSparseMatrixTransform.h"
+
 using namespace itk;
 
 namespace rstk
@@ -103,30 +106,33 @@ public:
 	/** Stop condition internal string type */
 	typedef std::ostringstream                                      StopConditionDescriptionType;
 
+	typedef size_t                                                  SizeValueType;
 
 	/** Functional definitions */
 	typedef typename FunctionalType::Pointer                        FunctionalPointer;
-	typedef typename FunctionalType::FieldType                      ParametersType;
-	typedef typename FunctionalType::FieldType                      DerivativeType;
 	typedef typename FunctionalType::MeasureType                    MeasureType;
 
 	typedef typename FunctionalType::PointType                      PointType;
 	typedef typename FunctionalType::VectorType                     VectorType;
 	typedef typename FunctionalType::PointValueType                 PointValueType;
 
-	typedef typename FunctionalType::FieldInterpolatorType          FieldInterpolatorType;
-	typedef typename FieldInterpolatorType::Pointer                 FieldInterpolatorPointer;
+	typedef typename FunctionalType::TransformType                  TransformType;
+	typedef typename TransformType::Pointer                         TransformPointer;
+	typedef typename TransformType::CoefficientsImageType           CoefficientsImageType;
+	typedef typename TransformType::CoeffImagePointer               CoefficientsImagePointer;
+	typedef typename TransformType::CoefficientsImageArray          CoefficientsImageArray;
+	typedef typename TransformType::ParametersType                  ParametersType;
+	typedef typename TransformType::FieldType                       FieldType;
+	typedef typename TransformType::FieldPointer                    FieldPointer;
+	typedef typename TransformType::FieldConstPointer               FieldConstPointer;
+	typedef typename TransformType::SizeType                        ControlPointsGridSizeType;
 
-	typedef typename ParametersType::Pointer                        ParametersPointer;
-	typedef typename ParametersType::ConstPointer                   ParametersConstPointer;
-	typedef typename ParametersType::PointType                      ParametersPointType;
-	typedef typename ParametersType::DirectionType                  ParametersDirectionType;
-	typedef typename ParametersType::SizeType                       GridSizeType;
-	typedef typename itk::Image<PointValueType, Dimension >         ParametersComponentType;
-	typedef typename ParametersComponentType::Pointer               ParametersComponentPointer;
+	typedef BSplineSparseMatrixTransform
+			                      < PointValueType, Dimension, 3u > SplineTransformType;
+	typedef typename SplineTransformType::Pointer                   SplineTransformPointer;
 
 	typedef itk::RealToHalfHermitianForwardFFTImageFilter
-			                          <ParametersComponentType>     FFTType;
+			                          <CoefficientsImageType>       FFTType;
 	typedef typename FFTType::Pointer                               FFTPointer;
 	typedef typename FFTType::OutputImageType                       FTDomainType;
 	typedef typename FTDomainType::Pointer                          FTDomainPointer;
@@ -141,7 +147,7 @@ public:
 																	ContinuousIndexType;
 
 	typedef itk::HalfHermitianToRealInverseFFTImageFilter
-			        <FTDomainType, ParametersComponentType>         IFFTType;
+			        <FTDomainType, CoefficientsImageType>           IFFTType;
 	typedef typename IFFTType::Pointer                              IFFTPointer;
 
 
@@ -150,11 +156,6 @@ public:
 	typedef itk::Image< ComplexFieldValue, Dimension >              ComplexFieldType;
 	typedef typename ComplexFieldType::Pointer                      ComplexFieldPointer;
 
-	//typedef itk::Matrix< ComplexValueType, Dimension, Dimension >   MatrixType;
-	//typedef itk::Image< MatrixType, Dimension >                     TensorFieldType;
-	//typedef typename TensorFieldType::Pointer                       TensorFieldPointer;
-
-	typedef size_t SizeValueType;
 
 	/** Type for the convergence checker */
 	typedef itk::Function::WindowConvergenceMonitoringFunction<MeasureType>	         ConvergenceMonitoringType;
@@ -166,8 +167,8 @@ public:
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
 
-	itkSetObjectMacro(Parameters, ParametersType);
-	itkGetConstObjectMacro(Parameters, ParametersType);
+	itkSetMacro(Coefficients, CoefficientsImageArray);
+	itkGetConstMacro(Coefficients, CoefficientsImageArray);
 
 	/** Minimum convergence value for convergence checking.
 	 *  The convergence checker calculates convergence value by fitting to
@@ -231,7 +232,7 @@ public:
 	/** Set the number of iterations. */
 	itkSetMacro(NumberOfIterations, SizeValueType);
 
-	itkSetMacro( GridSize, GridSizeType );
+	itkSetMacro( GridSize, ControlPointsGridSizeType );
 
 	void SetGridSize( double val ) { this->m_GridSize.Fill(val); }
 
@@ -259,7 +260,7 @@ public:
 	itkGetConstMacro( CurrentValue, MeasureType );
 
 
-	itkGetConstObjectMacro(CurrentDisplacementField, ParametersType);
+	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
 
 protected:
 	/** Manual learning rate to apply. It is overridden by
@@ -292,7 +293,7 @@ protected:
 
 	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 
-	void SpectralUpdate( ParametersType* parameters, const ParametersType* lambda, ParametersType* nextParameters, bool changeDirection = false );
+	void SpectralUpdate( CoefficientsImageArray parameters, const CoefficientsImageArray lambda, CoefficientsImageArray nextParameters, bool changeDirection = false );
 
 	virtual void InitializeAuxiliarParameters( void ) = 0;
 	virtual void SetUpdate() = 0;
@@ -311,9 +312,11 @@ protected:
 	InternalVectorType m_Beta;
 
 
-	ParametersPointer m_Parameters;
-	ParametersPointer m_NextParameters;
-	std::vector< ParametersComponentPointer > m_Denominator;
+	CoefficientsImageArray m_Coefficients;
+	CoefficientsImageArray m_NextCoefficients;
+	CoefficientsImageArray m_DerivativeCoefficients;
+	CoefficientsImageArray m_Denominator;
+
 	MeasureType m_CurrentValue;
 
 	FunctionalPointer m_Functional;
@@ -321,18 +324,22 @@ protected:
 	MeasureType m_CurrentTotalEnergy;
 	bool m_RegularizationEnergyUpdated;
 
-	ParametersPointer m_LastField;
-	ParametersPointer m_CurrentDisplacementField;
-	ParametersConstPointer m_CurrentSpeeds;
+	FieldPointer m_LastField;
+	FieldPointer m_CurrentDisplacementField;
+
 
 
 	/* Common variables for optimization control and reporting */
 	bool                          m_Stop;
 	StopConditionType             m_StopCondition;
 	StopConditionDescriptionType  m_StopConditionDescription;
-	SizeValueType                 m_NumberOfIterations;
 	SizeValueType                 m_CurrentIteration;
-	GridSizeType                  m_GridSize;
+	SizeValueType                 m_NumberOfIterations;
+	ControlPointsGridSizeType     m_GridSize;
+
+	TransformPointer              m_Transform;
+
+	bool                          m_DenominatorCached;
 
 private:
 	SpectralOptimizer( const Self & ); // purposely not implemented

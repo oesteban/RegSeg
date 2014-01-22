@@ -45,6 +45,8 @@
 
 #include "SpectralGradientDescentOptimizer.h"
 
+#include <itkImageAlgorithm.h>
+
 using namespace std;
 
 namespace rstk {
@@ -68,19 +70,20 @@ template< typename TFunctional >
 void SpectralGradientDescentOptimizer<TFunctional>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
 
-	this->SpectralUpdate( this->m_Parameters, this->m_CurrentSpeeds, this->m_NextParameters, true );
+	this->SpectralUpdate( this->m_Coefficients, this->m_DerivativeCoefficients, this->m_NextCoefficients, true );
 
 }
 
 template< typename TFunctional >
 void SpectralGradientDescentOptimizer<TFunctional>
 ::SetUpdate() {
-	const VectorType* next = this->m_NextParameters->GetBufferPointer();
-	VectorType* curr = this->m_Parameters->GetBufferPointer();
-	size_t nPix = this->m_Parameters->GetLargestPossibleRegion().GetNumberOfPixels();
-
-	for( size_t pix = 0; pix<nPix; pix++){
-		*(curr+pix) = *(next+pix);
+	for (size_t i = 0; i < Dimension; i++) {
+		itk::ImageAlgorithm::Copy< CoefficientsImageType, CoefficientsImageType > (
+			this->m_NextCoefficients[i],
+			this->m_Coefficients[i],
+			this->m_NextCoefficients[i]->GetLargestPossibleRegion(),
+			this->m_Coefficients[i]->GetLargestPossibleRegion()
+		);
 	}
 }
 
