@@ -43,6 +43,12 @@ public:
 	itkNewMacro( Self );
 
     void Execute(const itk::Object * object, const itk::EventObject & event) {
+    	std::string prefix = "";
+
+    	if ( this->m_Prefix.size() > 0 ) {
+    		prefix = this->m_Prefix + "_";
+    	}
+
     	if( typeid( event ) == typeid( itk::IterationEvent ) ) {
     		std::stringstream ss;
 
@@ -50,7 +56,7 @@ public:
     		for ( size_t i = 0; i< coeff.Size(); i++) {
 				typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
 				ss.str("");
-				ss << this->m_Prefix << "_coeff_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
+				ss << prefix << "coeff_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
 				p->SetFileName( ss.str().c_str() );
 				p->SetInput( coeff[i] );
 				p->Update();
@@ -58,7 +64,7 @@ public:
 
      		typename ComponentsWriter::Pointer f = ComponentsWriter::New();
     		ss.str("");
-    		ss << this->m_Prefix << "_field_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration();
+    		ss << prefix << "field_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration();
     		f->SetFileName( ss.str().c_str() );
     		f->SetInput( this->m_Optimizer->GetCurrentDisplacementField() );
     		f->Update();
@@ -69,7 +75,7 @@ public:
         	std::stringstream ss;
        		for( size_t r = 0; r <= nContours; r++){
         		ss.str("");
-        		ss << this->m_Prefix << "_region_" << r << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
+        		ss << prefix << "region_" << r << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
         		typename MapWriter::Pointer wr = MapWriter::New();
         		wr->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentMap(r));
         		wr->SetFileName(ss.str().c_str() );

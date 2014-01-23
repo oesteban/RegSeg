@@ -281,21 +281,6 @@ public:
 
 	typedef typename std::vector< GradientSample >           SampleType;
 
-	MeasureType GetValue();
-
-	void ComputeDerivative( void );
-
-	virtual void Initialize( void );
-
-	ROIConstPointer GetCurrentRegion( size_t idx );
-	ROIConstPointer GetCurrentRegions( void );
-
-	const ProbabilityMapType* GetCurrentMap( size_t idx );
-
-
-	size_t AddShapePrior( const ContourType* prior );
-	//itkGetMacro(ShapePrior, ContourList);
-
 	itkGetMacro(CurrentContours, ContourList);
 
 	itkSetMacro(Derivative, CoefficientsImageArray);
@@ -306,6 +291,20 @@ public:
 
 	itkSetObjectMacro(Transform, TransformType);
 	itkGetObjectMacro(Transform, TransformType);
+
+
+
+	MeasureType GetValue();
+	void ComputeDerivative();
+	virtual void Initialize();
+	virtual void UpdateDescriptors() = 0;
+
+	ROIConstPointer GetCurrentRegion( size_t idx );
+	ROIConstPointer GetCurrentRegions( void );
+
+	const ProbabilityMapType* GetCurrentMap( size_t idx );
+
+	size_t AddShapePrior( const ContourType* prior );
 
 protected:
 	FunctionalBase();
@@ -327,6 +326,17 @@ protected:
 	inline bool IsInside( const PointType p, ContinuousIndex& idx ) const;
 	//bool CheckExtents( const ContourType* prior ) const;
 
+
+
+	size_t m_NumberOfContours;
+	size_t m_NumberOfPoints;
+	size_t m_NumberOfNodes;
+	size_t m_SamplingFactor;
+	double m_Scale;
+	bool m_EnergyUpdated;
+	bool m_RegionsUpdated;
+
+
 	mutable MeasureType m_Value;
 	CoefficientsImageArray m_Derivative;
 	FieldPointer m_ReferenceSamplingGrid;
@@ -343,19 +353,9 @@ protected:
 	ROIPointer m_CurrentRegions;
 	ReferenceImageConstPointer m_ReferenceImage;
 	ContourOuterRegionsList m_OuterList;
-	bool m_EnergyUpdated;
-	bool m_RegionsUpdated;
-	size_t m_NumberOfContours;
-	size_t m_NumberOfPoints;
-	size_t m_NumberOfNodes;
-	double m_Scale;
-
 	ReferencePointType m_Origin, m_End;
 	DirectionType m_Direction;
-	unsigned int m_SamplingFactor;
-
-	VectorInterpolatorPointer m_LinearInterpolator;
-
+	//VectorInterpolatorPointer m_LinearInterpolator;
 	WarpContourFilterList m_WarpContourFilter;
 private:
 	FunctionalBase(const Self &);  //purposely not implemented

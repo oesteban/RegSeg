@@ -144,7 +144,8 @@ public:
 	size_t AddShapePrior( ContourType* prior, ParametersType&params );
 	size_t AddShapePrior( ContourType* prior );
 
-	void Initialize( void );
+	void Initialize();
+	void UpdateDescriptors();
 
 protected:
 	MahalanobisFunctional();
@@ -159,8 +160,6 @@ protected:
 	inline MeasureType GetEnergyAtPoint( PointType& point, size_t roi, ReferencePixelType& value );
 
 	ParametersType UpdateParametersOfRegion( const size_t idx );
-	void ComputeParameters( void );
-
 	ParametersList m_Parameters;
 
 private:

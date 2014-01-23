@@ -55,7 +55,8 @@
 
 #include <itkImageIteratorWithIndex.h>
 #include <itkImageAlgorithm.h>
-
+#include <itkMultiplyImageFilter.h>
+#include <itkAddImageFilter.h>
 
 #include "BSplineSparseMatrixTransform.h"
 
@@ -126,6 +127,9 @@ public:
 	typedef typename TransformType::FieldPointer                    FieldPointer;
 	typedef typename TransformType::FieldConstPointer               FieldConstPointer;
 	typedef typename TransformType::SizeType                        ControlPointsGridSizeType;
+
+	typedef itk::MultiplyImageFilter<CoefficientsImageType, CoefficientsImageType, CoefficientsImageType> MultiplyFilterType;
+	typedef itk::AddImageFilter<CoefficientsImageType, CoefficientsImageType, CoefficientsImageType>      AddFilterType;
 
 	typedef BSplineSparseMatrixTransform
 			                      < PointValueType, Dimension, 3u > SplineTransformType;
@@ -262,6 +266,11 @@ public:
 
 	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
 
+	itkSetMacro( DescriptorRecomputationFreq, SizeValueType );
+	itkGetConstMacro( DescriptorRecomputationFreq, SizeValueType );
+
+	itkSetMacro( UseDescriptorRecomputation, bool );
+	itkGetConstMacro( UseDescriptorRecomputation, bool );
 protected:
 	/** Manual learning rate to apply. It is overridden by
 	 * automatic learning rate estimation if enabled. See main documentation.
@@ -299,6 +308,18 @@ protected:
 	virtual void SetUpdate() = 0;
 	virtual void Iterate(void) = 0;
 
+
+	/* Common variables for optimization control and reporting */
+	bool                          m_Stop;
+	StopConditionType             m_StopCondition;
+	StopConditionDescriptionType  m_StopConditionDescription;
+	SizeValueType                 m_CurrentIteration;
+	SizeValueType                 m_NumberOfIterations;
+	ControlPointsGridSizeType     m_GridSize;
+	bool                          m_DenominatorCached;
+	SizeValueType                 m_DescriptorRecomputationFreq;
+	bool                          m_UseDescriptorRecomputation;
+
 //	/** Store the best value and related parameters */
 //	MeasureType                  m_CurrentBestValue;
 //	ParametersType               m_BestParameters;
@@ -328,18 +349,8 @@ protected:
 	FieldPointer m_CurrentDisplacementField;
 
 
-
-	/* Common variables for optimization control and reporting */
-	bool                          m_Stop;
-	StopConditionType             m_StopCondition;
-	StopConditionDescriptionType  m_StopConditionDescription;
-	SizeValueType                 m_CurrentIteration;
-	SizeValueType                 m_NumberOfIterations;
-	ControlPointsGridSizeType     m_GridSize;
-
 	TransformPointer              m_Transform;
 
-	bool                          m_DenominatorCached;
 
 private:
 	SpectralOptimizer( const Self & ); // purposely not implemented

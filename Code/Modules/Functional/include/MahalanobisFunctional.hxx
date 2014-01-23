@@ -77,7 +77,7 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 
 	// Check that parameters are initialized
 	if (! this->ParametersInitialized() )
-		this->ComputeParameters();
+		this->UpdateDescriptors();
 
 
 }
@@ -112,18 +112,18 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 
 template <typename TReferenceImageType, typename TCoordRepType>
 void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
-::ComputeParameters() {
+::UpdateDescriptors() {
 	// Update regions
 	for( size_t roi = 0; roi < this->m_Parameters.size(); roi++ ) {
 		ParametersType param = this->UpdateParametersOfRegion(roi);
 		this->SetParameters(roi, param);
 
-//#ifndef DNDEBUG
-//		std::cout << "Region " << roi << ":" << std::endl;
-//		std::cout << "\tMean = " << this->m_Parameters[roi].mean << std::endl;
-//		std::cout << "\tCovariance Matrix " << std::endl << this->m_Parameters[roi].cov << std::endl;
-//		std::cout << "\tCovariance Matrix^-1" << std::endl << this->m_Parameters[roi].invcov << std::endl;
-//#endif
+#ifndef DNDEBUG
+		std::cout << "Region " << roi << ":" << std::endl;
+		std::cout << "\tMean = " << this->m_Parameters[roi].mean << std::endl;
+		std::cout << "\tCovariance Matrix " << std::endl << this->m_Parameters[roi].cov << std::endl;
+		std::cout << "\tCovariance Matrix^-1" << std::endl << this->m_Parameters[roi].invcov << std::endl;
+#endif
 	}
 
 

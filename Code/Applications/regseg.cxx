@@ -46,8 +46,9 @@ int main(int argc, char *argv[]) {
 			("alpha,a", bpo::value< float > (), "alpha value in regularization")
 			("beta,b", bpo::value< float > (), "beta value in regularization")
 			("step-size,s", bpo::value< float > (), "step-size value in optimization")
-			("iterations,i", bpo::value< int > (), "number of iterations")
-			("grid-size,g", bpo::value< int > (), "grid size")
+			("iterations,i", bpo::value< size_t > (), "number of iterations")
+			("grid-size,g", bpo::value< size_t > (), "grid size")
+			("descriptors-update-iterations,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)")
 			("logfile,l", bpo::value<std::string>(&logFileName), "log filename")
 			("verbosity,V", bpo::value<size_t>(&verbosity), "verbosity level ( 0 = no output; 5 = verbose )");
 	bpo::positional_options_description pdesc;
@@ -139,6 +140,15 @@ int main(int argc, char *argv[]) {
 
 	if (vmap.count("beta")) {
 		opt->SetBeta( vmap["beta"].as<float>() );
+	}
+	if (vmap.count("descriptors-update-iterations")) {
+		size_t updDesc =  vmap["descriptors-update-iterations"].as<size_t>();
+
+		if ( updDesc > 0 ) {
+			opt->SetUseDescriptorRecomputation(true);
+			opt->SetDescriptorRecomputationFreq(updDesc);
+
+		}
 	}
 
 	IterationUpdatePointer iup = IterationUpdateType::New();
