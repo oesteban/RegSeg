@@ -61,16 +61,18 @@ namespace rstk {
 
 template< typename TReferenceImageType, typename TCoordRepType >
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::FunctionalBase() {
+::FunctionalBase():
+ m_NumberOfContours(0),
+ m_NumberOfPoints(0),
+ m_NumberOfNodes(0),
+ m_SamplingFactor(4),
+ m_Scale(10.0),
+ m_EnergyUpdated(false),
+ m_RegionsUpdated(false)
+
+ {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
-	this->m_EnergyUpdated = false;
-	this->m_RegionsUpdated = false;
-	this->m_NumberOfContours = 0;
-	this->m_NumberOfNodes = 0;
-	this->m_NumberOfPoints = 0;
-	this->m_SamplingFactor = 4;
-	this->m_Scale = 100.0;
-	this->m_LinearInterpolator = VectorInterpolatorType::New();
+	//this->m_LinearInterpolator = VectorInterpolatorType::New();
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -303,7 +305,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Transform->UpdateField();
 	FieldConstPointer updateField = this->m_Transform->GetField();
 
-	this->m_LinearInterpolator->SetInputImage( updateField );
+	//this->m_LinearInterpolator->SetInputImage( updateField );
 	this->m_Transform->Interpolate();
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
@@ -319,7 +321,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		while ( p_it != p_end ) {
 			ci = p_it.Value();
 			pid = p_it.Index();
-			disp2 = this->m_LinearInterpolator->Evaluate( ci );
+			//disp2 = this->m_LinearInterpolator->Evaluate( ci );
 			disp = this->m_Transform->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
 			norm = disp.GetNorm();
 
@@ -671,6 +673,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		this->m_CurrentROIs[idx] = tempROI;
 	}
+
+//#ifndef NDEBUG
+//	typedef itk::ImageFileWriter< ROIType > WriteROI;
+//	typename WriteROI::Pointer w = WriteROI::New();
+//	w->SetFileName( "regions.nii.gz" );
+//	w->SetInput( this->m_CurrentRegions );
+//	w->Update();
+//#endif
 
 	this->m_RegionsUpdated = true;
 }

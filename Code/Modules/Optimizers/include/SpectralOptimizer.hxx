@@ -72,14 +72,16 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer():
 m_LearningRate( 1.0 ),
 m_MinimumConvergenceValue( 1.0e-8 ),
 m_ConvergenceWindowSize( 50 ),
-m_StepSize(1.0),
 m_Stop( false ),
 m_CurrentIteration( 1 ),
 m_NumberOfIterations( 250 ),
-m_DenominatorCached( false )
+m_DenominatorCached( false ),
+m_DescriptorRecomputationFreq(5),
+m_UseDescriptorRecomputation(false),
+m_StepSize(1.0)
 {
-	this->m_Alpha.Fill( 1.0 );
-	this->m_Beta.Fill( 10.0 );
+	this->m_Alpha.Fill( 1.0e-2 );
+	this->m_Beta.Fill( 1.0e-2 );
 	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 20 );
@@ -159,6 +161,11 @@ void SpectralOptimizer<TFunctional>::Resume() {
 	this->m_Stop = false;
 
 	while( ! this->m_Stop )	{
+		if( this->m_UseDescriptorRecomputation && ( this->m_CurrentIteration%this->m_DescriptorRecomputationFreq == 0 ) ) {
+			this->m_Functional->UpdateDescriptors();
+		}
+
+
 		/* Compute functional value/derivative. */
 		try	{
 			this->m_Functional->ComputeDerivative();
@@ -308,36 +315,39 @@ void SpectralOptimizer<TFunctional>::SpectralUpdate(
 {
 	itkDebugMacro("Optimizer Spectral Update");
 
-	double dir = (changeDirection)?-1.0:1.0;
-	double r = 1.0/this->m_StepSize;
+	typename AddFilterType::Pointer add_filter = AddFilterType::New();
+	typename MultiplyFilterType::Pointer dir_filter;
 
-	size_t nPix = this->m_Transform->GetNumberOfParameters();
+	typename MultiplyFilterType::Pointer r_filter = MultiplyFilterType::New();
+	r_filter->SetConstant( 1.0/this->m_StepSize );
+
+	//size_t nPix = this->m_Transform->GetNumberOfParameters();
 
 	for( size_t d = 0; d < Dimension; d++ ) {
-		CoefficientsImagePointer numerator = CoefficientsImageType::New();
-		numerator->SetDirection( parameters[d]->GetDirection() );
-		numerator->SetRegions(   parameters[d]->GetLargestPossibleRegion() );
-		numerator->SetSpacing(   parameters[d]->GetSpacing() );
-		numerator->SetOrigin(    parameters[d]->GetOrigin());
-		numerator->Allocate();
-		numerator->FillBuffer(0.0);
+		r_filter->SetInput( parameters[d] );
+		add_filter->SetInput1( r_filter->GetOutput() );
 
-		// Prepare numerator
-		// Get deformation fields pointers
-		const PointValueType* uFieldBuffer = parameters[d]->GetBufferPointer();
-		const PointValueType* lFieldBuffer = lambda[d]->GetBufferPointer();
-		PointValueType* numBuffer = numerator->GetBufferPointer();
-
-		PointValueType u, l, n;
-		for(size_t pix = 0; pix< nPix; pix++) {
-			u = *(uFieldBuffer+pix);
-			l = *(lFieldBuffer+pix);
-			n = u * r + dir * l;
-
-			if ( n != 0.0 ) {
-				*( numBuffer ) = n;
-			}
+		if (changeDirection) {
+			dir_filter = MultiplyFilterType::New();
+			dir_filter->SetConstant( -1.0 );
+			dir_filter->SetInput( lambda[d] );
+			add_filter->SetInput2( dir_filter->GetOutput() );
+		} else {
+			add_filter->SetInput2( lambda[2] );
 		}
+		add_filter->Update();
+
+		CoefficientsImagePointer numerator = add_filter->GetOutput();
+
+#ifndef NDEBUG
+		std::stringstream ss;
+		ss << "coeff_unfiltered_" << std::setfill('0') << std::setw(3) << this->m_CurrentIteration << "_cmp" << std::setw(1) << d << ".nii.gz";
+		typedef itk::ImageFileWriter< CoefficientsImageType > W;
+		typename W::Pointer w = W::New();
+		w->SetInput( numerator );
+		w->SetFileName( ss.str().c_str() );
+		w->Update();
+#endif
 
 		FFTPointer fftFilter = FFTType::New();
 		fftFilter->SetInput( numerator );
@@ -367,17 +377,6 @@ void SpectralOptimizer<TFunctional>::SpectralUpdate(
 			ifft->GetOutput()->GetLargestPossibleRegion(),
 			nextParameters[d]->GetLargestPossibleRegion()
 		);
-
-#ifndef NDEBUG
-		typedef itk::ImageFileWriter< CoefficientsImageType > CoefficientsWriter;
-		typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
-		std::stringstream ss;
-		ss.str("");
-		ss << "coefficients_" << std::setfill('0')  << std::setw(3) << this->GetCurrentIteration() << "_cmp" << d << ".nii.gz";
-		p->SetFileName( ss.str().c_str() );
-		p->SetInput( this->m_NextCoefficients[d] );
-		p->Update();
-#endif
 	}
 }
 
@@ -451,7 +450,6 @@ void SpectralOptimizer<TFunctional>
 template< typename TFunctional >
 void
 SpectralOptimizer<TFunctional>::UpdateField() {
-
 	itk::ImageAlgorithm::Copy<FieldType, FieldType>(
 		this->m_Transform->GetField(), this->m_CurrentDisplacementField,
 		this->m_Transform->GetField()->GetLargestPossibleRegion(),
@@ -501,6 +499,14 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	VectorType zerov; zerov.Fill( 0.0 );
 	/* Initialize next parameters */
 	for ( size_t i=0; i<coeff.Size(); i++ ) {
+		this->m_Coefficients[i] = CoefficientsImageType::New();
+		this->m_Coefficients[i]->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
+		this->m_Coefficients[i]->SetSpacing(   coeff[0]->GetSpacing() );
+		this->m_Coefficients[i]->SetDirection( coeff[0]->GetDirection() );
+		this->m_Coefficients[i]->SetOrigin(    coeff[0]->GetOrigin() );
+		this->m_Coefficients[i]->Allocate();
+		this->m_Coefficients[i]->FillBuffer( 0.0 );
+
 		this->m_NextCoefficients[i] = CoefficientsImageType::New();
 		this->m_NextCoefficients[i]->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
 		this->m_NextCoefficients[i]->SetSpacing(   coeff[0]->GetSpacing() );
