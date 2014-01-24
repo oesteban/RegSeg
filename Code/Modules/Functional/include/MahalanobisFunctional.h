@@ -147,6 +147,7 @@ public:
 	void Initialize();
 	void UpdateDescriptors();
 
+	std::string PrintFormattedDescriptors();
 protected:
 	MahalanobisFunctional();
 	~MahalanobisFunctional() {}
@@ -169,6 +170,7 @@ private:
 	bool ParametersInitialized() const;
 
 	InterpolatorPointer m_Interp;
+	size_t m_NumberOfRegions;
 
 }; // End of class MahalanobisFunctional
 } // End of namespace

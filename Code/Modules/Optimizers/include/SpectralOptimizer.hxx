@@ -78,13 +78,13 @@ m_NumberOfIterations( 250 ),
 m_DenominatorCached( false ),
 m_DescriptorRecomputationFreq(5),
 m_UseDescriptorRecomputation(false),
-m_StepSize(1.0)
+m_StepSize(10.0)
 {
 	this->m_Alpha.Fill( 1.0e-2 );
-	this->m_Beta.Fill( 1.0e-2 );
+	this->m_Beta.Fill( 1.0e-1 );
 	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
-	this->m_GridSize.Fill( 20 );
+	this->m_GridSize.Fill( 5 );
 
 	this->m_CurrentValue = itk::NumericTraits<MeasureType>::infinity();
 	this->m_CurrentTotalEnergy = itk::NumericTraits<MeasureType>::infinity();
@@ -163,6 +163,7 @@ void SpectralOptimizer<TFunctional>::Resume() {
 	while( ! this->m_Stop )	{
 		if( this->m_UseDescriptorRecomputation && ( this->m_CurrentIteration%this->m_DescriptorRecomputationFreq == 0 ) ) {
 			this->m_Functional->UpdateDescriptors();
+			this->InvokeEvent( itk::ModifiedEvent() );
 		}
 
 
@@ -187,19 +188,6 @@ void SpectralOptimizer<TFunctional>::Resume() {
 		/* Advance one step along the gradient.
 		 * This will modify the gradient and update the transform. */
 		this->m_DerivativeCoefficients = this->m_Functional->GetDerivative();
-
-#ifndef NDEBUG
-		for ( size_t i = 0; i<Dimension; i++) {
-			typedef itk::ImageFileWriter< CoefficientsImageType > CoefficientsWriter;;
-			typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
-			std::stringstream ss;
-			ss.str("");
-			ss << "coeff_speeds_" << std::setfill('0')  << std::setw(3) << this->GetCurrentIteration() << std::setw(1) << "_cmp" << i << ".nii.gz";
-			p->SetFileName( ss.str().c_str() );
-			p->SetInput( this->m_DerivativeCoefficients[i] );
-			p->Update();
-		}
-#endif
 
 		this->Iterate();
 
@@ -339,15 +327,15 @@ void SpectralOptimizer<TFunctional>::SpectralUpdate(
 
 		CoefficientsImagePointer numerator = add_filter->GetOutput();
 
-#ifndef NDEBUG
-		std::stringstream ss;
-		ss << "coeff_unfiltered_" << std::setfill('0') << std::setw(3) << this->m_CurrentIteration << "_cmp" << std::setw(1) << d << ".nii.gz";
-		typedef itk::ImageFileWriter< CoefficientsImageType > W;
-		typename W::Pointer w = W::New();
-		w->SetInput( numerator );
-		w->SetFileName( ss.str().c_str() );
-		w->Update();
-#endif
+//#ifndef NDEBUG
+//		std::stringstream ss;
+//		ss << "coeff_unfiltered_" << std::setfill('0') << std::setw(3) << this->m_CurrentIteration << "_cmp" << std::setw(1) << d << ".nii.gz";
+//		typedef itk::ImageFileWriter< CoefficientsImageType > W;
+//		typename W::Pointer w = W::New();
+//		w->SetInput( numerator );
+//		w->SetFileName( ss.str().c_str() );
+//		w->Update();
+//#endif
 
 		FFTPointer fftFilter = FFTType::New();
 		fftFilter->SetInput( numerator );

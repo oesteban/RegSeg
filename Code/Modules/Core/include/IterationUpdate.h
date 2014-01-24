@@ -58,6 +58,7 @@ protected:
 	IterationUpdate(){
 		this->m_TrackEnergy = false;
 	}
+	~IterationUpdate(){}
 
 	//void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 private:

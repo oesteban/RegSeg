@@ -298,6 +298,7 @@ public:
 	void ComputeDerivative();
 	virtual void Initialize();
 	virtual void UpdateDescriptors() = 0;
+	virtual std::string PrintFormattedDescriptors() = 0;
 
 	ROIConstPointer GetCurrentRegion( size_t idx );
 	ROIConstPointer GetCurrentRegions( void );
@@ -305,6 +306,8 @@ public:
 	const ProbabilityMapType* GetCurrentMap( size_t idx );
 
 	size_t AddShapePrior( const ContourType* prior );
+
+
 
 protected:
 	FunctionalBase();

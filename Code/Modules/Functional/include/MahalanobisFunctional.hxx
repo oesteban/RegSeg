@@ -50,7 +50,9 @@
 namespace rstk {
 template <typename TReferenceImageType, typename TCoordRepType>
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
-::MahalanobisFunctional() {
+::MahalanobisFunctional():
+ m_NumberOfRegions(0)
+ {
 	this->m_Interp = InterpolatorType::New();
 
 }
@@ -61,7 +63,13 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::PrintSelf( std::ostream& os, itk::Indent indent) const {
 	Superclass::PrintSelf(os, indent);
 
-	// TODO PrintSelf parameters
+	os << indent << "NumberOfRegions: " << this->m_NumberOfRegions << std::endl;
+	for( size_t roi = 0; roi < this->m_NumberOfRegions; roi++ ) {
+		os << indent << "Region " << roi << ":" << std::endl;
+		os << indent << indent << "Mean vector = " << this->m_Parameters[roi].mean << std::endl;
+		os << indent << indent << "Covariance Matrix = " << std::endl << this->m_Parameters[roi].cov << std::endl;
+		os << indent << indent << "Covariance Matrix^-1 = " << std::endl << this->m_Parameters[roi].invcov << std::endl;
+	}
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
@@ -73,13 +81,12 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	// Initialize interpolators
 	this->m_Interp->SetInputImage( this->m_ReferenceImage );
 
-	this->m_Parameters.resize( this->m_Parameters.size() + 1 ); // Add 1 slot for the "null" region
+	this->m_NumberOfRegions = this->m_Parameters.size() + 1;
+	this->m_Parameters.resize( this->m_NumberOfRegions ); // Add 1 slot for the "null" region
 
 	// Check that parameters are initialized
 	if (! this->ParametersInitialized() )
 		this->UpdateDescriptors();
-
-
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
@@ -117,16 +124,11 @@ void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	for( size_t roi = 0; roi < this->m_Parameters.size(); roi++ ) {
 		ParametersType param = this->UpdateParametersOfRegion(roi);
 		this->SetParameters(roi, param);
-
-#ifndef DNDEBUG
-		std::cout << "Region " << roi << ":" << std::endl;
-		std::cout << "\tMean = " << this->m_Parameters[roi].mean << std::endl;
-		std::cout << "\tCovariance Matrix " << std::endl << this->m_Parameters[roi].cov << std::endl;
-		std::cout << "\tCovariance Matrix^-1" << std::endl << this->m_Parameters[roi].invcov << std::endl;
-#endif
 	}
 
-
+#ifndef DNDEBUG
+	std::cout << this->PrintFormattedDescriptors() << std::endl;
+#endif
 
 }
 
@@ -283,6 +285,38 @@ MahalanobisFunctional<TReferenceImageType, TCoordRepType>
 		if ( ! this->m_Parameters[i].initialized ) return false;
 	}
 	return true;
+}
+
+template <typename TReferenceImageType, typename TCoordRepType>
+std::string
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
+::PrintFormattedDescriptors() {
+	std::stringstream ss;
+
+	ss << "{ \"descriptors\" : { \"number\": " << this->m_NumberOfRegions << ", \"values\": [";
+
+	for ( size_t i = 0; i<this->m_NumberOfRegions; i++ ){
+		if (i>0) ss<<",";
+
+		ss << "{ \"id\": " << i << ", \"mu\": [";
+
+		for ( size_t l = 0; l<this->m_Parameters[i].mean.Size(); l++ ) {
+			if( l>0 ) ss << ",";
+			ss << this->m_Parameters[i].mean[l];
+		}
+		ss << "], \"cov\": [ ";
+
+		for( size_t j = 0; j<this->m_Parameters[i].cov.GetVnlMatrix().rows(); j++ ) {
+			for( size_t k = 0; k<this->m_Parameters[i].cov.GetVnlMatrix().cols(); k++ ) {
+				if( j>0 || k>0 ) ss << ",";
+				ss << this->m_Parameters[i].cov(j,k);
+			}
+		}
+		ss << "] }";
+	}
+	ss << "] } }";
+
+	return ss.str();
 }
 
 }

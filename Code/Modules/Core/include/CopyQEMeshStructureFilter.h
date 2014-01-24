@@ -57,6 +57,9 @@ public:
 
     itkNewMacro(Self);
 protected:
+    CopyQEMeshStructureFilter(){}
+    ~CopyQEMeshStructureFilter(){}
+
     void GenerateData()
     {
     	this->CopyMesh();

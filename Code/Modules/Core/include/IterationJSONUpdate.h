@@ -71,6 +71,7 @@ protected:
     IterationJSONUpdate(){
     	m_JSONRoot = Json::Value( Json::arrayValue );
     }
+    ~IterationJSONUpdate(){}
 
 private:
     IterationJSONUpdate( const Self & ); // purposely not implemented

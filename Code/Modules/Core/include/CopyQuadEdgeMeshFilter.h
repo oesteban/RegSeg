@@ -22,6 +22,9 @@ public:
 
     itkNewMacro(Self);
 protected:
+    CopyQuadEdgeMeshFilter(){}
+    ~CopyQuadEdgeMeshFilter(){}
+
     void GenerateData()
     {
         this->CopyInputMeshToOutputMesh();

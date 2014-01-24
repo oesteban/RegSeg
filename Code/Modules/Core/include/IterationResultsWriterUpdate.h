@@ -53,10 +53,18 @@ public:
     		std::stringstream ss;
 
     		CoefficientsImageArray coeff = this->m_Optimizer->GetCoefficients();
+    		CoefficientsImageArray speed = this->m_Optimizer->GetDerivativeCoefficients();
+
     		for ( size_t i = 0; i< coeff.Size(); i++) {
 				typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
 				ss.str("");
-				ss << prefix << "coeff_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
+				ss << prefix << "coeff_speed_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
+				p->SetFileName( ss.str().c_str() );
+				p->SetInput( speed[i] );
+				p->Update();
+
+				ss.str("");
+				ss << prefix << "coeff_value_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
 				p->SetFileName( ss.str().c_str() );
 				p->SetInput( coeff[i] );
 				p->Update();

@@ -174,6 +174,9 @@ public:
 	itkSetMacro(Coefficients, CoefficientsImageArray);
 	itkGetConstMacro(Coefficients, CoefficientsImageArray);
 
+	itkSetMacro(DerivativeCoefficients, CoefficientsImageArray);
+	itkGetConstMacro(DerivativeCoefficients, CoefficientsImageArray);
+
 	/** Minimum convergence value for convergence checking.
 	 *  The convergence checker calculates convergence value by fitting to
 	 *  a window of the Functional profile. When the convergence value reaches
