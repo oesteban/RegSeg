@@ -48,7 +48,8 @@ namespace rstk {
  */
 template<class TInputMesh, class TInputImage, class TCoordRep >
 SparseMultivariateInterpolator< TInputMesh, TInputImage, TCoordRep >
-::SparseMultivariateInterpolator()
+::SparseMultivariateInterpolator():
+ m_NumberOfImagePixels(0)
 {
   m_Mesh = NULL;
 }

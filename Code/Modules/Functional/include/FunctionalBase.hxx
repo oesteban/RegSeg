@@ -66,13 +66,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_NumberOfPoints(0),
  m_NumberOfNodes(0),
  m_SamplingFactor(4),
- m_Scale(10.0),
+ m_Scale(100.0),
  m_EnergyUpdated(false),
  m_RegionsUpdated(false)
 
  {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
-	//this->m_LinearInterpolator = VectorInterpolatorType::New();
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -305,7 +304,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Transform->UpdateField();
 	FieldConstPointer updateField = this->m_Transform->GetField();
 
-	//this->m_LinearInterpolator->SetInputImage( updateField );
 	this->m_Transform->Interpolate();
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
@@ -321,7 +319,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		while ( p_it != p_end ) {
 			ci = p_it.Value();
 			pid = p_it.Index();
-			//disp2 = this->m_LinearInterpolator->Evaluate( ci );
 			disp = this->m_Transform->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
 			norm = disp.GetNorm();
 
