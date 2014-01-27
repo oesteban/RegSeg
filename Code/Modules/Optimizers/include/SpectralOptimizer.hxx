@@ -73,7 +73,7 @@ m_LearningRate( 1.0 ),
 m_MinimumConvergenceValue( 1.0e-8 ),
 m_ConvergenceWindowSize( 50 ),
 m_Stop( false ),
-m_CurrentIteration( 1 ),
+m_CurrentIteration( 0 ),
 m_NumberOfIterations( 250 ),
 m_DenominatorCached( false ),
 m_DescriptorRecomputationFreq(5),
@@ -131,6 +131,8 @@ void SpectralOptimizer<TFunctional>::Start() {
 
 	this->m_Functional->Initialize();
 	this->InvokeEvent( itk::StartEvent() );
+
+	this->m_CurrentIteration++;
 	this->Resume();
 }
 

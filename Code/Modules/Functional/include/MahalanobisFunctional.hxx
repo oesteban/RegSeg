@@ -125,11 +125,6 @@ void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 		ParametersType param = this->UpdateParametersOfRegion(roi);
 		this->SetParameters(roi, param);
 	}
-
-#ifndef DNDEBUG
-	std::cout << this->PrintFormattedDescriptors() << std::endl;
-#endif
-
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
