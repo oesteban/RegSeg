@@ -10,6 +10,7 @@
 
 #include "IterationUpdate.h"
 
+#include <boost/lexical_cast.hpp>
 #include <jsoncpp/json/json.h>
 
 namespace rstk {
@@ -30,31 +31,43 @@ public:
 	itkNewMacro( Self );
 
     void Execute(const itk::Object * object, const itk::EventObject & event) {
+		size_t it = this->m_Optimizer->GetCurrentIteration();
+    	Json::Value itnode;
 
-		Json::Value iteration( Json::objectValue );
+    	if( it > 0 && it==m_LastIt ) {
+    		itnode = m_Last;
+    	} else {
+    		if ( it > 0 ) {
+    			this->m_JSONRoot.append( m_Last );
+    		}
+    		itnode = Json::Value( Json::objectValue );
+    		itnode["id"] = static_cast<Json::UInt64>( it );
+    	}
 
     	if( typeid( event ) == typeid( itk::StartEvent ) ) {
     		if( this->GetTrackEnergy() ) {
-    			iteration["id"] = 0;
-				iteration["energy"]["total"] = this->m_Optimizer->GetCurrentValue();
-				iteration["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
-				iteration["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
-				iteration["norm"] = 0.0;
-				this->m_JSONRoot.append( iteration );
+				itnode["energy"]["total"] = this->m_Optimizer->GetCurrentValue();
+				itnode["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
+				itnode["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
     		}
+    		itnode["descriptors"] = this->ParseTree( this->m_Optimizer->GetFunctional()->PrintFormattedDescriptors() );
     	}
 
-    	if( typeid( event ) == typeid( itk::IterationEvent ) ) {
+		if( typeid( event ) == typeid( itk::IterationEvent ) ) {
+			if ( this->GetTrackEnergy() ) {
+				itnode["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
+				itnode["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
+				itnode["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
+			}
+			itnode["norm"] = this->m_Optimizer->GetCurrentValue();
+		}
 
-    		iteration["id"] = static_cast<Json::UInt64> (this->m_Optimizer->GetCurrentIteration());
-    		if ( this->GetTrackEnergy() ) {
-    			iteration["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
-    			iteration["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
-    			iteration["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
-    		}
-    		iteration["norm"] = this->m_Optimizer->GetCurrentValue();
-    		this->m_JSONRoot.append( iteration );
-    	}
+		if( typeid( event ) == typeid( itk::ModifiedEvent ) || typeid( event ) == typeid( itk::StartEvent ) ) {
+			itnode["descriptors"] = this->ParseTree( this->m_Optimizer->GetFunctional()->PrintFormattedDescriptors() );
+		}
+
+    	m_Last = itnode;
+    	m_LastIt = it;
     }
 
     // itkSetMacro( JSONRoot, JSONValue );
@@ -65,11 +78,13 @@ public:
       m_Optimizer->AddObserver( itk::IterationEvent(), this );
       m_Optimizer->AddObserver( itk::StartEvent(), this );
       m_Optimizer->AddObserver( itk::EndEvent(), this );
+      m_Optimizer->AddObserver( itk::ModifiedEvent(), this );
     }
 
 protected:
-    IterationJSONUpdate(){
+    IterationJSONUpdate(): m_LastIt(0) {
     	m_JSONRoot = Json::Value( Json::arrayValue );
+    	m_Last = Json::Value( Json::objectValue );
     }
     ~IterationJSONUpdate(){}
 
@@ -77,8 +92,26 @@ private:
     IterationJSONUpdate( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
 
+	Json::Value ParseTree( std::string str ){
+		Json::Value node( Json::objectValue );
+		Json::Value val( Json::arrayValue );
+		Json::Reader r;
+
+		if( r.parse( str, node, false ) ) {
+			if ( node.size() > 0 ) {
+				for( Json::ValueIterator itr = node.begin() ; itr != node.end() ; itr++ ) {
+					val.append( *itr );
+				}
+			}
+		}
+
+		return val;
+	}
+
 	JSONValue m_JSONRoot;
+	JSONValue m_Last;
 	OptimizerPointer   m_Optimizer;
+	size_t m_LastIt;
 };
 
 } // end namespace rstk

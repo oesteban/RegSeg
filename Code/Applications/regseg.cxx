@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (vmap.count("iterations")) {
-		opt->SetNumberOfIterations( vmap["iterations"].as<int>() );
+		opt->SetNumberOfIterations( vmap["iterations"].as< size_t >() );
 	}
 	if (vmap.count("step-size")) {
 		opt->SetStepSize( vmap["step-size"].as<float>() );
