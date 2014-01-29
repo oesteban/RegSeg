@@ -81,12 +81,9 @@ int main(int argc, char *argv[]) {
 	clock_t preProcessStart = clock();
 
 
-	// Initialize LevelSet function
-	FunctionalType::Pointer functional = FunctionalType::New();
+	// Initialize registration
+	RegistrationPointer acwereg = RegistrationType::New();
 
-	// Connect Optimizer
-	OptimizerPointer opt = Optimizer::New();
-	opt->SetFunctional( functional );
 
 	// Read target feature(s) -----------------------------------------------------------
 	root["inputs"]["target"]["components"]["size"] = Json::Int (fixedImageNames.size());
@@ -105,7 +102,7 @@ int main(int argc, char *argv[]) {
 
     comb->Update();
 	ImageType::Pointer im = comb->GetOutput();
-	functional->SetReferenceImage( im );
+
 
 	// Read moving surface(s) -----------------------------------------------------------
 	root["inputs"]["moving"]["components"]["size"] = Json::Int (movingSurfaceNames.size());
@@ -151,14 +148,6 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	IterationUpdatePointer iup = IterationUpdateType::New();
-	iup->SetOptimizer( opt );
-	//iup->SetTrackEnergyOn();
-#ifndef NDEBUG
-	IterationWriterUpdatePointer iwp = IterationWriterUpdate::New();
-	iwp->SetOptimizer( opt );
-	iwp->SetPrefix( outPrefix );
-#endif
 
 	clock_t preProcessStop = clock();
 	float pre_tot_t = (float) (((double) (preProcessStop - preProcessStart)) / CLOCKS_PER_SEC);
