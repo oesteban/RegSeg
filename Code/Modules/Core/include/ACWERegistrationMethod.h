@@ -50,7 +50,7 @@
 
 namespace rstk {
 
-template < typename TFixedImage, typename TTransform >
+template < typename TFixedImage, typename TTransform, typename TComputationalValue = double >
 class ACWERegistrationMethod: public itk::ProcessObject
 {
 public:
@@ -64,8 +64,18 @@ public:
 	itkNewMacro( Self );
 	itkTypeMacro( ACWERegistrationMethod, itk::ProcessObject );
 
+	typedef TComputationalValue                               InternalValuesType;
+
 	typedef TFixedImage                                       ReferenceImageType;
 	typedef typename ReferenceImageType::Pointer              ReferenceImagePointer;
+	typedef typename ReferenceImageType::SizeType             GridSizeType;
+	typedef std::vector< GridSizeType >                       GridSizeList;
+
+	itkStaticConstMacro( Dimension, size_t, ReferenceImageType::Dimension );
+
+
+	typedef itk::FixedArray< InternalValuesType, Dimension >  ValueArrayType;
+	typedef itk::Vector< InternalValuesType, Dimension >      ValueVectorType;
 
 	typedef FunctionalBase< ReferenceImageType >              FunctionalType;
 	typedef typename FunctionalType::Pointer                  FunctionalPointer;
@@ -75,6 +85,12 @@ public:
 
 	itkSetMacro( NumberOfLevels, size_t );
 	itkGetConstMacro( NumberOfLevels, size_t );
+
+	itkSetMacro( UseGridLevelsInitialization, bool );
+	itkGetConstMacro( UseGridLevelsInitialization, bool );
+
+	itkSetMacro( UseGridSizeInitialization, bool );
+	itkGetConstMacro( UseGridSizeInitialization, bool );
 
 protected:
 	ACWERegistrationMethod();
@@ -89,6 +105,11 @@ private:
 	void operator=( const Self & );
 
 	size_t m_NumberOfLevels;
+	bool m_UseGridLevelsInitialization;
+	bool m_UseGridSizeInitialization;
+	bool m_Initialized;
+
+	GridSizeList m_GridSchedule;
 };
 
 } // namespace rstk
