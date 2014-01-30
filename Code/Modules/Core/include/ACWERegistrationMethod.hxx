@@ -47,18 +47,73 @@
 
 namespace rstk {
 
-template < typename TFixedImage, typename TTransform >
-ACWERegistrationMethod< TFixedImage, TTransform>
-::ACWERegistrationMethod(): m_NumberOfLevels(0) {
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+::ACWERegistrationMethod(): m_NumberOfLevels(0),
+                            m_UseGridLevelsInitialization(false),
+                            m_UseGridSizeInitialization(true),
+                            m_Initialized(false) {
 
 
 }
 
 
-template < typename TFixedImage, typename TTransform >
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
 void
-ACWERegistrationMethod< TFixedImage, TTransform>
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::Initialize() {
+	if ( m_Initialized ) {
+		return;
+	}
+
+	ReferenceImagePointer refim = this->GetInput(0);
+	GridSizeType maxSize = refim->GetLargestPossibleRegion().GetSize();
+
+
+	// Planify levels and sizes.
+	if ( m_UseGridLevelsInitialization && m_NumberOfLevels>0 ) {
+		if ( m_NumberOfLevels == 1 ) {
+			m_GridSchedule.push_back( maxSize );
+		} else {
+			bool invalidRatio = false;
+
+			for( size_t i = 0; i < Dimension; i++) {
+				int maxLevels = maxSize[i] - 4;
+
+				if ( maxLevels <= 0 ) {
+					itkExceptionMacro(<< "image size must be >= 3 pixels along dimension " << i );
+				}
+
+				if ( m_NumberOfLevels > maxLevels ) {
+					m_NumberOfLevels = maxLevels;
+					itkWarningMacro( << "too many levels required, NumberOfLevels has been updated to " << m_NumberOfLevels );
+				}
+			}
+
+			m_GridSchedule.resize(m_NumberOfLevels);
+			m_GridSchedule[m_NumberOfLevels-1] = maxSize;
+
+			GridSizeType gridStep;
+			for( size_t i = 0; i < Dimension; i++){
+				gridStep[i] = floor(  1.0*(maxSize[i]-4) / m_NumberOfLevels );
+			}
+
+			for( size_t l = m_NumberOfLevels-1; l > 0; --l ){
+				GridSizeType prevGrid = m_GridSchedule[l];
+
+				for( size_t i = 0; i < Dimension; i++) {
+					prevGrid[i]-= gridStep[i];
+				}
+
+				m_GridSchedule[l-1] = prevGrid;
+			}
+		}
+	} // end if m_UseGridLevelsInitialization
+	else if ( m_UseGridSizeInitialization ) {
+
+	} else {
+
+	}
 
 	// Initialize LevelSet function
 	FunctionalPointer functional = FunctionalType::New();
