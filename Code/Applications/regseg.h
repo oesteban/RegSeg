@@ -42,7 +42,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <ctime>
+
 #include <boost/program_options.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
@@ -77,7 +77,6 @@
 //#include "GradientDescentFunctionalOptimizer.h"
 //#include "ALOptimizer.h"
 
-#include <itkCommand.h>
 
 using namespace rstk;
 

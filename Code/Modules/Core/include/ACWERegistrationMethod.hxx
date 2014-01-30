@@ -50,90 +50,178 @@ namespace rstk {
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
 ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::ACWERegistrationMethod(): m_NumberOfLevels(0),
+ 	 	 	 	 	 	 	m_CurrentLevel(0),
+ 	 	 	 	 	 	 	m_OutputPrefix(""),
                             m_UseGridLevelsInitialization(false),
                             m_UseGridSizeInitialization(true),
-                            m_Initialized(false) {
+                            m_Initialized(false),
+                            m_Stop(false) {
+	this->m_StopCondition      = ALL_LEVELS_DONE;
+	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
+}
 
-
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+void
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+::PrintSelf( std::ostream &os, itk::Indent indent ) const {
+	Superclass::PrintSelf(os,indent);
 }
 
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
 void
 ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
-::Initialize() {
-	if ( m_Initialized ) {
-		return;
+::GenerateData() {
+	this->InvokeEvent( itk::StartEvent() );
+
+	if ( ! m_Initialized ) {
+		this->GenerateSchedule();
 	}
 
-	ReferenceImagePointer refim = this->GetInput(0);
-	GridSizeType maxSize = refim->GetLargestPossibleRegion().GetSize();
 
+	while( this->m_CurrentLevel < this->m_NumberOfLevels ) {
+		try {
+			this->SetUpLevel( this->m_CurrentLevel );
+		} catch ( itk::ExceptionObject & err ) {
+			this->m_StopCondition = LEVEL_SETTING_ERROR;
+			this->m_StopConditionDescription << "Error while setting up level " << this->m_CurrentLevel;
+			this->Stop();
+			throw err;  // Pass exception to caller
+		}
 
-	// Planify levels and sizes.
-	if ( m_UseGridLevelsInitialization && m_NumberOfLevels>0 ) {
-		if ( m_NumberOfLevels == 1 ) {
-			m_GridSchedule.push_back( maxSize );
-		} else {
-			bool invalidRatio = false;
+		try {
+			m_Optimizers[this->m_CurrentLevel]->Start();
+		} catch ( itk::ExceptionObject & err ) {
+			this->m_StopCondition = LEVEL_PROCESS_ERROR;
+			this->m_StopConditionDescription << "Error while executing level " << this->m_CurrentLevel;
+			this->Stop();
+			throw err;  // Pass exception to caller
+		}
+		// Add JSON tree to the general logging facility
+		//root["iterations"] = iup->GetJSONRoot();
 
-			for( size_t i = 0; i < Dimension; i++) {
-				int maxLevels = maxSize[i] - 4;
+		this->InvokeEvent( itk::IterationEvent() );
+		this->m_CurrentLevel++;
 
-				if ( maxLevels <= 0 ) {
-					itkExceptionMacro(<< "image size must be >= 3 pixels along dimension " << i );
-				}
+		if ( this->m_CurrentLevel == this->m_NumberOfLevels ) {
+			this->m_StopConditionDescription << "All levels are finished (" << this->m_NumberOfLevels << " levels).";
+			this->m_StopCondition = ALL_LEVELS_DONE;
+			this->Stop();
+			break;
+		}
+	}
+}
 
-				if ( m_NumberOfLevels > maxLevels ) {
-					m_NumberOfLevels = maxLevels;
-					itkWarningMacro( << "too many levels required, NumberOfLevels has been updated to " << m_NumberOfLevels );
-				}
-			}
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+void
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+::GenerateSchedule() {
+	try {
+		ReferenceImagePointer refim = this->GetInput(0);
 
-			m_GridSchedule.resize(m_NumberOfLevels);
-			m_GridSchedule[m_NumberOfLevels-1] = maxSize;
-
-			GridSizeType gridStep;
-			for( size_t i = 0; i < Dimension; i++){
-				gridStep[i] = floor(  1.0*(maxSize[i]-4) / m_NumberOfLevels );
-			}
-
-			for( size_t l = m_NumberOfLevels-1; l > 0; --l ){
-				GridSizeType prevGrid = m_GridSchedule[l];
-
-				for( size_t i = 0; i < Dimension; i++) {
-					prevGrid[i]-= gridStep[i];
-				}
-
-				m_GridSchedule[l-1] = prevGrid;
+		for ( size_t i = 0; i<Dimension; i++){
+			if ( m_MaxGridSize[i] == 0 ) {
+				m_MaxGridSize[i] = refim->GetLargestPossibleRegion().GetSize()[i];
 			}
 		}
-	} // end if m_UseGridLevelsInitialization
-	else if ( m_UseGridSizeInitialization ) {
 
-	} else {
+		// Schedule levels and sizes.
+		if ( m_UseGridLevelsInitialization && m_NumberOfLevels>0 ) {
+			if ( m_NumberOfLevels == 1 ) {
+				m_GridSchedule.push_back( m_MaxGridSize );
+			} else {
+				bool invalidRatio = false;
 
+				for( size_t i = 0; i < Dimension; i++) {
+					int maxLevels = m_MaxGridSize[i] - 4;
+
+					if ( maxLevels <= 0 ) {
+						itkExceptionMacro(<< "image size must be >= 3 pixels along dimension " << i );
+					}
+
+					if ( m_NumberOfLevels > maxLevels ) {
+						m_NumberOfLevels = maxLevels;
+						itkWarningMacro( << "too many levels required, NumberOfLevels has been updated to " << m_NumberOfLevels );
+					}
+				}
+
+				m_GridSchedule.resize(m_NumberOfLevels);
+				m_GridSchedule[m_NumberOfLevels-1] = m_MaxGridSize;
+
+				GridSizeType gridStep;
+				for( size_t i = 0; i < Dimension; i++){
+					gridStep[i] = floor(  1.0*(m_MaxGridSize[i]-4) / m_NumberOfLevels );
+				}
+
+				for( size_t l = m_NumberOfLevels-1; l > 0; --l ){
+					GridSizeType prevGrid = m_GridSchedule[l];
+
+					for( size_t i = 0; i < Dimension; i++) {
+						prevGrid[i]-= gridStep[i];
+					}
+
+					m_GridSchedule[l-1] = prevGrid;
+				}
+			}
+		} // end if m_UseGridLevelsInitialization
+		else if ( m_UseGridSizeInitialization ) {
+
+		} else {
+
+		}
+
+		m_Functionals.resize( this->m_NumberOfLevels );
+		m_Optimizers.resize( this->m_NumberOfLevels );
+
+		m_Stop = false;
+		m_Initialized = true;
+
+	} catch ( itk::ExceptionObject & err ) {
+		this->m_StopCondition = INITIALIZATION_ERROR;
+		this->m_StopConditionDescription << "Error occured during initialization";
+		this->Stop();
+		throw err;  // Pass exception to caller
+	}
+}
+
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+void
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+::SetUpLevel( size_t level ) {
+	if( level > (this->m_NumberOfLevels-1) ) {
+		itkExceptionMacro( << "Trying to set up a level beyond NumberOfLevels (level=" << (level+1) << ")." );
 	}
 
+	ReferenceImageConstPointer im = this->GetInput( 0 );
+
 	// Initialize LevelSet function
-	FunctionalPointer functional = FunctionalType::New();
-	functional->SetReferenceImage( im );
+	m_Functionals[level] = FunctionalType::New();
+	m_Functionals[level]->SetReferenceImage( im );
 
 
 	// Connect Optimizer
-	OptimizerPointer opt = Optimizer::New();
-	opt->SetFunctional( functional );
+	m_Optimizers[level] = Optimizer::New();
+	m_Optimizers[level]->SetFunctional( m_Functionals[level] );
 
 	IterationUpdatePointer iup = IterationUpdateType::New();
-	iup->SetOptimizer( opt );
+	iup->SetOptimizer( m_Optimizers[level] );
 	//iup->SetTrackEnergyOn();
 #ifndef NDEBUG
 	IterationWriterUpdatePointer iwp = IterationWriterUpdate::New();
-	iwp->SetOptimizer( opt );
-	iwp->SetPrefix( outPrefix );
+	iwp->SetOptimizer( m_Optimizers[level] );
+	iwp->SetPrefix( m_OutputPrefix );
 #endif
+
 }
 
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+void
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+::Stop() {
+	itkDebugMacro( "Stop called with a description - "  << this->GetStopConditionDescription() );
+	this->m_Stop = true;
+	this->InvokeEvent( itk::EndEvent() );
+}
 
 } // namespace rstk
 

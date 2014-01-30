@@ -149,22 +149,6 @@ int main(int argc, char *argv[]) {
 	}
 
 
-	clock_t preProcessStop = clock();
-	float pre_tot_t = (float) (((double) (preProcessStop - preProcessStart)) / CLOCKS_PER_SEC);
-	root["time"]["preprocessing"] = pre_tot_t;
-
-	// Start registration -------------------------------------------------------------
-	std::cout << " --------------------------------- Starting registration process." << std::endl;
-	clock_t initTime = clock();
-
-	opt->Start();
-
-	clock_t finishTime = clock();
-	std::cout << " --------------------------------- Finished registration process." << std::endl;
-
-	float tot_t = (float) (((double) (finishTime - initTime)) / CLOCKS_PER_SEC);
-	root["time"]["processing"] = tot_t;
-
 	//
 	// Write out final results ---------------------------------------------------------
 	//
@@ -196,15 +180,6 @@ int main(int argc, char *argv[]) {
 	w->SetFileName( (outPrefix + "_roi_background.nii.gz" ).c_str() );
 	w->Update();
 
-
-	root["iterations"] = iup->GetJSONRoot();
-	// JSON Summary
-	root["summary"]["energy"]["total"] = opt->GetCurrentValue();
-	root["summary"]["energy"]["data"] = functional->GetValue();
-	root["summary"]["energy"]["regularization"] = opt->GetCurrentRegularizationEnergy();
-	root["summary"]["iterations"] = Json::Int (opt->GetCurrentIteration());
-	root["summary"]["conv_status"] = opt->GetStopCondition();
-	root["summary"]["stop_msg"] = opt->GetStopConditionDescription();
 
 	// Set-up & write out log file
 	std::ofstream logfile((outPrefix + logFileName ).c_str());
