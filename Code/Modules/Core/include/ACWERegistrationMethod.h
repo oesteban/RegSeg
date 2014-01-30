@@ -44,6 +44,7 @@
 #define ACWEREGISTRATIONMETHOD_H_
 
 #include <itkProcessObject.h>
+#include <itkCommand.h>
 
 #include "FunctionalBase.h"
 #include "SpectralOptimizer.h"
@@ -68,6 +69,7 @@ public:
 
 	typedef TFixedImage                                       ReferenceImageType;
 	typedef typename ReferenceImageType::Pointer              ReferenceImagePointer;
+	typedef typename ReferenceImageType::ConstPointer         ReferenceImageConstPointer;
 	typedef typename ReferenceImageType::SizeType             GridSizeType;
 	typedef std::vector< GridSizeType >                       GridSizeList;
 
@@ -79,12 +81,31 @@ public:
 
 	typedef FunctionalBase< ReferenceImageType >              FunctionalType;
 	typedef typename FunctionalType::Pointer                  FunctionalPointer;
+	typedef std::vector< FunctionalPointer >                  FunctionalList;
 
 	typedef SpectralOptimizer< FunctionalType >               OptimizerType;
 	typedef typename OptimizerType::Pointer                   OptimizerPointer;
+	typedef std::vector< OptimizerPointer >                   OptimizerList;
+
+	/** Codes of stopping conditions. */
+	typedef enum {
+		ALL_LEVELS_DONE,
+		LEVEL_SETTING_ERROR,
+		LEVEL_PROCESS_ERROR,
+		INITIALIZATION_ERROR,
+		OTHER_ERROR
+	} StopConditionType;
+
+	/** Stop condition return string type */
+	typedef std::string                                             StopConditionReturnStringType;
+
+	/** Stop condition internal string type */
+	typedef std::ostringstream                                      StopConditionDescriptionType;
 
 	itkSetMacro( NumberOfLevels, size_t );
 	itkGetConstMacro( NumberOfLevels, size_t );
+
+	itkGetConstMacro( CurrentLevel, size_t );
 
 	itkSetMacro( UseGridLevelsInitialization, bool );
 	itkGetConstMacro( UseGridLevelsInitialization, bool );
@@ -92,24 +113,47 @@ public:
 	itkSetMacro( UseGridSizeInitialization, bool );
 	itkGetConstMacro( UseGridSizeInitialization, bool );
 
+	itkSetMacro( MaxGridSize, GridSizeType );
+	itkGetConstMacro( MaxGridSize, GridSizeType );
+
+	itkGetConstMacro( StopConditionDescription, StopConditionDescriptionType );
+
+	itkSetMacro( OutputPrefix, std::string );
+	itkGetConstMacro( OutputPrefix, std::string );
+
 protected:
 	ACWERegistrationMethod();
 	~ACWERegistrationMethod() {}
 
+	virtual void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 	virtual void GenerateData();
 
 	void Initialize();
+	void GenerateSchedule();
+	void SetUpLevel( size_t level );
+	void Stop();
 
 private:
 	ACWERegistrationMethod( const Self & );
 	void operator=( const Self & );
 
 	size_t m_NumberOfLevels;
+	size_t m_CurrentLevel;
+	std::string m_OutputPrefix;
 	bool m_UseGridLevelsInitialization;
 	bool m_UseGridSizeInitialization;
 	bool m_Initialized;
 
+	/* Common variables for optimization control and reporting */
+	bool                          m_Stop;
+	StopConditionType             m_StopCondition;
+	StopConditionDescriptionType  m_StopConditionDescription;
+
 	GridSizeList m_GridSchedule;
+	GridSizeList m_MaxGridSize;
+
+	FunctionalList m_Functionals;
+	OptimizerList m_Optimizers;
 };
 
 } // namespace rstk

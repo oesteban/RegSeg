@@ -12,6 +12,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <jsoncpp/json/json.h>
+#include <ctime>
 
 namespace rstk {
 
@@ -45,6 +46,8 @@ public:
     	}
 
     	if( typeid( event ) == typeid( itk::StartEvent ) ) {
+    		m_StartTime = clock();
+
     		if( this->GetTrackEnergy() ) {
 				itnode["energy"]["total"] = this->m_Optimizer->GetCurrentValue();
 				itnode["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
@@ -66,6 +69,19 @@ public:
 			itnode["descriptors"] = this->ParseTree( this->m_Optimizer->GetFunctional()->PrintFormattedDescriptors() );
 		}
 
+		if( typeid( event ) == typeid( itk::EndEvent ) ) {
+			m_StopTime = clock();
+			float tot_t = (float) (((double) (m_StopTime - m_StartTime)) / CLOCKS_PER_SEC);
+			// JSON Summary
+			//root["time"]["processing"] = tot_t;
+			//root["summary"]["energy"]["total"] = this->m_Optimizer->GetCurrentValue();
+			//root["summary"]["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
+			//root["summary"]["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
+			//root["summary"]["iterations"] = Json::Int (this->m_Optimizer->GetCurrentIteration());
+			//root["summary"]["conv_status"] = this->m_Optimizer->GetStopCondition();
+			//root["summary"]["stop_msg"] = this->m_Optimizer->GetStopConditionDescription();
+		}
+
     	m_Last = itnode;
     	m_LastIt = it;
     }
@@ -82,7 +98,7 @@ public:
     }
 
 protected:
-    IterationJSONUpdate(): m_LastIt(0) {
+    IterationJSONUpdate(): m_LastIt(0), m_StartTime(0), m_StopTime(0) {
     	m_JSONRoot = Json::Value( Json::arrayValue );
     	m_Last = Json::Value( Json::objectValue );
     }
@@ -112,6 +128,8 @@ private:
 	JSONValue m_Last;
 	OptimizerPointer   m_Optimizer;
 	size_t m_LastIt;
+	clock_t m_StartTime;
+	clock_t m_StopTime;
 };
 
 } // end namespace rstk
