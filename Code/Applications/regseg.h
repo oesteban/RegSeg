@@ -65,17 +65,11 @@
 #include <itkDisplacementFieldTransform.h>
 #include <itkResampleImageFilter.h>
 
-#include "MahalanobisFunctional.h"
-#include "SpectralGradientDescentOptimizer.h"
-#include "SpectralADMMOptimizer.h"
+
+#include "ACWERegistrationMethod.h"
+
 #include "DisplacementFieldFileWriter.h"
 #include "DisplacementFieldComponentsFileWriter.h"
-#include "IterationJSONUpdate.h"
-#include "IterationResultsWriterUpdate.h"
-#include "BSplineSparseMatrixTransform.h"
-
-//#include "GradientDescentFunctionalOptimizer.h"
-//#include "ALOptimizer.h"
 
 
 using namespace rstk;
@@ -89,44 +83,24 @@ typedef itk::Vector<float, 2u>                               VectorPixelType;
 typedef itk::Image<VectorPixelType, 3u>                      ImageType;
 typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
-typedef MahalanobisFunctional<ImageType>                     FunctionalType;
-typedef FunctionalType::ContourType                          ContourType;
-typedef ContourType::Pointer                                 ContourDisplacementFieldPointer;
-typedef FunctionalType::MeanType                             MeanType;
-typedef FunctionalType::CovarianceType                       CovarianceType;
-typedef FunctionalType::FieldType                            FieldType;
-typedef FunctionalType::ROIType                              ROIType;
 
 typedef BSplineSparseMatrixTransform<double, 3, 3>           TransformType;
 typedef TransformType::Pointer                               TransformPointer;
 typedef typename TransformType::CoefficientsImageType        CoefficientsType;
 
-typedef SpectralGradientDescentOptimizer< FunctionalType >   Optimizer;
-//typedef SpectralADMMOptimizer< FunctionalType >              Optimizer;
+typedef ACWERegistrationMethod< ImageType, TransformType >   RegistrationType;
+typedef typename RegistrationType::Pointer                   RegistrationPointer;
+typedef typename RegistrationType::ContourType               ContourType;
+typedef typename ContourType::Pointer                        ContourPointer;
 
-typedef typename Optimizer::Pointer                          OptimizerPointer;
-typedef IterationJSONUpdate< Optimizer >                     IterationUpdateType;
-typedef typename IterationUpdateType::Pointer                IterationUpdatePointer;
-typedef IterationResultWriterUpdate< Optimizer >             IterationWriterUpdate;
-typedef typename IterationWriterUpdate::Pointer              IterationWriterUpdatePointer;
 
 typedef itk::VTKPolyDataReader< ContourType >                ReaderType;
 typedef itk::VTKPolyDataWriter< ContourType >                WriterType;
 typedef itk::ImageFileReader<ChannelType>                    ImageReader;
 typedef itk::ImageFileWriter<ChannelType>                    ImageWriter;
-typedef rstk::DisplacementFieldFileWriter<FieldType>         DisplacementFieldWriter;
-typedef itk::ImageFileWriter< ROIType >                      ROIWriter;
+//typedef rstk::DisplacementFieldFileWriter<FieldType>         DisplacementFieldWriter;
+//typedef itk::ImageFileWriter< ROIType >                      ROIWriter;
 
-//typedef itk::VectorImageToImageAdaptor<double,3u>            VectorToImage;
-//typedef itk::VectorResampleImageFilter
-//		<DeformationFieldType,DeformationFieldType,double>   DisplacementResamplerType;
-//typedef itk::BSplineInterpolateImageFunction
-//		                <DeformationFieldType>               InterpolatorFunction;
-//typedef itk::DisplacementFieldTransform<float, 3u>           TransformType;
-//
-//typedef itk::ResampleImageFilter<ChannelType,ChannelType,float>    ResamplerType;
-//
-//typedef itk::SimpleMemberCommand< Optimizer >  ObserverType;
 
 int main(int argc, char *argv[]);
 

@@ -45,6 +45,8 @@
 
 #include "ACWERegistrationMethod.h"
 
+#include <boost/lexical_cast.hpp>
+
 namespace rstk {
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
@@ -58,6 +60,13 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
                             m_Stop(false) {
 	this->m_StopCondition      = ALL_LEVELS_DONE;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
+
+	this->SetNumberOfRequiredOutputs( 1 );
+
+	this->m_OutputTransform = OutputTransformType::New();
+	DecoratedOutputTransformPointer transformDecorator = DecoratedOutputTransformType::New().GetPointer();
+	transformDecorator->Set( this->m_OutputTransform );
+	this->ProcessObject::SetNthOutput( 0, transformDecorator );
 }
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
@@ -83,18 +92,16 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		try {
 			this->SetUpLevel( this->m_CurrentLevel );
 		} catch ( itk::ExceptionObject & err ) {
-			this->m_StopCondition = LEVEL_SETTING_ERROR;
-			this->m_StopConditionDescription << "Error while setting up level " << this->m_CurrentLevel;
-			this->Stop();
+			this->Stop( LEVEL_SETTING_ERROR,  "Error while setting up level "
+					+  boost::lexical_cast<std::string>(this->m_CurrentLevel) );
 			throw err;  // Pass exception to caller
 		}
 
 		try {
 			m_Optimizers[this->m_CurrentLevel]->Start();
 		} catch ( itk::ExceptionObject & err ) {
-			this->m_StopCondition = LEVEL_PROCESS_ERROR;
-			this->m_StopConditionDescription << "Error while executing level " << this->m_CurrentLevel;
-			this->Stop();
+			this->Stop( LEVEL_PROCESS_ERROR, "Error while executing level "
+					+ boost::lexical_cast<std::string>(this->m_CurrentLevel));
 			throw err;  // Pass exception to caller
 		}
 		// Add JSON tree to the general logging facility
@@ -104,9 +111,8 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		this->m_CurrentLevel++;
 
 		if ( this->m_CurrentLevel == this->m_NumberOfLevels ) {
-			this->m_StopConditionDescription << "All levels are finished (" << this->m_NumberOfLevels << " levels).";
-			this->m_StopCondition = ALL_LEVELS_DONE;
-			this->Stop();
+			this->Stop( ALL_LEVELS_DONE, "All levels are finished ("
+					+ boost::lexical_cast<std::string>(this->m_NumberOfLevels) + " levels)." );
 			break;
 		}
 	}
@@ -117,7 +123,7 @@ void
 ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::GenerateSchedule() {
 	try {
-		ReferenceImagePointer refim = this->GetInput(0);
+		ReferenceImageConstPointer refim = this->GetFixedImage();
 
 		for ( size_t i = 0; i<Dimension; i++){
 			if ( m_MaxGridSize[i] == 0 ) {
@@ -130,7 +136,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 			if ( m_NumberOfLevels == 1 ) {
 				m_GridSchedule.push_back( m_MaxGridSize );
 			} else {
-				bool invalidRatio = false;
 
 				for( size_t i = 0; i < Dimension; i++) {
 					int maxLevels = m_MaxGridSize[i] - 4;
@@ -139,7 +144,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 						itkExceptionMacro(<< "image size must be >= 3 pixels along dimension " << i );
 					}
 
-					if ( m_NumberOfLevels > maxLevels ) {
+					if ( m_NumberOfLevels > (size_t) maxLevels ) {
 						m_NumberOfLevels = maxLevels;
 						itkWarningMacro( << "too many levels required, NumberOfLevels has been updated to " << m_NumberOfLevels );
 					}
@@ -177,11 +182,11 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		m_Initialized = true;
 
 	} catch ( itk::ExceptionObject & err ) {
-		this->m_StopCondition = INITIALIZATION_ERROR;
-		this->m_StopConditionDescription << "Error occured during initialization";
-		this->Stop();
+		this->Stop( INITIALIZATION_ERROR, "Error occurred during initialization" );
 		throw err;  // Pass exception to caller
 	}
+
+	this->InvokeEvent( itk::InitializeEvent() );
 }
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
@@ -192,35 +197,57 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		itkExceptionMacro( << "Trying to set up a level beyond NumberOfLevels (level=" << (level+1) << ")." );
 	}
 
-	ReferenceImageConstPointer im = this->GetInput( 0 );
+	ReferenceImageConstPointer im = this->GetFixedImage();
 
 	// Initialize LevelSet function
-	m_Functionals[level] = FunctionalType::New();
+	m_Functionals[level] = DefaultFunctionalType::New();
 	m_Functionals[level]->SetReferenceImage( im );
 
+	if ( level == 0 ) {
+		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
+			m_Functionals[level]->AddShapePrior( this->m_Priors[i] );
+		}
+	} else {
+		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
+			m_Functionals[level]->AddShapePrior( this->m_Functionals[level-1]->GetCurrentContours()[i] );
+		}
+	}
 
 	// Connect Optimizer
-	m_Optimizers[level] = Optimizer::New();
+	m_Optimizers[level] = DefaultOptimizerType::New();
 	m_Optimizers[level]->SetFunctional( m_Functionals[level] );
 
-	IterationUpdatePointer iup = IterationUpdateType::New();
-	iup->SetOptimizer( m_Optimizers[level] );
-	//iup->SetTrackEnergyOn();
-#ifndef NDEBUG
-	IterationWriterUpdatePointer iwp = IterationWriterUpdate::New();
-	iwp->SetOptimizer( m_Optimizers[level] );
-	iwp->SetPrefix( m_OutputPrefix );
-#endif
+//	IterationUpdatePointer iup = IterationUpdateType::New();
+//	iup->SetOptimizer( m_Optimizers[level] );
+//	//iup->SetTrackEnergyOn();
+//#ifndef NDEBUG
+//	IterationWriterUpdatePointer iwp = IterationWriterUpdate::New();
+//	iwp->SetOptimizer( m_Optimizers[level] );
+//	iwp->SetPrefix( m_OutputPrefix );
+//#endif
 
 }
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
 void
 ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
-::Stop() {
-	itkDebugMacro( "Stop called with a description - "  << this->GetStopConditionDescription() );
+::Stop( StopConditionType code, std::string msg ) {
+	this->m_StopConditionDescription << msg;
+	this->m_StopCondition = code;
+	itkDebugMacro( "Stop called with a description - "  << this->m_StopConditionDescription.str() );
 	this->m_Stop = true;
 	this->InvokeEvent( itk::EndEvent() );
+}
+
+/*
+ *  Get output transform
+ */
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+const typename ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >::DecoratedOutputTransformType *
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+::GetOutput() const
+{
+  return static_cast<const DecoratedOutputTransformType *>( this->ProcessObject::GetOutput( 0 ) );
 }
 
 } // namespace rstk

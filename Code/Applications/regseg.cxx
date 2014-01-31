@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
 			("help,h", "show help message")
 			("fixed-images,F", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
 			("moving-surfaces,M", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken()->required(),	"moving image file")
+			("transform-levels,L", bpo::value< size_t > (), "number of multi-resolution levels for the transform")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
 			("output-all", bpo::bool_switch(&outImages),"output intermediate images")
 			("alpha,a", bpo::value< float > (), "alpha value in regularization")
@@ -77,10 +78,6 @@ int main(int argc, char *argv[]) {
 	std::time_t time;
 	root["information"] = std::ctime( &time );
 
-	// Read fixed image(s) --------------------------------------------------------------
-	clock_t preProcessStart = clock();
-
-
 	// Initialize registration
 	RegistrationPointer acwereg = RegistrationType::New();
 
@@ -101,7 +98,7 @@ int main(int argc, char *argv[]) {
 	root["inputs"]["target"]["components"] = targetjson;
 
     comb->Update();
-	ImageType::Pointer im = comb->GetOutput();
+	acwereg->SetFixedImage( comb->GetOutput() );
 
 
 	// Read moving surface(s) -----------------------------------------------------------
@@ -113,72 +110,77 @@ int main(int argc, char *argv[]) {
 		ReaderType::Pointer polyDataReader = ReaderType::New();
 		polyDataReader->SetFileName( movingSurfaceNames[i] );
 		polyDataReader->Update();
-		functional->AddShapePrior( polyDataReader->GetOutput() );
+		acwereg->AddShapePrior( polyDataReader->GetOutput() );
 		movingjson.append( movingSurfaceNames[i] );
 	}
 	root["inputs"]["moving"]["components"] = movingjson;
 
 
 	// Set up registration ------------------------------------------------------------
-	if (vmap.count("grid-size")) {
-		opt->SetGridSize( vmap["grid-size"].as<size_t>() );
+	if (vmap.count("transform-levels")) {
+		acwereg->SetNumberOfLevels( vmap["transform-levels"].as<size_t>() );
+		acwereg->SetUseGridLevelsInitialization( true );
 	}
+	//if (vmap.count("grid-size")) {
+	//	acwereg->SetGridSize( vmap["grid-size"].as<size_t>() );
+	//}
+    //
+	//if (vmap.count("iterations")) {
+	//	acwereg->SetNumberOfIterations( vmap["iterations"].as< size_t >() );
+	//}
+	//if (vmap.count("step-size")) {
+	//	acwereg->SetStepSize( vmap["step-size"].as<float>() );
+    //
+	//}
+	//if (vmap.count("alpha")) {
+	//	acwereg->SetAlpha( vmap["alpha"].as<float>() );
+	//}
+    //
+	//if (vmap.count("beta")) {
+	//	acwereg->SetBeta( vmap["beta"].as<float>() );
+	//}
+	//if (vmap.count("descriptors-update-iterations")) {
+	//	size_t updDesc =  vmap["descriptors-update-iterations"].as<size_t>();
+    //
+	//	if ( updDesc > 0 ) {
+	//		acwereg->SetUseDescriptorRecomputation(true);
+	//		acwereg->SetDescriptorRecomputationFreq(updDesc);
+    //
+	//	}
+	//}
 
-	if (vmap.count("iterations")) {
-		opt->SetNumberOfIterations( vmap["iterations"].as< size_t >() );
-	}
-	if (vmap.count("step-size")) {
-		opt->SetStepSize( vmap["step-size"].as<float>() );
-
-	}
-	if (vmap.count("alpha")) {
-		opt->SetAlpha( vmap["alpha"].as<float>() );
-	}
-
-	if (vmap.count("beta")) {
-		opt->SetBeta( vmap["beta"].as<float>() );
-	}
-	if (vmap.count("descriptors-update-iterations")) {
-		size_t updDesc =  vmap["descriptors-update-iterations"].as<size_t>();
-
-		if ( updDesc > 0 ) {
-			opt->SetUseDescriptorRecomputation(true);
-			opt->SetDescriptorRecomputationFreq(updDesc);
-
-		}
-	}
-
+	acwereg->Update();
 
 	//
 	// Write out final results ---------------------------------------------------------
 	//
 
 	// Displacementfield
-	typename DisplacementFieldWriter::Pointer p = DisplacementFieldWriter::New();
-	p->SetFileName( (outPrefix + "_field.nii.gz" ).c_str() );
-	p->SetInput( opt->GetCurrentDisplacementField() );
-	p->Update();
-
-	// Contours and regions
-    size_t nCont = functional->GetCurrentContours().size();
-    for ( size_t contid = 0; contid < nCont; contid++) {
-    	bfs::path contPath(movingSurfaceNames[contid]);
-    	WriterType::Pointer polyDataWriter = WriterType::New();
-    	polyDataWriter->SetInput( functional->GetCurrentContours()[contid] );
-    	polyDataWriter->SetFileName( (outPrefix + "_" + contPath.filename().string()).c_str() );
-    	polyDataWriter->Update();
-
-    	typename ROIWriter::Pointer w = ROIWriter::New();
-    	w->SetInput( functional->GetCurrentRegion(contid) );
-    	w->SetFileName( (outPrefix + "_roi_" + contPath.stem().string() + ".nii.gz" ).c_str() );
-    	w->Update();
-    }
-
-    // Last ROI (excluded region)
-	typename ROIWriter::Pointer w = ROIWriter::New();
-	w->SetInput( functional->GetCurrentRegion(nCont) );
-	w->SetFileName( (outPrefix + "_roi_background.nii.gz" ).c_str() );
-	w->Update();
+	//typename DisplacementFieldWriter::Pointer p = DisplacementFieldWriter::New();
+	//p->SetFileName( (outPrefix + "_field.nii.gz" ).c_str() );
+	//p->SetInput( opt->GetCurrentDisplacementField() );
+	//p->Update();
+    //
+	//// Contours and regions
+    //size_t nCont = functional->GetCurrentContours().size();
+    //for ( size_t contid = 0; contid < nCont; contid++) {
+    //	bfs::path contPath(movingSurfaceNames[contid]);
+    //	WriterType::Pointer polyDataWriter = WriterType::New();
+    //	polyDataWriter->SetInput( functional->GetCurrentContours()[contid] );
+    //	polyDataWriter->SetFileName( (outPrefix + "_" + contPath.filename().string()).c_str() );
+    //	polyDataWriter->Update();
+    //
+    //	typename ROIWriter::Pointer w = ROIWriter::New();
+    //	w->SetInput( functional->GetCurrentRegion(contid) );
+    //	w->SetFileName( (outPrefix + "_roi_" + contPath.stem().string() + ".nii.gz" ).c_str() );
+    //	w->Update();
+    //}
+    //
+    //// Last ROI (excluded region)
+	//typename ROIWriter::Pointer w = ROIWriter::New();
+	//w->SetInput( functional->GetCurrentRegion(nCont) );
+	//w->SetFileName( (outPrefix + "_roi_background.nii.gz" ).c_str() );
+	//w->Update();
 
 
 	// Set-up & write out log file
