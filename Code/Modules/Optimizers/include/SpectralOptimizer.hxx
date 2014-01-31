@@ -78,7 +78,8 @@ m_NumberOfIterations( 250 ),
 m_DenominatorCached( false ),
 m_DescriptorRecomputationFreq(5),
 m_UseDescriptorRecomputation(false),
-m_StepSize(10.0)
+m_StepSize(10.0),
+m_Settings()
 {
 	this->m_Alpha.Fill( 1.0e-2 );
 	this->m_Beta.Fill( 1.0e-1 );
@@ -92,6 +93,9 @@ m_StepSize(10.0)
 
 	SplineTransformPointer defaultTransform = SplineTransformType::New();
 	this->m_Transform = itkDynamicCastInDebugMode< TransformType* >( defaultTransform.GetPointer() );
+
+	//m_Settings.insert( std::make_pair( "alpha", bpo::variable_value( 0.7f , false )));
+	//bpo::notify( m_Settings );
 }
 
 template< typename TFunctional >
@@ -128,6 +132,11 @@ void SpectralOptimizer<TFunctional>::Start() {
 //		this->m_BestParameters = this->GetCurrentPosition( );
 //		this->m_CurrentBestValue = NumericTraits< MeasureType >::max();
 //	}
+
+	if( this->m_UseDescriptorRecomputation ) {
+		this->m_UseDescriptorRecomputation = (this->m_DescriptorRecomputationFreq > 0)
+				&& (this->m_DescriptorRecomputationFreq < this->m_NumberOfIterations);
+	}
 
 	this->m_Functional->Initialize();
 	this->InvokeEvent( itk::StartEvent() );

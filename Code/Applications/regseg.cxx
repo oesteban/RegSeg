@@ -115,39 +115,36 @@ int main(int argc, char *argv[]) {
 	}
 	root["inputs"]["moving"]["components"] = movingjson;
 
-
 	// Set up registration ------------------------------------------------------------
 	if (vmap.count("transform-levels")) {
 		acwereg->SetNumberOfLevels( vmap["transform-levels"].as<size_t>() );
 		acwereg->SetUseGridLevelsInitialization( true );
 	}
+	if (vmap.count("iterations")) {
+		acwereg->FillNumberOfIterations( vmap["iterations"].as< size_t >() );
+	}
+
+	if (vmap.count("step-size")) {
+		acwereg->FillStepSize( vmap["step-size"].as<float>() );
+
+	}
+	if (vmap.count("alpha")) {
+		acwereg->FillAlpha( vmap["alpha"].as<float>() );
+	}
+
+	if (vmap.count("beta")) {
+		acwereg->FillBeta( vmap["beta"].as<float>() );
+	}
+	if (vmap.count("descriptors-update-iterations")) {
+		size_t updDesc =  vmap["descriptors-update-iterations"].as<size_t>();
+		acwereg->FillDescriptorRecomputationFreq(updDesc);
+	}
+
+
 	//if (vmap.count("grid-size")) {
 	//	acwereg->SetGridSize( vmap["grid-size"].as<size_t>() );
 	//}
     //
-	//if (vmap.count("iterations")) {
-	//	acwereg->SetNumberOfIterations( vmap["iterations"].as< size_t >() );
-	//}
-	//if (vmap.count("step-size")) {
-	//	acwereg->SetStepSize( vmap["step-size"].as<float>() );
-    //
-	//}
-	//if (vmap.count("alpha")) {
-	//	acwereg->SetAlpha( vmap["alpha"].as<float>() );
-	//}
-    //
-	//if (vmap.count("beta")) {
-	//	acwereg->SetBeta( vmap["beta"].as<float>() );
-	//}
-	//if (vmap.count("descriptors-update-iterations")) {
-	//	size_t updDesc =  vmap["descriptors-update-iterations"].as<size_t>();
-    //
-	//	if ( updDesc > 0 ) {
-	//		acwereg->SetUseDescriptorRecomputation(true);
-	//		acwereg->SetDescriptorRecomputationFreq(updDesc);
-    //
-	//	}
-	//}
 
 	acwereg->Update();
 
