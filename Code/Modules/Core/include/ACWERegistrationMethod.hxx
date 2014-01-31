@@ -46,6 +46,7 @@
 #include "ACWERegistrationMethod.h"
 
 #include <boost/lexical_cast.hpp>
+#include <algorithm>    // std::fill
 
 namespace rstk {
 
@@ -67,6 +68,8 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	DecoratedOutputTransformPointer transformDecorator = DecoratedOutputTransformType::New().GetPointer();
 	transformDecorator->Set( this->m_OutputTransform );
 	this->ProcessObject::SetNthOutput( 0, transformDecorator );
+
+	this->m_MinGridSize.Fill( 4 );
 }
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
@@ -129,6 +132,14 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 			if ( m_MaxGridSize[i] == 0 ) {
 				m_MaxGridSize[i] = refim->GetLargestPossibleRegion().GetSize()[i];
 			}
+
+			if ( m_MaxGridSize[i] <= m_MinGridSize[i] ) {
+				m_MaxGridSize[i] = m_MinGridSize[i];
+			}
+		}
+
+		if ( m_MaxGridSize == m_MinGridSize ) {
+			this->SetNumberOfLevels( 1 );
 		}
 
 		// Schedule levels and sizes.
@@ -138,24 +149,23 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 			} else {
 
 				for( size_t i = 0; i < Dimension; i++) {
-					int maxLevels = m_MaxGridSize[i] - 4;
+					int maxLevels = m_MaxGridSize[i] - m_MinGridSize[i];
 
 					if ( maxLevels <= 0 ) {
 						itkExceptionMacro(<< "image size must be >= 3 pixels along dimension " << i );
 					}
 
 					if ( m_NumberOfLevels > (size_t) maxLevels ) {
-						m_NumberOfLevels = maxLevels;
+						this->SetNumberOfLevels( maxLevels );
 						itkWarningMacro( << "too many levels required, NumberOfLevels has been updated to " << m_NumberOfLevels );
 					}
 				}
 
-				m_GridSchedule.resize(m_NumberOfLevels);
 				m_GridSchedule[m_NumberOfLevels-1] = m_MaxGridSize;
 
 				GridSizeType gridStep;
 				for( size_t i = 0; i < Dimension; i++){
-					gridStep[i] = floor(  1.0*(m_MaxGridSize[i]-4) / m_NumberOfLevels );
+					gridStep[i] = floor(  1.0*(m_MaxGridSize[i]- m_MinGridSize[i]) / (m_NumberOfLevels-1) );
 				}
 
 				for( size_t l = m_NumberOfLevels-1; l > 0; --l ){
@@ -174,9 +184,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		} else {
 
 		}
-
-		m_Functionals.resize( this->m_NumberOfLevels );
-		m_Optimizers.resize( this->m_NumberOfLevels );
 
 		m_Stop = false;
 		m_Initialized = true;
@@ -217,6 +224,16 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	m_Optimizers[level] = DefaultOptimizerType::New();
 	m_Optimizers[level]->SetFunctional( m_Functionals[level] );
 
+	if ( this->m_NumberOfIterations[level] > 0 ) {
+		m_Optimizers[level]->SetNumberOfIterations( this->m_NumberOfIterations[level] );
+	}
+
+	// Set registration configuration
+	//m_StepSize;
+	//m_Alpha;
+	//m_Beta;
+	//m_DescriptorRecomputationFreq;
+
 //	IterationUpdatePointer iup = IterationUpdateType::New();
 //	iup->SetOptimizer( m_Optimizers[level] );
 //	//iup->SetTrackEnergyOn();
@@ -226,6 +243,25 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 //	iwp->SetPrefix( m_OutputPrefix );
 //#endif
 
+}
+
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+void
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+::SetNumberOfLevels( size_t levels ) {
+	if( levels == 0 || levels > 15 ) {
+		itkExceptionMacro( << "intended NumberOfLevels is not valid (zero or >15).")
+	}
+	this->m_NumberOfLevels = levels;
+
+	m_GridSchedule.resize(m_NumberOfLevels);
+	m_Functionals.resize( this->m_NumberOfLevels );
+	m_Optimizers.resize( this->m_NumberOfLevels );
+	m_NumberOfIterations.resize( this->m_NumberOfLevels );
+	m_StepSize.resize( this->m_NumberOfLevels );
+	m_Alpha.resize( this->m_NumberOfLevels );
+	m_Beta.resize( this->m_NumberOfLevels );
+	m_DescriptorRecomputationFreq.resize( this->m_NumberOfLevels );
 }
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >

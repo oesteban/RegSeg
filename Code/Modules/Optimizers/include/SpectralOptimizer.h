@@ -43,6 +43,7 @@
 #ifndef SPECTRALOPTIMIZER_H_
 #define SPECTRALOPTIMIZER_H_
 
+#include <boost/program_options.hpp>
 
 #include <itkObjectToObjectOptimizerBase.h>
 
@@ -61,6 +62,8 @@
 #include "BSplineSparseMatrixTransform.h"
 
 using namespace itk;
+namespace bpo = boost::program_options;
+
 
 namespace rstk
 {
@@ -163,6 +166,8 @@ public:
 
 	/** Type for the convergence checker */
 	typedef itk::Function::WindowConvergenceMonitoringFunction<MeasureType>	         ConvergenceMonitoringType;
+
+	typedef bpo::variables_map                                      SettingsMap;
 
 	/** Accessors for Functional */
 	itkGetObjectMacro( Functional, FunctionalType );
@@ -354,6 +359,7 @@ protected:
 
 	TransformPointer              m_Transform;
 
+	SettingsMap                   m_Settings;
 
 private:
 	SpectralOptimizer( const Self & ); // purposely not implemented

@@ -46,7 +46,10 @@
 #include <itkProcessObject.h>
 #include <itkCommand.h>
 #include <itkDataObjectDecorator.h>
+#include <vector>       // std::vector
+#include <iostream>     // std::cout
 
+#include "rstkMacro.h"
 #include "FunctionalBase.h"
 #include "MahalanobisFunctional.h"
 #include "SpectralOptimizer.h"
@@ -98,6 +101,12 @@ public:
 	typedef SpectralOptimizer< FunctionalType >               OptimizerType;
 	typedef typename OptimizerType::Pointer                   OptimizerPointer;
 	typedef std::vector< OptimizerPointer >                   OptimizerList;
+	typedef typename OptimizerType
+			        ::InternalComputationValueType            OptCompValueType;
+	typedef std::vector< OptCompValueType >                   OptCompValueList;
+
+	typedef typename OptimizerType::SizeValueType             NumberValueType;
+	typedef std::vector< NumberValueType >                    NumberValueList;
 
 	typedef MahalanobisFunctional< ReferenceImageType >       DefaultFunctionalType;
 	typedef SpectralGradientDescentOptimizer
@@ -121,7 +130,8 @@ public:
 	itkSetInputMacro( FixedImage, ReferenceImageType );
 	itkGetInputMacro( FixedImage, ReferenceImageType );
 
-	itkSetMacro( NumberOfLevels, size_t );
+	//itkSetMacro( NumberOfLevels, size_t );
+	void SetNumberOfLevels( size_t levels );
 	itkGetConstMacro( NumberOfLevels, size_t );
 
 	itkGetConstMacro( CurrentLevel, size_t );
@@ -135,10 +145,23 @@ public:
 	itkSetMacro( MaxGridSize, GridSizeType );
 	itkGetConstMacro( MaxGridSize, GridSizeType );
 
+	itkSetMacro( MinGridSize, GridSizeType );
+	itkGetConstMacro( MinGridSize, GridSizeType );
+
 	//itkGetConstMacro( StopConditionDescription, StopConditionDescriptionType );
 
 	itkSetMacro( OutputPrefix, std::string );
 	itkGetConstMacro( OutputPrefix, std::string );
+
+	rstkSetVectorElement( GridSchedule, GridSizeType );
+	rstkGetConstVectorElement( GridSchedule, GridSizeType );
+
+	rstkVectorMethods( NumberOfIterations, NumberValueType );
+
+	rstkVectorMethods( StepSize, OptCompValueType );
+	rstkVectorMethods( Alpha, OptCompValueType );
+	rstkVectorMethods( Beta, OptCompValueType );
+	rstkVectorMethods( DescriptorRecomputationFreq, NumberValueType );
 
 	void AddShapePrior( const ContourType *prior ) { this->m_Priors.push_back( prior ); }
 
@@ -176,11 +199,17 @@ private:
 
 	GridSizeList m_GridSchedule;
 	GridSizeType m_MaxGridSize;
+	GridSizeType m_MinGridSize;
+	NumberValueList m_NumberOfIterations;
 
 	FunctionalList m_Functionals;
 	OptimizerList m_Optimizers;
 	PriorsList m_Priors;
 	OutputTransformPointer m_OutputTransform;
+	OptCompValueList m_StepSize;
+	OptCompValueList m_Alpha;
+	OptCompValueList m_Beta;
+	NumberValueList  m_DescriptorRecomputationFreq;
 };
 
 } // namespace rstk

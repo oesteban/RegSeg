@@ -14,6 +14,28 @@ ELSE(ITK_FOUND)
           "Please Set ITK_DIR")
 ENDIF(ITK_FOUND)
 
+
+FIND_PACKAGE( Boost 1.49 COMPONENTS program_options filesystem system REQUIRED )
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
+
+FIND_PATH(JsonCpp_INCLUDE_DIR     
+  NAMES 
+        jsoncpp/json/json.h   
+  PATHS
+        /usr/local/include
+        /usr/include
+)
+INCLUDE_DIRECTORIES(${JsonCpp_INCLUDE_DIR})
+
+find_library(JsonCpp_LIBRARY 
+    NAMES 
+        jsoncpp
+        libjsoncpp
+    PATHS
+       /usr/lib 
+       /usr/local/lib
+)
+
 SET( CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Core )
 
 SET( LEVELSETS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Functional )
