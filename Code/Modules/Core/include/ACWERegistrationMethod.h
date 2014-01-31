@@ -45,9 +45,12 @@
 
 #include <itkProcessObject.h>
 #include <itkCommand.h>
+#include <itkDataObjectDecorator.h>
 
 #include "FunctionalBase.h"
+#include "MahalanobisFunctional.h"
 #include "SpectralOptimizer.h"
+#include "SpectralGradientDescentOptimizer.h"
 
 namespace rstk {
 
@@ -73,19 +76,32 @@ public:
 	typedef typename ReferenceImageType::SizeType             GridSizeType;
 	typedef std::vector< GridSizeType >                       GridSizeList;
 
-	itkStaticConstMacro( Dimension, size_t, ReferenceImageType::Dimension );
-
+	itkStaticConstMacro( Dimension, size_t, ReferenceImageType::ImageDimension );
 
 	typedef itk::FixedArray< InternalValuesType, Dimension >  ValueArrayType;
 	typedef itk::Vector< InternalValuesType, Dimension >      ValueVectorType;
 
+	typedef TTransform                                        OutputTransformType;
+	typedef typename OutputTransformType::Pointer             OutputTransformPointer;
+	typedef itk::DataObjectDecorator<OutputTransformType>     DecoratedOutputTransformType;
+	typedef typename DecoratedOutputTransformType::Pointer    DecoratedOutputTransformPointer;
+
 	typedef FunctionalBase< ReferenceImageType >              FunctionalType;
 	typedef typename FunctionalType::Pointer                  FunctionalPointer;
 	typedef std::vector< FunctionalPointer >                  FunctionalList;
+	typedef typename FunctionalType::ContourType              ContourType;
+	typedef typename FunctionalType::ContourPointer           ContourPointer;
+	typedef typename FunctionalType::ContourConstPointer      ContourConstPointer;
+	typedef std::vector< ContourConstPointer >                PriorsList;
+
 
 	typedef SpectralOptimizer< FunctionalType >               OptimizerType;
 	typedef typename OptimizerType::Pointer                   OptimizerPointer;
 	typedef std::vector< OptimizerPointer >                   OptimizerList;
+
+	typedef MahalanobisFunctional< ReferenceImageType >       DefaultFunctionalType;
+	typedef SpectralGradientDescentOptimizer
+			                            < FunctionalType >    DefaultOptimizerType;
 
 	/** Codes of stopping conditions. */
 	typedef enum {
@@ -102,6 +118,9 @@ public:
 	/** Stop condition internal string type */
 	typedef std::ostringstream                                      StopConditionDescriptionType;
 
+	itkSetInputMacro( FixedImage, ReferenceImageType );
+	itkGetInputMacro( FixedImage, ReferenceImageType );
+
 	itkSetMacro( NumberOfLevels, size_t );
 	itkGetConstMacro( NumberOfLevels, size_t );
 
@@ -116,10 +135,16 @@ public:
 	itkSetMacro( MaxGridSize, GridSizeType );
 	itkGetConstMacro( MaxGridSize, GridSizeType );
 
-	itkGetConstMacro( StopConditionDescription, StopConditionDescriptionType );
+	//itkGetConstMacro( StopConditionDescription, StopConditionDescriptionType );
 
 	itkSetMacro( OutputPrefix, std::string );
 	itkGetConstMacro( OutputPrefix, std::string );
+
+	void AddShapePrior( const ContourType *prior ) { this->m_Priors.push_back( prior ); }
+
+	/** Returns the transform resulting from the registration process  */
+	virtual const DecoratedOutputTransformType * GetOutput() const;
+
 
 protected:
 	ACWERegistrationMethod();
@@ -131,7 +156,7 @@ protected:
 	void Initialize();
 	void GenerateSchedule();
 	void SetUpLevel( size_t level );
-	void Stop();
+	void Stop( StopConditionType code, std::string msg );
 
 private:
 	ACWERegistrationMethod( const Self & );
@@ -150,10 +175,12 @@ private:
 	StopConditionDescriptionType  m_StopConditionDescription;
 
 	GridSizeList m_GridSchedule;
-	GridSizeList m_MaxGridSize;
+	GridSizeType m_MaxGridSize;
 
 	FunctionalList m_Functionals;
 	OptimizerList m_Optimizers;
+	PriorsList m_Priors;
+	OutputTransformPointer m_OutputTransform;
 };
 
 } // namespace rstk

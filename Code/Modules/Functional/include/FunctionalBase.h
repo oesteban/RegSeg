@@ -246,7 +246,7 @@ public:
 		size_t cid;
 		size_t gid;
 
-		GradientSample() {}
+		//GradientSample(): grad(0), cid(0), gid(0) {}
 		GradientSample( PointValueType g, size_t i, size_t j ): grad(g), cid(i), gid(j) {}
 		GradientSample( const GradientSample &s ): grad(s.grad), cid(s.cid), gid(s.gid) {}
 
