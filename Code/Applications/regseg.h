@@ -104,4 +104,14 @@ typedef itk::ImageFileWriter<ChannelType>                    ImageWriter;
 
 int main(int argc, char *argv[]);
 
+inline void add_level_options( bpo::options_description& level_desc ) {
+	level_desc.add_options()
+			("alpha,a", bpo::value< float > (), "alpha value in regularization")
+			("beta,b", bpo::value< float > (), "beta value in regularization")
+			("step-size,s", bpo::value< float > (), "step-size value in optimization")
+			("iterations,i", bpo::value< size_t > (), "number of iterations")
+			("grid-size,g", bpo::value< size_t > (), "grid size")
+			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)");
+}
+
 #endif /* REGSEG_H_ */

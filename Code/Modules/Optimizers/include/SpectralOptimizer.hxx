@@ -93,9 +93,6 @@ m_Settings()
 
 	SplineTransformPointer defaultTransform = SplineTransformType::New();
 	this->m_Transform = itkDynamicCastInDebugMode< TransformType* >( defaultTransform.GetPointer() );
-
-	//m_Settings.insert( std::make_pair( "alpha", bpo::variable_value( 0.7f , false )));
-	//bpo::notify( m_Settings );
 }
 
 template< typename TFunctional >
