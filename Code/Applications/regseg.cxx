@@ -183,31 +183,7 @@ int main(int argc, char *argv[]) {
 
 	for( size_t i = 0; i < cli_nlevels; i++ ) {
 		bpo::variables_map vm = vm_levels[i];
-
-		if (vm.count("iterations")) {
-			size_t nit = vm["iterations"].as< size_t >();
-			acwereg->SetNumberOfIterationsElement( i, nit );
-		}
-        //
-		//if (vm.count("step-size")) {
-		//	std::vector< double > ssize = vm["step-size"].as< std::vector< double > >();
-		//	acwereg->SetStepSizeElement( i,  ssize[0] );
-        //
-		//}
-		//if (vm.count("alpha")) {
-		//	acwereg->SetAlphaElement( i, vm["alpha"].as<float>() );
-		//}
-        //
-		//if (vm.count("beta")) {
-		//	acwereg->SetBetaElement( i, vm["beta"].as<float>() );
-		//}
-		//if (vm.count("descriptors-update-iterations")) {
-		//	size_t updDesc =  vm["descriptors-update-iterations"].as<size_t>();
-		//	acwereg->FillDescriptorRecomputationFreq(updDesc);
-		//}
-		//if (vm.count("grid-size")) {
-		//	acwereg->SetGridSize( vm["grid-size"].as<size_t>() );
-		//}
+		acwereg->SetSettingsOfLevel( i, vm );
 	}
 
 	acwereg->Update();

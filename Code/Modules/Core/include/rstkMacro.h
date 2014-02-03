@@ -93,7 +93,7 @@ virtual void Set##name##Element ( size_t id, const type _arg ) { \
 		this->Modified(); \
 	} \
 } \
-virtual type Get##name##Element( size_t id ) const { \
+virtual type Get##name##Element( const size_t id ) const { \
 	return this->m_##name[id]; \
 } \
 virtual void Fill##name ( const type _arg ) { \
@@ -103,5 +103,31 @@ virtual void Fill##name ( const type _arg ) { \
 			this->Modified(); \
 		} \
 	} \
+}
+
+
+
+#define rstkGetObjectList(name, type) \
+virtual type * Get##name##OfLevel ( const size_t id ) const  { \
+    return this->m_##name##s[id].GetPointer();    \
+}
+
+
+#define rstkSetObjectList(name, type) \
+virtual void Set##name##OfLevel ( const size_t id, type* obj )  { \
+	if ( this->m_##name.size() <= id ) { \
+		itkExceptionMacro( << "vector " #name " is not initialized, or position " << id << " not valid."); \
+	} \
+	if ( this->m_##name[id] != _arg ) { \
+		this->m_##name[id] = _arg; \
+		this->Modified(); \
+	} \
+}
+
+/** Get a smart const pointer to an object.  Creates the member
+ * Get"name"() (e.g., GetPoints()). */
+#define rstkGetConstObjectList(name, type) \
+virtual const type * Get##name##OfLevel ( const size_t id ) const  { \
+    return this->m_##name##s[id].GetPointer();    \
 }
 #endif /* RSTKMACRO_H_ */

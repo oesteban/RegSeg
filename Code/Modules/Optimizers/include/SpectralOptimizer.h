@@ -59,6 +59,7 @@
 #include <itkMultiplyImageFilter.h>
 #include <itkAddImageFilter.h>
 
+#include "ConfigurableObject.h"
 #include "BSplineSparseMatrixTransform.h"
 
 using namespace itk;
@@ -79,13 +80,19 @@ namespace rstk
  */
 
 template< typename TFunctional >
-class SpectralOptimizer: public ObjectToObjectOptimizerBase {
+class SpectralOptimizer:
+		public ObjectToObjectOptimizerBase,
+		public ConfigurableObject
+{
 public:
 	/** Standard class typedefs and macros */
 	typedef SpectralOptimizer           Self;
 	typedef ObjectToObjectOptimizerBase                Superclass;
 	typedef itk::SmartPointer<Self>                    Pointer;
 	typedef itk::SmartPointer< const Self >            ConstPointer;
+	typedef ConfigurableObject                         SettingsClass;
+	typedef typename SettingsClass::SettingsMap        SettingsMap;
+	typedef typename SettingsClass::SettingsDesc       SettingsDesc;
 
 	itkTypeMacro( SpectralOptimizer, ObjectToObjectOptimizerBase ); // Run-time type information (and related methods)
 
@@ -167,7 +174,7 @@ public:
 	/** Type for the convergence checker */
 	typedef itk::Function::WindowConvergenceMonitoringFunction<MeasureType>	         ConvergenceMonitoringType;
 
-	typedef bpo::variables_map                                      SettingsMap;
+
 
 	/** Accessors for Functional */
 	itkGetObjectMacro( Functional, FunctionalType );
@@ -315,7 +322,8 @@ protected:
 	virtual void InitializeAuxiliarParameters( void ) = 0;
 	virtual void SetUpdate() = 0;
 	virtual void Iterate(void) = 0;
-
+	virtual void AddOptions( SettingsDesc& opts ) const;
+	virtual void ParseSettings();
 
 	/* Common variables for optimization control and reporting */
 	bool                          m_Stop;
@@ -358,8 +366,6 @@ protected:
 
 
 	TransformPointer              m_Transform;
-
-	SettingsMap                   m_Settings;
 
 private:
 	SpectralOptimizer( const Self & ); // purposely not implemented

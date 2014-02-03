@@ -50,15 +50,21 @@
 #include <iostream>     // std::cout
 
 #include "rstkMacro.h"
+#include "ConfigurableObject.h"
 #include "FunctionalBase.h"
 #include "MahalanobisFunctional.h"
 #include "SpectralOptimizer.h"
 #include "SpectralGradientDescentOptimizer.h"
 
+
+namespace bpo = boost::program_options;
+
 namespace rstk {
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue = double >
-class ACWERegistrationMethod: public itk::ProcessObject
+class ACWERegistrationMethod:
+		public itk::ProcessObject,
+		public ConfigurableObject
 {
 public:
 	/** Standard class typedefs. */
@@ -66,6 +72,10 @@ public:
 	typedef itk::ProcessObject                                Superclass;
 	typedef itk::SmartPointer< Self >                         Pointer;
 	typedef itk::SmartPointer< const Self >                   ConstPointer;
+	typedef ConfigurableObject                                SettingsClass;
+	typedef typename SettingsClass::SettingsMap               SettingsMap;
+	typedef typename SettingsClass::SettingsDesc              SettingsDesc;
+	typedef std::vector< SettingsMap >                        SettingsList;
 
 	/** Method for creation through the object factory. */
 	itkNewMacro( Self );
@@ -163,7 +173,15 @@ public:
 	rstkVectorMethods( Beta, OptCompValueType );
 	rstkVectorMethods( DescriptorRecomputationFreq, NumberValueType );
 
+	rstkGetObjectList( Optimizer, OptimizerType );
+
 	void AddShapePrior( const ContourType *prior ) { this->m_Priors.push_back( prior ); }
+
+	// Methods inherited from the Configurable interface
+	virtual void AddOptions( SettingsDesc& opts ) const {};
+	virtual void ParseSettings() {};
+
+	void SetSettingsOfLevel( size_t l, SettingsMap& map );
 
 	/** Returns the transform resulting from the registration process  */
 	virtual const DecoratedOutputTransformType * GetOutput() const;
@@ -205,6 +223,7 @@ private:
 	FunctionalList m_Functionals;
 	OptimizerList m_Optimizers;
 	PriorsList m_Priors;
+	SettingsList m_Config;
 	OutputTransformPointer m_OutputTransform;
 	OptCompValueList m_StepSize;
 	OptCompValueList m_Alpha;

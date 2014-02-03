@@ -78,8 +78,7 @@ m_NumberOfIterations( 250 ),
 m_DenominatorCached( false ),
 m_DescriptorRecomputationFreq(5),
 m_UseDescriptorRecomputation(false),
-m_StepSize(10.0),
-m_Settings()
+m_StepSize(10.0)
 {
 	this->m_Alpha.Fill( 1.0e-2 );
 	this->m_Beta.Fill( 1.0e-1 );
@@ -486,6 +485,10 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 		itkExceptionMacro( << "functional must be set." );
 	}
 
+	if ( this->m_Settings.size() > 0 ) {
+		this->ParseSettings();
+	}
+
 	this->m_Transform->SetControlPointsSize( this->m_GridSize );
 	this->m_Transform->SetPhysicalDomainInformation( this->m_Functional->GetReferenceImage() );
 	this->m_Functional->SetTransform( this->m_Transform );
@@ -534,6 +537,56 @@ typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::GetCurrentEnergy() {
 	this->m_CurrentTotalEnergy = this->m_Functional->GetValue() + this->GetCurrentRegularizationEnergy();
 	return this->m_CurrentTotalEnergy;
+}
+
+
+template< typename TFunctional >
+void SpectralOptimizer<TFunctional>
+::AddOptions( SettingsDesc& opt ) const {
+	opt.add_options()
+			("alpha,a", bpo::value< float > (), "alpha value in regularization")
+			("beta,b", bpo::value< float > (), "beta value in regularization")
+			("step-size,s", bpo::value< float > (), "step-size value in optimization")
+			("iterations,i", bpo::value< size_t > (), "number of iterations")
+			("grid-size,g", bpo::value< size_t > (), "grid size")
+			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)");
+}
+
+template< typename TFunctional >
+void SpectralOptimizer<TFunctional>
+::ParseSettings() {
+	bpo::notify( this->m_Settings );
+
+	if( this->m_Settings.count( "alpha" ) ) {
+		bpo::variable_value v = this->m_Settings["alpha"];
+		InternalComputationValueType alpha = v.as<InternalComputationValueType> ();
+		this->SetAlpha( alpha );
+	}
+	if( this->m_Settings.count( "beta" ) ){
+		bpo::variable_value v = this->m_Settings["beta"];
+		this->SetBeta( v.as< InternalComputationValueType >() );
+	}
+	if( this->m_Settings.count( "step-size" ) ){
+		bpo::variable_value v = this->m_Settings["step-size"];
+		this->SetStepSize( v.as< float >() );
+	}
+
+	if( this->m_Settings.count( "iterations" ) ){
+		bpo::variable_value v = this->m_Settings["iterations"];
+		this->SetNumberOfIterations( v.as< size_t >() );
+	}
+
+	if( this->m_Settings.count( "grid-size" ) ){
+		bpo::variable_value v = this->m_Settings["grid-size"];
+		this->SetGridSize( v.as< size_t >() );
+	}
+	if (this->m_Settings.count("update-descriptors")) {
+		bpo::variable_value v = this->m_Settings["update-descriptors"];
+		size_t updDesc =  v.as<size_t>();
+		this->SetUseDescriptorRecomputation(true);
+		this->SetDescriptorRecomputationFreq( updDesc );
+	}
+
 }
 
 } // end namespace rstk
