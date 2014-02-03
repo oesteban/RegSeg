@@ -51,15 +51,7 @@ int main(int argc, char *argv[]) {
 			("verbosity,V", bpo::value<size_t>(&verbosity), "verbosity level ( 0 = no output; 5 = verbose )");
 
 	bpo::options_description level_desc("Registration level options");
-	level_desc.add_options()
-			("alpha,a", bpo::value< float > (), "alpha value in regularization")
-			("beta,b", bpo::value< float > (), "beta value in regularization")
-			("step-size,s", bpo::value< float > (), "step-size value in optimization")
-			("iterations,i", bpo::value< size_t > (), "number of iterations")
-			("grid-size,g", bpo::value< size_t > (), "grid size")
-			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)");
-	//bpo::positional_options_description pdesc;
-
+	add_level_options( level_desc );
 
 
 	std::vector< std::string > cli_token;
@@ -72,6 +64,7 @@ int main(int argc, char *argv[]) {
 		token = argv[i];
 		if( !isLevel ) {
 			if ( token.at(0)=='[' ) {
+				cli_token.clear();
 				isLevel = true;
 				token.erase(0,1);
 			} else {
@@ -88,7 +81,6 @@ int main(int argc, char *argv[]) {
 
 			if ( !isLevel ) {
 				cli_levels.push_back( cli_token );
-				cli_token.empty();
 			}
 		}
 	}
@@ -100,31 +92,35 @@ int main(int argc, char *argv[]) {
 
 
 	all_desc.add( general_desc ).add( level_desc );
-	if( cli_nlevels == 0 ) {
-		bpo::store(	bpo::command_line_parser( cli_general ).options(all_desc).run(),vm_general);
-	} else {
-		bpo::store( bpo::command_line_parser( cli_general ).options(general_desc).run(), vm_general );
-
-		for ( size_t i = 0; i<cli_nlevels; i++ ) {
-			boost::shared_ptr< bpo::option_description > tmp( new bpo::option_description(
-			     level_desc ) );
-
-			bpo::options_description ndesc;
-			ndesc.add( tmp );
-			bpo::variables_map vm;
-			bpo::store(	bpo::command_line_parser( cli_levels[i] ).options(ndesc).run(),vm );
-
-			vm_levels.push_back( vm );
-		}
-	}
-
-	if (vm_general.count("help")) {
-		std::cout << all_desc << std::endl;
-		return 1;
-	}
 
 	try {
+		// Deal with general options
+		if( cli_nlevels == 0 ) {
+			bpo::store(	bpo::command_line_parser( cli_general ).options(all_desc).run(),vm_general);
+		} else {
+			bpo::store( bpo::command_line_parser( cli_general ).options(general_desc).run(), vm_general );
+		}
+
+
+		if (vm_general.count("help")) {
+			std::cout << all_desc << std::endl;
+			return 1;
+		}
+
 		bpo::notify(vm_general);
+
+
+		if( cli_nlevels > 0 ) {
+			for ( size_t i = 0; i<cli_nlevels; i++ ) {
+				bpo::variables_map vm;
+				bpo::options_description ndesc("Level " + boost::lexical_cast<std::string> (i) + " options");
+				add_level_options( ndesc );
+
+				bpo::store(	bpo::command_line_parser( cli_levels[i] ).options(ndesc).run(), vm );
+				bpo::notify( vm );
+				vm_levels.push_back( vm );
+			}
+		}
 	} catch (boost::exception_detail::clone_impl
 			< boost::exception_detail::error_info_injector<	boost::program_options::required_option> > &err) {
 		std::cout << "Error: " << err.what() << std::endl;
@@ -176,35 +172,43 @@ int main(int argc, char *argv[]) {
 	root["inputs"]["moving"]["components"] = movingjson;
 
 	// Set up registration ------------------------------------------------------------
-	if (vm_general.count("transform-levels")) {
+	if ( vm_general.count("transform-levels") && cli_nlevels == 0 ) {
 		acwereg->SetNumberOfLevels( vm_general["transform-levels"].as<size_t>() );
 		acwereg->SetUseGridLevelsInitialization( true );
 	}
-	if (vm_general.count("iterations")) {
-		acwereg->FillNumberOfIterations( vm_general["iterations"].as< size_t >() );
+	if ( cli_nlevels ) {
+		acwereg->SetNumberOfLevels( cli_nlevels );
+		acwereg->SetUseGridLevelsInitialization( true );
 	}
 
-	if (vm_general.count("step-size")) {
-		acwereg->FillStepSize( vm_general["step-size"].as<float>() );
+	for( size_t i = 0; i < cli_nlevels; i++ ) {
+		bpo::variables_map vm = vm_levels[i];
 
+		if (vm.count("iterations")) {
+			size_t nit = vm["iterations"].as< size_t >();
+			acwereg->SetNumberOfIterationsElement( i, nit );
+		}
+        //
+		//if (vm.count("step-size")) {
+		//	std::vector< double > ssize = vm["step-size"].as< std::vector< double > >();
+		//	acwereg->SetStepSizeElement( i,  ssize[0] );
+        //
+		//}
+		//if (vm.count("alpha")) {
+		//	acwereg->SetAlphaElement( i, vm["alpha"].as<float>() );
+		//}
+        //
+		//if (vm.count("beta")) {
+		//	acwereg->SetBetaElement( i, vm["beta"].as<float>() );
+		//}
+		//if (vm.count("descriptors-update-iterations")) {
+		//	size_t updDesc =  vm["descriptors-update-iterations"].as<size_t>();
+		//	acwereg->FillDescriptorRecomputationFreq(updDesc);
+		//}
+		//if (vm.count("grid-size")) {
+		//	acwereg->SetGridSize( vm["grid-size"].as<size_t>() );
+		//}
 	}
-	if (vm_general.count("alpha")) {
-		acwereg->FillAlpha( vm_general["alpha"].as<float>() );
-	}
-
-	if (vm_general.count("beta")) {
-		acwereg->FillBeta( vm_general["beta"].as<float>() );
-	}
-	if (vm_general.count("descriptors-update-iterations")) {
-		size_t updDesc =  vm_general["descriptors-update-iterations"].as<size_t>();
-		acwereg->FillDescriptorRecomputationFreq(updDesc);
-	}
-
-
-	//if (vm_general.count("grid-size")) {
-	//	acwereg->SetGridSize( vm_general["grid-size"].as<size_t>() );
-	//}
-    //
 
 	acwereg->Update();
 
