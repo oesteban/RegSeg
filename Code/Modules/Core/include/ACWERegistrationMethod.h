@@ -49,12 +49,17 @@
 #include <vector>       // std::vector
 #include <iostream>     // std::cout
 
+
+#include <jsoncpp/json/json.h>
+
 #include "rstkMacro.h"
 #include "ConfigurableObject.h"
 #include "FunctionalBase.h"
 #include "MahalanobisFunctional.h"
 #include "SpectralOptimizer.h"
 #include "SpectralGradientDescentOptimizer.h"
+
+#include "IterationJSONUpdate.h"
 
 
 namespace bpo = boost::program_options;
@@ -122,6 +127,10 @@ public:
 	typedef SpectralGradientDescentOptimizer
 			                            < FunctionalType >    DefaultOptimizerType;
 
+	typedef Json::Value                                       JSONRoot;
+	typedef IterationJSONUpdate< OptimizerType >              JSONLoggerType;
+	typedef typename JSONLoggerType::Pointer                  JSONLoggerPointer;
+
 	/** Codes of stopping conditions. */
 	typedef enum {
 		ALL_LEVELS_DONE,
@@ -162,6 +171,8 @@ public:
 
 	itkSetMacro( OutputPrefix, std::string );
 	itkGetConstMacro( OutputPrefix, std::string );
+
+	itkGetMacro( JSONRoot, JSONRoot);
 
 	rstkSetVectorElement( GridSchedule, GridSizeType );
 	rstkGetConstVectorElement( GridSchedule, GridSizeType );
@@ -229,6 +240,9 @@ private:
 	OptCompValueList m_Alpha;
 	OptCompValueList m_Beta;
 	NumberValueList  m_DescriptorRecomputationFreq;
+
+	JSONRoot m_JSONRoot;
+	JSONLoggerPointer m_CurrentLogger;
 };
 
 } // namespace rstk

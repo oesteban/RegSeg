@@ -48,7 +48,6 @@
 #include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
 
-#include <jsoncpp/json/json.h>
 
 #include <itkVector.h>
 #include <itkVectorImage.h>

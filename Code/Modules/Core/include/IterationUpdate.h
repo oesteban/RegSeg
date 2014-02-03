@@ -48,6 +48,7 @@ public:
       m_Optimizer->AddObserver( itk::IterationEvent(), this );
     }
 
+    void SetLevel( size_t l ) { this->m_Level = l; }
     void SetTrackEnergyOn() { this->m_TrackEnergy = true; }
     void SetTrackEnergyOff(){ this->m_TrackEnergy = false; }
 
@@ -55,9 +56,7 @@ public:
     itkGetConstMacro( TrackEnergy, bool );
 
 protected:
-	IterationUpdate(){
-		this->m_TrackEnergy = false;
-	}
+	IterationUpdate(): m_Level(0), m_TrackEnergy(false) {}
 	~IterationUpdate(){}
 
 	//void PrintSelf( std::ostream &os, itk::Indent indent ) const;
@@ -67,6 +66,7 @@ private:
 
 
 	OptimizerPointer   m_Optimizer;
+	size_t m_Level;
 	bool m_TrackEnergy;
 };
 
