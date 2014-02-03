@@ -50,8 +50,10 @@ int main(int argc, char *argv[]) {
 			("logfile,l", bpo::value<std::string>(&logFileName), "log filename")
 			("verbosity,V", bpo::value<size_t>(&verbosity), "verbosity level ( 0 = no output; 5 = verbose )");
 
-	bpo::options_description level_desc("Registration level options");
-	add_level_options( level_desc );
+	bpo::options_description opt_desc("Optimizer options (by levels)");
+	OptimizerType::AddOptions( opt_desc );
+	bpo::options_description fun_desc("Functional options (by levels)");
+	FunctionalType::AddOptions( fun_desc );
 
 
 	std::vector< std::string > cli_token;
@@ -91,7 +93,7 @@ int main(int argc, char *argv[]) {
 	std::vector< bpo::variables_map > vm_levels;
 
 
-	all_desc.add( general_desc ).add( level_desc );
+	all_desc.add( general_desc ).add( opt_desc ).add( fun_desc );
 
 	try {
 		// Deal with general options
@@ -114,7 +116,8 @@ int main(int argc, char *argv[]) {
 			for ( size_t i = 0; i<cli_nlevels; i++ ) {
 				bpo::variables_map vm;
 				bpo::options_description ndesc("Level " + boost::lexical_cast<std::string> (i) + " options");
-				add_level_options( ndesc );
+				OptimizerType::AddOptions( ndesc );
+				FunctionalType::AddOptions( ndesc );
 
 				bpo::store(	bpo::command_line_parser( cli_levels[i] ).options(ndesc).run(), vm );
 				bpo::notify( vm );
@@ -178,7 +181,7 @@ int main(int argc, char *argv[]) {
 	}
 	if ( cli_nlevels ) {
 		acwereg->SetNumberOfLevels( cli_nlevels );
-		acwereg->SetUseGridLevelsInitialization( true );
+		acwereg->SetUseGridLevelsInitialization( false );
 	}
 
 	for( size_t i = 0; i < cli_nlevels; i++ ) {

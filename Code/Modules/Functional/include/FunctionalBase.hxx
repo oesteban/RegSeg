@@ -82,6 +82,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		itkExceptionMacro( << "Initialization failed: no transform is set");
 	}
 
+	this->ParseSettings();
+
 	CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
 	this->m_NumberOfNodes = coeff[0]->GetLargestPossibleRegion().GetNumberOfPixels();
 
@@ -208,8 +210,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		PointValueType maxq = ( fabs(quart1)>fabs(quart2) )?fabs(quart1):fabs(quart2);
 
-
-		// Scale and correct middle quartiles
 		vnl_random rnd = vnl_random();
 		for( size_t i = 0; i<q1; i++ ){
 			gradient = sample[rnd.lrand32(q1,q2)].grad;
@@ -233,7 +233,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			gradSum+= gradient;
 
 
-			if ( gradient > MIN_GRADIENT ) {
+			if ( fabs(gradient) > MIN_GRADIENT ) {
 				// project to normal, updating transform
 				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
 				ni*= gradient;
@@ -250,12 +250,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 
 #ifndef NDEBUG
-		ContourWriterPointer wc = ContourWriterType::New();
-		std::stringstream ss;
-		ss << "gradient_" << contid << ".vtk";
-		wc->SetFileName( ss.str().c_str() );
-		wc->SetInput( this->m_Gradients[contid] );
-		wc->Update();
+		//ContourWriterPointer wc = ContourWriterType::New();
+		//std::stringstream ss;
+		//ss << "gradient_" << contid << ".vtk";
+		//wc->SetFileName( ss.str().c_str() );
+		//wc->SetInput( this->m_Gradients[contid] );
+		//wc->Update();
 
 		PointValueType minGradient = (*( sample.begin() )).grad;
 		PointValueType maxGradient = (*( sample.end()-1 )).grad;
@@ -768,6 +768,25 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 
 	return totalArea * 0.33;
+}
+
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::AddOptions( SettingsDesc& opts ) {
+	opts.add_options()
+			("functional-scale,f", bpo::value< float > (), "scale functional gradients");
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::ParseSettings() {
+	if( this->m_Settings.count( "functional-scale" ) ) {
+		bpo::variable_value v = this->m_Settings["functional-scale"];
+		this->m_Scale = v.as<float> ();
+	}
 }
 
 

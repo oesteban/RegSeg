@@ -60,6 +60,7 @@
 #include <itkQuadEdgeMeshPolygonCell.h>
 #include <itkTriangleHelper.h>
 
+#include "ConfigurableObject.h"
 #include "CopyQuadEdgeMeshFilter.h"
 #include "CopyQEMeshStructureFilter.h"
 #include "WarpQEMeshFilter.h"
@@ -92,12 +93,18 @@ namespace rstk {
 
 
 template <typename TReferenceImageType, typename TCoordRepType = double>
-class FunctionalBase: public itk::Object {
+class FunctionalBase:
+		public itk::Object,
+		public ConfigurableObject  {
 public:
-	typedef FunctionalBase                    Self;
-	typedef itk::Object                      Superclass;
-	typedef itk::SmartPointer<Self>          Pointer;
-	typedef itk::SmartPointer< const Self >  ConstPointer;
+	typedef FunctionalBase                                    Self;
+	typedef itk::Object                                      Superclass;
+	typedef itk::SmartPointer<Self>                          Pointer;
+	typedef itk::SmartPointer< const Self >                  ConstPointer;
+	typedef ConfigurableObject                               SettingsClass;
+	typedef typename SettingsClass::SettingsMap              SettingsMap;
+	typedef typename SettingsClass::SettingsDesc             SettingsDesc;
+	typedef std::vector< SettingsMap >                       SettingsList;
 
 	/** Run-time type information (and related methods). */
 	itkTypeMacro(FunctionalBase, itk::Object);
@@ -307,7 +314,7 @@ public:
 
 	size_t AddShapePrior( const ContourType* prior );
 
-
+	static void AddOptions( SettingsDesc& opts );
 
 protected:
 	FunctionalBase();
@@ -330,6 +337,7 @@ protected:
 	//bool CheckExtents( const ContourType* prior ) const;
 
 
+	virtual void ParseSettings();
 
 	size_t m_NumberOfContours;
 	size_t m_NumberOfPoints;

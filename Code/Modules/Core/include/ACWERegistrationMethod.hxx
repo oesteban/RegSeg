@@ -92,6 +92,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 
 
 	while( this->m_CurrentLevel < this->m_NumberOfLevels ) {
+		std::cout << "Starting registration level " << this->m_CurrentLevel << "." << std::endl;
 		try {
 			this->SetUpLevel( this->m_CurrentLevel );
 		} catch ( itk::ExceptionObject & err ) {
@@ -220,6 +221,8 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		}
 	}
 
+	m_Functionals[level]->SetSettings( this->m_Config[level] );
+
 	// Connect Optimizer
 	m_Optimizers[level] = DefaultOptimizerType::New();
 	m_Optimizers[level]->SetFunctional( m_Functionals[level] );
@@ -228,12 +231,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	if ( this->m_NumberOfIterations[level] > 0 ) {
 		m_Optimizers[level]->SetNumberOfIterations( this->m_NumberOfIterations[level] );
 	}
-
-	// Set registration configuration
-	//m_StepSize;
-	//m_Alpha;
-	//m_Beta;
-	//m_DescriptorRecomputationFreq;
 
 //	IterationUpdatePointer iup = IterationUpdateType::New();
 //	iup->SetOptimizer( m_Optimizers[level] );

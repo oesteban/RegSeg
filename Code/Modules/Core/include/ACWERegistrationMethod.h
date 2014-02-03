@@ -179,7 +179,6 @@ public:
 
 	// Methods inherited from the Configurable interface
 	virtual void AddOptions( SettingsDesc& opts ) const {};
-	virtual void ParseSettings() {};
 
 	void SetSettingsOfLevel( size_t l, SettingsMap& map );
 
@@ -199,6 +198,7 @@ protected:
 	void SetUpLevel( size_t level );
 	void Stop( StopConditionType code, std::string msg );
 
+	virtual void ParseSettings() {};
 private:
 	ACWERegistrationMethod( const Self & );
 	void operator=( const Self & );

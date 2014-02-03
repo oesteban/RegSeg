@@ -542,8 +542,8 @@ SpectralOptimizer<TFunctional>::GetCurrentEnergy() {
 
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>
-::AddOptions( SettingsDesc& opt ) const {
-	opt.add_options()
+::AddOptions( SettingsDesc& opts ) {
+	opts.add_options()
 			("alpha,a", bpo::value< float > (), "alpha value in regularization")
 			("beta,b", bpo::value< float > (), "beta value in regularization")
 			("step-size,s", bpo::value< float > (), "step-size value in optimization")
@@ -559,12 +559,12 @@ void SpectralOptimizer<TFunctional>
 
 	if( this->m_Settings.count( "alpha" ) ) {
 		bpo::variable_value v = this->m_Settings["alpha"];
-		InternalComputationValueType alpha = v.as<InternalComputationValueType> ();
+		InternalComputationValueType alpha = v.as<float> ();
 		this->SetAlpha( alpha );
 	}
 	if( this->m_Settings.count( "beta" ) ){
 		bpo::variable_value v = this->m_Settings["beta"];
-		this->SetBeta( v.as< InternalComputationValueType >() );
+		this->SetBeta( v.as< float >() );
 	}
 	if( this->m_Settings.count( "step-size" ) ){
 		bpo::variable_value v = this->m_Settings["step-size"];
