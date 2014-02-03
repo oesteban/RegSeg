@@ -60,6 +60,7 @@
 #include "SpectralGradientDescentOptimizer.h"
 
 #include "IterationJSONUpdate.h"
+#include "IterationResultsWriterUpdate.h"
 
 
 namespace bpo = boost::program_options;
@@ -130,6 +131,10 @@ public:
 	typedef Json::Value                                       JSONRoot;
 	typedef IterationJSONUpdate< OptimizerType >              JSONLoggerType;
 	typedef typename JSONLoggerType::Pointer                  JSONLoggerPointer;
+
+
+	typedef IterationResultWriterUpdate< OptimizerType > IterationWriterUpdate;
+	typedef typename IterationWriterUpdate::Pointer      IterationWriterPointer;
 
 	/** Codes of stopping conditions. */
 	typedef enum {
@@ -243,6 +248,7 @@ private:
 
 	JSONRoot m_JSONRoot;
 	JSONLoggerPointer m_CurrentLogger;
+	IterationWriterPointer m_ImageLogger;
 };
 
 } // namespace rstk

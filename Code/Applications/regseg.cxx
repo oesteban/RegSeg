@@ -133,6 +133,7 @@ int main(int argc, char *argv[]) {
 
 	// Initialize registration
 	RegistrationPointer acwereg = RegistrationType::New();
+	acwereg->SetOutputPrefix( outPrefix );
 
 	// Create the JSON output object
 	Json::Value root;
@@ -166,7 +167,6 @@ int main(int argc, char *argv[]) {
 
     comb->Update();
 	acwereg->SetFixedImage( comb->GetOutput() );
-
 
 	// Read moving surface(s) -----------------------------------------------------------
 	root["inputs"]["moving"]["components"]["size"] = Json::Int (movingSurfaceNames.size());
