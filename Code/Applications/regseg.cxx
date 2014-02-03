@@ -29,6 +29,8 @@
 
 #include "regseg.h"
 
+#include <boost/shared_ptr.hpp>
+
 int main(int argc, char *argv[]) {
 	std::string outPrefix;
 	std::vector< std::string > fixedImageNames, movingSurfaceNames;
@@ -104,8 +106,11 @@ int main(int argc, char *argv[]) {
 		bpo::store( bpo::command_line_parser( cli_general ).options(general_desc).run(), vm_general );
 
 		for ( size_t i = 0; i<cli_nlevels; i++ ) {
+			boost::shared_ptr< bpo::option_description > tmp( new bpo::option_description(
+			     level_desc ) );
+
 			bpo::options_description ndesc;
-			ndesc.add( level_desc );
+			ndesc.add( tmp );
 			bpo::variables_map vm;
 			bpo::store(	bpo::command_line_parser( cli_levels[i] ).options(ndesc).run(),vm );
 
