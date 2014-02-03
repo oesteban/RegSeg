@@ -131,14 +131,22 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	// Create the JSON output object
-	Json::Value root;
-	root["description"] = "RSTK Summary File";
-	std::time_t time;
-	root["information"] = std::ctime( &time );
-
 	// Initialize registration
 	RegistrationPointer acwereg = RegistrationType::New();
+
+	// Create the JSON output object
+	Json::Value root;
+	root["description"]["title"] = "ACWE-Reg Summary File";
+	std::time_t rawtime;
+	std::tm* timeinfo;
+	char buffer[40];
+	std::time(&rawtime);
+	timeinfo = std::localtime(&rawtime);
+	std::strftime( buffer, 20, "%Y-%m-%d",timeinfo);
+	root["description"]["date"] = buffer;
+	std::strftime( buffer, 20, "%H:%M:%S",timeinfo);
+	root["description"]["time"] = buffer;
+
 
 
 	// Read target feature(s) -----------------------------------------------------------
@@ -190,6 +198,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	acwereg->Update();
+
+	root["levels"] = acwereg->GetJSONRoot();
 
 	//
 	// Write out final results ---------------------------------------------------------

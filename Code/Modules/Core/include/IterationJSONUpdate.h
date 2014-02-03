@@ -70,16 +70,18 @@ public:
 		}
 
 		if( typeid( event ) == typeid( itk::EndEvent ) ) {
+			itnode["norm"] = this->m_Optimizer->GetCurrentValue();
 			m_StopTime = clock();
 			float tot_t = (float) (((double) (m_StopTime - m_StartTime)) / CLOCKS_PER_SEC);
 			// JSON Summary
-			//root["time"]["processing"] = tot_t;
-			//root["summary"]["energy"]["total"] = this->m_Optimizer->GetCurrentValue();
-			//root["summary"]["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
-			//root["summary"]["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
-			//root["summary"]["iterations"] = Json::Int (this->m_Optimizer->GetCurrentIteration());
-			//root["summary"]["conv_status"] = this->m_Optimizer->GetStopCondition();
-			//root["summary"]["stop_msg"] = this->m_Optimizer->GetStopConditionDescription();
+			itnode["time"]["processing"] = tot_t;
+			itnode["summary"]["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
+			itnode["summary"]["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
+			itnode["summary"]["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
+			itnode["summary"]["iterations"] = Json::Int (this->m_Optimizer->GetCurrentIteration());
+			itnode["summary"]["conv_status"] = this->m_Optimizer->GetStopCondition();
+			itnode["summary"]["stop_msg"] = this->m_Optimizer->GetStopConditionDescription();
+			this->m_JSONRoot.append( itnode );
 		}
 
     	m_Last = itnode;

@@ -58,13 +58,13 @@ public:
     		for ( size_t i = 0; i< coeff.Size(); i++) {
 				typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
 				ss.str("");
-				ss << prefix << "coeff_speed_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
+				ss << prefix << "coeff_speed_" << std::setfill('0')  << "lev" << this->m_Level << "_it" << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
 				p->SetFileName( ss.str().c_str() );
 				p->SetInput( speed[i] );
 				p->Update();
 
 				ss.str("");
-				ss << prefix << "coeff_value_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
+				ss << prefix << "coeff_value_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
 				p->SetFileName( ss.str().c_str() );
 				p->SetInput( coeff[i] );
 				p->Update();
@@ -72,7 +72,7 @@ public:
 
      		typename ComponentsWriter::Pointer f = ComponentsWriter::New();
     		ss.str("");
-    		ss << prefix << "field_" << std::setfill('0')  << std::setw(3) << this->m_Optimizer->GetCurrentIteration();
+    		ss << prefix << "field_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration();
     		f->SetFileName( ss.str().c_str() );
     		f->SetInput( this->m_Optimizer->GetCurrentDisplacementField() );
     		f->Update();
@@ -83,7 +83,7 @@ public:
         	std::stringstream ss;
        		for( size_t r = 0; r <= nContours; r++){
         		ss.str("");
-        		ss << prefix << "region_" << r << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
+        		ss << prefix << "region_" << r  << "lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
         		typename MapWriter::Pointer wr = MapWriter::New();
         		wr->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentMap(r));
         		wr->SetFileName(ss.str().c_str() );

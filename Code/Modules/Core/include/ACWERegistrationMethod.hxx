@@ -70,6 +70,8 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->ProcessObject::SetNthOutput( 0, transformDecorator );
 
 	this->m_MinGridSize.Fill( 4 );
+
+	this->m_JSONRoot = JSONRoot( Json::arrayValue );
 }
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
@@ -108,8 +110,9 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 					+ boost::lexical_cast<std::string>(this->m_CurrentLevel));
 			throw err;  // Pass exception to caller
 		}
+
 		// Add JSON tree to the general logging facility
-		//root["iterations"] = iup->GetJSONRoot();
+		this->m_JSONRoot.append( this->m_CurrentLogger->GetJSONRoot() );
 
 		this->InvokeEvent( itk::IterationEvent() );
 		this->m_CurrentLevel++;
@@ -232,9 +235,10 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		m_Optimizers[level]->SetNumberOfIterations( this->m_NumberOfIterations[level] );
 	}
 
-//	IterationUpdatePointer iup = IterationUpdateType::New();
-//	iup->SetOptimizer( m_Optimizers[level] );
-//	//iup->SetTrackEnergyOn();
+	this->m_CurrentLogger = JSONLoggerType::New();
+	this->m_CurrentLogger->SetOptimizer( m_Optimizers[level] );
+	this->m_CurrentLogger->SetLevel( level );
+	//this->m_CurrentLogger->SetTrackEnergyOn();
 //#ifndef NDEBUG
 //	IterationWriterUpdatePointer iwp = IterationWriterUpdate::New();
 //	iwp->SetOptimizer( m_Optimizers[level] );
