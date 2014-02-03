@@ -223,6 +223,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	// Connect Optimizer
 	m_Optimizers[level] = DefaultOptimizerType::New();
 	m_Optimizers[level]->SetFunctional( m_Functionals[level] );
+	m_Optimizers[level]->SetSettings( this->m_Config[level] );
 
 	if ( this->m_NumberOfIterations[level] > 0 ) {
 		m_Optimizers[level]->SetNumberOfIterations( this->m_NumberOfIterations[level] );
@@ -262,6 +263,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	m_Alpha.resize( this->m_NumberOfLevels );
 	m_Beta.resize( this->m_NumberOfLevels );
 	m_DescriptorRecomputationFreq.resize( this->m_NumberOfLevels );
+	m_Config.resize( this->m_NumberOfLevels );
 }
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
@@ -284,6 +286,34 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::GetOutput() const
 {
   return static_cast<const DecoratedOutputTransformType *>( this->ProcessObject::GetOutput( 0 ) );
+}
+
+//template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+//void
+//ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+//::AddOptions(SettingsDesc& opts) const {
+//	opts.add_options()
+//			("help,h", "show help message")
+//			("fixed-images,F", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
+//			("moving-surfaces,M", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken()->required(),	"moving image file")
+//			("transform-levels,L", bpo::value< size_t > (), "number of multi-resolution levels for the transform")
+//			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
+//			("output-all", bpo::bool_switch(&outImages),"output intermediate images")
+//			("logfile,l", bpo::value<std::string>(&logFileName), "log filename")
+//			("verbosity,V", bpo::value<size_t>(&verbosity), "verbosity level ( 0 = no output; 5 = verbose )");
+//}
+
+
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+void
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+::SetSettingsOfLevel( size_t l, SettingsMap& map) {
+	if( l >= this->m_Config.size() ) {
+		itkExceptionMacro( << "settings of level " << l << " are not initialized.");
+	}
+
+	this->m_Config[l] = map;
+	this->Modified();
 }
 
 } // namespace rstk
