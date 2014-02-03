@@ -54,16 +54,16 @@ public:
 	typedef bpo::variables_map  SettingsMap;
 	typedef bpo::options_description SettingsDesc;
 
-	virtual void AddOptions( SettingsDesc& opts ) const = 0;
-	virtual void ParseSettings() = 0;
+	//virtual void AddOptions( SettingsDesc& opts ) const = 0;
 	void SetSettings( SettingsMap& s ) { this->m_Settings = s; }
 
 protected:
 	//virtual ConfigurableObject() {};
 	virtual ~ConfigurableObject() {};
 
-	SettingsMap m_Settings;
 
+	virtual void ParseSettings() = 0;
+	SettingsMap m_Settings;
 private:
 };
 

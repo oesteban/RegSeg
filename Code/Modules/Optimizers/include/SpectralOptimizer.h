@@ -286,6 +286,9 @@ public:
 
 	itkSetMacro( UseDescriptorRecomputation, bool );
 	itkGetConstMacro( UseDescriptorRecomputation, bool );
+
+
+	static void AddOptions( SettingsDesc& opts );
 protected:
 	/** Manual learning rate to apply. It is overridden by
 	 * automatic learning rate estimation if enabled. See main documentation.
@@ -322,7 +325,6 @@ protected:
 	virtual void InitializeAuxiliarParameters( void ) = 0;
 	virtual void SetUpdate() = 0;
 	virtual void Iterate(void) = 0;
-	virtual void AddOptions( SettingsDesc& opts ) const;
 	virtual void ParseSettings();
 
 	/* Common variables for optimization control and reporting */
