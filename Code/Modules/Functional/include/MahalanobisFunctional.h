@@ -142,7 +142,7 @@ public:
 	void SetParameters( size_t roi, ParametersType& params );
 
 	size_t AddShapePrior( ContourType* prior, ParametersType&params );
-	size_t AddShapePrior( ContourType* prior );
+	size_t AddShapePrior( const ContourType* prior ) { return Superclass::AddShapePrior( prior ); }
 
 	void Initialize();
 	void UpdateDescriptors();
@@ -167,10 +167,9 @@ private:
 	MahalanobisFunctional( const Self &); // purposely not implemented
 	void operator=(const Self &); // purposely not implemented
 
-	bool ParametersInitialized() const;
+	bool ParametersInitialized();
 
 	InterpolatorPointer m_Interp;
-	size_t m_NumberOfRegions;
 
 }; // End of class MahalanobisFunctional
 } // End of namespace

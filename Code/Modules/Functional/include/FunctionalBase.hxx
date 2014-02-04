@@ -63,6 +63,7 @@ template< typename TReferenceImageType, typename TCoordRepType >
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::FunctionalBase():
  m_NumberOfContours(0),
+ m_NumberOfRegions(1),
  m_NumberOfPoints(0),
  m_NumberOfNodes(0),
  m_SamplingFactor(4),
@@ -128,6 +129,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	wrp->SetInput( prior );
 	this->m_WarpContourFilter.push_back( wrp );
 	this->m_NumberOfContours++;
+	this->m_NumberOfRegions++;
     this->m_ROIs.resize( this->m_NumberOfContours+1 );
     this->m_CurrentROIs.resize( this->m_NumberOfContours+1 );
     this->m_CurrentMaps.resize( this->m_NumberOfContours+1 );
@@ -157,11 +159,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		sample.clear();
-
-		PointValueType gradSum;
 		PointValueType scaler = this->m_Scale;
-		double w;
+		double w = 0.0;
 		PointValueType totalArea = 0.0;
+		PointValueType gradSum = 0.0;
 
 		// Compute mesh of normals
 		normalsFilter = NormalFilterType::New();
@@ -180,35 +181,42 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		// for every node in the mesh: compute gradient, assign cid and gid.
 		while (c_it!=c_end) {
+			ni = zerov;
+			gradient = 0.0;
+			w = 0.0;
+
 			pid = c_it.Index();
 			outer_contid = this->m_OuterList[contid][pid];
-			w = this->ComputePointArea( pid, normals );
-			totalArea+=w;
 
 			if ( contid != outer_contid ) {
+				w = this->ComputePointArea( pid, normals );
+				totalArea+=w;
+
 				ci_prime = c_it.Value();
-				gradient =  w * (this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid ) );
+				gradient =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
+
+				if ( fabs(gradient) < MIN_GRADIENT ) {
+					gradient = 0.0;
+				}
+
+				gradSum+=gradient;
 				assert( !std::isnan(gradient) );
-			} else {
-				ni = zerov;
-				gradient = 0.0;
 			}
-			sample.push_back( GradientSample( gradient, pid, cpid ) );
+
+			sample.push_back( GradientSample( gradient, w, pid, cpid ) );
 			++c_it;
 			cpid++;
 		}
 
 		std::sort(sample.begin(), sample.end(), by_grad() );
+		size_t sSize = sample.size();
+		size_t q1 = floor( (sSize-1)*0.02 );
+		size_t q2 = round( (sSize-1)*0.50 );
+		size_t q3 = ceil ( (sSize-1)*0.98 );
 
-		size_t q1 = floor( (sample.size()-1)*0.05 );
-		size_t q2 = round( (sample.size()-1)*0.50 );
-		size_t q3 = ceil ( (sample.size()-1)*0.95 );
-
-		PointValueType median= sample[q2].grad;
-		PointValueType quart1= sample[q1].grad;
-		PointValueType quart2= sample[q3].grad;
-
-		PointValueType maxq = ( fabs(quart1)>fabs(quart2) )?fabs(quart1):fabs(quart2);
+#ifndef NDEBUG
+		std::cout << "Grad["<< contid << "]: area=" << totalArea << ", avg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
+#endif
 
 		vnl_random rnd = vnl_random();
 		for( size_t i = 0; i<q1; i++ ){
@@ -221,28 +229,36 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			sample[i].grad = gradient;
 		}
 
+#ifndef NDEBUG
+		std::sort(sample.begin(), sample.end(), by_grad() );
+		std::cout << "Grad["<< contid << "]: area=" << totalArea << ", avg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
+#endif
 
 		scaler*= (1.0/totalArea);
 		//if( maxq >= MAX_GRADIENT ) {
+		// PointValueType maxq = ( fabs(quart1)>fabs(quart2) )?fabs(quart1):fabs(quart2);
 		//	scaler*= (MAX_GRADIENT / maxq);
 		//}
+
 		ShapeGradientsContainerPointer grads = this->m_Gradients[contid]->GetPointData();
 		for( size_t i = 0; i< sample.size(); i++) {
-			gradient = scaler * sample[i].grad;
-			sample[i].grad = gradient;
-			gradSum+= gradient;
-
-
-			if ( fabs(gradient) > MIN_GRADIENT ) {
+			if ( sample[i].w > 0.0 ) {
+				gradient = scaler * sample[i].grad * sample[i].w;
+				sample[i].grad = gradient;
+				sample[i].w = 1.0;
+				gradSum+= gradient;
 				// project to normal, updating transform
 				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
 				ni*= gradient;
 
 				for( size_t dim = 0; dim<Dimension; dim++ ) {
-					gradVector.put( sample[i].gid, dim, ni[dim] );
+					if( ni[dim] > MIN_GRADIENT )
+						gradVector.put( sample[i].gid, dim, ni[dim] );
 				}
 			} else {
 				ni = zerov;
+				sample[i].grad = 0.0;
+				sample[i].w = 0.0;
 			}
 
 			grads->SetElement( sample[i].cid, sample[i].grad );
@@ -250,24 +266,15 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 
 #ifndef NDEBUG
-		//ContourWriterPointer wc = ContourWriterType::New();
-		//std::stringstream ss;
-		//ss << "gradient_" << contid << ".vtk";
-		//wc->SetFileName( ss.str().c_str() );
-		//wc->SetInput( this->m_Gradients[contid] );
-		//wc->Update();
+		ContourWriterPointer wc = ContourWriterType::New();
+		std::stringstream ss;
+		ss << "gradient_" << contid << ".vtk";
+		wc->SetFileName( ss.str().c_str() );
+		wc->SetInput( this->m_Gradients[contid] );
+		wc->Update();
 
-		PointValueType minGradient = (*( sample.begin() )).grad;
-		PointValueType maxGradient = (*( sample.end()-1 )).grad;
-		PointValueType average = gradSum / sample.size();
 		std::sort(sample.begin(), sample.end(), by_grad() );
-		median= sample[q2].grad;
-		quart1= sample[q1].grad;
-		quart2= sample[q3].grad;
-		minGradient = (*( sample.begin() )).grad;
-		maxGradient = (*( sample.end()-1 )).grad;
-		average = gradSum / sample.size();
-		std::cout << "Grad["<< contid << "]: area=" << totalArea << ", avg=" << average << ", max=" << maxGradient << ", min=" << minGradient << ", q1=" << quart1 << ", q2=" << quart2 << ", med=" << median << "." << std::endl;
+		std::cout << "Grad["<< contid << "]: area=" << totalArea << ", avg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
 #endif
 	}
 
@@ -322,7 +329,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			disp = this->m_Transform->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
 			norm = disp.GetNorm();
 
-			sample.push_back( GradientSample( norm, pid, gpid ) );
+			sample.push_back( GradientSample( norm, 1.0, pid, gpid ) );
 			gradSum+= norm;
 
 			if( norm > 0.0 ) {
@@ -767,7 +774,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	} while ( temp != edge );
 
 
-	return totalArea * 0.33;
+	return fabs(totalArea * 0.33);
 }
 
 
