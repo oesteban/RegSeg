@@ -250,14 +250,16 @@ public:
 
 	struct GradientSample {
 		PointValueType grad;
+		PointValueType w;
 		size_t cid;
 		size_t gid;
 
 		//GradientSample(): grad(0), cid(0), gid(0) {}
-		GradientSample( PointValueType g, size_t i, size_t j ): grad(g), cid(i), gid(j) {}
-		GradientSample( const GradientSample &s ): grad(s.grad), cid(s.cid), gid(s.gid) {}
+		GradientSample( PointValueType g, PointValueType weight, size_t i, size_t j ): grad(g), w(weight), cid(i), gid(j) {}
+		GradientSample( const GradientSample &s ): grad(s.grad), w(s.w), cid(s.cid), gid(s.gid) {}
 
 		GradientSample operator+(const GradientSample& g) const {
+			PointValueType val = (grad*w + g.grad * g.w )/ (w+g.w);
 			return GradientSample( grad+g.grad, cid, gid );
 		}
 
@@ -340,6 +342,7 @@ protected:
 	virtual void ParseSettings();
 
 	size_t m_NumberOfContours;
+	size_t m_NumberOfRegions;
 	size_t m_NumberOfPoints;
 	size_t m_NumberOfNodes;
 	size_t m_SamplingFactor;

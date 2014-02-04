@@ -50,9 +50,7 @@
 namespace rstk {
 template <typename TReferenceImageType, typename TCoordRepType>
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
-::MahalanobisFunctional():
- m_NumberOfRegions(0)
- {
+::MahalanobisFunctional() {
 	this->m_Interp = InterpolatorType::New();
 
 }
@@ -81,9 +79,6 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	// Initialize interpolators
 	this->m_Interp->SetInputImage( this->m_ReferenceImage );
 
-	this->m_NumberOfRegions = this->m_Parameters.size() + 1;
-	this->m_Parameters.resize( this->m_NumberOfRegions ); // Add 1 slot for the "null" region
-
 	// Check that parameters are initialized
 	if (! this->ParametersInitialized() )
 		this->UpdateDescriptors();
@@ -103,7 +98,9 @@ inline typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::Measur
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::GetEnergyAtPoint( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::PointType & point, size_t roi ) {
 	ReferencePixelType dist = this->m_Interp->Evaluate( point ) - this->m_Parameters[roi].mean;
-	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() );
+	double val = dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() );
+	val = (val > 1.0e-8 )? val : 0.0;
+	return val;
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
@@ -121,7 +118,7 @@ template <typename TReferenceImageType, typename TCoordRepType>
 void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::UpdateDescriptors() {
 	// Update regions
-	for( size_t roi = 0; roi < this->m_Parameters.size(); roi++ ) {
+	for( size_t roi = 0; roi < this->m_NumberOfRegions; roi++ ) {
 		ParametersType param = this->UpdateParametersOfRegion(roi);
 		this->SetParameters(roi, param);
 	}
@@ -175,19 +172,6 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 		         typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersType& params){
 	size_t id = this->AddShapePrior( prior );
 	this->SetParameters( id, params );
-	return id;
-}
-
-template <typename TReferenceImageType, typename TCoordRepType>
-size_t
-MahalanobisFunctional<TReferenceImageType,TCoordRepType>
-::AddShapePrior( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ContourType* prior ){
-	this->Superclass::AddShapePrior( prior );
-
-	size_t id = this->m_Parameters.size();
-	this->m_Parameters.resize( id + 1 );
-	this->m_Parameters.back().initialized = false;
-
 	return id;
 }
 
@@ -275,8 +259,16 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 bool
 MahalanobisFunctional<TReferenceImageType, TCoordRepType>
-::ParametersInitialized() const {
-	for ( size_t i = 0; i < this->m_Parameters.size(); i++ ) {
+::ParametersInitialized() {
+	if ( this->m_Parameters.size() != this->m_NumberOfRegions ) {
+		this->m_Parameters.resize( this->m_NumberOfRegions );
+		for ( size_t i = 0; i<this->m_NumberOfRegions; i++ )
+			this->m_Parameters[i].initialized = false;
+
+		return false;
+	}
+
+	for ( size_t i = 0; i < this->m_NumberOfRegions; i++ ) {
 		if ( ! this->m_Parameters[i].initialized ) return false;
 	}
 	return true;

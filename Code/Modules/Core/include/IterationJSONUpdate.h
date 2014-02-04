@@ -65,9 +65,9 @@ public:
 			itnode["norm"] = this->m_Optimizer->GetCurrentValue();
 		}
 
-		if( typeid( event ) == typeid( itk::ModifiedEvent ) || typeid( event ) == typeid( itk::StartEvent ) ) {
-			itnode["descriptors"] = this->ParseTree( this->m_Optimizer->GetFunctional()->PrintFormattedDescriptors() );
-		}
+		//if( typeid( event ) == typeid( itk::ModifiedEvent ) || typeid( event ) == typeid( itk::StartEvent ) ) {
+		//	itnode["descriptors"] = this->ParseTree( this->m_Optimizer->GetFunctional()->PrintFormattedDescriptors() );
+		//}
 
 		if( typeid( event ) == typeid( itk::EndEvent ) ) {
 			itnode["norm"] = this->m_Optimizer->GetCurrentValue();
