@@ -68,12 +68,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_NumberOfNodes(0),
  m_SamplingFactor(4),
  m_Scale(1.0),
+ m_DecileThreshold(0.05),
  m_EnergyUpdated(false),
  m_RegionsUpdated(false),
- m_ApplySmoothing( false )
+ m_ApplySmoothing(false)
  {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
-	this->m_Sigma.Fill( 0.0 );
+	this->m_Sigma.Fill(0.0);
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -98,6 +99,20 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		this->m_Derivative[i]->Allocate();
 		this->m_Derivative[i]->FillBuffer( 0.0 );
 	}
+
+	if( this->m_ApplySmoothing ) {
+		if( this->m_Sigma == 0.0 ) {
+			for( size_t i = 0; i<Dimension; i++)
+				this->m_Sigma[i] = 0.40 * coeff[0]->GetSpacing()[i];
+		}
+
+		SmoothingFilterPointer s = SmoothingFilterType::New();
+		s->SetInput( this->m_ReferenceImage );
+		s->SetSigmaArray( this->m_Sigma );
+		s->Update();
+		this->SetReferenceImage( s->GetOutput() );
+	}
+
 	this->InitializeCurrentContours();
 
 	// Initialize corresponding ROI /////////////////////////////
@@ -159,8 +174,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		sample.clear();
+		double wi = 0.0;
 		PointValueType scaler = this->m_Scale;
-		double w = 0.0;
 		PointValueType totalArea = 0.0;
 		PointValueType gradSum = 0.0;
 
@@ -173,49 +188,48 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename ContourType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
 		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
-		PointValueType gradient;
 		PointType  ci_prime;
 		VectorType ni;
+		PointValueType gi;
 		typename ContourType::PointIdentifier pid;
 		size_t outer_contid;
 
 		// for every node in the mesh: compute gradient, assign cid and gid.
 		while (c_it!=c_end) {
 			ni = zerov;
-			gradient = 0.0;
-			w = 0.0;
+			gi = 0.0;
+			wi = 0.0;
 
 			pid = c_it.Index();
 			outer_contid = this->m_OuterList[contid][pid];
 
 			if ( contid != outer_contid ) {
-				w = this->ComputePointArea( pid, normals );
-				totalArea+=w;
-
 				ci_prime = c_it.Value();
-				gradient =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
-
-				if ( fabs(gradient) < MIN_GRADIENT ) {
-					gradient = 0.0;
+				normals->GetPointData( pid, &ni );           // Normal ni in point c'_i
+				wi = this->ComputePointArea( pid, normals );  // Area of c'_i
+				gi =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
+				totalArea+=wi;
+				if ( fabs(gi) < MIN_GRADIENT ) {
+					gi = 0.0;
 				}
-
-				gradSum+=gradient;
-				assert( !std::isnan(gradient) );
+				gradSum+=gi;
 			}
 
-			sample.push_back( GradientSample( gradient, w, pid, cpid ) );
+			sample.push_back( GradientSample( gi, wi, ni, pid, cpid, contid ) );
 			++c_it;
 			cpid++;
 		}
 
+		PointValueType gradient;
 		std::sort(sample.begin(), sample.end(), by_grad() );
 		size_t sSize = sample.size();
-		size_t q1 = floor( (sSize-1)*0.02 );
+		size_t q1 = floor( (sSize-1)* this->m_DecileThreshold );
 		size_t q2 = round( (sSize-1)*0.50 );
-		size_t q3 = ceil ( (sSize-1)*0.98 );
+		size_t q3 = ceil ( (sSize-1)* (1.0 - this->m_DecileThreshold ) );
 
 #ifndef NDEBUG
-		std::cout << "Grad["<< contid << "]: area=" << totalArea << ", avg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
+		std::cout << "Grad[" << contid << "] - Area=" << totalArea << std::endl;
+		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
 #endif
 
 		vnl_random rnd = vnl_random();
@@ -231,53 +245,48 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 #ifndef NDEBUG
 		std::sort(sample.begin(), sample.end(), by_grad() );
-		std::cout << "Grad["<< contid << "]: area=" << totalArea << ", avg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
+		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
 #endif
-
 		scaler*= (1.0/totalArea);
 		//if( maxq >= MAX_GRADIENT ) {
 		// PointValueType maxq = ( fabs(quart1)>fabs(quart2) )?fabs(quart1):fabs(quart2);
 		//	scaler*= (MAX_GRADIENT / maxq);
 		//}
 
-		ShapeGradientsContainerPointer grads = this->m_Gradients[contid]->GetPointData();
+		ShapeGradientPointer gradmesh = this->m_Gradients[contid];
+		gradSum = 0.0;
 		for( size_t i = 0; i< sample.size(); i++) {
 			if ( sample[i].w > 0.0 ) {
 				gradient = scaler * sample[i].grad * sample[i].w;
 				sample[i].grad = gradient;
 				sample[i].w = 1.0;
 				gradSum+= gradient;
-				// project to normal, updating transform
-				normals->GetPointData( sample[i].cid, &ni );         // Normal ni in point c'_i
-				ni*= gradient;
+				ni = gradient * sample[i].normal;  // Project to normal
 
 				for( size_t dim = 0; dim<Dimension; dim++ ) {
 					if( ni[dim] > MIN_GRADIENT )
 						gradVector.put( sample[i].gid, dim, ni[dim] );
 				}
 			} else {
-				ni = zerov;
+				sample[i].normal = zerov;
 				sample[i].grad = 0.0;
 				sample[i].w = 0.0;
 			}
 
-			grads->SetElement( sample[i].cid, sample[i].grad );
+			gradmesh->GetPointData()->SetElement( sample[i].cid, sample[i].grad );
 		}
 
 #ifndef NDEBUG
 		std::sort(sample.begin(), sample.end(), by_grad() );
-		std::cout << "Grad["<< contid << "]: area=" << totalArea << ", avg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
+		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
 #endif
 	}
-
 	// Multiply phi and copy reshaped on this->m_Derivative
 	phi.mult( gradVector, derivative );
 
 	typename WeightsMatrix::row row;
-
 	for( size_t r = 0; r< this->m_NumberOfNodes; r++ ){
 		row = derivative.get_row( r );
-
 		for( size_t c = 0; c<row.size(); c++ ) {
 			*( buff[row[c].first] + r ) = row[c].second;
 		}
@@ -373,13 +382,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				if ( w > 0.0 ) {
 					val = *(refBuffer+i);
 					this->m_Value +=  w * this->GetEnergyOfSample( val, roi );
-	#ifndef NDEBUG
+#ifndef NDEBUG
 					*(tmpBuffer+i) = val[0];
-	#endif
+#endif
 				}
 			}
 
-	#ifndef NDEBUG
+#ifndef NDEBUG
 			typedef typename itk::ImageFileWriter< ProbabilityMapType > W;
 			typename W::Pointer writer = W::New();
 			writer->SetInput(tmpmap);
@@ -387,8 +396,16 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			ss << "region_energy_" << roi << ".nii.gz";
 			writer->SetFileName( ss.str().c_str() );
 			writer->Update();
-	#endif
+#endif
 		}
+
+#ifndef NDEBUG
+		typedef typename itk::ImageFileWriter< ReferenceImageType > W;
+		typename W::Pointer writer = W::New();
+		writer->SetInput(this->m_ReferenceImage );
+		writer->SetFileName( "reference.nii.gz" );
+		writer->Update();
+#endif
 		this->m_Value = normalizer*this->m_Value;
 		this->m_EnergyUpdated = true;
 	}
@@ -713,7 +730,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::AddOptions( SettingsDesc& opts ) {
 	opts.add_options()
 			("functional-scale,f", bpo::value< float > (), "scale functional gradients")
-			("smoothing,S", bpo::value< float > (), "apply isotropic smoothing filter on target image, with kernel sigma=S mm.");
+			("smoothing,S", bpo::value< float > (), "apply isotropic smoothing filter on target image, with kernel sigma=S mm.")
+			("smooth-auto", bpo::bool_switch(), "apply isotropic smoothing filter on target image, with kernel sigma=S mm.")
+			("decile-threshold,d", bpo::value< float > (), "set (decile) threshold to consider a computed gradient as outlier (ranges 0.0-0.5)");
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -727,7 +746,17 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	if( this->m_Settings.count( "smoothing" ) ) {
 		bpo::variable_value v = this->m_Settings["smoothing"];
 		this->m_Sigma.Fill( v.as<float> () );
-		this->m_ApplySmoothing = true;
+	}
+
+	if( this->m_Settings.count( "smooth-auto" ) ) {
+		bpo::variable_value v = this->m_Settings["smooth-auto"];
+		this->m_ApplySmoothing= v.as<bool> ();
+		this->m_Sigma.Fill( 0.0 );
+	}
+
+	if( this->m_Settings.count( "decile-threshold") ) {
+		bpo::variable_value v = this->m_Settings["decile-threshold"];
+		this->SetDecileThreshold( v.as<float> () );
 	}
 	this->Modified();
 }

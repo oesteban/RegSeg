@@ -177,6 +177,9 @@ public:
 	itkSetMacro( OutputPrefix, std::string );
 	itkGetConstMacro( OutputPrefix, std::string );
 
+	itkSetMacro( AutoSmoothing, bool );
+	itkGetConstMacro( AutoSmoothing, bool );
+
 	itkGetMacro( JSONRoot, JSONRoot);
 
 	rstkSetVectorElement( GridSchedule, GridSizeType );
@@ -225,6 +228,7 @@ private:
 	bool m_UseGridLevelsInitialization;
 	bool m_UseGridSizeInitialization;
 	bool m_Initialized;
+	bool m_AutoSmoothing;
 
 	/* Common variables for optimization control and reporting */
 	bool                          m_Stop;
