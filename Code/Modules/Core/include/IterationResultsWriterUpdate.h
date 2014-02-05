@@ -14,8 +14,6 @@
 #include "DisplacementFieldFileWriter.h"
 #include "DisplacementFieldComponentsFileWriter.h"
 
-
-
 namespace rstk {
 
 template< typename TOptimizer >
@@ -29,11 +27,17 @@ public:
 	typedef itk::SmartPointer<Self>                     Pointer;
 	typedef itk::SmartPointer< const Self >             ConstPointer;
 
-	typedef typename OptimizerType::FieldType      FieldType;
-	typedef typename OptimizerType::CoefficientsImageType      CoefficientsImageType;
+	typedef typename OptimizerType::FieldType                   FieldType;
+	typedef typename OptimizerType::CoefficientsImageType       CoefficientsImageType;
 	typedef typename OptimizerType::CoefficientsImageArray      CoefficientsImageArray;
-	typedef typename OptimizerType::FunctionalType      FunctionalType;
-	typedef typename FunctionalType::ProbabilityMapType ProbabilityMapType;
+	typedef typename OptimizerType::FunctionalType      		FunctionalType;
+	typedef typename FunctionalType::ROIType                    ROIType;
+	typedef typename FunctionalType::ProbabilityMapType 		ProbabilityMapType;
+	typedef typename FunctionalType::ShapeGradientType          ShapeGradientType;
+	typedef itk::QuadEdgeMeshScalarDataVTKPolyDataWriter
+			                             < ShapeGradientType >  ContourWriterType;
+	typedef typename ContourWriterType::Pointer                 ContourWriterPointer;
+
 
 	typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> ComponentsWriter;
 	typedef itk::ImageFileWriter< ProbabilityMapType >  MapWriter;
@@ -76,11 +80,9 @@ public:
     		f->SetFileName( ss.str().c_str() );
     		f->SetInput( this->m_Optimizer->GetCurrentDisplacementField() );
     		f->Update();
-    	}
 
-    	if( (typeid( event ) == typeid( itk::StartEvent ))  || (typeid( event ) == typeid( itk::IterationEvent ))) {
        		size_t nContours =this->m_Optimizer->GetFunctional()->GetCurrentContours().size();
-        	std::stringstream ss;
+
        		for( size_t r = 0; r <= nContours; r++){
         		ss.str("");
         		ss << prefix << "region_" << r  << "lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
@@ -89,10 +91,29 @@ public:
         		wr->SetFileName(ss.str().c_str() );
         		wr->Update();
         	}
+
+       		typename FunctionalType::ShapeGradientList grads = this->m_Optimizer->GetFunctional()->GetGradients();
+       		for( size_t r = 0; r < nContours; r++ ) {
+       			ContourWriterPointer wc = ContourWriterType::New();
+       			std::stringstream ss;
+       			ss << "gradients_lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << std::setw(2) << "_cont"<< r << ".vtk";
+       			wc->SetFileName( ss.str().c_str() );
+       			wc->SetInput( grads[r] );
+       			wc->Update();
+       		}
+    	}
+
+    	if (typeid( event ) == typeid( itk::StartEvent )) {
+			typedef itk::ImageFileWriter< ROIType > WriteROI;
+			typename WriteROI::Pointer w = WriteROI::New();
+			std::stringstream ss;
+			ss << prefix << "regions_" << this->m_Level << ".nii.gz";
+			w->SetFileName( ss.str().c_str() );
+			w->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentRegions() );
+			w->Update();
+
     	}
     }
-
-
 
     itkSetMacro( Prefix, std::string );
     itkGetConstMacro( Prefix, std::string );
@@ -117,7 +138,5 @@ private:
 };
 
 } // end namespace rstk
-
-
 
 #endif /* ITERATIONRESULTSWRITERUPDATE_H_ */

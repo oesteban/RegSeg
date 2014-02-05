@@ -124,6 +124,8 @@ public:
 	typedef typename ReferencePixelType::ValueType           ReferenceValueType;
 	typedef typename ReferenceImageType::PointType           ReferencePointType;
 	typedef typename ReferenceImageType::DirectionType       DirectionType;
+	typedef typename ReferenceImageType::SizeType            ReferenceSizeType;
+	typedef typename ReferenceImageType::SpacingType         ReferenceSpacingType;
 
 	typedef itk::VectorLinearInterpolateImageFunction
 			< ReferenceImageType >                           InterpolatorType;
@@ -244,10 +246,6 @@ public:
 			                <ContourType,ShapeGradientType>  ShapeCopyType;
 	typedef typename ShapeCopyType::Pointer                  ShapeCopyPointer;
 
-
-	typedef itk::QuadEdgeMeshScalarDataVTKPolyDataWriter< ShapeGradientType >  ContourWriterType;
-	typedef typename ContourWriterType::Pointer    ContourWriterPointer;
-
 	struct GradientSample {
 		PointValueType grad;
 		PointValueType w;
@@ -290,13 +288,14 @@ public:
 
 	typedef typename std::vector< GradientSample >           SampleType;
 
-	itkGetMacro(CurrentContours, ContourList);
+	itkGetMacro( CurrentContours, ContourList);
+	itkGetMacro( Gradients, ShapeGradientList );
 
 	itkSetMacro(Derivative, CoefficientsImageArray);
 	itkGetConstMacro(Derivative, CoefficientsImageArray);
 
-	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
+	virtual void SetReferenceImage (const ReferenceImageType * _arg);
 
 	itkSetObjectMacro(Transform, TransformType);
 	itkGetObjectMacro(Transform, TransformType);
@@ -310,7 +309,7 @@ public:
 	virtual std::string PrintFormattedDescriptors() = 0;
 
 	ROIConstPointer GetCurrentRegion( size_t idx );
-	ROIConstPointer GetCurrentRegions( void );
+	itkGetConstObjectMacro( CurrentRegions, ROIType );
 
 	const ProbabilityMapType* GetCurrentMap( size_t idx );
 
@@ -335,10 +334,7 @@ protected:
 	virtual MeasureType GetEnergyAtPoint( PointType& point, size_t roi, ReferencePixelType& value ) = 0;
 
 
-	inline bool IsInside( const PointType p, ContinuousIndex& idx ) const;
-	//bool CheckExtents( const ContourType* prior ) const;
-
-
+	inline bool CheckExtent( ContourPointType& p, ContinuousIndex& idx ) const;
 	virtual void ParseSettings();
 
 	size_t m_NumberOfContours;
@@ -349,6 +345,7 @@ protected:
 	double m_Scale;
 	bool m_EnergyUpdated;
 	bool m_RegionsUpdated;
+	bool m_ApplySmoothing;
 
 
 	mutable MeasureType m_Value;
@@ -367,7 +364,9 @@ protected:
 	ROIPointer m_CurrentRegions;
 	ReferenceImageConstPointer m_ReferenceImage;
 	ContourOuterRegionsList m_OuterList;
-	ReferencePointType m_Origin, m_End;
+	ReferencePointType m_Origin, m_End, m_FirstPixelCenter, m_LastPixelCenter;
+	ReferenceSizeType m_ReferenceSize;
+	ReferenceSpacingType m_ReferenceSpacing, m_Sigma;
 	DirectionType m_Direction;
 	//VectorInterpolatorPointer m_LinearInterpolator;
 	WarpContourFilterList m_WarpContourFilter;

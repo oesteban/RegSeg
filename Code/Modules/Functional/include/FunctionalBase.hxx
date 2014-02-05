@@ -69,10 +69,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_SamplingFactor(4),
  m_Scale(1.0),
  m_EnergyUpdated(false),
- m_RegionsUpdated(false)
-
+ m_RegionsUpdated(false),
+ m_ApplySmoothing( false )
  {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
+	this->m_Sigma.Fill( 0.0 );
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -97,7 +98,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		this->m_Derivative[i]->Allocate();
 		this->m_Derivative[i]->FillBuffer( 0.0 );
 	}
-
 	this->InitializeCurrentContours();
 
 	// Initialize corresponding ROI /////////////////////////////
@@ -264,15 +264,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			grads->SetElement( sample[i].cid, sample[i].grad );
 		}
 
-
 #ifndef NDEBUG
-		ContourWriterPointer wc = ContourWriterType::New();
-		std::stringstream ss;
-		ss << "gradient_" << contid << ".vtk";
-		wc->SetFileName( ss.str().c_str() );
-		wc->SetInput( this->m_Gradients[contid] );
-		wc->Update();
-
 		std::sort(sample.begin(), sample.end(), by_grad() );
 		std::cout << "Grad["<< contid << "]: area=" << totalArea << ", avg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
 #endif
@@ -297,19 +289,9 @@ void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::UpdateContour() {
 	MeasureType norm;
-	MeasureType meanNorm = 0.0;
-	VectorType meanDesp;
-	meanDesp.Fill(0.0);
-
 	ContinuousIndex point_idx;
 	size_t changed = 0;
 	size_t gpid = 0;
-
-	SampleType sample;
-	double gradSum = 0.0;
-
-	this->m_Transform->UpdateField();
-	FieldConstPointer updateField = this->m_Transform->GetField();
 
 	this->m_Transform->Interpolate();
 
@@ -329,15 +311,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			disp = this->m_Transform->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
 			norm = disp.GetNorm();
 
-			sample.push_back( GradientSample( norm, 1.0, pid, gpid ) );
-			gradSum+= norm;
-
-			if( norm > 0.0 ) {
+			if( norm > 1.0e-8 ) {
 				ci_prime = ci + disp; // Add displacement vector to the point
-
-				if( ! this->IsInside(ci_prime,point_idx) ) {
-					itkExceptionMacro( << "Contour is outside image regions after update.\n" <<
-						"\tMoving vertex [" << contid << "," << pid << "] from " << ci << " to " << ci_prime << " norm="  << norm << "mm.\n");
+				if( ! this->CheckExtent(ci_prime,point_idx) ) {
+					itkWarningMacro( << "ci'=[" << ci_prime << "] was outside image extents.");
 				}
 				curPoints->SetElement( pid, ci_prime );
 				changed++;
@@ -345,20 +322,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			++p_it;
 			gpid++;
 		}
-#ifndef NDEBUG
-		size_t q1 = floor( (sample.size()-1)*0.05 );
-		size_t q2 = round( (sample.size()-1)*0.50 );
-		size_t q3 = ceil ( (sample.size()-1)*0.95 );
-
-		std::sort(sample.begin(), sample.end(), by_grad() );
-		PointValueType median= sample[q2].grad;
-		PointValueType quart1= sample[q1].grad;
-		PointValueType quart2= sample[q3].grad;
-		PointValueType minGradient = (*( sample.begin() )).grad;
-        PointValueType maxGradient = (*( sample.end()-1 )).grad;
-        PointValueType average = gradSum / sample.size();
-		std::cout << "Disp["<< contid << "]: avg=" << average << ", max=" << maxGradient << ", min=" << minGradient << ", q1=" << quart1 << ", q2=" << quart2 << ", med=" << median << "." << std::endl;
-#endif
 
 		ShapeCopyPointer copyShape = ShapeCopyType::New();
 		copyShape->SetInput( this->m_CurrentContours[contid] );
@@ -435,20 +398,22 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 inline bool
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::IsInside( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType p, typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
-	bool isInside = this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex( p, idx );
-#ifndef NDEBUG
+::CheckExtent( typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContourPointType& p, typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
+	ReferencePointType ref;
+	ref.CastFrom ( p );
+	bool isInside = this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex( ref , idx );
+
 	if(!isInside) {
-		typename FieldType::PointType origin, end;
-		typename FieldType::IndexType tmp_idx;
-		typename FieldType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
-		tmp_idx.Fill(0);
-		this->m_ReferenceImage->TransformIndexToPhysicalPoint( tmp_idx, origin );
-		for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= size[dim]-1;
-		this->m_ReferenceImage->TransformIndexToPhysicalPoint( tmp_idx, end);
-		itkWarningMacro( << "Point p=[" << p << "] is outside image extents (" << origin << ", " << end << ").");
+		for ( size_t i = 0; i<Dimension; i++) {
+			if ( idx[i] < 0.0 ) {
+				p.SetElement(i, this->m_FirstPixelCenter[i] );
+			}
+			else if ( idx[i] > (this->m_ReferenceSize[i] -1) ) {
+				p.SetElement(i, this->m_LastPixelCenter[i] );
+			}
+		}
 	}
-#endif
+
 	return isInside;
 }
 
@@ -472,10 +437,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	if( this->m_CurrentMaps[idx].IsNull() ) {
 		this->m_CurrentMaps[idx] = ProbabilityMapType::New();
-		this->m_CurrentMaps[idx]->SetRegions(   this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
-		this->m_CurrentMaps[idx]->SetOrigin(    this->m_ReferenceImage->GetOrigin() );
-		this->m_CurrentMaps[idx]->SetDirection( this->m_ReferenceImage->GetDirection() );
-		this->m_CurrentMaps[idx]->SetSpacing(   this->m_ReferenceImage->GetSpacing() );
+		this->m_CurrentMaps[idx]->SetRegions(   this->m_ReferenceSize );
+		this->m_CurrentMaps[idx]->SetOrigin(    this->m_FirstPixelCenter );
+		this->m_CurrentMaps[idx]->SetDirection( this->m_Direction );
+		this->m_CurrentMaps[idx]->SetSpacing(   this->m_ReferenceSpacing );
 		this->m_CurrentMaps[idx]->Allocate();
 		this->m_CurrentMaps[idx]->FillBuffer( 0.0 );
 	}
@@ -483,10 +448,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	// Resample to reference image resolution
 	ResampleROIFilterPointer resampleFilter = ResampleROIFilterType::New();
 	resampleFilter->SetInput( this->m_CurrentROIs[idx] );
-	resampleFilter->SetSize( this->m_ReferenceImage->GetLargestPossibleRegion().GetSize() );
-	resampleFilter->SetOutputOrigin(    this->m_ReferenceImage->GetOrigin() );
-	resampleFilter->SetOutputSpacing(   this->m_ReferenceImage->GetSpacing() );
-	resampleFilter->SetOutputDirection( this->m_ReferenceImage->GetDirection() );
+	resampleFilter->SetSize( this->m_ReferenceSize );
+	resampleFilter->SetOutputOrigin(    this->m_FirstPixelCenter );
+	resampleFilter->SetOutputSpacing(   this->m_ReferenceSpacing );
+	resampleFilter->SetOutputDirection( this->m_Direction );
 	resampleFilter->SetDefaultPixelValue( 0.0 );
 	resampleFilter->Update();
 	ProbabilityMapPointer tpm = resampleFilter->GetOutput();
@@ -500,48 +465,29 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	return this->m_CurrentMaps[idx].GetPointer();
 }
 
-
-
-
-template< typename TReferenceImageType, typename TCoordRepType >
-typename FunctionalBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
-FunctionalBase<TReferenceImageType, TCoordRepType>
-::GetCurrentRegions() {
-	return this->m_CurrentRegions;
-}
-
-
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::InitializeSamplingGrid() {
-	typedef itk::ContinuousIndex< double, Dimension > ContinuousIndex;
-
-	typename FieldType::SizeType size = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
 	typename FieldType::SizeType exp_size;
 
-	ContinuousIndex f_idx, l_idx;
-	f_idx.Fill( -0.5 );
-
 	for (size_t i = 0; i<Dimension; i++ ){
-		l_idx[i] = size[i]-0.5;
-		exp_size[i] = (unsigned int) (size[i]*this->m_SamplingFactor);
+		exp_size[i] = (unsigned int) (this->m_ReferenceSize[i]*this->m_SamplingFactor);
 	}
 
-	PointType first, last, origin, step;
+	PointType firstPixelCenter;
+	VectorType step;
 	typename FieldType::SpacingType spacing;
-	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( f_idx, first );
-	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( l_idx, last );
 
 	for (size_t i = 0; i<Dimension; i++ ){
-		step[i] = (last[i]-first[i])/(1.0*exp_size[i]);
+		step[i] = (this->m_End[i] - this->m_Origin[i]) / (1.0*exp_size[i]);
 		spacing[i]= fabs( step[i] );
-		origin[i] = first[i] + 0.5 * step[i];
+		firstPixelCenter[i] = this->m_Origin[i] + 0.5 * step[i];
 	}
 
 	this->m_ReferenceSamplingGrid = FieldType::New();
-	this->m_ReferenceSamplingGrid->SetOrigin( origin );
-	this->m_ReferenceSamplingGrid->SetDirection( this->m_ReferenceImage->GetDirection() );
+	this->m_ReferenceSamplingGrid->SetOrigin( firstPixelCenter );
+	this->m_ReferenceSamplingGrid->SetDirection( this->m_Direction );
 	this->m_ReferenceSamplingGrid->SetRegions( exp_size );
 	this->m_ReferenceSamplingGrid->SetSpacing( spacing );
 	this->m_ReferenceSamplingGrid->Allocate();
@@ -577,13 +523,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		this->m_Gradients.push_back( copyShape->GetOutput() );
 	}
 
-	// Cache image properties
-	this->m_Origin    = this->m_ReferenceImage->GetOrigin();
-	this->m_Direction = this->m_ReferenceImage->GetDirection();
-
 	//typename ReferenceImageType::IndexType endIdx;
 	//for ( size_t d = 0; d<Dimension; d++)
-	//	endIdx[d] = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize()[d] -1;
+	//	endIdx[d] = this->m_ReferenceSize[d] -1;
 	//this->m_ReferenceImage->TransformIndexToPhysicalPoint( endIdx, this->m_End );
 	//DirectionType idDir; idDir.SetIdentity();
     //
@@ -618,7 +560,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		PointsIterator c_it  = this->m_CurrentContours[contid]->GetPoints()->Begin();
 		PointsIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
 		PointType ci;
-		//size_t pid;
 		while( c_it != c_end ) {
 			ci = c_it.Value();
 			this->m_Transform->AddOffGridPos( ci );
@@ -677,15 +618,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		this->m_CurrentROIs[idx] = tempROI;
 	}
-
-//#ifndef NDEBUG
-//	typedef itk::ImageFileWriter< ROIType > WriteROI;
-//	typename WriteROI::Pointer w = WriteROI::New();
-//	w->SetFileName( "regions.nii.gz" );
-//	w->SetInput( this->m_CurrentRegions );
-//	w->Update();
-//#endif
-
 	this->m_RegionsUpdated = true;
 }
 
@@ -695,8 +627,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeOuterRegions() {
 	ContourOuterRegions outerVect;
 
-
-	if( this->m_NumberOfContours>1 ) {
+	if( this->m_NumberOfRegions > 2 ) {
 		// Set up ROI interpolator
 		typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
 		interp->SetInputImage( this->m_CurrentRegions );
@@ -772,8 +703,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		temp = temp->GetOnext();
 	} while ( temp != edge );
-
-
 	return fabs(totalArea * 0.33);
 }
 
@@ -783,7 +712,8 @@ void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::AddOptions( SettingsDesc& opts ) {
 	opts.add_options()
-			("functional-scale,f", bpo::value< float > (), "scale functional gradients");
+			("functional-scale,f", bpo::value< float > (), "scale functional gradients")
+			("smoothing,S", bpo::value< float > (), "apply isotropic smoothing filter on target image, with kernel sigma=S mm.");
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -794,8 +724,43 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		bpo::variable_value v = this->m_Settings["functional-scale"];
 		this->m_Scale = v.as<float> ();
 	}
+	if( this->m_Settings.count( "smoothing" ) ) {
+		bpo::variable_value v = this->m_Settings["smoothing"];
+		this->m_Sigma.Fill( v.as<float> () );
+		this->m_ApplySmoothing = true;
+	}
+	this->Modified();
 }
 
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::SetReferenceImage ( const ReferenceImageType * _arg ) {
+	itkDebugMacro("setting ReferenceImage to " << _arg);
+
+	if ( this->m_ReferenceImage != _arg ) {
+		this->m_ReferenceImage = _arg;
+
+		// Cache image properties
+		this->m_FirstPixelCenter  = this->m_ReferenceImage->GetOrigin();
+		this->m_Direction = this->m_ReferenceImage->GetDirection();
+		this->m_ReferenceSize = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
+		this->m_ReferenceSpacing = this->m_ReferenceImage->GetSpacing();
+
+		ContinuousIndex tmp_idx;
+		tmp_idx.Fill( -0.5 );
+		this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_Origin );
+
+		for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]-1.0;
+		this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_LastPixelCenter );
+
+		for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]- 0.5;
+		this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_End );
+
+		this->Modified();
+	}
+}
 
 }
 

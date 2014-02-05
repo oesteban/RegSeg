@@ -450,6 +450,8 @@ SpectralOptimizer<TFunctional>::UpdateField() {
 		this->m_Transform->GetField()->GetLargestPossibleRegion(),
 		this->m_CurrentDisplacementField->GetLargestPossibleRegion()
 	);
+
+
 }
 
 template< typename TFunctional >
@@ -470,6 +472,26 @@ SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 
 		*(fBuffer+pix) = t1; // Copy current to last, once evaluated
 	}
+
+
+
+//#ifndef NDEBUG
+//		size_t q1 = floor( (sample.size()-1)*0.05 );
+//		size_t q2 = round( (sample.size()-1)*0.50 );
+//		size_t q3 = ceil ( (sample.size()-1)*0.95 );
+//
+//		std::sort(sample.begin(), sample.end(), by_grad() );
+//		PointValueType median= sample[q2].grad;
+//		PointValueType quart1= sample[q1].grad;
+//		PointValueType quart2= sample[q3].grad;
+//		PointValueType minGradient = (*( sample.begin() )).grad;
+//        PointValueType maxGradient = (*( sample.end()-1 )).grad;
+//        PointValueType average = gradSum / sample.size();
+//		std::cout << "Disp["<< contid << "]: avg=" << average << ", max=" << maxGradient << ", min=" << minGradient << ", q1=" << quart1 << ", q2=" << quart2 << ", med=" << median << "." << std::endl;
+//#endif
+//
+
+
 
 	this->m_RegularizationEnergyUpdated = (totalNorm==0);
 
