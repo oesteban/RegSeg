@@ -59,7 +59,9 @@
 #include <itkDisplacementFieldTransform.h>
 #include <itkQuadEdgeMeshPolygonCell.h>
 #include <itkTriangleHelper.h>
+#include <itkSmoothingRecursiveGaussianImageFilter.h>
 
+#include "rstkMacro.h"
 #include "ConfigurableObject.h"
 #include "CopyQuadEdgeMeshFilter.h"
 #include "CopyQEMeshStructureFilter.h"
@@ -126,6 +128,11 @@ public:
 	typedef typename ReferenceImageType::DirectionType       DirectionType;
 	typedef typename ReferenceImageType::SizeType            ReferenceSizeType;
 	typedef typename ReferenceImageType::SpacingType         ReferenceSpacingType;
+
+	typedef itk::SmoothingRecursiveGaussianImageFilter< ReferenceImageType >
+	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 SmoothingFilterType;
+	typedef typename SmoothingFilterType::Pointer			 SmoothingFilterPointer;
+	typedef typename SmoothingFilterType::SigmaArrayType     SigmaArrayType;
 
 	typedef itk::VectorLinearInterpolateImageFunction
 			< ReferenceImageType >                           InterpolatorType;
@@ -249,12 +256,14 @@ public:
 	struct GradientSample {
 		PointValueType grad;
 		PointValueType w;
-		size_t cid;
-		size_t gid;
+		VectorType normal;
+		size_t cid;         // point id in contour sid
+		size_t gid;         // global point id
+		size_t sid;         // shape id
 
 		//GradientSample(): grad(0), cid(0), gid(0) {}
-		GradientSample( PointValueType g, PointValueType weight, size_t i, size_t j ): grad(g), w(weight), cid(i), gid(j) {}
-		GradientSample( const GradientSample &s ): grad(s.grad), w(s.w), cid(s.cid), gid(s.gid) {}
+		GradientSample( PointValueType g, PointValueType weight, VectorType n, size_t i, size_t j, size_t k ): grad(g), w(weight), normal(n), cid(i), gid(j), sid(k) {}
+		GradientSample( const GradientSample &s ): grad(s.grad), w(s.w), normal(s.normal), cid(s.cid), gid(s.gid), sid(s.sid) {}
 
 		GradientSample operator+(const GradientSample& g) const {
 			PointValueType val = (grad*w + g.grad * g.w )/ (w+g.w);
@@ -288,6 +297,9 @@ public:
 
 	typedef typename std::vector< GradientSample >           SampleType;
 
+	itkSetClampMacro( DecileThreshold, float, 0.0, 0.5 );
+	itkGetMacro( DecileThreshold, float );
+
 	itkGetMacro( CurrentContours, ContourList);
 	itkGetMacro( Gradients, ShapeGradientList );
 
@@ -300,6 +312,25 @@ public:
 	itkSetObjectMacro(Transform, TransformType);
 	itkGetObjectMacro(Transform, TransformType);
 
+	itkGetMacro( ApplySmoothing, bool );
+	itkGetMacro( Sigma, SigmaArrayType );
+	itkSetMacro( Sigma, SigmaArrayType );
+
+	void SetSigma( float s ) {
+		itkDebugMacro( "set Sigma to " << s );
+		bool modified = false;
+		for( size_t i = 0; i<Dimension; i++){
+			if ( this->m_Sigma[i] != s ) {
+				modified = true;
+				break;
+			}
+		}
+		if ( modified ) {
+			this->m_Sigma.Fill(s);
+			this->m_ApplySmoothing = true;
+			this->Modified();
+		}
+	}
 
 
 	MeasureType GetValue();
@@ -343,6 +374,8 @@ protected:
 	size_t m_NumberOfNodes;
 	size_t m_SamplingFactor;
 	double m_Scale;
+	SigmaArrayType m_Sigma;
+	float m_DecileThreshold;
 	bool m_EnergyUpdated;
 	bool m_RegionsUpdated;
 	bool m_ApplySmoothing;
@@ -366,7 +399,7 @@ protected:
 	ContourOuterRegionsList m_OuterList;
 	ReferencePointType m_Origin, m_End, m_FirstPixelCenter, m_LastPixelCenter;
 	ReferenceSizeType m_ReferenceSize;
-	ReferenceSpacingType m_ReferenceSpacing, m_Sigma;
+	ReferenceSpacingType m_ReferenceSpacing;
 	DirectionType m_Direction;
 	//VectorInterpolatorPointer m_LinearInterpolator;
 	WarpContourFilterList m_WarpContourFilter;

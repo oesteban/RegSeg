@@ -59,6 +59,7 @@
 #include <itkMultiplyImageFilter.h>
 #include <itkAddImageFilter.h>
 
+#include "rstkMacro.h"
 #include "ConfigurableObject.h"
 #include "BSplineSparseMatrixTransform.h"
 
@@ -239,10 +240,12 @@ public:
 
 	void SetAlpha(const InternalComputationValueType v ) {
 		this->m_Alpha.Fill(v);
+		this->Modified();
 	}
 
 	void SetBeta(const InternalComputationValueType v ) {
 		this->m_Beta.Fill(v);
+		this->Modified();
 	}
 
 	/** Get stop condition enum */

@@ -58,6 +58,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
                             m_UseGridLevelsInitialization(false),
                             m_UseGridSizeInitialization(true),
                             m_Initialized(false),
+                            m_AutoSmoothing(false),
                             m_Stop(false) {
 	this->m_StopCondition      = ALL_LEVELS_DONE;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
@@ -212,6 +213,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 
 	// Initialize LevelSet function
 	m_Functionals[level] = DefaultFunctionalType::New();
+	m_Functionals[level]->SetSettings( this->m_Config[level] );
 	m_Functionals[level]->SetReferenceImage( im );
 
 	if ( level == 0 ) {
@@ -224,21 +226,15 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		}
 	}
 
-	m_Functionals[level]->SetSettings( this->m_Config[level] );
-
 	// Connect Optimizer
 	m_Optimizers[level] = DefaultOptimizerType::New();
 	m_Optimizers[level]->SetFunctional( m_Functionals[level] );
 	m_Optimizers[level]->SetSettings( this->m_Config[level] );
 
-	if ( this->m_NumberOfIterations[level] > 0 ) {
-		m_Optimizers[level]->SetNumberOfIterations( this->m_NumberOfIterations[level] );
-	}
-
 	this->m_CurrentLogger = JSONLoggerType::New();
 	this->m_CurrentLogger->SetOptimizer( m_Optimizers[level] );
 	this->m_CurrentLogger->SetLevel( level );
-	//this->m_CurrentLogger->SetTrackEnergyOn();
+	this->m_CurrentLogger->SetTrackEnergyOn();
 #ifndef NDEBUG
 	this->m_ImageLogger = IterationWriterUpdate::New();
 	this->m_ImageLogger->SetOptimizer( m_Optimizers[level] );
@@ -289,6 +285,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 {
   return static_cast<const DecoratedOutputTransformType *>( this->ProcessObject::GetOutput( 0 ) );
 }
+
 
 //template < typename TFixedImage, typename TTransform, typename TComputationalValue >
 //void
