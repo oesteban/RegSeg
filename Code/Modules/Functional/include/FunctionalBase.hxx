@@ -175,7 +175,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		sample.clear();
 		double wi = 0.0;
-		PointValueType scaler = this->m_Scale;
 		PointValueType totalArea = 0.0;
 		PointValueType gradSum = 0.0;
 
@@ -206,7 +205,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			if ( contid != outer_contid ) {
 				ci_prime = c_it.Value();
 				normals->GetPointData( pid, &ni );           // Normal ni in point c'_i
-				wi = this->ComputePointArea( pid, normals );  // Area of c'_i
+				//wi = this->ComputePointArea( pid, normals );  // Area of c'_i
+				wi = 1.0;
 				gi =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
 				totalArea+=wi;
 				if ( fabs(gi) < MIN_GRADIENT ) {
@@ -221,33 +221,33 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		}
 
 		PointValueType gradient;
-		std::sort(sample.begin(), sample.end(), by_grad() );
-		size_t sSize = sample.size();
-		size_t q1 = floor( (sSize-1)* this->m_DecileThreshold );
-		size_t q2 = round( (sSize-1)*0.50 );
-		size_t q3 = ceil ( (sSize-1)* (1.0 - this->m_DecileThreshold ) );
-
-#ifndef NDEBUG
-		std::cout << "Grad[" << contid << "] - Area=" << totalArea << std::endl;
-		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
-#endif
-
-		vnl_random rnd = vnl_random();
-		for( size_t i = 0; i<q1; i++ ){
-			gradient = sample[rnd.lrand32(q1,q2)].grad;
-			sample[i].grad = gradient;
-		}
-
-		for( size_t i = q3; i<sample.size(); i++ ){
-			gradient = sample[rnd.lrand32(q2,q3-1)].grad;
-			sample[i].grad = gradient;
-		}
-
-#ifndef NDEBUG
-		std::sort(sample.begin(), sample.end(), by_grad() );
-		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
-#endif
-		scaler*= (1.0/totalArea);
+//		std::sort(sample.begin(), sample.end(), by_grad() );
+//		size_t sSize = sample.size();
+//		size_t q1 = floor( (sSize-1)* this->m_DecileThreshold );
+//		size_t q2 = round( (sSize-1)*0.50 );
+//		size_t q3 = ceil ( (sSize-1)* (1.0 - this->m_DecileThreshold ) );
+//
+//#ifndef NDEBUG
+//		std::cout << "Grad[" << contid << "] - Area=" << totalArea << std::endl;
+//		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
+//#endif
+//
+//		vnl_random rnd = vnl_random();
+//		for( size_t i = 0; i<q1; i++ ){
+//			gradient = sample[rnd.lrand32(q1,q2)].grad;
+//			sample[i].grad = gradient;
+//		}
+//
+//		for( size_t i = q3; i<sample.size(); i++ ){
+//			gradient = sample[rnd.lrand32(q2,q3-1)].grad;
+//			sample[i].grad = gradient;
+//		}
+//
+//#ifndef NDEBUG
+//		std::sort(sample.begin(), sample.end(), by_grad() );
+//		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
+//#endif
+		PointValueType scaler = ( this->m_Scale /totalArea);
 		//if( maxq >= MAX_GRADIENT ) {
 		// PointValueType maxq = ( fabs(quart1)>fabs(quart2) )?fabs(quart1):fabs(quart2);
 		//	scaler*= (MAX_GRADIENT / maxq);
@@ -276,10 +276,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			gradmesh->GetPointData()->SetElement( sample[i].cid, sample[i].grad );
 		}
 
-#ifndef NDEBUG
-		std::sort(sample.begin(), sample.end(), by_grad() );
-		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
-#endif
+//#ifndef NDEBUG
+//		std::sort(sample.begin(), sample.end(), by_grad() );
+//		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
+//#endif
 	}
 	// Multiply phi and copy reshaped on this->m_Derivative
 	phi.mult( gradVector, derivative );
@@ -399,13 +399,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 #endif
 		}
 
-#ifndef NDEBUG
-		typedef typename itk::ImageFileWriter< ReferenceImageType > W;
-		typename W::Pointer writer = W::New();
-		writer->SetInput(this->m_ReferenceImage );
-		writer->SetFileName( "reference.nii.gz" );
-		writer->Update();
-#endif
 		this->m_Value = normalizer*this->m_Value;
 		this->m_EnergyUpdated = true;
 	}
@@ -653,10 +646,22 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
 			// Compute mesh of normals
 			NormalFilterPointer normalsFilter = NormalFilterType::New();
-			normalsFilter->SetInput( this->m_Priors[contid] );
+			normalsFilter->SetInput( this->m_CurrentContours[contid] );
 			normalsFilter->Update();
 			ContourPointer normals = normalsFilter->GetOutput();
 			outerVect.resize( normals->GetNumberOfPoints() );
+
+#ifndef NDEBUG
+			ShapeCopyPointer copyShape1 = ShapeCopyType::New();
+			copyShape1->SetInput( this->m_CurrentContours[contid] );
+			copyShape1->Update();
+			ShapeGradientPointer inner_surf = copyShape1->GetOutput();
+
+			ShapeCopyPointer copyShape2 = ShapeCopyType::New();
+			copyShape2->SetInput( this->m_CurrentContours[contid] );
+			copyShape2->Update();
+			ShapeGradientPointer outer_surf = copyShape2->GetOutput();
+#endif
 
 			typename ContourType::PointsContainerConstIterator c_it  = normals->GetPoints()->Begin();
 			typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
@@ -670,19 +675,36 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				pid = c_it.Index();
 				ci = c_it.Value();
 				normals->GetPointData( pid, &ni );
-				outerVect[pid] =  interp->Evaluate( ci - ni * 0.25 );
-				ROIPixelType v = interp->Evaluate( ci + ni * 0.25 );
-
-				if ( v == outerVect[pid] ) {
-					std::cout << "Warning [id=" << pid << ",contour=" << contid << "]: no gradient" << std::endl;
+				ROIPixelType inner = interp->Evaluate( ci + ni );
+				ROIPixelType outer = interp->Evaluate( ci - ni );
+				outerVect[pid] = outer;
+#ifndef NDEBUG
+				if ( inner!= outer ) {
+					inner_surf->GetPointData()->SetElement( pid, (1.0+inner) );
+					outer_surf->GetPointData()->SetElement( pid, (1.0+outer) );
+				} else {
+					inner_surf->GetPointData()->SetElement( pid, 0.0 );
+					outer_surf->GetPointData()->SetElement( pid, 0.0 );
 				}
-
-				if ( contid == outerVect[pid] ) {
-					std::cout << "Warning [id=" << pid << ",contour=" << contid << "]: same region" << std::endl;
-				}
-
+#endif
 				++c_it;
 			}
+#ifndef NDEBUG
+			typedef itk::QuadEdgeMeshScalarDataVTKPolyDataWriter
+					                             < ShapeGradientType >  ContourWriterType;
+			typedef typename ContourWriterType::Pointer                 ContourWriterPointer;
+			ContourWriterPointer wc = ContourWriterType::New();
+			std::stringstream ss;
+			ss << "inner_regions_cont" << contid << ".vtk";
+			wc->SetFileName( ss.str().c_str() );
+			wc->SetInput( inner_surf );
+			wc->Update();
+			ss.str("");
+			ss << "outer_regions_cont" << contid << ".vtk";
+			wc->SetFileName( ss.str().c_str() );
+			wc->SetInput( outer_surf );
+			wc->Update();
+#endif
 			this->m_OuterList.push_back( outerVect );
 		}
 	} else {
