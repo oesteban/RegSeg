@@ -53,6 +53,10 @@ BSplineSparseMatrixTransform<TScalarType,NDimensions, VSplineOrder >
 ::BSplineSparseMatrixTransform(): Superclass() {
 	this->m_KernelFunction = dynamic_cast< KernelFunctionType * >(
             itk::BSplineKernelFunction<3u, ScalarType>::New().GetPointer() );
+	this->m_DerivativeKernel = dynamic_cast< KernelFunctionType * >(
+            itk::BSplineDerivativeKernelFunction<3u, ScalarType>::New().GetPointer() );
+	this->m_SecondDerivativeKernel = dynamic_cast< KernelFunctionType * >(
+            itk::BSplineSecondDerivativeKernelFunction<3u, ScalarType>::New().GetPointer() );
 }
 
 }
