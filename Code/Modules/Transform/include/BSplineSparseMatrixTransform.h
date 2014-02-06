@@ -44,6 +44,10 @@
 #define BSPLINESPARSEMATRIXTRANSFORM_H_
 
 #include "SparseMatrixTransform.h"
+#include <itkBSplineKernelFunction.h>
+#include <itkBSplineDerivativeKernelFunction.h>
+#include "BSplineSecondDerivativeKernelFunction.h"
+
 
 namespace rstk {
 

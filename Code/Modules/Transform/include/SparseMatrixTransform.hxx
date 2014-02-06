@@ -81,7 +81,21 @@ SparseMatrixTransform<TScalarType,NDimensions>
 ::Evaluate( const VectorType r ) const {
 	ScalarType wi=1.0;
 	for (size_t i = 0; i<Dimension; i++) {
-		wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / this->m_ControlPointsSpacing[i] );
+		wi*= this->m_KernelFunction->Evaluate( fabs(r[i]) / this->m_ControlPointsSpacing[i] );
+	}
+	return wi;
+}
+
+template< class TScalarType, unsigned int NDimensions >
+inline typename SparseMatrixTransform<TScalarType,NDimensions>::ScalarType
+SparseMatrixTransform<TScalarType,NDimensions>
+::EvaluateDerivative( const VectorType r, size_t dim ) const {
+	ScalarType wi=1.0;
+	for (size_t i = 0; i<Dimension; i++) {
+		if( dim == i )
+			wi*= this->m_DerivativeKernel->Evaluate( r[i] / this->m_ControlPointsSpacing[i] );
+		else
+			wi*= this->m_KernelFunction->Evaluate( fabs(r[i]) / this->m_ControlPointsSpacing[i] );
 	}
 	return wi;
 }
@@ -189,6 +203,17 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	this->m_Field->Allocate();
 	this->m_Field->FillBuffer( zerov );
 
+	for( size_t i = 0; i<Dimension; i++ ) {
+		VectorType zerov; zerov.Fill( 0.0 );
+		this->m_Derivatives.push_back( FieldType::New() );
+		this->m_Derivatives[i]->SetRegions(   this->m_ControlPointsSize );
+		this->m_Derivatives[i]->SetOrigin(    this->m_ControlPointsOrigin );
+		this->m_Derivatives[i]->SetSpacing(   this->m_ControlPointsSpacing );
+		this->m_Derivatives[i]->SetDirection( this->m_ControlPointsDirection );
+		this->m_Derivatives[i]->Allocate();
+		this->m_Derivatives[i]->FillBuffer( zerov );
+	}
+
 }
 
 
@@ -223,7 +248,51 @@ SparseMatrixTransform<TScalarType,NDimensions>
 			r = uk - ci;
 			wi = this->Evaluate( r );
 
-			if (wi > 1.0e-5) {
+			if ( fabs(wi) > 1.0e-5) {
+				cols.push_back( col );
+				vals.push_back( wi );
+			}
+		}
+
+		if ( cols.size() > 0 ) {
+			phi.set_row( row, cols, vals );
+		}
+	}
+	return phi;
+}
+
+template< class TScalarType, unsigned int NDimensions >
+typename SparseMatrixTransform<TScalarType,NDimensions>::WeightsMatrix
+SparseMatrixTransform<TScalarType,NDimensions>
+::ComputeDerivativeMatrix( PointsList vrows, PointsList vcols, size_t dim ) {
+	size_t nRows = vrows.size();
+	size_t nCols = vcols.size();
+
+	WeightsMatrix phi( nRows, nCols );
+
+	ScalarType wi;
+	PointType ci, uk;
+	size_t row, col;
+	VectorType r;
+
+	vcl_vector< int > cols;
+	vcl_vector< ScalarType > vals;
+
+	cols.resize(0);
+	vals.resize(0);
+
+	// Walk the grid region
+	for( row = 0; row < vrows.size(); row++ ) {
+		cols.clear();
+		vals.clear();
+
+		ci = vrows[row];
+		for ( col=0; col < vcols.size(); col++) {
+			uk = vcols[col];
+			r = uk - ci;
+			wi = this->EvaluateDerivative( r, dim );
+
+			if ( fabs(wi) > 1.0e-5) {
 				cols.push_back( col );
 				vals.push_back( wi );
 			}
@@ -255,22 +324,6 @@ SparseMatrixTransform<TScalarType,NDimensions>
 ::ComputeS() {
 	this->m_S = this->ComputeMatrix( this->m_OnGridPos, this->m_OnGridPos );
 }
-
-//template< class TScalarType, unsigned int NDimensions >
-//void
-//SparseMatrixTransform<TScalarType,NDimensions>
-//::ComputeCoeffDerivatives() {
-//	// Check m_Phi and initializations
-//	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
-//		this->ComputePhi();
-//	}
-//
-//    for ( size_t i = 0; i < Dimension; i++ ) {
-//    	this->m_CoeffDerivative[i].fill(0.0);
-//    	this->m_Phi.pre_mult(this->m_OffGridValue[i], this->m_CoeffDerivative[i] );
-//    }
-//}
-
 
 template< class TScalarType, unsigned int NDimensions >
 void
@@ -374,20 +427,43 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	this->Modified();
 }
 
-//template< class TScalarType, unsigned int NDimensions >
-//void
-//SparseMatrixTransform<TScalarType,NDimensions>
-//::ComputeJacobian( ) {
-//	if( this->m_SPrime[0].rows() == 0 || this->m_SPrime[0].cols() == 0 ) {
-//		this->ComputeSPrime();
-//	}
-//
-//	for( size_t i = 0; i < Dimension; i++ ) {
-//		for( size_t j = 0; j < Dimension; j++ ) {
-//			this->m_SPrime[i].mult( this->m_Coeff[j], this->m_Jacobian[i][j] );
-//		}
-//	}
-//}
+template< class TScalarType, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalarType,NDimensions>
+::ComputeGradientField( ) {
+	WeightsMatrix coeff = this->VectorizeCoefficients();
+	std::vector< WeightsMatrix > gradValues;
+
+	for( size_t i = 0; i<Dimension; i++ ) {
+		if( this->m_SPrime[i].rows() == 0 || this->m_SPrime[i].cols() == 0 ) {
+			this->m_SPrime[i] = this->ComputeDerivativeMatrix( this->m_OnGridPos, this->m_OnGridPos, i );
+		}
+
+		WeightsMatrix result;
+
+		// Interpolate
+		this->m_SPrime[i].mult( coeff, result );
+		gradValues.push_back( result );
+	}
+
+	for( size_t i = 0; i<Dimension; i++ ){
+		VectorType v;
+		v.Fill( 0.0 );
+		this->m_Derivatives[i]->FillBuffer( v );
+		VectorType* fbuf = this->m_Derivatives[i]->GetBufferPointer();
+		SparseVectorType r;
+
+		for ( size_t row = 0; row<this->m_NumberOfParameters; row++ ) {
+			for( size_t j = 0; j < Dimension; j++ ){
+				r = gradValues[j].get_row( row );
+				for( size_t k = 0; k< r.size(); k++ ) {
+					v[r[i].first]+= r[i].second;
+				}
+			}
+			*( fbuf + row ) = v;
+		}
+	}
+}
 
 template< class TScalarType, unsigned int NDimensions >
 inline void
@@ -667,47 +743,20 @@ SparseMatrixTransform<TScalarType,NDimensions>
 	return vectorized;
 }
 
+
 //template< class TScalarType, unsigned int NDimensions >
 //void
 //SparseMatrixTransform<TScalarType,NDimensions>
-//::ComputeSPrime( ) {
-//	PointType s, x;
-//	ScalarType wi;
-//	size_t row, col;
-//	VectorType r;
-//
-//	for ( size_t dim = 0; dim < Dimension; dim++ ) {
-//		this->m_SPrime[dim] = WeightsMatrix(this->m_NumberOfParameters,this->m_NumberOfParameters);
+//::ComputeCoeffDerivatives() {
+//	// Check m_Phi and initializations
+//	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
+//		this->ComputePhi();
 //	}
 //
-//	for( row = 0; row < this->m_NumberOfParameters; row++ ) {
-//		s = this->m_OnGridPos[row];
-//
-//		for ( col=0; col < this->m_NumberOfParameters; col++) {
-//			x = this->m_OnGridPos[col];
-//			r = s - x;
-//			for ( size_t dim = 0; dim < Dimension; dim++ ) {
-//				wi=1.0;
-//				for (size_t i = 0; i<Dimension; i++) {
-//					if( dim == i ) {
-//						wi*= this->m_KernelDerivativeFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
-//					} else {
-//						wi*= this->m_KernelFunction->Evaluate( fabs( r[i] ) / m_Sigma[i] );
-//					}
-//
-//					if( fabs(wi) < vnl_math::eps ) {
-//						wi = 0.0;
-//						break;
-//					}
-//				}
-//
-//				if ( fabs(wi) > 0.0) {
-//					//this->m_SPrime[dim].put(row, col, this->m_KernelNorm * wi);
-//					this->m_SPrime[dim].put(row, col, wi);
-//				}
-//			}
-//		}
-//	}
+//    for ( size_t i = 0; i < Dimension; i++ ) {
+//    	this->m_CoeffDerivative[i].fill(0.0);
+//    	this->m_Phi.pre_mult(this->m_OffGridValue[i], this->m_CoeffDerivative[i] );
+//    }
 //}
 
 }

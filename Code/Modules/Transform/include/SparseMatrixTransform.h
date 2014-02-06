@@ -57,6 +57,8 @@
 #include <vnl/vnl_matrix.h>
 #include <vnl/algo/vnl_sparse_lu.h>
 
+#include "rstkMacro.h"
+
 namespace rstk {
 
 template< class TScalarType = double, unsigned int NDimensions = 3u >
@@ -119,6 +121,31 @@ public:
 
     typedef itk::FixedArray< ScalarType, itkGetStaticConstMacro(Dimension) >    ArrayType;
 
+    typedef itk::Image< ScalarType, Dimension >                      CoefficientsImageType;
+    typedef typename CoefficientsImageType::Pointer                  CoeffImagePointer;
+    typedef typename CoefficientsImageType::ConstPointer             CoeffImageConstPointer;
+    typedef itk::FixedArray< CoeffImagePointer, Dimension >          CoefficientsImageArray;
+
+    /** Typedefs for specifying the extent of the grid. */
+    typedef itk::ImageBase< Dimension >                   DomainBase;
+    typedef typename DomainBase::Pointer                  DomainPointer;
+    typedef itk::ImageRegion< Dimension >                 RegionType;
+    typedef typename RegionType::IndexType                IndexType;
+    typedef typename DomainBase::SizeType                 SizeType;
+    typedef typename CoefficientsImageType::SpacingType   SpacingType;
+    typedef typename CoefficientsImageType::DirectionType DirectionType;
+    typedef typename CoefficientsImageType::PointType     OriginType;
+    typedef typename CoefficientsImageType::SpacingType   PhysicalDimensionsType;
+    typedef itk::ContinuousIndex< ScalarType, Dimension>  ContinuousIndexType;
+
+    typedef itk::Image< VectorType, Dimension >           FieldType;
+    typedef typename FieldType::Pointer                   FieldPointer;
+    typedef typename FieldType::ConstPointer              FieldConstPointer;
+    typedef typename std::vector< FieldPointer >          DerivativesType;
+
+    itkSetMacro( ControlPointsSize, SizeType );
+    itkGetConstMacro( ControlPointsSize, SizeType );
+
     itkSetObjectMacro(KernelFunction, KernelFunctionType);
     itkGetConstReferenceObjectMacro(KernelFunction, KernelFunctionType);
 
@@ -127,10 +154,12 @@ public:
 
     itkGetConstMacro( NumberOfParameters, size_t );
 
+    itkGetMacro( Derivatives, DerivativesType );
+
     void Interpolate();
     void UpdateField();
     //void ComputeCoeffDerivatives( void );
-    //void ComputeJacobian( void );
+    void ComputeGradientField();
     void ComputeCoefficients();
 
 
@@ -161,41 +190,18 @@ public:
     const WeightsMatrix GetPhi() const { return this->m_Phi; }
     const WeightsMatrix GetS() const { return this->m_S; }
 
-    typedef itk::Image< ScalarType, Dimension >                      CoefficientsImageType;
-    typedef typename CoefficientsImageType::Pointer                  CoeffImagePointer;
-    typedef typename CoefficientsImageType::ConstPointer             CoeffImageConstPointer;
-    typedef itk::FixedArray< CoeffImagePointer, Dimension >          CoefficientsImageArray;
-
-
-    /** Get the array of coefficient images. */
-    const CoefficientsImageArray GetCoefficientsImages() const {
-      return this->m_CoefficientsImages;
-    }
-
-    /** Typedefs for specifying the extent of the grid. */
-    typedef itk::ImageBase< Dimension >                   DomainBase;
-    typedef typename DomainBase::Pointer                  DomainPointer;
-    typedef itk::ImageRegion< Dimension >                 RegionType;
-    typedef typename RegionType::IndexType                IndexType;
-    typedef typename DomainBase::SizeType                 SizeType;
-    typedef typename CoefficientsImageType::SpacingType   SpacingType;
-    typedef typename CoefficientsImageType::DirectionType DirectionType;
-    typedef typename CoefficientsImageType::PointType     OriginType;
-    typedef typename CoefficientsImageType::SpacingType   PhysicalDimensionsType;
-    typedef itk::ContinuousIndex< ScalarType, Dimension>  ContinuousIndexType;
-
-    typedef itk::Image< VectorType, Dimension >           FieldType;
-    typedef typename FieldType::Pointer                   FieldPointer;
-    typedef typename FieldType::ConstPointer              FieldConstPointer;
-
-    itkSetMacro( ControlPointsSize, SizeType );
-    itkGetConstMacro( ControlPointsSize, SizeType );
 
     void SetControlPointsSize( size_t s ) { this->m_ControlPointsSize.Fill( s ); }
 
     itkSetObjectMacro( Field, FieldType );
     itkGetConstObjectMacro( Field, FieldType );
 
+
+    /** Get the array of coefficient images. */
+    //const CoefficientsImageArray GetCoefficientsImages() const {
+    //  return this->m_CoefficientsImages;
+    //}
+    itkGetConstMacro( CoefficientsImages, CoefficientsImageArray );
     void SetCoefficientsImages( const CoefficientsImageArray & images );
     void SetCoefficientsImage( size_t dim, const CoefficientsImageType* c );
     void SetCoefficientsVectorImage( const FieldType* f );
@@ -252,7 +258,8 @@ protected:
 	void ComputePhi();
 	void ComputeS();
 	WeightsMatrix ComputeMatrix( PointsList vrows, PointsList vcols );
-	void ComputeSPrime();
+	WeightsMatrix ComputeDerivativeMatrix( PointsList vrows, PointsList vcols, size_t dim );
+
 	void InitializeCoefficientsImages();
 	DimensionVector Vectorize( const CoefficientsImageType* image );
 	WeightsMatrix VectorizeCoefficients();
@@ -260,6 +267,7 @@ protected:
 	WeightsMatrix MatrixField( const FieldType* image );
 
 	inline ScalarType Evaluate( const VectorType r ) const;
+	inline ScalarType EvaluateDerivative( const VectorType r, size_t dim ) const;
 	virtual size_t GetSupport() const = 0;
 
 	/* Field domain definitions */
@@ -284,7 +292,7 @@ protected:
 
 	WeightsMatrix   m_Phi;
 	WeightsMatrix   m_S;
-	//WeightsMatrix   m_SPrime[Dimension];
+	WeightsMatrix   m_SPrime[Dimension];
 
 
 	bool            m_GridDataChanged;
@@ -292,7 +300,10 @@ protected:
 	bool            m_UseImageOutput;
 
 	KernelFunctionPointer m_KernelFunction;
+	KernelFunctionPointer m_DerivativeKernel;
+	KernelFunctionPointer m_SecondDerivativeKernel;
 	FieldPointer          m_Field;
+	DerivativesType       m_Derivatives;
 	FieldPointer          m_OutputField;
 private:
 	SparseMatrixTransform( const Self & );

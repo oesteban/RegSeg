@@ -341,6 +341,18 @@ protected:
 	SizeValueType                 m_DescriptorRecomputationFreq;
 	bool                          m_UseDescriptorRecomputation;
 
+	/** Particular parameter definitions from our method */
+	InternalComputationValueType m_StepSize; // Step-size is tau in the formulations
+	InternalVectorType m_Alpha;
+	InternalVectorType m_Beta;
+
+	/* Energy tracking */
+	MeasureType m_CurrentValue;
+	MeasureType m_RegularizationEnergy;
+	MeasureType m_CurrentTotalEnergy;
+	bool m_RegularizationEnergyUpdated;
+
+
 //	/** Store the best value and related parameters */
 //	MeasureType                  m_CurrentBestValue;
 //	ParametersType               m_BestParameters;
@@ -348,30 +360,15 @@ protected:
 //	/** Flag to control returning of best value and parameters. */
 //	bool m_ReturnBestParametersAndValue;
 
-	/** Particular parameter definitions from our method */
-	InternalComputationValueType m_StepSize; // Step-size is tau in the formulations
-	InternalVectorType m_Alpha;
-	InternalVectorType m_Beta;
 
-
-	CoefficientsImageArray m_Coefficients;
-	CoefficientsImageArray m_NextCoefficients;
-	CoefficientsImageArray m_DerivativeCoefficients;
-	CoefficientsImageArray m_Denominator;
-
-	MeasureType m_CurrentValue;
-
-	FunctionalPointer m_Functional;
-	MeasureType m_RegularizationEnergy;
-	MeasureType m_CurrentTotalEnergy;
-	bool m_RegularizationEnergyUpdated;
-
-	FieldPointer m_LastField;
-	FieldPointer m_CurrentDisplacementField;
-
-
-	TransformPointer              m_Transform;
-
+	TransformPointer             m_Transform;
+	FunctionalPointer            m_Functional;
+	CoefficientsImageArray       m_Coefficients;
+	CoefficientsImageArray       m_NextCoefficients;
+	CoefficientsImageArray       m_DerivativeCoefficients;
+	CoefficientsImageArray       m_Denominator;
+	FieldPointer                 m_LastField;
+	FieldPointer                 m_CurrentDisplacementField;
 private:
 	SpectralOptimizer( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented

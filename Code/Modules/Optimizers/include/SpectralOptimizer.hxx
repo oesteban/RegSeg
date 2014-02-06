@@ -72,24 +72,24 @@ SpectralOptimizer<TFunctional>::SpectralOptimizer():
 m_LearningRate( 1.0 ),
 m_MinimumConvergenceValue( 1.0e-8 ),
 m_ConvergenceWindowSize( 50 ),
+m_ConvergenceValue( 0.0 ),
 m_Stop( false ),
+m_StopCondition(MAXIMUM_NUMBER_OF_ITERATIONS),
 m_CurrentIteration( 0 ),
 m_NumberOfIterations( 250 ),
 m_DenominatorCached( false ),
-m_DescriptorRecomputationFreq(5),
+m_DescriptorRecomputationFreq(0),
 m_UseDescriptorRecomputation(false),
-m_StepSize(10.0)
+m_StepSize(10.0),
+m_CurrentValue(itk::NumericTraits<MeasureType>::infinity()),
+m_RegularizationEnergy( 0.0 ),
+m_CurrentTotalEnergy(itk::NumericTraits<MeasureType>::infinity()),
+m_RegularizationEnergyUpdated(true)
 {
 	this->m_Alpha.Fill( 1.0e-2 );
 	this->m_Beta.Fill( 1.0e-1 );
-	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 5 );
-
-	this->m_CurrentValue = itk::NumericTraits<MeasureType>::infinity();
-	this->m_CurrentTotalEnergy = itk::NumericTraits<MeasureType>::infinity();
-	this->m_RegularizationEnergyUpdated = false;
-
 	SplineTransformPointer defaultTransform = SplineTransformType::New();
 	this->m_Transform = itkDynamicCastInDebugMode< TransformType* >( defaultTransform.GetPointer() );
 }
@@ -262,41 +262,42 @@ template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 	if (!this->m_RegularizationEnergyUpdated ){
-		//this->m_RegularizationEnergy=0;
-		//const VectorType* fBuffer = this->m_LastField->GetBufferPointer();
-		//size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
-        //
-		//VectorType u;
-        //
-		//for ( size_t pix = 0; pix<nPix; pix++) {
-		//	u = *(fBuffer+pix);
-		//	for ( size_t i = 0; i<Dimension; i++) {
-		//		u[i] = u[i]*u[i];
-		//	}
-		//	this->m_RegularizationEnergy+= this->m_Alpha * u;
-		//}
-        //
-		//double normalizer = 1.0;
-        //
-		//for( size_t i = 0; i<Dimension; i++ ) {
-		//	normalizer*= this->m_LastField->GetSpacing()[i];
-		//}
-        //
-		//this->m_Functional->GetTransform()->ComputeJacobian();
-        //
-		//typedef typename FunctionalType::TransformType::JacobianType JacobianType;
-		//JacobianType j;
-        //
-		//for ( size_t pix = 0; pix<nPix; pix++) {
-		//	j = this->m_Functional->GetTransform()->GetJacobian(pix);
-		//	for ( size_t i = 0; i<Dimension; i++) {
-		//		u[i] = j[i][i]*j[i][i];
-		//	}
-		//	this->m_RegularizationEnergy+= this->m_Beta * u;
-		//}
-        //
-		//this->m_RegularizationEnergy = normalizer * this->m_RegularizationEnergy;
-		//this->m_RegularizationEnergyUpdated = true;
+		this->m_RegularizationEnergy=0;
+		const VectorType* fBuffer = this->m_LastField->GetBufferPointer();
+		const VectorType* dBuffer[Dimension];
+		size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
+
+		VectorType u, d_u;
+		InternalComputationValueType u_norm = 0.0;
+		InternalComputationValueType du_norm = 0.0;
+
+
+		this->m_Transform->ComputeGradientField();
+
+
+		double normalizer = 1.0;
+
+		for (size_t i = 0; i<Dimension; i++ ) {
+			dBuffer[i] =  this->m_Transform->GetDerivatives()[i]->GetBufferPointer();
+			normalizer*= this->m_LastField->GetSpacing()[i];
+		}
+
+		for ( size_t pix = 0; pix<nPix; pix++) {
+			u = *(fBuffer+pix);
+			for ( size_t i = 0; i<Dimension; i++) {
+				// Regularization, first term
+				this->m_RegularizationEnergy+= this->m_Alpha[i] * u[i] * u[i];
+
+				// Regularization, second term
+				d_u = *(dBuffer[i] + pix );
+				for( size_t j = 0; j<Dimension; j++) {
+					this->m_RegularizationEnergy+= this->m_Beta[j] * d_u[j] * d_u[j];
+				}
+			}
+		}
+
+		this->m_RegularizationEnergy = normalizer * this->m_RegularizationEnergy;
+		this->m_RegularizationEnergyUpdated = true;
 	}
 	return this->m_RegularizationEnergy;
 }

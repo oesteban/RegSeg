@@ -49,7 +49,7 @@ public:
     		m_StartTime = clock();
 
     		if( this->GetTrackEnergy() ) {
-				itnode["energy"]["total"] = this->m_Optimizer->GetCurrentValue();
+				itnode["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
 				itnode["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
 				itnode["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
     		}
