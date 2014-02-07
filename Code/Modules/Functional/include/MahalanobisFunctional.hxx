@@ -89,7 +89,9 @@ inline typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::Measur
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::GetEnergyOfSample( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ReferencePixelType value, size_t roi ) {
 	ReferencePixelType dist = value - this->m_Parameters[roi].mean;
-	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() );
+	MeasureType val = dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() ) + this->m_Parameters[roi].bias;
+	val = ( fabs(val) > 1.0e-8 )?val:0.0;
+	return val;
 }
 
 
@@ -97,10 +99,7 @@ template <typename TReferenceImageType, typename TCoordRepType>
 inline typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::MeasureType
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::GetEnergyAtPoint( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::PointType & point, size_t roi ) {
-	ReferencePixelType dist = this->m_Interp->Evaluate( point ) - this->m_Parameters[roi].mean;
-	double val = dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() );
-	val = (val > 1.0e-8 )? val : 0.0;
-	return val;
+	return this->GetEnergyOfSample( this->m_Interp->Evaluate( point ), roi );
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
@@ -109,8 +108,7 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::GetEnergyAtPoint( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::PointType & point, size_t roi,
 		            typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ReferencePixelType & value) {
 	value = this->m_Interp->Evaluate( point );
-	ReferencePixelType dist = value - this->m_Parameters[roi].mean;
-	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() );
+	return this->GetEnergyOfSample( value, roi );
 }
 
 
