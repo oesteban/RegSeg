@@ -78,7 +78,7 @@ namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 
 typedef itk::Image<float, 3u>                                ChannelType;
-typedef itk::Vector<float, 2u>                               VectorPixelType;
+typedef itk::Vector<float, 1u>                               VectorPixelType;
 typedef itk::Image<VectorPixelType, 3u>                      ImageType;
 typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
