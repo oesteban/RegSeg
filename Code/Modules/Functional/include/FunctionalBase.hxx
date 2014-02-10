@@ -69,12 +69,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_SamplingFactor(4),
  m_Scale(1.0),
  m_DecileThreshold(0.05),
+ m_DisplacementsUpdated(true),
  m_EnergyUpdated(false),
  m_RegionsUpdated(false),
  m_ApplySmoothing(false)
  {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_Sigma.Fill(0.0);
+	this->m_Interp = InterpolatorType::New();
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -87,20 +89,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	this->ParseSettings();
 
-	CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
-	this->m_NumberOfNodes = coeff[0]->GetLargestPossibleRegion().GetNumberOfPixels();
-
-	for( size_t i = 0; i<Dimension; i++ ) {
-		this->m_Derivative[i] = CoefficientsImageType::New();
-		this->m_Derivative[i]->SetRegions(   coeff[i]->GetLargestPossibleRegion().GetSize() );
-		this->m_Derivative[i]->SetOrigin(    coeff[i]->GetOrigin() );
-		this->m_Derivative[i]->SetDirection( coeff[i]->GetDirection() );
-		this->m_Derivative[i]->SetSpacing(   coeff[i]->GetSpacing() );
-		this->m_Derivative[i]->Allocate();
-		this->m_Derivative[i]->FillBuffer( 0.0 );
-	}
 
 	if( this->m_ApplySmoothing ) {
+		CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
+		this->m_NumberOfNodes = coeff[0]->GetLargestPossibleRegion().GetNumberOfPixels();
+
 		if( this->m_Sigma == 0.0 ) {
 			for( size_t i = 0; i<Dimension; i++)
 				this->m_Sigma[i] = 0.40 * coeff[0]->GetSpacing()[i];
@@ -129,6 +122,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	// Compute the outer region in each vertex
 	this->ComputeOuterRegions();
+
+	// Initialize interpolators
+	this->m_Interp->SetInputImage( this->m_ReferenceImage );
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -140,9 +136,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	// Increase number of off-grid nodes to set into the sparse-dense interpolator
 	this->m_NumberOfPoints+= prior->GetNumberOfPoints();
 
-	WarpContourPointer wrp = WarpContourFilterType::New();
-	wrp->SetInput( prior );
-	this->m_WarpContourFilter.push_back( wrp );
 	this->m_NumberOfContours++;
 	this->m_NumberOfRegions++;
     this->m_ROIs.resize( this->m_NumberOfContours+1 );
@@ -152,7 +145,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-void
+typename FunctionalBase<TReferenceImageType, TCoordRepType>::WeightsMatrix
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeDerivative() {
 	size_t cpid = 0;
@@ -162,15 +155,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	this->UpdateContour();
 
-	typename CoefficientsImageType::PixelType* buff[Dimension];
-	for ( size_t i = 0; i<Dimension; i++) {
-		this->m_Derivative[i]->FillBuffer( 0.0 );
-		buff[i] = this->m_Derivative[i]->GetBufferPointer();
-	}
-
-	WeightsMatrix phi = this->m_Transform->GetPhi().transpose();
 	WeightsMatrix gradVector( this->m_NumberOfPoints, Dimension );
-	WeightsMatrix derivative( this->m_NumberOfNodes, Dimension );
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		sample.clear();
@@ -206,8 +191,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				ci_prime = c_it.Value();
 				normals->GetPointData( pid, &ni );           // Normal ni in point c'_i
 				wi = this->ComputePointArea( pid, normals );  // Area of c'_i
-				//wi = 1.0;
-				gi =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
+				gi = this->EvaluateGradient( ci_prime, outer_contid, contid );
+				//gi =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
 				totalArea+=wi;
 				if ( fabs(gi) < MIN_GRADIENT ) {
 					gi = 0.0;
@@ -281,29 +266,23 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 //		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
 //#endif
 	}
-	// Multiply phi and copy reshaped on this->m_Derivative
-	phi.mult( gradVector, derivative );
 
-	typename WeightsMatrix::row row;
-	for( size_t r = 0; r< this->m_NumberOfNodes; r++ ){
-		row = derivative.get_row( r );
-		for( size_t c = 0; c<row.size(); c++ ) {
-			*( buff[row[c].first] + r ) = row[c].second;
-		}
-	}
+	return gradVector;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::UpdateContour() {
+	if( this->m_DisplacementsUpdated ) {
+		return;
+	}
+
 	MeasureType norm;
 	ContinuousIndex point_idx;
 	size_t changed = 0;
 	size_t gpid = 0;
 	std::vector< size_t > invalid;
-
-	this->m_Transform->Interpolate();
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
 		typename ContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
@@ -311,15 +290,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		PointsContainerPointer curPoints = this->m_CurrentContours[contid]->GetPoints();
 
 		ContourPointType ci, ci_prime;
-		VectorType disp, disp2;
+		VectorType disp;
 		size_t pid;
-
 
 		// For all the points in the mesh
 		while ( p_it != p_end ) {
 			ci = p_it.Value();
 			pid = p_it.Index();
-			disp = this->m_Transform->GetOffGridValue( gpid ); // Get the interpolated value of the field in the point
+			disp = this->m_CurrentDisplacements->GetElement( gpid ); // Get the interpolated value of the field in the point
 			norm = disp.GetNorm();
 
 			if( norm > 1.0e-8 ) {
@@ -346,6 +324,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		itkWarningMacro(<< "a total of " << invalid.size() << " mesh nodes were to be moved off the image domain." );
 	}
 
+	this->m_DisplacementsUpdated = true;
 	this->m_RegionsUpdated = (changed==0);
 	this->m_EnergyUpdated = (changed==0);
 }
@@ -574,13 +553,20 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	//}
 
 	// Fill in interpolator points
+	this->m_CurrentDisplacements = PointDataContainer::New();
+	this->m_CurrentDisplacements->Reserve( this->m_NumberOfPoints );
+	VectorType zerov;
+	zerov.Fill(0.0);
+
+	size_t identifier;
 	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
 		PointsIterator c_it  = this->m_CurrentContours[contid]->GetPoints()->Begin();
 		PointsIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
 		PointType ci;
 		while( c_it != c_end ) {
 			ci = c_it.Value();
-			this->m_Transform->AddOffGridPos( ci );
+			identifier = this->m_Transform->AddOffGridPos( ci );
+			this->m_CurrentDisplacements->SetElement(identifier, zerov );
 			++c_it;
 		}
 	}
@@ -791,6 +777,43 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->Modified();
 }
 
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::SetCurrentDisplacements( const SparseMatrix& vals ) {
+	if ( vals.cols() != Dimension ) {
+		itkExceptionMacro(<< "vals contains a wrong number of columns");
+	}
+	size_t npoints = vals.rows();
+
+	if ( npoints != this->m_NumberOfPoints ) {
+		itkExceptionMacro( << "vals contains a wrong number of vectors");
+	}
+
+	VectorType new_ci, old_ci;
+	double norm;
+	size_t modified = 0;
+	for( size_t id = 0; id<npoints; id++ ) {
+		new_ci.Fill( 0.0 );
+		norm = 0.0;
+
+		if ( !vals.empty_row( id ) ) {
+			for( size_t d = 0; d < Dimension; d++) {
+				new_ci[d] = vals( id, d );
+			}
+			old_ci = this->m_CurrentDisplacements->GetElement( id );
+			norm = (new_ci-old_ci).GetNorm();
+
+			if ( norm > 1.0e-8 ) {
+				modified++;
+				this->m_CurrentDisplacements->SetElement( id, new_ci );
+			}
+		}
+	}
+
+	this->m_DisplacementsUpdated = (modified==0);
+
+}
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
@@ -819,6 +842,38 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		this->Modified();
 	}
+}
+
+
+template <typename TReferenceImageType, typename TCoordRepType>
+inline typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::EvaluateGradient(  typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point,
+		size_t outer_roi, size_t inner_roi ) const {
+	if ( outer_roi == inner_roi ) {
+		return 0.0;
+	}
+	ReferencePixelType value = this->m_Interp->Evaluate( point );
+	MeasureType grad = this->GetEnergyOfSample( value, outer_roi ) - this->GetEnergyOfSample( value, inner_roi );
+	grad = ( fabs(grad) > 1.0e-8 )?grad:0.0;
+	return grad;
+}
+
+
+template <typename TReferenceImageType, typename TCoordRepType>
+inline typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::GetEnergyAtPoint( typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point, size_t roi ) const {
+	return this->GetEnergyOfSample( this->m_Interp->Evaluate( point ), roi );
+}
+
+template <typename TReferenceImageType, typename TCoordRepType>
+inline typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::GetEnergyAtPoint( typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point, size_t roi,
+		            typename FunctionalBase<TReferenceImageType, TCoordRepType>::ReferencePixelType & value) const {
+	value = this->m_Interp->Evaluate( point );
+	return this->GetEnergyOfSample( value, roi );
 }
 
 }

@@ -466,6 +466,18 @@ SparseMatrixTransform<TScalarType,NDimensions>
 }
 
 template< class TScalarType, unsigned int NDimensions >
+typename SparseMatrixTransform<TScalarType,NDimensions>::WeightsMatrix
+SparseMatrixTransform<TScalarType,NDimensions>
+::GetPhi() {
+	// Check m_Phi and initializations
+	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
+		this->ComputePhi();
+	}
+
+	return this->m_Phi;
+}
+
+template< class TScalarType, unsigned int NDimensions >
 inline void
 SparseMatrixTransform<TScalarType,NDimensions>
 ::SetOffGridPos(size_t id, typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
@@ -479,11 +491,12 @@ SparseMatrixTransform<TScalarType,NDimensions>
 }
 
 template< class TScalarType, unsigned int NDimensions >
-inline void
+inline size_t
 SparseMatrixTransform<TScalarType,NDimensions>
 ::AddOffGridPos(typename SparseMatrixTransform<TScalarType,NDimensions>::PointType pi ){
 	this->m_OffGridPos.push_back( pi );
 	this->m_NumberOfSamples++;
+	return (this->m_NumberOfSamples-1);
 }
 
 

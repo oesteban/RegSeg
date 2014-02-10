@@ -48,12 +48,6 @@
 #include <itkMeshFileWriter.h>
 
 namespace rstk {
-template <typename TReferenceImageType, typename TCoordRepType>
-MahalanobisFunctional<TReferenceImageType,TCoordRepType>
-::MahalanobisFunctional() {
-	this->m_Interp = InterpolatorType::New();
-
-}
 
 template <typename TReferenceImageType, typename TCoordRepType>
 void
@@ -76,9 +70,6 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::Initialize() {
 	Superclass::Initialize();
 
-	// Initialize interpolators
-	this->m_Interp->SetInputImage( this->m_ReferenceImage );
-
 	// Check that parameters are initialized
 	if (! this->ParametersInitialized() )
 		this->UpdateDescriptors();
@@ -87,28 +78,9 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 inline typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::MeasureType
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
-::GetEnergyOfSample( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ReferencePixelType value, size_t roi ) {
+::GetEnergyOfSample( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ReferencePixelType value, size_t roi ) const {
 	ReferencePixelType dist = value - this->m_Parameters[roi].mean;
-	MeasureType val = dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() ) + this->m_Parameters[roi].bias;
-	val = ( fabs(val) > 1.0e-8 )?val:0.0;
-	return val;
-}
-
-
-template <typename TReferenceImageType, typename TCoordRepType>
-inline typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::MeasureType
-MahalanobisFunctional<TReferenceImageType,TCoordRepType>
-::GetEnergyAtPoint( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::PointType & point, size_t roi ) {
-	return this->GetEnergyOfSample( this->m_Interp->Evaluate( point ), roi );
-}
-
-template <typename TReferenceImageType, typename TCoordRepType>
-inline typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::MeasureType
-MahalanobisFunctional<TReferenceImageType,TCoordRepType>
-::GetEnergyAtPoint( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::PointType & point, size_t roi,
-		            typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ReferencePixelType & value) {
-	value = this->m_Interp->Evaluate( point );
-	return this->GetEnergyOfSample( value, roi );
+	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() ) + this->m_Parameters[roi].bias;
 }
 
 

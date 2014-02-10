@@ -60,6 +60,7 @@
 #include <itkQuadEdgeMeshPolygonCell.h>
 #include <itkTriangleHelper.h>
 #include <itkSmoothingRecursiveGaussianImageFilter.h>
+#include <vnl/vnl_sparse_matrix.h>
 
 #include "rstkMacro.h"
 #include "ConfigurableObject.h"
@@ -145,6 +146,7 @@ public:
 	typedef typename std::vector<ContourPointer>             ContourList;
 	typedef typename std::vector<ContourConstPointer>        ConstContourList;
 	typedef typename ContourType::PointsContainerPointer     PointsContainerPointer;
+	typedef typename ContourType::PointDataContainer         PointDataContainer;
 	typedef typename ContourType::PointDataContainerPointer  PointDataContainerPointer;
 	typedef typename ContourType::PointsContainerIterator    PointsIterator;
 	typedef typename ContourType::PointsContainerConstIterator    PointsConstIterator;
@@ -154,6 +156,8 @@ public:
 	typedef typename ContourType::CellType                   CellType;
 	typedef typename itk::QuadEdgeMeshPolygonCell<CellType>  PolygonType;
 	typedef itk::TriangleHelper< ContourPointType >          TriangleType;
+
+	typedef vnl_sparse_matrix< PointValueType >              SparseMatrix;
 
 	typedef itk::NormalQuadEdgeMeshFilter
 			< ContourType, ContourType >                     NormalFilterType;
@@ -277,23 +281,25 @@ public:
 		GradientSample operator>(const GradientSample& g) const {
 			return grad > g.grad;
 		}
+
+
+		struct by_grad {
+			bool operator()( GradientSample const &a, GradientSample const &b ) {
+				return a.grad < b.grad;
+			}
+		};
+		struct by_gid {
+			bool operator()( GradientSample const &a, GradientSample const &b ) {
+				return a.gid < b.gid;
+			}
+		};
+		struct by_cid {
+			bool operator()( GradientSample const &a, GradientSample const &b ) {
+				return a.cid < b.cid;
+			}
+		};
 	};
 
-	struct by_grad {
-		bool operator()( GradientSample const &a, GradientSample const &b ) {
-			return a.grad < b.grad;
-		}
-	};
-	struct by_gid {
-		bool operator()( GradientSample const &a, GradientSample const &b ) {
-			return a.gid < b.gid;
-		}
-	};
-	struct by_cid {
-		bool operator()( GradientSample const &a, GradientSample const &b ) {
-			return a.cid < b.cid;
-		}
-	};
 
 	typedef typename std::vector< GradientSample >           SampleType;
 
@@ -303,8 +309,10 @@ public:
 	itkGetMacro( CurrentContours, ContourList);
 	itkGetMacro( Gradients, ShapeGradientList );
 
-	itkSetMacro(Derivative, CoefficientsImageArray);
-	itkGetConstMacro(Derivative, CoefficientsImageArray);
+	virtual void SetCurrentDisplacements( const SparseMatrix& vals );
+
+	//itkSetMacro(Derivative, CoefficientsImageArray);
+	//itkGetConstMacro(Derivative, CoefficientsImageArray);
 
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	virtual void SetReferenceImage (const ReferenceImageType * _arg);
@@ -332,9 +340,8 @@ public:
 		}
 	}
 
-
 	MeasureType GetValue();
-	void ComputeDerivative();
+	WeightsMatrix ComputeDerivative();
 	virtual void Initialize();
 	virtual void UpdateDescriptors() = 0;
 	virtual std::string PrintFormattedDescriptors() = 0;
@@ -360,9 +367,10 @@ protected:
 
 	void InitializeSamplingGrid( void );
 
-	virtual MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roi ) = 0;
-	virtual MeasureType GetEnergyAtPoint( PointType& point, size_t roi ) = 0;
-	virtual MeasureType GetEnergyAtPoint( PointType& point, size_t roi, ReferencePixelType& value ) = 0;
+	virtual MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roi ) const = 0;
+	MeasureType GetEnergyAtPoint( PointType& point, size_t roi ) const;
+	MeasureType GetEnergyAtPoint( PointType& point, size_t roi, ReferencePixelType& value ) const;
+	MeasureType EvaluateGradient( PointType& point, size_t outer_roi, size_t inner_roi ) const;
 
 
 	inline bool CheckExtent( ContourPointType& p, ContinuousIndex& idx ) const;
@@ -376,13 +384,13 @@ protected:
 	double m_Scale;
 	SigmaArrayType m_Sigma;
 	float m_DecileThreshold;
+	bool m_DisplacementsUpdated;
 	bool m_EnergyUpdated;
 	bool m_RegionsUpdated;
 	bool m_ApplySmoothing;
 
 
 	mutable MeasureType m_Value;
-	CoefficientsImageArray m_Derivative;
 	FieldPointer m_ReferenceSamplingGrid;
 	ContourList m_CurrentContours;
 	ShapeGradientList m_Gradients;
@@ -403,6 +411,11 @@ protected:
 	DirectionType m_Direction;
 	//VectorInterpolatorPointer m_LinearInterpolator;
 	WarpContourFilterList m_WarpContourFilter;
+
+
+	InterpolatorPointer m_Interp;
+	PointDataContainerPointer m_CurrentDisplacements;
+
 private:
 	FunctionalBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented

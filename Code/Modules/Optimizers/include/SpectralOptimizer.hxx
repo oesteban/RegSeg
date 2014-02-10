@@ -176,7 +176,28 @@ void SpectralOptimizer<TFunctional>::Resume() {
 
 		/* Compute functional value/derivative. */
 		try	{
-			this->m_Functional->ComputeDerivative();
+			// Multiply phi and copy reshaped on this->m_Derivative
+			WeightsMatrix phi = this->m_Transform->GetPhi().transpose();
+			WeightsMatrix gradVector = this->m_Functional->ComputeDerivative();
+			WeightsMatrix derivative( phi.rows(), gradVector.cols() );
+
+
+			phi.mult( gradVector, derivative );
+
+			typename CoefficientsImageType::PixelType* buff[Dimension];
+			for ( size_t i = 0; i<Dimension; i++) {
+				this->m_DerivativeCoefficients[i]->FillBuffer( 0.0 );
+				buff[i] = this->m_DerivativeCoefficients[i]->GetBufferPointer();
+			}
+			size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
+
+			typename WeightsMatrix::row row;
+			for( size_t r = 0; r<nPix; r++ ){
+				row = derivative.get_row( r );
+				for( size_t c = 0; c<row.size(); c++ ) {
+					*( buff[row[c].first] + r ) = row[c].second;
+				}
+			}
 		}
 		catch ( itk::ExceptionObject & err ) {
 			this->m_StopCondition = COSTFUNCTION_ERROR;
@@ -194,8 +215,6 @@ void SpectralOptimizer<TFunctional>::Resume() {
 
 		/* Advance one step along the gradient.
 		 * This will modify the gradient and update the transform. */
-		this->m_DerivativeCoefficients = this->m_Functional->GetDerivative();
-
 		this->Iterate();
 
 		/* Update the deformation field */
@@ -205,6 +224,9 @@ void SpectralOptimizer<TFunctional>::Resume() {
 		this->UpdateField();
 		this->m_CurrentValue = this->ComputeIterationChange();
 		this->SetUpdate();
+
+		this->m_Transform->Interpolate();
+		this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetOffGridValueMatrix() );
 
 
 		/* TODO Store best value and position */
@@ -536,6 +558,14 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 		this->m_NextCoefficients[i]->SetOrigin(    coeff[0]->GetOrigin() );
 		this->m_NextCoefficients[i]->Allocate();
 		this->m_NextCoefficients[i]->FillBuffer( 0.0 );
+
+		this->m_DerivativeCoefficients[i] = CoefficientsImageType::New();
+		this->m_DerivativeCoefficients[i]->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
+		this->m_DerivativeCoefficients[i]->SetSpacing(   coeff[0]->GetSpacing() );
+		this->m_DerivativeCoefficients[i]->SetDirection( coeff[0]->GetDirection() );
+		this->m_DerivativeCoefficients[i]->SetOrigin(    coeff[0]->GetOrigin() );
+		this->m_DerivativeCoefficients[i]->Allocate();
+		this->m_DerivativeCoefficients[i]->FillBuffer( 0.0 );
 	}
 
 	this->m_LastField = FieldType::New();

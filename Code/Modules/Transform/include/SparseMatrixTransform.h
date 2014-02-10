@@ -166,7 +166,7 @@ public:
 	// Setters & Getters -----------------------------------------
 	// Physical positions
 	inline void SetOffGridPos  ( size_t id, const PointType pi );
-	inline void AddOffGridPos  ( const PointType pi );
+	inline size_t AddOffGridPos  ( const PointType pi );
 
 	// Values off-grid (displacement vector of a node)
 	inline bool       SetOffGridValue( const size_t id, VectorType pi );
@@ -179,17 +179,10 @@ public:
 	// Coefficients of the interpolating kernels
 	inline VectorType GetCoefficient ( const size_t id );
 
-	// Derivative of coefficients
-	//inline VectorType GetCoeffDerivative ( const size_t id );
-
-	// Sparse matrix of kernel weights
-	//inline VectorType GetOffGridWeight ( const size_t id );
-	//inline VectorType GetOnGridWeight  ( const size_t id );
-
-	//inline JacobianType GetJacobian    ( const size_t id );
-    const WeightsMatrix GetPhi() const { return this->m_Phi; }
-    const WeightsMatrix GetS() const { return this->m_S; }
-
+	virtual WeightsMatrix  GetPhi ();
+	//itkGetConstMacro( Phi, WeightsMatrix );
+	itkGetConstMacro( S, WeightsMatrix );
+	itkGetConstMacro( OffGridValueMatrix, WeightsMatrix );
 
     void SetControlPointsSize( size_t s ) { this->m_ControlPointsSize.Fill( s ); }
 
