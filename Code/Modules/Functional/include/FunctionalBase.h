@@ -35,8 +35,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef LEVELSETSBASE_H_
-#define LEVELSETSBASE_H_
+#ifndef FUNCTIONALBASE_H_
+#define FUNCTIONALBASE_H_
 
 #include <itkObject.h>
 #include <itkNumericTraits.h>
@@ -415,10 +415,13 @@ private:
 	double ComputePointArea( const PointIdentifier &iId, ContourType *mesh );
 
 }; // end FunctionalBase Class
+
+itkEventMacro(WarningEvent, itk::AnyEvent);
+
 } // end namespace rstk
 
 #ifndef ITK_MANUAL_INSTANTIATION
 #include "FunctionalBase.hxx"
 #endif
 
-#endif /* LEVELSETSBASE_H_ */
+#endif /* FUNCTIONALBASE_H_ */

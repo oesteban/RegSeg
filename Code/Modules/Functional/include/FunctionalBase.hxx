@@ -35,8 +35,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef LEVELSETSBASE_HXX_
-#define LEVELSETSBASE_HXX_
+#ifndef FUNCTIONALBASE_HXX_
+#define FUNCTIONALBASE_HXX_
 
 #include "FunctionalBase.h"
 
@@ -205,8 +205,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			if ( contid != outer_contid ) {
 				ci_prime = c_it.Value();
 				normals->GetPointData( pid, &ni );           // Normal ni in point c'_i
-				//wi = this->ComputePointArea( pid, normals );  // Area of c'_i
-				wi = 1.0;
+				wi = this->ComputePointArea( pid, normals );  // Area of c'_i
+				//wi = 1.0;
 				gi =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
 				totalArea+=wi;
 				if ( fabs(gi) < MIN_GRADIENT ) {
@@ -301,6 +301,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	ContinuousIndex point_idx;
 	size_t changed = 0;
 	size_t gpid = 0;
+	std::vector< size_t > invalid;
 
 	this->m_Transform->Interpolate();
 
@@ -313,6 +314,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		VectorType disp, disp2;
 		size_t pid;
 
+
 		// For all the points in the mesh
 		while ( p_it != p_end ) {
 			ci = p_it.Value();
@@ -323,7 +325,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			if( norm > 1.0e-8 ) {
 				ci_prime = ci + disp; // Add displacement vector to the point
 				if( ! this->CheckExtent(ci_prime,point_idx) ) {
-					itkWarningMacro( << "ci'=[" << ci_prime << "] was outside image extents.");
+					invalid.push_back( gpid );
+					this->InvokeEvent( WarningEvent() );
 				}
 				curPoints->SetElement( pid, ci_prime );
 				changed++;
@@ -332,10 +335,15 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			gpid++;
 		}
 
+
 		ShapeCopyPointer copyShape = ShapeCopyType::New();
 		copyShape->SetInput( this->m_CurrentContours[contid] );
 		copyShape->Update();
 		this->m_Gradients[contid] = copyShape->GetOutput();
+	}
+
+	if ( invalid.size() > 0 ) {
+		itkWarningMacro(<< "a total of " << invalid.size() << " mesh nodes were to be moved off the image domain." );
 	}
 
 	this->m_RegionsUpdated = (changed==0);
@@ -815,4 +823,4 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 }
 
-#endif /* LEVELSETSBASE_HXX_ */
+#endif /* FUNCTIONALBASE_HXX_ */
