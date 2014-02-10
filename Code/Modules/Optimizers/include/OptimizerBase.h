@@ -1,13 +1,13 @@
 // --------------------------------------------------------------------------------------
-// File:          SpectralOptimizer.h
-// Date:          Jul 31, 2013
+// File:          OptimizerBase.h
+// Date:          Feb 10, 2014
 // Author:        code@oscaresteban.es (Oscar Esteban)
 // Version:       1.0 beta
 // License:       GPLv3 - 29 June 2007
 // Short Summary:
 // --------------------------------------------------------------------------------------
 //
-// Copyright (c) 2013, code@oscaresteban.es (Oscar Esteban)
+// Copyright (c) 2014, code@oscaresteban.es (Oscar Esteban)
 // with Signal Processing Lab 5, EPFL (LTS5-EPFL)
 // and Biomedical Image Technology, UPM (BIT-UPM)
 // All rights reserved.
@@ -40,8 +40,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef SPECTRALOPTIMIZER_H_
-#define SPECTRALOPTIMIZER_H_
+#ifndef OPTIMIZERBASE_H_
+#define OPTIMIZERBASE_H_
+
 
 #include <boost/program_options.hpp>
 
@@ -49,19 +50,12 @@
 
 #include <itkWindowConvergenceMonitoringFunction.h>
 #include <vector>
-#include <itkForwardFFTImageFilter.h>
-#include <itkInverseFFTImageFilter.h>
-#include <itkRealToHalfHermitianForwardFFTImageFilter.h>
-#include <itkHalfHermitianToRealInverseFFTImageFilter.h>
 
 #include <itkImageIteratorWithIndex.h>
 #include <itkImageAlgorithm.h>
-#include <itkMultiplyImageFilter.h>
-#include <itkAddImageFilter.h>
 
 #include "rstkMacro.h"
 #include "ConfigurableObject.h"
-#include "BSplineSparseMatrixTransform.h"
 
 using namespace itk;
 namespace bpo = boost::program_options;
@@ -70,7 +64,7 @@ namespace bpo = boost::program_options;
 namespace rstk
 {
 /**
- * \class SpectralOptimizer
+ * \class OptimizerBase
  *  \brief Gradient descent optimizer.
  *
  * GradientDescentOptimizer implements a simple gradient descent optimizer.
@@ -81,13 +75,13 @@ namespace rstk
  */
 
 template< typename TFunctional >
-class SpectralOptimizer:
+class OptimizerBase:
 		public ObjectToObjectOptimizerBase,
 		public ConfigurableObject
 {
 public:
 	/** Standard class typedefs and macros */
-	typedef SpectralOptimizer           Self;
+	typedef OptimizerBase           Self;
 	typedef ObjectToObjectOptimizerBase                Superclass;
 	typedef itk::SmartPointer<Self>                    Pointer;
 	typedef itk::SmartPointer< const Self >            ConstPointer;
@@ -95,7 +89,7 @@ public:
 	typedef typename SettingsClass::SettingsMap        SettingsMap;
 	typedef typename SettingsClass::SettingsDesc       SettingsDesc;
 
-	itkTypeMacro( SpectralOptimizer, ObjectToObjectOptimizerBase ); // Run-time type information (and related methods)
+	itkTypeMacro( OptimizerBase, ObjectToObjectOptimizerBase ); // Run-time type information (and related methods)
 
 	/** Metric type over which this class is templated */
 	typedef TFunctional                                             FunctionalType;
@@ -140,56 +134,12 @@ public:
 	typedef typename TransformType::FieldConstPointer               FieldConstPointer;
 	typedef typename TransformType::SizeType                        ControlPointsGridSizeType;
 
-	typedef itk::MultiplyImageFilter<CoefficientsImageType, CoefficientsImageType, CoefficientsImageType> MultiplyFilterType;
-	typedef itk::AddImageFilter<CoefficientsImageType, CoefficientsImageType, CoefficientsImageType>      AddFilterType;
-
-	typedef BSplineSparseMatrixTransform
-			                      < PointValueType, Dimension, 3u > SplineTransformType;
-	typedef typename SplineTransformType::Pointer                   SplineTransformPointer;
-
-	typedef itk::RealToHalfHermitianForwardFFTImageFilter
-			                          <CoefficientsImageType>       FFTType;
-	typedef typename FFTType::Pointer                               FFTPointer;
-	typedef typename FFTType::OutputImageType                       FTDomainType;
-	typedef typename FTDomainType::Pointer                          FTDomainPointer;
-	typedef typename FTDomainType::PixelType                        ComplexType;
-
-	/** Internal computation value type */
-	typedef typename ComplexType::value_type                        InternalComputationValueType;
-	typedef itk::Vector< InternalComputationValueType, Dimension >  InternalVectorType;
-	typedef itk::Image< InternalVectorType, Dimension >             InternalVectorFieldType;
-	typedef typename InternalVectorFieldType::Pointer               InternalVectorFieldPointer;
-	typedef itk::ContinuousIndex< InternalComputationValueType, Dimension>
-																	ContinuousIndexType;
-
-	typedef itk::HalfHermitianToRealInverseFFTImageFilter
-			        <FTDomainType, CoefficientsImageType>           IFFTType;
-	typedef typename IFFTType::Pointer                              IFFTPointer;
-
-
-	typedef itk::Image< InternalComputationValueType, Dimension >   RealPartType;
-	typedef itk::Vector< ComplexType, Dimension >                   ComplexFieldValue;
-	typedef itk::Image< ComplexFieldValue, Dimension >              ComplexFieldType;
-	typedef typename ComplexFieldType::Pointer                      ComplexFieldPointer;
-
-
 	/** Type for the convergence checker */
 	typedef itk::Function::WindowConvergenceMonitoringFunction<MeasureType>	         ConvergenceMonitoringType;
-
-
 
 	/** Accessors for Functional */
 	itkGetObjectMacro( Functional, FunctionalType );
 	itkSetObjectMacro( Functional, FunctionalType );
-
-	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
-	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
-
-	itkSetMacro(Coefficients, CoefficientsImageArray);
-	itkGetConstMacro(Coefficients, CoefficientsImageArray);
-
-	itkSetMacro(DerivativeCoefficients, CoefficientsImageArray);
-	itkGetConstMacro(DerivativeCoefficients, CoefficientsImageArray);
 
 	/** Minimum convergence value for convergence checking.
 	 *  The convergence checker calculates convergence value by fitting to
@@ -226,28 +176,6 @@ public:
 	 *  parameters, which can be large when working with high-dimensional
 	 *  transforms such as DisplacementFieldTransform.
 	 */
-//	itkSetMacro(ReturnBestParametersAndValue, bool);
-//	itkGetConstReferenceMacro(ReturnBestParametersAndValue, bool);
-//	itkBooleanMacro(ReturnBestParametersAndValue);
-
-	itkSetMacro( Alpha, InternalVectorType );
-	itkGetConstMacro( Alpha, InternalVectorType );
-
-	itkSetMacro( Beta, InternalVectorType );
-	itkGetConstMacro( Beta, InternalVectorType );
-
-	itkSetMacro( StepSize, InternalComputationValueType );
-	itkGetConstMacro( StepSize, InternalComputationValueType );
-
-	void SetAlpha(const InternalComputationValueType v ) {
-		this->m_Alpha.Fill(v);
-		this->Modified();
-	}
-
-	void SetBeta(const InternalComputationValueType v ) {
-		this->m_Beta.Fill(v);
-		this->Modified();
-	}
 
 	/** Get stop condition enum */
 	itkGetConstReferenceMacro(StopCondition, StopConditionType);
@@ -255,15 +183,23 @@ public:
 	/** Set the number of iterations. */
 	itkSetMacro(NumberOfIterations, SizeValueType);
 
-	itkSetMacro( GridSize, ControlPointsGridSizeType );
-
-	void SetGridSize( double val ) { this->m_GridSize.Fill(val); }
-
 	/** Get the number of iterations. */
 	itkGetConstReferenceMacro(NumberOfIterations, SizeValueType);
 
 	/** Get the current iteration number. */
 	itkGetConstMacro(CurrentIteration, SizeValueType);
+
+	itkGetConstMacro( CurrentValue, MeasureType );
+
+	itkSetMacro( DescriptorRecomputationFreq, SizeValueType );
+	itkGetConstMacro( DescriptorRecomputationFreq, SizeValueType );
+
+	itkSetMacro( UseDescriptorRecomputation, bool );
+	itkGetConstMacro( UseDescriptorRecomputation, bool );
+
+
+	itkSetMacro( StepSize, InternalComputationValueType );
+	itkGetConstMacro( StepSize, InternalComputationValueType );
 
 	/** Start and run the optimization */
 	void Start();
@@ -275,24 +211,11 @@ public:
 
 	void Resume();
 
-
-	MeasureType ComputeIterationChange();
-	MeasureType GetCurrentRegularizationEnergy();
-	MeasureType GetCurrentEnergy();
-
-	itkGetConstMacro( CurrentValue, MeasureType );
-
-
-	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
-
-	itkSetMacro( DescriptorRecomputationFreq, SizeValueType );
-	itkGetConstMacro( DescriptorRecomputationFreq, SizeValueType );
-
-	itkSetMacro( UseDescriptorRecomputation, bool );
-	itkGetConstMacro( UseDescriptorRecomputation, bool );
-
+	virtual MeasureType GetCurrentRegularizationEnergy() = 0;
+	virtual MeasureType GetCurrentEnergy() = 0;
 
 	static void AddOptions( SettingsDesc& opts );
+	virtual void ParseSettings();
 protected:
 	/** Manual learning rate to apply. It is overridden by
 	 * automatic learning rate estimation if enabled. See main documentation.
@@ -319,17 +242,16 @@ protected:
 	/** The convergence checker. */
 	typename ConvergenceMonitoringType::Pointer m_ConvergenceMonitoring;
 
-	SpectralOptimizer();
-	~SpectralOptimizer() {}
 
+	OptimizerBase();
+	~OptimizerBase() {}
 	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 
-	void SpectralUpdate( CoefficientsImageArray parameters, const CoefficientsImageArray lambda, CoefficientsImageArray nextParameters, bool changeDirection = false );
-
-	virtual void InitializeAuxiliarParameters( void ) = 0;
-	virtual void SetUpdate() = 0;
-	virtual void Iterate(void) = 0;
-	virtual void ParseSettings();
+	virtual void InitializeParameters() = 0;
+	virtual void InitializeAuxiliarParameters() = 0;
+	virtual void ComputeDerivative() = 0;
+	virtual void Iterate() = 0;
+	virtual void PostIteration() = 0;
 
 	/* Common variables for optimization control and reporting */
 	bool                          m_Stop;
@@ -337,55 +259,30 @@ protected:
 	StopConditionDescriptionType  m_StopConditionDescription;
 	SizeValueType                 m_CurrentIteration;
 	SizeValueType                 m_NumberOfIterations;
-	ControlPointsGridSizeType     m_GridSize;
-	bool                          m_DenominatorCached;
 	SizeValueType                 m_DescriptorRecomputationFreq;
 	bool                          m_UseDescriptorRecomputation;
 
-	/** Particular parameter definitions from our method */
-	InternalComputationValueType m_StepSize; // Step-size is tau in the formulations
-	InternalVectorType m_Alpha;
-	InternalVectorType m_Beta;
+	InternalComputationValueType  m_StepSize;
 
 	/* Energy tracking */
 	MeasureType m_CurrentValue;
-	MeasureType m_RegularizationEnergy;
-	MeasureType m_CurrentTotalEnergy;
-	bool m_RegularizationEnergyUpdated;
-
-
-//	/** Store the best value and related parameters */
-//	MeasureType                  m_CurrentBestValue;
-//	ParametersType               m_BestParameters;
-//
-//	/** Flag to control returning of best value and parameters. */
-//	bool m_ReturnBestParametersAndValue;
-
 
 	TransformPointer             m_Transform;
 	FunctionalPointer            m_Functional;
-	CoefficientsImageArray       m_Coefficients;
-	CoefficientsImageArray       m_NextCoefficients;
-	CoefficientsImageArray       m_DerivativeCoefficients;
-	CoefficientsImageArray       m_Denominator;
-	FieldPointer                 m_LastField;
-	FieldPointer                 m_CurrentDisplacementField;
+
 private:
-	SpectralOptimizer( const Self & ); // purposely not implemented
+	OptimizerBase( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
 
-	void ApplyRegularizationTerm( ComplexFieldType* reference );
-	void ApplyRegularizationComponent( size_t d, FTDomainType *reference );
-	void InitializeParameters( void );
-	void InitializeDenominator( itk::ImageBase<Dimension> *reference );
-	void UpdateField();
 }; // End of Class
 
 } // End of namespace rstk
 
 #ifndef ITK_MANUAL_INSTANTIATION
-#include "SpectralOptimizer.hxx"
+#include "OptimizerBase.hxx"
 #endif
 
 
-#endif /* SPECTRALOPTIMIZER_H_ */
+
+
+#endif /* OPTIMIZERBASE_H_ */
