@@ -235,12 +235,12 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->m_CurrentLogger->SetOptimizer( m_Optimizers[level] );
 	this->m_CurrentLogger->SetLevel( level );
 	//this->m_CurrentLogger->SetTrackEnergyOn();
-//#ifndef NDEBUG
-//	this->m_ImageLogger = IterationWriterUpdate::New();
-//	this->m_ImageLogger->SetOptimizer( m_Optimizers[level] );
-//	this->m_ImageLogger->SetPrefix( m_OutputPrefix );
-//	this->m_ImageLogger->SetLevel( level );
-//#endif
+#ifndef NDEBUG
+	this->m_ImageLogger = IterationWriterUpdate::New();
+	this->m_ImageLogger->SetOptimizer( m_Optimizers[level] );
+	this->m_ImageLogger->SetPrefix( m_OutputPrefix );
+	this->m_ImageLogger->SetLevel( level );
+#endif
 
 }
 

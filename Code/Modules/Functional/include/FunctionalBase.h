@@ -240,6 +240,7 @@ public:
 		size_t sid;         // shape id
 
 		//GradientSample(): grad(0), cid(0), gid(0) {}
+		GradientSample( PointValueType g, VectorType n, size_t i ): grad(g), w(1.0), normal(n), cid(0),gid(i),sid(0) {}
 		GradientSample( PointValueType g, PointValueType weight, VectorType n, size_t i, size_t j, size_t k ): grad(g), w(weight), normal(n), cid(i), gid(j), sid(k) {}
 		GradientSample( const GradientSample &s ): grad(s.grad), w(s.w), normal(s.normal), cid(s.cid), gid(s.gid), sid(s.sid) {}
 
@@ -248,30 +249,29 @@ public:
 			return GradientSample( grad+g.grad, cid, gid );
 		}
 
-		GradientSample operator<(const GradientSample& g) const {
+		bool operator<(const GradientSample& g) const {
 			return grad < g.grad;
 		}
 
-		GradientSample operator>(const GradientSample& g) const {
+		bool operator>(const GradientSample& g) const {
 			return grad > g.grad;
 		}
+	};
 
-
-		struct by_grad {
-			bool operator()( GradientSample const &a, GradientSample const &b ) {
-				return a.grad < b.grad;
-			}
-		};
-		struct by_gid {
-			bool operator()( GradientSample const &a, GradientSample const &b ) {
-				return a.gid < b.gid;
-			}
-		};
-		struct by_cid {
-			bool operator()( GradientSample const &a, GradientSample const &b ) {
-				return a.cid < b.cid;
-			}
-		};
+//	struct by_grad {
+//		bool operator()( GradientSample const &a, GradientSample const &b ) {
+//			return a.grad < b.grad;
+//		}
+//	};
+	struct by_gid {
+		bool operator()( GradientSample const &a, GradientSample const &b ) {
+			return a.gid < b.gid;
+		}
+	};
+	struct by_cid {
+		bool operator()( GradientSample const &a, GradientSample const &b ) {
+			return a.cid < b.cid;
+		}
 	};
 
 

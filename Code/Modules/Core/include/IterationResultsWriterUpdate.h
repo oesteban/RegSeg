@@ -59,27 +59,35 @@ public:
     		CoefficientsImageArray coeff = this->m_Optimizer->GetCoefficients();
     		CoefficientsImageArray speed = this->m_Optimizer->GetDerivativeCoefficients();
 
-    		for ( size_t i = 0; i< coeff.Size(); i++) {
-				typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
-				ss.str("");
-				ss << prefix << "coeff_speed_" << std::setfill('0')  << "lev" << this->m_Level << "_it" << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
-				p->SetFileName( ss.str().c_str() );
-				p->SetInput( speed[i] );
-				p->Update();
+    		typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
 
-				ss.str("");
-				ss << prefix << "coeff_value_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
-				p->SetFileName( ss.str().c_str() );
-				p->SetInput( coeff[i] );
-				p->Update();
+    		for ( size_t i = 0; i< coeff.Size(); i++) {
+    			if ( speed[i].IsNotNull() ) {
+					ss.str("");
+					ss << prefix << "coeff_speed_" << std::setfill('0')  << "lev" << this->m_Level << "_it" << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
+					p->SetFileName( ss.str().c_str() );
+					p->SetInput( speed[i] );
+					p->Update();
+    			}
+
+    			if ( coeff[i].IsNotNull() ) {
+					ss.str("");
+					ss << prefix << "coeff_value_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
+					p->SetFileName( ss.str().c_str() );
+					p->SetInput( coeff[i] );
+					p->Update();
+    			}
     		}
 
-     		typename ComponentsWriter::Pointer f = ComponentsWriter::New();
-    		ss.str("");
-    		ss << prefix << "field_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration();
-    		f->SetFileName( ss.str().c_str() );
-    		f->SetInput( this->m_Optimizer->GetCurrentDisplacementField() );
-    		f->Update();
+    		typename FieldType::ConstPointer field = this->m_Optimizer->GetCurrentDisplacementField();
+    		if ( field.IsNotNull() ) {
+				typename ComponentsWriter::Pointer f = ComponentsWriter::New();
+				ss.str("");
+				ss << prefix << "field_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration();
+				f->SetFileName( ss.str().c_str() );
+				f->SetInput( field );
+				f->Update();
+    		}
 
        		size_t nContours =this->m_Optimizer->GetFunctional()->GetCurrentContours().size();
 

@@ -92,16 +92,108 @@ template< typename TFunctional >
 void SegmentationOptimizer<TFunctional>::ComputeDerivative() {
 	// Multiply phi and copy reshaped on this->m_Derivative
 	this->m_Gradient = this->m_Functional->ComputeDerivative();
+
+	if ( this->m_Displacement.rows() == 0 || this->m_Displacement.cols() == 0) {
+		this->m_Displacement = WeightsMatrix( this->m_Gradient.rows(), this->m_Gradient.cols() );
+	}
 }
 
 template< typename TFunctional >
 void SegmentationOptimizer<TFunctional>::Iterate() {
-	this->m_Functional->SetCurrentDisplacements( this->m_Gradient );
+	SampleType sample;
+	size_t nrows = this->m_Gradient.rows();
+	PointValueType g;
+	VectorType ci;
+	PointValueType gradSum = 0.0;
+
+	for ( size_t i = 0; i < nrows; i++ ) {
+		g = 0.0;
+		ci.Fill( 0.0 );
+
+		if( !this->m_Gradient.empty_row(i) ) {
+			for( size_t d = 0; d < Dimension; d++) {
+				ci[d] = this->m_Gradient( i, d );
+			}
+			g = ci.GetNorm();
+			gradSum+=g;
+		}
+
+		sample.push_back( GradientSample( g, ci, i ) );
+	}
+
+	std::sort(sample.begin(), sample.end());
+	size_t sSize = sample.size();
+	size_t q1 = floor( (sSize-1)* 0.1);
+	size_t q2 = round( (sSize-1)*0.50 );
+	size_t q3 = ceil ( (sSize-1)* (1.0 - 0.1 ) );
+
+#ifndef NDEBUG
+	std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
+#endif
+
+	VectorType vi;
+	PointValueType old_grad;
+	vnl_random rnd = vnl_random();
+	for( size_t i = 0; i<q1; i++ ){
+		old_grad = sample[i].grad;
+		ci.Fill(0.0);
+		vi.Fill(0.0);
+		if (old_grad>0.0) {
+			ci = (sample[i].normal) / old_grad;
+			g = sample[rnd.lrand32(q1,q2)].grad;
+			sample[i].grad = g;
+			vi = ci*g;
+			sample[i].normal = vi;
+		}
+
+		for( size_t j = 0; j< Dimension; j++ ) {
+			this->m_Gradient.put( sample[i].gid, j, vi[j] );
+		}
+	}
+
+	for( size_t i = q3; i<sample.size(); i++ ){
+		old_grad = sample[i].grad;
+		ci.Fill(0.0);
+		vi.Fill(0.0);
+		if (old_grad>0.0) {
+			ci = (sample[i].normal) / old_grad;
+			g = sample[rnd.lrand32(q2,q3-1)].grad;
+			sample[i].grad = g;
+			vi = ci*g;
+			sample[i].normal = vi;
+		}
+
+		for( size_t j = 0; j< Dimension; j++ ) {
+			this->m_Gradient.put( sample[i].gid, j, vi[j] );
+		}
+	}
+
+#ifndef NDEBUG
+	std::sort(sample.begin(), sample.end() );
+	std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
+#endif
+
 }
 
 template< typename TFunctional >
 void SegmentationOptimizer<TFunctional>::PostIteration() {
+	PointValueType g;
+	VectorType ci;
+	PointValueType gradSum = 0.0;
+	size_t nrows = this->m_Gradient.rows();
+	for ( size_t i = 0; i < nrows; i++ ) {
+		if( !this->m_Gradient.empty_row(i) ) {
+			ci.Fill(0.0);
+			for( size_t d = 0; d < Dimension; d++) {
+				ci[d] = this->m_Gradient( i, d );
+				this->m_Displacement(i,d) += ci[d];
+			}
+			g = ci.GetNorm();
+			gradSum+=g;
+		}
+	}
 
+	this->m_Functional->SetCurrentDisplacements( this->m_Displacement );
 }
 
 

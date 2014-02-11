@@ -121,13 +121,15 @@ public:
 	typedef typename Superclass::SizeValueType                      SizeValueType;
 
 	/** Functional definitions */
-	typedef typename Superclass::Pointer                            FunctionalPointer;
+	typedef typename FunctionalType::SampleType                     SampleType;
+	typedef typename FunctionalType::GradientSample                 GradientSample;
+	typedef typename Superclass::FunctionalPointer                  FunctionalPointer;
 	typedef typename Superclass::MeasureType                        MeasureType;
 	typedef typename Superclass::PointType                          PointType;
 	typedef typename Superclass::VectorType                         VectorType;
 	typedef typename Superclass::PointValueType                     PointValueType;
 	typedef typename Superclass::TransformType                      TransformType;
-	typedef typename Superclass::Pointer                            TransformPointer;
+	typedef typename Superclass::TransformPointer                   TransformPointer;
 	typedef typename Superclass::CoefficientsImageType              CoefficientsImageType;
 	typedef typename Superclass::CoefficientsImageArray             CoefficientsImageArray;
 	typedef typename Superclass::ParametersType                     ParametersType;
@@ -157,6 +159,7 @@ private:
 	void operator=( const Self & ); // purposely not implemented
 
 	WeightsMatrix m_Gradient;
+	WeightsMatrix m_Displacement;
 }; // End of Class
 
 } // End of namespace rstk
