@@ -159,13 +159,6 @@ public:
 	typedef itk::Image< ComplexFieldValue, Dimension >              ComplexFieldType;
 	typedef typename ComplexFieldType::Pointer                      ComplexFieldPointer;
 
-
-	itkSetMacro(Coefficients, CoefficientsImageArray);
-	itkGetConstMacro(Coefficients, CoefficientsImageArray);
-
-	itkSetMacro(DerivativeCoefficients, CoefficientsImageArray);
-	itkGetConstMacro(DerivativeCoefficients, CoefficientsImageArray);
-
 	itkSetMacro( Alpha, InternalVectorType );
 	itkGetConstMacro( Alpha, InternalVectorType );
 
@@ -188,9 +181,6 @@ public:
 	MeasureType ComputeIterationChange();
 	MeasureType GetCurrentRegularizationEnergy();
 	MeasureType GetCurrentEnergy();
-
-
-	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
 
 	itkSetMacro( DescriptorRecomputationFreq, SizeValueType );
 	itkGetConstMacro( DescriptorRecomputationFreq, SizeValueType );
@@ -234,12 +224,9 @@ protected:
 	MeasureType m_CurrentTotalEnergy;
 	bool m_RegularizationEnergyUpdated;
 
-	CoefficientsImageArray       m_Coefficients;
 	CoefficientsImageArray       m_NextCoefficients;
-	CoefficientsImageArray       m_DerivativeCoefficients;
 	CoefficientsImageArray       m_Denominator;
 	FieldPointer                 m_LastField;
-	FieldPointer                 m_CurrentDisplacementField;
 private:
 	SpectralOptimizer( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented

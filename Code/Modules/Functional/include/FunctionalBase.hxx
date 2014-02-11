@@ -201,37 +201,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		}
 
 		PointValueType gradient;
-//		std::sort(sample.begin(), sample.end(), by_grad() );
-//		size_t sSize = sample.size();
-//		size_t q1 = floor( (sSize-1)* this->m_DecileThreshold );
-//		size_t q2 = round( (sSize-1)*0.50 );
-//		size_t q3 = ceil ( (sSize-1)* (1.0 - this->m_DecileThreshold ) );
-//
-//#ifndef NDEBUG
-//		std::cout << "Grad[" << contid << "] - Area=" << totalArea << std::endl;
-//		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
-//#endif
-//
-//		vnl_random rnd = vnl_random();
-//		for( size_t i = 0; i<q1; i++ ){
-//			gradient = sample[rnd.lrand32(q1,q2)].grad;
-//			sample[i].grad = gradient;
-//		}
-//
-//		for( size_t i = q3; i<sample.size(); i++ ){
-//			gradient = sample[rnd.lrand32(q2,q3-1)].grad;
-//			sample[i].grad = gradient;
-//		}
-//
-//#ifndef NDEBUG
-//		std::sort(sample.begin(), sample.end(), by_grad() );
-//		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
-//#endif
+
 		PointValueType scaler = ( this->m_Scale /totalArea);
-		//if( maxq >= MAX_GRADIENT ) {
-		// PointValueType maxq = ( fabs(quart1)>fabs(quart2) )?fabs(quart1):fabs(quart2);
-		//	scaler*= (MAX_GRADIENT / maxq);
-		//}
 
 		ShapeGradientPointer gradmesh = this->m_Gradients[contid];
 		gradSum = 0.0;

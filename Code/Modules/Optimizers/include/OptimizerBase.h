@@ -202,6 +202,14 @@ public:
 	itkSetMacro( StepSize, InternalComputationValueType );
 	itkGetConstMacro( StepSize, InternalComputationValueType );
 
+	itkSetMacro(Coefficients, CoefficientsImageArray);
+	itkGetConstMacro(Coefficients, CoefficientsImageArray);
+
+	itkSetMacro(DerivativeCoefficients, CoefficientsImageArray);
+	itkGetConstMacro(DerivativeCoefficients, CoefficientsImageArray);
+
+	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
+
 	/** Start and run the optimization */
 	void Start();
 
@@ -271,6 +279,9 @@ protected:
 	TransformPointer             m_Transform;
 	FunctionalPointer            m_Functional;
 
+	CoefficientsImageArray       m_Coefficients;
+	CoefficientsImageArray       m_DerivativeCoefficients;
+	FieldPointer                 m_CurrentDisplacementField;
 private:
 	OptimizerBase( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
