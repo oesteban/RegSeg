@@ -167,6 +167,11 @@ public:
 	// Physical positions
 	inline void SetOffGridPos  ( size_t id, const PointType pi );
 	inline size_t AddOffGridPos  ( const PointType pi );
+	void SetOffGridPositions( const PointsList points ) {
+		this->m_OffGridPos = points;
+		this->m_NumberOfSamples = points.size();
+		this->Modified();
+	}
 
 	// Values off-grid (displacement vector of a node)
 	inline bool       SetOffGridValue( const size_t id, VectorType pi );
@@ -221,26 +226,35 @@ public:
 
 	/** These vector transforms are not implemented for this transform */
     using Superclass::TransformVector;
-    OutputVectorType TransformVector(const InputVectorType &) const {                                                                                             \
-      itkExceptionMacro(<< "TransformVector(const InputVectorType &) is not implemented for KernelTransform");
+    OutputVectorType TransformVector(const InputVectorType &) const {
+    	itkExceptionMacro(<< "TransformVector(const InputVectorType &) is not implemented for KernelTransform");
+    	OutputVectorType zero;
+    	zero.Fill(0.0);
+    	return zero;
     }
 
-    OutputVnlVectorType TransformVector(const InputVnlVectorType &) const {                                                                                             \
-      itkExceptionMacro(<< "TransformVector(const InputVnlVectorType &) is not implemented for KernelTransform");
+    OutputVnlVectorType TransformVector(const InputVnlVectorType &) const {
+    	itkExceptionMacro(<< "TransformVector(const InputVnlVectorType &) is not implemented for KernelTransform");
+    	OutputVnlVectorType zero(Dimension);
+    	zero.fill(0.0);
+    	return zero;
     }
 
     /**  Method to transform a CovariantVector. */
     using Superclass::TransformCovariantVector;
-    OutputCovariantVectorType TransformCovariantVector(const InputCovariantVectorType &) const {                                                                                                            \
-      itkExceptionMacro( << "TransformCovariantVector(const InputCovariantVectorType &) is not implemented for KernelTransform");
+    OutputCovariantVectorType TransformCovariantVector(const InputCovariantVectorType &) const {
+    	itkExceptionMacro( << "TransformCovariantVector(const InputCovariantVectorType &) is not implemented for KernelTransform");
+    	OutputCovariantVectorType zero;
+    	zero.Fill(0.0);
+    	return zero;
     }
     /** Compute the Jacobian Matrix of the transformation at one point */
-    void ComputeJacobianWithRespectToParameters( const InputPointType  & p, JacobianType & jacobian) const {                                                                                 \
-      itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented for " << this->GetNameOfClass() );
+    void ComputeJacobianWithRespectToParameters( const InputPointType  & p, JacobianType & jacobian) const {
+    	itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented for " << this->GetNameOfClass() );
     }
 
-    void ComputeJacobianWithRespectToPosition(const InputPointType &, JacobianType &) const {                                                                                 \
-      itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented for " << this->GetNameOfClass() );
+    void ComputeJacobianWithRespectToPosition(const InputPointType &, JacobianType &) const {
+    	itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented for " << this->GetNameOfClass() );
     }
 
 protected:

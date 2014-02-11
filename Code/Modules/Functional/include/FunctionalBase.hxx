@@ -83,28 +83,23 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
-	if ( this->m_Transform.IsNull() ) {
-		itkExceptionMacro( << "Initialization failed: no transform is set");
-	}
-
 	this->ParseSettings();
 
-
-	if( this->m_ApplySmoothing ) {
-		CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
-		this->m_NumberOfNodes = coeff[0]->GetLargestPossibleRegion().GetNumberOfPixels();
-
-		if( this->m_Sigma == 0.0 ) {
-			for( size_t i = 0; i<Dimension; i++)
-				this->m_Sigma[i] = 0.40 * coeff[0]->GetSpacing()[i];
-		}
-
-		SmoothingFilterPointer s = SmoothingFilterType::New();
-		s->SetInput( this->m_ReferenceImage );
-		s->SetSigmaArray( this->m_Sigma );
-		s->Update();
-		this->SetReferenceImage( s->GetOutput() );
-	}
+//	if( this->m_ApplySmoothing ) {
+//		CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
+//		this->m_NumberOfNodes = coeff[0]->GetLargestPossibleRegion().GetNumberOfPixels();
+//
+//		if( this->m_Sigma == 0.0 ) {
+//			for( size_t i = 0; i<Dimension; i++)
+//				this->m_Sigma[i] = 0.40 * coeff[0]->GetSpacing()[i];
+//		}
+//
+//		SmoothingFilterPointer s = SmoothingFilterType::New();
+//		s->SetInput( this->m_ReferenceImage );
+//		s->SetSigmaArray( this->m_Sigma );
+//		s->Update();
+//		this->SetReferenceImage( s->GetOutput() );
+//	}
 
 	this->InitializeCurrentContours();
 
@@ -145,7 +140,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-typename FunctionalBase<TReferenceImageType, TCoordRepType>::WeightsMatrix
+typename FunctionalBase<TReferenceImageType, TCoordRepType>::SparseMatrix
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeDerivative() {
 	size_t cpid = 0;
@@ -155,7 +150,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	this->UpdateContour();
 
-	WeightsMatrix gradVector( this->m_NumberOfPoints, Dimension );
+	SparseMatrix gradVector( this->m_NumberOfPoints, Dimension );
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
 		sample.clear();
@@ -558,20 +553,21 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	VectorType zerov;
 	zerov.Fill(0.0);
 
-	size_t identifier;
+	size_t identifier = 0;
 	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
 		PointsIterator c_it  = this->m_CurrentContours[contid]->GetPoints()->Begin();
 		PointsIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
 		PointType ci;
 		while( c_it != c_end ) {
 			ci = c_it.Value();
-			identifier = this->m_Transform->AddOffGridPos( ci );
+			this->m_NodesPosition.push_back( ci );
 			this->m_CurrentDisplacements->SetElement(identifier, zerov );
 			++c_it;
+			identifier++;
 		}
 	}
 
-	if ( this->m_NumberOfPoints != this->m_Transform->GetNumberOfSamples() ) {
+	if ( this->m_NumberOfPoints != this->m_NodesPosition.size() ) {
 		itkExceptionMacro( << "an error occurred initializing mesh points: NumberOfPoints in functional and" \
 				" NumberOfSamples in transform do not match" );
 
