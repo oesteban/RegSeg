@@ -102,6 +102,9 @@ template< typename TFunctional >
 void OptimizerBase<TFunctional>::Start() {
 	itkDebugMacro("OptimizerBase::Start()");
 
+	if ( this->m_Settings.size() > 0 ) {
+		this->ParseSettings();
+	}
 
 	/* Settings validation */
 	if ( this->m_Functional.IsNull() ) {
@@ -164,7 +167,7 @@ void OptimizerBase<TFunctional>::Resume() {
 	while( ! this->m_Stop )	{
 		if( this->m_UseDescriptorRecomputation && ( this->m_CurrentIteration%this->m_DescriptorRecomputationFreq == 0 ) ) {
 			this->m_Functional->UpdateDescriptors();
-			this->InvokeEvent( itk::ModifiedEvent() );
+			this->InvokeEvent( FunctionalModifiedEvent() );
 		}
 
 

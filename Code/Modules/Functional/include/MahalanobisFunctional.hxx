@@ -219,10 +219,11 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 					this->m_Parameters[roi].invcov(i,j) = R.inverse()[i][j];
 		}
 	} else {
+		this->m_Parameters[roi].cov = cov;
 		this->m_Parameters[roi].invcov(0,0)=1.0 / cov(0,0);
 		det = fabs( this->m_Parameters[roi].cov(0,0) );
 	}
-	this->m_Parameters[roi].bias = Components * log( 2*vnl_math::pi ) + log( det );
+	this->m_Parameters[roi].bias = log( det );
 	this->m_Parameters[roi].initialized = true;
 }
 

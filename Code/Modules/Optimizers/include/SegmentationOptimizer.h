@@ -149,6 +149,8 @@ protected:
 	~SegmentationOptimizer(){}
 	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 
+	void ParseSettings() { Superclass::ParseSettings(); }
+
 	void InitializeParameters();
 	void InitializeAuxiliarParameters() {};
 	void ComputeDerivative();

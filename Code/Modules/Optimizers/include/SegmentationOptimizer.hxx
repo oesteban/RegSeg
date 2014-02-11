@@ -125,7 +125,7 @@ void SegmentationOptimizer<TFunctional>::Iterate() {
 	size_t sSize = sample.size();
 	size_t q1 = floor( (sSize-1)* 0.1);
 	size_t q2 = round( (sSize-1)*0.50 );
-	size_t q3 = ceil ( (sSize-1)* (1.0 - 0.1 ) );
+	size_t q3 = ceil ( (sSize-1)* (1.0 - 0.25 ) );
 
 #ifndef NDEBUG
 	std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
@@ -134,23 +134,6 @@ void SegmentationOptimizer<TFunctional>::Iterate() {
 	VectorType vi;
 	PointValueType old_grad;
 	vnl_random rnd = vnl_random();
-	for( size_t i = 0; i<q1; i++ ){
-		old_grad = sample[i].grad;
-		ci.Fill(0.0);
-		vi.Fill(0.0);
-		if (old_grad>0.0) {
-			ci = (sample[i].normal) / old_grad;
-			g = sample[rnd.lrand32(q1,q2)].grad;
-			sample[i].grad = g;
-			vi = ci*g;
-			sample[i].normal = vi;
-		}
-
-		for( size_t j = 0; j< Dimension; j++ ) {
-			this->m_Gradient.put( sample[i].gid, j, vi[j] );
-		}
-	}
-
 	for( size_t i = q3; i<sample.size(); i++ ){
 		old_grad = sample[i].grad;
 		ci.Fill(0.0);

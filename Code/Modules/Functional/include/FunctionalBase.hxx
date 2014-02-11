@@ -821,7 +821,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		return 0.0;
 	}
 	ReferencePixelType value = this->m_Interp->Evaluate( point );
-	MeasureType grad = this->GetEnergyOfSample( value, outer_roi ) - this->GetEnergyOfSample( value, inner_roi );
+	MeasureType grad = this->GetEnergyOfSample( value, inner_roi ) - this->GetEnergyOfSample( value, outer_roi );
 	grad = ( fabs(grad) > 1.0e-8 )?grad:0.0;
 	return grad;
 }

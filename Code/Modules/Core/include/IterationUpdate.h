@@ -10,6 +10,7 @@
 
 #include <itkCommandIterationUpdate.h>
 #include <itkWeakPointer.h>
+#include "OptimizerBase.h"
 
 
 namespace rstk {

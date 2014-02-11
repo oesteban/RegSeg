@@ -224,11 +224,11 @@ public:
 	virtual MeasureType GetCurrentEnergy() = 0;
 
 	static void AddOptions( SettingsDesc& opts );
-	virtual void ParseSettings();
 protected:
 	OptimizerBase();
 	~OptimizerBase() {}
 	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
+	virtual void ParseSettings();
 
 	virtual void InitializeParameters() = 0;
 	virtual void InitializeAuxiliarParameters() = 0;
@@ -287,6 +287,9 @@ private:
 	void operator=( const Self & ); // purposely not implemented
 
 }; // End of Class
+
+
+itkEventMacro(FunctionalModifiedEvent, itk::AnyEvent);
 
 } // End of namespace rstk
 
