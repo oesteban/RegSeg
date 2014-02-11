@@ -126,9 +126,9 @@ public:
 	typedef typename OptimizerType::SizeValueType             NumberValueType;
 	typedef std::vector< NumberValueType >                    NumberValueList;
 
-	typedef MeanFunctional< ReferenceImageType >       DefaultFunctionalType;
+	//typedef MeanFunctional< ReferenceImageType >       DefaultFunctionalType;
 	typedef SegmentationOptimizer< FunctionalType >    DefaultOptimizerType;
-	//typedef MahalanobisFunctional< ReferenceImageType >       DefaultFunctionalType;
+	typedef MahalanobisFunctional< ReferenceImageType >       DefaultFunctionalType;
 	//typedef SpectralGradientDescentOptimizer
 	//		                            < FunctionalType >    DefaultOptimizerType;
 

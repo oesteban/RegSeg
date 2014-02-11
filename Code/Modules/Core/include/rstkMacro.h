@@ -45,6 +45,7 @@
 
 #include <itkMacro.h>
 
+
 /*
     if ( this->m_##name.size() <= id ) { \
 		itkExceptionMacro( << "vector " #name "is not initialized, or position " << id << " not valid."); \

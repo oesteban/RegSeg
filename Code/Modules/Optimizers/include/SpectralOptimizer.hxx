@@ -384,10 +384,6 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 		itkExceptionMacro( << "functional must be set." );
 	}
 
-	if ( this->m_Settings.size() > 0 ) {
-		this->ParseSettings();
-	}
-
 	this->m_Transform->SetControlPointsSize( this->m_GridSize );
 	this->m_Transform->SetPhysicalDomainInformation( this->m_Functional->GetReferenceImage() );
 	this->m_Transform->SetOffGridPositions( this->m_Functional->GetNodesPosition() );
