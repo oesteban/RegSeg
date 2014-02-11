@@ -108,6 +108,8 @@ void OptimizerBase<TFunctional>::Start() {
 		itkExceptionMacro("Energy functional must be set");
 	}
 
+	this->m_Functional->Initialize();
+
 	/* Check & initialize parameter fields */
 	this->InitializeParameters();
 	this->InitializeAuxiliarParameters();
@@ -126,7 +128,7 @@ void OptimizerBase<TFunctional>::Start() {
 				&& (this->m_DescriptorRecomputationFreq < this->m_NumberOfIterations);
 	}
 
-	this->m_Functional->Initialize();
+
 	this->InvokeEvent( itk::StartEvent() );
 
 	this->m_CurrentIteration++;

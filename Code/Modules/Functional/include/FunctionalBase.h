@@ -186,11 +186,6 @@ public:
 		< FieldType >                                        ModulateFilterType;
 	typedef typename ModulateFilterType::Pointer             ModulateFilterPointer;
 
-
-	//typedef itk::DisplacementFieldTransform<TCoordRepType, Dimension>
-	//														 DisplacementTransformType;
-	//typedef typename DisplacementTransformType::Pointer      DisplacementTransformPointer;
-
 	typedef unsigned char                                    ROIPixelType;
 	typedef itk::Image< ROIPixelType, Dimension >            ROIType;
 	typedef typename ROIType::Pointer                        ROIPointer;
@@ -216,31 +211,10 @@ public:
 			       < ContourSpatialObject, ROIType >         SpatialObjectToImageFilterType;
 	typedef typename SpatialObjectToImageFilterType::Pointer SpatialObjectToImageFilterPointer;
 
-	typedef SparseMatrixTransform<TCoordRepType, Dimension > TransformType;
-	typedef typename TransformType::Pointer                  TransformPointer;
-	typedef typename TransformType::SizeType                 TransformControlPointsSizeType;
-	typedef typename TransformType::CoefficientsImageType    CoefficientsImageType;
-	typedef typename TransformType::CoeffImagePointer        CoefficientsImagePointer;
-	typedef typename TransformType::CoefficientsImageArray   CoefficientsImageArray;
-	typedef typename TransformType::ParametersType           ParametersType;
-	typedef typename TransformType::WeightsMatrix            WeightsMatrix;
-
 	typedef DownsampleAveragingFilter
 			                 <ROIType, ProbabilityMapType >  ResampleROIFilterType;
 	typedef typename ResampleROIFilterType::Pointer          ResampleROIFilterPointer;
 	typedef std::vector< ResampleROIFilterPointer >          ResampleROIFilterList;
-
-
-	//typedef typename itk::WarpMeshFilter
-	//		< ContourType,
-	//		  ContourType,
-	//		  FieldType>                                     WarpContourType;
-
-	typedef WarpQEMeshFilter< ContourType, ContourType,
-			                         TransformType > WarpContourFilterType;
-	typedef typename WarpContourFilterType::Pointer          WarpContourPointer;
-	typedef std::vector< WarpContourPointer >                WarpContourFilterList;
-
 
 	typedef typename std::vector< ROIPixelType >             ContourOuterRegions;
 	typedef typename std::vector< ContourOuterRegions >      ContourOuterRegionsList;
@@ -308,17 +282,12 @@ public:
 
 	itkGetMacro( CurrentContours, ContourList);
 	itkGetMacro( Gradients, ShapeGradientList );
+	itkGetMacro( NodesPosition, PointsVector );
 
 	virtual void SetCurrentDisplacements( const SparseMatrix& vals );
 
-	//itkSetMacro(Derivative, CoefficientsImageArray);
-	//itkGetConstMacro(Derivative, CoefficientsImageArray);
-
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	virtual void SetReferenceImage (const ReferenceImageType * _arg);
-
-	itkSetObjectMacro(Transform, TransformType);
-	itkGetObjectMacro(Transform, TransformType);
 
 	itkGetMacro( ApplySmoothing, bool );
 	itkGetMacro( Sigma, SigmaArrayType );
@@ -341,7 +310,7 @@ public:
 	}
 
 	MeasureType GetValue();
-	WeightsMatrix ComputeDerivative();
+	SparseMatrix ComputeDerivative();
 	virtual void Initialize();
 	virtual void UpdateDescriptors() = 0;
 	virtual std::string PrintFormattedDescriptors() = 0;
@@ -396,8 +365,8 @@ protected:
 	ShapeGradientList m_Gradients;
 	ConstContourList m_Priors;
 	NormalFilterList m_NormalFilter;
-	WarpContourPointer m_ContourUpdater;
-	TransformPointer m_Transform;
+	//WarpContourPointer m_ContourUpdater;
+	//TransformPointer m_Transform;
 	DisplacementResamplerPointer m_EnergyResampler;
 	ROIList m_ROIs;
 	ROIList m_CurrentROIs;
@@ -410,11 +379,12 @@ protected:
 	ReferenceSpacingType m_ReferenceSpacing;
 	DirectionType m_Direction;
 	//VectorInterpolatorPointer m_LinearInterpolator;
-	WarpContourFilterList m_WarpContourFilter;
+	//WarpContourFilterList m_WarpContourFilter;
 
 
 	InterpolatorPointer m_Interp;
 	PointDataContainerPointer m_CurrentDisplacements;
+	PointsVector m_NodesPosition;
 
 private:
 	FunctionalBase(const Self &);  //purposely not implemented

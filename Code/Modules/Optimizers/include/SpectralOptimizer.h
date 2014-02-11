@@ -45,8 +45,6 @@
 
 #include <boost/program_options.hpp>
 
-#include <itkObjectToObjectOptimizerBase.h>
-
 #include <itkWindowConvergenceMonitoringFunction.h>
 #include <vector>
 #include <itkForwardFFTImageFilter.h>
@@ -59,8 +57,9 @@
 #include <itkMultiplyImageFilter.h>
 #include <itkAddImageFilter.h>
 
+
 #include "rstkMacro.h"
-#include "ConfigurableObject.h"
+#include "OptimizerBase.h"
 #include "BSplineSparseMatrixTransform.h"
 
 using namespace itk;
@@ -81,64 +80,52 @@ namespace rstk
  */
 
 template< typename TFunctional >
-class SpectralOptimizer:
-		public ObjectToObjectOptimizerBase,
-		public ConfigurableObject
+class SpectralOptimizer: public OptimizerBase< TFunctional >
 {
 public:
 	/** Standard class typedefs and macros */
-	typedef SpectralOptimizer           Self;
-	typedef ObjectToObjectOptimizerBase                Superclass;
+	typedef SpectralOptimizer                          Self;
+	typedef OptimizerBase< TFunctional >               Superclass;
 	typedef itk::SmartPointer<Self>                    Pointer;
 	typedef itk::SmartPointer< const Self >            ConstPointer;
-	typedef ConfigurableObject                         SettingsClass;
-	typedef typename SettingsClass::SettingsMap        SettingsMap;
-	typedef typename SettingsClass::SettingsDesc       SettingsDesc;
 
-	itkTypeMacro( SpectralOptimizer, ObjectToObjectOptimizerBase ); // Run-time type information (and related methods)
+	itkTypeMacro( SpectralOptimizer, OptimizerBase ); // Run-time type information (and related methods)
+
+	/* Configurable object typedefs */
+	typedef typename Superclass::SettingsClass         SettingsClass;
+	typedef typename Superclass::SettingsMap           SettingsMap;
+	typedef typename Superclass::SettingsDesc          SettingsDesc;
 
 	/** Metric type over which this class is templated */
-	typedef TFunctional                                             FunctionalType;
+	typedef TFunctional                                FunctionalType;
 	itkStaticConstMacro( Dimension, unsigned int, FunctionalType::Dimension );
 
 	/** Codes of stopping conditions. */
-	typedef enum {
-		MAXIMUM_NUMBER_OF_ITERATIONS,
-		COSTFUNCTION_ERROR,
-		UPDATE_PARAMETERS_ERROR,
-		STEP_TOO_SMALL,
-		QUASI_NEWTON_STEP_ERROR,
-		CONVERGENCE_CHECKER_PASSED,
-		OTHER_ERROR
-	} StopConditionType;
+	using Superclass::StopConditionType;
 
-	/** Stop condition return string type */
-	typedef std::string                                             StopConditionReturnStringType;
+	/** Inherited definitions */
+	typedef typename Superclass::StopConditionReturnStringType  StopConditionReturnStringType;
+	typedef typename Superclass::StopConditionDescriptionType   StopConditionDescriptionType;
+    typedef typename Superclass::SizeValueType                  SizeValueType;
+	typedef typename Superclass::ConvergenceMonitoringType	    ConvergenceMonitoringType;
 
-	/** Stop condition internal string type */
-	typedef std::ostringstream                                      StopConditionDescriptionType;
+	typedef typename Superclass::FunctionalPointer              FunctionalPointer;
+	typedef typename Superclass::MeasureType                    MeasureType;
+	typedef typename Superclass::PointType                      PointType;
+	typedef typename Superclass::VectorType                     VectorType;
+	typedef typename Superclass::PointValueType                 PointValueType;
 
-	typedef size_t                                                  SizeValueType;
-
-	/** Functional definitions */
-	typedef typename FunctionalType::Pointer                        FunctionalPointer;
-	typedef typename FunctionalType::MeasureType                    MeasureType;
-
-	typedef typename FunctionalType::PointType                      PointType;
-	typedef typename FunctionalType::VectorType                     VectorType;
-	typedef typename FunctionalType::PointValueType                 PointValueType;
-
-	typedef typename FunctionalType::TransformType                  TransformType;
-	typedef typename TransformType::Pointer                         TransformPointer;
-	typedef typename TransformType::CoefficientsImageType           CoefficientsImageType;
-	typedef typename TransformType::CoeffImagePointer               CoefficientsImagePointer;
-	typedef typename TransformType::CoefficientsImageArray          CoefficientsImageArray;
-	typedef typename TransformType::ParametersType                  ParametersType;
-	typedef typename TransformType::WeightsMatrix                   WeightsMatrix;
-	typedef typename TransformType::FieldType                       FieldType;
-	typedef typename TransformType::FieldPointer                    FieldPointer;
-	typedef typename TransformType::FieldConstPointer               FieldConstPointer;
-	typedef typename TransformType::SizeType                        ControlPointsGridSizeType;
+	typedef typename Superclass::TransformType                  TransformType;
+	typedef typename Superclass::TransformPointer               TransformPointer;
+	typedef typename Superclass::CoefficientsImageType          CoefficientsImageType;
+	typedef typename Superclass::CoefficientsImagePointer       CoefficientsImagePointer;
+	typedef typename Superclass::CoefficientsImageArray         CoefficientsImageArray;
+	typedef typename Superclass::ParametersType                 ParametersType;
+	typedef typename Superclass::WeightsMatrix                  WeightsMatrix;
+	typedef typename Superclass::FieldType                      FieldType;
+	typedef typename Superclass::FieldPointer                   FieldPointer;
+	typedef typename Superclass::FieldConstPointer              FieldConstPointer;
+	typedef typename Superclass::ControlPointsGridSizeType      ControlPointsGridSizeType;
 
 	typedef itk::MultiplyImageFilter<CoefficientsImageType, CoefficientsImageType, CoefficientsImageType> MultiplyFilterType;
 	typedef itk::AddImageFilter<CoefficientsImageType, CoefficientsImageType, CoefficientsImageType>      AddFilterType;
@@ -173,71 +160,17 @@ public:
 	typedef typename ComplexFieldType::Pointer                      ComplexFieldPointer;
 
 
-	/** Type for the convergence checker */
-	typedef itk::Function::WindowConvergenceMonitoringFunction<MeasureType>	         ConvergenceMonitoringType;
-
-
-
-	/** Accessors for Functional */
-	itkGetObjectMacro( Functional, FunctionalType );
-	itkSetObjectMacro( Functional, FunctionalType );
-
-	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
-	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
-
 	itkSetMacro(Coefficients, CoefficientsImageArray);
 	itkGetConstMacro(Coefficients, CoefficientsImageArray);
 
 	itkSetMacro(DerivativeCoefficients, CoefficientsImageArray);
 	itkGetConstMacro(DerivativeCoefficients, CoefficientsImageArray);
 
-	/** Minimum convergence value for convergence checking.
-	 *  The convergence checker calculates convergence value by fitting to
-	 *  a window of the Functional profile. When the convergence value reaches
-	 *  a small value, it would be treated as converged.
-	 *
-	 *  The default m_MinimumConvergenceValue is set to 1e-8 to pass all
-	 *  tests. It is suggested to use 1e-6 for less stringent convergence
-	 *  checking.
-	 */
-	itkSetMacro(MinimumConvergenceValue, InternalComputationValueType);
-
-	/** Window size for the convergence checker.
-	 *  The convergence checker calculates convergence value by fitting to
-	 *  a window of the Functional (metric value) profile.
-	 *
-	 *  The default m_ConvergenceWindowSize is set to 50 to pass all
-	 *  tests. It is suggested to use 10 for less stringent convergence
-	 *  checking.
-	 */
-	itkSetMacro(ConvergenceWindowSize, SizeValueType);
-
-	/** Get current convergence value */
-	itkGetConstReferenceMacro( ConvergenceValue, InternalComputationValueType );
-
-	/** Flag. Set to have the optimizer track and return the best
-	 *  best metric value and corresponding best parameters that were
-	 *  calculated during the optimization. This captures the best
-	 *  solution when the optimizer oversteps or osciallates near the end
-	 *  of an optimization.
-	 *  Results are stored in m_CurrentMetricValue and in the assigned metric's
-	 *  parameters, retrievable via optimizer->GetCurrentPosition().
-	 *  This option requires additional memory to store the best
-	 *  parameters, which can be large when working with high-dimensional
-	 *  transforms such as DisplacementFieldTransform.
-	 */
-//	itkSetMacro(ReturnBestParametersAndValue, bool);
-//	itkGetConstReferenceMacro(ReturnBestParametersAndValue, bool);
-//	itkBooleanMacro(ReturnBestParametersAndValue);
-
 	itkSetMacro( Alpha, InternalVectorType );
 	itkGetConstMacro( Alpha, InternalVectorType );
 
 	itkSetMacro( Beta, InternalVectorType );
 	itkGetConstMacro( Beta, InternalVectorType );
-
-	itkSetMacro( StepSize, InternalComputationValueType );
-	itkGetConstMacro( StepSize, InternalComputationValueType );
 
 	void SetAlpha(const InternalComputationValueType v ) {
 		this->m_Alpha.Fill(v);
@@ -249,38 +182,12 @@ public:
 		this->Modified();
 	}
 
-	/** Get stop condition enum */
-	itkGetConstReferenceMacro(StopCondition, StopConditionType);
-
-	/** Set the number of iterations. */
-	itkSetMacro(NumberOfIterations, SizeValueType);
-
 	itkSetMacro( GridSize, ControlPointsGridSizeType );
-
 	void SetGridSize( double val ) { this->m_GridSize.Fill(val); }
-
-	/** Get the number of iterations. */
-	itkGetConstReferenceMacro(NumberOfIterations, SizeValueType);
-
-	/** Get the current iteration number. */
-	itkGetConstMacro(CurrentIteration, SizeValueType);
-
-	/** Start and run the optimization */
-	void Start();
-
-	void Stop(void);
-
-	/** Get the reason for termination */
-	const StopConditionReturnStringType GetStopConditionDescription() const;
-
-	void Resume();
-
 
 	MeasureType ComputeIterationChange();
 	MeasureType GetCurrentRegularizationEnergy();
 	MeasureType GetCurrentEnergy();
-
-	itkGetConstMacro( CurrentValue, MeasureType );
 
 
 	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
@@ -291,79 +198,42 @@ public:
 	itkSetMacro( UseDescriptorRecomputation, bool );
 	itkGetConstMacro( UseDescriptorRecomputation, bool );
 
-
 	static void AddOptions( SettingsDesc& opts );
 protected:
-	/** Manual learning rate to apply. It is overridden by
-	 * automatic learning rate estimation if enabled. See main documentation.
-	 */
-	InternalComputationValueType  m_LearningRate;
-
-	/** Minimum convergence value for convergence checking.
-	 *  The convergence checker calculates convergence value by fitting to
-	 *  a window of the Functional profile. When the convergence value reaches
-	 *  a small value, such as 1e-8, it would be treated as converged.
-	 */
-	InternalComputationValueType m_MinimumConvergenceValue;
-
-	/** Window size for the convergence checker.
-	 *  The convergence checker calculates convergence value by fitting to
-	 *  a window of the Functional (metric value) profile.
-	 */
-	SizeValueType m_ConvergenceWindowSize;
-
-
-	/** Current convergence value. */
-	InternalComputationValueType m_ConvergenceValue;
-
-	/** The convergence checker. */
-	typename ConvergenceMonitoringType::Pointer m_ConvergenceMonitoring;
-
 	SpectralOptimizer();
 	~SpectralOptimizer() {}
-
 	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
 
-	void SpectralUpdate( CoefficientsImageArray parameters, const CoefficientsImageArray lambda, CoefficientsImageArray nextParameters, bool changeDirection = false );
+	/* Inherited from OptimizerBase */
+	virtual void ComputeDerivative();
+	virtual void Iterate() = 0;
+	virtual void PostIteration();
+	void InitializeParameters();
+	virtual void InitializeAuxiliarParameters() = 0;
 
-	virtual void InitializeAuxiliarParameters( void ) = 0;
+	/* SpectralOptimizer specific members */
+	void SpectralUpdate( CoefficientsImageArray parameters,
+			             const CoefficientsImageArray lambda,
+			             CoefficientsImageArray nextParameters,
+			             bool changeDirection = false );
+
 	virtual void SetUpdate() = 0;
-	virtual void Iterate(void) = 0;
+
 	virtual void ParseSettings();
 
 	/* Common variables for optimization control and reporting */
-	bool                          m_Stop;
-	StopConditionType             m_StopCondition;
-	StopConditionDescriptionType  m_StopConditionDescription;
-	SizeValueType                 m_CurrentIteration;
-	SizeValueType                 m_NumberOfIterations;
 	ControlPointsGridSizeType     m_GridSize;
 	bool                          m_DenominatorCached;
-	SizeValueType                 m_DescriptorRecomputationFreq;
-	bool                          m_UseDescriptorRecomputation;
 
 	/** Particular parameter definitions from our method */
-	InternalComputationValueType m_StepSize; // Step-size is tau in the formulations
 	InternalVectorType m_Alpha;
 	InternalVectorType m_Beta;
 
 	/* Energy tracking */
-	MeasureType m_CurrentValue;
 	MeasureType m_RegularizationEnergy;
 	MeasureType m_CurrentTotalEnergy;
 	bool m_RegularizationEnergyUpdated;
 
-
-//	/** Store the best value and related parameters */
-//	MeasureType                  m_CurrentBestValue;
-//	ParametersType               m_BestParameters;
-//
-//	/** Flag to control returning of best value and parameters. */
-//	bool m_ReturnBestParametersAndValue;
-
-
-	TransformPointer             m_Transform;
-	FunctionalPointer            m_Functional;
 	CoefficientsImageArray       m_Coefficients;
 	CoefficientsImageArray       m_NextCoefficients;
 	CoefficientsImageArray       m_DerivativeCoefficients;
@@ -376,7 +246,6 @@ private:
 
 	void ApplyRegularizationTerm( ComplexFieldType* reference );
 	void ApplyRegularizationComponent( size_t d, FTDomainType *reference );
-	void InitializeParameters( void );
 	void InitializeDenominator( itk::ImageBase<Dimension> *reference );
 	void UpdateField();
 }; // End of Class

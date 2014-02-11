@@ -117,12 +117,11 @@ public:
 	/** Functional definitions */
 	typedef typename FunctionalType::Pointer                        FunctionalPointer;
 	typedef typename FunctionalType::MeasureType                    MeasureType;
-
 	typedef typename FunctionalType::PointType                      PointType;
 	typedef typename FunctionalType::VectorType                     VectorType;
 	typedef typename FunctionalType::PointValueType                 PointValueType;
 
-	typedef typename FunctionalType::TransformType                  TransformType;
+	typedef SparseMatrixTransform<PointValueType, Dimension >       TransformType;
 	typedef typename TransformType::Pointer                         TransformPointer;
 	typedef typename TransformType::CoefficientsImageType           CoefficientsImageType;
 	typedef typename TransformType::CoeffImagePointer               CoefficientsImagePointer;
@@ -197,6 +196,8 @@ public:
 	itkSetMacro( UseDescriptorRecomputation, bool );
 	itkGetConstMacro( UseDescriptorRecomputation, bool );
 
+	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
+	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
 
 	itkSetMacro( StepSize, InternalComputationValueType );
 	itkGetConstMacro( StepSize, InternalComputationValueType );
@@ -217,6 +218,16 @@ public:
 	static void AddOptions( SettingsDesc& opts );
 	virtual void ParseSettings();
 protected:
+	OptimizerBase();
+	~OptimizerBase() {}
+	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
+
+	virtual void InitializeParameters() = 0;
+	virtual void InitializeAuxiliarParameters() = 0;
+	virtual void ComputeDerivative() = 0;
+	virtual void Iterate() = 0;
+	virtual void PostIteration() = 0;
+
 	/** Manual learning rate to apply. It is overridden by
 	 * automatic learning rate estimation if enabled. See main documentation.
 	 */
@@ -243,16 +254,6 @@ protected:
 	typename ConvergenceMonitoringType::Pointer m_ConvergenceMonitoring;
 
 
-	OptimizerBase();
-	~OptimizerBase() {}
-	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
-
-	virtual void InitializeParameters() = 0;
-	virtual void InitializeAuxiliarParameters() = 0;
-	virtual void ComputeDerivative() = 0;
-	virtual void Iterate() = 0;
-	virtual void PostIteration() = 0;
-
 	/* Common variables for optimization control and reporting */
 	bool                          m_Stop;
 	StopConditionType             m_StopCondition;
@@ -265,7 +266,7 @@ protected:
 	InternalComputationValueType  m_StepSize;
 
 	/* Energy tracking */
-	MeasureType m_CurrentValue;
+	MeasureType                  m_CurrentValue;
 
 	TransformPointer             m_Transform;
 	FunctionalPointer            m_Functional;

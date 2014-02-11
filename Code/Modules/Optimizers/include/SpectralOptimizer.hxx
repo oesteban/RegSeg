@@ -69,19 +69,8 @@ namespace rstk {
  */
 template< typename TFunctional >
 SpectralOptimizer<TFunctional>::SpectralOptimizer():
-m_LearningRate( 1.0 ),
-m_MinimumConvergenceValue( 1.0e-8 ),
-m_ConvergenceWindowSize( 50 ),
-m_ConvergenceValue( 0.0 ),
-m_Stop( false ),
-m_StopCondition(MAXIMUM_NUMBER_OF_ITERATIONS),
-m_CurrentIteration( 0 ),
-m_NumberOfIterations( 250 ),
+Superclass(),
 m_DenominatorCached( false ),
-m_DescriptorRecomputationFreq(0),
-m_UseDescriptorRecomputation(false),
-m_StepSize(10.0),
-m_CurrentValue(itk::NumericTraits<MeasureType>::infinity()),
 m_RegularizationEnergy( 0.0 ),
 m_CurrentTotalEnergy(itk::NumericTraits<MeasureType>::infinity()),
 m_RegularizationEnergyUpdated(true)
@@ -105,178 +94,43 @@ void SpectralOptimizer<TFunctional>
 	os << indent << "Stop condition description: " << this->m_StopConditionDescription.str() << std::endl;
 }
 
-
 template< typename TFunctional >
-void SpectralOptimizer<TFunctional>::Start() {
-	itkDebugMacro("SpectralOptimizer::Start()");
+void SpectralOptimizer<TFunctional>::ComputeDerivative() {
+	// Multiply phi and copy reshaped on this->m_Derivative
+	WeightsMatrix phi = this->m_Transform->GetPhi().transpose();
+	WeightsMatrix gradVector = this->m_Functional->ComputeDerivative();
+	WeightsMatrix derivative( phi.rows(), gradVector.cols() );
 
+	phi.mult( gradVector, derivative );
 
-	/* Settings validation */
-	if ( this->m_Functional.IsNull() ) {
-		itkExceptionMacro("Energy functional must be set");
+	typename CoefficientsImageType::PixelType* buff[Dimension];
+	for ( size_t i = 0; i<Dimension; i++) {
+		this->m_DerivativeCoefficients[i]->FillBuffer( 0.0 );
+		buff[i] = this->m_DerivativeCoefficients[i]->GetBufferPointer();
 	}
+	size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
 
-	/* Check & initialize parameter fields */
-	this->InitializeParameters();
-	this->InitializeAuxiliarParameters();
-
-	/* Initialize convergence checker */
-	this->m_ConvergenceMonitoring = ConvergenceMonitoringType::New();
-	this->m_ConvergenceMonitoring->SetWindowSize( this->m_ConvergenceWindowSize );
-
-//	if( this->m_ReturnBestParametersAndValue )	{
-//		this->m_BestParameters = this->GetCurrentPosition( );
-//		this->m_CurrentBestValue = NumericTraits< MeasureType >::max();
-//	}
-
-	if( this->m_UseDescriptorRecomputation ) {
-		this->m_UseDescriptorRecomputation = (this->m_DescriptorRecomputationFreq > 0)
-				&& (this->m_DescriptorRecomputationFreq < this->m_NumberOfIterations);
+	typename WeightsMatrix::row row;
+	for( size_t r = 0; r<nPix; r++ ){
+		row = derivative.get_row( r );
+		for( size_t c = 0; c<row.size(); c++ ) {
+			*( buff[row[c].first] + r ) = row[c].second;
+		}
 	}
-
-	this->m_Functional->Initialize();
-	this->InvokeEvent( itk::StartEvent() );
-
-	this->m_CurrentIteration++;
-	this->Resume();
 }
 
 template< typename TFunctional >
-const typename SpectralOptimizer<TFunctional>::StopConditionReturnStringType
-SpectralOptimizer<TFunctional>::
-GetStopConditionDescription() const {
-  return this->m_StopConditionDescription.str();
-}
+void SpectralOptimizer<TFunctional>::PostIteration() {
+	/* Update the deformation field */
+	this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
+	this->m_Transform->UpdateField();
 
-template< typename TFunctional >
-void SpectralOptimizer<TFunctional>::Stop() {
-	itkDebugMacro( "Stop called with a description - "
-	  << this->GetStopConditionDescription() );
-	this->m_Stop = true;
-	this->InvokeEvent( itk::EndEvent() );
+	this->UpdateField();
+	this->m_CurrentValue = this->ComputeIterationChange();
+	this->SetUpdate();
 
-//	if( this->m_ReturnBestParametersAndValue )	{
-//		this->GetMetric()->SetParameters( this->m_BestParameters );
-//		this->m_CurrentValue = this->m_CurrentBestValue;
-//	}
-}
-
-template< typename TFunctional >
-void SpectralOptimizer<TFunctional>::Resume() {
-	this->m_StopConditionDescription.str("");
-	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
-	this->m_Stop = false;
-
-	while( ! this->m_Stop )	{
-		if( this->m_UseDescriptorRecomputation && ( this->m_CurrentIteration%this->m_DescriptorRecomputationFreq == 0 ) ) {
-			this->m_Functional->UpdateDescriptors();
-			this->InvokeEvent( itk::ModifiedEvent() );
-		}
-
-
-		/* Compute functional value/derivative. */
-		try	{
-			// Multiply phi and copy reshaped on this->m_Derivative
-			WeightsMatrix phi = this->m_Transform->GetPhi().transpose();
-			WeightsMatrix gradVector = this->m_Functional->ComputeDerivative();
-			WeightsMatrix derivative( phi.rows(), gradVector.cols() );
-
-
-			phi.mult( gradVector, derivative );
-
-			typename CoefficientsImageType::PixelType* buff[Dimension];
-			for ( size_t i = 0; i<Dimension; i++) {
-				this->m_DerivativeCoefficients[i]->FillBuffer( 0.0 );
-				buff[i] = this->m_DerivativeCoefficients[i]->GetBufferPointer();
-			}
-			size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
-
-			typename WeightsMatrix::row row;
-			for( size_t r = 0; r<nPix; r++ ){
-				row = derivative.get_row( r );
-				for( size_t c = 0; c<row.size(); c++ ) {
-					*( buff[row[c].first] + r ) = row[c].second;
-				}
-			}
-		}
-		catch ( itk::ExceptionObject & err ) {
-			this->m_StopCondition = COSTFUNCTION_ERROR;
-			this->m_StopConditionDescription << "Functional error during optimization";
-			this->Stop();
-			throw err;  // Pass exception to caller
-		}
-
-		/* Check if optimization has been stopped externally.
-		 * (Presumably this could happen from a multi-threaded client app?) */
-		if ( this->m_Stop ) {
-			this->m_StopConditionDescription << "Stop() called externally";
-			break;
-		}
-
-		/* Advance one step along the gradient.
-		 * This will modify the gradient and update the transform. */
-		this->Iterate();
-
-		/* Update the deformation field */
-		this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
-		this->m_Transform->UpdateField();
-
-		this->UpdateField();
-		this->m_CurrentValue = this->ComputeIterationChange();
-		this->SetUpdate();
-
-		this->m_Transform->Interpolate();
-		this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetOffGridValueMatrix() );
-
-
-		/* TODO Store best value and position */
-		//if ( this->m_ReturnBestParametersAndValue && this->m_CurrentValue < this->m_CurrentBestValue )
-		//{
-		//	this->m_CurrentBestValue = this->m_CurrentValue;
-		//	this->m_BestParameters = this->GetCurrentPosition( );
-		//}
-
-
-		/*
-		 * Check the convergence by WindowConvergenceMonitoringFunction.
-		 */
-
-		/*
-		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentValue );
-		try {
-			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
-			if (this->m_ConvergenceValue <= this->m_MinimumConvergenceValue) {
-				this->m_StopConditionDescription << "Convergence checker passed at iteration " << this->m_CurrentIteration << ".";
-				this->m_StopCondition = Superclass::CONVERGENCE_CHECKER_PASSED;
-				this->Stop();
-				break;
-			}
-		}
-		catch(std::exception & e) {
-			std::cerr << "GetConvergenceValue() failed with exception: " << e.what() << std::endl;
-		}
-
-
-		if( this->m_CurrentValue < this->m_ConvergenceValue ) {
-			this->m_StopConditionDescription << "Parameters field changed below the minimum threshold.";
-			this->m_StopCondition = Superclass::STEP_TOO_SMALL;
-			this->Stop();
-			break;
-		}
-		*/
-
-		/* Update and check iteration count */
-		if ( this->m_CurrentIteration >= this->m_NumberOfIterations ) {
-			this->m_StopConditionDescription << "Maximum number of iterations (" << this->m_NumberOfIterations << ") exceeded.";
-			this->m_StopCondition = MAXIMUM_NUMBER_OF_ITERATIONS;
-			this->Stop();
-			break;
-		}
-
-
-		this->InvokeEvent( itk::IterationEvent() );
-		this->m_CurrentIteration++;
-	} //while (!m_Stop)
+	this->m_Transform->Interpolate();
+	this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetOffGridValueMatrix() );
 }
 
 
@@ -381,7 +235,7 @@ void SpectralOptimizer<TFunctional>::SpectralUpdate(
 			ifft->Update();
 		}
 		catch ( itk::ExceptionObject & err ) {
-			this->m_StopCondition = UPDATE_PARAMETERS_ERROR;
+			this->m_StopCondition = Superclass::UPDATE_PARAMETERS_ERROR;
 			this->m_StopConditionDescription << "Optimizer error: spectral update failed";
 			this->Stop();
 			// Pass exception to caller
@@ -536,7 +390,7 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 
 	this->m_Transform->SetControlPointsSize( this->m_GridSize );
 	this->m_Transform->SetPhysicalDomainInformation( this->m_Functional->GetReferenceImage() );
-	this->m_Functional->SetTransform( this->m_Transform );
+	this->m_Transform->SetOffGridPositions( this->m_Functional->GetNodesPosition() );
 
 	CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
 
@@ -596,19 +450,20 @@ SpectralOptimizer<TFunctional>::GetCurrentEnergy() {
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>
 ::AddOptions( SettingsDesc& opts ) {
+	Superclass::AddOptions( opts );
 	opts.add_options()
 			("alpha,a", bpo::value< float > (), "alpha value in regularization")
 			("beta,b", bpo::value< float > (), "beta value in regularization")
-			("step-size,s", bpo::value< float > (), "step-size value in optimization")
-			("iterations,i", bpo::value< size_t > (), "number of iterations")
-			("grid-size,g", bpo::value< size_t > (), "grid size")
-			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)");
+			//("step-size,s", bpo::value< float > (), "step-size value in optimization")
+			//("iterations,i", bpo::value< size_t > (), "number of iterations")
+			("grid-size,g", bpo::value< size_t > (), "grid size");
+			//("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)");
 }
 
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>
 ::ParseSettings() {
-	bpo::notify( this->m_Settings );
+	Superclass::ParseSettings();
 
 	if( this->m_Settings.count( "alpha" ) ) {
 		bpo::variable_value v = this->m_Settings["alpha"];
@@ -619,26 +474,26 @@ void SpectralOptimizer<TFunctional>
 		bpo::variable_value v = this->m_Settings["beta"];
 		this->SetBeta( v.as< float >() );
 	}
-	if( this->m_Settings.count( "step-size" ) ){
-		bpo::variable_value v = this->m_Settings["step-size"];
-		this->SetStepSize( v.as< float >() );
-	}
-
-	if( this->m_Settings.count( "iterations" ) ){
-		bpo::variable_value v = this->m_Settings["iterations"];
-		this->SetNumberOfIterations( v.as< size_t >() );
-	}
+	//if( this->m_Settings.count( "step-size" ) ){
+	//	bpo::variable_value v = this->m_Settings["step-size"];
+	//	this->SetStepSize( v.as< float >() );
+	//}
+    //
+	//if( this->m_Settings.count( "iterations" ) ){
+	//	bpo::variable_value v = this->m_Settings["iterations"];
+	//	this->SetNumberOfIterations( v.as< size_t >() );
+	//}
 
 	if( this->m_Settings.count( "grid-size" ) ){
 		bpo::variable_value v = this->m_Settings["grid-size"];
 		this->SetGridSize( v.as< size_t >() );
 	}
-	if (this->m_Settings.count("update-descriptors")) {
-		bpo::variable_value v = this->m_Settings["update-descriptors"];
-		size_t updDesc =  v.as<size_t>();
-		this->SetUseDescriptorRecomputation(true);
-		this->SetDescriptorRecomputationFreq( updDesc );
-	}
+	//if (this->m_Settings.count("update-descriptors")) {
+	//	bpo::variable_value v = this->m_Settings["update-descriptors"];
+	//	size_t updDesc =  v.as<size_t>();
+	//	this->SetUseDescriptorRecomputation(true);
+	//	this->SetDescriptorRecomputationFreq( updDesc );
+	//}
 
 }
 
