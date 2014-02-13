@@ -31,6 +31,7 @@ public:
 	typedef typename OptimizerType::CoefficientsImageType       CoefficientsImageType;
 	typedef typename OptimizerType::CoefficientsImageArray      CoefficientsImageArray;
 	typedef typename OptimizerType::FunctionalType      		FunctionalType;
+	typedef typename FunctionalType::ReferenceImageType         ReferenceImageType;
 	typedef typename FunctionalType::ROIType                    ROIType;
 	typedef typename FunctionalType::ProbabilityMapType 		ProbabilityMapType;
 	typedef typename FunctionalType::ShapeGradientType          ShapeGradientType;
@@ -120,6 +121,13 @@ public:
 			w->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentRegions() );
 			w->Update();
 
+			typedef itk::ImageFileWriter< ReferenceImageType > WriteRef;
+			typename WriteRef::Pointer w2 = WriteRef::New();
+			ss.str("");
+			ss << prefix << "fixed_reoriented_" << this->m_Level << ".nii.gz";
+			w2->SetFileName( ss.str().c_str() );
+			w2->SetInput( this->m_Optimizer->GetFunctional()->GetReferenceImage() );
+			w2->Update();
     	}
     }
 

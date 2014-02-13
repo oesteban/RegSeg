@@ -477,37 +477,22 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		this->m_Gradients.push_back( copyShape->GetOutput() );
 	}
 
-	//typename ReferenceImageType::IndexType endIdx;
-	//for ( size_t d = 0; d<Dimension; d++)
-	//	endIdx[d] = this->m_ReferenceSize[d] -1;
-	//this->m_ReferenceImage->TransformIndexToPhysicalPoint( endIdx, this->m_End );
-	//DirectionType idDir; idDir.SetIdentity();
-    //
-	//if ( this->m_Direction != idDir ) {
-	//	typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >   ReorientFilterType;
-	//	typename ReorientFilterType::Pointer reorient = ReorientFilterType::New();
-	//	reorient->UseImageDirectionOn();
-	//	reorient->SetDesiredCoordinateDirection(idDir);
-	//	reorient->SetInput( this->m_ReferenceImage );
-	//	reorient->Update();
-	//	ReferenceImagePointer reoriented = reorient->GetOutput();
-	//	ReferencePointType newOrigin = reoriented->GetOrigin();
-    //
-	//	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-	//		ContourPointer c = this->m_CurrentContours[contid];
-	//		PointsIterator c_it  = c->GetPoints()->Begin();
-	//		PointsIterator c_end = c->GetPoints()->End();
-	//		ContourPointType ci, ci_new;
-	//		size_t pid;
-	//		while( c_it != c_end ) {
-	//			pid = c_it.Index();
-	//			ci = c_it.Value();
-	//			ci_new = (this->m_Direction* ( ci - this->m_Origin.GetVectorFromOrigin() )) + newOrigin.GetVectorFromOrigin();
-	//			c->SetPoint( pid, ci_new );
-	//			++c_it;
-	//		}
+
+	//for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+	//	ContourPointer c = this->m_CurrentContours[contid];
+	//	PointsIterator c_it  = c->GetPoints()->Begin();
+	//	PointsIterator c_end = c->GetPoints()->End();
+	//	ContourPointType ci, ci_new;
+	//	size_t pid;
+	//	while( c_it != c_end ) {
+	//		pid = c_it.Index();
+	//		ci = c_it.Value();
+	//		ci_new = (this->m_Direction* ( ci - this->m_Origin.GetVectorFromOrigin() )) + this->m_Origin.GetVectorFromOrigin();
+	//		c->SetPoint( pid, ci_new );
+	//		++c_it;
 	//	}
 	//}
+
 
 	// Fill in interpolator points
 	this->m_CurrentDisplacements = PointDataContainer::New();
@@ -543,7 +528,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	ROIPixelType unassigned = itk::NumericTraits< ROIPixelType >::max();
 	this->m_CurrentRegions->FillBuffer(unassigned);
 	size_t nPix = this->m_CurrentRegions->GetLargestPossibleRegion().GetNumberOfPixels();
-
 	ROIPixelType* regionsBuffer = this->m_CurrentRegions->GetBufferPointer();
 
 	for (ROIPixelType idx = 0; idx < this->m_CurrentROIs.size(); idx++ ) {
@@ -780,7 +764,37 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	itkDebugMacro("setting ReferenceImage to " << _arg);
 
 	if ( this->m_ReferenceImage != _arg ) {
-		this->m_ReferenceImage = _arg;
+		this->m_OldDirection = _arg->GetDirection();
+		this->m_OldOrigin = _arg->GetOrigin();
+
+
+
+		//typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >  Orienter;
+		//typename Orienter::Pointer orient = Orienter::New();
+		//orient->UseImageDirectionOn();
+		//orient->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
+		//orient->SetInput(_arg);
+		//orient->Update();
+		//ReferenceImagePointer ref = orient->GetOutput();
+
+		ReferenceImagePointer ref = ReferenceImageType::New();
+		ref->CopyInformation( _arg );
+		ref->SetRegions( _arg->GetLargestPossibleRegion() );
+		ref->Allocate();
+
+		itk::ImageAlgorithm::Copy< ReferenceImageType, ReferenceImageType >(
+				_arg,
+				ref,
+				_arg->GetLargestPossibleRegion(),
+				ref->GetLargestPossibleRegion()
+		);
+
+
+		DirectionType dir; dir.SetIdentity();
+		ref->SetDirection( dir );
+		ref->SetOrigin( PointType(0.0) + this->m_OldDirection*(this->m_OldOrigin).GetVectorFromOrigin() );
+
+		this->m_ReferenceImage = ref;
 
 		// Cache image properties
 		this->m_FirstPixelCenter  = this->m_ReferenceImage->GetOrigin();
