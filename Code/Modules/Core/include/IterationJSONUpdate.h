@@ -54,6 +54,17 @@ public:
 				itnode["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
     		}
     		itnode["descriptors"] = this->ParseTree( this->m_Optimizer->GetFunctional()->PrintFormattedDescriptors() );
+
+    		JSONValue size = Json::Value( Json::arrayValue );
+    		JSONValue spacing = Json::Value( Json::arrayValue );
+
+    		for( size_t i = 0; i < this->m_Optimizer->GetGridSize().GetSizeDimension(); i++) {
+    			size.append(  static_cast<Json::UInt64>( this->m_Optimizer->GetGridSize()[i] ) );
+    			spacing.append(  static_cast<Json::UInt64>( this->m_Optimizer->GetGridSpacing()[i] ) );
+    		}
+
+    		itnode["transform"]["grid-size"] = size;
+    		itnode["transform"]["grid-spacing"] = spacing;
     	}
 
 		if( typeid( event ) == typeid( itk::IterationEvent ) ) {

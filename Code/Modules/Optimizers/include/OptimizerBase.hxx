@@ -70,7 +70,7 @@ namespace rstk {
  */
 template< typename TFunctional >
 OptimizerBase<TFunctional>::OptimizerBase():
-m_LearningRate( 1.0 ),
+m_LearningRate( 2.0 ),
 m_MinimumConvergenceValue( 1.0e-8 ),
 m_ConvergenceWindowSize( 50 ),
 m_ConvergenceValue( 0.0 ),
@@ -81,9 +81,11 @@ m_NumberOfIterations( 250 ),
 m_DescriptorRecomputationFreq(0),
 m_UseDescriptorRecomputation(false),
 m_StepSize(1.0),
+m_AutoStepSize(true),
 m_CurrentValue(itk::NumericTraits<MeasureType>::infinity())
 {
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
+	this->m_GridSize.Fill( 0 );
 }
 
 template< typename TFunctional >
@@ -245,6 +247,17 @@ void OptimizerBase<TFunctional>::Resume() {
 		this->InvokeEvent( itk::IterationEvent() );
 		this->m_CurrentIteration++;
 	} //while (!m_Stop)
+}
+
+
+template< typename TFunctional >
+void OptimizerBase<TFunctional>
+::SetStepSize (const InternalComputationValueType _arg) {
+    if ( this->m_StepSize != _arg ){
+    	this->m_AutoStepSize = false;
+    	this->m_StepSize = _arg;
+    	this->Modified();
+    }
 }
 
 template< typename TFunctional >

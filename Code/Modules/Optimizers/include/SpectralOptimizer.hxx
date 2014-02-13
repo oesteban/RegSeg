@@ -79,6 +79,7 @@ m_RegularizationEnergyUpdated(true)
 	this->m_Beta.Fill( 1.0e-1 );
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 5 );
+	this->m_GridSpacing.Fill( 0.0 );
 	SplineTransformPointer defaultTransform = SplineTransformType::New();
 	this->m_Transform = itkDynamicCastInDebugMode< TransformType* >( defaultTransform.GetPointer() );
 }
@@ -110,12 +111,27 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	}
 	size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
 
+	VectorType vi;
+	size_t dim;
+	VectorType maxSpeed;
+	maxSpeed.Fill(0.0);
+
 	typename WeightsMatrix::row row;
 	for( size_t r = 0; r<nPix; r++ ){
+		vi.Fill(0.0);
 		row = derivative.get_row( r );
 		for( size_t c = 0; c<row.size(); c++ ) {
-			*( buff[row[c].first] + r ) = row[c].second;
+			dim = row[c].first;
+			vi[dim] = row[c].second;
+			*( buff[dim] + r ) = row[c].second;
+
+			if( vi[dim] > maxSpeed[dim] )
+				maxSpeed[dim] = vi[dim];
 		}
+	}
+
+	if( this->m_AutoStepSize && this->m_CurrentIteration < 5 ) {
+		this->m_StepSize = (this->m_StepSize  + this->m_LearningRate * ( this->m_MaxDisplacement.GetNorm() / maxSpeed.GetNorm() ) )*0.5;
 	}
 }
 
@@ -341,6 +357,8 @@ SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 	InternalComputationValueType totalNorm = 0;
 	VectorType t0,t1;
 	InternalComputationValueType diff = 0.0;
+	bool isDiffeomorphic = true;
+
 	for (size_t pix = 0; pix < nPix; pix++ ) {
 		t0 = *(fBuffer+pix);
 		t1 = *(fnextBuffer+pix);
@@ -348,6 +366,19 @@ SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 		totalNorm += diff;
 
 		*(fBuffer+pix) = t1; // Copy current to last, once evaluated
+
+
+		if ( isDiffeomorphic ) {
+			for( size_t i = 0; i<Dimension; i++) {
+				if ( fabs(t1[i]) > this->m_MaxDisplacement[i] ) {
+					isDiffeomorphic = false;
+				}
+			}
+		}
+	}
+
+	if( !isDiffeomorphic ) {
+		itkWarningMacro( << "some update vectors are larger than the maximum displacement (" << this->m_MaxDisplacement << ").");
 	}
 
 
@@ -378,7 +409,6 @@ SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::InitializeParameters() {
-
 	// Check functional exists and hold a reference image
 	if ( this->m_Functional.IsNull() ) {
 		itkExceptionMacro( << "functional must be set." );
@@ -389,6 +419,12 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	this->m_Transform->SetOffGridPositions( this->m_Functional->GetNodesPosition() );
 
 	CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
+	this->m_GridSpacing = coeff[0]->GetSpacing();
+
+	for (size_t i = 0; i<Dimension; i++) {
+		this->m_MaxDisplacement[i] = 0.40 * this->m_GridSpacing[i];
+	}
+
 
 	VectorType zerov; zerov.Fill( 0.0 );
 	/* Initialize next parameters */
@@ -434,6 +470,7 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	this->m_CurrentDisplacementField->Allocate();
 	this->m_CurrentDisplacementField->FillBuffer( zerov );
 }
+
 
 template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
