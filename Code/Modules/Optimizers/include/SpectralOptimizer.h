@@ -212,7 +212,6 @@ protected:
 	virtual void ParseSettings();
 
 	/* Common variables for optimization control and reporting */
-	ControlPointsGridSizeType     m_GridSize;
 	bool                          m_DenominatorCached;
 
 	/** Particular parameter definitions from our method */

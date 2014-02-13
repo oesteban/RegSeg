@@ -152,7 +152,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	SparseMatrix gradVector( this->m_NumberOfPoints, Dimension );
 
-	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++) {
+	for( size_t in_cid = 0; in_cid < this->m_NumberOfContours; in_cid++) {
 		sample.clear();
 		double wi = 0.0;
 		PointValueType totalArea = 0.0;
@@ -160,7 +160,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		// Compute mesh of normals
 		normalsFilter = NormalFilterType::New();
-		normalsFilter->SetInput( this->m_CurrentContours[contid] );
+		normalsFilter->SetInput( this->m_CurrentContours[in_cid] );
 		normalsFilter->Update();
 		ContourPointer normals = normalsFilter->GetOutput();
 
@@ -171,7 +171,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		VectorType ni;
 		PointValueType gi;
 		typename ContourType::PointIdentifier pid;
-		size_t outer_contid;
+		size_t out_cid;
 
 		// for every node in the mesh: compute gradient, assign cid and gid.
 		while (c_it!=c_end) {
@@ -180,22 +180,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			wi = 0.0;
 
 			pid = c_it.Index();
-			outer_contid = this->m_OuterList[contid][pid];
+			out_cid = this->m_OuterList[in_cid][pid];
 
-			if ( contid != outer_contid ) {
+			if ( in_cid != out_cid ) {
 				ci_prime = c_it.Value();
 				normals->GetPointData( pid, &ni );           // Normal ni in point c'_i
 				wi = this->ComputePointArea( pid, normals );  // Area of c'_i
-				gi = this->EvaluateGradient( ci_prime, outer_contid, contid );
-				//gi =  this->GetEnergyAtPoint( ci_prime, outer_contid ) - this->GetEnergyAtPoint( ci_prime, contid );
+				gi = this->EvaluateGradient( ci_prime, out_cid, in_cid );
 				totalArea+=wi;
-				if ( fabs(gi) < MIN_GRADIENT ) {
-					gi = 0.0;
-				}
 				gradSum+=gi;
 			}
 
-			sample.push_back( GradientSample( gi, wi, ni, pid, cpid, contid ) );
+			sample.push_back( GradientSample( gi, wi, ni, pid, cpid, in_cid ) );
 			++c_it;
 			cpid++;
 		}
@@ -204,7 +200,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		PointValueType scaler = ( this->m_Scale /totalArea);
 
-		ShapeGradientPointer gradmesh = this->m_Gradients[contid];
+		ShapeGradientPointer gradmesh = this->m_Gradients[in_cid];
 		gradSum = 0.0;
 		for( size_t i = 0; i< sample.size(); i++) {
 			if ( sample[i].w > 0.0 ) {
@@ -226,11 +222,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 			gradmesh->GetPointData()->SetElement( sample[i].cid, sample[i].grad );
 		}
-
-//#ifndef NDEBUG
-//		std::sort(sample.begin(), sample.end(), by_grad() );
-//		std::cout << "\tavg=" << (gradSum/sSize) << ", max=" << sample[sSize-1].grad << ", min=" << sample[0].grad << ", q1=" << sample[q1].grad << ", q2=" << sample[q3].grad << ", med=" << sample[q2].grad << "." << std::endl;
-//#endif
 	}
 
 	return gradVector;
@@ -821,8 +812,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		return 0.0;
 	}
 	ReferencePixelType value = this->m_Interp->Evaluate( point );
-	MeasureType grad = this->GetEnergyOfSample( value, inner_roi ) - this->GetEnergyOfSample( value, outer_roi );
-	grad = ( fabs(grad) > 1.0e-8 )?grad:0.0;
+	MeasureType grad = this->GetEnergyOfSample( value, outer_roi ) - this->GetEnergyOfSample( value, inner_roi );
+	grad = (fabs(grad)>MIN_GRADIENT)?grad:0.0;
 	return grad;
 }
 

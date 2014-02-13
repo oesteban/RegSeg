@@ -113,6 +113,7 @@ public:
 	typedef std::ostringstream                                      StopConditionDescriptionType;
 
 	typedef size_t                                                  SizeValueType;
+	typedef itk::FixedArray< double, Dimension >                    ControlPointsGridSpacingType;
 
 	/** Functional definitions */
 	typedef typename FunctionalType::Pointer                        FunctionalPointer;
@@ -132,6 +133,7 @@ public:
 	typedef typename TransformType::FieldPointer                    FieldPointer;
 	typedef typename TransformType::FieldConstPointer               FieldConstPointer;
 	typedef typename TransformType::SizeType                        ControlPointsGridSizeType;
+
 
 	/** Type for the convergence checker */
 	typedef itk::Function::WindowConvergenceMonitoringFunction<MeasureType>	         ConvergenceMonitoringType;
@@ -196,10 +198,17 @@ public:
 	itkSetMacro( UseDescriptorRecomputation, bool );
 	itkGetConstMacro( UseDescriptorRecomputation, bool );
 
+	itkGetConstMacro( GridSize, ControlPointsGridSizeType );
+	itkGetConstMacro( GridSpacing, ControlPointsGridSpacingType );
+	itkGetConstMacro( MaxDisplacement, VectorType );
+
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
 
-	itkSetMacro( StepSize, InternalComputationValueType );
+	itkSetMacro( AutoStepSize, bool );
+	itkGetConstMacro( AutoStepSize, bool );
+
+	virtual void SetStepSize (const InternalComputationValueType _arg);
 	itkGetConstMacro( StepSize, InternalComputationValueType );
 
 	itkSetMacro(Coefficients, CoefficientsImageArray);
@@ -272,9 +281,14 @@ protected:
 	bool                          m_UseDescriptorRecomputation;
 
 	InternalComputationValueType  m_StepSize;
+	bool                          m_AutoStepSize;
 
 	/* Energy tracking */
 	MeasureType                  m_CurrentValue;
+
+	ControlPointsGridSizeType    m_GridSize;
+	ControlPointsGridSpacingType m_GridSpacing;
+	VectorType                   m_MaxDisplacement;
 
 	TransformPointer             m_Transform;
 	FunctionalPointer            m_Functional;

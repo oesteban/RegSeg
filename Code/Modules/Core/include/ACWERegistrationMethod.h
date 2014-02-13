@@ -127,10 +127,10 @@ public:
 	typedef std::vector< NumberValueType >                    NumberValueList;
 
 	//typedef MeanFunctional< ReferenceImageType >       DefaultFunctionalType;
-	typedef SegmentationOptimizer< FunctionalType >    DefaultOptimizerType;
+	//typedef SegmentationOptimizer< FunctionalType >    DefaultOptimizerType;
 	typedef MahalanobisFunctional< ReferenceImageType >       DefaultFunctionalType;
-	//typedef SpectralGradientDescentOptimizer
-	//		                            < FunctionalType >    DefaultOptimizerType;
+	typedef SpectralGradientDescentOptimizer
+			                            < FunctionalType >    DefaultOptimizerType;
 
 	typedef Json::Value                                       JSONRoot;
 	typedef IterationJSONUpdate< OptimizerType >              JSONLoggerType;
