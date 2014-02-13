@@ -100,7 +100,7 @@ class FunctionalBase:
 		public itk::Object,
 		public ConfigurableObject  {
 public:
-	typedef FunctionalBase                                    Self;
+	typedef FunctionalBase                                   Self;
 	typedef itk::Object                                      Superclass;
 	typedef itk::SmartPointer<Self>                          Pointer;
 	typedef itk::SmartPointer< const Self >                  ConstPointer;
@@ -375,9 +375,11 @@ protected:
 	ReferenceImageConstPointer m_ReferenceImage;
 	ContourOuterRegionsList m_OuterList;
 	ReferencePointType m_Origin, m_End, m_FirstPixelCenter, m_LastPixelCenter;
+	ReferencePointType m_OldOrigin;
 	ReferenceSizeType m_ReferenceSize;
 	ReferenceSpacingType m_ReferenceSpacing;
 	DirectionType m_Direction;
+	DirectionType m_OldDirection;
 	//VectorInterpolatorPointer m_LinearInterpolator;
 	//WarpContourFilterList m_WarpContourFilter;
 
