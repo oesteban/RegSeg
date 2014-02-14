@@ -767,7 +767,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		this->m_OldDirection = _arg->GetDirection();
 		this->m_OldOrigin = _arg->GetOrigin();
 
-
+		DirectionType itk; itk.SetIdentity();
+		itk(0,0) = -1.0; itk(1,1) = -1.0;
+		if ( this->m_OldDirection != itk ) {
+			itkWarningMacro( << "input volume is not RAS oriented.")
+		}
 
 		//typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >  Orienter;
 		//typename Orienter::Pointer orient = Orienter::New();
