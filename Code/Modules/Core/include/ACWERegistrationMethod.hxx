@@ -198,6 +198,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		throw err;  // Pass exception to caller
 	}
 
+
 	this->InvokeEvent( itk::InitializeEvent() );
 }
 

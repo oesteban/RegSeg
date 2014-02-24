@@ -1,6 +1,8 @@
 Debug/
 Release/
 .project
+*.sublime-*
+.ipynb_checkpoints/
 .fuse*
 *.vtk
 *.aux

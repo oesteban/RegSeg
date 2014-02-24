@@ -240,6 +240,7 @@ private:
 	StopConditionDescriptionType  m_StopConditionDescription;
 
 	GridSizeList m_GridSchedule;
+	GridSizeList m_FactorsSchedule;
 	GridSizeType m_MaxGridSize;
 	GridSizeType m_MinGridSize;
 	NumberValueList m_NumberOfIterations;

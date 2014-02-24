@@ -85,21 +85,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::Initialize() {
 	this->ParseSettings();
 
-//	if( this->m_ApplySmoothing ) {
-//		CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
-//		this->m_NumberOfNodes = coeff[0]->GetLargestPossibleRegion().GetNumberOfPixels();
-//
-//		if( this->m_Sigma == 0.0 ) {
-//			for( size_t i = 0; i<Dimension; i++)
-//				this->m_Sigma[i] = 0.40 * coeff[0]->GetSpacing()[i];
-//		}
-//
-//		SmoothingFilterPointer s = SmoothingFilterType::New();
-//		s->SetInput( this->m_ReferenceImage );
-//		s->SetSigmaArray( this->m_Sigma );
-//		s->Update();
-//		this->SetReferenceImage( s->GetOutput() );
-//	}
+	if( this->m_ApplySmoothing ) {
+		SmoothingFilterPointer s = SmoothingFilterType::New();
+		s->SetInput( this->m_ReferenceImage );
+		s->SetSigmaArray( this->m_Sigma );
+		s->Update();
+		this->m_ReferenceImage = s->GetOutput();
+		//this->SetReferenceImage( s->GetOutput() );
+	}
 
 	this->InitializeCurrentContours();
 
@@ -211,7 +204,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				ni = gradient * sample[i].normal;  // Project to normal
 
 				for( size_t dim = 0; dim<Dimension; dim++ ) {
-					if( ni[dim] > MIN_GRADIENT )
+					if( fabs(ni[dim]) > MIN_GRADIENT )
 						gradVector.put( sample[i].gid, dim, ni[dim] );
 				}
 			} else {
@@ -477,23 +470,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		this->m_Gradients.push_back( copyShape->GetOutput() );
 	}
 
-
-	//for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-	//	ContourPointer c = this->m_CurrentContours[contid];
-	//	PointsIterator c_it  = c->GetPoints()->Begin();
-	//	PointsIterator c_end = c->GetPoints()->End();
-	//	ContourPointType ci, ci_new;
-	//	size_t pid;
-	//	while( c_it != c_end ) {
-	//		pid = c_it.Index();
-	//		ci = c_it.Value();
-	//		ci_new = (this->m_Direction* ( ci - this->m_Origin.GetVectorFromOrigin() )) + this->m_Origin.GetVectorFromOrigin();
-	//		c->SetPoint( pid, ci_new );
-	//		++c_it;
-	//	}
-	//}
-
-
 	// Fill in interpolator points
 	this->m_CurrentDisplacements = PointDataContainer::New();
 	this->m_CurrentDisplacements->Reserve( this->m_NumberOfPoints );
@@ -702,14 +678,17 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		this->m_Scale = v.as<float> ();
 	}
 	if( this->m_Settings.count( "smoothing" ) ) {
+		this->m_ApplySmoothing = true;
 		bpo::variable_value v = this->m_Settings["smoothing"];
 		this->m_Sigma.Fill( v.as<float> () );
 	}
 
 	if( this->m_Settings.count( "smooth-auto" ) ) {
 		bpo::variable_value v = this->m_Settings["smooth-auto"];
-		this->m_ApplySmoothing= v.as<bool> ();
-		this->m_Sigma.Fill( 0.0 );
+		if ( v.as<bool>() ) {
+			this->m_ApplySmoothing= v.as<bool> ();
+			this->m_Sigma.Fill( 0.0 );
+		}
 	}
 
 	if( this->m_Settings.count( "decile-threshold") ) {
