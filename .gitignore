@@ -39,6 +39,7 @@ Release/
 *.dot
 *.dot.png
 *.npz
+*.pklz
 *.html
 *.csv
 *.sql

@@ -38,7 +38,7 @@ def t2_registration_correct( name="T2_Registration" ):
 
     resample= pe.Node( fs.MRIConvert(out_type='niigz'),name='ResampleT2')
 
-    reg = pe.Node( ants.Registration() , name='B0-to-T2' )
+    reg = pe.Node( ants.Registration() , name='B0_to_T2' )
 
     reg.inputs.transforms = ['SyN']
     reg.inputs.transform_parameters = [(0.80, 0.5, 1.0) ]
