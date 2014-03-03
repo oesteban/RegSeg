@@ -19,13 +19,13 @@ def smri_preparation( name="sMRI_prepare" ):
 	workflow = pe.Workflow(name=name)
 
 	# Setup i/o
-	inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'in_fmap_mag', 'in_fmap_pha', 'in_t1w_brain', 'in_t2w' ]), name='inputnode' )
+	inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'in_fmap_mag', 'in_fmap_pha', 'in_t1w_brain', 'in_t2w', 'fs_subjects_dir' ]), name='inputnode' )
 	outputnode = pe.Node( niu.IdentityInterface(fields=[ 'out_fmap_mag', 'out_fmap_pha', 'out_t2w_brain' ]), name='outputnode' )
 
 	# Setup initial nodes
 	fslroi = pe.Node( fsl.ExtractROI(t_min=0, t_size=1), name='GetFirst' )
 	bet = pe.Node( fsl.BET( frac=0.4 ), name='BrainExtraction' )
-	bbreg = pe.Node( fs.BBRegister( subjects_dir=freesurfer_subjects_dir, init='header', contrast_type='t2', registered_file=True ), name='T2w_to_T1w')
+	bbreg = pe.Node( fs.BBRegister( init='header', contrast_type='t2', registered_file=True ), name='T2w_to_T1w')
 	applymsk = pe.Node( fs.ApplyMask(), name='MaskBrain_T2w' )
 	n4 = pe.Node( ants.N4BiasFieldCorrection( dimension=3 ), name='Bias' )
 	#windorise = pe.Node( fsl.ImageStats(op_string='-p 98'), name='Windorise' )
@@ -69,7 +69,7 @@ def smri_preparation( name="sMRI_prepare" ):
 	                  # Connect inputs to nodes
 	                   ( inputnode, tonifti0, [ ('in_fmap_mag', 'in_file')] )
 	                  ,( inputnode, tonifti1, [ ('in_fmap_pha', 'in_file')] )
-	                  ,( inputnode, bbreg,    [ ('subject_id', 'subject_id'), ('in_t2w', 'source_file') ] )
+	                  ,( inputnode, bbreg,    [ ('subject_id', 'subject_id'), ('in_t2w', 'source_file'),('fs_subjects_dir','subjects_dir') ] )
 	                  ,( inputnode, tonifti3, [ ('in_t1w_brain', 'in_file' ) ] )
 	                  ,( inputnode, applymsk, [ ('in_t1w_brain', 'mask_file') ] )
 	                  # Connections between nodes
