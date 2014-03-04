@@ -376,7 +376,7 @@ def swap_yz( in_file, out_file=None ):
 
 if __name__ == '__main__':
     z = False
-    root_dir='/home/oesteban/workspace/ACWE-Reg/'
+    root_dir='/home/oesteban/workspace/ACWE-Registration/'
     data_dir= op.join( root_dir, 'Data' )
     mname = 'Phantom3'
     model_dir = op.join( data_dir, mname )
