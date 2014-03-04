@@ -20,7 +20,7 @@ def smri_preparation( name="sMRI_prepare" ):
 
 	# Setup i/o
 	inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'in_fmap_mag', 'in_fmap_pha', 'in_t1w_brain', 'in_t2w', 'fs_subjects_dir' ]), name='inputnode' )
-	outputnode = pe.Node( niu.IdentityInterface(fields=[ 'out_fmap_mag', 'out_fmap_pha', 'out_t2w_brain', 'out_tpms' ]), name='outputnode' )
+	outputnode = pe.Node( niu.IdentityInterface(fields=[ 'out_fmap_mag', 'out_fmap_pha', 'out_smri', 'out_tpms', 'out_mask' ]), name='outputnode' )
 
 	# Setup initial nodes
 	fslroi = pe.Node( fsl.ExtractROI(t_min=0, t_size=1), name='GetFirst' )
@@ -63,14 +63,15 @@ def smri_preparation( name="sMRI_prepare" ):
 
 	binarize = pe.Node( fs.Binarize( min=0.001 ), name='Binarize' )
 	applyAnts = pe.Node( ants.ApplyTransforms(dimension=3,interpolation='BSpline' ), name='ApplyANTs' )
-	applymsk2 = pe.Node( fs.ApplyMask(), name='MaskBrain_FMap' )
-	applymsk3 = pe.Node( fs.ApplyMask(), name='MaskBrain_FMap2' )
-
+  msk_mag = pe.Node( fs.ApplyMask(), name='Brain_FMap_Mag' )
+  bin_mag = pe.Node( fs.Binarize( min=0.001 ), name='OutMask' )
+	msk_pha = pe.Node( fs.ApplyMask(), name='Brain_FMap_Pha' )
 	smooth = pe.Node( fsl.SpatialFilter( operation='median', kernel_shape='sphere', kernel_size=4 ), name='SmoothPhaseMap' )
-
-
 	n4_t1 = pe.Node( ants.N4BiasFieldCorrection( dimension=3 ), name='Bias_T1' )
 	fast = pe.Node( fsl.FAST( number_classes=3, probability_maps=True, img_type=1 ), name='SegmentT1' )
+
+  merge = pe.Node( niu.Merge(2), name='JoinNames')
+  combine = pe.Node( fsl.Merge(dimension='t' ), name='Combine')
 
 	workflow.connect([
 	                  # Connect inputs to nodes
@@ -84,9 +85,10 @@ def smri_preparation( name="sMRI_prepare" ):
 	                  ,( fslroi,                 n4, [ ('roi_file', 'input_image' ) ] )
 	                  ,( n4,                    bet, [ ('output_image','in_file' ) ] )
 	                  ,( bbreg,            applymsk, [ ('registered_file','in_file' ) ] )
+                    ,( applymsk,         tonifti2, [ ('out_file','in_file') ])
 	                  # ANTs
 	                  ,( tonifti3,            n4_t1, [ ('out_file', 'input_image' ) ] )
-			  ,( n4_t1,                fast, [ ('output_image', 'in_files' ) ] )
+			              ,( n4_t1,                fast, [ ('output_image', 'in_files' ) ] )
 	                  ,( n4_t1,        registration, [ ('output_image', 'fixed_image' ) ] )
 	                  ,( tonifti3,         binarize, [ ('out_file', 'in_file' ) ] )
 	                  ,( bet,          registration, [ ('out_file', 'moving_image' ) ] )
@@ -94,27 +96,30 @@ def smri_preparation( name="sMRI_prepare" ):
 	                  ,( tonifti3,        applyAnts, [ ('out_file', 'reference_image' ) ] )
 	                  ,( tonifti1,        applyAnts, [ ('out_file', 'input_image' ) ] )
 	                  ,( registration,    applyAnts, [ ('forward_transforms','transforms'),('forward_invert_flags','invert_transform_flags') ])
-	                  ,( applyAnts,       applymsk2, [ ('output_image', 'in_file' ) ] )
-	                  ,( tonifti3,        applymsk2, [ ('out_file', 'mask_file' ) ] )
-	                  ,( registration,    applymsk3, [ ('warped_image', 'in_file' ) ] )
-	                  ,( tonifti3,        applymsk3, [ ('out_file', 'mask_file' ) ] )
-	                  ,( applymsk2,          smooth, [ ('out_file', 'in_file' ) ] )
+                    ,( registration,      msk_mag, [ ('warped_image', 'in_file' ) ] )
+                    ,( tonifti3,          msk_mag, [ ('out_file', 'mask_file' ) ] )
+                    ,( msk_mag,           bin_mag, [ ('out_file', 'in_file') ])
+	                  ,( applyAnts,         msk_pha, [ ('output_image', 'in_file' ) ] )
+	                  ,( bin_mag,           msk_pha, [ ('out_file', 'mask_file' ) ] )
+	                  ,( msk_pha,            smooth, [ ('out_file', 'in_file' ) ] )
+                    ,( n4_t1,               merge, [ ('output_image', 'in1' ) ])
+                    ,( tonifti2,            merge, [ ('out_file', 'in2') ])
+                    ,( merge,             combine, [ ('out', 'in_files')])
 	                  # Connections to output
-	                  ,( applymsk,         tonifti2, [ ('out_file','in_file') ])
-	                  ,( smooth,         outputnode, [ ('out_file', 'out_fmap_pha' ) ] )
-	                  ,( tonifti2,       outputnode, [ ('out_file','out_t2w_brain') ])
-	                  ,( applymsk3,      outputnode, [ ('out_file', 'out_fmap_mag' ) ] )
-			  ,( fast,           outputnode, [ ('probability_maps', 'out_tpms' ) ] )
+	                  ,( combine,        outputnode, [ ('merged_file','out_smri') ])
+	                  ,( msk_mag,        outputnode, [ ('out_file', 'out_fmap_mag' ) ] )
+                    ,( smooth,         outputnode, [ ('out_file', 'out_fmap_pha' ) ] )
+                    ,( bin_mag,        outputnode, [ ('out_file', 'out_mask' ) ] )
+			              ,( fast,           outputnode, [ ('partial_volume_files', 'out_tpms' ) ] )
 	                 ])
 
 	return workflow
 
-def distortion_workflow(name="synthetic_distortion"):
+def distortion_workflow(name="synthetic_distortion", nocheck=False):
     pipeline = pe.Workflow(name=name)
     
-    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'te_incr', 'echospacing','encoding_direction','intensity','sigma', 'in_tpms' ]), name='inputnode' )
-    phmap_siemens = pe.Node( niu.Function(input_names=['in_file','intensity','sigma'],output_names=['out_file'], function=generate_siemens_phmap ), name='gen_siemens_PhaseDiffMap' )
-    prepare = pe.Node( fsl.PrepareFieldmap(nocheck=True), name='fsl_prepare_fieldmap' )
+    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mag', 'in_pha', 'in_mask', 'te_incr', 'echospacing','encoding_direction','in_tpms' ]), name='inputnode' )
+    prepare = pe.Node( fsl.PrepareFieldmap(nocheck=nocheck), name='fsl_prepare_fieldmap' )
     vsm = pe.Node(fsl.FUGUE(save_shift=True), name="gen_VSM")
     dm = pe.Node( niu.Function(input_names=['in_file','in_mask'],output_names=['out_file'], function=demean ), name='demean' )
     applyWarp = fugue_all_workflow()
@@ -122,17 +127,12 @@ def distortion_workflow(name="synthetic_distortion"):
     binarize = pe.Node( fs.Binarize( min=0.00001 ), name="binarize" )
     warpimages = pe.MapNode( fsl.FUGUE(forward_warping=True,icorr=True), iterfield=['in_file'], name='WarpImages' )
     normalize_tpms = pe.Node( niu.Function( input_names=['in_files'], output_names=['out_files'], function=normalize ), name='Normalize' )
-#    fixsignal = pe.Node( niu.Function( input_names=['in_reference','in_distorted','in_mask' ], output_names=['out_distorted'], function=sanitize ), name='FixSignal' )
-
-
     outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_phdiff_map', 'out_tpms' ]), name='outputnode' )
     
     pipeline.connect([
-                       (inputnode,phmap_siemens, [('in_mask', 'in_file'),('intensity','intensity'),('sigma','sigma') ] )
-                      ,(phmap_siemens,  prepare, [('out_file','in_phase') ])
-                      ,(inputnode,      prepare, [('in_mask','in_magnitude'),(('te_incr',_sec2ms),'delta_TE')])
+                       (inputnode,      prepare, [('in_mag','in_magnitude'), ('in_pha','in_phase'),(('te_incr',_sec2ms),'delta_TE')])
                       ,(prepare,            vsm, [('out_fieldmap','phasemap_file')])
-                      ,(inputnode,          vsm, [('in_mask','in_file'),('in_mask','mask_file'),('te_incr','asym_se_time'),('echospacing','dwell_time')])
+                      ,(inputnode,          vsm, [('in_mag','in_file'),('in_mask','mask_file'),('te_incr','asym_se_time'),('echospacing','dwell_time')])
                       ,(vsm,                 dm, [('shift_out_file', 'in_file')])
                       ,(inputnode,           dm, [('in_mask','in_mask')])
                       ,(inputnode, vsm_fwd_mask, [('in_mask','in_file'),('in_mask','mask_file')])
