@@ -20,7 +20,7 @@ def smri_preparation( name="sMRI_prepare" ):
 
 	# Setup i/o
 	inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'in_fmap_mag', 'in_fmap_pha', 'in_t1w_brain', 'in_t2w', 'fs_subjects_dir' ]), name='inputnode' )
-	outputnode = pe.Node( niu.IdentityInterface(fields=[ 'out_fmap_mag', 'out_fmap_pha', 'out_t2w_brain' ]), name='outputnode' )
+	outputnode = pe.Node( niu.IdentityInterface(fields=[ 'out_fmap_mag', 'out_fmap_pha', 'out_t2w_brain', 'out_tpms' ]), name='outputnode' )
 
 	# Setup initial nodes
 	fslroi = pe.Node( fsl.ExtractROI(t_min=0, t_size=1), name='GetFirst' )
@@ -66,20 +66,28 @@ def smri_preparation( name="sMRI_prepare" ):
 	applymsk2 = pe.Node( fs.ApplyMask(), name='MaskBrain_FMap' )
 	applymsk3 = pe.Node( fs.ApplyMask(), name='MaskBrain_FMap2' )
 
+	smooth = pe.Node( fsl.SpatialFilter( operation='median', kernel_shape='sphere', kernel_size=4 ), name='SmoothPhaseMap' )
+
+
+	n4_t1 = pe.Node( ants.N4BiasFieldCorrection( dimension=3 ), name='Bias_T1' )
+	fast = pe.Node( fsl.FAST( number_classes=3, probability_maps=True, img_type=1 ), name='SegmentT1' )
+
 	workflow.connect([
 	                  # Connect inputs to nodes
-	                   ( inputnode, tonifti0, [ ('in_fmap_mag', 'in_file')] )
-	                  ,( inputnode, tonifti1, [ ('in_fmap_pha', 'in_file')] )
-	                  ,( inputnode, bbreg,    [ ('subject_id', 'subject_id'), ('in_t2w', 'source_file'),('fs_subjects_dir','subjects_dir') ] )
-	                  ,( inputnode, tonifti3, [ ('in_t1w_brain', 'in_file' ) ] )
-	                  ,( inputnode, applymsk, [ ('in_t1w_brain', 'mask_file') ] )
+	                   ( inputnode,        tonifti0, [ ('in_fmap_mag', 'in_file')] )
+	                  ,( inputnode,        tonifti1, [ ('in_fmap_pha', 'in_file')] )
+	                  ,( inputnode,           bbreg, [ ('subject_id', 'subject_id'), ('in_t2w', 'source_file'),('fs_subjects_dir','subjects_dir') ] )
+	                  ,( inputnode,        tonifti3, [ ('in_t1w_brain', 'in_file' ) ] )
+	                  ,( inputnode,        applymsk, [ ('in_t1w_brain', 'mask_file') ] )
 	                  # Connections between nodes
-	                  ,( tonifti0, fslroi,    [ ('out_file', 'in_file')] )
-	                  ,( fslroi,  n4,         [ ('roi_file', 'input_image' ) ] )
-	                  ,( n4,            bet,  [ ('output_image','in_file' ) ] )
-	                  ,( bbreg, applymsk,     [ ('registered_file','in_file' ) ] )
+	                  ,( tonifti0,           fslroi, [ ('out_file', 'in_file')] )
+	                  ,( fslroi,                 n4, [ ('roi_file', 'input_image' ) ] )
+	                  ,( n4,                    bet, [ ('output_image','in_file' ) ] )
+	                  ,( bbreg,            applymsk, [ ('registered_file','in_file' ) ] )
 	                  # ANTs
-	                  ,( tonifti3,     registration, [ ('out_file', 'fixed_image' ) ] )
+	                  ,( tonifti3,            n4_t1, [ ('out_file', 'input_image' ) ] )
+			  ,( n4_t1,                fast, [ ('output_image', 'in_files' ) ] )
+	                  ,( n4_t1,        registration, [ ('output_image', 'fixed_image' ) ] )
 	                  ,( tonifti3,         binarize, [ ('out_file', 'in_file' ) ] )
 	                  ,( bet,          registration, [ ('out_file', 'moving_image' ) ] )
 	                  ,( binarize,     registration, [ ('binary_file', 'fixed_image_mask' ) ] )
@@ -90,11 +98,13 @@ def smri_preparation( name="sMRI_prepare" ):
 	                  ,( tonifti3,        applymsk2, [ ('out_file', 'mask_file' ) ] )
 	                  ,( registration,    applymsk3, [ ('warped_image', 'in_file' ) ] )
 	                  ,( tonifti3,        applymsk3, [ ('out_file', 'mask_file' ) ] )
+	                  ,( applymsk2,          smooth, [ ('out_file', 'in_file' ) ] )
 	                  # Connections to output
 	                  ,( applymsk,         tonifti2, [ ('out_file','in_file') ])
-	                  ,( applymsk2,      outputnode, [ ('out_file', 'out_fmap_pha' ) ] )
+	                  ,( smooth,         outputnode, [ ('out_file', 'out_fmap_pha' ) ] )
 	                  ,( tonifti2,       outputnode, [ ('out_file','out_t2w_brain') ])
 	                  ,( applymsk3,      outputnode, [ ('out_file', 'out_fmap_mag' ) ] )
+			  ,( fast,           outputnode, [ ('probability_maps', 'out_tpms' ) ] )
 	                 ])
 
 	return workflow
