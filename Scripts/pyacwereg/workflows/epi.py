@@ -40,24 +40,25 @@ def smri_preparation( name="sMRI_prepare" ):
 	    return np.atleast_1d( tname ).tolist()
 
 	registration = pe.Node( ants.Registration(output_warped_image=True), name="FM_to_T1" )
-	registration.inputs.transforms = ['Rigid','Affine','SyN', 'SyN']
-	registration.inputs.transform_parameters = [(2.0,),(1.0,),(1.0,4.0,6.0),(0.5,2.0,2.0)]
-	registration.inputs.number_of_iterations = [[200],[100],[75],[50] ]
+	registration.inputs.transforms = ['Rigid','Affine','SyN'] #, 'SyN']
+	registration.inputs.transform_parameters = [(2.0,),(1.0,),(0.75,4.0,2.0)] #,(0.2,1.0,1.0)]
+	registration.inputs.number_of_iterations = [[50],[20],[15]] #,[10] ]
 	registration.inputs.dimension = 3
-	registration.inputs.metric = ['CC']*4
-	registration.inputs.metric_weight = [1.0]*4
-	registration.inputs.radius_or_number_of_bins = [2]*4
-	registration.inputs.sampling_strategy = ['Regular','Random','Random','Random']
-	registration.inputs.sampling_percentage = [None,0.2,0.15,0.15]
-	registration.inputs.convergence_threshold = [1.e-5,1.e-7,1.e-8,1.e-8]
-	registration.inputs.convergence_window_size = [20,10,5,5]
-	registration.inputs.smoothing_sigmas = [[6.0],[4.0],[2.0],[1.0]]
-	registration.inputs.sigma_units = ['vox']*4
-	registration.inputs.shrink_factors = [[4],[2],[2],[1] ]
-	registration.inputs.use_estimate_learning_rate_once = [True]*4
-	registration.inputs.use_histogram_matching = [True]*4
+	registration.inputs.metric = ['Mattes','CC', 'CC'] #,'CC']
+	registration.inputs.metric_weight = [1.0]*3
+	registration.inputs.radius_or_number_of_bins = [32,3,3] #,2]
+	registration.inputs.sampling_strategy = ['Regular','Random','Random'] #,'Random']
+	registration.inputs.sampling_percentage = [None,0.1,0.15] #,0.15]
+	registration.inputs.convergence_threshold = [1.e-5,1.e-6,1.e-7] #,1.e-8]
+	registration.inputs.convergence_window_size = [20,10,4] # ,3]
+	registration.inputs.smoothing_sigmas = [[6.0],[4.0],[2.0]] #,[1.0]]
+	registration.inputs.sigma_units = ['vox']*3
+	registration.inputs.shrink_factors = [[6],[2],[2]] #,[1] ]
+	registration.inputs.use_estimate_learning_rate_once = [True]*3
+	registration.inputs.use_histogram_matching = [True]*3
 	registration.inputs.initial_moving_transform_com = 0
 	registration.inputs.collapse_output_transforms = True
+	registration.inputs.winsorize_lower_quantile = 0.005
 	registration.inputs.winsorize_upper_quantile = 0.975
 
 	binarize = pe.Node( fs.Binarize( min=0.001 ), name='Binarize' )
