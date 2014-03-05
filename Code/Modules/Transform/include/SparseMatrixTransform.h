@@ -48,6 +48,7 @@
 #include <itkVector.h>
 #include <itkMatrix.h>
 #include <itkPointSet.h>
+#include <itkImage.h>
 #include <itkDefaultStaticMeshTraits.h>
 #include <itkKernelFunctionBase.h>
 #include <VNLSparseLUSolverTraits.h>
