@@ -65,8 +65,9 @@ def smri_preparation( name="sMRI_prepare" ):
     applyAnts = pe.Node( ants.ApplyTransforms(dimension=3,interpolation='BSpline' ), name='ApplyANTs' )
     msk_mag = pe.Node( fs.ApplyMask(), name='Brain_FMap_Mag' )
     bin_mag = pe.Node( fs.Binarize( min=0.001 ), name='OutMask' )
-    msk_pha = pe.Node( fs.ApplyMask(), name='Brain_FMap_Pha' )
-    smooth = pe.Node( fsl.SpatialFilter( operation='median', kernel_shape='sphere', kernel_size=4 ), name='SmoothPhaseMap' )
+    # msk_pha = pe.Node( fs.ApplyMask(), name='Brain_FMap_Pha' )
+    # smooth = pe.Node( fsl.SpatialFilter( operation='median', kernel_shape='sphere', kernel_size=4 ), name='SmoothPhaseMap' )
+    fix_pha = pe.Node( niu.Function( input_names=['in_file'], output_names=['out_file'], function=check_range ), name='CheckPhaseMap' )
     n4_t1 = pe.Node( ants.N4BiasFieldCorrection( dimension=3 ), name='Bias_T1' )
     fast = pe.Node( fsl.FAST( number_classes=3, probability_maps=True, img_type=1 ), name='SegmentT1' )
     merge = pe.Node( niu.Merge(2), name='JoinNames')
@@ -98,28 +99,29 @@ def smri_preparation( name="sMRI_prepare" ):
                         ,( registration,      msk_mag, [ ('warped_image', 'in_file' ) ] )
                         ,( tonifti3,          msk_mag, [ ('out_file', 'mask_file' ) ] )
                         ,( msk_mag,           bin_mag, [ ('out_file', 'in_file') ])
-                        ,( applyAnts,         msk_pha, [ ('output_image', 'in_file' ) ] )
-                        ,( bin_mag,           msk_pha, [ ('binary_file', 'mask_file' ) ] )
-                        ,( msk_pha,            smooth, [ ('out_file', 'in_file' ) ] )
+                        #,( applyAnts,         msk_pha, [ ('output_image', 'in_file' ) ] )
+                        #,( bin_mag,           msk_pha, [ ('binary_file', 'mask_file' ) ] )
+                        #,( msk_pha,            smooth, [ ('out_file', 'in_file' ) ] )
+                        ,( applyAnts,         fix_pha, [ ('output_image', 'in_file' ) ] )
                         ,( n4_t1,               merge, [ ('output_image', 'in1' ) ])
                         ,( tonifti2,            merge, [ ('out_file', 'in2') ])
                         ,( merge,             combine, [ ('out', 'in_files')])
                         # Connections to output
                         ,( combine,        outputnode, [ ('merged_file','out_smri') ])
                         ,( msk_mag,        outputnode, [ ('out_file', 'out_fmap_mag' ) ] )
-                        ,( smooth,         outputnode, [ ('out_file', 'out_fmap_pha' ) ] )
+                        ,( fix_pha,        outputnode, [ ('out_file', 'out_fmap_pha' ) ] )
                         ,( bin_mag,        outputnode, [ ('binary_file', 'out_mask' ) ] )
     		            ,( fast,           outputnode, [ ('partial_volume_files', 'out_tpms' ) ] )
                      ])
     
     return workflow
 
-def distortion_workflow(name="synthetic_distortion", nocheck=False):
+def distortion_workflow(name="synthetic_distortion", nocheck=False ):
     pipeline = pe.Workflow(name=name)
     
-    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mag', 'in_pha', 'in_mask', 'te_incr', 'echospacing','encoding_direction','in_tpms' ]), name='inputnode' )
+    inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mag', 'in_pha', 'in_mask', 'te_incr', 'echospacing','enc_dir','in_tpms' ]), name='inputnode' )
     prepare = pe.Node( fsl.PrepareFieldmap(nocheck=nocheck), name='fsl_prepare_fieldmap' )
-    vsm = pe.Node(fsl.FUGUE(save_shift=True), name="gen_VSM")
+    vsm = pe.Node(fsl.FUGUE(save_shift=True,poly_order=2 ), name="gen_VSM")
     dm = pe.Node( niu.Function(input_names=['in_file','in_mask'],output_names=['out_file'], function=demean ), name='demean' )
     applyWarp = fugue_all_workflow()
     vsm_fwd_mask = pe.Node(fsl.FUGUE(forward_warping=True), name='Fugue_WarpMask')
@@ -131,13 +133,13 @@ def distortion_workflow(name="synthetic_distortion", nocheck=False):
     pipeline.connect([
                        (inputnode,      prepare, [('in_mag','in_magnitude'), ('in_pha','in_phase'),(('te_incr',_sec2ms),'delta_TE')])
                       ,(prepare,            vsm, [('out_fieldmap','phasemap_file')])
-                      ,(inputnode,          vsm, [('in_mag','in_file'),('in_mask','mask_file'),('te_incr','asym_se_time'),('echospacing','dwell_time')])
+                      ,(inputnode,          vsm, [('in_mag','in_file'),('in_mask','mask_file'),('te_incr','asym_se_time'),('echospacing','dwell_time'),('enc_dir','unwarp_direction') ])
                       ,(vsm,                 dm, [('shift_out_file', 'in_file')])
                       ,(inputnode,           dm, [('in_mask','in_mask')])
-                      ,(inputnode, vsm_fwd_mask, [('in_mask','in_file'),('in_mask','mask_file')])
+                      ,(inputnode, vsm_fwd_mask, [('in_mask','in_file'),('in_mask','mask_file'),('enc_dir','unwarp_direction') ])
                       ,(dm,        vsm_fwd_mask, [('out_file','shift_in_file')])
                       ,(dm,           applyWarp, [('out_file', 'inputnode.in_vsm')])
-                      ,(inputnode,    applyWarp, [('in_file', 'inputnode.in_file'),('in_mask', 'inputnode.in_mask'),('encoding_direction','inputnode.unwarp_direction') ])
+                      ,(inputnode,    applyWarp, [('in_file', 'inputnode.in_file'),('in_mask', 'inputnode.in_mask'),('enc_dir','inputnode.unwarp_direction') ])
                       ,(dm,          outputnode, [('out_file', 'out_vsm')])
                       ,(applyWarp,   outputnode, [('outputnode.out_file', 'out_file')])
                       #,(applyWarp,    fixsignal, [('outputnode.out_file', 'in_distorted')])
@@ -146,7 +148,7 @@ def distortion_workflow(name="synthetic_distortion", nocheck=False):
                       #,(fixsignal,   outputnode, [('out_distorted','out_file')])
                       ,(vsm_fwd_mask,  binarize, [('warped_file','in_file')])
                       ,(binarize,    outputnode, [('binary_file','out_mask')])
-                      ,(inputnode,  warpimages, [('in_tpms','in_file'),('in_mask', 'mask_file') ])
+                      ,(inputnode,  warpimages, [('in_tpms','in_file'),('in_mask', 'mask_file'),('enc_dir','unwarp_direction') ])
                       ,(dm      ,   warpimages, [('out_file','shift_in_file') ])
                       ,(warpimages,  normalize_tpms, [('warped_file','in_files')])
                       ,(normalize_tpms,  outputnode, [('out_files','out_tpms')])
@@ -324,6 +326,31 @@ def generate_siemens_phmap( in_file, intensity, sigma, w1=-0.5, w2=1.0, out_file
     hdr.set_data_dtype( np.float32 )
     nib.save( nib.Nifti1Image( phasefield.astype( np.float32 ), msk.get_affine(), hdr ), out_file ) 
     return out_file
+
+
+def check_range( in_file, out_file=None ):
+    import nibabel as nb
+    import os.path as op
+    import numpy as np
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_checked.nii.gz' % fname)
+
+    im = nb.load( in_file )
+    imdata = im.get_data()
+
+    imdata = imdata - imdata.min()
+    norm = ( 8192 / imdata.max() )
+    imdata = ( norm * imdata ) - 4096
+
+    nii = nb.Nifti1Image( imdata, im.get_affine(), im.get_header() )
+    nb.save( nii, out_file )
+    return out_file
+
+
 
 
 def generate_phmap( in_file, out_file=None ):
