@@ -48,15 +48,15 @@
 
 namespace rstk {
 
-template< class TScalarType, unsigned int NDimensions, unsigned int VSplineOrder >
-BSplineSparseMatrixTransform<TScalarType,NDimensions, VSplineOrder >
+template< class TScalar, unsigned int NDimensions, unsigned int VSplineOrder >
+BSplineSparseMatrixTransform<TScalar,NDimensions, VSplineOrder >
 ::BSplineSparseMatrixTransform(): Superclass() {
 	this->m_KernelFunction = dynamic_cast< KernelFunctionType * >(
-            itk::BSplineKernelFunction<3u, ScalarType>::New().GetPointer() );
+            itk::BSplineKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
 	this->m_DerivativeKernel = dynamic_cast< KernelFunctionType * >(
-            itk::BSplineDerivativeKernelFunction<3u, ScalarType>::New().GetPointer() );
+            itk::BSplineDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
 	this->m_SecondDerivativeKernel = dynamic_cast< KernelFunctionType * >(
-            itk::BSplineSecondDerivativeKernelFunction<3u, ScalarType>::New().GetPointer() );
+            itk::BSplineSecondDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
 }
 
 }

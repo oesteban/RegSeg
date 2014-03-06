@@ -10,9 +10,10 @@
 
 #include "bspline_field.h"
 
+#include <sstream>
 
 int main(int argc, char *argv[]) {
-	std::string outPrefix;
+	std::string outPrefix = "";
 	std::vector< std::string > fixedImageNames, movingSurfaceNames,coefficientImageNames;
 	std::vector<size_t> grid_size;
 
@@ -45,8 +46,6 @@ int main(int argc, char *argv[]) {
 	CoefficientsImageArray coeffs;
 
 	TPointer transform = Transform::New();
-	transform->SetPhysicalDomainInformation( ref );
-	transform->SetOutputReference( ref );
 
 	if (vm.count("coeff-images")) {
 		std::cout << "coefficient images mode not implemented" << std::endl;
@@ -67,48 +66,127 @@ int main(int argc, char *argv[]) {
 		}
 
 		transform->SetControlPointsSize( size );
+		transform->SetPhysicalDomainInformation( ref );
+		transform->SetOutputReference( ref );
 		transform->UpdateField();
 		coeffs = transform->GetCoefficientsImages();
 		spacing = coeffs[0]->GetSpacing();
+		size_t numPix = coeffs[0]->GetLargestPossibleRegion().GetNumberOfPixels();
 
 		std::cout << size << std::endl;
 		std::cout << spacing << std::endl;
 
+		typename CoefficientsType::RegionType region;
+		typename CoefficientsType::IndexType start;
+		typename CoefficientsType::SizeType regionSize;
+
+		for( size_t i = 0; i<DIMENSION; i++ ) {
+			start[i] = static_cast<size_t>( floor( size[i] * 0.35 + 0.5f ) ) -1;
+			regionSize[i] = size[i] - 2.0 * start[i];
+		}
+		region.SetIndex( start );
+		region.SetSize( regionSize );
+
 		for( size_t i = 0; i< DIMENSION; i++) {
-			float scale = spacing[i] * 0.35;
+			RandomIterator rndit( coeffs[i], region );
+			rndit.SetNumberOfSamples( static_cast<size_t>( floor( numPix * 0.08 + 0.5f ) ) );
 
-			RandomSourcePointer src = RandomSourceType::New();
-			src->SetMax( scale );
-			src->SetMin( -1.0 * scale );
-			src->SetSize( coeffs[i]->GetLargestPossibleRegion().GetSize() );
-			src->SetSpacing( coeffs[i]->GetSpacing() );
-			src->SetDirection( coeffs[i]->GetDirection() );
-			src->SetOrigin( coeffs[i]->GetOrigin() );
-			//src->SetScale( scale );
-			src->Update();
-			coeffs[i] = src->GetOutput();
+			for(rndit.GoToBegin(); !rndit.IsAtEnd(); ++rndit){
+				float r = -1.0 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/2.0));
+				rndit.Set( r );
+			}
 
-			std::cout << scale << "mm." << std::endl;
+			SigmaArrayType sigma;
+			sigma.Fill(12.0);
+
+			SmoothingFilterPointer s = SmoothingFilterType::New();
+			s->SetInput( coeffs[i] );
+			s->SetSigmaArray( sigma );
+			s->Update();
+			coeffs[i] = s->GetOutput();
+
+			ScalarType *buff = coeffs[i]->GetBufferPointer();
+			std::vector< ScalarType > sample;
+
+			for( size_t j = 0; j < numPix; j++ ) {
+				sample.push_back( *(buff + j) );
+			}
+
+			std::sort( sample.begin(), sample.end() );
+
+			SubtractPointer sub = SubtractFilter::New();
+			sub->SetInput1( coeffs[i] );
+			sub->SetConstant( sample[ static_cast<size_t>( floor( 0.5 * numPix + 0.5f ) ) ] );
+			sub->Update();
+			coeffs[i] = sub->GetOutput();
+
+			MaxCalcPointer max = MaxCalc::New();
+			max->SetImage( coeffs[i] );
+			max->Compute();
+
+			float immax = max->GetMaximum();
+			if ( fabs( max->GetMinimum() ) > fabs(immax) ) {
+				immax = fabs( max->GetMinimum() );
+			}
+
+			float scale = (spacing[i] * 0.35) / immax;
+
+			MultiplyPointer m = MultiplyFilter::New();
+			m->SetInput1( coeffs[i] );
+			m->SetConstant( scale );
+			m->Update();
+			coeffs[i] = m->GetOutput();
+
 			CoefficientsWriterPointer w = CoefficientsWriterType::New();
-			w->SetFileName( "test.nii.gz" );
-			w->SetInput( src->GetOutput() );
+			std::stringstream ss;
+			ss << outPrefix << "_coeffs_" << i << ".nii.gz";
+			w->SetFileName( ss.str().c_str() );
+			w->SetInput( coeffs[i] );
 			w->Update();
 		}
 	}
 
 	// Set coefficients
+	transform->SetCoefficientsImages( coeffs );
+	transform->UpdateField();
+
+	typename ComponentsWriter::Pointer f = ComponentsWriter::New();
+	std::stringstream ss;
+	ss << outPrefix << "_field";
+	f->SetFileName( ss.str().c_str() );
+	f->SetInput( transform->GetField() );
+	f->Update();
 
 
+	transform->Interpolate();
+	f->SetInput( transform->GetOutputField() );
+	ss.str("");
+	ss << outPrefix << "_field_hires";
+	f->SetFileName( ss.str().c_str() );
+	f->Update();
 
 
 	// Read and transform images if present
-	std::vector< ChannelPointer > images;
 	for( size_t i = 0; i<fixedImageNames.size(); i++) {
 		ReaderPointer r = ReaderType::New();
 		r->SetFileName( fixedImageNames[i] );
 		r->Update();
-		images.push_back( r->GetOutput() );
 
+
+		ResamplePointer res = ResampleFilter::New();
+		res->SetInput( r->GetOutput() );
+		res->SetReferenceImage( r->GetOutput() );
+		res->SetUseReferenceImage(true);
+		res->SetInterpolator( BSplineInterpolateImageFunction::New() );
+		res->SetTransform( transform );
+		res->Update();
+
+		ss.str("");
+		ss << outPrefix << "_resampled_" << i << ".nii.gz";
+		WriterPointer w = WriterType::New();
+		w->SetInput( res->GetOutput() );
+		w->SetFileName( ss.str().c_str() );
+		w->Update();
 	}
 
 }
