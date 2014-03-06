@@ -151,9 +151,9 @@ def distortion_workflow(name="synthetic_distortion", nocheck=False ):
     dm = pe.Node( niu.Function(input_names=['in_file','in_mask'],output_names=['out_file'], function=demean ), name='demean' )
     applyWarp = fugue_all_workflow()
     vsm_fwd_mask = pe.Node(fsl.FUGUE(forward_warping=True), name='Fugue_WarpMask')
-    binarize = pe.Node( fs.Binarize( min=0.00001 ), name="binarize" )
+    binarize = pe.Node( fs.Binarize( min=0.75 ), name="binarize" )
     warpimages = pe.MapNode( fsl.FUGUE(forward_warping=True,icorr=True), iterfield=['in_file'], name='WarpImages' )
-    normalize_tpms = pe.Node( niu.Function( input_names=['in_files'], output_names=['out_files'], function=normalize ), name='Normalize' )
+    normalize_tpms = pe.Node( niu.Function( input_names=['in_files','in_mask'], output_names=['out_files'], function=normalize ), name='Normalize' )
     outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_tpms' ]), name='outputnode' )
     
     pipeline.connect([
@@ -176,6 +176,7 @@ def distortion_workflow(name="synthetic_distortion", nocheck=False ):
                       ,(binarize,    outputnode, [('binary_file','out_mask')])
                       ,(inputnode,  warpimages, [('in_tpms','in_file'),('in_mask', 'mask_file'),('enc_dir','unwarp_direction') ])
                       ,(dm      ,   warpimages, [('out_file','shift_in_file') ])
+                      ,(binarize,    normalize_tpms, [('binary_file','in_mask')])
                       ,(warpimages,  normalize_tpms, [('warped_file','in_files')])
                       ,(normalize_tpms,  outputnode, [('out_files','out_tpms')])
     ])
@@ -231,13 +232,11 @@ def get_vox_size( in_file ):
     pixdim = nib.load( in_file ).get_header()['pixdim']
     return (pixdim[1],pixdim[2],pixdim[3])
 
-def normalize( in_files ):
+def normalize( in_files, in_mask=None, out_files=[] ):
     import nibabel as nib
     import numpy as np
     import os.path as op
-
-    out_files = []
-    
+ 
     imgs = [ nib.load(fim) for fim in in_files ]
     img_data = np.array( [ im.get_data() for im in imgs ] ).astype( 'f32' )
     img_data[img_data>1.0] = 1.0
@@ -246,23 +245,34 @@ def normalize( in_files ):
 
     img_data[0][weights==0] = 1.0
     weights[weights==0] = 1.0
-    
 
-    nib.save( nib.Nifti1Image( weights, im.get_affine(), im.get_header() ), op.abspath('w.nii.gz' ) )
+    msk = np.ones_like( imgs[0].get_data() )
     
-    for i,finname in enumerate( in_files ):
-        fname,fext = op.splitext( op.basename( finname ) )
-        if fext == '.gz':
-            fname,fext2 = op.splitext( fname )
-            fext = fext2 + fext
-         
-        out_file = op.abspath( fname+'_norm'+fext )
-        out_files+= [ out_file ]
-        data = img_data[i] / weights
-        hdr = imgs[i].get_header()
-        hdr['data_type']= 16
-        hdr.set_data_dtype( 'float32' )   
-        nib.save( nib.Nifti1Image( data, imgs[i].get_affine(), hdr ), out_file )
+    if not in_mask is None:
+        msk = nib.load( in_mask ).get_data()
+        msk[ msk<=0 ] = 0
+        msk[ msk>0 ] = 1
+
+
+    if len( out_files )==0:    
+        for i,finname in enumerate( in_files ):
+            fname,fext = op.splitext( op.basename( finname ) )
+            if fext == '.gz':
+                fname,fext2 = op.splitext( fname )
+                fext = fext2 + fext
+             
+            out_file = op.abspath( fname+'_norm'+fext )
+            out_files+= [ out_file ]
+
+
+    for i,out_file in enumerate( out_files ):
+            data = img_data[i] / weights
+            data = data * msk
+            hdr = imgs[i].get_header().copy()
+            hdr['data_type']= 16
+            hdr.set_data_dtype( 'float32' )   
+            nib.save( nib.Nifti1Image( data, imgs[i].get_affine(), hdr ), out_file )
+
     return out_files
 
 
