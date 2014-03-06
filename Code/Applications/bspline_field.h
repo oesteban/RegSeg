@@ -58,14 +58,23 @@
 #include <itkImageFileWriter.h>
 #include <itkRandomImageSource.h>
 #include <itkGaussianImageSource.h>
+#include <itkImageRandomNonRepeatingIteratorWithIndex.h>
+#include <itkSmoothingRecursiveGaussianImageFilter.h>
+#include <itkStatisticsImageFilter.h>
+#include <itkMinimumMaximumImageCalculator.h>
+#include <itkMultiplyImageFilter.h>
+#include <itkSubtractImageFilter.h>
+#include <itkResampleImageFilter.h>
+#include <itkBSplineInterpolateImageFunction.h>
 #include "BSplineSparseMatrixTransform.h"
+#include "DisplacementFieldComponentsFileWriter.h"
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 
 static const unsigned int DIMENSION = 3;
 
-typedef itk::Image<float, DIMENSION>                                ChannelType;
+typedef itk::Image<float, DIMENSION>                         ChannelType;
 typedef typename ChannelType::Pointer                        ChannelPointer;
 typedef itk::ImageFileReader<ChannelType>                    ReaderType;
 typedef typename ReaderType::Pointer                         ReaderPointer;
@@ -73,16 +82,43 @@ typedef itk::ImageFileWriter<ChannelType>                    WriterType;
 typedef typename WriterType::Pointer                         WriterPointer;
 
 
-typedef rstk::BSplineSparseMatrixTransform< float, DIMENSION, DIMENSION>   Transform;
+typedef double                                               ScalarType;
+typedef rstk::BSplineSparseMatrixTransform
+		                          < ScalarType, DIMENSION>   Transform;
 typedef Transform::Pointer                                   TPointer;
 typedef typename Transform::CoefficientsImageType            CoefficientsType;
 typedef typename Transform::CoefficientsImageArray           CoefficientsImageArray;
+typedef typename Transform::FieldType                        FieldType;
 
-typedef itk::RandomImageSource< CoefficientsType >           RandomSourceType;
-typedef typename RandomSourceType::Pointer                   RandomSourcePointer;
-
+typedef itk::ImageRandomNonRepeatingIteratorWithIndex
+		                             <CoefficientsType>      RandomIterator;
 typedef itk::ImageFileWriter< CoefficientsType >             CoefficientsWriterType;
 typedef CoefficientsWriterType::Pointer                      CoefficientsWriterPointer;
+
+
+typedef itk::SmoothingRecursiveGaussianImageFilter< CoefficientsType >
+	 	 	 	 	 	 	 	 	 	 	 	 	 	 SmoothingFilterType;
+typedef typename SmoothingFilterType::Pointer			 SmoothingFilterPointer;
+typedef typename SmoothingFilterType::SigmaArrayType     SigmaArrayType;
+
+typedef itk::MinimumMaximumImageCalculator< CoefficientsType > MaxCalc;
+typedef typename MaxCalc::Pointer                              MaxCalcPointer;
+
+typedef itk::StatisticsImageFilter< CoefficientsType >         MedianCalc;
+typedef typename MedianCalc::Pointer                           MedianCalcPointer;
+
+typedef itk::MultiplyImageFilter< CoefficientsType >           MultiplyFilter;
+typedef typename MultiplyFilter::Pointer                       MultiplyPointer;
+
+typedef itk::SubtractImageFilter< CoefficientsType >           SubtractFilter;
+typedef typename SubtractFilter::Pointer                       SubtractPointer;
+
+typedef itk::ResampleImageFilter< ChannelType, ChannelType, ScalarType >    ResampleFilter;
+typedef typename ResampleFilter::Pointer                       ResamplePointer;
+
+typedef itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >    BSplineInterpolateImageFunction;
+
+typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> ComponentsWriter;
 
 int main(int argc, char *argv[]);
 

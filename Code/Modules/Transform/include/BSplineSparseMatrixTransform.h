@@ -51,11 +51,11 @@
 
 namespace rstk {
 
-template< class TScalarType = double, unsigned int NDimensions = 3u, unsigned int VSplineOrder = 3u >
-class BSplineSparseMatrixTransform: public SparseMatrixTransform< TScalarType, NDimensions > {
+template< class TScalar, unsigned int NDimensions, unsigned int VSplineOrder = 3u >
+class BSplineSparseMatrixTransform: public SparseMatrixTransform< TScalar, NDimensions > {
 public:
-	typedef BSplineSparseMatrixTransform< TScalarType, NDimensions, VSplineOrder >      Self;
-	typedef SparseMatrixTransform< TScalarType, NDimensions >                           Superclass;
+	typedef BSplineSparseMatrixTransform< TScalar, NDimensions, VSplineOrder >          Self;
+	typedef SparseMatrixTransform< TScalar, NDimensions >                               Superclass;
 	typedef itk::SmartPointer< Self >                                                   Pointer;
 	typedef itk::SmartPointer< const Self >                                             ConstPointer;
 
@@ -77,6 +77,8 @@ public:
 	typedef typename Superclass::PointSetTraitsType                                     PointSetTraitsType;
 	typedef typename Superclass::PointSetType                                           PointSetType;
 	typedef typename Superclass::PointSetPointer                                        PointSetPointer;
+	typedef typename Superclass::CoefficientsImageArray                                 CoefficientsImageArray;
+	typedef typename Superclass::CoefficientsImageType                                  CoefficientsImageType;
 
     /** Standard coordinate point type for this class. */
     typedef typename Superclass::InputPointType                                         InputPointType;

@@ -52,6 +52,7 @@
 #include <itkDefaultStaticMeshTraits.h>
 #include <itkKernelFunctionBase.h>
 #include <VNLSparseLUSolverTraits.h>
+#include <itkDisplacementFieldTransform.h>
 
 #include <vnl/vnl_sparse_matrix.h>
 #include <vnl/vnl_vector.h>
@@ -62,25 +63,23 @@
 
 namespace rstk {
 
-template< class TScalarType = double, unsigned int NDimensions = 3u >
-class SparseMatrixTransform: public itk::Transform< TScalarType, NDimensions, NDimensions >
+template< class TScalar, unsigned int NDimensions = 3u >
+class SparseMatrixTransform: public itk::DisplacementFieldTransform< TScalar, NDimensions >
 {
 public:
 	/* Standard class typedefs. */
 	typedef SparseMatrixTransform             Self;
-	typedef itk::Transform< TScalarType, NDimensions, NDimensions > Superclass;
+	typedef itk::DisplacementFieldTransform< TScalar, NDimensions > Superclass;
 	typedef itk::SmartPointer< Self >         Pointer;
 	typedef itk::SmartPointer< const Self >   ConstPointer;
 
 	itkTypeMacro( SparseMatrixTransform, Transform );
-	itkCloneMacro(Self);
-
-	//itkNewMacro( Self );
+	//itkCloneMacro(Self);
+	itkNewMacro( Self );
 
 	itkStaticConstMacro( Dimension, unsigned int, NDimensions );
 
-	typedef typename Superclass::ScalarType ScalarType;
-	typedef typename Superclass::ParametersType ParametersType;
+	typedef typename Superclass::ScalarType          ScalarType;
 
 	typedef itk::Point< ScalarType, Dimension >      PointType;
 	typedef itk::Vector< ScalarType, Dimension >     VectorType;
@@ -93,13 +92,16 @@ public:
 	typedef typename SolverType::VectorType          DimensionVector;
 	typedef typename WeightsMatrix::row              SparseVectorType;
 
+	typedef itk::DisplacementFieldTransform< ScalarType, Dimension > DisplacementFieldTransformType;
+	typedef typename DisplacementFieldTransformType::Pointer         DisplacementFieldTransformPointer;
+
 	typedef itk::FixedArray< DimensionVector, NDimensions > DimensionParametersContainer;
 
 	typedef std::vector< PointType >                 PointsList;
 
 	typedef itk::Matrix< ScalarType, Dimension, Dimension >        JacobianType;
 
-	typedef itk::DefaultStaticMeshTraits<TScalarType, NDimensions, NDimensions, TScalarType, TScalarType> PointSetTraitsType;
+	typedef itk::DefaultStaticMeshTraits<TScalar, NDimensions, NDimensions, TScalar, TScalar> PointSetTraitsType;
 	typedef itk::PointSet<PointType, NDimensions, PointSetTraitsType>                                     PointSetType;
 	typedef typename PointSetType::Pointer           PointSetPointer;
 
@@ -143,6 +145,15 @@ public:
     typedef typename FieldType::Pointer                   FieldPointer;
     typedef typename FieldType::ConstPointer              FieldConstPointer;
     typedef typename std::vector< FieldPointer >          DerivativesType;
+
+    /** Type of the input parameters. */
+    typedef typename Superclass::ParametersType          ParametersType;
+    typedef typename Superclass::ParametersValueType     ParametersValueType;
+
+    /** Define the internal parameter helper used to access the field */
+    typedef itk::ImageVectorOptimizerParametersHelper
+    		                                 < ScalarType, Dimension, Dimension>
+    OptimizerParametersHelperType;
 
     itkSetMacro( ControlPointsSize, SizeType );
     itkGetConstMacro( ControlPointsSize, SizeType );
@@ -195,7 +206,6 @@ public:
     itkSetObjectMacro( Field, FieldType );
     itkGetConstObjectMacro( Field, FieldType );
 
-
     /** Get the array of coefficient images. */
     //const CoefficientsImageArray GetCoefficientsImages() const {
     //  return this->m_CoefficientsImages;
@@ -215,48 +225,48 @@ public:
     	return this->m_OutputField;
     }
 
-	void SetParameters(const ParametersType & parameters);
+	//void SetParameters(const ParametersType & parameters);
 
-	void SetFixedParameters(const ParametersType &){
-		itkExceptionMacro(<< "TransformVector(const InputVectorType &) is not implemented for KernelTransform");
-	}
+	//void SetFixedParameters(const ParametersType &){
+	//	itkExceptionMacro(<< "TransformVector(const InputVectorType &) is not implemented for KernelTransform");
+	//}
 
-	OutputPointType TransformPoint(const InputPointType  & point) const	{
-	  return point;
-	}
-
-	/** These vector transforms are not implemented for this transform */
-    using Superclass::TransformVector;
-    OutputVectorType TransformVector(const InputVectorType &) const {
-    	itkExceptionMacro(<< "TransformVector(const InputVectorType &) is not implemented for KernelTransform");
-    	OutputVectorType zero;
-    	zero.Fill(0.0);
-    	return zero;
-    }
-
-    OutputVnlVectorType TransformVector(const InputVnlVectorType &) const {
-    	itkExceptionMacro(<< "TransformVector(const InputVnlVectorType &) is not implemented for KernelTransform");
-    	OutputVnlVectorType zero(Dimension);
-    	zero.fill(0.0);
-    	return zero;
-    }
-
-    /**  Method to transform a CovariantVector. */
-    using Superclass::TransformCovariantVector;
-    OutputCovariantVectorType TransformCovariantVector(const InputCovariantVectorType &) const {
-    	itkExceptionMacro( << "TransformCovariantVector(const InputCovariantVectorType &) is not implemented for KernelTransform");
-    	OutputCovariantVectorType zero;
-    	zero.Fill(0.0);
-    	return zero;
-    }
-    /** Compute the Jacobian Matrix of the transformation at one point */
-    void ComputeJacobianWithRespectToParameters( const InputPointType  & p, JacobianType & jacobian) const {
-    	itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented for " << this->GetNameOfClass() );
-    }
-
-    void ComputeJacobianWithRespectToPosition(const InputPointType &, JacobianType &) const {
-    	itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented for " << this->GetNameOfClass() );
-    }
+	//OutputPointType TransformPoint(const InputPointType  & point) const	{
+	//  return point;
+	//}
+    //
+	///** These vector transforms are not implemented for this transform */
+    //using Superclass::TransformVector;
+    //OutputVectorType TransformVector(const InputVectorType &) const {
+    //	itkExceptionMacro(<< "TransformVector(const InputVectorType &) is not implemented for KernelTransform");
+    //	OutputVectorType zero;
+    //	zero.Fill(0.0);
+    //	return zero;
+    //}
+    //
+    //OutputVnlVectorType TransformVector(const InputVnlVectorType &) const {
+    //	itkExceptionMacro(<< "TransformVector(const InputVnlVectorType &) is not implemented for KernelTransform");
+    //	OutputVnlVectorType zero(Dimension);
+    //	zero.fill(0.0);
+    //	return zero;
+    //}
+    //
+    ///**  Method to transform a CovariantVector. */
+    //using Superclass::TransformCovariantVector;
+    //OutputCovariantVectorType TransformCovariantVector(const InputCovariantVectorType &) const {
+    //	itkExceptionMacro( << "TransformCovariantVector(const InputCovariantVectorType &) is not implemented for KernelTransform");
+    //	OutputCovariantVectorType zero;
+    //	zero.Fill(0.0);
+    //	return zero;
+    //}
+    ///** Compute the Jacobian Matrix of the transformation at one point */
+    //void ComputeJacobianWithRespectToParameters( const InputPointType  & p, JacobianType & jacobian) const {
+    //	itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented for " << this->GetNameOfClass() );
+    //}
+    //
+    //void ComputeJacobianWithRespectToPosition(const InputPointType &, JacobianType &) const {
+    //	itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented for " << this->GetNameOfClass() );
+    //}
 
 protected:
 	SparseMatrixTransform();
@@ -276,7 +286,7 @@ protected:
 
 	inline ScalarType Evaluate( const VectorType r ) const;
 	inline ScalarType EvaluateDerivative( const VectorType r, size_t dim ) const;
-	virtual size_t GetSupport() const = 0;
+	//virtual size_t GetSupport() const = 0;
 
 	/* Field domain definitions */
 	SizeType               m_ControlPointsSize;
@@ -313,6 +323,7 @@ protected:
 	FieldPointer          m_Field;
 	DerivativesType       m_Derivatives;
 	FieldPointer          m_OutputField;
+
 private:
 	SparseMatrixTransform( const Self & );
 	void operator=( const Self & );
