@@ -66,7 +66,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_NumberOfRegions(1),
  m_NumberOfPoints(0),
  m_NumberOfNodes(0),
- m_SamplingFactor(4),
+ m_SamplingFactor(2),
  m_Scale(1.0),
  m_DecileThreshold(0.05),
  m_DisplacementsUpdated(true),
