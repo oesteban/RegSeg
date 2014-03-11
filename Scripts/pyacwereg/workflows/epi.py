@@ -1,6 +1,13 @@
-# coding: utf-8
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
+#
+# @Author: Oscar Esteban - code@oscaresteban.es
+# @Date:   2014-03-10 17:32:19
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2014-03-11 15:54:27
+
 
 import os
 import os.path as op
@@ -17,9 +24,8 @@ from smri import fieldmap_preparation
 
 def isbi_workflow( name='ISBI2014' ):
     workflow = pe.Workflow(name=name)
-
     # Setup i/o
-    inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'in_fmap_mag', 'in_fmap_pha', 'in_t1w_brain', 'in_t2w', 'fs_subjects_dir','te_incr', 'echospacing','enc_dir' ]), name='inputnode' )
+    inputnode = pe.Node( niu.IdentityInterface(fields=['subject_id','in_fmap_mag','in_fmap_pha','in_t1w_brain', 'in_t2w', 'fs_subjects_dir','te_incr', 'echospacing','enc_dir' ]), name='inputnode' )
     outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_tpms' ]), name='outputnode' )
     
     # Setup internal workflows
@@ -27,7 +33,7 @@ def isbi_workflow( name='ISBI2014' ):
     distort = distortion_workflow()
 
 
-    workflow.connect( [
+    workflow.connect([
                          ( inputnode,  prepare, [ ('subject_id','inputnode.subject_id'),('in_fmap_mag','inputnode.in_fmap_mag'),
                                                   ('in_fmap_pha','inputnode.in_fmap_pha'),('in_t1w_brain','inputnode.in_t1w_brain'),
                                                   ('in_t2w','inputnode.in_t2w'),('fs_subjects_dir','inputnode.fs_subjects_dir') ])
