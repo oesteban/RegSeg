@@ -52,7 +52,8 @@ class FSFiles( IOBase ):
 
 def gen_fs_transform( in_file, fs_subjects_dir, subject_id, out_file=None ):
     """ Get transform matrix between orig (*tkRAS*) and native (*scannerRAS*)
-    coordinates in Freesurfer.
+    coordinates in Freesurfer. Implements first step of 
+    `this guide <http://surfer.nmr.mgh.harvard.edu/fswiki/FsAnat-to-NativeAnat>`_.
 
     Keyword arguments:
     in_file -- image in scanner coordinates

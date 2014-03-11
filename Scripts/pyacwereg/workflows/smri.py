@@ -16,52 +16,69 @@ import pyacwereg.utils.freesurfer as myfs
 
 
 def prepare_smri( name='Prepare_sMRI'):
-	wf = pe.Workflow( name=name )
+    wf = pe.Workflow( name=name )
 
-	def _fsdir( path ):
-		import os.path as op
-		return op.join( path, 'FREESURFER' )
+    def _fsdir( path ):
+        import os.path as op
+        return op.join( path, 'FREESURFER' )
 
-	inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'data_dir' ] ), name='inputnode' )
-	outputnode = pe.Node( niu.IdentityInterface( fields=[ 'out_surfs', 'out_smri' ] ), name='outputnode' )
+    inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'data_dir' ] ), name='inputnode' )
+    outputnode = pe.Node( niu.IdentityInterface( fields=[ 'out_surfs', 'out_smri', 'out_smri_brain' ] ), name='outputnode' )
 
-	ds = pe.Node( nio.DataGrabber(infields=['subject_id'], outfields=['t1w','t2w'], sort_filelist=False), name='DataSource' )
-	ds.inputs.template = '*'
-	ds.inputs.field_template = dict( t1w='subjects/%s/T1*.nii.gz', t2w='subjects/%s/T2*.nii.gz' )
-	ds.inputs.template_args = dict( t1w=[['subject_id']], t2w=[['subject_id']] )
+    ds = pe.Node( nio.DataGrabber(infields=['subject_id'], outfields=['t1w','t2w'], sort_filelist=False), name='DataSource' )
+    ds.inputs.template = '*'
+    ds.inputs.field_template = dict( t1w='subjects/%s/T1*.nii.gz', t2w='subjects/%s/T2*.nii.gz' )
+    ds.inputs.template_args = dict( t1w=[['subject_id']], t2w=[['subject_id']] )
 
-	bbreg = pe.Node( fs.BBRegister( init='header', contrast_type='t2', registered_file=True ), name='T2w_to_T1w')
+    fs_src = pe.Node( myfs.FSFiles(), name='FSSource')
 
-	T1toRAS = pe.Node( fs.MRIConvert( out_type='niigz', out_orientation='RAS' ), name='T1toRAS' )
-	T2toRAS = pe.Node( fs.MRIConvert( out_type='niigz', out_orientation='RAS' ), name='T2toRAS' )
-	merge_mri = pe.Node( niu.Merge(2), name='merge_mri')
+    bbreg = pe.Node( fs.BBRegister( init='header', contrast_type='t2', registered_file=True ), name='T2w_to_T1w')
+    T1toRAS = pe.Node( fs.MRIConvert( out_type='niigz', out_orientation='RAS' ), name='T1toRAS' )
+    T2toRAS = pe.Node( fs.MRIConvert( out_type='niigz', out_orientation='RAS' ), name='T2toRAS' )
+    merge_mri = pe.Node( niu.Merge(2), name='merge_mri')
 
-	csf = csf_surface()
-	surfs = surfs_to_native()
-	merge_srf = pe.Node( niu.Merge(2), name='merge_surfs')
-	tovtk = pe.MapNode( fs.MRIsConvert( out_datatype='vtk'), name='toVTK', iterfield=['in_file'])
-	fixvtk = pe.MapNode( niu.Function( input_names=['in_file','in_ref'], output_names=['out_file'], function=myfs.fixvtk), name='fixVTK', iterfield=['in_file'])
+    csf = csf_surface()
+    surfs = surfs_to_native()
+    merge_srf = pe.Node( niu.Merge(2), name='merge_surfs')
+    tovtk = pe.MapNode( fs.MRIsConvert( out_datatype='vtk'), name='toVTK', iterfield=['in_file'])
+    fixvtk = pe.MapNode( niu.Function( input_names=['in_file','in_ref'], output_names=['out_file'], function=myfs.fixvtk), name='fixVTK', iterfield=['in_file'])
 
-	wf.connect([
+    tfm_norm = pe.Node( fs.ApplyVolTransform(reg_header=True), name='norm_to_T1')
+    T1brainToRAS = pe.Node( fs.MRIConvert( out_type='niigz', out_orientation='RAS' ), name='T1brainToRAS' )
+    t2msk = pe.Node( fs.ApplyMask(), name='T2_BET' )
+    n4 = pe.Node( ants.N4BiasFieldCorrection( dimension=3 ), name='T2_Bias' )
+    merge_brain = pe.Node( niu.Merge(2), name='merge_brain')
+
+    wf.connect([
                      ( inputnode,              ds, [ ('subject_id','subject_id'), ('data_dir','base_directory')])
+                    ,( inputnode,          fs_src, [ ('subject_id','subject_id'), (('data_dir',_fsdir),'fs_subjects_dir')]) 
                     ,( inputnode,             csf, [ ('subject_id', 'inputnode.subject_id'), (('data_dir',_fsdir),'inputnode.fs_subjects_dir') ])
                     ,( inputnode,           surfs, [ ('subject_id', 'inputnode.subject_id'), (('data_dir',_fsdir),'inputnode.fs_subjects_dir') ])
                     ,( inputnode,           bbreg, [ ('subject_id', 'subject_id'), (('data_dir',_fsdir),'subjects_dir') ] )
                     ,( ds,                  bbreg, [ ('t2w', 'source_file') ] )
                     ,( ds,                T1toRAS, [ ('t1w', 'in_file')])
+                    ,( fs_src,           tfm_norm, [ ('norm','source_file') ])
+                    ,( T1toRAS,          tfm_norm, [ ('out_file','target_file') ])
                     ,( T1toRAS,             surfs, [ ('out_file','inputnode.in_native')])
                     ,( bbreg,             T2toRAS, [ ('registered_file','in_file')])
                     ,( T1toRAS,         merge_mri, [ ('out_file','in1')])
                     ,( T2toRAS,         merge_mri, [ ('out_file','in2')])
+                    ,( tfm_norm,     T1brainToRAS, [ ('transformed_file', 'in_file' )])
+                    ,( T1brainToRAS,  merge_brain, [ ('out_file', 'in1' )])
+                    ,( T1brainToRAS,        t2msk, [ ('out_file', 'mask_file') ])
+                    ,( T2toRAS,             t2msk, [ ('out_file', 'in_file')])
+                    ,( t2msk,                  n4, [ ('out_file', 'input_image')])
+                    ,( n4,            merge_brain, [ ('output_image', 'in2')])
                     ,( csf,             merge_srf, [ ('outputnode.out_surf', 'in1')])
                     ,( surfs,           merge_srf, [ ('outputnode.out_surfs', 'in2')])
                     ,( merge_srf,           tovtk, [ ('out', 'in_file')])
-                    ,( merge_mri,      outputnode, [ ('out', 'out_smri')])
                     ,( T1toRAS,            fixvtk, [ ('out_file','in_ref')])
                     ,( tovtk,              fixvtk, [ ('converted','in_file')])
+                    ,( merge_mri,      outputnode, [ ('out', 'out_smri')])
+                    ,( merge_brain,    outputnode, [ ('out', 'out_smri_brain')])
                     ,( fixvtk,         outputnode, [ ('out_file','out_surfs')])
-		])
-	return wf
+        ])
+    return wf
 
 
 def fieldmap_preparation( name="Fmap_prepare" ):
@@ -160,17 +177,17 @@ def fieldmap_preparation( name="Fmap_prepare" ):
                         ,( msk_mag,        outputnode, [ ('out_file', 'out_fmap_mag' ) ] )
                         ,( fix_pha,        outputnode, [ ('out_file', 'out_fmap_pha' ) ] )
                         ,( bin_mag,        outputnode, [ ('binary_file', 'out_mask' ) ] )
-    		            ,( fast,           outputnode, [ ('partial_volume_files', 'out_tpms' ) ] )
+                        ,( fast,           outputnode, [ ('partial_volume_files', 'out_tpms' ) ] )
                      ])
     
     return workflow
 
 def csf_surface( name="CSF_Surface" ):
-	return extract_surface( name=name, labels=[ 4, 5, 43, 44, 14, 15, 72, 24 ] )
+    return extract_surface( name=name, labels=[ 4, 5, 43, 44, 14, 15, 72, 24 ] )
 
 def extract_surface( name="GenSurface", labels=None ):
     if labels is None:
-	    raise RuntimeError( "labels should contain an array of ids")
+        raise RuntimeError( "labels should contain an array of ids")
     pipeline = pe.Workflow( name=name )
     inputnode = pe.Node(niu.IdentityInterface( fields=['subject_id', 'fs_subjects_dir' ] ), name='inputnode' )
     outputnode = pe.Node(niu.IdentityInterface( fields=['out_surf', 'out_binary'  ] ), name='outputnode' )
@@ -191,10 +208,10 @@ def extract_surface( name="GenSurface", labels=None ):
     rename = pe.Node( niu.Rename(keep_ext=False,format_string='surf.native'), name='rename')
    
     def _default_labels( in_labels ):
-    	from nipype.interfaces.base import isdefined
-    	if not isdefined( in_labels) or len( in_labels ) == 0:
-    		in_labels = [ 4, 5, 43, 44, 14, 15, 72, 24 ]
-    	return in_labels
+        from nipype.interfaces.base import isdefined
+        if not isdefined( in_labels) or len( in_labels ) == 0:
+            in_labels = [ 4, 5, 43, 44, 14, 15, 72, 24 ]
+        return in_labels
                                     
     pipeline.connect( [
                         ( inputnode,    fs_src, [( 'subject_id', 'subject_id'), ('fs_subjects_dir','fs_subjects_dir') ])
