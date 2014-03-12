@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-10 17:32:19
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-03-11 15:54:27
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-03-12 13:15:53
 
 
 import os
@@ -22,33 +22,7 @@ import nipype.pipeline.engine as pe
 
 from smri import fieldmap_preparation
 
-def isbi_workflow( name='ISBI2014' ):
-    workflow = pe.Workflow(name=name)
-    # Setup i/o
-    inputnode = pe.Node( niu.IdentityInterface(fields=['subject_id','in_fmap_mag','in_fmap_pha','in_t1w_brain', 'in_t2w', 'fs_subjects_dir','te_incr', 'echospacing','enc_dir' ]), name='inputnode' )
-    outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_tpms' ]), name='outputnode' )
-    
-    # Setup internal workflows
-    prepare = fieldmap_preparation()
-    distort = distortion_workflow()
-
-
-    workflow.connect([
-                         ( inputnode,  prepare, [ ('subject_id','inputnode.subject_id'),('in_fmap_mag','inputnode.in_fmap_mag'),
-                                                  ('in_fmap_pha','inputnode.in_fmap_pha'),('in_t1w_brain','inputnode.in_t1w_brain'),
-                                                  ('in_t2w','inputnode.in_t2w'),('fs_subjects_dir','inputnode.fs_subjects_dir') ])
-                        ,( inputnode,  distort, [ ('te_incr','inputnode.te_incr'),('echospacing','inputnode.echospacing'),('enc_dir','inputnode.enc_dir') ])
-                        ,( prepare,    distort, [ ('outputnode.out_smri','inputnode.in_file'),('outputnode.out_fmap_pha','inputnode.in_pha'),
-                                                  ('outputnode.out_fmap_mag','inputnode.in_mag'),('outputnode.out_mask','inputnode.in_mask'),
-                                                  ('outputnode.out_tpms','inputnode.in_tpms') ])
-                        ,( distort, outputnode, [ ('outputnode.out_file','out_file'),('outputnode.out_vsm','out_vsm'),
-                                                  ('outputnode.out_mask','out_mask'),('outputnode.out_tpms','out_tpms') ])
-                    ])
-
-    return workflow 
-
-
-def distortion_workflow(name="synthetic_distortion", nocheck=False ):
+def epi_deform(name="synthetic_distortion", nocheck=False ):
     pipeline = pe.Workflow(name=name)
     
     inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mag', 'in_pha', 'in_mask', 'te_incr', 'echospacing','enc_dir','in_tpms' ]), name='inputnode' )
@@ -89,11 +63,113 @@ def distortion_workflow(name="synthetic_distortion", nocheck=False ):
     
     return pipeline
 
+def fieldmap_preparation( name="Fmap_prepare" ):
+    workflow = pe.Workflow(name=name)
+    
+    # Setup i/o
+    inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'in_fmap_mag', 'in_fmap_pha', 'in_t1w_brain', 'in_surfs', 'in_t2w', 'fs_subjects_dir' ]), name='inputnode' )
+    outputnode = pe.Node( niu.IdentityInterface(fields=[ 'out_fmap_mag', 'out_fmap_pha', 'out_smri', 'out_tpms', 'out_mask', 'out_surfs' ]), name='outputnode' )
+    
+    # Setup initial nodes
+    fslroi = pe.Node( fsl.ExtractROI(t_min=0, t_size=1), name='GetFirst' )
+    bet = pe.Node( fsl.BET( frac=0.4 ), name='BrainExtraction' )
+    bbreg = pe.Node( fs.BBRegister( init='header', contrast_type='t2', registered_file=True ), name='T2w_to_T1w')
+    applymsk = pe.Node( fs.ApplyMask(), name='MaskBrain_T2w' )
+    n4 = pe.Node( ants.N4BiasFieldCorrection( dimension=3 ), name='Bias' )
+    #windorise = pe.Node( fsl.ImageStats(op_string='-p 98'), name='Windorise' )
+    tonifti0 = pe.Node( fs.MRIConvert(out_type="niigz", out_orientation="RAS" ), name='To_Nifti_0' )
+    tonifti1 = pe.Node( fs.MRIConvert(out_type="niigz", out_orientation="RAS" ), name='To_Nifti_1' )
+    tonifti2 = pe.Node( fs.MRIConvert(out_type="niigz", out_orientation="RAS" ), name='To_Nifti_2' )
+    tonifti3 = pe.Node( fs.MRIConvert(out_type="niigz", out_orientation="RAS" ), name='To_Nifti_3' )
+    
+    # Setup ANTS and registration
+    def _aslist( tname ):
+        import numpy as np
+        return np.atleast_1d( tname ).tolist()
+    
+    registration = pe.Node( ants.Registration(output_warped_image=True), name="FM_to_T1" )
+    registration.inputs.transforms = ['Rigid','Affine','SyN'] #, 'SyN']
+    registration.inputs.transform_parameters = [(2.0,),(1.0,),(0.75,4.0,2.0)] #,(0.2,1.0,1.0)]
+    registration.inputs.number_of_iterations = [[50],[20],[15]] #,[10] ]
+    registration.inputs.dimension = 3
+    registration.inputs.metric = ['Mattes','CC', 'CC'] #,'CC']
+    registration.inputs.metric_weight = [1.0]*3
+    registration.inputs.radius_or_number_of_bins = [32,3,3] #,2]
+    registration.inputs.sampling_strategy = ['Regular','Random','Random'] #,'Random']
+    registration.inputs.sampling_percentage = [None,0.1,0.15] #,0.15]
+    registration.inputs.convergence_threshold = [1.e-5,1.e-6,1.e-7] #,1.e-8]
+    registration.inputs.convergence_window_size = [20,10,4] # ,3]
+    registration.inputs.smoothing_sigmas = [[6.0],[4.0],[2.0]] #,[1.0]]
+    registration.inputs.sigma_units = ['vox']*3
+    registration.inputs.shrink_factors = [[6],[2],[2]] #,[1] ]
+    registration.inputs.use_estimate_learning_rate_once = [True]*3
+    registration.inputs.use_histogram_matching = [True]*3
+    registration.inputs.initial_moving_transform_com = 0
+    registration.inputs.collapse_output_transforms = True
+    registration.inputs.winsorize_lower_quantile = 0.005
+    registration.inputs.winsorize_upper_quantile = 0.975
+    
+    binarize = pe.Node( fs.Binarize( min=0.001 ), name='Binarize' )
+    applyAnts = pe.Node( ants.ApplyTransforms(dimension=3,interpolation='BSpline' ), name='ApplyANTs' )
+    msk_mag = pe.Node( fs.ApplyMask(), name='Brain_FMap_Mag' )
+    bin_mag = pe.Node( fs.Binarize( min=0.001 ), name='OutMask' )
+    # msk_pha = pe.Node( fs.ApplyMask(), name='Brain_FMap_Pha' )
+    # smooth = pe.Node( fsl.SpatialFilter( operation='median', kernel_shape='sphere', kernel_size=4 ), name='SmoothPhaseMap' )
+    fix_pha = pe.Node( niu.Function( input_names=['in_file'], output_names=['out_file'], function=check_range ), name='CheckPhaseMap' )
+    n4_t1 = pe.Node( ants.N4BiasFieldCorrection( dimension=3 ), name='Bias_T1' )
+    fast = pe.Node( fsl.FAST( number_classes=3, probability_maps=True, img_type=1 ), name='SegmentT1' )
+    merge = pe.Node( niu.Merge(2), name='JoinNames')
+    combine = pe.Node( fsl.Merge(dimension='t' ), name='Combine')
+    
+    workflow.connect([
+                        # Connect inputs to nodes
+                         ( inputnode,        tonifti0, [ ('in_fmap_mag', 'in_file')] )
+                        ,( inputnode,        tonifti1, [ ('in_fmap_pha', 'in_file')] )
+                        ,( inputnode,           bbreg, [ ('subject_id', 'subject_id'), ('in_t2w', 'source_file'),('fs_subjects_dir','subjects_dir') ] )
+                        ,( inputnode,        tonifti3, [ ('in_t1w_brain', 'in_file' ) ] )
+                        ,( inputnode,        applymsk, [ ('in_t1w_brain', 'mask_file') ] )
+                        # Connections between nodes
+                        ,( tonifti0,           fslroi, [ ('out_file', 'in_file')] )
+                        ,( fslroi,                 n4, [ ('roi_file', 'input_image' ) ] )
+                        ,( n4,                    bet, [ ('output_image','in_file' ) ] )
+                        ,( bbreg,            applymsk, [ ('registered_file','in_file' ) ] )
+                        ,( applymsk,         tonifti2, [ ('out_file','in_file') ])
+                        # ANTs
+                        ,( tonifti3,            n4_t1, [ ('out_file', 'input_image' ) ] )
+                        ,( n4_t1,                fast, [ ('output_image', 'in_files' ) ] )
+                        ,( n4_t1,        registration, [ ('output_image', 'fixed_image' ) ] )
+                        ,( tonifti3,         binarize, [ ('out_file', 'in_file' ) ] )
+                        ,( bet,          registration, [ ('out_file', 'moving_image' ) ] )
+                        ,( binarize,     registration, [ ('binary_file', 'fixed_image_mask' ) ] )
+                        ,( tonifti3,        applyAnts, [ ('out_file', 'reference_image' ) ] )
+                        ,( tonifti1,        applyAnts, [ ('out_file', 'input_image' ) ] )
+                        ,( registration,    applyAnts, [ ('forward_transforms','transforms'),('forward_invert_flags','invert_transform_flags') ])
+                        ,( registration,      msk_mag, [ ('warped_image', 'in_file' ) ] )
+                        ,( tonifti3,          msk_mag, [ ('out_file', 'mask_file' ) ] )
+                        ,( msk_mag,           bin_mag, [ ('out_file', 'in_file') ])
+                        #,( applyAnts,         msk_pha, [ ('output_image', 'in_file' ) ] )
+                        #,( bin_mag,           msk_pha, [ ('binary_file', 'mask_file' ) ] )
+                        #,( msk_pha,            smooth, [ ('out_file', 'in_file' ) ] )
+                        ,( applyAnts,         fix_pha, [ ('output_image', 'in_file' ) ] )
+                        ,( n4_t1,               merge, [ ('output_image', 'in1' ) ])
+                        ,( tonifti2,            merge, [ ('out_file', 'in2') ])
+                        ,( merge,             combine, [ ('out', 'in_files')])
+                        # Connections to output
+                        ,( combine,        outputnode, [ ('merged_file','out_smri') ])
+                        ,( msk_mag,        outputnode, [ ('out_file', 'out_fmap_mag' ) ] )
+                        ,( fix_pha,        outputnode, [ ('out_file', 'out_fmap_pha' ) ] )
+                        ,( bin_mag,        outputnode, [ ('binary_file', 'out_mask' ) ] )
+                        ,( fast,           outputnode, [ ('partial_volume_files', 'out_tpms' ) ] )
+                     ])
+    
+    return workflow
+
 #
 # AUXILIARY FUGUE ALL WORKFLOW ---------------------------------------------------------------------------------
 #
 
 def fugue_all_workflow(name="Fugue_WarpDWIs"):
+    """ Auxiliary nipype workflow that warps/unwarps all images in a sequence """
     pipeline = pe.Workflow(name=name)
     
     def _split_dwi(in_file):
@@ -132,6 +208,28 @@ def fugue_all_workflow(name="Fugue_WarpDWIs"):
 #
 # HELPER FUNCTIONS ------------------------------------------------------------------------------------
 #
+
+def check_range( in_file, out_file=None ):
+    import nibabel as nb
+    import os.path as op
+    import numpy as np
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_checked.nii.gz' % fname)
+
+    im = nb.load( in_file )
+    imdata = im.get_data()
+
+    imdata = imdata - imdata.min()
+    norm = ( 8192 / imdata.max() )
+    imdata = ( norm * imdata ) - 4096
+
+    nii = nb.Nifti1Image( imdata, im.get_affine(), im.get_header() )
+    nb.save( nii, out_file )
+    return out_file
 
 def get_vox_size( in_file ):
     import nibabel as nib

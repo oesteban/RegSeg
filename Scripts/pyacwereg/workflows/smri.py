@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-05 15:08:55
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-03-11 15:55:07
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-03-12 13:08:32
 
 import os
 import os.path as op
@@ -22,6 +22,11 @@ import pyacwereg.utils.freesurfer as myfs
 
 
 def prepare_smri( name='Prepare_sMRI'):
+    """ A nipype workflow to generate structural MRI datasets, including:
+    A T2w image, co-registered to the original T1w using bbreg
+    T1w and T2w, Co-registered, brain-extracted, inhomogeneity corrected
+    Surfaces set comprehending: right and left hemispheres both pial and white, and CSF.
+    """
     wf = pe.Workflow( name=name )
 
     def _fsdir( path ):
@@ -87,10 +92,16 @@ def prepare_smri( name='Prepare_sMRI'):
     return wf
     
 
-def csf_surface( name="CSF_Surface" ):
-    return extract_surface( name=name, labels=[ 4, 5, 43, 44, 14, 15, 72, 24 ] )
-
 def extract_surface( name="GenSurface", labels=None ):
+    """ A nipype workflow for surface extraction from labels in a segmentation.
+    References:
+
+    https://github.com/nipy/nipype/issues/307
+    https://mail.nmr.mgh.harvard.edu/pipermail//freesurfer/2011-November/021391.html
+    http://brainder.org/2012/05/08/importing-freesurfer-subcortical-structures-into-blender/
+    https://mail.nmr.mgh.harvard.edu/pipermail/freesurfer/2013-June/030586.html
+    """
+
     if labels is None:
         raise RuntimeError( "labels should contain an array of ids")
     pipeline = pe.Workflow( name=name )
@@ -138,7 +149,14 @@ def extract_surface( name="GenSurface", labels=None ):
     
     return pipeline
 
+def csf_surface( name="CSF_Surface" ):
+    """ An extract_surface workflow with labels set to liquid areas in aseg segmentation  """
+    return extract_surface( name=name, labels=[ 4, 5, 43, 44, 14, 15, 72, 24 ] )
+
 def surfs_to_native( name='Surfaces_to_native' ):
+    """ A nipype workflow to project a surface from Freesurfer to the T1's native space,
+    in vtk format.
+    """
     wf = pe.Workflow(name=name)
     
     inputnode = pe.Node( niu.IdentityInterface( fields=['in_native','fs_subjects_dir','subject_id']), name='inputnode')
@@ -159,27 +177,3 @@ def surfs_to_native( name='Surfaces_to_native' ):
         ])
 
     return wf
-
-# Helper functions
-
-def check_range( in_file, out_file=None ):
-    import nibabel as nb
-    import os.path as op
-    import numpy as np
-
-    if out_file is None:
-        fname, fext = op.splitext(op.basename(in_file))
-        if fext == '.gz':
-            fname, _ = op.splitext(fname)
-        out_file = op.abspath('./%s_checked.nii.gz' % fname)
-
-    im = nb.load( in_file )
-    imdata = im.get_data()
-
-    imdata = imdata - imdata.min()
-    norm = ( 8192 / imdata.max() )
-    imdata = ( norm * imdata ) - 4096
-
-    nii = nb.Nifti1Image( imdata, im.get_affine(), im.get_header() )
-    nb.save( nii, out_file )
-    return out_file
