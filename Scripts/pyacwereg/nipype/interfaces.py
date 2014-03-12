@@ -6,16 +6,17 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-03-12 13:45:37
+# @Last Modified time: 2014-03-12 15:51:55
 
 import os
+import os.path as op
 from glob import glob
 import warnings
 
 import numpy as np
 import nibabel as nib
 
-from nipype.interfaces.base import (traits, TraitedSpec, , CommandLine,
+from nipype.interfaces.base import (traits, TraitedSpec, CommandLine,
                                     CommandLineInputSpec, InputMultiPath, File,
                                     isdefined, Undefined )
 
@@ -34,14 +35,14 @@ class RandomBSplineDeformationInputSpec( CommandLineInputSpec ):
     grid_size_item_trait = traits.Int(10, usedefault=True )
     grid_size = traits.Either( grid_size_item_trait, traits.List(grid_size_item_trait),
                                xor=['in_coeff'], default=10, usedefault=True,
-                               desc='size of control points grid' )
-    out_prefix =
+                               desc='size of control points grid', argstr="-g %s" )
+    out_prefix = traits.Str( "def", desc='output files prefix', argstr="-o %s", usedefault=True,
+                             mandatory=True )
 
-class RandomBSplineDeformationOutputSpec( TratedSpec ):
-    out_file =
-    out_coeff =
-    out_field =
-
+class RandomBSplineDeformationOutputSpec( TraitedSpec ):
+    out_file = InputMultiPath(File(exists=True))
+    out_coeff = InputMultiPath(File(exists=True))
+    out_field = InputMultiPath(File(exists=True))
 
 class RandomBSplineDeformation( CommandLine ):
     """ Use ACWEReg bspline random deformation tool to generate
@@ -52,9 +53,21 @@ class RandomBSplineDeformation( CommandLine ):
     output_spec = RandomBSplineDeformationOutputSpec
     _cmd = '/home/oesteban/workspace/ACWE-Reg/Debug/Applications/bspline_field'
 
+    def _format_arg( self, name, spec, value ):
+        if name == "grid_size":
+            if spec.is_trait_type(traits.List):
+                if not len(value)==3:
+                    raise RuntimeError("length of grid-size should be one value or three")
+
+        return super(RandomBSplineDeformation, self)._format_arg( name, spec, value )
+
     def _list_outputs( self ):
         out_prefix = self.inputs.out_prefix
-
         outputs = self.output_spec().get()
+
+        outputs['out_file'] = [ op.abspath( '%s_resampled_%d.nii.gz' % ( out_prefix, i ))  for i in range(len(self.inputs.in_file)) ]
+        outputs['out_coeff'] = [ op.abspath( '%s_coeffs_%d.nii.gz' % ( out_prefix, i ))  for i in range(3) ]
+        outputs['out_field'] = [ op.abspath( '%s_field_cmp%d.nii.gz' % ( out_prefix, i ))  for i in range(3) ]
+
         return outputs
 

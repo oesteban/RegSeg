@@ -5,9 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-10 17:32:19
-# @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-12 13:15:53
-
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2014-03-12 15:49:22
 
 import os
 import os.path as op
@@ -20,7 +19,6 @@ import nipype.interfaces.freesurfer as fs       # freesurfer
 import nipype.interfaces.ants as ants           # ANTS
 import nipype.pipeline.engine as pe
 
-from smri import fieldmap_preparation
 
 def epi_deform(name="synthetic_distortion", nocheck=False ):
     pipeline = pe.Workflow(name=name)
