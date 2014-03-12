@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-03-12 15:51:55
+# @Last Modified time: 2014-03-12 16:28:39
 
 import os
 import os.path as op
@@ -48,15 +48,25 @@ class RandomBSplineDeformation( CommandLine ):
     """ Use ACWEReg bspline random deformation tool to generate
     a deformation field and apply the deformation to the target
     images.
+
+    Example
+    -------
+    >>> bspline = RandomBSplineDeformation()
+    >>> bspline.inputs.in_file = 'moving.nii'
+    >>> bspline.inputs.grid_size = [ 5, 8, 6 ]
+    >>> bspline.inputs.out_prefix = 'myprefix'
+    >>> bspline.cmdline
+    'bspline_field -g 5 8 6 -I moving.nii -o myprefix'
     """
+
     input_spec = RandomBSplineDeformationInputSpec
     output_spec = RandomBSplineDeformationOutputSpec
     _cmd = '/home/oesteban/workspace/ACWE-Reg/Debug/Applications/bspline_field'
 
     def _format_arg( self, name, spec, value ):
         if name == "grid_size":
-            if spec.is_trait_type(traits.List):
-                if not len(value)==3:
+            if isinstance( value, list ):
+                if not len(value)==3 and not len(value)==1:
                     raise RuntimeError("length of grid-size should be one value or three")
 
         return super(RandomBSplineDeformation, self)._format_arg( name, spec, value )

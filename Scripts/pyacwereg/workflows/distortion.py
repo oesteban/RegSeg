@@ -6,7 +6,7 @@
 # @Author: oesteban
 # @Date:   2014-03-11 15:28:16
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-03-12 13:17:01
+# @Last Modified time: 2014-03-12 16:56:39
 
 import os
 import os.path as op
@@ -19,7 +19,8 @@ import nipype.interfaces.freesurfer as fs       # freesurfer
 import nipype.interfaces.ants as ants           # ANTS
 import nipype.pipeline.engine as pe
 
-from epi import epi_deform,fielmdap_preparation
+from epi import epi_deform,fieldmap_preparation
+from pyacwereg.nipype.interfaces import RandomBSplineDeformation
 
 def isbi_workflow( name='ISBI2014' ):
     workflow = pe.Workflow(name=name)
@@ -27,10 +28,9 @@ def isbi_workflow( name='ISBI2014' ):
     inputnode = pe.Node( niu.IdentityInterface(fields=['subject_id','in_fmap_mag','in_fmap_pha','in_t1w_brain', 'in_t2w', 'fs_subjects_dir','te_incr', 'echospacing','enc_dir' ]), name='inputnode' )
     outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_tpms' ]), name='outputnode' )
     
-    # Setup internal workflows
+    # Set-up internal workflows
     prepare = fieldmap_preparation()
     distort = epi_deform()
-
 
     workflow.connect([
                          ( inputnode,  prepare, [ ('subject_id','inputnode.subject_id'),('in_fmap_mag','inputnode.in_fmap_mag'),
@@ -48,5 +48,14 @@ def isbi_workflow( name='ISBI2014' ):
 
 def bspline_deform( name='BSplineDistortion' ):
     """ A nipype workflow to produce bspline-based deformation fields """
+    wf = pe.Workflow( name=name )
+    inputnode = pe.Node( niu.IdentityInterface(fields=['in_file','grid_size']), name='inputnode' )
+    outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_field', 'out_coeff' ]), name='outputnode' )
+    distort = pe.Node( RandomBSplineDeformation(), name='bspline_field')
+
+    wf.connect([
+                 ( inputnode,  distort, [ ('in_file','in_file'), ('grid_size','grid_size')])
+                ,( distort, outputnode, [ ('out_file','out_file'), ('out_field','out_field'), ('out_coeff','out_coeff')])
+        ])
 
     return wf
