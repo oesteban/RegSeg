@@ -578,7 +578,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			typename ContourType::PointsContainerConstIterator c_it  = normals->GetPoints()->Begin();
 			typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
-			ContourPointType ci;
+			PointType ci;
 			VectorType v;
 			VectorType ni;
 

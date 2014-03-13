@@ -121,6 +121,8 @@ public:
 	typedef typename FunctionalType::PointType                      PointType;
 	typedef typename FunctionalType::VectorType                     VectorType;
 	typedef typename FunctionalType::PointValueType                 PointValueType;
+	typedef typename FunctionalType::PointValueType                 InternalComputationValueType; // This comes from MetricType in Superclass
+
 
 	typedef SparseMatrixTransform<PointValueType, Dimension >       TransformType;
 	typedef typename TransformType::Pointer                         TransformPointer;
@@ -133,7 +135,6 @@ public:
 	typedef typename TransformType::FieldPointer                    FieldPointer;
 	typedef typename TransformType::FieldConstPointer               FieldConstPointer;
 	typedef typename TransformType::SizeType                        ControlPointsGridSizeType;
-
 
 	/** Type for the convergence checker */
 	typedef itk::Function::WindowConvergenceMonitoringFunction<MeasureType>	         ConvergenceMonitoringType;
