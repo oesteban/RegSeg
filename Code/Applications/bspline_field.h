@@ -69,6 +69,10 @@
 #include "BSplineSparseMatrixTransform.h"
 #include "DisplacementFieldComponentsFileWriter.h"
 
+#include <itkMesh.h>
+#include <itkVTKPolyDataReader.h>
+#include <itkVTKPolyDataWriter.h>
+
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 
@@ -120,6 +124,15 @@ typedef typename ResampleFilter::Pointer                       ResamplePointer;
 typedef itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >    BSplineInterpolateImageFunction;
 
 typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> ComponentsWriter;
+
+
+typedef itk::Mesh< float, DIMENSION >                          MeshType;
+typedef typename MeshType::Pointer                             MeshPointer;
+typedef typename MeshType::PointsContainer::Iterator           PointsIterator;
+typedef itk::VTKPolyDataReader<MeshType>                       MeshReaderType;
+typedef typename MeshReaderType::Pointer                       MeshReaderPointer;
+typedef itk::VTKPolyDataWriter<MeshType>                       MeshWriterType;
+typedef typename MeshWriterType::Pointer                       MeshWriterPointer;
 
 int main(int argc, char *argv[]);
 
