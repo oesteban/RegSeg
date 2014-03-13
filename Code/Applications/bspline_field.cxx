@@ -166,7 +166,6 @@ int main(int argc, char *argv[]) {
 	f->SetFileName( ss.str().c_str() );
 	f->Update();
 
-
 	// Read and transform images if present
 	for( size_t i = 0; i<fixedImageNames.size(); i++) {
 		ReaderPointer r = ReaderType::New();
@@ -188,6 +187,17 @@ int main(int argc, char *argv[]) {
 		w->SetInput( res->GetOutput() );
 		w->SetFileName( ss.str().c_str() );
 		w->Update();
+	}
+
+
+	for( size_t i = 0; i<movingSurfaceNames.size(); i++){
+		MeshReaderPointer r = MeshReaderType::New();
+		r->SetFileName( movingSurfaceNames[i] );
+		r->Update();
+
+		MeshPointer mesh = r->GetOutput();
+
+		PointsIterator  pointIterator = mesh->GetPoints()->Begin();
 	}
 
 }
