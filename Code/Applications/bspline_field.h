@@ -73,6 +73,7 @@ namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 
 static const unsigned int DIMENSION = 3;
+static const unsigned int NUM_THREADS = 4;
 
 typedef itk::Image<float, DIMENSION>                         ChannelType;
 typedef typename ChannelType::Pointer                        ChannelPointer;

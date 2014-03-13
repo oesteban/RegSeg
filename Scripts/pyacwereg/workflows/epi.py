@@ -6,14 +6,14 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-10 17:32:19
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-03-12 15:49:22
+# @Last Modified time: 2014-03-13 10:22:08
 
 import os
 import os.path as op
 
 import nipype.interfaces.io as nio              # Data i/o
 import nipype.interfaces.utility as niu         # utility
-import nipype.pipeline.engine as pe             # pypeline engine
+import nipype.pipeline.engine as pe             # pipeline engine
 import nipype.interfaces.fsl as fsl             # fsl
 import nipype.interfaces.freesurfer as fs       # freesurfer
 import nipype.interfaces.ants as ants           # ANTS

@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
 			("images,I", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
 			("surfaces,S", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken(),	"moving image file")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
+			("num-threads", bpo::value < unsigned int >()->default_value(NUM_THREADS), "use num-threads")
 			("grid-size,g", bpo::value< std::vector<size_t> >(&grid_size)->multitoken(), "size of grid of bspline control points (default is 10x10x10)");
 
 	bpo::variables_map vm;
