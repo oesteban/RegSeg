@@ -9,3 +9,7 @@ TARGET_LINK_LIBRARIES(regseg ${ITK_LIBRARIES} ${Boost_LIBRARIES} ${JsonCpp_LIBRA
 
 ADD_EXECUTABLE(bspline_field bspline_field.cxx ) 
 TARGET_LINK_LIBRARIES(bspline_field ${ITK_LIBRARIES} ${Boost_LIBRARIES} ${JsonCpp_LIBRARY})
+
+INSTALL(TARGETS bspline_field regseg
+  RUNTIME DESTINATION bin
+)
