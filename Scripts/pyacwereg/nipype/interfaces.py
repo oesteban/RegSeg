@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-03-12 16:28:39
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-03-13 16:50:56
 
 import os
 import os.path as op
@@ -24,6 +24,44 @@ from nipype.utils.filemanip import load_json, save_json, split_filename, fname_p
 
 warn = warnings.warn
 warnings.filterwarnings('always', category=UserWarning)
+
+
+class ACWERegInputSpec( CommandLineInputSpec ):
+    in_fixed = InputMultiPath(File(exists=True), mandatory=True, argstr="-F %s",
+              desc='target volume/image(s) contrast to register contours to')
+    in_prior = InputMultiPath(File(exists=True), mandatory=True, argstr="-M %s",
+              desc='vtk contours that will be registered to in_fixed, should be \
+                    given in hierarchical order (from top to bottom, last is bg)')
+    levels = traits.Int(1, usedefault=True, desc='number of levels in multi-resolution \
+                        schemes')
+    out_prefix = traits.Str( "regseg", desc='output files prefix', argstr="-o %s", usedefault=True,
+                             mandatory=True )
+
+    # Functional options
+    func_scale_trait = traits.Float(1.0, usedefault=True)
+    func_scale = traits.Either( func_scale_trait, traits.List(func_scale_trait), default=[1.0],
+                                desc='scales to be applied to computed shape gradients')
+    smooth_trait = traits.Float(2.0)
+    func_smooth = traits.Either( smooth_trait, traits.List(smooth_trait), default=[1.0],
+                                 desc='smoothing kernel')
+
+class ACWERegOutputSpec( TraitedSpec ):
+
+class ACWEReg( CommandLine ):
+    """ Wraps regseg application from ACWERegistration to perform
+    joint segmentation-registration based on ACWE.
+
+    Example
+    -------
+    >>> regseg = ACWEReg()
+    >>>
+    'regseg -F T1w.nii.gz T2w.nii.gz -M csf.vtk white_lh.vtk white_rh.vtk pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 -g 8 ]'
+    """
+    input_spec = ACWERegInputSpec
+    output_spec = ACWERegOutputSpec
+    _cmd = 'regseg'
+
+
 
 class RandomBSplineDeformationInputSpec( CommandLineInputSpec ):
     in_file = InputMultiPath(File(exists=True), mandatory=True, argstr="-I %s",
