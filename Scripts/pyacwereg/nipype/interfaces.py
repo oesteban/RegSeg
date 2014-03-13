@@ -61,7 +61,7 @@ class RandomBSplineDeformation( CommandLine ):
 
     input_spec = RandomBSplineDeformationInputSpec
     output_spec = RandomBSplineDeformationOutputSpec
-    _cmd = '/home/oesteban/workspace/ACWE-Reg/Debug/Applications/bspline_field'
+    _cmd = 'bspline_field'
 
     def _format_arg( self, name, spec, value ):
         if name == "grid_size":
