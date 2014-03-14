@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
-# @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-13 16:50:56
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2014-03-14 19:37:53
 
 import os
 import os.path as op
@@ -25,27 +25,38 @@ from nipype.utils.filemanip import load_json, save_json, split_filename, fname_p
 warn = warnings.warn
 warnings.filterwarnings('always', category=UserWarning)
 
-
-class ACWERegInputSpec( CommandLineInputSpec ):
-    in_fixed = InputMultiPath(File(exists=True), mandatory=True, argstr="-F %s",
-              desc='target volume/image(s) contrast to register contours to')
-    in_prior = InputMultiPath(File(exists=True), mandatory=True, argstr="-M %s",
-              desc='vtk contours that will be registered to in_fixed, should be \
-                    given in hierarchical order (from top to bottom, last is bg)')
-    levels = traits.Int(1, usedefault=True, desc='number of levels in multi-resolution \
-                        schemes')
-    out_prefix = traits.Str( "regseg", desc='output files prefix', argstr="-o %s", usedefault=True,
-                             mandatory=True )
-
+class ACWERegInputGroupSpec( CommandLineInputSpec ):
     # Functional options
     func_scale_trait = traits.Float(1.0, usedefault=True)
     func_scale = traits.Either( func_scale_trait, traits.List(func_scale_trait), default=[1.0],
-                                desc='scales to be applied to computed shape gradients')
-    smooth_trait = traits.Float(2.0)
+                                desc='scales to be applied to computed shape gradients',
+                                argstr='-f %0.5f')
+    smooth_trait = traits.Either( None, traits.Float(2.0) )
     func_smooth = traits.Either( smooth_trait, traits.List(smooth_trait), default=[1.0],
-                                 desc='smoothing kernel')
+                                 desc='smoothing kernel', argstr='-s %0.2f' )
+
+    # Optimizer options
+    iterations_trait = traits.Int( 10 )
+    iterations = traits.Either( iterations_trait, traits.List(iterations_trait), default=[50],
+                                desc='number of iterations (per level)', argstr='-i %d' )
+
+class ACWERegInputSpec( ACWERegInputGroupSpec ):
+    in_fixed = InputMultiPath(File(exists=True), argstr="-F %s",
+              desc='target volume/image(s) contrast to register contours to')
+    in_prior = InputMultiPath(File(exists=True), argstr="-M %s",
+              desc='vtk contours that will be registered to in_fixed, should be \
+                    given in hierarchical order (from top to bottom, last is bg)')
+    levels = traits.Int(1, desc='number of levels in multi-resolution \
+                        schemes')
+    out_prefix = traits.Str( "regseg", desc='output files prefix', argstr="-o %s",
+         usedefault=True )
+
+
 
 class ACWERegOutputSpec( TraitedSpec ):
+    out_warped = traits.File(exists=True)
+
+
 
 class ACWEReg( CommandLine ):
     """ Wraps regseg application from ACWERegistration to perform
@@ -58,9 +69,93 @@ class ACWEReg( CommandLine ):
     'regseg -F T1w.nii.gz T2w.nii.gz -M csf.vtk white_lh.vtk white_rh.vtk pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 -g 8 ]'
     """
     input_spec = ACWERegInputSpec
+    input_group_spec = ACWERegInputGroupSpec
     output_spec = ACWERegOutputSpec
+    _grouped_traits = []
     _cmd = 'regseg'
+    _num_levels = 0
 
+    def __init__( self, command=None, **inputs ):
+        """ Combine general and grouped inputs """
+        super( ACWEReg, self ).__init__( command=command, **inputs )
+        self.groups = self.input_group_spec()
+
+        general_names = CommandLineInputSpec().trait_names()
+
+        for name in self.groups.trait_names():
+            if not any( name in s for s in general_names ):
+                self._grouped_traits.append( name )
+
+
+    def _parse_inputs(self, skip=None):
+        """Parse all inputs using the ``argstr`` format string in the Trait.
+
+        Any inputs that are assigned (not the default_value) are formatted
+        to be added to the command line.
+
+        Returns
+        -------
+        all_args : list
+            A list of all inputs formatted for the command line.
+
+        """
+        all_args = []
+
+        if skip is None:
+            skip = []
+
+        skip+=['levels']
+        all_args+=super( ACWEReg, self )._parse_inputs( skip=skip+self._grouped_traits )
+
+        if isdefined( self.inputs.levels ):
+            self._num_levels = self.inputs.levels
+        elif isdefined( self.inputs.iterations ):
+            if isinstance( self.inputs.iterations, list ):
+                self._num_levels = len( self.inputs.iterations )
+            elif type( self.inputs.iterations ) is int:
+                self._num_levels = 1
+            else:
+                raise RuntimeError( 'iterations is not a valid value')
+        else:
+            raise RuntimeError( 'No way to guess number of levels')
+
+        for i in range( self._num_levels ):
+            all_args+=[ self._parse_group( i ) ]
+
+        return all_args
+
+
+    def _parse_group( self, gid, skip=None ):
+        retval = []
+        retval.append( ' [' )
+
+        metadata = dict(argstr=lambda t: t is not None)
+        for name, spec in sorted(self.inputs.traits(**metadata).items()):
+            if skip and name in skip:
+                continue
+            if not name in self._grouped_traits:
+                continue
+
+            value = getattr( self.inputs, name)
+
+            if not isdefined(value):
+                continue
+
+            value = np.atleast_1d( value )
+
+            if not len(value) == self._num_levels:
+                raise RuntimeError('spec  \'%s\' should match number of levels' % name )
+
+            if value[gid] is None:
+                continue
+
+            retval.append( ' ' + self._format_arg( name, spec, value[gid] ) )
+
+
+
+        retval.append( ']' )
+
+        return "".join(retval)
 
 
 class RandomBSplineDeformationInputSpec( CommandLineInputSpec ):
