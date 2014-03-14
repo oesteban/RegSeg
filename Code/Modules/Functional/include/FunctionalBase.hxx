@@ -293,19 +293,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
 			ProbabilityMapConstPointer roipm = this->GetCurrentMap( roi );
-
-	#ifndef NDEBUG
-			ProbabilityMapPointer tmpmap = ProbabilityMapType::New();
-			tmpmap->SetOrigin( roipm->GetOrigin() );
-			tmpmap->SetRegions( roipm->GetLargestPossibleRegion() );
-			tmpmap->SetDirection( roipm->GetDirection() );
-			tmpmap->SetSpacing( roipm->GetSpacing() );
-			tmpmap->Allocate();
-			tmpmap->FillBuffer( 0.0 );
-
-			typename ProbabilityMapType::PixelType* tmpBuffer = tmpmap->GetBufferPointer();
-	#endif
-
 			const typename ProbabilityMapType::PixelType* roiBuffer = roipm->GetBufferPointer();
 			const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
 
@@ -319,21 +306,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				if ( w > 0.0 ) {
 					val = *(refBuffer+i);
 					this->m_Value +=  w * this->GetEnergyOfSample( val, roi );
-#ifndef NDEBUG
-					*(tmpBuffer+i) = val[0];
-#endif
 				}
 			}
-
-#ifndef NDEBUG
-			typedef typename itk::ImageFileWriter< ProbabilityMapType > W;
-			typename W::Pointer writer = W::New();
-			writer->SetInput(tmpmap);
-			std::stringstream ss;
-			ss << "region_energy_" << roi << ".nii.gz";
-			writer->SetFileName( ss.str().c_str() );
-			writer->Update();
-#endif
 		}
 
 		this->m_Value = normalizer*this->m_Value;
@@ -563,18 +537,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			ContourPointer normals = normalsFilter->GetOutput();
 			outerVect.resize( normals->GetNumberOfPoints() );
 
-#ifndef NDEBUG
-			ShapeCopyPointer copyShape1 = ShapeCopyType::New();
-			copyShape1->SetInput( this->m_CurrentContours[contid] );
-			copyShape1->Update();
-			ShapeGradientPointer inner_surf = copyShape1->GetOutput();
-
-			ShapeCopyPointer copyShape2 = ShapeCopyType::New();
-			copyShape2->SetInput( this->m_CurrentContours[contid] );
-			copyShape2->Update();
-			ShapeGradientPointer outer_surf = copyShape2->GetOutput();
-#endif
-
 			typename ContourType::PointsContainerConstIterator c_it  = normals->GetPoints()->Begin();
 			typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
 
@@ -590,33 +552,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				ROIPixelType inner = interp->Evaluate( ci + ni );
 				ROIPixelType outer = interp->Evaluate( ci - ni );
 				outerVect[pid] = outer;
-#ifndef NDEBUG
-				if ( inner!= outer ) {
-					inner_surf->GetPointData()->SetElement( pid, (1.0+inner) );
-					outer_surf->GetPointData()->SetElement( pid, (1.0+outer) );
-				} else {
-					inner_surf->GetPointData()->SetElement( pid, 0.0 );
-					outer_surf->GetPointData()->SetElement( pid, 0.0 );
-				}
-#endif
 				++c_it;
 			}
-#ifndef NDEBUG
-			typedef itk::QuadEdgeMeshScalarDataVTKPolyDataWriter
-					                             < ShapeGradientType >  ContourWriterType;
-			typedef typename ContourWriterType::Pointer                 ContourWriterPointer;
-			ContourWriterPointer wc = ContourWriterType::New();
-			std::stringstream ss;
-			ss << "inner_regions_cont" << contid << ".vtk";
-			wc->SetFileName( ss.str().c_str() );
-			wc->SetInput( inner_surf );
-			wc->Update();
-			ss.str("");
-			ss << "outer_regions_cont" << contid << ".vtk";
-			wc->SetFileName( ss.str().c_str() );
-			wc->SetInput( outer_surf );
-			wc->Update();
-#endif
 			this->m_OuterList.push_back( outerVect );
 		}
 	} else {

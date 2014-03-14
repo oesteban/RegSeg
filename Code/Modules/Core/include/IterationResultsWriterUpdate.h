@@ -105,7 +105,7 @@ public:
        		for( size_t r = 0; r < nContours; r++ ) {
        			ContourWriterPointer wc = ContourWriterType::New();
        			std::stringstream ss;
-       			ss << "gradients_lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << std::setw(2) << "_cont"<< r << ".vtk";
+       			ss << "contour_lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << std::setw(2) << "_cont"<< r << ".vtk";
        			wc->SetFileName( ss.str().c_str() );
        			wc->SetInput( grads[r] );
        			wc->Update();
@@ -116,7 +116,7 @@ public:
 			typedef itk::ImageFileWriter< ROIType > WriteROI;
 			typename WriteROI::Pointer w = WriteROI::New();
 			std::stringstream ss;
-			ss << prefix << "regions_" << this->m_Level << ".nii.gz";
+			ss << prefix << "segmentation_" << this->m_Level << ".nii.gz";
 			w->SetFileName( ss.str().c_str() );
 			w->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentRegions() );
 			w->Update();
