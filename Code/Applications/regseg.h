@@ -101,6 +101,11 @@ typedef itk::ImageFileWriter<ChannelType>                    ImageWriter;
 //typedef rstk::DisplacementFieldFileWriter<FieldType>         DisplacementFieldWriter;
 //typedef itk::ImageFileWriter< ROIType >                      ROIWriter;
 
+#ifndef NDEBUG
+	const static size_t DEFAULT_VERBOSITY = 5;
+#else
+	const static size_t DEFAULT_VERBOSITY = 1;
+#endif
 
 int main(int argc, char *argv[]);
 
