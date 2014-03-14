@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
 			("output-all", bpo::bool_switch(&outImages),"output intermediate images")
 			("logfile,l", bpo::value<std::string>(&logFileName), "log filename")
-			("verbosity,V", bpo::value<size_t>(&verbosity), "verbosity level ( 0 = no output; 5 = verbose )");
+			("verbosity,v", bpo::value<size_t>(&verbosity), "verbosity level ( 0 = no output; 5 = verbose )");
 
 	bpo::options_description opt_desc("Optimizer options (by levels)");
 	OptimizerType::AddOptions( opt_desc );
@@ -134,6 +134,7 @@ int main(int argc, char *argv[]) {
 	// Initialize registration
 	RegistrationPointer acwereg = RegistrationType::New();
 	acwereg->SetOutputPrefix( outPrefix );
+	acwereg->SetVerbosity( verbosity );
 
 	// Create the JSON output object
 	Json::Value root;
