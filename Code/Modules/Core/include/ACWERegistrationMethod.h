@@ -184,6 +184,9 @@ public:
 	itkSetMacro( AutoSmoothing, bool );
 	itkGetConstMacro( AutoSmoothing, bool );
 
+	itkSetClampMacro( Verbosity, size_t, 0, 5 );
+	itkGetConstMacro( Verbosity, size_t );
+
 	itkGetMacro( JSONRoot, JSONRoot);
 
 	rstkSetVectorElement( GridSchedule, GridSizeType );
@@ -207,7 +210,6 @@ public:
 
 	/** Returns the transform resulting from the registration process  */
 	virtual const DecoratedOutputTransformType * GetOutput() const;
-
 
 protected:
 	ACWERegistrationMethod();
@@ -258,6 +260,8 @@ private:
 	JSONRoot m_JSONRoot;
 	JSONLoggerPointer m_CurrentLogger;
 	IterationWriterPointer m_ImageLogger;
+
+	size_t m_Verbosity;
 };
 
 } // namespace rstk

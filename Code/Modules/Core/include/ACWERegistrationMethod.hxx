@@ -59,7 +59,8 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
                             m_UseGridSizeInitialization(true),
                             m_Initialized(false),
                             m_AutoSmoothing(false),
-                            m_Stop(false) {
+                            m_Stop(false),
+                            m_Verbosity(1) {
 	this->m_StopCondition      = ALL_LEVELS_DONE;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 
@@ -229,19 +230,22 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 
 	// Connect Optimizer
 	m_Optimizers[level] = DefaultOptimizerType::New();
-	m_Optimizers[level]->SetFunctional( m_Functionals[level] );
+	m_Optimizers[level]->SetFunctional( this->m_Functionals[level] );
 	m_Optimizers[level]->SetSettings( this->m_Config[level] );
 
 	this->m_CurrentLogger = JSONLoggerType::New();
-	this->m_CurrentLogger->SetOptimizer( m_Optimizers[level] );
+	this->m_CurrentLogger->SetOptimizer( this->m_Optimizers[level] );
 	this->m_CurrentLogger->SetLevel( level );
 	//this->m_CurrentLogger->SetTrackEnergyOn();
-#ifndef NDEBUG
-	this->m_ImageLogger = IterationWriterUpdate::New();
-	this->m_ImageLogger->SetOptimizer( m_Optimizers[level] );
-	this->m_ImageLogger->SetPrefix( m_OutputPrefix );
-	this->m_ImageLogger->SetLevel( level );
-#endif
+
+	if( this->m_Verbosity > 0 ) {
+		this->m_ImageLogger = IterationWriterUpdate::New();
+		this->m_ImageLogger->SetOptimizer( this->m_Optimizers[level] );
+		this->m_ImageLogger->SetPrefix( this->m_OutputPrefix );
+		this->m_ImageLogger->SetLevel( level );
+		this->m_ImageLogger->SetVerbosity( this->m_Verbosity );
+	}
+
 
 }
 
