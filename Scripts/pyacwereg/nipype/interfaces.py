@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-03-14 19:37:53
+# @Last Modified time: 2014-03-14 20:31:02
 
 import os
 import os.path as op
@@ -27,18 +27,37 @@ warnings.filterwarnings('always', category=UserWarning)
 
 class ACWERegInputGroupSpec( CommandLineInputSpec ):
     # Functional options
-    func_scale_trait = traits.Float(1.0, usedefault=True)
-    func_scale = traits.Either( func_scale_trait, traits.List(func_scale_trait), default=[1.0],
+    float_trait = traits.Either( None, traits.Float(1.0) )
+    int_trait = traits.Either( None, traits.Int( 0 ) )
+
+    f_scale = traits.Either( float_trait, traits.List(float_trait), default=1.0,
                                 desc='scales to be applied to computed shape gradients',
                                 argstr='-f %0.5f')
-    smooth_trait = traits.Either( None, traits.Float(2.0) )
-    func_smooth = traits.Either( smooth_trait, traits.List(smooth_trait), default=[1.0],
-                                 desc='smoothing kernel', argstr='-s %0.2f' )
+    f_smooth = traits.Either( float_trait, traits.List(float_trait), default=2.0,
+                                 desc='smoothing kernel', argstr='-S %0.2f' )
+    f_decile = traits.Either( float_trait, traits.List(float_trait), default=1.0,
+                                desc='set (decile) threshold to consider a computed \
+                                      gradient as outlier (ranges 0.0-0.5)',
+                                argstr='-d %0.5f')
 
     # Optimizer options
-    iterations_trait = traits.Int( 10 )
-    iterations = traits.Either( iterations_trait, traits.List(iterations_trait), default=[50],
+    iterations = traits.Either( traits.Int(), traits.List(traits.Int()), default=50,
                                 desc='number of iterations (per level)', argstr='-i %d' )
+    grid_size = traits.Either( int_trait, traits.List( int_trait ), default=8,
+                                desc='bspline control points per dimension and level',
+                                argstr='-g %d')
+    descript_update = traits.Either( int_trait, traits.List( int_trait ), default=5,
+                                desc='update descriptors every N iterations, per level',
+                                argstr='-u %d')
+    step_size = traits.Either( float_trait, traits.List(float_trait), default=1.0,
+                                desc='update step size in gradient descent optimization',
+                                argstr='-s %0.5f')
+    alpha = traits.Either( float_trait, traits.List(float_trait), default=1.0,
+                                desc='alpha scalar',
+                                argstr='-a %0.5f')
+    beta = traits.Either( float_trait, traits.List(float_trait), default=1.0,
+                                desc='beta scalar',
+                                argstr='-b %0.5f')
 
 class ACWERegInputSpec( ACWERegInputGroupSpec ):
     in_fixed = InputMultiPath(File(exists=True), argstr="-F %s",
@@ -47,7 +66,7 @@ class ACWERegInputSpec( ACWERegInputGroupSpec ):
               desc='vtk contours that will be registered to in_fixed, should be \
                     given in hierarchical order (from top to bottom, last is bg)')
     levels = traits.Int(1, desc='number of levels in multi-resolution \
-                        schemes')
+                        schemes', argstr="-L %d")
     out_prefix = traits.Str( "regseg", desc='output files prefix', argstr="-o %s",
          usedefault=True )
 
@@ -104,9 +123,6 @@ class ACWEReg( CommandLine ):
         if skip is None:
             skip = []
 
-        skip+=['levels']
-        all_args+=super( ACWEReg, self )._parse_inputs( skip=skip+self._grouped_traits )
-
         if isdefined( self.inputs.levels ):
             self._num_levels = self.inputs.levels
         elif isdefined( self.inputs.iterations ):
@@ -118,6 +134,9 @@ class ACWEReg( CommandLine ):
                 raise RuntimeError( 'iterations is not a valid value')
         else:
             raise RuntimeError( 'No way to guess number of levels')
+
+        skip+=['levels']
+        all_args+=super( ACWEReg, self )._parse_inputs( skip=skip+self._grouped_traits )
 
         for i in range( self._num_levels ):
             all_args+=[ self._parse_group( i ) ]
@@ -150,11 +169,7 @@ class ACWEReg( CommandLine ):
                 continue
 
             retval.append( ' ' + self._format_arg( name, spec, value[gid] ) )
-
-
-
         retval.append( ']' )
-
         return "".join(retval)
 
 
