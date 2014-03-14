@@ -36,7 +36,6 @@ int main(int argc, char *argv[]) {
 	std::vector< std::string > fixedImageNames, movingSurfaceNames;
 	std::string logFileName = ".log";
 	bool outImages = false;
-	size_t verbosity = 1;
 
 	bpo::options_description all_desc("Usage");
 	bpo::options_description general_desc("General options");
@@ -46,9 +45,8 @@ int main(int argc, char *argv[]) {
 			("moving-surfaces,M", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken()->required(),	"moving image file")
 			("transform-levels,L", bpo::value< size_t > (), "number of multi-resolution levels for the transform")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
-			("output-all", bpo::bool_switch(&outImages),"output intermediate images")
 			("logfile,l", bpo::value<std::string>(&logFileName), "log filename")
-			("verbosity,v", bpo::value<size_t>(&verbosity), "verbosity level ( 0 = no output; 5 = verbose )");
+			("monitoring-verbosity,v", bpo::value<size_t>()->default_value(DEFAULT_VERBOSITY), "verbosity level of intermediate results monitoring ( 0 = no output; 5 = verbose )");
 
 	bpo::options_description opt_desc("Optimizer options (by levels)");
 	OptimizerType::AddOptions( opt_desc );
@@ -134,7 +132,7 @@ int main(int argc, char *argv[]) {
 	// Initialize registration
 	RegistrationPointer acwereg = RegistrationType::New();
 	acwereg->SetOutputPrefix( outPrefix );
-	acwereg->SetVerbosity( verbosity );
+	acwereg->SetVerbosity( vm_general["monitoring-verbosity"].as< size_t >() );
 
 	// Create the JSON output object
 	Json::Value root;
