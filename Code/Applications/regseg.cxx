@@ -196,6 +196,8 @@ int main(int argc, char *argv[]) {
 		acwereg->SetSettingsOfLevel( i, vm );
 	}
 
+	acwereg->SetNumberOfThreads( 4 );
+
 	acwereg->Update();
 
 	root["levels"] = acwereg->GetJSONRoot();

@@ -232,6 +232,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	m_Optimizers[level] = DefaultOptimizerType::New();
 	m_Optimizers[level]->SetFunctional( this->m_Functionals[level] );
 	m_Optimizers[level]->SetSettings( this->m_Config[level] );
+	m_Optimizers[level]->SetNumberOfThreads( this->GetNumberOfThreads() );
 
 	this->m_CurrentLogger = JSONLoggerType::New();
 	this->m_CurrentLogger->SetOptimizer( this->m_Optimizers[level] );

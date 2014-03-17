@@ -60,20 +60,21 @@ namespace rstk {
 
 template< class TScalar, unsigned int NDimensions >
 SparseMatrixTransform<TScalar,NDimensions>
-::SparseMatrixTransform(): Superclass(){
-	this->m_NumberOfSamples = 0;
-	this->m_NumberOfParameters = 0;
-
+::SparseMatrixTransform():
+Superclass(),
+m_NumberOfSamples(0),
+m_NumberOfParameters(0),
+m_GridDataChanged(false),
+m_ControlDataChanged(false),
+m_UseImageOutput(false) {
 	this->m_ControlPointsSize.Fill(10);
 	this->m_ControlPointsOrigin.Fill(0.0);
 	this->m_ControlPointsSpacing.Fill(1.0);
 	this->m_ControlPointsDirection.SetIdentity();
 	this->m_ControlPointsDirectionInverse.SetIdentity();
 
-
-	this->m_GridDataChanged = false;
-	this->m_ControlDataChanged = false;
-	this->m_UseImageOutput = false;
+	this->m_Threader = itk::MultiThreader::New();
+	this->m_NumberOfThreads = this->m_Threader->GetNumberOfThreads();
 
 }
 
@@ -221,59 +222,97 @@ SparseMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::ComputePhi() {
-	if ( this->m_OffGridPos.size() != this->m_NumberOfSamples ) {
-		itkExceptionMacro(<< "OffGrid positions are not initialized");
-	}
-
-	this->m_OffGridValueMatrix = WeightsMatrix ( this->m_NumberOfSamples, Dimension );
-
-	size_t nRows = this->m_OffGridPos.size();
-	size_t nCols = this->m_OnGridPos.size();
-	this->m_Phi = WeightsMatrix( nRows, nCols );
-
+::ComputeMatrix( MatrixType type ) {
 	SMTStruct str;
 	str.Transform = this;
+	str.type = type;
+	str.vcols = &this->m_OnGridPos;
+
+	if ( type == Self::PHI ) {
+		this->m_Phi = WeightsMatrix( str.vrows->size(), str.vcols->size() );
+
+		str.matrix = &this->m_Phi;
+		str.vrows = &this->m_OffGridPos;
+
+		if ( this->m_OffGridPos.size() != this->m_NumberOfSamples ) {
+			itkExceptionMacro(<< "OffGrid positions are not initialized");
+		}
+
+		this->m_OffGridValueMatrix = WeightsMatrix ( this->m_NumberOfSamples, Dimension );
+
+	} else if ( str.type == Self::S ) {
+		this->m_S = WeightsMatrix( str.vrows->size(), str.vcols->size() );
+
+		str.matrix = &this->m_S;
+		str.vrows = &this->m_OnGridPos;
+	} else {
+		itkExceptionMacro(<< "Matrix computation not implemented" );
+	}
 
 	this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
-	this->GetMultiThreader()->SetSingleMethod( this->ComputePhiThreaderCallback, &str );
-	this->GetMultiThreader->SingleMethodExecute();
+	this->GetMultiThreader()->SetSingleMethod( this->ComputeThreaderCallback, &str );
+	this->GetMultiThreader()->SingleMethodExecute();
 }
 
 template< class TScalar, unsigned int NDimensions >
 ITK_THREAD_RETURN_TYPE
 SparseMatrixTransform<TScalar,NDimensions>
-::ComputePhiThreaderCallback(void *arg) {
+::ComputeThreaderCallback(void *arg) {
 	SMTStruct *str;
 
-	ThreadIdType total, threadId, threadCount;
+	itk::ThreadIdType total, threadId, threadCount;
 	threadId = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->ThreadID;
 	threadCount = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->NumberOfThreads;
 	str = (SMTStruct *)( ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->UserData );
 
+
 	MatrixSectionType splitSection;
+	splitSection.vcols = str->vcols;
+	splitSection.matrix = str->matrix;
+	splitSection.vrows = str->vrows;
 	total = str->Transform->SplitMatrixSection( threadId, threadCount, splitSection );
 
+
 	if( threadId < total ) {
-		str->Transform->ThreadedComputeMatrix( splitRegion, threadId );
+		str->Transform->ThreadedComputeMatrix( splitSection, threadId );
 	}
 	return ITK_THREAD_RETURN_VALUE;
 }
 
 template< class TScalar, unsigned int NDimensions >
-void
+itk::ThreadIdType
 SparseMatrixTransform<TScalar,NDimensions>
-::ComputeS() {
-	this->m_S = this->ComputeMatrix( this->m_OnGridPos, this->m_OnGridPos );
+::SplitMatrixSection( itk::ThreadIdType i, itk::ThreadIdType num, MatrixSectionType& section ) {
+	size_t range = section.vrows->size();
+
+	unsigned int valuesPerThread = itk::Math::Ceil< unsigned int >(range / (double)num);
+	unsigned int maxThreadIdUsed = itk::Math::Ceil< unsigned int >(range / (double)valuesPerThread) - 1;
+
+	section.section_id = i;
+	section.first_row = i * valuesPerThread;
+
+	if( i < maxThreadIdUsed ) {
+		section.num_rows = valuesPerThread;
+	}
+	if( i == maxThreadIdUsed ) {
+		section.num_rows = range - i*valuesPerThread;
+	}
+
+	return maxThreadIdUsed + 1;
 }
 
 
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::ThreadedComputeMatrix( MatrixSectionType& section, ThreadIdType threadId ) {
+::ThreadedComputeMatrix( MatrixSectionType& section, itk::ThreadIdType threadId ) {
 	size_t last = section.first_row + section.num_rows;
 	size_t nCols = section.vcols->size();
+
+	itk::SizeValueType nRows = section.num_rows;
+
+	PointsList vrows = *(section.vrows);
+	PointsList vcols = *(section.vcols);
 
 	ScalarType wi;
 	PointType ci, uk;
@@ -286,16 +325,16 @@ SparseMatrixTransform<TScalar,NDimensions>
 	cols.resize(0);
 	vals.resize(0);
 
-	itk::ProgressReporter progress( this, threadId, nRows, 100, 0.0f, 0.5f );
+	//itk::ProgressReporter progress( this, threadId, nRows, 100, 0.0f, 0.5f );
 
 	// Walk the grid region
 	for( row = section.first_row; row < last; row++ ) {
 		cols.clear();
 		vals.clear();
 
-		ci = section.vrows[row];
+		ci = vrows[row];
 		for ( col=0; col < nCols; col++) {
-			uk = section.vcols[col];
+			uk = vcols[col];
 			r = uk - ci;
 			wi = this->Evaluate( r );
 
@@ -308,8 +347,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 		if ( cols.size() > 0 ) {
 			section.matrix->set_row( row, cols, vals );
 		}
-
-		progress.CompletedPixel();
 	}
 }
 
@@ -363,7 +400,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 ::Interpolate() {
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
-		this->ComputePhi();
+		this->ComputeMatrix( Self::PHI );
 	}
 
 	WeightsMatrix coeff = this->VectorizeCoefficients();
@@ -401,7 +438,7 @@ void
 SparseMatrixTransform<TScalar,NDimensions>
 ::UpdateField() {
 	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
-		this->ComputeS();
+		this->ComputeMatrix( Self::S );
 	}
 
 	WeightsMatrix coeff = this->VectorizeCoefficients();
@@ -436,7 +473,7 @@ void
 SparseMatrixTransform<TScalar,NDimensions>
 ::ComputeCoefficients() {
 	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
-		this->ComputeS();
+		this->ComputeMatrix( Self::S );
 	}
 
 	DimensionParametersContainer fieldValues = this->VectorizeField( this->m_Field );
@@ -506,7 +543,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 ::GetPhi() {
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
-		this->ComputePhi();
+		this->ComputeMatrix( Self::PHI );
 	}
 
 	return this->m_Phi;
