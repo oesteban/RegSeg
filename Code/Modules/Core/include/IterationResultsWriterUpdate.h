@@ -114,7 +114,7 @@ public:
 				for( size_t r = 0; r < nContours; r++ ) {
 					ContourWriterPointer wc = ContourWriterType::New();
 					std::stringstream ss;
-					ss << "contour_lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << std::setw(2) << "_cont"<< r << ".vtk";
+					ss << this->m_Prefix << "contour_lev" << this->m_Level << "_it" << std::setfill('0')<< std::setw(3) << this->m_Optimizer->GetCurrentIteration() << std::setw(2) << "_cont"<< r << ".vtk";
 					wc->SetFileName( ss.str().c_str() );
 					wc->SetInput( grads[r] );
 					wc->Update();

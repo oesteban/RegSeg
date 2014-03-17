@@ -144,6 +144,10 @@ public:
 	MeasureType GetCurrentRegularizationEnergy() { return 0.0; };
 	MeasureType GetCurrentEnergy() { return 0.0; };
 
+	const FieldType * GetCurrentDisplacementField () const {
+		return FieldType::New();
+	}
+
 protected:
 	SegmentationOptimizer();
 	~SegmentationOptimizer(){}

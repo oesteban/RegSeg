@@ -218,7 +218,7 @@ public:
 	itkSetMacro(DerivativeCoefficients, CoefficientsImageArray);
 	itkGetConstMacro(DerivativeCoefficients, CoefficientsImageArray);
 
-	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
+	virtual const FieldType * GetCurrentDisplacementField () const = 0;
 
 	/** Start and run the optimization */
 	void Start();
@@ -296,7 +296,6 @@ protected:
 
 	CoefficientsImageArray       m_Coefficients;
 	CoefficientsImageArray       m_DerivativeCoefficients;
-	FieldPointer                 m_CurrentDisplacementField;
 private:
 	OptimizerBase( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented

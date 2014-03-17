@@ -56,7 +56,7 @@
 #include <itkImageFileWriter.h>
 #include <itkQuadEdgeMesh.h>
 #include <itkVTKPolyDataReader.h>
-#include <itkVTKPolyDataWriter.h>
+#include "rstkVTKPolyDataWriter.h"
 #include <itkVectorImageToImageAdaptor.h>
 #include <itkComposeImageFilter.h>
 #include <itkVectorResampleImageFilter.h>
@@ -91,15 +91,18 @@ typedef ACWERegistrationMethod< ImageType, TransformType >   RegistrationType;
 typedef typename RegistrationType::Pointer                   RegistrationPointer;
 typedef typename RegistrationType::ContourType               ContourType;
 typedef typename ContourType::Pointer                        ContourPointer;
+typedef typename RegistrationType::PriorsList                ContourList;
 typedef typename RegistrationType::OptimizerType             OptimizerType;
 typedef typename RegistrationType::FunctionalType            FunctionalType;
-
+typedef typename FunctionalType::ROIType                     ROIType;
+typedef typename OptimizerType::FieldType                    FieldType;
 typedef itk::VTKPolyDataReader< ContourType >                ReaderType;
-typedef itk::VTKPolyDataWriter< ContourType >                WriterType;
+typedef rstk::VTKPolyDataWriter< ContourType >               WriterType;
 typedef itk::ImageFileReader<ChannelType>                    ImageReader;
 typedef itk::ImageFileWriter<ChannelType>                    ImageWriter;
-//typedef rstk::DisplacementFieldFileWriter<FieldType>         DisplacementFieldWriter;
-//typedef itk::ImageFileWriter< ROIType >                      ROIWriter;
+typedef rstk::DisplacementFieldComponentsFileWriter
+		                                         <FieldType> ComponentsWriter;
+typedef itk::ImageFileWriter< ROIType >                      ROIWriter;
 
 #ifndef NDEBUG
 	const static size_t DEFAULT_VERBOSITY = 5;

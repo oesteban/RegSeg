@@ -205,32 +205,26 @@ int main(int argc, char *argv[]) {
 	//
 
 	// Displacementfield
-	//typename DisplacementFieldWriter::Pointer p = DisplacementFieldWriter::New();
-	//p->SetFileName( (outPrefix + "_field.nii.gz" ).c_str() );
-	//p->SetInput( opt->GetCurrentDisplacementField() );
-	//p->Update();
-    //
-	//// Contours and regions
-    //size_t nCont = functional->GetCurrentContours().size();
-    //for ( size_t contid = 0; contid < nCont; contid++) {
-    //	bfs::path contPath(movingSurfaceNames[contid]);
-    //	WriterType::Pointer polyDataWriter = WriterType::New();
-    //	polyDataWriter->SetInput( functional->GetCurrentContours()[contid] );
-    //	polyDataWriter->SetFileName( (outPrefix + "_" + contPath.filename().string()).c_str() );
-    //	polyDataWriter->Update();
-    //
-    //	typename ROIWriter::Pointer w = ROIWriter::New();
-    //	w->SetInput( functional->GetCurrentRegion(contid) );
-    //	w->SetFileName( (outPrefix + "_roi_" + contPath.stem().string() + ".nii.gz" ).c_str() );
-    //	w->Update();
-    //}
-    //
-    //// Last ROI (excluded region)
-	//typename ROIWriter::Pointer w = ROIWriter::New();
-	//w->SetInput( functional->GetCurrentRegion(nCont) );
-	//w->SetFileName( (outPrefix + "_roi_background.nii.gz" ).c_str() );
-	//w->Update();
+	typename ComponentsWriter::Pointer p = ComponentsWriter::New();
+	p->SetFileName( (outPrefix + "_final_field" ).c_str() );
+	p->SetInput( acwereg->GetCurrentDisplacementField() );
+	p->Update();
 
+	// Contours and regions
+	ContourList conts = acwereg->GetCurrentContours();
+    size_t nCont = conts.size();
+    for ( size_t contid = 0; contid < nCont; contid++) {
+    	bfs::path contPath(movingSurfaceNames[contid]);
+    	WriterType::Pointer polyDataWriter = WriterType::New();
+    	polyDataWriter->SetInput( conts[contid] );
+    	polyDataWriter->SetFileName( (outPrefix + "_final_" + contPath.filename().string()).c_str() );
+    	polyDataWriter->Update();
+
+    	typename ROIWriter::Pointer w = ROIWriter::New();
+    	w->SetInput( acwereg->GetCurrentRegion(contid) );
+    	w->SetFileName( (outPrefix + "_final_roi_" + contPath.stem().string() + ".nii.gz" ).c_str() );
+    	w->Update();
+    }
 
 	// Set-up & write out log file
 	std::ofstream logfile((outPrefix + logFileName ).c_str());

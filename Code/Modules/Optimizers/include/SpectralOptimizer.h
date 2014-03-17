@@ -188,6 +188,9 @@ public:
 	itkSetMacro( UseDescriptorRecomputation, bool );
 	itkGetConstMacro( UseDescriptorRecomputation, bool );
 
+
+	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
+
 	static void AddOptions( SettingsDesc& opts );
 protected:
 	SpectralOptimizer();
@@ -226,6 +229,7 @@ protected:
 	CoefficientsImageArray       m_NextCoefficients;
 	CoefficientsImageArray       m_Denominator;
 	FieldPointer                 m_LastField;
+	FieldPointer                 m_CurrentDisplacementField;
 private:
 	SpectralOptimizer( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
