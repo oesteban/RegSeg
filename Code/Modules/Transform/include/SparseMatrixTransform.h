@@ -275,7 +275,8 @@ protected:
 
 	void ComputePhi();
 	void ComputeS();
-	WeightsMatrix ComputeMatrix( PointsList vrows, PointsList vcols );
+	void ThreadedComputeMatrix( MatrixSectionType& section, ThreadIdType threadId );
+
 	WeightsMatrix ComputeDerivativeMatrix( PointsList vrows, PointsList vcols, size_t dim );
 
 	void InitializeCoefficientsImages();
@@ -327,6 +328,21 @@ protected:
 private:
 	SparseMatrixTransform( const Self & );
 	void operator=( const Self & );
+
+	struct SMTStruct {
+		SparseMatrixTransform *Transform;
+	};
+
+	struct MatrixSectionType {
+		WeightsMatrix *matrix;
+		PointsList *vrows;
+		PointsList *vcols;
+		size_t section_id;
+		size_t first_row;
+		size_t num_rows;
+	};
+
+
 
 };
 } // end namespace rstk
