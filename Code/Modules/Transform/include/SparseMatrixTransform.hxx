@@ -47,6 +47,7 @@
 #include <itkGaussianKernelFunction.h>
 #include <itkBSplineKernelFunction.h>
 #include <itkBSplineDerivativeKernelFunction.h>
+#include <itkProgressReporter.h>
 
 #include <itkImage.h>
 #include <itkImageFileWriter.h>
@@ -217,15 +218,62 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 }
 
+template< class TScalar, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalar,NDimensions>
+::ComputePhi() {
+	if ( this->m_OffGridPos.size() != this->m_NumberOfSamples ) {
+		itkExceptionMacro(<< "OffGrid positions are not initialized");
+	}
+
+	this->m_OffGridValueMatrix = WeightsMatrix ( this->m_NumberOfSamples, Dimension );
+
+	size_t nRows = this->m_OffGridPos.size();
+	size_t nCols = this->m_OnGridPos.size();
+	this->m_Phi = WeightsMatrix( nRows, nCols );
+
+	SMTStruct str;
+	str.Transform = this;
+
+	this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
+	this->GetMultiThreader()->SetSingleMethod( this->ComputePhiThreaderCallback, &str );
+	this->GetMultiThreader->SingleMethodExecute();
+}
 
 template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::WeightsMatrix
+ITK_THREAD_RETURN_TYPE
 SparseMatrixTransform<TScalar,NDimensions>
-::ComputeMatrix( PointsList vrows, PointsList vcols ) {
-	size_t nRows = vrows.size();
-	size_t nCols = vcols.size();
+::ComputePhiThreaderCallback(void *arg) {
+	SMTStruct *str;
 
-	WeightsMatrix phi( nRows, nCols );
+	ThreadIdType total, threadId, threadCount;
+	threadId = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->ThreadID;
+	threadCount = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->NumberOfThreads;
+	str = (SMTStruct *)( ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->UserData );
+
+	MatrixSectionType splitSection;
+	total = str->Transform->SplitMatrixSection( threadId, threadCount, splitSection );
+
+	if( threadId < total ) {
+		str->Transform->ThreadedComputeMatrix( splitRegion, threadId );
+	}
+	return ITK_THREAD_RETURN_VALUE;
+}
+
+template< class TScalar, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalar,NDimensions>
+::ComputeS() {
+	this->m_S = this->ComputeMatrix( this->m_OnGridPos, this->m_OnGridPos );
+}
+
+
+template< class TScalar, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalar,NDimensions>
+::ThreadedComputeMatrix( MatrixSectionType& section, ThreadIdType threadId ) {
+	size_t last = section.first_row + section.num_rows;
+	size_t nCols = section.vcols->size();
 
 	ScalarType wi;
 	PointType ci, uk;
@@ -238,14 +286,16 @@ SparseMatrixTransform<TScalar,NDimensions>
 	cols.resize(0);
 	vals.resize(0);
 
+	itk::ProgressReporter progress( this, threadId, nRows, 100, 0.0f, 0.5f );
+
 	// Walk the grid region
-	for( row = 0; row < vrows.size(); row++ ) {
+	for( row = section.first_row; row < last; row++ ) {
 		cols.clear();
 		vals.clear();
 
-		ci = vrows[row];
-		for ( col=0; col < vcols.size(); col++) {
-			uk = vcols[col];
+		ci = section.vrows[row];
+		for ( col=0; col < nCols; col++) {
+			uk = section.vcols[col];
 			r = uk - ci;
 			wi = this->Evaluate( r );
 
@@ -256,10 +306,11 @@ SparseMatrixTransform<TScalar,NDimensions>
 		}
 
 		if ( cols.size() > 0 ) {
-			phi.set_row( row, cols, vals );
+			section.matrix->set_row( row, cols, vals );
 		}
+
+		progress.CompletedPixel();
 	}
-	return phi;
 }
 
 template< class TScalar, unsigned int NDimensions >
@@ -304,26 +355,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 		}
 	}
 	return phi;
-}
-
-
-template< class TScalar, unsigned int NDimensions >
-void
-SparseMatrixTransform<TScalar,NDimensions>
-::ComputePhi() {
-	if ( this->m_OffGridPos.size() != this->m_NumberOfSamples ) {
-		itkExceptionMacro(<< "OffGrid positions are not initialized");
-	}
-
-	this->m_OffGridValueMatrix = WeightsMatrix ( this->m_NumberOfSamples, Dimension );
-	this->m_Phi = this->ComputeMatrix( this->m_OffGridPos, this->m_OnGridPos );
-}
-
-template< class TScalar, unsigned int NDimensions >
-void
-SparseMatrixTransform<TScalar,NDimensions>
-::ComputeS() {
-	this->m_S = this->ComputeMatrix( this->m_OnGridPos, this->m_OnGridPos );
 }
 
 template< class TScalar, unsigned int NDimensions >
