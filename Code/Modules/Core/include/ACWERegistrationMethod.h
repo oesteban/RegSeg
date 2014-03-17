@@ -111,6 +111,7 @@ public:
 	typedef typename FunctionalType::Pointer                  FunctionalPointer;
 	typedef std::vector< FunctionalPointer >                  FunctionalList;
 	typedef typename FunctionalType::ContourType              ContourType;
+	typedef typename FunctionalType::ROIType                  ROIType;
 	typedef typename FunctionalType::ContourPointer           ContourPointer;
 	typedef typename FunctionalType::ContourConstPointer      ContourConstPointer;
 	typedef std::vector< ContourConstPointer >                PriorsList;
@@ -125,6 +126,9 @@ public:
 
 	typedef typename OptimizerType::SizeValueType             NumberValueType;
 	typedef std::vector< NumberValueType >                    NumberValueList;
+
+	typedef typename OptimizerType::FieldType                 FieldType;
+	typedef typename FieldType::Pointer                       FieldPointer;
 
 	//typedef MeanFunctional< ReferenceImageType >       DefaultFunctionalType;
 	//typedef SegmentationOptimizer< FunctionalType >    DefaultOptimizerType;
@@ -210,6 +214,22 @@ public:
 
 	/** Returns the transform resulting from the registration process  */
 	virtual const DecoratedOutputTransformType * GetOutput() const;
+
+	const FieldType* GetCurrentDisplacementField() const {
+		return static_cast<const FieldType* >(this->m_Optimizers[this->m_CurrentLevel-1]->GetCurrentDisplacementField());
+	}
+
+	PriorsList GetCurrentContours() const {
+		PriorsList contours;
+		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
+			contours.push_back( static_cast< const ContourType * >(this->m_Functionals[this->m_CurrentLevel-1]->GetCurrentContours()[i] ) );
+		}
+		return contours;
+	}
+
+	const ROIType* GetCurrentRegion( size_t contour_id ) const {
+		return this->m_Functionals[this->m_CurrentLevel-1]->GetCurrentRegion( contour_id );
+	}
 
 protected:
 	ACWERegistrationMethod();
