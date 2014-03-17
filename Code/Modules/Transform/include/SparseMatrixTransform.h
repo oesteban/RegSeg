@@ -155,6 +155,15 @@ public:
     		                                 < ScalarType, Dimension, Dimension>
     OptimizerParametersHelperType;
 
+	struct MatrixSectionType {
+		WeightsMatrix *matrix;
+		PointsList *vrows;
+		PointsList *vcols;
+		size_t section_id;
+		size_t first_row;
+		size_t num_rows;
+	};
+
     itkSetMacro( ControlPointsSize, SizeType );
     itkGetConstMacro( ControlPointsSize, SizeType );
 
@@ -225,57 +234,18 @@ public:
     	return this->m_OutputField;
     }
 
-	//void SetParameters(const ParametersType & parameters);
+    /** Return the multithreader used by this class. */
+    itk::MultiThreader * GetMultiThreader() const { return m_Threader; }
 
-	//void SetFixedParameters(const ParametersType &){
-	//	itkExceptionMacro(<< "TransformVector(const InputVectorType &) is not implemented for KernelTransform");
-	//}
-
-	//OutputPointType TransformPoint(const InputPointType  & point) const	{
-	//  return point;
-	//}
-    //
-	///** These vector transforms are not implemented for this transform */
-    //using Superclass::TransformVector;
-    //OutputVectorType TransformVector(const InputVectorType &) const {
-    //	itkExceptionMacro(<< "TransformVector(const InputVectorType &) is not implemented for KernelTransform");
-    //	OutputVectorType zero;
-    //	zero.Fill(0.0);
-    //	return zero;
-    //}
-    //
-    //OutputVnlVectorType TransformVector(const InputVnlVectorType &) const {
-    //	itkExceptionMacro(<< "TransformVector(const InputVnlVectorType &) is not implemented for KernelTransform");
-    //	OutputVnlVectorType zero(Dimension);
-    //	zero.fill(0.0);
-    //	return zero;
-    //}
-    //
-    ///**  Method to transform a CovariantVector. */
-    //using Superclass::TransformCovariantVector;
-    //OutputCovariantVectorType TransformCovariantVector(const InputCovariantVectorType &) const {
-    //	itkExceptionMacro( << "TransformCovariantVector(const InputCovariantVectorType &) is not implemented for KernelTransform");
-    //	OutputCovariantVectorType zero;
-    //	zero.Fill(0.0);
-    //	return zero;
-    //}
-    ///** Compute the Jacobian Matrix of the transformation at one point */
-    //void ComputeJacobianWithRespectToParameters( const InputPointType  & p, JacobianType & jacobian) const {
-    //	itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented for " << this->GetNameOfClass() );
-    //}
-    //
-    //void ComputeJacobianWithRespectToPosition(const InputPointType &, JacobianType &) const {
-    //	itkExceptionMacro( "ComputeJacobianWithRespectToPosition not yet implemented for " << this->GetNameOfClass() );
-    //}
-
+    itkSetClampMacro( NumberOfThreads, itk::ThreadIdType, 1, ITK_MAX_THREADS);
+    itkGetConstReferenceMacro(NumberOfThreads, itk::ThreadIdType);
 protected:
 	SparseMatrixTransform();
 	~SparseMatrixTransform(){};
 
-
-	void ComputePhi();
-	void ComputeS();
-	void ThreadedComputeMatrix( MatrixSectionType& section, ThreadIdType threadId );
+	void ThreadedComputeMatrix( MatrixSectionType& section, itk::ThreadIdType threadId );
+	itk::ThreadIdType SplitMatrixSection( itk::ThreadIdType i, itk::ThreadIdType num, MatrixSectionType& section );
+	static ITK_THREAD_RETURN_TYPE ComputeThreaderCallback(void *arg);
 
 	WeightsMatrix ComputeDerivativeMatrix( PointsList vrows, PointsList vcols, size_t dim );
 
@@ -329,21 +299,21 @@ private:
 	SparseMatrixTransform( const Self & );
 	void operator=( const Self & );
 
+	enum MatrixType { PHI, S };
+
 	struct SMTStruct {
 		SparseMatrixTransform *Transform;
-	};
-
-	struct MatrixSectionType {
+		MatrixType type;
 		WeightsMatrix *matrix;
 		PointsList *vrows;
 		PointsList *vcols;
-		size_t section_id;
-		size_t first_row;
-		size_t num_rows;
 	};
 
+	void ComputeMatrix( MatrixType type );
 
-
+	/** Support processing data in multiple threads. */
+	itk::MultiThreader::Pointer m_Threader;
+	itk::ThreadIdType           m_NumberOfThreads;
 };
 } // end namespace rstk
 

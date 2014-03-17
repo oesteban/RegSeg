@@ -82,6 +82,7 @@ m_RegularizationEnergyUpdated(true)
 	this->m_GridSpacing.Fill( 0.0 );
 	SplineTransformPointer defaultTransform = SplineTransformType::New();
 	this->m_Transform = itkDynamicCastInDebugMode< TransformType* >( defaultTransform.GetPointer() );
+	this->m_Transform->SetNumberOfThreads( this->GetNumberOfThreads() );
 }
 
 template< typename TFunctional >
