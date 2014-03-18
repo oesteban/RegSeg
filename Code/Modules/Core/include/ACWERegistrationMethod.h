@@ -62,6 +62,7 @@
 #include "SegmentationOptimizer.h"
 
 #include "IterationJSONUpdate.h"
+#include "IterationStdOutUpdate.h"
 #include "IterationResultsWriterUpdate.h"
 
 
@@ -139,6 +140,9 @@ public:
 	typedef Json::Value                                       JSONRoot;
 	typedef IterationJSONUpdate< OptimizerType >              JSONLoggerType;
 	typedef typename JSONLoggerType::Pointer                  JSONLoggerPointer;
+
+	typedef IterationStdOutUpdate< OptimizerType >            STDOutLoggerType;
+	typedef typename STDOutLoggerType::Pointer                STDOutLoggerPointer;
 
 
 	typedef IterationResultWriterUpdate< OptimizerType > IterationWriterUpdate;
@@ -283,6 +287,7 @@ private:
 	JSONRoot m_JSONRoot;
 	JSONLoggerPointer m_CurrentLogger;
 	IterationWriterPointer m_ImageLogger;
+	STDOutLoggerPointer m_OutLogger;
 
 	size_t m_Verbosity;
 

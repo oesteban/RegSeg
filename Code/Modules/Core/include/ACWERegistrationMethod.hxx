@@ -249,6 +249,10 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		this->m_ImageLogger->SetPrefix( this->m_OutputPrefix );
 		this->m_ImageLogger->SetLevel( level );
 		this->m_ImageLogger->SetVerbosity( this->m_Verbosity );
+
+		this->m_OutLogger = STDOutLoggerType::New();
+		this->m_OutLogger->SetOptimizer( this->m_Optimizers[level] );
+		this->m_OutLogger->SetLevel( level );
 	}
 
 
