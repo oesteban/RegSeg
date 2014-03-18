@@ -248,6 +248,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 	str.matrix = WeightsMatrix( nRows, nCols );
 
 	this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
+
+	std::cout << "NumberOfThreads: " << this->GetNumberOfThreads() << std::endl;
 	this->GetMultiThreader()->SetSingleMethod( this->ComputeThreaderCallback, &str );
 	this->GetMultiThreader()->SingleMethodExecute();
 

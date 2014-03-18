@@ -47,7 +47,6 @@ int main(int argc, char *argv[]) {
 	CoefficientsImageArray coeffs;
 
 	TPointer transform = Transform::New();
-	transform->SetNumberOfThreads(4);
 
 	if (vm.count("coeff-images")) {
 		std::cout << "coefficient images mode not implemented" << std::endl;
