@@ -228,16 +228,6 @@ void SpectralOptimizer<TFunctional>::SpectralUpdate(
 
 		CoefficientsImagePointer numerator = add_filter->GetOutput();
 
-//#ifndef NDEBUG
-//		std::stringstream ss;
-//		ss << "coeff_unfiltered_" << std::setfill('0') << std::setw(3) << this->m_CurrentIteration << "_cmp" << std::setw(1) << d << ".nii.gz";
-//		typedef itk::ImageFileWriter< CoefficientsImageType > W;
-//		typename W::Pointer w = W::New();
-//		w->SetInput( numerator );
-//		w->SetFileName( ss.str().c_str() );
-//		w->Update();
-//#endif
-
 		FFTPointer fftFilter = FFTType::New();
 		fftFilter->SetInput( numerator );
 		fftFilter->Update();  // This is required for computing the denominator for first time
@@ -382,28 +372,7 @@ SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 		itkWarningMacro( << "some update vectors are larger than the maximum displacement (" << this->m_MaxDisplacement << ").");
 	}
 
-
-
-//#ifndef NDEBUG
-//		size_t q1 = floor( (sample.size()-1)*0.05 );
-//		size_t q2 = round( (sample.size()-1)*0.50 );
-//		size_t q3 = ceil ( (sample.size()-1)*0.95 );
-//
-//		std::sort(sample.begin(), sample.end(), by_grad() );
-//		PointValueType median= sample[q2].grad;
-//		PointValueType quart1= sample[q1].grad;
-//		PointValueType quart2= sample[q3].grad;
-//		PointValueType minGradient = (*( sample.begin() )).grad;
-//        PointValueType maxGradient = (*( sample.end()-1 )).grad;
-//        PointValueType average = gradSum / sample.size();
-//		std::cout << "Disp["<< contid << "]: avg=" << average << ", max=" << maxGradient << ", min=" << minGradient << ", q1=" << quart1 << ", q2=" << quart2 << ", med=" << median << "." << std::endl;
-//#endif
-//
-
-
-
 	this->m_RegularizationEnergyUpdated = (totalNorm==0);
-
 	return totalNorm/nPix;
 }
 

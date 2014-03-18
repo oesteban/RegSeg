@@ -210,14 +210,12 @@ void OptimizerBase<TFunctional>::Resume() {
 		/*
 		 * Check the convergence by WindowConvergenceMonitoringFunction.
 		 */
-
-		/*
 		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentValue );
 		try {
 			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
 			if (this->m_ConvergenceValue <= this->m_MinimumConvergenceValue) {
 				this->m_StopConditionDescription << "Convergence checker passed at iteration " << this->m_CurrentIteration << ".";
-				this->m_StopCondition = Superclass::CONVERGENCE_CHECKER_PASSED;
+				this->m_StopCondition = Self::CONVERGENCE_CHECKER_PASSED;
 				this->Stop();
 				break;
 			}
@@ -227,13 +225,13 @@ void OptimizerBase<TFunctional>::Resume() {
 		}
 
 
-		if( this->m_CurrentValue < this->m_ConvergenceValue ) {
+		if( fabs(this->m_CurrentValue) < 1e-8 ) {
 			this->m_StopConditionDescription << "Parameters field changed below the minimum threshold.";
-			this->m_StopCondition = Superclass::STEP_TOO_SMALL;
+			this->m_StopCondition = Self::STEP_TOO_SMALL;
 			this->Stop();
 			break;
 		}
-		*/
+
 
 		/* Update and check iteration count */
 		if ( this->m_CurrentIteration >= this->m_NumberOfIterations ) {
@@ -268,6 +266,7 @@ void OptimizerBase<TFunctional>
 			("beta,b", bpo::value< float > (), "beta value in regularization")
 			("step-size,s", bpo::value< float > (), "step-size value in optimization")
 			("iterations,i", bpo::value< size_t > (), "number of iterations")
+			("convergence-window,w", bpo::value< size_t > (), "number of iterations of convergence window")
 			("grid-size,g", bpo::value< size_t > (), "grid size")
 			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)");
 }
@@ -285,6 +284,11 @@ void OptimizerBase<TFunctional>
 	if( this->m_Settings.count( "iterations" ) ){
 		bpo::variable_value v = this->m_Settings["iterations"];
 		this->SetNumberOfIterations( v.as< size_t >() );
+	}
+
+	if( this->m_Settings.count( "convergence-window" ) ){
+			bpo::variable_value v = this->m_Settings["convergence-window"];
+			this->m_ConvergenceWindowSize = v.as< size_t >();
 	}
 
 	if (this->m_Settings.count("update-descriptors")) {
