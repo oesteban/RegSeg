@@ -47,6 +47,7 @@ int main(int argc, char *argv[]) {
 	CoefficientsImageArray coeffs;
 
 	TPointer transform = Transform::New();
+	transform->SetNumberOfThreads(4);
 
 	if (vm.count("coeff-images")) {
 		std::cout << "coefficient images mode not implemented" << std::endl;
@@ -90,6 +91,7 @@ int main(int argc, char *argv[]) {
 
 		for( size_t i = 0; i< DIMENSION; i++) {
 			RandomIterator rndit( coeffs[i], region );
+			rndit.ReinitializeSeed();
 			rndit.SetNumberOfSamples( static_cast<size_t>( floor( numPix * 0.08 + 0.5f ) ) );
 
 			for(rndit.GoToBegin(); !rndit.IsAtEnd(); ++rndit){

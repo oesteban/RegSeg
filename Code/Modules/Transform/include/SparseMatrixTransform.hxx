@@ -229,9 +229,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 	str.vcols = &this->m_OnGridPos;
 
 	if ( type == Self::PHI ) {
-		this->m_Phi = WeightsMatrix( str.vrows->size(), str.vcols->size() );
-
-		str.matrix = &this->m_Phi;
 		str.vrows = &this->m_OffGridPos;
 
 		if ( this->m_OffGridPos.size() != this->m_NumberOfSamples ) {
@@ -240,18 +237,32 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 		this->m_OffGridValueMatrix = WeightsMatrix ( this->m_NumberOfSamples, Dimension );
 
-	} else if ( str.type == Self::S ) {
-		this->m_S = WeightsMatrix( str.vrows->size(), str.vcols->size() );
-
-		str.matrix = &this->m_S;
+	} else if ( type == Self::S ) {
 		str.vrows = &this->m_OnGridPos;
 	} else {
 		itkExceptionMacro(<< "Matrix computation not implemented" );
 	}
 
+	size_t nRows = str.vrows->size();
+	size_t nCols = str.vcols->size();
+	str.matrix = WeightsMatrix( nRows, nCols );
+
 	this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
 	this->GetMultiThreader()->SetSingleMethod( this->ComputeThreaderCallback, &str );
 	this->GetMultiThreader()->SingleMethodExecute();
+
+	this->AfterThreadedComputeMatrix(str);
+}
+
+template< class TScalar, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalar,NDimensions>
+::AfterThreadedComputeMatrix( SMTStruct str ) {
+	if ( str.type == Self::PHI ) {
+		this->m_Phi = str.matrix;
+	} else if ( str.type == Self::S ) {
+		this->m_S = str.matrix;
+	}
 }
 
 template< class TScalar, unsigned int NDimensions >
@@ -265,13 +276,11 @@ SparseMatrixTransform<TScalar,NDimensions>
 	threadCount = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->NumberOfThreads;
 	str = (SMTStruct *)( ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->UserData );
 
-
 	MatrixSectionType splitSection;
 	splitSection.vcols = str->vcols;
-	splitSection.matrix = str->matrix;
+	splitSection.matrix = &(str->matrix);
 	splitSection.vrows = str->vrows;
 	total = str->Transform->SplitMatrixSection( threadId, threadCount, splitSection );
-
 
 	if( threadId < total ) {
 		str->Transform->ThreadedComputeMatrix( splitSection, threadId );

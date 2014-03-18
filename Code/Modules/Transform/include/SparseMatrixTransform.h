@@ -295,25 +295,27 @@ protected:
 	DerivativesType       m_Derivatives;
 	FieldPointer          m_OutputField;
 
-private:
-	SparseMatrixTransform( const Self & );
-	void operator=( const Self & );
+
 
 	enum MatrixType { PHI, S };
 
 	struct SMTStruct {
 		SparseMatrixTransform *Transform;
 		MatrixType type;
-		WeightsMatrix *matrix;
+		WeightsMatrix matrix;
 		PointsList *vrows;
 		PointsList *vcols;
 	};
 
-	void ComputeMatrix( MatrixType type );
+	virtual void ComputeMatrix( MatrixType type );
+	virtual void AfterThreadedComputeMatrix( SMTStruct str );
 
 	/** Support processing data in multiple threads. */
 	itk::MultiThreader::Pointer m_Threader;
 	itk::ThreadIdType           m_NumberOfThreads;
+private:
+	SparseMatrixTransform( const Self & );
+	void operator=( const Self & );
 };
 } // end namespace rstk
 
