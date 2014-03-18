@@ -218,6 +218,8 @@ public:
 	itkSetMacro(DerivativeCoefficients, CoefficientsImageArray);
 	itkGetConstMacro(DerivativeCoefficients, CoefficientsImageArray);
 
+	itkGetObjectMacro( Transform, TransformType );
+
 	virtual const FieldType * GetCurrentDisplacementField () const = 0;
 
 	/** Start and run the optimization */

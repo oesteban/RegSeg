@@ -191,6 +191,9 @@ public:
 	itkSetClampMacro( Verbosity, size_t, 0, 5 );
 	itkGetConstMacro( Verbosity, size_t );
 
+	itkSetClampMacro( TransformNumberOfThreads, size_t, 1, ITK_MAX_THREADS );
+	itkGetConstMacro( TransformNumberOfThreads, size_t );
+
 	itkGetMacro( JSONRoot, JSONRoot);
 
 	rstkSetVectorElement( GridSchedule, GridSizeType );
@@ -282,6 +285,8 @@ private:
 	IterationWriterPointer m_ImageLogger;
 
 	size_t m_Verbosity;
+
+	size_t m_TransformNumberOfThreads;
 };
 
 } // namespace rstk

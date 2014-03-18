@@ -60,7 +60,8 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
                             m_Initialized(false),
                             m_AutoSmoothing(false),
                             m_Stop(false),
-                            m_Verbosity(1) {
+                            m_Verbosity(1),
+                            m_TransformNumberOfThreads(0) {
 	this->m_StopCondition      = ALL_LEVELS_DONE;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 
@@ -232,7 +233,10 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	m_Optimizers[level] = DefaultOptimizerType::New();
 	m_Optimizers[level]->SetFunctional( this->m_Functionals[level] );
 	m_Optimizers[level]->SetSettings( this->m_Config[level] );
-	m_Optimizers[level]->SetNumberOfThreads( this->GetNumberOfThreads() );
+
+	if ( this->m_TransformNumberOfThreads > 0 ) {
+		m_Optimizers[level]->GetTransform()->SetNumberOfThreads( this->m_TransformNumberOfThreads );
+	}
 
 	this->m_CurrentLogger = JSONLoggerType::New();
 	this->m_CurrentLogger->SetOptimizer( this->m_Optimizers[level] );
