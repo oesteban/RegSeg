@@ -71,7 +71,7 @@
 
 #include <itkMesh.h>
 #include <itkVTKPolyDataReader.h>
-#include <itkVTKPolyDataWriter.h>
+#include "rstkVTKPolyDataWriter.h"
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
@@ -125,13 +125,14 @@ typedef itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >    BSpli
 
 typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> ComponentsWriter;
 
-
+typedef itk::Matrix< float, DIMENSION, DIMENSION >             MatrixType;
 typedef itk::Mesh< float, DIMENSION >                          MeshType;
 typedef typename MeshType::Pointer                             MeshPointer;
+typedef typename MeshType::PointType                           MeshPointType;
 typedef typename MeshType::PointsContainer::Iterator           PointsIterator;
 typedef itk::VTKPolyDataReader<MeshType>                       MeshReaderType;
 typedef typename MeshReaderType::Pointer                       MeshReaderPointer;
-typedef itk::VTKPolyDataWriter<MeshType>                       MeshWriterType;
+typedef rstk::VTKPolyDataWriter<MeshType>                      MeshWriterType;
 typedef typename MeshWriterType::Pointer                       MeshWriterPointer;
 
 int main(int argc, char *argv[]);
