@@ -71,7 +71,7 @@ public:
     		m_StartTime = clock();
 
     		std::cout << "[ini] " << std::setw(8) << "     N/A";
-    		if( this->GetTrackEnergy() ) {
+    		if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
     			std::cout << " " << this->m_Optimizer->GetCurrentEnergy();
 				std::cout << " " << this->m_Optimizer->GetFunctional()->GetValue();
 				std::cout << " " << this->m_Optimizer->GetCurrentRegularizationEnergy();
@@ -81,7 +81,7 @@ public:
 
 		if( typeid( event ) == typeid( itk::IterationEvent ) ) {
 			std::cout << "[" << std::setw(3) << it << "] " << std::setw(8) << this->m_Optimizer->GetCurrentValue();
-    		if( this->GetTrackEnergy() ) {
+			if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
     			std::cout << " " << this->m_Optimizer->GetCurrentEnergy();
 				std::cout << " " << this->m_Optimizer->GetFunctional()->GetValue();
 				std::cout << " " << this->m_Optimizer->GetCurrentRegularizationEnergy();
@@ -95,7 +95,7 @@ public:
 
 		if( typeid( event ) == typeid( itk::EndEvent ) ) {
 			std::cout << "[end] " << std::setw(8) << this->m_Optimizer->GetCurrentValue();
-			if( this->GetTrackEnergy() ) {
+			if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
 				std::cout << " " << this->m_Optimizer->GetCurrentEnergy();
 				std::cout << " " << this->m_Optimizer->GetFunctional()->GetValue();
 				std::cout << " " << this->m_Optimizer->GetCurrentRegularizationEnergy();

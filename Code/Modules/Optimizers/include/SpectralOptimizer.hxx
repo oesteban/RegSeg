@@ -143,7 +143,15 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 	this->m_Transform->UpdateField();
 
 	this->UpdateField();
-	this->m_CurrentValue = this->ComputeIterationChange();
+
+	MeasureType meanDisp = this->ComputeIterationChange();
+
+	if ( this->m_UseLightWeightConvergenceChecking ) {
+		this->m_CurrentValue = log( meanDisp );
+	} else {
+		this->m_CurrentValue = this->GetCurrentEnergy();
+	}
+
 	this->SetUpdate();
 
 	this->m_Transform->Interpolate();
@@ -348,7 +356,8 @@ SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 	InternalComputationValueType totalNorm = 0;
 	VectorType t0,t1;
 	InternalComputationValueType diff = 0.0;
-	bool isDiffeomorphic = true;
+
+	this->m_IsDiffeomorphic = true;
 
 	for (size_t pix = 0; pix < nPix; pix++ ) {
 		t0 = *(fBuffer+pix);
@@ -359,17 +368,13 @@ SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 		*(fBuffer+pix) = t1; // Copy current to last, once evaluated
 
 
-		if ( isDiffeomorphic ) {
+		if ( this->m_IsDiffeomorphic ) {
 			for( size_t i = 0; i<Dimension; i++) {
 				if ( fabs(t1[i]) > this->m_MaxDisplacement[i] ) {
-					isDiffeomorphic = false;
+					this->m_IsDiffeomorphic = false;
 				}
 			}
 		}
-	}
-
-	if( !isDiffeomorphic ) {
-		itkWarningMacro( << "some update vectors are larger than the maximum displacement (" << this->m_MaxDisplacement << ").");
 	}
 
 	this->m_RegularizationEnergyUpdated = (totalNorm==0);

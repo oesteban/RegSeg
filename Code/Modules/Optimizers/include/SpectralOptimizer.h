@@ -188,7 +188,6 @@ public:
 	itkSetMacro( UseDescriptorRecomputation, bool );
 	itkGetConstMacro( UseDescriptorRecomputation, bool );
 
-
 	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
 
 	static void AddOptions( SettingsDesc& opts );

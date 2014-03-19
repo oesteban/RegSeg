@@ -241,7 +241,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->m_CurrentLogger = JSONLoggerType::New();
 	this->m_CurrentLogger->SetOptimizer( this->m_Optimizers[level] );
 	this->m_CurrentLogger->SetLevel( level );
-	//this->m_CurrentLogger->SetTrackEnergyOn();
 
 	if( this->m_Verbosity > 0 ) {
 		this->m_ImageLogger = IterationWriterUpdate::New();
