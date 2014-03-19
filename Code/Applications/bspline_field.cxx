@@ -10,6 +10,8 @@
 
 #include "bspline_field.h"
 
+#include <vnl/vnl_matrix.h>
+#include <vnl/vnl_diag_matrix.h>
 #include <sstream>
 
 int main(int argc, char *argv[]) {
@@ -40,9 +42,19 @@ int main(int argc, char *argv[]) {
 	readref->SetFileName( fixedImageNames[0] );
 	readref->Update();
 	ChannelPointer ref = readref->GetOutput();
+	typename ChannelType::DirectionType dir = ref->GetDirection();
+	typename ChannelType::PointType ref_orig = ref->GetOrigin();
+
+	typename ChannelType::DirectionType itk;
+	itk.SetIdentity();
+	itk(0,0)=-1.0;
+	itk(1,1)=-1.0;
+	ref->SetDirection( dir * itk );
+	ref->SetOrigin( itk * ref_orig );
 
 	typename CoefficientsType::SizeType size;
 	typename CoefficientsType::SpacingType spacing;
+
 	size.Fill(10);
 	CoefficientsImageArray coeffs;
 
@@ -73,9 +85,6 @@ int main(int argc, char *argv[]) {
 		coeffs = transform->GetCoefficientsImages();
 		spacing = coeffs[0]->GetSpacing();
 		size_t numPix = coeffs[0]->GetLargestPossibleRegion().GetNumberOfPixels();
-
-		std::cout << size << std::endl;
-		std::cout << spacing << std::endl;
 
 		typename CoefficientsType::RegionType region;
 		typename CoefficientsType::IndexType start;
@@ -173,23 +182,30 @@ int main(int argc, char *argv[]) {
 		r->SetFileName( fixedImageNames[i] );
 		r->Update();
 
+		ChannelPointer im = r->GetOutput();
+		im->SetDirection( dir * itk );
+		im->SetOrigin( itk * ref_orig );
+
 
 		ResamplePointer res = ResampleFilter::New();
-		res->SetInput( r->GetOutput() );
+		res->SetInput( im );
 		res->SetReferenceImage( r->GetOutput() );
 		res->SetUseReferenceImage(true);
 		res->SetInterpolator( BSplineInterpolateImageFunction::New() );
 		res->SetTransform( transform );
 		res->Update();
 
+		ChannelPointer im_res = res->GetOutput();
+		im_res->SetDirection( dir );
+		im_res->SetOrigin( ref_orig );
+
 		ss.str("");
 		ss << outPrefix << "_resampled_" << i << ".nii.gz";
 		WriterPointer w = WriterType::New();
-		w->SetInput( res->GetOutput() );
+		w->SetInput( im_res );
 		w->SetFileName( ss.str().c_str() );
 		w->Update();
 	}
-
 
 	for( size_t i = 0; i<movingSurfaceNames.size(); i++){
 		MeshReaderPointer r = MeshReaderType::New();
@@ -198,7 +214,23 @@ int main(int argc, char *argv[]) {
 
 		MeshPointer mesh = r->GetOutput();
 
-		PointsIterator  pointIterator = mesh->GetPoints()->Begin();
+		PointsIterator p_it = mesh->GetPoints()->Begin();
+		PointsIterator p_end = mesh->GetPoints()->End();
+
+		MeshPointType p;
+		while ( p_it!=p_end ) {
+			p = p_it.Value();
+			p_it.Value()+= p - transform->TransformPoint( p );
+			++p_it;
+		}
+
+		MeshWriterPointer wmesh = MeshWriterType::New();
+		ss.str("");
+		ss << outPrefix << "_surf_" << i << ".vtk";
+		wmesh->SetFileName( ss.str().c_str() );
+		wmesh->SetInput( mesh );
+		wmesh->Update();
+
 	}
 
 }
