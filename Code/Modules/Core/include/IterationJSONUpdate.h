@@ -48,7 +48,7 @@ public:
     	if( typeid( event ) == typeid( itk::StartEvent ) ) {
     		m_StartTime = clock();
 
-    		if( this->GetTrackEnergy() ) {
+    		if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
 				itnode["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
 				itnode["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
 				itnode["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
@@ -57,18 +57,22 @@ public:
 
     		JSONValue size = Json::Value( Json::arrayValue );
     		JSONValue spacing = Json::Value( Json::arrayValue );
+    		JSONValue maxdisp = Json::Value( Json::arrayValue );
 
     		for( size_t i = 0; i < this->m_Optimizer->GetGridSize().GetSizeDimension(); i++) {
     			size.append(  static_cast<Json::UInt64>( this->m_Optimizer->GetGridSize()[i] ) );
     			spacing.append(  static_cast<Json::UInt64>( this->m_Optimizer->GetGridSpacing()[i] ) );
+    			maxdisp.append(  static_cast<Json::UInt64>( this->m_Optimizer->GetMaxDisplacement()[i] ) );
     		}
 
     		itnode["transform"]["grid-size"] = size;
     		itnode["transform"]["grid-spacing"] = spacing;
+    		itnode["transform"]["max-displacement"] = maxdisp;
+    		itnode["transform"]["num-threads"] = this->m_Optimizer->GetTransform()->GetNumberOfThreads();
     	}
 
 		if( typeid( event ) == typeid( itk::IterationEvent ) ) {
-			if ( this->GetTrackEnergy() ) {
+			if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
 				itnode["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
 				itnode["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
 				itnode["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
@@ -92,6 +96,7 @@ public:
 			itnode["summary"]["iterations"] = Json::Int (this->m_Optimizer->GetCurrentIteration());
 			itnode["summary"]["conv_status"] = this->m_Optimizer->GetStopCondition();
 			itnode["summary"]["stop_msg"] = this->m_Optimizer->GetStopConditionDescription();
+			itnode["summary"]["is-diffeomorphic"] = Json::Int( this->m_Optimizer->GetIsDiffeomorphic() );
 			this->m_JSONRoot.append( itnode );
 		}
 

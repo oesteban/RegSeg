@@ -71,7 +71,7 @@ namespace rstk {
 template< typename TFunctional >
 OptimizerBase<TFunctional>::OptimizerBase():
 m_LearningRate( 2.0 ),
-m_MinimumConvergenceValue( 1.0e-8 ),
+m_MinimumConvergenceValue( 1e-7 ),
 m_ConvergenceWindowSize( 50 ),
 m_ConvergenceValue( 0.0 ),
 m_Stop( false ),
@@ -82,6 +82,8 @@ m_DescriptorRecomputationFreq(0),
 m_UseDescriptorRecomputation(false),
 m_StepSize(1.0),
 m_AutoStepSize(true),
+m_IsDiffeomorphic(true),
+m_UseLightWeightConvergenceChecking(true),
 m_CurrentValue(itk::NumericTraits<MeasureType>::infinity())
 {
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
@@ -268,7 +270,9 @@ void OptimizerBase<TFunctional>
 			("iterations,i", bpo::value< size_t > (), "number of iterations")
 			("convergence-window,w", bpo::value< size_t > (), "number of iterations of convergence window")
 			("grid-size,g", bpo::value< size_t > (), "grid size")
-			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)");
+			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)")
+			("convergence-energy", bpo::bool_switch(), "disables lazy convergence tracking: instead of fast computation of the mean norm of "
+					"the displacement field, it computes the full energy functional");
 }
 
 template< typename TFunctional >
@@ -284,6 +288,10 @@ void OptimizerBase<TFunctional>
 	if( this->m_Settings.count( "iterations" ) ){
 		bpo::variable_value v = this->m_Settings["iterations"];
 		this->SetNumberOfIterations( v.as< size_t >() );
+
+		if( ! this->m_Settings.count("convergence-window" ) ) {
+			this->m_ConvergenceWindowSize = floor( 0.20 * this->m_NumberOfIterations ) + 1;
+		}
 	}
 
 	if( this->m_Settings.count( "convergence-window" ) ){
@@ -298,6 +306,8 @@ void OptimizerBase<TFunctional>
 		this->SetDescriptorRecomputationFreq( updDesc );
 	}
 
+	bpo::variable_value v = this->m_Settings["convergence-energy"];
+	this->m_UseLightWeightConvergenceChecking = ! v.as<bool>();
 }
 
 } // end namespace rstk

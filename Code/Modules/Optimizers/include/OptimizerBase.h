@@ -201,13 +201,19 @@ public:
 
 	itkGetConstMacro( GridSize, ControlPointsGridSizeType );
 	itkGetConstMacro( GridSpacing, ControlPointsGridSpacingType );
+
 	itkGetConstMacro( MaxDisplacement, VectorType );
+
+	itkGetConstMacro( IsDiffeomorphic, bool );
 
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
 
 	itkSetMacro( AutoStepSize, bool );
 	itkGetConstMacro( AutoStepSize, bool );
+
+	itkSetMacro( UseLightWeightConvergenceChecking, bool );
+	itkGetConstMacro( UseLightWeightConvergenceChecking, bool );
 
 	virtual void SetStepSize (const InternalComputationValueType _arg);
 	itkGetConstMacro( StepSize, InternalComputationValueType );
@@ -285,6 +291,8 @@ protected:
 
 	InternalComputationValueType  m_StepSize;
 	bool                          m_AutoStepSize;
+	bool                          m_IsDiffeomorphic;
+	bool                          m_UseLightWeightConvergenceChecking;
 
 	/* Energy tracking */
 	MeasureType                  m_CurrentValue;
