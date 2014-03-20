@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-10 17:32:19
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-03-13 10:22:08
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-03-20 12:15:59
 
 import os
 import os.path as op
@@ -22,7 +22,7 @@ import nipype.pipeline.engine as pe
 
 def epi_deform(name="synthetic_distortion", nocheck=False ):
     pipeline = pe.Workflow(name=name)
-    
+
     inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mag', 'in_pha', 'in_mask', 'te_incr', 'echospacing','enc_dir','in_tpms' ]), name='inputnode' )
     prepare = pe.Node( fsl.PrepareFieldmap(nocheck=nocheck), name='fsl_prepare_fieldmap' )
     vsm = pe.Node(fsl.FUGUE(save_shift=True,poly_order=2 ), name="gen_VSM")
@@ -33,7 +33,7 @@ def epi_deform(name="synthetic_distortion", nocheck=False ):
     warpimages = pe.MapNode( fsl.FUGUE(forward_warping=True,icorr=True), iterfield=['in_file'], name='WarpImages' )
     normalize_tpms = pe.Node( niu.Function( input_names=['in_files','in_mask'], output_names=['out_files'], function=normalize ), name='Normalize' )
     outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_vsm', 'out_mask', 'out_tpms' ]), name='outputnode' )
-    
+
     pipeline.connect([
                        (inputnode,      prepare, [('in_mag','in_magnitude'), ('in_pha','in_phase'),(('te_incr',_sec2ms),'delta_TE')])
                       ,(prepare,            vsm, [('out_fieldmap','phasemap_file')])
@@ -58,16 +58,16 @@ def epi_deform(name="synthetic_distortion", nocheck=False ):
                       ,(warpimages,  normalize_tpms, [('warped_file','in_files')])
                       ,(normalize_tpms,  outputnode, [('out_files','out_tpms')])
     ])
-    
+
     return pipeline
 
 def fieldmap_preparation( name="Fmap_prepare" ):
     workflow = pe.Workflow(name=name)
-    
+
     # Setup i/o
     inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'in_fmap_mag', 'in_fmap_pha', 'in_t1w_brain', 'in_surfs', 'in_t2w', 'fs_subjects_dir' ]), name='inputnode' )
     outputnode = pe.Node( niu.IdentityInterface(fields=[ 'out_fmap_mag', 'out_fmap_pha', 'out_smri', 'out_tpms', 'out_mask', 'out_surfs' ]), name='outputnode' )
-    
+
     # Setup initial nodes
     fslroi = pe.Node( fsl.ExtractROI(t_min=0, t_size=1), name='GetFirst' )
     bet = pe.Node( fsl.BET( frac=0.4 ), name='BrainExtraction' )
@@ -79,12 +79,12 @@ def fieldmap_preparation( name="Fmap_prepare" ):
     tonifti1 = pe.Node( fs.MRIConvert(out_type="niigz", out_orientation="RAS" ), name='To_Nifti_1' )
     tonifti2 = pe.Node( fs.MRIConvert(out_type="niigz", out_orientation="RAS" ), name='To_Nifti_2' )
     tonifti3 = pe.Node( fs.MRIConvert(out_type="niigz", out_orientation="RAS" ), name='To_Nifti_3' )
-    
+
     # Setup ANTS and registration
     def _aslist( tname ):
         import numpy as np
         return np.atleast_1d( tname ).tolist()
-    
+
     registration = pe.Node( ants.Registration(output_warped_image=True), name="FM_to_T1" )
     registration.inputs.transforms = ['Rigid','Affine','SyN'] #, 'SyN']
     registration.inputs.transform_parameters = [(2.0,),(1.0,),(0.75,4.0,2.0)] #,(0.2,1.0,1.0)]
@@ -106,7 +106,7 @@ def fieldmap_preparation( name="Fmap_prepare" ):
     registration.inputs.collapse_output_transforms = True
     registration.inputs.winsorize_lower_quantile = 0.005
     registration.inputs.winsorize_upper_quantile = 0.975
-    
+
     binarize = pe.Node( fs.Binarize( min=0.001 ), name='Binarize' )
     applyAnts = pe.Node( ants.ApplyTransforms(dimension=3,interpolation='BSpline' ), name='ApplyANTs' )
     msk_mag = pe.Node( fs.ApplyMask(), name='Brain_FMap_Mag' )
@@ -118,7 +118,7 @@ def fieldmap_preparation( name="Fmap_prepare" ):
     fast = pe.Node( fsl.FAST( number_classes=3, probability_maps=True, img_type=1 ), name='SegmentT1' )
     merge = pe.Node( niu.Merge(2), name='JoinNames')
     combine = pe.Node( fsl.Merge(dimension='t' ), name='Combine')
-    
+
     workflow.connect([
                         # Connect inputs to nodes
                          ( inputnode,        tonifti0, [ ('in_fmap_mag', 'in_file')] )
@@ -132,6 +132,7 @@ def fieldmap_preparation( name="Fmap_prepare" ):
                         ,( n4,                    bet, [ ('output_image','in_file' ) ] )
                         ,( bbreg,            applymsk, [ ('registered_file','in_file' ) ] )
                         ,( applymsk,         tonifti2, [ ('out_file','in_file') ])
+                        ,( n4_t1             tonifti2, [ ('output_image','reslice_like')])
                         # ANTs
                         ,( tonifti3,            n4_t1, [ ('out_file', 'input_image' ) ] )
                         ,( n4_t1,                fast, [ ('output_image', 'in_files' ) ] )
@@ -159,7 +160,7 @@ def fieldmap_preparation( name="Fmap_prepare" ):
                         ,( bin_mag,        outputnode, [ ('binary_file', 'out_mask' ) ] )
                         ,( fast,           outputnode, [ ('partial_volume_files', 'out_tpms' ) ] )
                      ])
-    
+
     return workflow
 
 #
@@ -169,7 +170,7 @@ def fieldmap_preparation( name="Fmap_prepare" ):
 def fugue_all_workflow(name="Fugue_WarpDWIs"):
     """ Auxiliary nipype workflow that warps/unwarps all images in a sequence """
     pipeline = pe.Workflow(name=name)
-    
+
     def _split_dwi(in_file):
         import nibabel as nib
         import os.path as op
@@ -183,12 +184,12 @@ def fugue_all_workflow(name="Fugue_WarpDWIs"):
             nib.save(frame, out_file)
             out_files.append(out_file)
         return out_files
-    
+
     inputnode = pe.Node(niu.IdentityInterface(fields=['in_file', 'in_mask', 'in_vsm','unwarp_direction' ]), name='inputnode' )
     dwi_split = pe.Node(niu.Function(input_names=['in_file'], output_names=['out_files'], function=_split_dwi), name='split_DWI')
     vsm_fwd = pe.MapNode(fsl.FUGUE(forward_warping=True, icorr=False), iterfield=['in_file'], name='Fugue_Warp')
     dwi_merge = pe.Node(fsl.utils.Merge(dimension='t'), name='merge_DWI')
-    
+
     outputnode = pe.Node(niu.IdentityInterface(fields=['out_file' ]), name='outputnode' )
     pipeline.connect([
                        (inputnode,  dwi_split, [('in_file', 'in_file')])
@@ -196,8 +197,8 @@ def fugue_all_workflow(name="Fugue_WarpDWIs"):
                       ,(inputnode,    vsm_fwd, [('in_mask', 'mask_file'),('in_vsm','shift_in_file'),('unwarp_direction','unwarp_direction') ])
                       ,(vsm_fwd,    dwi_merge, [('warped_file', 'in_files')])
                       ,(dwi_merge, outputnode, [('merged_file', 'out_file')])
-                    ])    
-    
+                    ])
+
     return pipeline
 
 
@@ -238,7 +239,7 @@ def normalize( in_files, in_mask=None, out_files=[] ):
     import nibabel as nib
     import numpy as np
     import os.path as op
- 
+
     imgs = [ nib.load(fim) for fim in in_files ]
     img_data = np.array( [ im.get_data() for im in imgs ] ).astype( 'f32' )
     img_data[img_data>1.0] = 1.0
@@ -249,20 +250,20 @@ def normalize( in_files, in_mask=None, out_files=[] ):
     weights[weights==0] = 1.0
 
     msk = np.ones_like( imgs[0].get_data() )
-    
+
     if not in_mask is None:
         msk = nib.load( in_mask ).get_data()
         msk[ msk<=0 ] = 0
         msk[ msk>0 ] = 1
 
 
-    if len( out_files )==0:    
+    if len( out_files )==0:
         for i,finname in enumerate( in_files ):
             fname,fext = op.splitext( op.basename( finname ) )
             if fext == '.gz':
                 fname,fext2 = op.splitext( fname )
                 fext = fext2 + fext
-             
+
             out_file = op.abspath( fname+'_norm'+fext )
             out_files+= [ out_file ]
 
@@ -272,7 +273,7 @@ def normalize( in_files, in_mask=None, out_files=[] ):
             data = data * msk
             hdr = imgs[i].get_header().copy()
             hdr['data_type']= 16
-            hdr.set_data_dtype( 'float32' )   
+            hdr.set_data_dtype( 'float32' )
             nib.save( nib.Nifti1Image( data, imgs[i].get_affine(), hdr ), out_file )
 
     return out_files
@@ -293,10 +294,10 @@ def sanitize( in_reference, in_distorted, in_mask, out_file=None ):
     im = nib.load( in_distorted )
     im_data = im.get_data()
     ref_data = nib.load( in_reference ).get_data()
-        
+
     for i in range(0,np.shape(im_data)[-1]):
-        im_data[:,:,:,i] = ref_data[:,:,:,i] * msk_data + im_data[:,:,:,i] * (1-msk_data) 
-       
+        im_data[:,:,:,i] = ref_data[:,:,:,i] * msk_data + im_data[:,:,:,i] * (1-msk_data)
+
     if out_file is None:
         fname, fext = op.splitext(op.basename(in_distorted))
         if fext == '.gz':
@@ -326,7 +327,7 @@ def generate_siemens_phmap( in_file, intensity, sigma, w1=-0.5, w2=1.0, out_file
     imshape = msk.get_shape()
     boundary = binary_erosion( mskdata ).astype(np.dtype('u1'))
     boundary = (( mskdata - boundary )).astype(float)
-    
+
     x = ( int(0.65*imshape[0]),int(0.35*imshape[0]) )
     y = ( int(0.4*imshape[1]), int(0.6*imshape[1]) )
     z = ( int(0.4*imshape[2]), int( imshape[2] ) )
@@ -362,7 +363,7 @@ def generate_siemens_phmap( in_file, intensity, sigma, w1=-0.5, w2=1.0, out_file
     hdr['data_type'] = 16
     hdr['qform_code'] = 2
     hdr.set_data_dtype( np.float32 )
-    nib.save( nib.Nifti1Image( phasefield.astype( np.float32 ), msk.get_affine(), hdr ), out_file ) 
+    nib.save( nib.Nifti1Image( phasefield.astype( np.float32 ), msk.get_affine(), hdr ), out_file )
     return out_file
 
 
@@ -385,79 +386,79 @@ def generate_phmap( in_file, out_file=None ):
     data = np.pi * data * (1.0/2048)
     hdr = msk.get_header()
     hdr.set_data_dtype( 16 )
-    nib.save( nib.Nifti1Image( data, msk.get_affine(), hdr ), out_file ) 
+    nib.save( nib.Nifti1Image( data, msk.get_affine(), hdr ), out_file )
     return out_file
-    
+
 def rad2radsec( in_file, in_mask, te_incr=2.46e-3, out_file=None ):
     import nibabel as nib
     import numpy as np
     import os.path as op
-    
+
     im = nib.load( in_file )
     msk = nib.load( in_mask ).get_data()
     data = np.ma.array( im.get_data(), mask = 1-msk )
     data[msk==1] = data[msk==1] / ( te_incr )
     mval = np.ma.median( data )
-    
+
     data1 = np.zeros( shape=im.get_shape() )
     data2 = np.zeros( shape=im.get_shape() )
-    
+
     data1[msk==1] = data[msk==1] - mval
-    
-    data = np.rollaxis ( np.array( [ data1, data2 ] ), 0, 4)    
+
+    data = np.rollaxis ( np.array( [ data1, data2 ] ), 0, 4)
     hdr = im.get_header()
     hdr['dim'][0]=4
     hdr['dim'][4]=2
-    
+
     if out_file is None:
         fname, fext = op.splitext(op.basename(in_file))
         if fext == '.gz':
             fname, _ = op.splitext(fname)
         out_file = op.abspath('./%s_ph_unwrap_radsec.nii.gz' % fname)
-        
+
     nib.save( nib.Nifti1Image( data, im.get_affine(), hdr ), out_file )
-    
+
     return out_file
 
 def genmask(in_file, out_file=None):
     import numpy as np
     import nibabel as nib
     import os.path as op
-    
+
     im = nib.load(in_file)
-    
+
     data = np.ones( shape=im.get_shape() )
-    
+
     if out_file is None:
         fname, fext = op.splitext(op.basename(in_file))
         if fext == '.gz':
             fname, _ = op.splitext(fname)
         out_file = op.abspath('./%s_mask.nii.gz' % fname)
-        
+
     nib.save( nib.Nifti1Image( data, im.get_affine(), im.get_header() ), out_file )
-    
+
     return out_file
 
 def demean( in_file, in_mask, out_file=None ):
     import numpy as np
     import nibabel as nib
     import os.path as op
-    
+
     im = nib.load( in_file )
     msk = nib.load( in_mask ).get_data()
-    
+
     data = np.ma.array( im.get_data(), mask = 1-msk )
     mval = np.ma.median( data )
     data[msk==1] = data[msk==1] - mval
-    
+
     if out_file is None:
         fname, fext = op.splitext(op.basename(in_file))
         if fext == '.gz':
             fname, _ = op.splitext(fname)
         out_file = op.abspath('./%s_demeaned.nii.gz' % fname)
-        
+
     nib.save( nib.Nifti1Image( data, im.get_affine(), im.get_header() ), out_file )
-    
+
     return out_file
 
 def _ms2sec(val):

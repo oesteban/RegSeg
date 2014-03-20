@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-20 10:13:03
+# @Last Modified time: 2014-03-20 11:12:43
 
 import os
 import os.path as op
@@ -17,7 +17,8 @@ import numpy as np
 import nibabel as nib
 
 from nipype.interfaces.base import (traits, TraitedSpec, CommandLine,
-                                    CommandLineInputSpec, InputMultiPath, File,
+                                    CommandLineInputSpec, InputMultiPath,
+                                    OutputMultiPath, File,
                                     isdefined, Undefined )
 
 from nipype.utils.filemanip import load_json, save_json, split_filename, fname_presuffix
@@ -66,20 +67,27 @@ class ACWERegInputGroupSpec( CommandLineInputSpec ):
                                 argstr='-b %0.5f')
 
 class ACWERegInputSpec( ACWERegInputGroupSpec ):
-    in_fixed = InputMultiPath(File(exists=True), argstr="-F %s",
+    in_fixed = InputMultiPath(File(exists=True), argstr="-F %s", mandatory=True,
               desc='target volume/image(s) contrast to register contours to')
-    in_prior = InputMultiPath(File(exists=True), argstr="-M %s",
+    in_prior = InputMultiPath(File(exists=True), argstr="-M %s", mandatory=True,
               desc='vtk contours that will be registered to in_fixed, should be \
                     given in hierarchical order (from top to bottom, last is bg)')
     levels = traits.Int(1, desc='number of levels in multi-resolution \
                         schemes', argstr="-L %d")
     out_prefix = traits.Str( "regseg", desc='output files prefix', argstr="-o %s",
          usedefault=True )
+    log_filename = File(desc='filepath for log file', argstr='-l %s')
+    images_verbosity = traits.Int(1, desc='verbosity of intermediate results output', argstr='-v %d')
 
 
 
 class ACWERegOutputSpec( TraitedSpec ):
-    out_warped = traits.File(exists=True)
+    out_warped = OutputMultiPath(File(exists=True, desc='source images unwarped'))
+    out_contours = OutputMultiPath(File(exists=True, desc='priors in target space'))
+    out_tpms = OutputMultiPath(File(exists=True, desc='tissue probability maps (TPM) in target space'))
+    out_field = OutputMultiPath( File(exists=True, desc='output field') )
+    out_log = File(exists=True, desc='log JSON file')
+    #out_coeff = OutputMultiPath( File(desc='output coefficients') )
 
 
 
@@ -178,6 +186,19 @@ class ACWEReg( CommandLine ):
         retval.append( ']' )
         return "".join(retval)
 
+    def _list_outputs(self):
+        out_prefix = self.inputs.out_prefix
+        outputs = self.output_spec().get()
+        outputs['out_warped'] =
+        outputs['out_tpms'] = [ op.abspath('%s_final_tpm_%d.nii.gz' % (out_prefix, i))  for i in range(len(self.inputs.in_prior) + 1 ) ]
+        outputs['out_surfs'] = [ op.abspath('%s_final_%d.vtk' % (out_prefix, i))  for i in range(len(self.inputs.in_prior)) ]
+        outputs['out_field'] = [op.abspath('%s_final_field_cmp%d.nii.gz' % (out_prefix, i))  for i in range(3) ]
+        #outputs['out_coeff'] =
+
+        if isdefined( self.inputs.log_filename ):
+
+        return outputs
+
 
 class RandomBSplineDeformationInputSpec( CommandLineInputSpec ):
     in_file = InputMultiPath(File(exists=True), mandatory=True, argstr="-I %s",
@@ -194,9 +215,10 @@ class RandomBSplineDeformationInputSpec( CommandLineInputSpec ):
                              mandatory=True )
 
 class RandomBSplineDeformationOutputSpec( TraitedSpec ):
-    out_file = InputMultiPath(File(exists=True))
-    out_coeff = InputMultiPath(File(exists=True))
-    out_field = InputMultiPath(File(exists=True))
+    out_file = OutputMultiPath(File(exists=True, desc='warped input files'))
+    out_coeff = OutputMultiPath(File(exists=True, desc='output coefficients'))
+    out_field = OutputMultiPath(File(exists=True, desc='output warping field'))
+    out_surfs = OutputMultiPath(File(desc='output warped surfaces'))
 
 class RandomBSplineDeformation( CommandLine ):
     """ Use ACWEReg bspline random deformation tool to generate
@@ -232,6 +254,9 @@ class RandomBSplineDeformation( CommandLine ):
         outputs['out_file'] = [ op.abspath( '%s_resampled_%d.nii.gz' % ( out_prefix, i ))  for i in range(len(self.inputs.in_file)) ]
         outputs['out_coeff'] = [ op.abspath( '%s_coeffs_%d.nii.gz' % ( out_prefix, i ))  for i in range(3) ]
         outputs['out_field'] = [ op.abspath( '%s_field_cmp%d.nii.gz' % ( out_prefix, i ))  for i in range(3) ]
+
+        if isdefined( self.inputs.in_surfs ):
+            outputs['out_surfs'] = [ op.abspath( '%s_surf_%d.vtk' % ( out_prefix, i ))  for i in range(len(self.inputs.in_surfs)) ]
 
         return outputs
 
