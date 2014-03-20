@@ -11,7 +11,7 @@ from nipype.interfaces.io import IOBase
 
 
 class FSFilesInputSpect( BaseInterfaceInputSpec ):
-    fs_subjects_dir = Directory( os.environ['SUBJECTS_DIR'], exists=True, usedefault=True, 
+    fs_subjects_dir = Directory( os.environ['SUBJECTS_DIR'], exists=True, usedefault=True,
                                  desc='Freesurfer subjects dir' )
     subject_id = traits.String( mandatory=True, desc='Subject in Freesurfer system')
 
@@ -20,6 +20,7 @@ class FSFilesOutputSpect( TraitedSpec ):
     rawavg = File(exists=True, desc='Path to rawavg.mgz file' )
     orig = File(exists=True, desc='Path to orig.mgz file' )
     norm = File(exists=True, desc='Path to norm.mgz file' )
+    brain = File(exists=True, desc='Path to brain.mgz file' )
 
 class FSFiles( IOBase ):
     """ Dumb datasource to get Freesurfer's files.
@@ -46,13 +47,14 @@ class FSFiles( IOBase ):
         outputs['rawavg'] = op.join( fs_dir, 'rawavg.mgz' )
         outputs['orig'] = op.join( fs_dir, 'orig.mgz' )
         outputs['norm'] = op.join( fs_dir, 'norm.mgz' )
+        outputs['brain'] = op.join( fs_dir, 'brain.mgz' )
 
         return outputs
 
 
 def gen_fs_transform( in_file, fs_subjects_dir, subject_id, out_file=None ):
     """ Get transform matrix between orig (*tkRAS*) and native (*scannerRAS*)
-    coordinates in Freesurfer. Implements first step of 
+    coordinates in Freesurfer. Implements first step of
     `this guide <http://surfer.nmr.mgh.harvard.edu/fswiki/FsAnat-to-NativeAnat>`_.
 
     Keyword arguments:
@@ -92,7 +94,7 @@ def transform_surface( in_surf, in_reg, in_target, fs_subjects_dir, subject_id, 
 
     hemi, surf = op.splitext(op.basename(in_surf))
     surf = surf[1:]
-        
+
     if out_file is None:
         out_file = op.abspath('./%s.%s.native' % (hemi,surf) )
 
@@ -110,17 +112,17 @@ def MRIPreTess( in_file, in_norm, label=1, out_file="" ):
     import subprocess as sp
     import os
     import os.path as op
-    
+
     if out_file=="":
         fname,ext = op.splitext( op.basename(in_file) )
         if ext==".gz":
             fname,_ = op.splitext(fname)
-            
+
         out_file= op.join( op.abspath( os.getcwd() ), "%s_pretess.mgz" % fname )
-        
+
     cmd="mri_pretess %s %d %s %s" % ( in_file, label, in_norm, out_file )
     proc = sp.check_call( cmd, shell=True )
-        
+
     return out_file
 
 
@@ -130,10 +132,10 @@ def merge_labels( in_file, labels ):
     import numpy as np
     import os.path as op
     from scipy import ndimage
-    
+
     img = nb.load( in_file )
     imgdata = img.get_data()
-    
+
     outdata = np.zeros( shape=imgdata.shape )
     for l in labels:
         outdata[ imgdata==l ] = 1
@@ -141,12 +143,12 @@ def merge_labels( in_file, labels ):
     #disk = disk_structure( (2,2,2) )
     #outdata = ndimage.binary_opening( outdata, structure=disk ).astype(np.int)
     #outdata = ndimage.binary_closing( outdata, structure=disk ).astype(np.int)
-    
+
     fname, ext = op.splitext( in_file )
-    
+
     if ext=='.gz':
         fname,_ = op.splitext(fname)
-        
+
     out_file = '%s_bin.nii.gz' % fname
     nb.save( nb.Nifti1Image( outdata, img.get_affine(), img.get_header() ), out_file)
     return out_file
@@ -164,7 +166,7 @@ def fixvtk( in_file, in_ref, out_file=None ):
         fname,ext = op.splitext( op.basename(in_file) )
         if ext==".gz":
             fname,_ = op.splitext(fname)
-            
+
         out_file= op.abspath( "%s_fixed.vtk" % fname )
 
     ref = nb.load( in_ref )
@@ -178,7 +180,7 @@ def fixvtk( in_file, in_ref, out_file=None ):
         with open( out_file, 'w+' ) as w:
             npoints = 0
             pointid = -5
-            
+
             for i,l in enumerate(f):
                 if (i==4):
                     s = l.split()
@@ -189,7 +191,7 @@ def fixvtk( in_file, in_ref, out_file=None ):
                     vert.append( 1.0 )
                     newvert = np.dot( matrix, vert )
                     l = '%.9f  %.9f  %.9f\n' % tuple(newvert[0:3])
-                
+
                 w.write( l )
                 pointid = pointid + 1
 
