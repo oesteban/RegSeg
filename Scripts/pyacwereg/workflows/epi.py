@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-10 17:32:19
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-20 12:15:59
+# @Last Modified time: 2014-03-20 12:35:19
 
 import os
 import os.path as op
@@ -18,6 +18,8 @@ import nipype.interfaces.fsl as fsl             # fsl
 import nipype.interfaces.freesurfer as fs       # freesurfer
 import nipype.interfaces.ants as ants           # ANTS
 import nipype.pipeline.engine as pe
+
+import pyacwereg.utils.freesurfer as myfs
 
 
 def epi_deform(name="synthetic_distortion", nocheck=False ):
@@ -65,12 +67,13 @@ def fieldmap_preparation( name="Fmap_prepare" ):
     workflow = pe.Workflow(name=name)
 
     # Setup i/o
-    inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'in_fmap_mag', 'in_fmap_pha', 'in_t1w_brain', 'in_surfs', 'in_t2w', 'fs_subjects_dir' ]), name='inputnode' )
+    inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'in_fmap_mag', 'in_fmap_pha', 'in_t1w', 'in_t2w', 'in_surfs', 'fs_subjects_dir' ]), name='inputnode' )
     outputnode = pe.Node( niu.IdentityInterface(fields=[ 'out_fmap_mag', 'out_fmap_pha', 'out_smri', 'out_tpms', 'out_mask', 'out_surfs' ]), name='outputnode' )
 
     # Setup initial nodes
     fslroi = pe.Node( fsl.ExtractROI(t_min=0, t_size=1), name='GetFirst' )
     bet = pe.Node( fsl.BET( frac=0.4 ), name='BrainExtraction' )
+    fs_src = pe.Node( myfs.FSFiles(), name='FSSource')
     bbreg = pe.Node( fs.BBRegister( init='header', contrast_type='t2', registered_file=True ), name='T2w_to_T1w')
     applymsk = pe.Node( fs.ApplyMask(), name='MaskBrain_T2w' )
     n4 = pe.Node( ants.N4BiasFieldCorrection( dimension=3 ), name='Bias' )
@@ -123,9 +126,10 @@ def fieldmap_preparation( name="Fmap_prepare" ):
                         # Connect inputs to nodes
                          ( inputnode,        tonifti0, [ ('in_fmap_mag', 'in_file')] )
                         ,( inputnode,        tonifti1, [ ('in_fmap_pha', 'in_file')] )
+                        ,( inputnode,          fs_src, [ ('subject_id','subject_id'), ('fs_subjects_dir','fs_subjects_dir')])
                         ,( inputnode,           bbreg, [ ('subject_id', 'subject_id'), ('in_t2w', 'source_file'),('fs_subjects_dir','subjects_dir') ] )
-                        ,( inputnode,        tonifti3, [ ('in_t1w_brain', 'in_file' ) ] )
-                        ,( inputnode,        applymsk, [ ('in_t1w_brain', 'mask_file') ] )
+                        ,( fs_src,           tonifti3, [ ('brain', 'in_file' ) ] )
+                        ,( fs_src,           applymsk, [ ('brain', 'mask_file') ] )
                         # Connections between nodes
                         ,( tonifti0,           fslroi, [ ('out_file', 'in_file')] )
                         ,( fslroi,                 n4, [ ('roi_file', 'input_image' ) ] )
