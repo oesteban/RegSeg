@@ -132,7 +132,7 @@ def fieldmap_preparation( name="Fmap_prepare" ):
                         ,( n4,                    bet, [ ('output_image','in_file' ) ] )
                         ,( bbreg,            applymsk, [ ('registered_file','in_file' ) ] )
                         ,( applymsk,         tonifti2, [ ('out_file','in_file') ])
-                        ,( n4_t1             tonifti2, [ ('output_image','reslice_like')])
+                        ,( n4_t1,            tonifti2, [ ('output_image','reslice_like')])
                         # ANTs
                         ,( tonifti3,            n4_t1, [ ('out_file', 'input_image' ) ] )
                         ,( n4_t1,                fast, [ ('output_image', 'in_files' ) ] )

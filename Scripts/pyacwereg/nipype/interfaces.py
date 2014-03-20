@@ -189,13 +189,13 @@ class ACWEReg( CommandLine ):
     def _list_outputs(self):
         out_prefix = self.inputs.out_prefix
         outputs = self.output_spec().get()
-        outputs['out_warped'] =
+        #outputs['out_warped'] =
         outputs['out_tpms'] = [ op.abspath('%s_final_tpm_%d.nii.gz' % (out_prefix, i))  for i in range(len(self.inputs.in_prior) + 1 ) ]
         outputs['out_surfs'] = [ op.abspath('%s_final_%d.vtk' % (out_prefix, i))  for i in range(len(self.inputs.in_prior)) ]
         outputs['out_field'] = [op.abspath('%s_final_field_cmp%d.nii.gz' % (out_prefix, i))  for i in range(3) ]
         #outputs['out_coeff'] =
 
-        if isdefined( self.inputs.log_filename ):
+        #if isdefined( self.inputs.log_filename ):
 
         return outputs
 
