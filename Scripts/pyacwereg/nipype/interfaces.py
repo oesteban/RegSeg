@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-03-14 20:31:02
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-03-20 10:13:03
 
 import os
 import os.path as op
@@ -29,6 +29,7 @@ class ACWERegInputGroupSpec( CommandLineInputSpec ):
     # Functional options
     float_trait = traits.Either( None, traits.Float(1.0) )
     int_trait = traits.Either( None, traits.Int( 0 ) )
+    bool_trait = traits.Either( None, traits.Bool(False) )
 
     f_scale = traits.Either( float_trait, traits.List(float_trait), default=1.0,
                                 desc='scales to be applied to computed shape gradients',
@@ -43,6 +44,11 @@ class ACWERegInputGroupSpec( CommandLineInputSpec ):
     # Optimizer options
     iterations = traits.Either( traits.Int(), traits.List(traits.Int()), default=50,
                                 desc='number of iterations (per level)', argstr='-i %d' )
+    convergence_window = traits.Either( int_trait, traits.List( int_trait ), default=10,
+                                desc='convergence window in iterations', argstr='-w %d' )
+    convergence_energy = traits.Either( bool_trait, traits.List( bool_trait ), default=False,
+                                        desc='use lazy (default) or rigurous energy tracking',
+                                        argstr='--convergence-energy')
     grid_size = traits.Either( int_trait, traits.List( int_trait ), default=8,
                                 desc='bspline control points per dimension and level',
                                 argstr='-g %d')
