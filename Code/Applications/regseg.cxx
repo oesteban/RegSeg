@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
 	// Displacementfield
 	typename ComponentsWriter::Pointer p = ComponentsWriter::New();
 	p->SetFileName( (outPrefix + "_final_field" ).c_str() );
-	p->SetInput( acwereg->GetCurrentDisplacementField() );
+	p->SetInput( acwereg->GetDisplacementField() );
 	p->Update();
 
 	// Contours and regions
@@ -229,6 +229,44 @@ int main(int argc, char *argv[]) {
 		w->SetFileName( ss.str().c_str() );
 		w->Update();
     }
+
+	// Read and transform images if present
+	for( size_t i = 0; i<fixedImageNames.size(); i++) {
+		typename ImageReader::Pointer r = ImageReader::New();
+		r->SetFileName( fixedImageNames[i] );
+		r->Update();
+
+		typename ChannelType::Pointer im = r->GetOutput();
+		typename ChannelType::DirectionType dir = im->GetDirection();
+		typename ChannelType::PointType ref_orig = im->GetOrigin();
+
+		typename ChannelType::DirectionType itk;
+		itk.SetIdentity();
+		itk(0,0)=-1.0;
+		itk(1,1)=-1.0;
+		im->SetDirection( dir * itk );
+		im->SetOrigin( itk * ref_orig );
+
+		ResamplePointer res = ResampleFilter::New();
+		res->SetInput( im );
+		res->SetReferenceImage( im );
+		res->SetUseReferenceImage(true);
+		res->SetInterpolator( itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >::New() );
+		res->SetTransform( acwereg->GetOutputTransform() );
+		res->Update();
+
+		typename ChannelType::Pointer im_res = res->GetOutput();
+		im_res->SetDirection( dir );
+		im_res->SetOrigin( ref_orig );
+
+		std::stringstream ss;
+		ss.str("");
+		ss << outPrefix << "_resampled_" << i << ".nii.gz";
+		typename ImageWriter::Pointer w = ImageWriter::New();
+		w->SetInput( im_res );
+		w->SetFileName( ss.str().c_str() );
+		w->Update();
+	}
 
 	// Set-up & write out log file
 	std::ofstream logfile((outPrefix + logFileName ).c_str());

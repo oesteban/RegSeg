@@ -84,10 +84,17 @@ typedef itk::Vector<float, 1u>                               VectorPixelType;
 typedef itk::Image<VectorPixelType, 3u>                      ImageType;
 typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
-
-typedef BSplineSparseMatrixTransform<double, DIMENSION, 3U>  TransformType;
+typedef double                                               ScalarType;
+typedef BSplineSparseMatrixTransform<ScalarType,
+		                                     DIMENSION, 3u>  TransformType;
 typedef TransformType::Pointer                               TransformPointer;
 typedef typename TransformType::CoefficientsImageType        CoefficientsType;
+
+typedef itk::ResampleImageFilter
+		         < ChannelType, ChannelType, ScalarType >    ResampleFilter;
+typedef typename ResampleFilter::Pointer                     ResamplePointer;
+typedef itk::BSplineInterpolateImageFunction
+		                      < ChannelType, ScalarType >    BSplineInterpolateImageFunction;
 
 typedef ACWERegistrationMethod< ImageType, TransformType >   RegistrationType;
 typedef typename RegistrationType::Pointer                   RegistrationPointer;

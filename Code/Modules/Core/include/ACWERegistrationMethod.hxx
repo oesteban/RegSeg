@@ -57,6 +57,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
  	 	 	 	 	 	 	m_OutputPrefix(""),
                             m_UseGridLevelsInitialization(false),
                             m_UseGridSizeInitialization(true),
+                            m_UseCustomGridSize(false),
                             m_Initialized(false),
                             m_AutoSmoothing(false),
                             m_Stop(false),
@@ -116,6 +117,12 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 
 		// Add JSON tree to the general logging facility
 		this->m_JSONRoot.append( this->m_CurrentLogger->GetJSONRoot() );
+		this->m_Transforms[this->m_CurrentLevel]->SetControlPointsSize( this->m_Optimizers[this->m_CurrentLevel]->GetTransform()->GetControlPointsSize() );
+		this->m_Transforms[this->m_CurrentLevel]->SetPhysicalDomainInformation( this->GetFixedImage() );
+		this->m_Transforms[this->m_CurrentLevel]->SetCoefficientsImages(
+						this->m_Optimizers[this->m_CurrentLevel]->GetTransform()->GetCoefficientsImages());
+		this->m_Transforms[this->m_CurrentLevel]->SetOutputReference( this->GetFixedImage() );
+		this->m_Transforms[this->m_CurrentLevel]->UpdateField();
 
 		this->InvokeEvent( itk::IterationEvent() );
 		this->m_CurrentLevel++;
@@ -126,6 +133,8 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 			break;
 		}
 	}
+
+    this->GenerateFinalDisplacementField();
 }
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
@@ -189,7 +198,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		else if ( m_UseGridSizeInitialization ) {
 
 		} else {
-
+			this->m_UseCustomGridSize = true;
 		}
 
 		m_Stop = false;
@@ -215,32 +224,34 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	ReferenceImageConstPointer im = this->GetFixedImage();
 
 	// Initialize LevelSet function
-	m_Functionals[level] = DefaultFunctionalType::New();
-	m_Functionals[level]->SetSettings( this->m_Config[level] );
-	m_Functionals[level]->SetReferenceImage( im );
+	this->m_Functionals[level] = DefaultFunctionalType::New();
+	this->m_Functionals[level]->SetSettings( this->m_Config[level] );
+	this->m_Functionals[level]->SetReferenceImage( im );
 
 	if ( level == 0 ) {
 		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
-			m_Functionals[level]->AddShapePrior( this->m_Priors[i] );
+			this->m_Functionals[level]->AddShapePrior( this->m_Priors[i] );
 		}
 	} else {
 		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
-			m_Functionals[level]->AddShapePrior( this->m_Functionals[level-1]->GetCurrentContours()[i] );
+			this->m_Functionals[level]->AddShapePrior( this->m_Functionals[level-1]->GetCurrentContours()[i] );
 		}
 	}
 
 	// Connect Optimizer
-	m_Optimizers[level] = DefaultOptimizerType::New();
-	m_Optimizers[level]->SetFunctional( this->m_Functionals[level] );
-	m_Optimizers[level]->SetSettings( this->m_Config[level] );
+	this->m_Optimizers[level] = DefaultOptimizerType::New();
+	this->m_Optimizers[level]->SetFunctional( this->m_Functionals[level] );
+	this->m_Optimizers[level]->SetSettings( this->m_Config[level] );
 
 	if ( this->m_TransformNumberOfThreads > 0 ) {
-		m_Optimizers[level]->GetTransform()->SetNumberOfThreads( this->m_TransformNumberOfThreads );
+		this->m_Optimizers[level]->GetTransform()->SetNumberOfThreads( this->m_TransformNumberOfThreads );
 	}
 
 	this->m_CurrentLogger = JSONLoggerType::New();
 	this->m_CurrentLogger->SetOptimizer( this->m_Optimizers[level] );
 	this->m_CurrentLogger->SetLevel( level );
+
+	this->m_Transforms[level] = LevelTransformType::New();
 
 	if( this->m_Verbosity > 0 ) {
 		this->m_ImageLogger = IterationWriterUpdate::New();
@@ -267,6 +278,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->m_NumberOfLevels = levels;
 
 	m_GridSchedule.resize(m_NumberOfLevels);
+	m_Transforms.resize( this->m_NumberOfLevels );
 	m_Functionals.resize( this->m_NumberOfLevels );
 	m_Optimizers.resize( this->m_NumberOfLevels );
 	m_NumberOfIterations.resize( this->m_NumberOfLevels );
@@ -288,6 +300,41 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->InvokeEvent( itk::EndEvent() );
 }
 
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+void
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+::GenerateFinalDisplacementField() {
+	ReferenceImageConstPointer refim = this->GetFixedImage();
+	OutputFieldPointer outfield = OutputFieldType::New();
+	outfield->SetOrigin( refim->GetOrigin() );
+	outfield->SetDirection( refim->GetDirection() );
+	outfield->SetRegions( refim->GetLargestPossibleRegion() );
+	outfield->SetSpacing( refim->GetSpacing() );
+	outfield->Allocate();
+	OutputVectorType zerov;
+	zerov.Fill(0.0);
+
+	outfield->FillBuffer(0.0);
+
+	OutputVectorType* outbuff = outfield->GetBufferPointer();
+	const OutputVectorType* tfbuff[this->m_NumberOfLevels];
+
+	for( size_t i = 0; i < this->m_NumberOfLevels; i++ ) {
+		this->m_Transforms[i]->Interpolate();
+		tfbuff[i] = this->m_Transforms[i]->GetOutputField()->GetBufferPointer();
+	}
+
+	size_t nPix = outfield->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	for( size_t i = 0; i < nPix; i++ ) {
+		for ( size_t j = 0; j < this->m_NumberOfLevels; j++) {
+			*( outbuff + i ) += *( tfbuff[j] + i );
+		}
+	}
+
+	this->m_OutputTransform->SetDisplacementField( outfield );
+}
+
 /*
  *  Get output transform
  */
@@ -298,22 +345,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 {
   return static_cast<const DecoratedOutputTransformType *>( this->ProcessObject::GetOutput( 0 ) );
 }
-
-
-//template < typename TFixedImage, typename TTransform, typename TComputationalValue >
-//void
-//ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
-//::AddOptions(SettingsDesc& opts) const {
-//	opts.add_options()
-//			("help,h", "show help message")
-//			("fixed-images,F", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
-//			("moving-surfaces,M", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken()->required(),	"moving image file")
-//			("transform-levels,L", bpo::value< size_t > (), "number of multi-resolution levels for the transform")
-//			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
-//			("output-all", bpo::bool_switch(&outImages),"output intermediate images")
-//			("logfile,l", bpo::value<std::string>(&logFileName), "log filename")
-//			("verbosity,V", bpo::value<size_t>(&verbosity), "verbosity level ( 0 = no output; 5 = verbose )");
-//}
 
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
