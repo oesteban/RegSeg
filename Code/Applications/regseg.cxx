@@ -224,7 +224,9 @@ int main(int argc, char *argv[]) {
     for ( size_t contid = 0; contid <= nCont; contid++) {
 		typename ProbabilityMapWriter::Pointer w = ProbabilityMapWriter::New();
 		w->SetInput( acwereg->GetFunctionalOfLevel(-1)->GetCurrentMap(contid) );
-		w->SetFileName( (outPrefix + "_final_tpm_" + contPath.stem().string() + ".nii.gz" ).c_str() );
+		std::stringstream ss;
+		ss << outPrefix << "_final_tpm_" << contid << ".nii.gz";
+		w->SetFileName( ss.str().c_str() );
 		w->Update();
     }
 
