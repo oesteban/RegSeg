@@ -113,14 +113,28 @@ virtual type * Get##name##OfLevel ( const size_t id ) const  { \
     return this->m_##name##s[id].GetPointer();    \
 }
 
+#define rstkGetObjectListWithLast(name, type) \
+virtual type * Get##name##OfLevel ( const int id ) const  { \
+	if ( this->m_##name##s.empty() ) { \
+		itkExceptionMacro(<< "list " #name " is empty." );\
+	} \
+	size_t real_id = id; \
+	if( id == -1 ) { \
+		real_id = this->m_##name##s.size() -1; \
+	} else if ( id < -1 || id > this->m_##name##s.size() ) { \
+		itkExceptionMacro(<< "attempted to access invalid position in list " #name "." );\
+	} \
+    return this->m_##name##s[real_id].GetPointer(); \
+}
+
 
 #define rstkSetObjectList(name, type) \
 virtual void Set##name##OfLevel ( const size_t id, type* obj )  { \
-	if ( this->m_##name.size() <= id ) { \
+	if ( this->m_##name##s.size() <= id ) { \
 		itkExceptionMacro( << "vector " #name " is not initialized, or position " << id << " not valid."); \
 	} \
-	if ( this->m_##name[id] != _arg ) { \
-		this->m_##name[id] = _arg; \
+	if ( this->m_##name##s[id] != _arg ) { \
+		this->m_##name##s[id] = _arg; \
 		this->Modified(); \
 	} \
 }
