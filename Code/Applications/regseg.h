@@ -77,13 +77,15 @@ using namespace rstk;
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 
-typedef itk::Image<float, 3u>                                ChannelType;
+const static unsigned int DIMENSION = 3;
+
+typedef itk::Image<float, DIMENSION>                         ChannelType;
 typedef itk::Vector<float, 1u>                               VectorPixelType;
 typedef itk::Image<VectorPixelType, 3u>                      ImageType;
 typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
 
-typedef BSplineSparseMatrixTransform<double, 3, 3>           TransformType;
+typedef BSplineSparseMatrixTransform<double, DIMENSION, 3U>  TransformType;
 typedef TransformType::Pointer                               TransformPointer;
 typedef typename TransformType::CoefficientsImageType        CoefficientsType;
 
@@ -94,7 +96,7 @@ typedef typename ContourType::Pointer                        ContourPointer;
 typedef typename RegistrationType::PriorsList                ContourList;
 typedef typename RegistrationType::OptimizerType             OptimizerType;
 typedef typename RegistrationType::FunctionalType            FunctionalType;
-typedef typename FunctionalType::ROIType                     ROIType;
+typedef typename FunctionalType::ProbabilityMapType          ProbabilityMapType;
 typedef typename OptimizerType::FieldType                    FieldType;
 typedef itk::VTKPolyDataReader< ContourType >                ReaderType;
 typedef rstk::VTKPolyDataWriter< ContourType >               WriterType;
@@ -102,7 +104,8 @@ typedef itk::ImageFileReader<ChannelType>                    ImageReader;
 typedef itk::ImageFileWriter<ChannelType>                    ImageWriter;
 typedef rstk::DisplacementFieldComponentsFileWriter
 		                                         <FieldType> ComponentsWriter;
-typedef itk::ImageFileWriter< ROIType >                      ROIWriter;
+typedef itk::ImageFileWriter< ProbabilityMapType >           ProbabilityMapWriter;
+typedef itk::ImageFileWriter< CoefficientsType >             CoefficientsWriter;
 
 #ifndef NDEBUG
 	const static size_t DEFAULT_VERBOSITY = 5;

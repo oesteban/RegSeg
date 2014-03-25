@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
 			("fixed-images,F", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
 			("moving-surfaces,M", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken()->required(),	"moving image file")
 			("transform-levels,L", bpo::value< size_t > (), "number of multi-resolution levels for the transform")
-			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
+			("output-prefix,o", bpo::value < std::string > (&outPrefix)->default_value("regseg"), "prefix for output files")
 			("logfile,l", bpo::value<std::string>(&logFileName), "log filename")
 			("monitoring-verbosity,v", bpo::value<size_t>()->default_value(DEFAULT_VERBOSITY), "verbosity level of intermediate results monitoring ( 0 = no output; 5 = verbose )");
 
@@ -219,11 +219,13 @@ int main(int argc, char *argv[]) {
     	polyDataWriter->SetInput( conts[contid] );
     	polyDataWriter->SetFileName( (outPrefix + "_final_" + contPath.filename().string()).c_str() );
     	polyDataWriter->Update();
+    }
 
-    	typename ROIWriter::Pointer w = ROIWriter::New();
-    	w->SetInput( acwereg->GetCurrentRegion(contid) );
-    	w->SetFileName( (outPrefix + "_final_roi_" + contPath.stem().string() + ".nii.gz" ).c_str() );
-    	w->Update();
+    for ( size_t contid = 0; contid <= nCont; contid++) {
+		typename ProbabilityMapWriter::Pointer w = ProbabilityMapWriter::New();
+		w->SetInput( acwereg->GetFunctionalOfLevel(-1)->GetCurrentMap(contid) );
+		w->SetFileName( (outPrefix + "_final_tpm_" + contPath.stem().string() + ".nii.gz" ).c_str() );
+		w->Update();
     }
 
 	// Set-up & write out log file

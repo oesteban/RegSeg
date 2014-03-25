@@ -210,7 +210,8 @@ public:
 	rstkVectorMethods( Beta, OptCompValueType );
 	rstkVectorMethods( DescriptorRecomputationFreq, NumberValueType );
 
-	rstkGetObjectList( Optimizer, OptimizerType );
+	rstkGetObjectListWithLast( Optimizer, OptimizerType );
+	rstkGetObjectListWithLast( Functional, FunctionalType );
 
 	void AddShapePrior( const ContourType *prior ) { this->m_Priors.push_back( prior ); }
 
