@@ -103,10 +103,20 @@ public:
 	typedef itk::FixedArray< InternalValuesType, Dimension >  ValueArrayType;
 	typedef itk::Vector< InternalValuesType, Dimension >      ValueVectorType;
 
-	typedef TTransform                                        OutputTransformType;
+	typedef TTransform                                        LevelTransformType;
+	typedef typename LevelTransformType::Pointer              LevelTransformPointer;
+	typedef std::vector< LevelTransformPointer >              LevelTransformList;
+
+	typedef itk::DisplacementFieldTransform
+			            < InternalValuesType, Dimension >     OutputTransformType;
 	typedef typename OutputTransformType::Pointer             OutputTransformPointer;
 	typedef itk::DataObjectDecorator<OutputTransformType>     DecoratedOutputTransformType;
 	typedef typename DecoratedOutputTransformType::Pointer    DecoratedOutputTransformPointer;
+	typedef typename OutputTransformType::
+			                            DisplacementFieldType OutputFieldType;
+	typedef typename OutputTransformType::
+			                         DisplacementFieldPointer OutputFieldPointer;
+	typedef typename OutputTransformType::OutputVectorType    OutputVectorType;
 
 	typedef FunctionalBase< ReferenceImageType >              FunctionalType;
 	typedef typename FunctionalType::Pointer                  FunctionalPointer;
@@ -198,6 +208,8 @@ public:
 	itkSetClampMacro( TransformNumberOfThreads, size_t, 1, ITK_MAX_THREADS );
 	itkGetConstMacro( TransformNumberOfThreads, size_t );
 
+	itkGetConstObjectMacro(OutputTransform, OutputTransformType );
+
 	itkGetMacro( JSONRoot, JSONRoot);
 
 	rstkSetVectorElement( GridSchedule, GridSizeType );
@@ -227,6 +239,10 @@ public:
 		return static_cast<const FieldType* >(this->m_Optimizers[this->m_CurrentLevel-1]->GetCurrentDisplacementField());
 	}
 
+	const FieldType* GetDisplacementField() {
+		return this->m_OutputTransform->GetDisplacementField();
+	}
+
 	PriorsList GetCurrentContours() const {
 		PriorsList contours;
 		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
@@ -248,6 +264,7 @@ protected:
 
 	void Initialize();
 	void GenerateSchedule();
+	void GenerateFinalDisplacementField();
 	void SetUpLevel( size_t level );
 	void Stop( StopConditionType code, std::string msg );
 
@@ -261,6 +278,7 @@ private:
 	std::string m_OutputPrefix;
 	bool m_UseGridLevelsInitialization;
 	bool m_UseGridSizeInitialization;
+	bool m_UseCustomGridSize;
 	bool m_Initialized;
 	bool m_AutoSmoothing;
 
@@ -275,6 +293,7 @@ private:
 	GridSizeType m_MinGridSize;
 	NumberValueList m_NumberOfIterations;
 
+	LevelTransformList m_Transforms;
 	FunctionalList m_Functionals;
 	OptimizerList m_Optimizers;
 	PriorsList m_Priors;
