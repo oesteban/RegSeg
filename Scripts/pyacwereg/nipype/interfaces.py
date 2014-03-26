@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-20 11:12:43
+# @Last Modified time: 2014-03-26 19:41:28
 
 import os
 import os.path as op
@@ -83,9 +83,9 @@ class ACWERegInputSpec( ACWERegInputGroupSpec ):
 
 class ACWERegOutputSpec( TraitedSpec ):
     out_warped = OutputMultiPath(File(exists=True, desc='source images unwarped'))
-    out_contours = OutputMultiPath(File(exists=True, desc='priors in target space'))
+    out_surfs = OutputMultiPath(File(exists=True, desc='priors in target space'))
     out_tpms = OutputMultiPath(File(exists=True, desc='tissue probability maps (TPM) in target space'))
-    out_field = OutputMultiPath( File(exists=True, desc='output field') )
+    out_field = File(exists=True, desc='output field')
     out_log = File(exists=True, desc='log JSON file')
     #out_coeff = OutputMultiPath( File(desc='output coefficients') )
 
@@ -179,23 +179,38 @@ class ACWEReg( CommandLine ):
             if not len(value) == self._num_levels:
                 raise RuntimeError('spec  \'%s\' should match number of levels' % name )
 
-            if value[gid] is None:
-                continue
+            val = value[gid]
+            argval = self._format_arg( name, spec, val )
+            retval.append( ' ' +  argval )
 
-            retval.append( ' ' + self._format_arg( name, spec, value[gid] ) )
         retval.append( ']' )
         return "".join(retval)
+
+    def _format_arg( self, name, spec, value ):
+        if isinstance(value,bool) or isinstance(value,np.bool_):
+            if value:
+                return spec.argstr
+            else:
+                return ''
+
+        if value is None or value.__class__.__name__=='NoneType':
+            return ''
+
+        return super( ACWEReg, self )._format_arg( name, spec, value )
 
     def _list_outputs(self):
         out_prefix = self.inputs.out_prefix
         outputs = self.output_spec().get()
-        #outputs['out_warped'] =
+        outputs['out_warped'] = [ op.abspath('%s_warped_%d.nii.gz' % (out_prefix, i))  for i in range(len(self.inputs.in_fixed )) ]
         outputs['out_tpms'] = [ op.abspath('%s_final_tpm_%d.nii.gz' % (out_prefix, i))  for i in range(len(self.inputs.in_prior) + 1 ) ]
-        outputs['out_surfs'] = [ op.abspath('%s_final_%d.vtk' % (out_prefix, i))  for i in range(len(self.inputs.in_prior)) ]
-        outputs['out_field'] = [op.abspath('%s_final_field_cmp%d.nii.gz' % (out_prefix, i))  for i in range(3) ]
-        #outputs['out_coeff'] =
+        outputs['out_surfs'] = [ op.abspath('%s_warped_%s' % (out_prefix, op.basename(name)))  for name in self.inputs.in_prior ]
+        outputs['out_field'] = op.abspath('%s_displacement_field.nii.gz' % out_prefix )
 
-        #if isdefined( self.inputs.log_filename ):
+        logname = ''
+        if isdefined( self.inputs.log_filename ):
+            logname = self.inputs.log_filename
+
+        outputs['out_log'] = op.abspath( '%s%s.log' % (out_prefix, logname) )
 
         return outputs
 

@@ -209,6 +209,9 @@ public:
 	itkGetConstMacro( TransformNumberOfThreads, size_t );
 
 	itkGetConstObjectMacro(OutputTransform, OutputTransformType );
+	itkGetConstObjectMacro(OutputInverseTransform, OutputTransformType );
+	itkGetConstObjectMacro(DisplacementField, FieldType );
+	itkGetConstObjectMacro(InverseDisplacementField, FieldType );
 
 	itkGetMacro( JSONRoot, JSONRoot);
 
@@ -237,10 +240,6 @@ public:
 
 	const FieldType* GetCurrentDisplacementField() const {
 		return static_cast<const FieldType* >(this->m_Optimizers[this->m_CurrentLevel-1]->GetCurrentDisplacementField());
-	}
-
-	const FieldType* GetDisplacementField() {
-		return this->m_OutputTransform->GetDisplacementField();
 	}
 
 	PriorsList GetCurrentContours() const {
@@ -299,6 +298,9 @@ private:
 	PriorsList m_Priors;
 	SettingsList m_Config;
 	OutputTransformPointer m_OutputTransform;
+	OutputTransformPointer m_OutputInverseTransform;
+	FieldPointer m_DisplacementField;
+	FieldPointer m_InverseDisplacementField;
 	OptCompValueList m_StepSize;
 	OptCompValueList m_Alpha;
 	OptCompValueList m_Beta;
