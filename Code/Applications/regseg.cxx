@@ -34,7 +34,7 @@
 int main(int argc, char *argv[]) {
 	std::string outPrefix;
 	std::vector< std::string > fixedImageNames, movingSurfaceNames;
-	std::string logFileName = ".log";
+	std::string logFileName = "";
 	bool outImages = false;
 
 	bpo::options_description all_desc("Usage");
@@ -205,8 +205,8 @@ int main(int argc, char *argv[]) {
 	//
 
 	// Displacementfield
-	typename ComponentsWriter::Pointer p = ComponentsWriter::New();
-	p->SetFileName( (outPrefix + "_final_field" ).c_str() );
+	typename FieldWriter::Pointer p = FieldWriter::New();
+	p->SetFileName( (outPrefix + "_displacement_field.nii.gz" ).c_str() );
 	p->SetInput( acwereg->GetDisplacementField() );
 	p->Update();
 
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
     	bfs::path contPath(movingSurfaceNames[contid]);
     	WriterType::Pointer polyDataWriter = WriterType::New();
     	polyDataWriter->SetInput( conts[contid] );
-    	polyDataWriter->SetFileName( (outPrefix + "_final_" + contPath.filename().string()).c_str() );
+    	polyDataWriter->SetFileName( (outPrefix + "_warped_" + contPath.filename().string()).c_str() );
     	polyDataWriter->Update();
     }
 
@@ -247,12 +247,11 @@ int main(int argc, char *argv[]) {
 		im->SetDirection( dir * itk );
 		im->SetOrigin( itk * ref_orig );
 
-		ResamplePointer res = ResampleFilter::New();
-		res->SetInput( im );
-		res->SetReferenceImage( im );
-		res->SetUseReferenceImage(true);
+		WarpFilterPointer res = WarpFilter::New();
 		res->SetInterpolator( itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >::New() );
-		res->SetTransform( acwereg->GetOutputTransform() );
+		res->SetOutputParametersFromImage( im );
+		res->SetInput( im );
+		res->SetDisplacementField( acwereg->GetDisplacementField() );
 		res->Update();
 
 		typename ChannelType::Pointer im_res = res->GetOutput();
@@ -261,15 +260,16 @@ int main(int argc, char *argv[]) {
 
 		std::stringstream ss;
 		ss.str("");
-		ss << outPrefix << "_resampled_" << i << ".nii.gz";
+		ss << outPrefix << "_warped_" << i << ".nii.gz";
 		typename ImageWriter::Pointer w = ImageWriter::New();
 		w->SetInput( im_res );
 		w->SetFileName( ss.str().c_str() );
 		w->Update();
+
 	}
 
 	// Set-up & write out log file
-	std::ofstream logfile((outPrefix + logFileName ).c_str());
+	std::ofstream logfile((outPrefix + logFileName + ".log" ).c_str());
 	logfile << root;
 
 	return EXIT_SUCCESS;

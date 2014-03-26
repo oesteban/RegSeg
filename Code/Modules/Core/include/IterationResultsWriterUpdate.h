@@ -139,18 +139,16 @@ public:
 				typedef itk::ImageFileWriter< ROIType > WriteROI;
 				typename WriteROI::Pointer w = WriteROI::New();
 				std::stringstream ss;
-				ss << this->m_Prefix << "segmentation_" << this->m_Level << ".nii.gz";
+				ss << this->m_Prefix << "initial_seg_" << this->m_Level << ".nii.gz";
 				w->SetFileName( ss.str().c_str() );
 				w->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentRegions() );
 				w->Update();
     		}
 
-    		if ( this->m_Verbosity > 2 ) {
+    		if ( this->m_Verbosity > 2 && this->m_Level==0 ) {
 				typedef itk::ImageFileWriter< ReferenceImageType > WriteRef;
 				typename WriteRef::Pointer w2 = WriteRef::New();
-				ss.str("");
-				ss << this->m_Prefix << "fixed_reoriented_" << this->m_Level << ".nii.gz";
-				w2->SetFileName( ss.str().c_str() );
+				w2->SetFileName( this->m_Prefix +  "fixed_reoriented.nii.gz" );
 				w2->SetInput( this->m_Optimizer->GetFunctional()->GetReferenceImage() );
 				w2->Update();
     		}

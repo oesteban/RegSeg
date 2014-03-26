@@ -69,6 +69,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->SetNumberOfRequiredOutputs( 1 );
 
 	this->m_OutputTransform = OutputTransformType::New();
+	this->m_OutputInverseTransform = OutputTransformType::New();
 	DecoratedOutputTransformPointer transformDecorator = DecoratedOutputTransformType::New().GetPointer();
 	transformDecorator->Set( this->m_OutputTransform );
 	this->ProcessObject::SetNthOutput( 0, transformDecorator );
@@ -305,18 +306,28 @@ void
 ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::GenerateFinalDisplacementField() {
 	ReferenceImageConstPointer refim = this->GetFixedImage();
-	OutputFieldPointer outfield = OutputFieldType::New();
-	outfield->SetOrigin( refim->GetOrigin() );
-	outfield->SetDirection( refim->GetDirection() );
-	outfield->SetRegions( refim->GetLargestPossibleRegion() );
-	outfield->SetSpacing( refim->GetSpacing() );
-	outfield->Allocate();
+
 	OutputVectorType zerov;
 	zerov.Fill(0.0);
 
-	outfield->FillBuffer(0.0);
+	this->m_DisplacementField = OutputFieldType::New();
+	this->m_DisplacementField->SetOrigin( refim->GetOrigin() );
+	this->m_DisplacementField->SetDirection( refim->GetDirection() );
+	this->m_DisplacementField->SetRegions( refim->GetLargestPossibleRegion() );
+	this->m_DisplacementField->SetSpacing( refim->GetSpacing() );
+	this->m_DisplacementField->Allocate();
+	this->m_DisplacementField->FillBuffer(0.0);
+	OutputVectorType* outbuff = this->m_DisplacementField->GetBufferPointer();
 
-	OutputVectorType* outbuff = outfield->GetBufferPointer();
+	this->m_InverseDisplacementField = OutputFieldType::New();
+	this->m_InverseDisplacementField->SetOrigin( refim->GetOrigin() );
+	this->m_InverseDisplacementField->SetDirection( refim->GetDirection() );
+	this->m_InverseDisplacementField->SetRegions( refim->GetLargestPossibleRegion() );
+	this->m_InverseDisplacementField->SetSpacing( refim->GetSpacing() );
+	this->m_InverseDisplacementField->Allocate();
+	this->m_InverseDisplacementField->FillBuffer(0.0);
+	OutputVectorType* outinvbuff = this->m_InverseDisplacementField->GetBufferPointer();
+
 	const OutputVectorType* tfbuff[this->m_NumberOfLevels];
 
 	for( size_t i = 0; i < this->m_NumberOfLevels; i++ ) {
@@ -324,15 +335,17 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		tfbuff[i] = this->m_Transforms[i]->GetOutputField()->GetBufferPointer();
 	}
 
-	size_t nPix = outfield->GetLargestPossibleRegion().GetNumberOfPixels();
+	size_t nPix = this->m_DisplacementField->GetLargestPossibleRegion().GetNumberOfPixels();
 
 	for( size_t i = 0; i < nPix; i++ ) {
 		for ( size_t j = 0; j < this->m_NumberOfLevels; j++) {
 			*( outbuff + i ) += *( tfbuff[j] + i );
+			*( outinvbuff + i ) -= *( tfbuff[j] + i );
 		}
 	}
 
-	this->m_OutputTransform->SetDisplacementField( outfield );
+	this->m_OutputTransform->SetDisplacementField( this->m_DisplacementField );
+	this->m_OutputInverseTransform->SetDisplacementField( this->m_InverseDisplacementField );
 }
 
 /*
