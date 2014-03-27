@@ -295,3 +295,41 @@ class RandomBSplineDeformation( CommandLine ):
 
         return outputs
 
+
+class FieldBasedWarpInputSpec( CommandLineInputSpec ):
+    in_file = InputMultiPath(File(exists=True), mandatory=True, argstr="-I %s",
+              desc='image(s) to be deformed')
+    in_field = File(exists=True, mandatory=False, argstr="-F %s",
+               desc='field')
+    out_prefix = traits.Str( "fbased", desc='output files prefix', argstr="-o %s", usedefault=True,
+                             mandatory=True )
+
+class FieldBasedWarpOutputSpec( TraitedSpec ):
+    out_file = OutputMultiPath(File(exists=True, desc='warped input files'))
+
+class FieldBasedWarp( CommandLine ):
+    """ Use ACWEReg bspline random deformation tool to generate
+    a deformation field and apply the deformation to the target
+    images.
+
+    Example
+    -------
+    >>> warp = FieldBasedWarp()
+    >>> warp.inputs.in_file = 'moving.nii'
+    >>> warp.inputs.in_field = 'field.nii'
+    >>> warp.inputs.out_prefix = 'myprefix'
+    >>> warp.cmdline
+    'warp_image -I moving.nii -f field.nii -o myprefix'
+    """
+
+    input_spec = FieldBasedWarpInputSpec
+    output_spec = FieldBasedWarpOutputSpec
+    _cmd = 'warp_image'
+
+    def _list_outputs( self ):
+        out_prefix = self.inputs.out_prefix
+        outputs = self.output_spec().get()
+
+        outputs['out_file'] = [ op.abspath( '%s_warped_%d.nii.gz' % ( out_prefix, i ))  for i in range(len(self.inputs.in_file)) ]
+        return outputs
+
