@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-05 15:08:55
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-03-13 10:22:17
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-03-27 10:14:28
 
 import os
 import os.path as op
@@ -62,7 +62,7 @@ def prepare_smri( name='Prepare_sMRI'):
 
     wf.connect([
                      ( inputnode,              ds, [ ('subject_id','subject_id'), ('data_dir','base_directory')])
-                    ,( inputnode,          fs_src, [ ('subject_id','subject_id'), (('data_dir',_fsdir),'fs_subjects_dir')]) 
+                    ,( inputnode,          fs_src, [ ('subject_id','subject_id'), (('data_dir',_fsdir),'fs_subjects_dir')])
                     ,( inputnode,             csf, [ ('subject_id', 'inputnode.subject_id'), (('data_dir',_fsdir),'inputnode.fs_subjects_dir') ])
                     ,( inputnode,           surfs, [ ('subject_id', 'inputnode.subject_id'), (('data_dir',_fsdir),'inputnode.fs_subjects_dir') ])
                     ,( inputnode,           bbreg, [ ('subject_id', 'subject_id'), (('data_dir',_fsdir),'subjects_dir') ] )
@@ -72,6 +72,7 @@ def prepare_smri( name='Prepare_sMRI'):
                     ,( T1toRAS,          tfm_norm, [ ('out_file','target_file') ])
                     ,( T1toRAS,             surfs, [ ('out_file','inputnode.in_native')])
                     ,( bbreg,             T2toRAS, [ ('registered_file','in_file')])
+                    ,( T1toRAS,           T2toRAS, [ ('out_file','reslice_like') ])
                     ,( T1toRAS,         merge_mri, [ ('out_file','in1')])
                     ,( T2toRAS,         merge_mri, [ ('out_file','in2')])
                     ,( tfm_norm,     T1brainToRAS, [ ('transformed_file', 'in_file' )])
@@ -90,7 +91,7 @@ def prepare_smri( name='Prepare_sMRI'):
                     ,( fixvtk,         outputnode, [ ('out_file','out_surfs')])
         ])
     return wf
-    
+
 
 def extract_surface( name="GenSurface", labels=None ):
     """ A nipype workflow for surface extraction from labels in a segmentation.
@@ -111,7 +112,7 @@ def extract_surface( name="GenSurface", labels=None ):
     toRAS = pe.Node( fs.MRIConvert( out_type='mgz', out_orientation="RAS" ), name='toRAS' )
     tfm_norm = pe.Node( fs.ApplyVolTransform(reg_header=True), name='norm_to_native')
     label2vol = pe.Node( fs.Label2Vol(), name='aseg_to_native')
-    binarize = pe.Node( niu.Function( input_names=['in_file', 'labels' ], output_names=["out_file"], 
+    binarize = pe.Node( niu.Function( input_names=['in_file', 'labels' ], output_names=["out_file"],
                                       function=myfs.merge_labels ), name='combine' )
     binarize.inputs.labels = labels
 
@@ -122,13 +123,13 @@ def extract_surface( name="GenSurface", labels=None ):
     tess = pe.Node( fs.MRITessellate(label_value=1), name='tess' )
     smooth = pe.Node( fs.SmoothTessellation(disable_estimates=True ), name='mris_smooth' )
     rename = pe.Node( niu.Rename(keep_ext=False,format_string='surf.native'), name='rename')
-   
+
     def _default_labels( in_labels ):
         from nipype.interfaces.base import isdefined
         if not isdefined( in_labels) or len( in_labels ) == 0:
             in_labels = [ 4, 5, 43, 44, 14, 15, 72, 24 ]
         return in_labels
-                                    
+
     pipeline.connect( [
                         ( inputnode,    fs_src, [( 'subject_id', 'subject_id'), ('fs_subjects_dir','fs_subjects_dir') ])
                        ,( fs_src,        toRAS, [ ('rawavg', 'in_file') ])
@@ -146,7 +147,7 @@ def extract_surface( name="GenSurface", labels=None ):
                        ,( rename,   outputnode, [ ('out_file', 'out_surf' ) ])
                        ,( binarize, outputnode, [ ('out_file', 'out_binary')])
                        ])
-    
+
     return pipeline
 
 def csf_surface( name="CSF_Surface" ):
@@ -158,13 +159,13 @@ def surfs_to_native( name='Surfaces_to_native' ):
     in vtk format.
     """
     wf = pe.Workflow(name=name)
-    
+
     inputnode = pe.Node( niu.IdentityInterface( fields=['in_native','fs_subjects_dir','subject_id']), name='inputnode')
     get_tfm = pe.Node( niu.Function( input_names=['in_file', 'fs_subjects_dir', 'subject_id'],
                                      output_names=['out_tfm'],
                                      function=myfs.gen_fs_transform), name='surftfm')
     applytfm = pe.MapNode( niu.Function( input_names=['in_surf','in_reg','in_target','fs_subjects_dir','subject_id'],
-                                         output_names=['out_surf'], function=myfs.transform_surface ), 
+                                         output_names=['out_surf'], function=myfs.transform_surface ),
                                          iterfield=['in_surf'], name='TransformSurface' )
     applytfm.inputs.in_surf = [ 'lh.pial', 'rh.pial', 'lh.white', 'rh.white' ]
     outputnode = pe.Node( niu.IdentityInterface( fields=['out_surfs'] ), name='outputnode' )
