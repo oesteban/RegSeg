@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-05 15:08:55
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-27 10:14:28
+# @Last Modified time: 2014-03-27 11:46:13
 
 import os
 import os.path as op
@@ -167,7 +167,7 @@ def surfs_to_native( name='Surfaces_to_native' ):
     applytfm = pe.MapNode( niu.Function( input_names=['in_surf','in_reg','in_target','fs_subjects_dir','subject_id'],
                                          output_names=['out_surf'], function=myfs.transform_surface ),
                                          iterfield=['in_surf'], name='TransformSurface' )
-    applytfm.inputs.in_surf = [ 'lh.pial', 'rh.pial', 'lh.white', 'rh.white' ]
+    applytfm.inputs.in_surf = [ 'lh.white', 'rh.white','lh.pial', 'rh.pial' ]
     outputnode = pe.Node( niu.IdentityInterface( fields=['out_surfs'] ), name='outputnode' )
 
     wf.connect([

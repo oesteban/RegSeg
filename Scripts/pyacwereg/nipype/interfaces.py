@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-26 19:41:28
+# @Last Modified time: 2014-03-27 12:23:11
 
 import os
 import os.path as op
@@ -150,6 +150,7 @@ class ACWEReg( CommandLine ):
             raise RuntimeError( 'No way to guess number of levels')
 
         skip+=['levels']
+
         all_args+=super( ACWEReg, self )._parse_inputs( skip=skip+self._grouped_traits )
 
         for i in range( self._num_levels ):
@@ -180,13 +181,13 @@ class ACWEReg( CommandLine ):
                 raise RuntimeError('spec  \'%s\' should match number of levels' % name )
 
             val = value[gid]
-            argval = self._format_arg( name, spec, val )
+            argval = self._format_group_arg( name, spec, val )
             retval.append( ' ' +  argval )
 
         retval.append( ']' )
         return "".join(retval)
 
-    def _format_arg( self, name, spec, value ):
+    def _format_group_arg( self, name, spec, value ):
         if isinstance(value,bool) or isinstance(value,np.bool_):
             if value:
                 return spec.argstr
@@ -196,6 +197,25 @@ class ACWEReg( CommandLine ):
         if value is None or value.__class__.__name__=='NoneType':
             return ''
 
+        return super( ACWEReg, self )._format_arg( name, spec, value )
+
+    def _format_arg( self, name, spec, value ):
+        if name == 'in_prior':
+            idxs = []
+            for i,v in enumerate(value):
+                if 'white' in v or 'wm' in v:
+                    idxs.append( i )
+
+            for i in reversed(idxs):
+                value.append( value.pop( i ) )
+
+            idxs = []
+            for i,v in enumerate(value):
+                if 'pial' in v:
+                    idxs.append( i )
+
+            for i in reversed(idxs):
+                value.append( value.pop( i ) )
         return super( ACWEReg, self )._format_arg( name, spec, value )
 
     def _list_outputs(self):
