@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-27 12:23:11
+# @Last Modified time: 2014-03-27 12:36:32
 
 import os
 import os.path as op
@@ -203,7 +203,7 @@ class ACWEReg( CommandLine ):
         if name == 'in_prior':
             idxs = []
             for i,v in enumerate(value):
-                if 'white' in v or 'wm' in v:
+                if 'white' in op.basename(v) or 'wm' in op.basename(v):
                     idxs.append( i )
 
             for i in reversed(idxs):
@@ -211,7 +211,7 @@ class ACWEReg( CommandLine ):
 
             idxs = []
             for i,v in enumerate(value):
-                if 'pial' in v:
+                if 'pial' in op.basename(v):
                     idxs.append( i )
 
             for i in reversed(idxs):
