@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-05 15:08:55
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-27 11:46:13
+# @Last Modified time: 2014-03-28 13:37:28
 
 import os
 import os.path as op
@@ -34,7 +34,9 @@ def prepare_smri( name='Prepare_sMRI'):
         return op.join( path, 'FREESURFER' )
 
     inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'data_dir' ] ), name='inputnode' )
-    outputnode = pe.Node( niu.IdentityInterface( fields=[ 'out_surfs', 'out_smri', 'out_smri_brain' ] ), name='outputnode' )
+    outputnode = pe.Node( niu.IdentityInterface( fields=[ 'out_surfs', 'out_smri',
+                                                           'out_smri_brain', 'out_tpms' ] ),
+                                                 name='outputnode' )
 
     ds = pe.Node( nio.DataGrabber(infields=['subject_id'], outfields=['t1w','t2w'], sort_filelist=False), name='DataSource' )
     ds.inputs.template = '*'
@@ -57,38 +59,46 @@ def prepare_smri( name='Prepare_sMRI'):
     tfm_norm = pe.Node( fs.ApplyVolTransform(reg_header=True), name='norm_to_T1')
     T1brainToRAS = pe.Node( fs.MRIConvert( out_type='niigz', out_orientation='RAS' ), name='T1brainToRAS' )
     t2msk = pe.Node( fs.ApplyMask(), name='T2_BET' )
-    n4 = pe.Node( ants.N4BiasFieldCorrection( dimension=3 ), name='T2_Bias' )
+    n4_t2 = pe.Node( ants.N4BiasFieldCorrection( dimension=3 ), name='Bias_T2' )
     merge_brain = pe.Node( niu.Merge(2), name='merge_brain')
 
+    fast = pe.Node( fsl.FAST( number_classes=3, img_type=1 ), name='SegmentT1' )
+
     wf.connect([
-                     ( inputnode,              ds, [ ('subject_id','subject_id'), ('data_dir','base_directory')])
-                    ,( inputnode,          fs_src, [ ('subject_id','subject_id'), (('data_dir',_fsdir),'fs_subjects_dir')])
-                    ,( inputnode,             csf, [ ('subject_id', 'inputnode.subject_id'), (('data_dir',_fsdir),'inputnode.fs_subjects_dir') ])
-                    ,( inputnode,           surfs, [ ('subject_id', 'inputnode.subject_id'), (('data_dir',_fsdir),'inputnode.fs_subjects_dir') ])
-                    ,( inputnode,           bbreg, [ ('subject_id', 'subject_id'), (('data_dir',_fsdir),'subjects_dir') ] )
-                    ,( ds,                  bbreg, [ ('t2w', 'source_file') ] )
-                    ,( ds,                T1toRAS, [ ('t1w', 'in_file')])
-                    ,( fs_src,           tfm_norm, [ ('norm','source_file') ])
-                    ,( T1toRAS,          tfm_norm, [ ('out_file','target_file') ])
-                    ,( T1toRAS,             surfs, [ ('out_file','inputnode.in_native')])
-                    ,( bbreg,             T2toRAS, [ ('registered_file','in_file')])
-                    ,( T1toRAS,           T2toRAS, [ ('out_file','reslice_like') ])
-                    ,( T1toRAS,         merge_mri, [ ('out_file','in1')])
-                    ,( T2toRAS,         merge_mri, [ ('out_file','in2')])
-                    ,( tfm_norm,     T1brainToRAS, [ ('transformed_file', 'in_file' )])
-                    ,( T1brainToRAS,  merge_brain, [ ('out_file', 'in1' )])
-                    ,( T1brainToRAS,        t2msk, [ ('out_file', 'mask_file') ])
-                    ,( T2toRAS,             t2msk, [ ('out_file', 'in_file')])
-                    ,( t2msk,                  n4, [ ('out_file', 'input_image')])
-                    ,( n4,            merge_brain, [ ('output_image', 'in2')])
-                    ,( csf,             merge_srf, [ ('outputnode.out_surf', 'in1')])
-                    ,( surfs,           merge_srf, [ ('outputnode.out_surfs', 'in2')])
-                    ,( merge_srf,           tovtk, [ ('out', 'in_file')])
-                    ,( T1toRAS,            fixvtk, [ ('out_file','in_ref')])
-                    ,( tovtk,              fixvtk, [ ('converted','in_file')])
-                    ,( merge_mri,      outputnode, [ ('out', 'out_smri')])
-                    ,( merge_brain,    outputnode, [ ('out', 'out_smri_brain')])
-                    ,( fixvtk,         outputnode, [ ('out_file','out_surfs')])
+         ( inputnode,              ds, [ ('subject_id','subject_id'), ('data_dir','base_directory')])
+        ,( inputnode,          fs_src, [ ('subject_id','subject_id'),
+                                         (('data_dir',_fsdir),'fs_subjects_dir')])
+        ,( inputnode,             csf, [ ('subject_id', 'inputnode.subject_id'),
+                                         (('data_dir',_fsdir),'inputnode.fs_subjects_dir') ])
+        ,( inputnode,           surfs, [ ('subject_id', 'inputnode.subject_id'),
+                                         (('data_dir',_fsdir),'inputnode.fs_subjects_dir') ])
+        ,( inputnode,           bbreg, [ ('subject_id', 'subject_id'),
+                                         (('data_dir',_fsdir),'subjects_dir') ] )
+        ,( ds,                  bbreg, [ ('t2w', 'source_file') ] )
+        ,( ds,                T1toRAS, [ ('t1w', 'in_file')])
+        ,( fs_src,           tfm_norm, [ ('norm','source_file') ])
+        ,( T1toRAS,          tfm_norm, [ ('out_file','target_file') ])
+        ,( T1toRAS,             surfs, [ ('out_file','inputnode.in_native')])
+        ,( bbreg,             T2toRAS, [ ('registered_file','in_file')])
+        ,( T1toRAS,           T2toRAS, [ ('out_file','reslice_like') ])
+        ,( T1toRAS,         merge_mri, [ ('out_file','in1')])
+        ,( T2toRAS,         merge_mri, [ ('out_file','in2')])
+        ,( tfm_norm,     T1brainToRAS, [ ('transformed_file', 'in_file' )])
+        ,( T1brainToRAS,  merge_brain, [ ('out_file', 'in1' )])
+        ,( T1brainToRAS,        t2msk, [ ('out_file', 'mask_file') ])
+        ,( T2toRAS,             t2msk, [ ('out_file', 'in_file')])
+        ,( t2msk,               n4_t2, [ ('out_file', 'input_image')])
+        ,( n4_t2,         merge_brain, [ ('output_image', 'in2')])
+        ,( csf,             merge_srf, [ ('outputnode.out_surf', 'in1')])
+        ,( surfs,           merge_srf, [ ('outputnode.out_surfs', 'in2')])
+        ,( merge_srf,           tovtk, [ ('out', 'in_file')])
+        ,( T1toRAS,              fast, [ ('out_file', 'in_files' ) ] )
+        ,( T1toRAS,            fixvtk, [ ('out_file','in_ref')])
+        ,( tovtk,              fixvtk, [ ('converted','in_file')])
+        ,( merge_mri,      outputnode, [ ('out', 'out_smri')])
+        ,( merge_brain,    outputnode, [ ('out', 'out_smri_brain')])
+        ,( fixvtk,         outputnode, [ ('out_file','out_surfs')])
+        ,( fast,           outputnode, [ ('partial_volume_files', 'out_tpms' ) ] )
         ])
     return wf
 
