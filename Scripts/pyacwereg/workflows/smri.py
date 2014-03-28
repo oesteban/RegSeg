@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-05 15:08:55
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-28 13:37:28
+# @Last Modified time: 2014-03-28 20:17:31
 
 import os
 import os.path as op
@@ -99,7 +99,7 @@ def prepare_smri( name='Prepare_sMRI'):
         ,( merge_brain,    outputnode, [ ('out', 'out_smri_brain')])
         ,( fixvtk,         outputnode, [ ('out_file','out_surfs')])
         ,( fast,           outputnode, [ ('partial_volume_files', 'out_tpms' ) ] )
-        ])
+    ])
     return wf
 
 
