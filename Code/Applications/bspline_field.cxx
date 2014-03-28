@@ -16,6 +16,7 @@
 
 int main(int argc, char *argv[]) {
 	std::string outPrefix = "";
+	std::string maskfile;
 	std::vector< std::string > fixedImageNames, movingSurfaceNames,coefficientImageNames;
 	std::vector<size_t> grid_size;
 
@@ -25,6 +26,7 @@ int main(int argc, char *argv[]) {
 			("coeff-images,C", bpo::value < std::vector<std::string> > (&coefficientImageNames )->multitoken(), "coefficient image(s)" )
 			("images,I", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
 			("surfaces,S", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken(),	"moving image file")
+			("mask,M", bpo::value< std::string >(&maskfile), "mask file" )
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
 			("num-threads", bpo::value < unsigned int >()->default_value(NUM_THREADS), "use num-threads")
 			("grid-size,g", bpo::value< std::vector<size_t> >(&grid_size)->multitoken(), "size of grid of bspline control points (default is 10x10x10)");
@@ -176,6 +178,44 @@ int main(int argc, char *argv[]) {
 	f->SetFileName( ss.str().c_str() );
 	f->Update();
 
+	MaskPointer mask;
+
+	if (vm.count( "mask" ) ) {
+		typename ReaderType::Pointer rmask = ReaderType::New();
+		rmask->SetFileName( maskfile );
+		rmask->Update();
+
+		ChannelPointer im = rmask->GetOutput();
+		im->SetDirection( dir * itk );
+		im->SetOrigin( itk * ref_orig );
+
+		ResamplePointer res = ResampleFilter::New();
+		res->SetInput( im );
+		res->SetReferenceImage( rmask->GetOutput() );
+		res->SetUseReferenceImage(true);
+		res->SetInterpolator( NearestNeighborInterpolateImageFunction::New() );
+		res->SetTransform( transform );
+		res->Update();
+
+		ChannelPointer im_res = res->GetOutput();
+		im_res->SetDirection( dir );
+		im_res->SetOrigin( ref_orig );
+
+		typename Binarize::Pointer bin = Binarize::New();
+		bin->SetInput( im_res );
+		bin->SetLowerThreshold( 0.01 );
+		bin->SetOutsideValue( 0 );
+		bin->SetInsideValue( 1 );
+		bin->Update();
+		mask = bin->GetOutput();
+
+		typename MaskWriter::Pointer wm = MaskWriter::New();
+		wm->SetInput( mask );
+		wm->SetFileName( (outPrefix + "_mask_warped.nii.gz").c_str() );
+		wm->Update();
+	}
+
+
 	// Read and transform images if present
 	for( size_t i = 0; i<fixedImageNames.size(); i++) {
 		ReaderPointer r = ReaderType::New();
@@ -198,6 +238,15 @@ int main(int argc, char *argv[]) {
 		ChannelPointer im_res = res->GetOutput();
 		im_res->SetDirection( dir );
 		im_res->SetOrigin( ref_orig );
+
+		if (mask.IsNotNull()) {
+			typename MaskFilter::Pointer mm = MaskFilter::New();
+			mm->SetMaskImage( mask );
+			mm->SetInput( im_res );
+			mm->Update();
+
+			im_res = mm->GetOutput();
+		}
 
 		ss.str("");
 		ss << outPrefix << "_resampled_" << i << ".nii.gz";
