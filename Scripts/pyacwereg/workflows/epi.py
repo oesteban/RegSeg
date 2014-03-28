@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-10 17:32:19
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-20 12:35:19
+# @Last Modified time: 2014-03-28 13:46:22
 
 import os
 import os.path as op
@@ -20,6 +20,7 @@ import nipype.interfaces.ants as ants           # ANTS
 import nipype.pipeline.engine as pe
 
 import pyacwereg.utils.freesurfer as myfs
+from pyacwereg.utils.misc import normalize_tpms as normalize
 
 
 def epi_deform(name="synthetic_distortion", nocheck=False ):
@@ -238,50 +239,6 @@ def get_vox_size( in_file ):
     import nibabel as nib
     pixdim = nib.load( in_file ).get_header()['pixdim']
     return (pixdim[1],pixdim[2],pixdim[3])
-
-def normalize( in_files, in_mask=None, out_files=[] ):
-    import nibabel as nib
-    import numpy as np
-    import os.path as op
-
-    imgs = [ nib.load(fim) for fim in in_files ]
-    img_data = np.array( [ im.get_data() for im in imgs ] ).astype( 'f32' )
-    img_data[img_data>1.0] = 1.0
-    img_data[img_data<0.0] = 0.0
-    weights = np.sum( img_data, axis=0 )
-
-    img_data[0][weights==0] = 1.0
-    weights[weights==0] = 1.0
-
-    msk = np.ones_like( imgs[0].get_data() )
-
-    if not in_mask is None:
-        msk = nib.load( in_mask ).get_data()
-        msk[ msk<=0 ] = 0
-        msk[ msk>0 ] = 1
-
-
-    if len( out_files )==0:
-        for i,finname in enumerate( in_files ):
-            fname,fext = op.splitext( op.basename( finname ) )
-            if fext == '.gz':
-                fname,fext2 = op.splitext( fname )
-                fext = fext2 + fext
-
-            out_file = op.abspath( fname+'_norm'+fext )
-            out_files+= [ out_file ]
-
-
-    for i,out_file in enumerate( out_files ):
-            data = img_data[i] / weights
-            data = data * msk
-            hdr = imgs[i].get_header().copy()
-            hdr['data_type']= 16
-            hdr.set_data_dtype( 'float32' )
-            nib.save( nib.Nifti1Image( data, imgs[i].get_affine(), hdr ), out_file )
-
-    return out_files
-
 
 def sanitize( in_reference, in_distorted, in_mask, out_file=None ):
     import nibabel as nib

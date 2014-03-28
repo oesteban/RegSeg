@@ -6,7 +6,7 @@
 # @Author: oesteban
 # @Date:   2014-03-11 15:28:16
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-28 13:00:05
+# @Last Modified time: 2014-03-28 14:05:10
 
 import os
 import os.path as op
@@ -21,6 +21,7 @@ import nipype.pipeline.engine as pe
 
 from epi import epi_deform,fieldmap_preparation
 from pyacwereg.nipype.interfaces import RandomBSplineDeformation
+from pyacwereg.utils.misc import normalize_tpms as normalize
 
 def isbi_workflow( name='ISBI2014' ):
     workflow = pe.Workflow(name=name)
@@ -61,15 +62,22 @@ def bspline_deform( name='BSplineDistortion' ):
 
     split = pe.Node( niu.Split(splits=[2,3]), name='SplitOutputs' )
 
+    get_t1 = pe.Node( niu.Select(index=0), name='SelectT1')
+    norm_tpms = pe.Node( niu.Function( input_names=['in_files','in_mask'], output_names=['out_files'], function=normalize ), name='Normalize' )
+
     wf.connect([
-                 ( inputnode,  distort, [ ('in_surfs','in_surfs'), ('grid_size','grid_size')])
-                ,( inputnode,    merge, [ ('in_file', 'in1'), ('in_tpms','in2') ])
-                ,( merge,      distort, [ ('out', 'in_file' )])
-                ,( distort,      split, [ ('out_file', 'inlist') ])
-                ,( split,   outputnode, [ ('out1', 'out_file'),('out2','out_tpms')])
-                ,( distort, outputnode, [ ('out_surfs', 'out_surfs'),
-                                          ('out_field','out_field'),
-                                          ('out_coeff','out_coeff')])
+       ( inputnode,    distort, [ ('in_surfs','in_surfs'), ('grid_size','grid_size')])
+      ,( inputnode,      merge, [ ('in_file', 'in1'), ('in_tpms','in2') ])
+      ,( merge,        distort, [ ('out', 'in_file' )])
+      ,( distort,        split, [ ('out_file', 'inlist') ])
+      ,( split,         get_t1, [ ('out1','inlist') ])
+      ,( split,      norm_tpms, [ ('out2','in_files' )])
+      ,( get_t1,     norm_tpms, [ ('out','in_mask')])
+      ,( split,     outputnode, [ ('out1', 'out_file') ])
+      ,( norm_tpms, outputnode, [ ('out_files','out_tpms')])
+      ,( distort,   outputnode, [ ('out_surfs', 'out_surfs'),
+                                ('out_field','out_field'),
+                                ('out_coeff','out_coeff')])
         ])
 
     return wf

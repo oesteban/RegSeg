@@ -6,7 +6,7 @@
 """
 misc.py - Miscelaneous helpers for ACWEReg
 
-Copyright (c) 2013, code@oscaresteban.es (Oscar Esteban), 
+Copyright (c) 2013, code@oscaresteban.es (Oscar Esteban),
                     with Biomedical Image Technology, UPM (BIT-UPM)
 All rights reserved.
 This file is part of ACWEReg.
@@ -59,13 +59,55 @@ def gen_noise( image, mask=None, snr_db=10.0 ):
 
     if mask is None:
         mask = np.ones_like( image )
-    
+
     im_scaled = noise.std() / image.std() *(sqrt(snr))* image;
     im_noise = np.zeros_like( image )
-    
+
     im_noise[mask>0] = im_scaled[mask>0] + noise[mask>0]
     im_noise[mask==0] = bg_noise[mask==0]
-    
+
     return im_noise
 
 
+def normalize_tpms( in_files, in_mask=None, out_files=[] ):
+    import nibabel as nib
+    import numpy as np
+    import os.path as op
+
+    imgs = [ nib.load(fim) for fim in in_files ]
+    img_data = np.array( [ im.get_data() for im in imgs ] ).astype( 'f32' )
+    img_data[img_data>1.0] = 1.0
+    img_data[img_data<0.0] = 0.0
+    weights = np.sum( img_data, axis=0 )
+
+    img_data[0][weights==0] = 1.0
+    weights[weights==0] = 1.0
+
+    msk = np.ones_like( imgs[0].get_data() )
+
+    if not in_mask is None:
+        msk = nib.load( in_mask ).get_data()
+        msk[ msk<=0 ] = 0
+        msk[ msk>0 ] = 1
+
+
+    if len( out_files )==0:
+        for i,finname in enumerate( in_files ):
+            fname,fext = op.splitext( op.basename( finname ) )
+            if fext == '.gz':
+                fname,fext2 = op.splitext( fname )
+                fext = fext2 + fext
+
+            out_file = op.abspath( fname+'_norm'+fext )
+            out_files+= [ out_file ]
+
+
+    for i,out_file in enumerate( out_files ):
+            data = img_data[i] / weights
+            data = data * msk
+            hdr = imgs[i].get_header().copy()
+            hdr['data_type']= 16
+            hdr.set_data_dtype( 'float32' )
+            nib.save( nib.Nifti1Image( data, imgs[i].get_affine(), hdr ), out_file )
+
+    return out_files
