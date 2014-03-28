@@ -56,6 +56,7 @@
 #include <itkImage.h>
 #include <itkImageFileReader.h>
 #include <itkImageFileWriter.h>
+#include <itkBinaryThresholdImageFilter.h>
 #include <itkRandomImageSource.h>
 #include <itkGaussianImageSource.h>
 #include <itkImageRandomNonRepeatingIteratorWithIndex.h>
@@ -65,6 +66,8 @@
 #include <itkMultiplyImageFilter.h>
 #include <itkSubtractImageFilter.h>
 #include <itkResampleImageFilter.h>
+#include <itkMaskImageFilter.h>
+#include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkBSplineInterpolateImageFunction.h>
 #include "BSplineSparseMatrixTransform.h"
 #include "DisplacementFieldComponentsFileWriter.h"
@@ -85,6 +88,12 @@ typedef itk::ImageFileReader<ChannelType>                    ReaderType;
 typedef typename ReaderType::Pointer                         ReaderPointer;
 typedef itk::ImageFileWriter<ChannelType>                    WriterType;
 typedef typename WriterType::Pointer                         WriterPointer;
+
+typedef itk::Image< unsigned char, DIMENSION >               MaskType;
+typedef typename MaskType::Pointer                           MaskPointer;
+typedef itk::ImageFileWriter<MaskType>                       MaskWriter;
+typedef itk::BinaryThresholdImageFilter
+		                           < ChannelType, MaskType > Binarize;
 
 
 typedef double                                               ScalarType;
@@ -122,6 +131,9 @@ typedef itk::ResampleImageFilter< ChannelType, ChannelType, ScalarType >    Resa
 typedef typename ResampleFilter::Pointer                       ResamplePointer;
 
 typedef itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >    BSplineInterpolateImageFunction;
+typedef itk::NearestNeighborInterpolateImageFunction< ChannelType, ScalarType >    NearestNeighborInterpolateImageFunction;
+
+typedef itk::MaskImageFilter< ChannelType, MaskType, ChannelType > MaskFilter;
 
 typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> ComponentsWriter;
 

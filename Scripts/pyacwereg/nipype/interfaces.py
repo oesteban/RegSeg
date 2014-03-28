@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-27 12:36:32
+# @Last Modified time: 2014-03-28 16:22:43
 
 import os
 import os.path as op
@@ -242,6 +242,7 @@ class RandomBSplineDeformationInputSpec( CommandLineInputSpec ):
                desc='coefficient images (to re-use a deformation field)')
     in_surfs = InputMultiPath(File(exists=True), mandatory=False, argstr="-S %s",
                desc='apply deformation field to surfaces')
+    in_mask = File(exists=True, argstr='-M %s', desc='set a mask')
     grid_size_item_trait = traits.Int(10, usedefault=True )
     grid_size = traits.Either( grid_size_item_trait, traits.List(grid_size_item_trait),
                                xor=['in_coeff'], default=10, usedefault=True,
@@ -254,6 +255,7 @@ class RandomBSplineDeformationOutputSpec( TraitedSpec ):
     out_coeff = OutputMultiPath(File(exists=True, desc='output coefficients'))
     out_field = OutputMultiPath(File(exists=True, desc='output warping field'))
     out_surfs = OutputMultiPath(File(desc='output warped surfaces'))
+    out_mask = File(exists=True, desc='warped input mask')
 
 class RandomBSplineDeformation( CommandLine ):
     """ Use ACWEReg bspline random deformation tool to generate
@@ -292,6 +294,9 @@ class RandomBSplineDeformation( CommandLine ):
 
         if isdefined( self.inputs.in_surfs ):
             outputs['out_surfs'] = [ op.abspath( '%s_surf_%d.vtk' % ( out_prefix, i ))  for i in range(len(self.inputs.in_surfs)) ]
+
+        if isdefined( self.inputs.in_mask ):
+            outputs['out_mask'] = op.abspath( '%s_mask_warped.nii.gz' % out_prefix )
 
         return outputs
 
