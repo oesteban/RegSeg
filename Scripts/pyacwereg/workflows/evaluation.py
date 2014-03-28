@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-03-13 10:21:44
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-03-28 13:06:28
 
 import os
 import os.path as op
@@ -24,14 +24,12 @@ def bspline( name='BSplineEvaluation' ):
     """
     wf = pe.Workflow( name=name )
     inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'data_dir','grid_size' ] ), name='inputnode' )
-    outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_field', 'out_coeff' ]), name='outputnode' )
+    outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_tpms', 'out_surfs',
+                                               'out_field', 'out_coeff' ]), name='outputnode' )
 
     prep = prepare_smri()
     dist = bspline_deform()
     regseg = pe.Node( iface.ACWEReg(), name="ACWERegistration" )
-
-    #regseg.inputs.in_fixed = '/home/oesteban/workspace/ACWE-Reg/Data/Phantom0/box/bspline/box_resampled_0.nii.gz'
-    #regseg.inputs.in_prior = '/home/oesteban/workspace/ACWE-Reg/Data/Phantom0/box/surfs-wm.vtk'
     regseg.inputs.iterations = [ 10, 10 ]
     regseg.inputs.descript_update = [ 5, 15 ]
     regseg.inputs.step_size = [ 0.5, 1.0 ]
@@ -44,7 +42,9 @@ def bspline( name='BSplineEvaluation' ):
     wf.connect([
              ( inputnode,  prep, [ ('subject_id','inputnode.subject_id'),('data_dir','inputnode.data_dir') ])
             ,( inputnode,  dist, [ ('grid_size', 'inputnode.grid_size')])
-            ,( prep,       dist, [ ('outputnode.out_smri_brain','inputnode.in_file')])
+            ,( prep,       dist, [ ('outputnode.out_smri_brain','inputnode.in_file'),
+                                   ('outputnode.out_surfs', 'inputnode.in_source')
+                                   ('outputnode.out_tpms', 'inputnode.in_tpms')])
             ,( prep,     regseg, [ ('outputnode.out_surfs','in_prior' ) ])
             ,( dist,     regseg, [ ('outputnode.out_file','in_fixed' ) ])
             ,( dist, outputnode, [ ('outputnode.out_file','out_file'),('outputnode.out_field','out_field'),('outputnode.out_coeff','out_coeff')])
