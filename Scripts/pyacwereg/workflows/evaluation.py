@@ -14,6 +14,7 @@ import os.path as op
 import nipype.interfaces.io as nio              # Data i/o
 import nipype.interfaces.utility as niu         # utility
 import nipype.pipeline.engine as pe             # pipeline engine
+import pyacwereg.nipype.interfaces as iface
 
 from smri import prepare_smri
 from distortion import bspline_deform
@@ -27,11 +28,25 @@ def bspline( name='BSplineEvaluation' ):
 
     prep = prepare_smri()
     dist = bspline_deform()
+    regseg = pe.Node( iface.ACWEReg(), name="ACWERegistration" )
+
+    #regseg.inputs.in_fixed = '/home/oesteban/workspace/ACWE-Reg/Data/Phantom0/box/bspline/box_resampled_0.nii.gz'
+    #regseg.inputs.in_prior = '/home/oesteban/workspace/ACWE-Reg/Data/Phantom0/box/surfs-wm.vtk'
+    regseg.inputs.iterations = [ 10, 10 ]
+    regseg.inputs.descript_update = [ 5, 15 ]
+    regseg.inputs.step_size = [ 0.5, 1.0 ]
+    regseg.inputs.alpha = [ 0.0, 0.001 ]
+    regseg.inputs.beta = [ 0.0, 0.01 ]
+    regseg.inputs.grid_size = [ 6, 10 ]
+    regseg.inputs.convergence_energy = [ True, True ]
+    regseg.inputs.convergence_window = [ 5, 5 ]
 
     wf.connect([
-             ( inputnode, prep, [ ('subject_id','inputnode.subject_id'),('data_dir','inputnode.data_dir') ])
-            ,( inputnode, dist, [ ('grid_size', 'inputnode.grid_size')])
-            ,( prep,      dist, [ ('outputnode.out_smri_brain','inputnode.in_file')])
+             ( inputnode,  prep, [ ('subject_id','inputnode.subject_id'),('data_dir','inputnode.data_dir') ])
+            ,( inputnode,  dist, [ ('grid_size', 'inputnode.grid_size')])
+            ,( prep,       dist, [ ('outputnode.out_smri_brain','inputnode.in_file')])
+            ,( prep,     regseg, [ ('outputnode.out_surfs','in_prior' ) ])
+            ,( dist,     regseg, [ ('outputnode.out_file','in_fixed' ) ])
             ,( dist, outputnode, [ ('outputnode.out_file','out_file'),('outputnode.out_field','out_field'),('outputnode.out_coeff','out_coeff')])
         ])
 
