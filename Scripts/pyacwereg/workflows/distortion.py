@@ -59,7 +59,7 @@ def bspline_deform( name='BSplineDistortion' ):
 
     distort = pe.Node( RandomBSplineDeformation(), name='bspline_field')
 
-    split = pe.Node( niu.Split(splits=[2,3]))
+    split = pe.Node( niu.Split(splits=[2,3]), name='SplitOutputs' )
 
     wf.connect([
                  ( inputnode,  distort, [ ('in_surfs','in_surfs'), ('grid_size','grid_size')])

@@ -43,7 +43,7 @@ def bspline( name='BSplineEvaluation' ):
              ( inputnode,  prep, [ ('subject_id','inputnode.subject_id'),('data_dir','inputnode.data_dir') ])
             ,( inputnode,  dist, [ ('grid_size', 'inputnode.grid_size')])
             ,( prep,       dist, [ ('outputnode.out_smri_brain','inputnode.in_file'),
-                                   ('outputnode.out_surfs', 'inputnode.in_source')
+                                   ('outputnode.out_surfs', 'inputnode.in_source'),
                                    ('outputnode.out_tpms', 'inputnode.in_tpms')])
             ,( prep,     regseg, [ ('outputnode.out_surfs','in_prior' ) ])
             ,( dist,     regseg, [ ('outputnode.out_file','in_fixed' ) ])
