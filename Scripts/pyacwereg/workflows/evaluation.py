@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-28 20:40:23
+# @Last Modified time: 2014-03-30 11:34:56
 
 import os
 import os.path as op
@@ -14,6 +14,8 @@ import numpy as np
 
 import nipype.interfaces.io as nio              # Data i/o
 import nipype.interfaces.utility as niu         # utility
+import nipype.algorithms.misc as namisc         # misc algorithms
+import nipype.algorithms.mesh as namesh
 import nipype.pipeline.engine as pe             # pipeline engine
 import pyacwereg.nipype.interfaces as iface
 
@@ -21,13 +23,36 @@ from smri import prepare_smri
 from distortion import bspline_deform
 from registration import default_regseg
 
-def registration_ev( name='EvaluateMapping' ):
+def registration_ev( name='EvaluateMapping', out_file= ):
     wf = pe.Workflow( name=name )
     input_ref = pe.Node( niu.IdentityInterface( fields=[ 'in_imag', 'in_tpms','in_surf','in_field' ] ),
                         name='refnode' )
-    input_test = pe.Node( niu.IdentityInterface( fields=[ 'in_imag', 'in_tpms','in_surf','in_field' ] ),
-                        name='testnode' )
-    outputnode = pe.Node(niu.IdentityInterface(fields=['out_dice']), name='outputnode' )
+    input_tst = pe.Node( niu.IdentityInterface( fields=['in_imag', 'in_tpms',
+                                                        'in_surf','in_field', 'in_mask' ] ),
+                        name='tstnode' )
+    outputnode = pe.Node(niu.IdentityInterface(fields=['out_dice','out_tpm_diff']), name='outputnode' )
+
+    overlap = pe.Node( namisc.FuzzyOverlap(weighting='volume'), name='Overlap' )
+    idx_merge = pe.Node( niu.Merge(4), name='MergeIndices')
+    diff_im = pe.Node( namisc.Distance(method='eucl_max'), name='ContrastDiff')
+    diff_fld = pe.Node( namisc.Distance(method='eucl_max'), name='FieldDiff')
+    mesh = pe.MapNode( namesh.P2PDistance(weighting='surface'),
+                      iterfield=[ 'surface1','surface2' ],
+                      name='SurfDistance')
+
+    wf.connect( [
+                ( input_ref,     overlap, [( 'in_tpms', 'in_ref')] )
+               ,( input_tst,     overlap, [( 'in_tpms', 'in_tst')] )
+               ,( input_ref,     diff_im, [( 'in_imag', 'volume1'), ('in_mask','mask_volume')])
+               ,( input_tst,     diff_im, [( 'in_imag', 'volume2')])
+               ,( input_ref,    diff_fld, [( 'in_field', 'volume1'), ('in_mask','mask_volume')])
+               ,( input_tst,    diff_fld, [( 'in_field', 'volume2')])
+               ,( input_ref,        mesh, [( 'in_surf', 'surface1')])
+               ,( input_tst,        mesh, [( 'in_surf', 'surface2')])
+               ,( overlap,     idx_merge, [( 'jaccard', 'in1'), ('class_fji','in2'),
+                                           ( 'dice', 'in3'), ('class_fdi', 'in4') ])
+               ,( overlap,    outputnode, [( 'diff_file','out_tpm_diff')])
+    ])
 
     return wf
 
@@ -95,14 +120,15 @@ def bspline( name='BSplineEvaluation', methods=None ):
                                ('outputnode.out_smri_brain', 'inputnode.in_orig' ),
                                ('outputnode.out_tpms', 'inputnode.in_tpms') ])
             ,( dist,     reg, [ ('outputnode.out_file', 'inputnode.in_dist' )])
-            ,( prep,evwfs[i], [ ('outputnode.out_smri_brain', 'refnode.in_imag'),
-                               ('outputnode.out_tpms', 'refnode.in_tpms'),
-                               ('outputnode.out_surfs','refnode.in_surf') ])
-            ,( dist,evwfs[i], [ ('outputnode.out_field','refnode.in_field' ) ])
-            ,( reg, evwfs[i], [ ('outputnode.out_corr', 'testnode.in_imag'),
-                               ('outputnode.out_tpms', 'testnode.in_tpms'),
-                               ('outputnode.out_surf', 'testnode.in_surf'),
-                               ('outputnode.out_field','testnode.in_field' ) ])
+            ,( prep,evwfs[i], [('outputnode.out_smri_brain', 'refnode.in_imag'),
+                               ('outputnode.out_tpms',       'refnode.in_tpms'),
+                               ('outputnode.out_surfs',      'refnode.in_surf'),
+                               ('outputnode.out_mask',       'refnode.in_mask'), ])
+            ,( dist,evwfs[i], [ ('outputnode.out_field',     'refnode.in_field' ) ])
+            ,( reg, evwfs[i], [('outputnode.out_corr', 'tstnode.in_imag'),
+                               ('outputnode.out_tpms', 'tstnode.in_tpms'),
+                               ('outputnode.out_surf', 'tstnode.in_surf'),
+                               ('outputnode.out_field','tstnode.in_field' ) ])
             ,( evwfs[i], mergeres, [ ('outputnode.out_dice', 'in%d' %i ) ] )
         ])
 
