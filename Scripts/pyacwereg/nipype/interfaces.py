@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-28 16:22:43
+# @Last Modified time: 2014-03-31 13:36:36
 
 import os
 import os.path as op
@@ -253,7 +253,8 @@ class RandomBSplineDeformationInputSpec( CommandLineInputSpec ):
 class RandomBSplineDeformationOutputSpec( TraitedSpec ):
     out_file = OutputMultiPath(File(exists=True, desc='warped input files'))
     out_coeff = OutputMultiPath(File(exists=True, desc='output coefficients'))
-    out_field = OutputMultiPath(File(exists=True, desc='output warping field'))
+    out_field = File(exists=True, desc='output warping field')
+    out_field_base = OutputMultiPath(File(exists=True, desc='output warping bspline field'))
     out_surfs = OutputMultiPath(File(desc='output warped surfaces'))
     out_mask = File(exists=True, desc='warped input mask')
 
@@ -289,8 +290,9 @@ class RandomBSplineDeformation( CommandLine ):
         outputs = self.output_spec().get()
 
         outputs['out_file'] = [ op.abspath( '%s_resampled_%d.nii.gz' % ( out_prefix, i ))  for i in range(len(self.inputs.in_file)) ]
+        outputs['out_field'] = op.abspath( '%s_dispfield.nii.gz' % out_prefix )
         outputs['out_coeff'] = [ op.abspath( '%s_coeffs_%d.nii.gz' % ( out_prefix, i ))  for i in range(3) ]
-        outputs['out_field'] = [ op.abspath( '%s_field_cmp%d.nii.gz' % ( out_prefix, i ))  for i in range(3) ]
+        outputs['out_field_base'] = [ op.abspath( '%s_field_cmp%d.nii.gz' % ( out_prefix, i ))  for i in range(3) ]
 
         if isdefined( self.inputs.in_surfs ):
             outputs['out_surfs'] = [ op.abspath( '%s_surf_%d.vtk' % ( out_prefix, i ))  for i in range(len(self.inputs.in_surfs)) ]
@@ -306,11 +308,13 @@ class FieldBasedWarpInputSpec( CommandLineInputSpec ):
               desc='image(s) to be deformed')
     in_field = File(exists=True, mandatory=False, argstr="-F %s",
                desc='field')
+    in_mask = File(exists=True, argstr='-M %s', desc='set a mask')
     out_prefix = traits.Str( "fbased", desc='output files prefix', argstr="-o %s", usedefault=True,
                              mandatory=True )
 
 class FieldBasedWarpOutputSpec( TraitedSpec ):
     out_file = OutputMultiPath(File(exists=True, desc='warped input files'))
+    out_mask = File(exists=True, desc='warped input mask')
 
 class FieldBasedWarp( CommandLine ):
     """ Use ACWEReg bspline random deformation tool to generate
@@ -336,5 +340,9 @@ class FieldBasedWarp( CommandLine ):
         outputs = self.output_spec().get()
 
         outputs['out_file'] = [ op.abspath( '%s_warped_%d.nii.gz' % ( out_prefix, i ))  for i in range(len(self.inputs.in_file)) ]
+
+        if isdefined( self.inputs.in_mask ):
+            outputs['out_mask'] = op.abspath( '%s_mask_warped.nii.gz' % out_prefix )
+
         return outputs
 

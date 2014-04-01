@@ -13,13 +13,14 @@
 
 int main(int argc, char *argv[]) {
 	std::string outPrefix = "displ";
-	std::string fieldname;
+	std::string fieldname,maskfile;
 	std::vector< std::string > fixedImageNames;
 
 	bpo::options_description all_desc("Usage");
 	all_desc.add_options()
 			("help,h", "show help message")
 			("displacement-field,F", bpo::value < std::string >(&fieldname), "displacement field" )
+			("mask,M", bpo::value< std::string >(&maskfile), "mask file" )
 			("images,I", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files");
 
@@ -37,6 +38,58 @@ int main(int argc, char *argv[]) {
 	fread->Update();
 	DisplacementFieldPointer field = fread->GetOutput();
 
+	// Direction issues
+	typename ChannelType::DirectionType itk;
+	itk.SetIdentity();
+	itk(0,0)=-1.0;
+	itk(1,1)=-1.0;
+
+	typename ReaderType::Pointer rref = ReaderType::New();
+	rref->SetFileName( fixedImageNames[0] );
+	rref->Update();
+
+	typename ChannelType::Pointer im = rref->GetOutput();
+	typename ChannelType::DirectionType dir = im->GetDirection();
+	typename ChannelType::PointType ref_orig = im->GetOrigin();
+
+
+	// Read and transform mask, if present
+	MaskPointer mask;
+
+	if (vm.count( "mask" ) ) {
+		typename ReaderType::Pointer rmask = ReaderType::New();
+		rmask->SetFileName( maskfile );
+		rmask->Update();
+
+		ChannelPointer im = rmask->GetOutput();
+		im->SetDirection( dir * itk );
+		im->SetOrigin( itk * ref_orig );
+
+		WarpFilterPointer res = WarpFilter::New();
+		res->SetInput( im );
+		res->SetOutputParametersFromImage( rmask->GetOutput() );
+		res->SetInterpolator( NearestNeighborInterpolateImageFunction::New() );
+		res->SetDisplacementField( field );
+		res->Update();
+
+		ChannelPointer im_res = res->GetOutput();
+		im_res->SetDirection( dir );
+		im_res->SetOrigin( ref_orig );
+
+		typename Binarize::Pointer bin = Binarize::New();
+		bin->SetInput( im_res );
+		bin->SetLowerThreshold( 0.01 );
+		bin->SetOutsideValue( 0 );
+		bin->SetInsideValue( 1 );
+		bin->Update();
+		mask = bin->GetOutput();
+
+		typename MaskWriter::Pointer wm = MaskWriter::New();
+		wm->SetInput( mask );
+		wm->SetFileName( (outPrefix + "_mask_warped.nii.gz").c_str() );
+		wm->Update();
+	}
+
 	// Read and transform images if present
 	for( size_t i = 0; i<fixedImageNames.size(); i++) {
 		typename ReaderType::Pointer r = ReaderType::New();
@@ -47,10 +100,6 @@ int main(int argc, char *argv[]) {
 		typename ChannelType::DirectionType dir = im->GetDirection();
 		typename ChannelType::PointType ref_orig = im->GetOrigin();
 
-		typename ChannelType::DirectionType itk;
-		itk.SetIdentity();
-		itk(0,0)=-1.0;
-		itk(1,1)=-1.0;
 		im->SetDirection( dir * itk );
 		im->SetOrigin( itk * ref_orig );
 
@@ -64,6 +113,15 @@ int main(int argc, char *argv[]) {
 		typename ChannelType::Pointer im_res = res->GetOutput();
 		im_res->SetDirection( dir );
 		im_res->SetOrigin( ref_orig );
+
+		if (mask.IsNotNull()) {
+			typename MaskFilter::Pointer mm = MaskFilter::New();
+			mm->SetMaskImage( mask );
+			mm->SetInput( im_res );
+			mm->Update();
+
+			im_res = mm->GetOutput();
+		}
 
 		std::stringstream ss;
 		ss.str("");

@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-05 15:08:55
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-28 20:17:31
+# @Last Modified time: 2014-03-31 12:32:15
 
 import os
 import os.path as op
@@ -33,10 +33,11 @@ def prepare_smri( name='Prepare_sMRI'):
         import os.path as op
         return op.join( path, 'FREESURFER' )
 
-    inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'data_dir' ] ), name='inputnode' )
-    outputnode = pe.Node( niu.IdentityInterface( fields=[ 'out_surfs', 'out_smri',
+    inputnode =  pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'data_dir' ] ),
+                         name='inputnode' )
+    outputnode = pe.Node( niu.IdentityInterface( fields=[ 'out_surfs', 'out_smri','out_mask',
                                                            'out_smri_brain', 'out_tpms' ] ),
-                                                 name='outputnode' )
+                         name='outputnode' )
 
     ds = pe.Node( nio.DataGrabber(infields=['subject_id'], outfields=['t1w','t2w'], sort_filelist=False), name='DataSource' )
     ds.inputs.template = '*'
@@ -58,6 +59,7 @@ def prepare_smri( name='Prepare_sMRI'):
 
     tfm_norm = pe.Node( fs.ApplyVolTransform(reg_header=True), name='norm_to_T1')
     T1brainToRAS = pe.Node( fs.MRIConvert( out_type='niigz', out_orientation='RAS' ), name='T1brainToRAS' )
+    binarize = pe.Node( fs.Binarize( min=0.01 ), name="binarize" )
     t2msk = pe.Node( fs.ApplyMask(), name='T2_BET' )
     n4_t2 = pe.Node( ants.N4BiasFieldCorrection( dimension=3 ), name='Bias_T2' )
     merge_brain = pe.Node( niu.Merge(2), name='merge_brain')
@@ -95,9 +97,11 @@ def prepare_smri( name='Prepare_sMRI'):
         ,( T1toRAS,              fast, [ ('out_file', 'in_files' ) ] )
         ,( T1toRAS,            fixvtk, [ ('out_file','in_ref')])
         ,( tovtk,              fixvtk, [ ('converted','in_file')])
+        ,( T1brainToRAS,     binarize, [ ('out_file', 'in_file')])
         ,( merge_mri,      outputnode, [ ('out', 'out_smri')])
         ,( merge_brain,    outputnode, [ ('out', 'out_smri_brain')])
         ,( fixvtk,         outputnode, [ ('out_file','out_surfs')])
+        ,( binarize,       outputnode, [ ('binary_file', 'out_mask' )])
         ,( fast,           outputnode, [ ('partial_volume_files', 'out_tpms' ) ] )
     ])
     return wf
@@ -141,7 +145,8 @@ def extract_surface( name="GenSurface", labels=None ):
         return in_labels
 
     pipeline.connect( [
-                        ( inputnode,    fs_src, [( 'subject_id', 'subject_id'), ('fs_subjects_dir','fs_subjects_dir') ])
+                        ( inputnode,    fs_src, [ ('subject_id', 'subject_id'),
+                                                  ('fs_subjects_dir','fs_subjects_dir') ])
                        ,( fs_src,        toRAS, [ ('rawavg', 'in_file') ])
                        ,( fs_src,    label2vol, [ ('aseg','seg_file'), ('aseg', 'reg_header')] )
                        ,( fs_src,     tfm_norm, [ ('norm','source_file') ])

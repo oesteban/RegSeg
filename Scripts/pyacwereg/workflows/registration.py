@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-28 20:48:15
+# @Last Modified time: 2014-03-31 12:52:51
 
 import os
 import os.path as op
@@ -19,11 +19,13 @@ import pyacwereg.nipype.interfaces as iface
 def default_regseg( name='REGSEGDefault'):
     wf = pe.Workflow( name=name )
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=['in_orig', 'in_dist', 'in_tpms', 'in_surf' ]),
-                                              name='outputnode' )
+    inputnode = pe.Node(niu.IdentityInterface(fields=['in_orig', 'in_dist', 'in_tpms', 'in_surf',
+                        'in_mask' ]),
+                        name='inputnode' )
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=['out_corr', 'out_tpms', 'out_surf', 'out_field' ]),
-                                               name='outputnode' )
+    outputnode = pe.Node(niu.IdentityInterface(fields=['out_corr', 'out_tpms',
+                         'out_surf', 'out_field', 'out_mask' ]),
+                         name='outputnode' )
 
     # Registration
     regseg = pe.Node( iface.ACWEReg(), name="ACWERegistration" )
@@ -37,12 +39,20 @@ def default_regseg( name='REGSEGDefault'):
     regseg.inputs.convergence_window = [ 5, 5 ]
 
     # Apply tfm to tpms
+    applytfm = pe.Node( iface.FieldBasedWarp(), name="ApplyWarp" )
 
     # Connect
     wf.connect([
-         ( inputnode,   regseg, [ ('in_surfs','in_prior' ),
+         ( inputnode,   regseg, [ ('in_surf','in_prior' ),
                                   ('in_dist','in_fixed' ) ])
+        ,( inputnode, applytfm, [ ('in_tpms', 'in_file' ),
+                                  ('in_mask', 'in_mask') ])
+        ,( regseg,    applytfm, [ ('out_field','in_field')])
         ,( regseg,  outputnode, [ ('out_warped','out_corr'),
                                   ('out_field','out_field'),
-                                  ('out_surfs', 'out_surf')])
+                                  ('out_surfs', 'out_surf') ])
+        ,( applytfm,outputnode, [ ('out_file', 'out_tpms'),
+                                  ('out_mask', 'out_mask')])
     ])
+
+    return wf

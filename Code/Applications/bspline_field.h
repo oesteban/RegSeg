@@ -136,6 +136,7 @@ typedef itk::NearestNeighborInterpolateImageFunction< ChannelType, ScalarType > 
 typedef itk::MaskImageFilter< ChannelType, MaskType, ChannelType > MaskFilter;
 
 typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> ComponentsWriter;
+typedef itk::ImageFileWriter< FieldType >                      FieldWriter;
 
 typedef itk::Matrix< float, DIMENSION, DIMENSION >             MatrixType;
 typedef itk::Mesh< float, DIMENSION >                          MeshType;
