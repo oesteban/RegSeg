@@ -84,7 +84,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 ::Evaluate( const VectorType r ) const {
 	ScalarType wi=1.0;
 	for (size_t i = 0; i<Dimension; i++) {
-		wi*= this->m_KernelFunction->Evaluate( fabs(r[i]) / this->m_ControlPointsSpacing[i] );
+		wi*= this->m_KernelFunction->Evaluate( r[i] / this->m_ControlPointsSpacing[i] );
 	}
 	return wi;
 }
@@ -98,7 +98,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 		if( dim == i )
 			wi*= this->m_DerivativeKernel->Evaluate( r[i] / this->m_ControlPointsSpacing[i] );
 		else
-			wi*= this->m_KernelFunction->Evaluate( fabs(r[i]) / this->m_ControlPointsSpacing[i] );
+			wi*= this->m_KernelFunction->Evaluate( r[i] / this->m_ControlPointsSpacing[i] );
 	}
 	return wi;
 }
@@ -327,6 +327,10 @@ SparseMatrixTransform<TScalar,NDimensions>
 	PointType ci, uk;
 	size_t row, col;
 	VectorType r;
+	VectorType support; support.Fill(1.0);
+
+	for (size_t i = 0; i<Dimension; i++ ) support*= this->m_ControlPointsSize[i];
+	double maxRadius = support.GetNorm();
 
 	vcl_vector< int > cols;
 	vcl_vector< ScalarType > vals;
@@ -345,11 +349,14 @@ SparseMatrixTransform<TScalar,NDimensions>
 		for ( col=0; col < nCols; col++) {
 			uk = vcols[col];
 			r = uk - ci;
-			wi = this->Evaluate( r );
 
-			if ( fabs(wi) > 1.0e-5) {
-				cols.push_back( col );
-				vals.push_back( wi );
+			if ( ( r.GetNorm() / maxRadius ) < 2.0) {
+				wi = this->Evaluate( r );
+
+				if ( fabs(wi) > 1.0e-5) {
+					cols.push_back( col );
+					vals.push_back( wi );
+				}
 			}
 		}
 
