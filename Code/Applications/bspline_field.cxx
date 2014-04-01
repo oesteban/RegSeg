@@ -62,6 +62,10 @@ int main(int argc, char *argv[]) {
 
 	TPointer transform = Transform::New();
 
+#ifndef NDEBUG
+	transform->SetNumberOfThreads( 2 );
+#endif
+
 	if (vm.count("coeff-images")) {
 		std::cout << "coefficient images mode not implemented" << std::endl;
 		// set size
@@ -172,11 +176,11 @@ int main(int argc, char *argv[]) {
 
 
 	transform->Interpolate();
-	f->SetInput( transform->GetOutputField() );
-	ss.str("");
-	ss << outPrefix << "_field_hires";
-	f->SetFileName( ss.str().c_str() );
-	f->Update();
+
+	typename FieldWriter::Pointer ff = FieldWriter::New();
+	ff->SetInput( transform->GetOutputField() );
+	ff->SetFileName( (outPrefix + "dispfield.nii.gz").c_str() );
+	ff->Update();
 
 	MaskPointer mask;
 

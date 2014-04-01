@@ -25,6 +25,10 @@
 #include <itkWarpImageFilter.h>
 #include <itkBSplineInterpolateImageFunction.h>
 
+#include <itkMaskImageFilter.h>
+#include <itkNearestNeighborInterpolateImageFunction.h>
+#include <itkBinaryThresholdImageFilter.h>
+
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 
@@ -38,6 +42,13 @@ typedef typename ReaderType::Pointer                         ReaderPointer;
 typedef itk::ImageFileWriter<ChannelType>                    WriterType;
 typedef typename WriterType::Pointer                         WriterPointer;
 
+
+typedef itk::Image< unsigned char, DIMENSION >               MaskType;
+typedef typename MaskType::Pointer                           MaskPointer;
+typedef itk::ImageFileWriter<MaskType>                       MaskWriter;
+typedef itk::BinaryThresholdImageFilter
+		                           < ChannelType, MaskType > Binarize;
+
 typedef double                                               ScalarType;
 
 typedef itk::Vector< ScalarType, DIMENSION >                 VectorType;
@@ -47,6 +58,8 @@ typedef itk::ImageFileReader<DisplacementFieldType>          DisplacementFieldRe
 typedef typename DisplacementFieldReaderType::Pointer        DisplacementFieldReaderPointer;
 
 typedef itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >    BSplineInterpolateImageFunction;
+typedef itk::NearestNeighborInterpolateImageFunction< ChannelType, ScalarType >    NearestNeighborInterpolateImageFunction;
+typedef itk::MaskImageFilter< ChannelType, MaskType, ChannelType > MaskFilter;
 
 typedef itk::WarpImageFilter
 		         < ChannelType, ChannelType, DisplacementFieldType >     WarpFilter;
