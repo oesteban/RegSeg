@@ -76,6 +76,8 @@ m_UseImageOutput(false) {
 	this->m_Threader = itk::MultiThreader::New();
 	this->m_NumberOfThreads = this->m_Threader->GetNumberOfThreads();
 
+	this->m_ControlPointsIndexToPhysicalPoint.SetIdentity();
+	this->m_ControlPointsPhysicalPointToIndex.SetIdentity();
 }
 
 template< class TScalar, unsigned int NDimensions >
@@ -101,6 +103,46 @@ SparseMatrixTransform<TScalar,NDimensions>
 			wi*= this->m_KernelFunction->Evaluate( r[i] / this->m_ControlPointsSpacing[i] );
 	}
 	return wi;
+}
+
+template< class TScalar, unsigned int NDimensions >
+inline size_t
+SparseMatrixTransform<TScalar,NDimensions>
+::ComputeRegionOfPoint(const PointType& point, VectorType& cvector, IndexType& start, IndexType& end, OffsetTableType offsetTable ) {
+	IndexType center;
+	VectorType cstart,cend;
+	size_t num = 1;
+	offsetTable[0] = num;
+
+    for ( size_t k = 0; k <Dimension; k++ ) {
+    	cvector[k] = point[k] - this->m_ControlPointsOrigin[k];
+    }
+    cvector = this->m_ControlPointsPhysicalPointToIndex * cvector;
+
+    for ( size_t k = 0; k <Dimension; k++ ) {
+    	cstart[k] = cvector[k]-2.0;
+    	cend[k] = cvector[k]+2.0;
+
+    	if (cend[k] < 0.0 || cstart[k] > (this->m_ControlPointsSize[k]-1) ) {
+    		return 0;
+    	}
+
+    	center[k] = floor( cvector[k] + 0.5 );  // Add 0.5 to get an actual round() result
+    	start[k] = ceil( cstart[k] );
+    	end[k] = floor( cend[k] );
+
+    	if ( start[k] < 0 ) start[k] = 0;
+    	if ( end[k] > (this->m_ControlPointsSize[k]-1) ) end[k] = this->m_ControlPointsSize[k]-1;
+
+    	if( end[k]<start[k] ) {
+    		return 0;
+    	}
+
+    	num*= (  end[k]-start[k] + 1 );
+    	offsetTable[k+1] = num;
+    }
+
+    return num;
 }
 
 template< class TScalar, unsigned int NDimensions >
@@ -178,6 +220,25 @@ template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
 ::InitializeCoefficientsImages() {
+
+	// Compute pixel conversion matrices
+	DirectionType scale;
+
+	for ( size_t i = 0; i < Dimension; i++ ) {
+	  if ( this->m_ControlPointsSpacing[i] == 0.0 ) {
+		itkExceptionMacro("A spacing of 0 is not allowed: Spacing is " << this->m_ControlPointsSpacing);
+	  }
+	  scale[i][i] = this->m_ControlPointsSpacing[i];
+	}
+
+	if ( vnl_determinant( this->m_ControlPointsDirection.GetVnlMatrix() ) == 0.0 ) {
+	  itkExceptionMacro(<< "Bad direction, determinant is 0. Direction is " << this->m_ControlPointsDirection);
+	}
+
+	this->m_ControlPointsIndexToPhysicalPoint = this->m_ControlPointsDirection * scale;
+	this->m_ControlPointsPhysicalPointToIndex = this->m_ControlPointsIndexToPhysicalPoint.GetInverse();
+
+
 	for( size_t dim = 0; dim < Dimension; dim++ ) {
 		this->m_CoefficientsImages[dim] = CoefficientsImageType::New();
 		this->m_CoefficientsImages[dim]->SetRegions(   this->m_ControlPointsSize );
@@ -226,7 +287,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 	SMTStruct str;
 	str.Transform = this;
 	str.type = type;
-	str.vcols = &this->m_OnGridPos;
 
 	if ( type == Self::PHI ) {
 		str.vrows = &this->m_OffGridPos;
@@ -244,7 +304,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	}
 
 	size_t nRows = str.vrows->size();
-	size_t nCols = str.vcols->size();
+	size_t nCols = this->m_OnGridPos.size();
 	str.matrix = WeightsMatrix( nRows, nCols );
 
 	this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
@@ -277,7 +337,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 	str = (SMTStruct *)( ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->UserData );
 
 	MatrixSectionType splitSection;
-	splitSection.vcols = str->vcols;
 	splitSection.matrix = &(str->matrix);
 	splitSection.vrows = str->vrows;
 	total = str->Transform->SplitMatrixSection( threadId, threadCount, splitSection );
@@ -316,47 +375,40 @@ void
 SparseMatrixTransform<TScalar,NDimensions>
 ::ThreadedComputeMatrix( MatrixSectionType& section, itk::ThreadIdType threadId ) {
 	size_t last = section.first_row + section.num_rows;
-	size_t nCols = section.vcols->size();
-
 	itk::SizeValueType nRows = section.num_rows;
-
 	PointsList vrows = *(section.vrows);
-	PointsList vcols = *(section.vcols);
 
 	ScalarType wi;
 	PointType ci, uk;
-	size_t row, col;
-	VectorType r;
-	VectorType support; support.Fill(1.0);
-
-	for (size_t i = 0; i<Dimension; i++ ) support*= this->m_ControlPointsSize[i];
-	double maxRadius = support.GetNorm();
+	size_t row, col, number_of_pixels;
+	VectorType r,cindex;
+	IndexType start, end, current;
+	OffsetTableType rOffsetTable;
 
 	vcl_vector< int > cols;
 	vcl_vector< ScalarType > vals;
-
 	cols.resize(0);
 	vals.resize(0);
 
-	//itk::ProgressReporter progress( this, threadId, nRows, 100, 0.0f, 0.5f );
+	CoeffImagePointer ref = this->m_CoefficientsImages[0];
 
 	// Walk the grid region
-	for( row = section.first_row; row < last; row++ ) {
+	for ( row = section.first_row; row < last; row++ ) {
 		cols.clear();
 		vals.clear();
-
 		ci = vrows[row];
-		for ( col=0; col < nCols; col++) {
-			uk = vcols[col];
-			r = uk - ci;
+		number_of_pixels = this->ComputeRegionOfPoint( ci, cindex, start, end, rOffsetTable );
 
-			if ( ( r.GetNorm() / maxRadius ) < 2.0) {
-				wi = this->Evaluate( r );
+		for( size_t rOffset = 0; rOffset<number_of_pixels; rOffset++) {
+			Helper::ComputeIndex( start, rOffset, rOffsetTable, current );
+			TransformHelper::TransformIndexToPhysicalPoint( this->m_ControlPointsIndexToPhysicalPoint, this->m_ControlPointsOrigin, current, uk);
+			r = ci - uk;
+			wi = this->Evaluate( r );
 
-				if ( fabs(wi) > 1.0e-5) {
-					cols.push_back( col );
-					vals.push_back( wi );
-				}
+			if ( fabs(wi) > 1.0e-5) {
+				col = ref->ComputeOffset( current );
+				cols.push_back( col );
+				vals.push_back( wi );
 			}
 		}
 
