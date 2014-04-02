@@ -101,7 +101,9 @@ int main(int argc, char *argv[]) {
 
 		for( size_t i = 0; i< DIMENSION; i++) {
 			RandomIterator rndit( coeffs[i], region );
+#ifdef NDEBUG
 			rndit.ReinitializeSeed();
+#endif
 			rndit.SetNumberOfSamples( static_cast<size_t>( floor( numPix * 0.08 + 0.5f ) ) );
 
 			for(rndit.GoToBegin(); !rndit.IsAtEnd(); ++rndit){
