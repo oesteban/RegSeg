@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-05 15:08:55
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-02 17:46:07
+# @Last Modified time: 2014-04-02 18:22:07
 
 import os
 import os.path as op
@@ -94,7 +94,7 @@ def prepare_smri( name='Prepare_sMRI'):
         ,( csf,             merge_srf, [ ('outputnode.out_surf', 'in1')])
         ,( surfs,           merge_srf, [ ('outputnode.out_surfs', 'in2')])
         ,( merge_srf,           tovtk, [ ('out', 'in_file')])
-        ,( T1toRAS,              fast, [ ('out_file', 'in_files' ) ] )
+        ,( T1brainToRAS,         fast, [ ('out_file', 'in_files' ) ] )
         ,( T1toRAS,            fixvtk, [ ('out_file','in_ref')])
         ,( tovtk,              fixvtk, [ ('converted','in_file')])
         ,( T1brainToRAS,     binarize, [ ('out_file', 'in_file')])
