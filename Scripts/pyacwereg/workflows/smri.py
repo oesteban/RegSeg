@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-05 15:08:55
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-31 12:32:15
+# @Last Modified time: 2014-04-02 17:46:07
 
 import os
 import os.path as op
@@ -64,7 +64,7 @@ def prepare_smri( name='Prepare_sMRI'):
     n4_t2 = pe.Node( ants.N4BiasFieldCorrection( dimension=3 ), name='Bias_T2' )
     merge_brain = pe.Node( niu.Merge(2), name='merge_brain')
 
-    fast = pe.Node( fsl.FAST( number_classes=3, img_type=1 ), name='SegmentT1' )
+    fast = pe.Node( fsl.FAST( number_classes=3, img_type=1, probability_maps=True ), name='SegmentT1' )
 
     wf.connect([
          ( inputnode,              ds, [ ('subject_id','subject_id'), ('data_dir','base_directory')])
@@ -102,7 +102,7 @@ def prepare_smri( name='Prepare_sMRI'):
         ,( merge_brain,    outputnode, [ ('out', 'out_smri_brain')])
         ,( fixvtk,         outputnode, [ ('out_file','out_surfs')])
         ,( binarize,       outputnode, [ ('binary_file', 'out_mask' )])
-        ,( fast,           outputnode, [ ('partial_volume_files', 'out_tpms' ) ] )
+        ,( fast,           outputnode, [ ('probability_maps', 'out_tpms' ) ] )
     ])
     return wf
 
