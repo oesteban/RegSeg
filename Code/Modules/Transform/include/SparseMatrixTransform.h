@@ -53,6 +53,8 @@
 #include <itkKernelFunctionBase.h>
 #include <VNLSparseLUSolverTraits.h>
 #include <itkDisplacementFieldTransform.h>
+#include <itkImageHelper.h>
+#include <itkImageTransformHelper.h>
 
 #include <vnl/vnl_sparse_matrix.h>
 #include <vnl/vnl_vector.h>
@@ -140,6 +142,9 @@ public:
     typedef typename CoefficientsImageType::PointType     OriginType;
     typedef typename CoefficientsImageType::SpacingType   PhysicalDimensionsType;
     typedef itk::ContinuousIndex< ScalarType, Dimension>  ContinuousIndexType;
+    typedef typename IndexType::OffsetType                OffsetType;
+    typedef typename OffsetType::OffsetValueType          OffsetValueType;
+    typedef OffsetValueType                               OffsetTableType[Dimension+1];
 
     typedef itk::Image< VectorType, Dimension >           FieldType;
     typedef typename FieldType::Pointer                   FieldPointer;
@@ -152,13 +157,13 @@ public:
 
     /** Define the internal parameter helper used to access the field */
     typedef itk::ImageVectorOptimizerParametersHelper
-    		                                 < ScalarType, Dimension, Dimension>
-    OptimizerParametersHelperType;
+    		      < ScalarType, Dimension, Dimension>    OptimizerParametersHelperType;
+    typedef itk::ImageHelper< Dimension, Dimension >     Helper;
+    typedef itk::ImageTransformHelper< Dimension, Dimension - 1, Dimension - 1 > TransformHelper;
 
 	struct MatrixSectionType {
 		WeightsMatrix *matrix;
 		PointsList *vrows;
-		PointsList *vcols;
 		size_t section_id;
 		size_t first_row;
 		size_t num_rows;
@@ -265,6 +270,8 @@ protected:
 	OriginType             m_ControlPointsOrigin;
 	DirectionType          m_ControlPointsDirection;
 	DirectionType          m_ControlPointsDirectionInverse;
+	DirectionType          m_ControlPointsIndexToPhysicalPoint;
+	DirectionType          m_ControlPointsPhysicalPointToIndex;
 
 	size_t                 m_NumberOfSamples;     // This is N mesh points
 	size_t                 m_NumberOfParameters;  // This is K nodes
@@ -309,6 +316,7 @@ protected:
 
 	virtual void ComputeMatrix( MatrixType type );
 	virtual void AfterThreadedComputeMatrix( SMTStruct str );
+	virtual size_t ComputeRegionOfPoint(const PointType& point, VectorType& cvector, IndexType& start, IndexType& end, OffsetTableType offsetTable );
 
 	/** Support processing data in multiple threads. */
 	itk::MultiThreader::Pointer m_Threader;
