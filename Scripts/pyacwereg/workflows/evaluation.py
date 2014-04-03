@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-03 11:02:20
+# @Last Modified time: 2014-04-03 15:25:45
 
 import os
 import os.path as op
@@ -16,6 +16,7 @@ import nipype.interfaces.io as nio              # Data i/o
 import nipype.interfaces.utility as niu         # utility
 import nipype.algorithms.misc as namisc         # misc algorithms
 import nipype.algorithms.mesh as namesh
+import nipype.algorithms.eval as namev
 import nipype.interfaces.fsl as fsl
 from nipype.interfaces.nipy.utils import Similarity
 import nipype.pipeline.engine as pe             # pipeline engine
@@ -46,10 +47,10 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
     merge_tst = pe.Node( fsl.Merge(dimension='t'), name='ConcatTestInputs' )
 
 
-    overlap = pe.Node( namisc.FuzzyOverlap(weighting='volume'), name='Overlap' )
+    overlap = pe.Node( namev.FuzzyOverlap(weighting='volume'), name='Overlap' )
     row_merge = pe.Node( niu.Merge(9), name='MergeIndices')
     diff_im = pe.Node( Similarity(metric='cc'), name='ContrastDiff')
-    diff_fld = pe.Node( namisc.Distance(method='eucl_max'), name='FieldDiff')
+    diff_fld = pe.Node( namev.ErrorMap(), name='FieldDiff')
     mesh = pe.MapNode( namesh.P2PDistance(weighting='surface'),
                       iterfield=[ 'surface1','surface2' ],
                       name='SurfDistance')
