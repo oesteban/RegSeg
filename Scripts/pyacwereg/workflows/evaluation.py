@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-03 11:00:17
+# @Last Modified time: 2014-04-03 11:02:20
 
 import os
 import os.path as op
@@ -16,6 +16,7 @@ import nipype.interfaces.io as nio              # Data i/o
 import nipype.interfaces.utility as niu         # utility
 import nipype.algorithms.misc as namisc         # misc algorithms
 import nipype.algorithms.mesh as namesh
+import nipype.interfaces.fsl as fsl
 from nipype.interfaces.nipy.utils import Similarity
 import nipype.pipeline.engine as pe             # pipeline engine
 import pyacwereg.nipype.interfaces as iface
