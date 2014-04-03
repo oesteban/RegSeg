@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-03 15:40:14
+# @Last Modified time: 2014-04-03 15:53:55
 
 import os
 import os.path as op
@@ -36,7 +36,7 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
         import nibabel as nb
 
         data = nb.load( in_file ).get_data()
-        data = np.ma.mask_equal( data, 0 )
+        data = np.ma.masked_equal( data, 0 )
         return [ data.mean(), data.std(), data.max(), data.min(), np.ma.extras.median(data) ]
 
 
