@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-04-01 16:21:05
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-04-03 11:00:17
 
 import os
 import os.path as op
@@ -41,6 +41,10 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
     outputnode = pe.Node(niu.IdentityInterface(fields=[ 'out_file', 'out_tpm_diff' ]),
                          name='outputnode' )
 
+    merge_ref = pe.Node( fsl.Merge(dimension='t'), name='ConcatRefInputs' )
+    merge_tst = pe.Node( fsl.Merge(dimension='t'), name='ConcatTestInputs' )
+
+
     overlap = pe.Node( namisc.FuzzyOverlap(weighting='volume'), name='Overlap' )
     row_merge = pe.Node( niu.Merge(9), name='MergeIndices')
     diff_im = pe.Node( Similarity(metric='cc'), name='ContrastDiff')
@@ -58,12 +62,14 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
 
     wf.connect( [
                 ( inputnode,   row_merge, [( 'subject_id', 'in1'), ('method','in2')])
+               ,( input_ref,   merge_ref, [( 'in_imag', 'in_files' )])
+               ,( input_tst,   merge_tst, [( 'in_imag', 'in_files' )])
                ,( input_ref,     overlap, [( 'in_tpms', 'in_ref')] )
                ,( input_tst,     overlap, [( 'in_tpms', 'in_tst')] )
-               ,( input_ref,     diff_im, [( 'in_imag', 'volume1'),
-                                           ('in_mask','mask1'),
+               ,( input_ref,     diff_im, [('in_mask','mask1'),
                                            ('in_mask','mask2')])
-               ,( input_tst,     diff_im, [( 'in_imag', 'volume2')])
+               ,( merge_ref,     diff_im, [( 'merged_file', 'volume1')])
+               ,( merge_tst,     diff_im, [( 'merged_file', 'volume2')])
                ,( input_ref,    diff_fld, [( 'in_field', 'volume1'), ('in_mask','mask_volume')])
                ,( input_tst,    diff_fld, [( 'in_field', 'volume2')])
                ,( input_ref,        mesh, [( 'in_surf', 'surface1')])
