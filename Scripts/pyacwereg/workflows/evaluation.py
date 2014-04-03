@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-03 15:39:28
+# @Last Modified time: 2014-04-03 15:40:14
 
 import os
 import os.path as op
@@ -96,7 +96,7 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
                ,( row_merge,         csv, [( 'out', 'new_fields')])
                ,( csv,        outputnode, [( 'csv_file', 'out_file')])
                ,( overlap,    outputnode, [( 'diff_file','out_tpm_diff')])
-               ,( diff_fld,   outputnode, [( 'distance', 'out_field_err')])
+               ,( diff_fld,   outputnode, [( 'out_map', 'out_field_err')])
     ])
 
     return wf
