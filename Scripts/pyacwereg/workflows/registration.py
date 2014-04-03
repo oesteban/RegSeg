@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-31 12:52:51
+# @Last Modified time: 2014-04-03 17:25:42
 
 import os
 import os.path as op
@@ -53,6 +53,33 @@ def default_regseg( name='REGSEGDefault'):
                                   ('out_surfs', 'out_surf') ])
         ,( applytfm,outputnode, [ ('out_file', 'out_tpms'),
                                   ('out_mask', 'out_mask')])
+    ])
+
+    return wf
+
+def identity_wf( name='Identity'):
+    """ An identity workflow to check how ideal inverse transform
+    affects final evaluation scores.
+    """
+    wf = pe.Workflow( name=name )
+
+    inputnode = pe.Node(niu.IdentityInterface(fields=['in_orig', 'in_dist', 'in_tpms', 'in_surf',
+                        'in_mask' ]),
+                        name='inputnode' )
+
+    outputnode = pe.Node(niu.IdentityInterface(fields=['out_corr', 'out_tpms',
+                         'out_surf', 'out_field', 'out_mask' ]),
+                         name='outputnode' )
+
+    # Invert field
+
+    # Compute corrected images
+
+    # Apply tfm to tpms
+    applytfm = pe.Node( iface.FieldBasedWarp(), name="ApplyWarp" )
+
+    # Connect
+    wf.connect([
     ])
 
     return wf

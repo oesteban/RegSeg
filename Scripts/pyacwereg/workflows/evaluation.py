@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-03 15:53:55
+# @Last Modified time: 2014-04-03 17:21:39
 
 import os
 import os.path as op
@@ -80,8 +80,8 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
                ,( input_tst,   merge_tst, [( 'in_imag', 'in_files' )])
                ,( input_ref,     overlap, [( 'in_tpms', 'in_ref')] )
                ,( input_tst,     overlap, [( 'in_tpms', 'in_tst')] )
-               ,( input_ref,     diff_im, [('in_mask','mask1'),
-                                           ('in_mask','mask2')])
+               ,( input_ref,     diff_im, [( 'in_mask','mask1'),
+                                           ( 'in_mask','mask2')])
                ,( merge_ref,     diff_im, [( 'merged_file', 'volume1')])
                ,( merge_tst,     diff_im, [( 'merged_file', 'volume2')])
                ,( input_ref,    diff_fld, [( 'in_field', 'in_ref'), ('in_mask','mask')])
@@ -177,3 +177,27 @@ def bspline( name='BSplineEvaluation', methods=None ):
         ])
 
     return wf
+
+
+if __name__== '__main__':
+    from argparse import ArgumentParser
+    from argparse import RawTextHelpFormatter
+    from os import getcwd
+    from shutil import copyfileobj
+
+    import os
+    import os.path as op
+    import nipype.pipeline.engine as pe             # pipeline engine
+    import pyacwereg.workflows.epi as epi
+    from IPython.display import Image
+    import pyacwereg.workflows.evaluation as ev
+    data_dir = op.join( '/scr/data', 'IXI_dataset' )
+    work_dir = op.abspath( '/home/oesteban/tmp' )
+
+    mm = ev.bspline()
+    mm.base_dir = work_dir
+    mm.inputs.inputnode.subject_id = 'S400'
+    mm.inputs.inputnode.data_dir = data_dir
+    mm.inputs.inputnode.grid_size = 6
+
+    mm.run()
