@@ -81,7 +81,7 @@ namespace bfs = boost::filesystem;
 const static unsigned int DIMENSION = 3;
 
 typedef itk::Image<float, DIMENSION>                         ChannelType;
-typedef itk::Vector<float, 1u>                               VectorPixelType;
+typedef itk::Vector<float, 2u>                               VectorPixelType;
 typedef itk::Image<VectorPixelType, 3u>                      ImageType;
 typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 

@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
 
 	typename FieldWriter::Pointer ff = FieldWriter::New();
 	ff->SetInput( transform->GetOutputField() );
-	ff->SetFileName( (outPrefix + "dispfield.nii.gz").c_str() );
+	ff->SetFileName( (outPrefix + "_dispfield.nii.gz").c_str() );
 	ff->Update();
 
 	MaskPointer mask;
