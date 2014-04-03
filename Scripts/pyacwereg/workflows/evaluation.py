@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-03 15:25:45
+# @Last Modified time: 2014-04-03 15:39:28
 
 import os
 import os.path as op
@@ -31,6 +31,15 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
     similarity, displacement fields difference, mesh distances, and overlap indices.
     """
 
+    def _average( in_file ):
+        import numpy as np
+        import nibabel as nb
+
+        data = nb.load( in_file ).get_data()
+        data = np.ma.mask_equal( data, 0 )
+        return [ data.mean(), data.std(), data.max(), data.min(), np.ma.extras.median(data) ]
+
+
     wf = pe.Workflow( name=name )
     input_ref = pe.Node( niu.IdentityInterface( fields=[ 'in_imag',
                         'in_tpms','in_surf','in_field', 'in_mask' ] ),
@@ -40,7 +49,7 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
                         name='tstnode' )
     inputnode = pe.Node( niu.IdentityInterface( fields=['subject_id', 'method']),
                          name='infonode' )
-    outputnode = pe.Node(niu.IdentityInterface(fields=[ 'out_file', 'out_tpm_diff' ]),
+    outputnode = pe.Node(niu.IdentityInterface(fields=[ 'out_file', 'out_tpm_diff', 'out_field_err' ]),
                          name='outputnode' )
 
     merge_ref = pe.Node( fsl.Merge(dimension='t'), name='ConcatRefInputs' )
@@ -60,7 +69,10 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
     csv.inputs.field_headings = [ 'subject_id', 'method',
                                   'di_avg', 'di_tpm0', 'di_tpm1', 'di_tpm2',
                                   'ji_avg', 'ji_tpm0', 'ji_tpm1', 'ji_tpm2',
-                                  'cc_im', 'max_err_field', 'err_surf' ]
+                                  'cc_im',
+                                  'err_field_avg','err_field_std','err_field_max',
+                                  'err_field_min','err_field_median',
+                                  'err_surf' ]
 
     wf.connect( [
                 ( inputnode,   row_merge, [( 'subject_id', 'in1'), ('method','in2')])
@@ -72,18 +84,19 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
                                            ('in_mask','mask2')])
                ,( merge_ref,     diff_im, [( 'merged_file', 'volume1')])
                ,( merge_tst,     diff_im, [( 'merged_file', 'volume2')])
-               ,( input_ref,    diff_fld, [( 'in_field', 'volume1'), ('in_mask','mask_volume')])
-               ,( input_tst,    diff_fld, [( 'in_field', 'volume2')])
+               ,( input_ref,    diff_fld, [( 'in_field', 'in_ref'), ('in_mask','mask')])
+               ,( input_tst,    diff_fld, [( 'in_field', 'in_tst')])
                ,( input_ref,        mesh, [( 'in_surf', 'surface1')])
                ,( input_tst,        mesh, [( 'in_surf', 'surface2')])
                ,( overlap,     row_merge, [( 'jaccard', 'in3'), ('class_fji','in4'),
                                            ( 'dice', 'in5'), ('class_fdi', 'in6') ])
                ,( diff_im,     row_merge, [( 'similarity','in7')])
-               ,( diff_fld,    row_merge, [( 'distance', 'in8')])
+               ,( diff_fld,    row_merge, [(('out_map',_average), 'in8' ) ])
                ,( mesh,        row_merge, [( 'distance', 'in9')])
                ,( row_merge,         csv, [( 'out', 'new_fields')])
                ,( csv,        outputnode, [( 'csv_file', 'out_file')])
                ,( overlap,    outputnode, [( 'diff_file','out_tpm_diff')])
+               ,( diff_fld,   outputnode, [( 'distance', 'out_field_err')])
     ])
 
     return wf
