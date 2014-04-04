@@ -83,7 +83,7 @@ def identity_wf( name='Identity'):
 
     # Connect
     wf.connect([
-         ( inputnode,       inv, [ ('in_field','in_file' ) ])
+         ( inputnode,       inv, [ ('in_field','in_field' ) ])
         ,( inputnode,     merge, [ ('in_dist', 'in1'), ('in_tpms', 'in2' ) ])
         ,( inputnode,  applytfm, [ ('in_mask', 'in_mask'),
                                    ('in_surf', 'in_surf') ])
@@ -92,7 +92,7 @@ def identity_wf( name='Identity'):
         ,( applytfm,      split, [ ('out_file', 'inlist')])
         ,( split,    outputnode, [ ('out1', 'out_corr' ),
                                    ('out2', 'out_tpms' )])
-        ,( inv,      outputnode, [ ('out_file','out_field') ])
+        ,( inv,      outputnode, [ ('out_field','out_field') ])
         ,( applytfm, outputnode, [ ('out_surf', 'out_surf'),
                                    ('out_mask', 'out_mask')])
     ])

@@ -102,7 +102,7 @@ def normalize_tpms( in_files, in_mask=None, out_files=[] ):
 
 
     for i,out_file in enumerate( out_files ):
-        data = np.masked_equal( img_data[i], 0 )
+        data = np.ma.masked_equal( img_data[i], 0 )
         probmap = data / weights
         hdr = imgs[i].get_header().copy()
         hdr['data_type']= 16

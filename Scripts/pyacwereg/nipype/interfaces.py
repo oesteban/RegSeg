@@ -16,9 +16,9 @@ import warnings
 import numpy as np
 import nibabel as nib
 
-from nipype.interfaces.base import (traits, TraitedSpec, CommandLine,
-                                    CommandLineInputSpec, InputMultiPath,
-                                    OutputMultiPath, File,
+from nipype.interfaces.base import (traits, TraitedSpec, CommandLine, BaseInterface,
+                                    CommandLineInputSpec, BaseInterfaceInputSpec,
+                                    InputMultiPath, OutputMultiPath, File,
                                     isdefined, Undefined )
 
 from nipype.utils.filemanip import load_json, save_json, split_filename, fname_presuffix
@@ -366,8 +366,8 @@ class InverseField( BaseInterface ):
     inverse of each vector.
     """
     input_spec = InverseFieldInputSpec
-    output_spec = InverseFieldOutputSpect
-    self._out_file = ''
+    output_spec = InverseFieldOutputSpec
+    _out_file = ''
 
     def _run_interface( self, runtime ):
         import numpy as np
@@ -378,7 +378,7 @@ class InverseField( BaseInterface ):
         data = -1.0 * im.get_data()
         nii = nb.Nifti1Image( data, im.get_affine(), im.get_header() )
         if not isdefined( self.inputs.out_field ):
-            fname, ext = op.splitext( op.basename(in_file) )
+            fname, ext = op.splitext( op.basename(self.inputs.in_field) )
             if ext == '.gz':
                 fname, ext2 = op.splitext( fname )
                 ext = ext2 + ext
@@ -386,7 +386,7 @@ class InverseField( BaseInterface ):
         else:
             out_file = self.inputs.out_field
 
-        self._out_file = out_field
+        self._out_file = out_file
 
         nb.save( nii, out_file )
 
