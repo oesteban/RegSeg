@@ -76,20 +76,19 @@ def normalize_tpms( in_files, in_mask=None, out_files=[] ):
 
     imgs = [ nib.load(fim) for fim in in_files ]
     img_data = np.array( [ im.get_data() for im in imgs ] ).astype( 'f32' )
-    img_data[img_data>1.0] = 1.0
+    #img_data[img_data>1.0] = 1.0
     img_data[img_data<0.0] = 0.0
     weights = np.sum( img_data, axis=0 )
 
-    img_data[0][weights==0] = 1.0
-    weights[weights==0] = 1.0
-
     msk = np.ones_like( imgs[0].get_data() )
+    msk[ weights<= 0 ] = 0
 
     if not in_mask is None:
         msk = nib.load( in_mask ).get_data()
         msk[ msk<=0 ] = 0
         msk[ msk>0 ] = 1
 
+    msk = np.ma.masked_equal( msk, 0 )
 
     if len( out_files )==0:
         for i,finname in enumerate( in_files ):
@@ -103,11 +102,11 @@ def normalize_tpms( in_files, in_mask=None, out_files=[] ):
 
 
     for i,out_file in enumerate( out_files ):
-            data = img_data[i] / weights
-            data = data * msk
-            hdr = imgs[i].get_header().copy()
-            hdr['data_type']= 16
-            hdr.set_data_dtype( 'float32' )
-            nib.save( nib.Nifti1Image( data, imgs[i].get_affine(), hdr ), out_file )
+        data = np.masked_equal( img_data[i], 0 )
+        probmap = data / weights
+        hdr = imgs[i].get_header().copy()
+        hdr['data_type']= 16
+        hdr.set_data_dtype( 'float32' )
+        nib.save( nib.Nifti1Image( probmap.astype(np.float32), imgs[i].get_affine(), hdr ), out_file )
 
     return out_files
