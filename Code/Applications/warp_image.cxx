@@ -137,6 +137,7 @@ int main(int argc, char *argv[]) {
 	TransformPointer transform;
 	if ( movingSurfaceNames.size() > 0 ) {
 		transform = TransformType::New();
+		transform->SetDisplacementField(field);
 	}
 
 	for( size_t i = 0; i<movingSurfaceNames.size(); i++){
