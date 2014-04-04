@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-03 17:21:39
+# @Last Modified time: 2014-04-04 14:47:31
 
 import os
 import os.path as op
@@ -26,7 +26,7 @@ from smri import prepare_smri
 from distortion import bspline_deform
 from registration import identity_wf,default_regseg
 
-def registration_ev( name='EvaluateMapping', fresults='results.csv'):
+def registration_ev( name='EvaluateMapping' ):
     """ Workflow that provides different scores comparing two registration methods. It compares images
     similarity, displacement fields difference, mesh distances, and overlap indices.
     """
@@ -47,7 +47,7 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
     input_tst = pe.Node( niu.IdentityInterface( fields=['in_imag', 'in_tpms',
                                                         'in_surf','in_field' ] ),
                         name='tstnode' )
-    inputnode = pe.Node( niu.IdentityInterface( fields=['subject_id', 'method']),
+    inputnode = pe.Node( niu.IdentityInterface( fields=['subject_id', 'method', 'out_csv']),
                          name='infonode' )
     outputnode = pe.Node(niu.IdentityInterface(fields=[ 'out_file', 'out_tpm_diff', 'out_field_err' ]),
                          name='outputnode' )
@@ -65,7 +65,6 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
                       name='SurfDistance')
 
     csv = pe.Node( namisc.AddCSVRow(), name="AddRow" )
-    csv.inputs.in_file = fresults
     csv.inputs.field_headings = [ 'subject_id', 'method',
                                   'di_avg', 'di_tpm0', 'di_tpm1', 'di_tpm2',
                                   'ji_avg', 'ji_tpm0', 'ji_tpm1', 'ji_tpm2',
@@ -76,6 +75,7 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
 
     wf.connect( [
                 ( inputnode,   row_merge, [( 'subject_id', 'in1'), ('method','in2')])
+               ,( inputnode,         csv, [( 'out_csv', 'in_file' )])
                ,( input_ref,   merge_ref, [( 'in_imag', 'in_files' )])
                ,( input_tst,   merge_tst, [( 'in_imag', 'in_files' )])
                ,( input_ref,     overlap, [( 'in_tpms', 'in_ref')] )
@@ -101,7 +101,7 @@ def registration_ev( name='EvaluateMapping', fresults='results.csv'):
 
     return wf
 
-def bspline( name='BSplineEvaluation', methods=None ):
+def bspline( name='BSplineEvaluation', methods=None, results=None ):
     """ A workflow to evaluate registration methods generating a gold standard
     with random bspline deformations.
 
@@ -136,7 +136,9 @@ def bspline( name='BSplineEvaluation', methods=None ):
     else:
         methods = np.atleast_1d( methods ).tolist()
 
-    inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'data_dir','grid_size' ] ), name='inputnode' )
+    inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'data_dir',
+                                                         'grid_size', 'out_csv' ] ),
+                        name='inputnode' )
     outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_tpms',
                          'out_surfs','out_field', 'out_coeff', 'out_overlap' ]),
                          name='outputnode' )
@@ -159,8 +161,9 @@ def bspline( name='BSplineEvaluation', methods=None ):
     for i,reg in enumerate(methods):
         evwfs.append( registration_ev( name=('Ev_%s' % reg.name) ) )
         evwfs[i].inputs.infonode.method = reg.name
+
         wf.connect( [
-             ( inputnode, evwfs[i], [ ('subject_id', 'infonode.subject_id')])
+             ( inputnode, evwfs[i], [ ('subject_id', 'infonode.subject_id') ] )
             ,( prep,     reg, [('outputnode.out_surfs','inputnode.in_surf'),
                                ('outputnode.out_smri_brain', 'inputnode.in_orig' ),
                                ('outputnode.out_tpms', 'inputnode.in_tpms') ])
@@ -181,6 +184,12 @@ def bspline( name='BSplineEvaluation', methods=None ):
             wf.connect( [
                 ( dist, reg, [( 'outputnode.out_field', 'inputnode.in_field')])
             ])
+
+        # Connect results output file
+        if not results is None:
+            evwfs[i].inputs.infonode.out_csv = results
+        else:
+            wf.connect([ ( inputnode, evwfs[i], [('out_csv', 'infonode.out_csv')] ) ])
 
     return wf
 
