@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-04 20:21:39
+# @Last Modified time: 2014-04-04 20:25:28
 
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
@@ -20,7 +20,7 @@ import pyacwereg.workflows.evaluation as ev
 
 
 if __name__== '__main__':
-    parser = ArgumentParser(description='Run evaluation workflow'
+    parser = ArgumentParser(description='Run evaluation workflow',
                             formatter_class=RawTextHelpFormatter)
 
     g_input = parser.add_argument_group('Inputs')
@@ -30,12 +30,11 @@ if __name__== '__main__':
                          help='directory where subjects are found')
     g_input.add_argument('-s', '--subjects', action='store',
                          default='S*', help='subject id or pattern of ids')
-
     g_input.add_argument('-g', '--grid_size', action='store',
                          default=[6,6,6], nargs='+',
                          help='number of control points')
     g_input.add_argument('-w', '--work_dir', action='store',
-                         default=os.getcwd()),
+                         default=os.getcwd(),
                          help='directory where subjects are found')
 
     g_output = parser.add_argument_group('Outputs')
@@ -55,7 +54,7 @@ if __name__== '__main__':
 
 
     mm = ev.bspline()
-    mm.base_dir = work_dir
+    mm.base_dir = options.work_dir
     mm.inputs.inputnode.subject_id = subjects[0]
     mm.inputs.inputnode.data_dir = options.data_dir
     mm.inputs.inputnode.grid_size = options.grid_size

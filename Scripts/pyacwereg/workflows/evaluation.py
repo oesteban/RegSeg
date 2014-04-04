@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-04 19:02:07
+# @Last Modified time: 2014-04-04 19:39:15
 
 import os
 import os.path as op
@@ -205,27 +205,3 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
 
 
     return wf
-
-
-if __name__== '__main__':
-    from argparse import ArgumentParser
-    from argparse import RawTextHelpFormatter
-    from os import getcwd
-    from shutil import copyfileobj
-
-    import os
-    import os.path as op
-    import nipype.pipeline.engine as pe             # pipeline engine
-    import pyacwereg.workflows.epi as epi
-    from IPython.display import Image
-    import pyacwereg.workflows.evaluation as ev
-    data_dir = op.join( '/scr/data', 'IXI_dataset' )
-    work_dir = op.abspath( '/home/oesteban/tmp' )
-
-    mm = ev.bspline()
-    mm.base_dir = work_dir
-    mm.inputs.inputnode.subject_id = 'S400'
-    mm.inputs.inputnode.data_dir = data_dir
-    mm.inputs.inputnode.grid_size = 6
-
-    mm.run()
