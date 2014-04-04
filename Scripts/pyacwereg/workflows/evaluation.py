@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-04 14:47:31
+# @Last Modified time: 2014-04-04 14:50:38
 
 import os
 import os.path as op
@@ -189,7 +189,10 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
         if not results is None:
             evwfs[i].inputs.infonode.out_csv = results
         else:
-            wf.connect([ ( inputnode, evwfs[i], [('out_csv', 'infonode.out_csv')] ) ])
+            wf.connect([
+             ( inputnode, evwfs[i], [ ('out_csv', 'infonode.out_csv') ])
+            ])
+
 
     return wf
 
