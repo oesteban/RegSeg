@@ -14,14 +14,15 @@
 int main(int argc, char *argv[]) {
 	std::string outPrefix = "displ";
 	std::string fieldname,maskfile;
-	std::vector< std::string > fixedImageNames;
+	std::vector< std::string > fixedImageNames, movingSurfaceNames;
 
 	bpo::options_description all_desc("Usage");
 	all_desc.add_options()
 			("help,h", "show help message")
+			("images,I", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
+			("surfaces,S", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken(),	"moving image file")
 			("displacement-field,F", bpo::value < std::string >(&fieldname), "displacement field" )
 			("mask,M", bpo::value< std::string >(&maskfile), "mask file" )
-			("images,I", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files");
 
 	bpo::variables_map vm;
@@ -132,5 +133,37 @@ int main(int argc, char *argv[]) {
 		w->Update();
 
 	}
+
+	TransformPointer transform;
+	if ( movingSurfaceNames.size() > 0 ) {
+		transform = TransformType::New();
+	}
+
+	for( size_t i = 0; i<movingSurfaceNames.size(); i++){
+		MeshReaderPointer r = MeshReaderType::New();
+		r->SetFileName( movingSurfaceNames[i] );
+		r->Update();
+
+		MeshPointer mesh = r->GetOutput();
+
+		PointsIterator p_it = mesh->GetPoints()->Begin();
+		PointsIterator p_end = mesh->GetPoints()->End();
+
+		MeshPointType p;
+		while ( p_it!=p_end ) {
+			p = p_it.Value();
+			p_it.Value()+= p - transform->TransformPoint( p );
+			++p_it;
+		}
+
+		MeshWriterPointer wmesh = MeshWriterType::New();
+		std::stringstream ss;
+		ss << outPrefix << "_warped_" << i << ".vtk";
+		wmesh->SetFileName( ss.str().c_str() );
+		wmesh->SetInput( mesh );
+		wmesh->Update();
+
+	}
+
 }
 

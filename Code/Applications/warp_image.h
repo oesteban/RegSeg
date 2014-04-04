@@ -29,6 +29,11 @@
 #include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkBinaryThresholdImageFilter.h>
 
+#include <itkDisplacementFieldTransform.h>
+#include <itkMesh.h>
+#include <itkVTKPolyDataReader.h>
+#include "rstkVTKPolyDataWriter.h"
+
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 
@@ -64,6 +69,19 @@ typedef itk::MaskImageFilter< ChannelType, MaskType, ChannelType > MaskFilter;
 typedef itk::WarpImageFilter
 		         < ChannelType, ChannelType, DisplacementFieldType >     WarpFilter;
 typedef typename WarpFilter::Pointer                         WarpFilterPointer;
+
+typedef typename itk::DisplacementFieldTransform
+		                           < ScalarType, DIMENSION>    TransformType;
+typedef typename TransformType::Pointer                        TransformPointer;
+
+typedef itk::Mesh< float, DIMENSION >                          MeshType;
+typedef typename MeshType::Pointer                             MeshPointer;
+typedef typename MeshType::PointType                           MeshPointType;
+typedef typename MeshType::PointsContainer::Iterator           PointsIterator;
+typedef itk::VTKPolyDataReader<MeshType>                       MeshReaderType;
+typedef typename MeshReaderType::Pointer                       MeshReaderPointer;
+typedef rstk::VTKPolyDataWriter<MeshType>                      MeshWriterType;
+typedef typename MeshWriterType::Pointer                       MeshWriterPointer;
 
 int main(int argc, char *argv[]);
 
