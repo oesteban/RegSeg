@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-04 14:50:38
+# @Last Modified time: 2014-04-04 14:53:03
 
 import os
 import os.path as op
@@ -180,7 +180,7 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
         ])
 
         # Connect in_field in case it is an identity workflow
-        if 'in_field' in [ i[0] for i in reg.inputs.inputnode.items() ]:
+        if 'in_field' in [ item[0] for item in reg.inputs.inputnode.items() ]:
             wf.connect( [
                 ( dist, reg, [( 'outputnode.out_field', 'inputnode.in_field')])
             ])
