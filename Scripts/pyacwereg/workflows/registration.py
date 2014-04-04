@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-03 17:25:42
+# @Last Modified time: 2014-04-04 12:41:35
 
 import os
 import os.path as op
@@ -63,8 +63,27 @@ def identity_wf( name='Identity'):
     """
     wf = pe.Workflow( name=name )
 
+    def _invert_field( in_file, out_file=None ):
+        import numpy as np
+        import nibabel as nb
+        import os.path as op
+
+        im = nb.load( in_file )
+        data = -1.0 * im.get_data()
+        nii = nb.Nifti1Image( data, im.get_affine(), im.get_header() )
+        if out_file is None:
+            fname, ext = op.splitext( op.basename(in_file) )
+            if ext == '.gz':
+                fname, ext2 = op.splitext( fname )
+                ext = ext2 + ext
+            out_file = op.abspath( fname + '_inv' + ext )
+
+        nb.save( nii, out_file )
+        return out_file
+
+
     inputnode = pe.Node(niu.IdentityInterface(fields=['in_orig', 'in_dist', 'in_tpms', 'in_surf',
-                        'in_mask' ]),
+                        'in_mask', 'in_field' ]),
                         name='inputnode' )
 
     outputnode = pe.Node(niu.IdentityInterface(fields=['out_corr', 'out_tpms',
@@ -72,14 +91,31 @@ def identity_wf( name='Identity'):
                          name='outputnode' )
 
     # Invert field
+    inv = pe.Node( niu.Function( input_names=['in_file'],
+                   output_names=['out_file'], function=_invert_field ),
+                   name='InvertField' )
 
     # Compute corrected images
+    merge = pe.Node( niu.Merge(2), name='Merge' )
+    split = pe.Node( niu.Split(splits=[2,3]), name='Split')
 
     # Apply tfm to tpms
     applytfm = pe.Node( iface.FieldBasedWarp(), name="ApplyWarp" )
 
     # Connect
     wf.connect([
+         ( inputnode,       inv, [ ('in_field','in_file' ) ])
+        ,( inputnode,     merge, [ ('in_dist', 'in1'), ('in_tpms', 'in2' ) ])
+        ,( inputnode,  applytfm, [ ('in_mask', 'in_mask'),
+                                   ('in_surf', 'in_surf') ])
+        ,( merge,      applytfm, [ ('out', 'in_file' )])
+        ,( inv,        applytfm, [ ('out_file', 'in_field')])
+        ,( applytfm,      split, [ ('out_file', 'inlist')])
+        ,( split,    outputnode, [ ('out1', 'out_corr' ),
+                                   ('out2', 'out_tpms' )])
+        ,( inv,      outputnode, [ ('out_file','out_field') ])
+        ,( applytfm, outputnode, [ ('out_surf', 'out_surf'),
+                                   ('out_mask', 'out_mask')])
     ])
 
     return wf

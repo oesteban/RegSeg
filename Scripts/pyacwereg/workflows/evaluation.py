@@ -24,7 +24,7 @@ import pyacwereg.nipype.interfaces as iface
 
 from smri import prepare_smri
 from distortion import bspline_deform
-from registration import default_regseg
+from registration import identity_wf,default_regseg
 
 def registration_ev( name='EvaluateMapping', fresults='results.csv'):
     """ Workflow that provides different scores comparing two registration methods. It compares images
@@ -132,7 +132,7 @@ def bspline( name='BSplineEvaluation', methods=None ):
 
 
     if methods is None:
-        methods = [ default_regseg() ]
+        methods = [ identity_wf(), default_regseg() ]
     else:
         methods = np.atleast_1d( methods ).tolist()
 
@@ -175,6 +175,12 @@ def bspline( name='BSplineEvaluation', methods=None ):
                                ('outputnode.out_surf', 'tstnode.in_surf'),
                                ('outputnode.out_field','tstnode.in_field' ) ])
         ])
+
+        # Connect in_field in case it is an identity workflow
+        if 'in_field' in [ i[0] for i in reg.inputs.inputnode.items() ]:
+            wf.connect( [
+                ( dist, reg, [( 'outputnode.out_field', 'inputnode.in_field')])
+            ])
 
     return wf
 

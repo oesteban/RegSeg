@@ -309,11 +309,14 @@ class FieldBasedWarpInputSpec( CommandLineInputSpec ):
     in_field = File(exists=True, mandatory=False, argstr="-F %s",
                desc='field')
     in_mask = File(exists=True, argstr='-M %s', desc='set a mask')
+    in_surf = InputMultiPath(File(exists=True), argstr="-S %s",
+              desc='surface(s) to be deformed')
     out_prefix = traits.Str( "fbased", desc='output files prefix', argstr="-o %s", usedefault=True,
                              mandatory=True )
 
 class FieldBasedWarpOutputSpec( TraitedSpec ):
     out_file = OutputMultiPath(File(exists=True, desc='warped input files'))
+    out_surf = OutputMultiPath(File(exists=True, desc='warped input surfaces'))
     out_mask = File(exists=True, desc='warped input mask')
 
 class FieldBasedWarp( CommandLine ):
@@ -326,9 +329,10 @@ class FieldBasedWarp( CommandLine ):
     >>> warp = FieldBasedWarp()
     >>> warp.inputs.in_file = 'moving.nii'
     >>> warp.inputs.in_field = 'field.nii'
+    >>> warp.inputs.in_surf = [ 'lh.white.vtk', 'rh.white.vtk' ]
     >>> warp.inputs.out_prefix = 'myprefix'
     >>> warp.cmdline
-    'warp_image -I moving.nii -f field.nii -o myprefix'
+    'warp_image -I moving.nii -f field.nii -S lh.white.vtk rh.white.vtk -o myprefix'
     """
 
     input_spec = FieldBasedWarpInputSpec
@@ -344,5 +348,7 @@ class FieldBasedWarp( CommandLine ):
         if isdefined( self.inputs.in_mask ):
             outputs['out_mask'] = op.abspath( '%s_mask_warped.nii.gz' % out_prefix )
 
+        if isdefined( self.inputs.in_surf ):
+            outputs['out_surf'] = [ op.abspath( '%s_warped_%d.vtk' % ( out_prefix, i ))  for i in range(len(self.inputs.in_surf)) ]
         return outputs
 
