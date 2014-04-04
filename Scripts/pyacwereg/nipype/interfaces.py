@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-31 13:36:36
+# @Last Modified time: 2014-04-04 17:57:00
 
 import os
 import os.path as op
@@ -352,3 +352,47 @@ class FieldBasedWarp( CommandLine ):
             outputs['out_surf'] = [ op.abspath( '%s_warped_%d.vtk' % ( out_prefix, i ))  for i in range(len(self.inputs.in_surf)) ]
         return outputs
 
+class InverseFieldInputSpec( BaseInterfaceInputSpec ):
+    in_field = File( exists=True, mandatory=True,
+                     desc='Displacements field to be inverted')
+    out_field = File( desc='Output file name')
+
+class InverseFieldOutputSpec( TraitedSpec ):
+    out_field = File( exists=True,
+                      desc='Inverted displacement field')
+
+class InverseField( BaseInterface ):
+    """ Takes a displacements field as input and computes the
+    inverse of each vector.
+    """
+    input_spec = InverseFieldInputSpec
+    output_spec = InverseFieldOutputSpect
+    self._out_file = ''
+
+    def _run_interface( self, runtime ):
+        import numpy as np
+        import nibabel as nb
+        import os.path as op
+
+        im = nb.load( self.inputs.in_field )
+        data = -1.0 * im.get_data()
+        nii = nb.Nifti1Image( data, im.get_affine(), im.get_header() )
+        if not isdefined( self.inputs.out_field ):
+            fname, ext = op.splitext( op.basename(in_file) )
+            if ext == '.gz':
+                fname, ext2 = op.splitext( fname )
+                ext = ext2 + ext
+            out_file = op.abspath( fname + '_inv' + ext )
+        else:
+            out_file = self.inputs.out_field
+
+        self._out_file = out_field
+
+        nb.save( nii, out_file )
+
+        return runtime
+
+    def _list_outputs( self ):
+        outputs = self._outputs().get()
+        outputs['out_field'] = self._out_file
+        return outputs

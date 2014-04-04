@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-04 14:53:03
+# @Last Modified time: 2014-04-04 18:06:08
 
 import os
 import os.path as op
@@ -20,7 +20,9 @@ import nipype.algorithms.eval as namev
 import nipype.interfaces.fsl as fsl
 from nipype.interfaces.nipy.utils import Similarity
 import nipype.pipeline.engine as pe             # pipeline engine
+
 import pyacwereg.nipype.interfaces as iface
+from pyacwereg.utils.misc import normalize_tpms as normalize
 
 from smri import prepare_smri
 from distortion import bspline_deform
@@ -59,6 +61,7 @@ def registration_ev( name='EvaluateMapping' ):
     overlap = pe.Node( namev.FuzzyOverlap(weighting='volume'), name='Overlap' )
     row_merge = pe.Node( niu.Merge(9), name='MergeIndices')
     diff_im = pe.Node( Similarity(metric='cc'), name='ContrastDiff')
+    inv_fld = pe.Node( iface.InverseField(), name='InvertField' )
     diff_fld = pe.Node( namev.ErrorMap(), name='FieldDiff')
     mesh = pe.MapNode( namesh.P2PDistance(weighting='surface'),
                       iterfield=[ 'surface1','surface2' ],
@@ -84,7 +87,9 @@ def registration_ev( name='EvaluateMapping' ):
                                            ( 'in_mask','mask2')])
                ,( merge_ref,     diff_im, [( 'merged_file', 'volume1')])
                ,( merge_tst,     diff_im, [( 'merged_file', 'volume2')])
-               ,( input_ref,    diff_fld, [( 'in_field', 'in_ref'), ('in_mask','mask')])
+               ,( input_ref,     inv_fld, [( 'in_field', 'in_field') ])
+               ,( input_ref,    diff_fld, [( 'in_mask','mask')])
+               ,( inv_fld,      diff_fld, [( 'out_field', 'in_ref') ])
                ,( input_tst,    diff_fld, [( 'in_field', 'in_tst')])
                ,( input_ref,        mesh, [( 'in_surf', 'surface1')])
                ,( input_tst,        mesh, [( 'in_surf', 'surface2')])
@@ -158,9 +163,12 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
     ])
 
     evwfs = []
+    norm_tpms = []
     for i,reg in enumerate(methods):
         evwfs.append( registration_ev( name=('Ev_%s' % reg.name) ) )
         evwfs[i].inputs.infonode.method = reg.name
+
+        norm_tpms.append( pe.Node( niu.Function( input_names=['in_files','in_mask'], output_names=['out_files'], function=normalize ), name='Normalize%02d' % i ) )
 
         wf.connect( [
              ( inputnode, evwfs[i], [ ('subject_id', 'infonode.subject_id') ] )
@@ -173,10 +181,11 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
                                ('outputnode.out_surfs',      'refnode.in_surf'),
                                ('outputnode.out_mask',       'refnode.in_mask'), ])
             ,( dist,evwfs[i], [('outputnode.out_field',      'refnode.in_field' ) ])
+            ,( reg, norm_tpms[i], [ ('outputnode.out_tpms', 'in_files') ] )
             ,( reg, evwfs[i], [('outputnode.out_corr', 'tstnode.in_imag'),
-                               ('outputnode.out_tpms', 'tstnode.in_tpms'),
                                ('outputnode.out_surf', 'tstnode.in_surf'),
                                ('outputnode.out_field','tstnode.in_field' ) ])
+            ,( norm_tpms[i],evwfs[i], [('out_files', 'tstnode.in_tpms')])
         ])
 
         # Connect in_field in case it is an identity workflow
