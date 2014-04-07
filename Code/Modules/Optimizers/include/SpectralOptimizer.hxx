@@ -177,6 +177,8 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 
 
 		double normalizer = 1.0;
+		MeasureType energyA = 0;
+		MeasureType energyB = 0;
 
 		for (size_t i = 0; i<Dimension; i++ ) {
 			dBuffer[i] =  this->m_Transform->GetDerivatives()[i]->GetBufferPointer();
@@ -187,17 +189,17 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 			u = *(fBuffer+pix);
 			for ( size_t i = 0; i<Dimension; i++) {
 				// Regularization, first term
-				this->m_RegularizationEnergy+= this->m_Alpha[i] * u[i] * u[i];
+				energyA+= this->m_Alpha[i] * u[i] * u[i];
 
 				// Regularization, second term
 				d_u = *(dBuffer[i] + pix );
 				for( size_t j = 0; j<Dimension; j++) {
-					this->m_RegularizationEnergy+= this->m_Beta[j] * d_u[j] * d_u[j];
+					energyB+= this->m_Beta[j] * d_u[j] * d_u[j];
 				}
 			}
 		}
 
-		this->m_RegularizationEnergy = normalizer * this->m_RegularizationEnergy;
+		this->m_RegularizationEnergy = normalizer * ( energyA + energyB );
 		this->m_RegularizationEnergyUpdated = true;
 	}
 	return this->m_RegularizationEnergy;
