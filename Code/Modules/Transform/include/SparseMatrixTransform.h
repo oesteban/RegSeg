@@ -43,6 +43,8 @@
 #ifndef SPARSEMATRIXTRANSFORM_H_
 #define SPARSEMATRIXTRANSFORM_H_
 
+#include <functional>
+
 #include <itkTransform.h>
 #include <itkPoint.h>
 #include <itkVector.h>
@@ -161,14 +163,6 @@ public:
     typedef itk::ImageHelper< Dimension, Dimension >     Helper;
     typedef itk::ImageTransformHelper< Dimension, Dimension - 1, Dimension - 1 > TransformHelper;
 
-	struct MatrixSectionType {
-		WeightsMatrix *matrix;
-		PointsList *vrows;
-		size_t section_id;
-		size_t first_row;
-		size_t num_rows;
-	};
-
     itkSetMacro( ControlPointsSize, SizeType );
     itkGetConstMacro( ControlPointsSize, SizeType );
 
@@ -248,7 +242,27 @@ protected:
 	SparseMatrixTransform();
 	~SparseMatrixTransform(){};
 
-	void ThreadedComputeMatrix( MatrixSectionType& section, itk::ThreadIdType threadId );
+	enum MatrixType { PHI, S, SPRIME };
+
+	struct MatrixSectionType {
+		WeightsMatrix *matrix;
+		PointsList *vrows;
+		size_t section_id;
+		size_t first_row;
+		size_t num_rows;
+	};
+
+	typedef ScalarType (Self::*FunctionalCallback)( const VectorType, const size_t );
+
+	struct SMTStruct {
+		SparseMatrixTransform *Transform;
+		MatrixType type;
+		WeightsMatrix matrix;
+		PointsList *vrows;
+		PointsList *vcols;
+	};
+
+	void ThreadedComputeMatrix( MatrixSectionType& section, FunctionalCallback func, itk::ThreadIdType threadId );
 	itk::ThreadIdType SplitMatrixSection( itk::ThreadIdType i, itk::ThreadIdType num, MatrixSectionType& section );
 	static ITK_THREAD_RETURN_TYPE ComputeThreaderCallback(void *arg);
 
@@ -260,8 +274,12 @@ protected:
 	DimensionParametersContainer VectorizeField( const FieldType* image );
 	WeightsMatrix MatrixField( const FieldType* image );
 
-	inline ScalarType Evaluate( const VectorType r ) const;
-	inline ScalarType EvaluateDerivative( const VectorType r, size_t dim ) const;
+	inline ScalarType EvaluateFunctional( const VectorType r, const size_t dim = 0 );
+	inline ScalarType EvaluateDerivative( const VectorType r, const size_t dim );
+	//inline ScalarType Evaluate( const VectorType r, const size_t dim, FunctionalCallbackPtr functional, Self& a ) {
+	//	return (a.*functional)(r,dim);
+	//}
+
 	//virtual size_t GetSupport() const = 0;
 
 	/* Field domain definitions */
@@ -301,18 +319,6 @@ protected:
 	FieldPointer          m_Field;
 	DerivativesType       m_Derivatives;
 	FieldPointer          m_OutputField;
-
-
-
-	enum MatrixType { PHI, S };
-
-	struct SMTStruct {
-		SparseMatrixTransform *Transform;
-		MatrixType type;
-		WeightsMatrix matrix;
-		PointsList *vrows;
-		PointsList *vcols;
-	};
 
 	virtual void ComputeMatrix( MatrixType type );
 	virtual void AfterThreadedComputeMatrix( SMTStruct str );
