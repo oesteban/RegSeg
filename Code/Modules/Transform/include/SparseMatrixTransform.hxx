@@ -83,7 +83,7 @@ m_UseImageOutput(false) {
 template< class TScalar, unsigned int NDimensions >
 inline typename SparseMatrixTransform<TScalar,NDimensions>::ScalarType
 SparseMatrixTransform<TScalar,NDimensions>
-::Evaluate( const VectorType r ) const {
+::EvaluateFunctional( const VectorType r, const size_t dim ) {
 	ScalarType wi=1.0;
 	for (size_t i = 0; i<Dimension; i++) {
 		wi*= this->m_KernelFunction->Evaluate( r[i] / this->m_ControlPointsSpacing[i] );
@@ -94,7 +94,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 inline typename SparseMatrixTransform<TScalar,NDimensions>::ScalarType
 SparseMatrixTransform<TScalar,NDimensions>
-::EvaluateDerivative( const VectorType r, size_t dim ) const {
+::EvaluateDerivative( const VectorType r, const size_t dim ) {
 	ScalarType wi=1.0;
 	for (size_t i = 0; i<Dimension; i++) {
 		if( dim == i )
@@ -284,9 +284,10 @@ template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
 ::ComputeMatrix( MatrixType type ) {
-	SMTStruct str;
+	struct SMTStruct str;
 	str.Transform = this;
 	str.type = type;
+
 
 	if ( type == Self::PHI ) {
 		str.vrows = &this->m_OffGridPos;
@@ -318,10 +319,19 @@ template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
 ::AfterThreadedComputeMatrix( SMTStruct str ) {
-	if ( str.type == Self::PHI ) {
+	switch( str.type ) {
+	case Self::PHI:
 		this->m_Phi = str.matrix;
-	} else if ( str.type == Self::S ) {
+		break;
+	case Self::S:
 		this->m_S = str.matrix;
+		break;
+	case Self::SPRIME:
+		this->m_SPrime[0] = str.matrix;
+		break;
+	default:
+		itkExceptionMacro( << "MatrixType not implemented");
+		break;
 	}
 }
 
@@ -342,8 +352,12 @@ SparseMatrixTransform<TScalar,NDimensions>
 	total = str->Transform->SplitMatrixSection( threadId, threadCount, splitSection );
 
 	if( threadId < total ) {
-		str->Transform->ThreadedComputeMatrix( splitSection, threadId );
+		if (str->type == Self::SPRIME )
+			str->Transform->ThreadedComputeMatrix( splitSection, &Self::EvaluateDerivative, threadId );
+		else
+			str->Transform->ThreadedComputeMatrix( splitSection, &Self::EvaluateFunctional, threadId );
 	}
+
 	return ITK_THREAD_RETURN_VALUE;
 }
 
@@ -373,7 +387,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::ThreadedComputeMatrix( MatrixSectionType& section, itk::ThreadIdType threadId ) {
+::ThreadedComputeMatrix( MatrixSectionType& section, FunctionalCallback func, itk::ThreadIdType threadId ) {
 	size_t last = section.first_row + section.num_rows;
 	itk::SizeValueType nRows = section.num_rows;
 	PointsList vrows = *(section.vrows);
@@ -392,6 +406,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 	CoeffImagePointer ref = this->m_CoefficientsImages[0];
 
+
 	// Walk the grid region
 	for ( row = section.first_row; row < last; row++ ) {
 		cols.clear();
@@ -403,7 +418,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 			Helper::ComputeIndex( start, rOffset, rOffsetTable, current );
 			TransformHelper::TransformIndexToPhysicalPoint( this->m_ControlPointsIndexToPhysicalPoint, this->m_ControlPointsOrigin, current, uk);
 			r = ci - uk;
-			wi = this->Evaluate( r );
+			wi = (this->*func)(r, 0);
 
 			if ( fabs(wi) > 1.0e-5) {
 				col = ref->ComputeOffset( current );
