@@ -283,13 +283,14 @@ SparseMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::ComputeMatrix( MatrixType type ) {
+::ComputeMatrix( MatrixType type, size_t dim ) {
 	struct SMTStruct str;
 	str.Transform = this;
 	str.type = type;
+	str.dim = dim;
 
-
-	if ( type == Self::PHI ) {
+	switch( type ) {
+	case Self::PHI:
 		str.vrows = &this->m_OffGridPos;
 
 		if ( this->m_OffGridPos.size() != this->m_NumberOfSamples ) {
@@ -297,21 +298,24 @@ SparseMatrixTransform<TScalar,NDimensions>
 		}
 
 		this->m_OffGridValueMatrix = WeightsMatrix ( this->m_NumberOfSamples, Dimension );
-
-	} else if ( type == Self::S ) {
+		break;
+	case Self::S:
+	case Self::SPRIME:
 		str.vrows = &this->m_OnGridPos;
-	} else {
+		break;
+	default:
 		itkExceptionMacro(<< "Matrix computation not implemented" );
+		break;
 	}
 
 	size_t nRows = str.vrows->size();
 	size_t nCols = this->m_OnGridPos.size();
+
 	str.matrix = WeightsMatrix( nRows, nCols );
 
 	this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
 	this->GetMultiThreader()->SetSingleMethod( this->ComputeThreaderCallback, &str );
 	this->GetMultiThreader()->SingleMethodExecute();
-
 	this->AfterThreadedComputeMatrix(str);
 }
 
@@ -327,7 +331,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->m_S = str.matrix;
 		break;
 	case Self::SPRIME:
-		this->m_SPrime[0] = str.matrix;
+		this->m_SPrime[str.dim] = str.matrix;
 		break;
 	default:
 		itkExceptionMacro( << "MatrixType not implemented");
@@ -431,50 +435,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 			section.matrix->set_row( row, cols, vals );
 		}
 	}
-}
-
-template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::WeightsMatrix
-SparseMatrixTransform<TScalar,NDimensions>
-::ComputeDerivativeMatrix( PointsList vrows, PointsList vcols, size_t dim ) {
-	size_t nRows = vrows.size();
-	size_t nCols = vcols.size();
-
-	WeightsMatrix phi( nRows, nCols );
-
-	ScalarType wi;
-	PointType ci, uk;
-	size_t row, col;
-	VectorType r;
-
-	vcl_vector< int > cols;
-	vcl_vector< ScalarType > vals;
-
-	cols.resize(0);
-	vals.resize(0);
-
-	// Walk the grid region
-	for( row = 0; row < vrows.size(); row++ ) {
-		cols.clear();
-		vals.clear();
-
-		ci = vrows[row];
-		for ( col=0; col < vcols.size(); col++) {
-			uk = vcols[col];
-			r = uk - ci;
-			wi = this->EvaluateDerivative( r, dim );
-
-			if ( fabs(wi) > 1.0e-5) {
-				cols.push_back( col );
-				vals.push_back( wi );
-			}
-		}
-
-		if ( cols.size() > 0 ) {
-			phi.set_row( row, cols, vals );
-		}
-	}
-	return phi;
 }
 
 template< class TScalar, unsigned int NDimensions >
@@ -591,7 +551,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 	for( size_t i = 0; i<Dimension; i++ ) {
 		if( this->m_SPrime[i].rows() == 0 || this->m_SPrime[i].cols() == 0 ) {
-			this->m_SPrime[i] = this->ComputeDerivativeMatrix( this->m_OnGridPos, this->m_OnGridPos, i );
+			this->ComputeMatrix( Self::SPRIME, i );
 		}
 
 		WeightsMatrix result;

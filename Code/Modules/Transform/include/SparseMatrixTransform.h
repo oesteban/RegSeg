@@ -258,6 +258,7 @@ protected:
 		SparseMatrixTransform *Transform;
 		MatrixType type;
 		WeightsMatrix matrix;
+		size_t dim;
 		PointsList *vrows;
 		PointsList *vcols;
 	};
@@ -265,8 +266,6 @@ protected:
 	void ThreadedComputeMatrix( MatrixSectionType& section, FunctionalCallback func, itk::ThreadIdType threadId );
 	itk::ThreadIdType SplitMatrixSection( itk::ThreadIdType i, itk::ThreadIdType num, MatrixSectionType& section );
 	static ITK_THREAD_RETURN_TYPE ComputeThreaderCallback(void *arg);
-
-	WeightsMatrix ComputeDerivativeMatrix( PointsList vrows, PointsList vcols, size_t dim );
 
 	void InitializeCoefficientsImages();
 	DimensionVector Vectorize( const CoefficientsImageType* image );
@@ -276,11 +275,6 @@ protected:
 
 	inline ScalarType EvaluateFunctional( const VectorType r, const size_t dim = 0 );
 	inline ScalarType EvaluateDerivative( const VectorType r, const size_t dim );
-	//inline ScalarType Evaluate( const VectorType r, const size_t dim, FunctionalCallbackPtr functional, Self& a ) {
-	//	return (a.*functional)(r,dim);
-	//}
-
-	//virtual size_t GetSupport() const = 0;
 
 	/* Field domain definitions */
 	SizeType               m_ControlPointsSize;
@@ -320,7 +314,7 @@ protected:
 	DerivativesType       m_Derivatives;
 	FieldPointer          m_OutputField;
 
-	virtual void ComputeMatrix( MatrixType type );
+	virtual void ComputeMatrix( MatrixType type, size_t dim = 0 );
 	virtual void AfterThreadedComputeMatrix( SMTStruct str );
 	virtual size_t ComputeRegionOfPoint(const PointType& point, VectorType& cvector, IndexType& start, IndexType& end, OffsetTableType offsetTable );
 
