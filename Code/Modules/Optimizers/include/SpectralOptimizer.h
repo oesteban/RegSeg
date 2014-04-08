@@ -118,6 +118,7 @@ public:
 	typedef typename Superclass::TransformType                  TransformType;
 	typedef typename Superclass::TransformPointer               TransformPointer;
 	typedef typename Superclass::CoefficientsImageType          CoefficientsImageType;
+	typedef typename CoefficientsImageType::PixelType           CoefficientsValueType;
 	typedef typename Superclass::CoefficientsImagePointer       CoefficientsImagePointer;
 	typedef typename Superclass::CoefficientsImageArray         CoefficientsImageArray;
 	typedef typename Superclass::ParametersType                 ParametersType;

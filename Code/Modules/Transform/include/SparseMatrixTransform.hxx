@@ -268,14 +268,13 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->m_Field->FillBuffer( zerov );
 
 	for( size_t i = 0; i<Dimension; i++ ) {
-		VectorType zerov; zerov.Fill( 0.0 );
-		this->m_Derivatives.push_back( FieldType::New() );
+		this->m_Derivatives[i] = CoefficientsImageType::New();
 		this->m_Derivatives[i]->SetRegions(   this->m_ControlPointsSize );
 		this->m_Derivatives[i]->SetOrigin(    this->m_ControlPointsOrigin );
 		this->m_Derivatives[i]->SetSpacing(   this->m_ControlPointsSpacing );
 		this->m_Derivatives[i]->SetDirection( this->m_ControlPointsDirection );
 		this->m_Derivatives[i]->Allocate();
-		this->m_Derivatives[i]->FillBuffer( zerov );
+		this->m_Derivatives[i]->FillBuffer( 0.0 );
 	}
 
 }
@@ -353,6 +352,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	MatrixSectionType splitSection;
 	splitSection.matrix = &(str->matrix);
 	splitSection.vrows = str->vrows;
+	splitSection.dim = str->dim;
 	total = str->Transform->SplitMatrixSection( threadId, threadCount, splitSection );
 
 	if( threadId < total ) {
@@ -395,6 +395,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	size_t last = section.first_row + section.num_rows;
 	itk::SizeValueType nRows = section.num_rows;
 	PointsList vrows = *(section.vrows);
+	size_t dim = section.dim;
 
 	ScalarType wi;
 	PointType ci, uk;
@@ -422,7 +423,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 			Helper::ComputeIndex( start, rOffset, rOffsetTable, current );
 			TransformHelper::TransformIndexToPhysicalPoint( this->m_ControlPointsIndexToPhysicalPoint, this->m_ControlPointsOrigin, current, uk);
 			r = ci - uk;
-			wi = (this->*func)(r, 0);
+			wi = (this->*func)(r, dim);
 
 			if ( fabs(wi) > 1.0e-5) {
 				col = ref->ComputeOffset( current );
@@ -548,36 +549,51 @@ SparseMatrixTransform<TScalar,NDimensions>
 ::ComputeGradientField( ) {
 	WeightsMatrix coeff = this->VectorizeCoefficients();
 	std::vector< WeightsMatrix > gradValues;
-
+	ScalarType* fbuf[Dimension];
+	WeightsMatrix result[Dimension];
 	for( size_t i = 0; i<Dimension; i++ ) {
 		if( this->m_SPrime[i].rows() == 0 || this->m_SPrime[i].cols() == 0 ) {
 			this->ComputeMatrix( Self::SPRIME, i );
 		}
 
-		WeightsMatrix result;
 
 		// Interpolate
-		this->m_SPrime[i].mult( coeff, result );
-		gradValues.push_back( result );
+		this->m_SPrime[i].mult( coeff, result[i] );
+		gradValues.push_back( result[i] );
+
+		// Clear data buffer and get pointer
+		this->m_Derivatives[i]->FillBuffer( 0.0 );
+		fbuf[i] = this->m_Derivatives[i]->GetBufferPointer();
 	}
 
-	for( size_t i = 0; i<Dimension; i++ ){
-		VectorType v;
-		v.Fill( 0.0 );
-		this->m_Derivatives[i]->FillBuffer( v );
-		VectorType* fbuf = this->m_Derivatives[i]->GetBufferPointer();
-		SparseVectorType r;
 
-		for ( size_t row = 0; row<this->m_NumberOfParameters; row++ ) {
-			for( size_t j = 0; j < Dimension; j++ ){
-				r = gradValues[j].get_row( row );
-				for( size_t k = 0; k< r.size(); k++ ) {
-					v[r[i].first]+= r[i].second;
-				}
+	SparseVectorType r;
+	VectorType v;
+	ScalarType norm;
+
+	for ( size_t row = 0; row<this->m_NumberOfParameters; row++ ) {
+		for( size_t j = 0; j < Dimension; j++ ){
+			v.Fill( 0.0 );
+			r = gradValues[j].get_row( row );
+			for( size_t k = 0; k< r.size(); k++ ) {
+				v[r[k].first] = r[k].second;
 			}
-			*( fbuf + row ) = v;
+			norm = v.GetSquaredNorm();
+			if ( norm > 1.0e-7 )
+				*( fbuf[j] + row ) = norm;
 		}
 	}
+
+	typedef itk::ImageFileWriter< CoefficientsImageType > WW;
+	for( size_t j = 0; j < Dimension; j++ ){
+		typename WW::Pointer w = WW::New();
+		w->SetInput( this->m_Derivatives[j] );
+		std::stringstream ss;
+		ss << "derivative_" << j << ".nii.gz";
+		w->SetFileName( ss.str() );
+		w->Update();
+	}
+
 }
 
 template< class TScalar, unsigned int NDimensions >
