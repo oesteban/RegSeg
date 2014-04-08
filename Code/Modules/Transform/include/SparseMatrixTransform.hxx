@@ -54,6 +54,8 @@
 #include <itkImageAlgorithm.h>
 
 #include <vnl/algo/vnl_sparse_lu.h>
+#include <vnl/vnl_copy.h>
+#include <vnl/vnl_matrix.h>
 #include <vcl_vector.h>
 
 namespace rstk {
@@ -222,7 +224,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 ::InitializeCoefficientsImages() {
 
 	// Compute pixel conversion matrices
-	DirectionType scale;
+	MatrixType scale;
 
 	for ( size_t i = 0; i < Dimension; i++ ) {
 	  if ( this->m_ControlPointsSpacing[i] == 0.0 ) {
@@ -235,7 +237,11 @@ SparseMatrixTransform<TScalar,NDimensions>
 	  itkExceptionMacro(<< "Bad direction, determinant is 0. Direction is " << this->m_ControlPointsDirection);
 	}
 
-	this->m_ControlPointsIndexToPhysicalPoint = this->m_ControlPointsDirection * scale;
+	typedef vnl_matrix< ScalarType > InternalComputationMatrix;
+	InternalComputationMatrix dir( Dimension, Dimension );
+	typedef vnl_matrix< typename DirectionType::ValueType > DirectionVNLMatrix;
+	vnl_copy< DirectionVNLMatrix, InternalComputationMatrix >( this->m_ControlPointsDirection.GetVnlMatrix(), dir );
+	this->m_ControlPointsIndexToPhysicalPoint = MatrixType(dir) * scale;
 	this->m_ControlPointsPhysicalPointToIndex = this->m_ControlPointsIndexToPhysicalPoint.GetInverse();
 
 
@@ -282,7 +288,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::ComputeMatrix( MatrixType type, size_t dim ) {
+::ComputeMatrix( WeightsMatrixType type, size_t dim ) {
 	struct SMTStruct str;
 	str.Transform = this;
 	str.type = type;
@@ -333,7 +339,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->m_SPrime[str.dim] = str.matrix;
 		break;
 	default:
-		itkExceptionMacro( << "MatrixType not implemented");
+		itkExceptionMacro( << "WeightsMatrixType not implemented");
 		break;
 	}
 }

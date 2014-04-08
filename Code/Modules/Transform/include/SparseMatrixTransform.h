@@ -71,43 +71,43 @@ template< class TScalar, unsigned int NDimensions = 3u >
 class SparseMatrixTransform: public itk::DisplacementFieldTransform< TScalar, NDimensions >
 {
 public:
-	/* Standard class typedefs. */
-	typedef SparseMatrixTransform             Self;
-	typedef itk::DisplacementFieldTransform< TScalar, NDimensions > Superclass;
-	typedef itk::SmartPointer< Self >         Pointer;
-	typedef itk::SmartPointer< const Self >   ConstPointer;
-
-	itkTypeMacro( SparseMatrixTransform, Transform );
-	//itkCloneMacro(Self);
-	itkNewMacro( Self );
-
-	itkStaticConstMacro( Dimension, unsigned int, NDimensions );
-
-	typedef TScalar                                  ScalarType;
-
-	typedef itk::Point< ScalarType, Dimension >      PointType;
-	typedef itk::Vector< ScalarType, Dimension >     VectorType;
-
+    /* Standard class typedefs. */
+    typedef SparseMatrixTransform             Self;
+    typedef itk::DisplacementFieldTransform< TScalar, NDimensions > Superclass;
+    typedef itk::SmartPointer< Self >         Pointer;
+    typedef itk::SmartPointer< const Self >   ConstPointer;
+    
+    itkTypeMacro( SparseMatrixTransform, Transform );
+    itkNewMacro( Self );
+    
+    itkStaticConstMacro( Dimension, unsigned int, NDimensions );
+    
+    typedef typename Superclass::ScalarType          ScalarType;
+    typedef itk::Point< ScalarType, Dimension >      PointType;
+    typedef itk::Vector< ScalarType, Dimension >     VectorType;
+    typedef itk::Matrix
+    	    < ScalarType, Dimension, Dimension >     MatrixType;
+    
     typedef itk::KernelFunctionBase<ScalarType>      KernelFunctionType;
     typedef typename KernelFunctionType::Pointer     KernelFunctionPointer;
-
+    
     typedef VNLSparseLUSolverTraits< ScalarType >    SolverType;
-	typedef typename SolverType::MatrixType          WeightsMatrix;
-	typedef typename SolverType::VectorType          DimensionVector;
-	typedef typename WeightsMatrix::row              SparseVectorType;
-
-	typedef itk::DisplacementFieldTransform< ScalarType, Dimension > DisplacementFieldTransformType;
-	typedef typename DisplacementFieldTransformType::Pointer         DisplacementFieldTransformPointer;
-
-	typedef itk::FixedArray< DimensionVector, NDimensions > DimensionParametersContainer;
-
-	typedef std::vector< PointType >                 PointsList;
-
-	typedef itk::Matrix< ScalarType, Dimension, Dimension >        JacobianType;
-
-	typedef itk::DefaultStaticMeshTraits<TScalar, NDimensions, NDimensions, TScalar, TScalar> PointSetTraitsType;
-	typedef itk::PointSet<PointType, NDimensions, PointSetTraitsType>                                     PointSetType;
-	typedef typename PointSetType::Pointer           PointSetPointer;
+    typedef typename SolverType::MatrixType          WeightsMatrix;
+    typedef typename SolverType::VectorType          DimensionVector;
+    typedef typename WeightsMatrix::row              SparseVectorType;
+    
+    typedef itk::DisplacementFieldTransform< ScalarType, Dimension > DisplacementFieldTransformType;
+    typedef typename DisplacementFieldTransformType::Pointer         DisplacementFieldTransformPointer;
+    
+    typedef itk::FixedArray< DimensionVector, NDimensions > DimensionParametersContainer;
+    
+    typedef std::vector< PointType >                 PointsList;
+    
+    typedef itk::Matrix< ScalarType, Dimension, Dimension >        JacobianType;
+    
+    typedef itk::DefaultStaticMeshTraits<TScalar, NDimensions, NDimensions, TScalar, TScalar> PointSetTraitsType;
+    typedef itk::PointSet<PointType, NDimensions, PointSetTraitsType>                                     PointSetType;
+    typedef typename PointSetType::Pointer           PointSetPointer;
 
 
     /** Standard coordinate point type for this class. */
@@ -161,7 +161,7 @@ public:
     typedef itk::ImageVectorOptimizerParametersHelper
     		      < ScalarType, Dimension, Dimension>    OptimizerParametersHelperType;
     typedef itk::ImageHelper< Dimension, Dimension >     Helper;
-    typedef itk::ImageTransformHelper< Dimension, Dimension - 1, Dimension - 1 > TransformHelper;
+    typedef itk::ImageTransformHelper< Dimension, Dimension - 1, Dimension - 1, ScalarType, ScalarType > TransformHelper;
 
     itkSetMacro( ControlPointsSize, SizeType );
     itkGetConstMacro( ControlPointsSize, SizeType );
@@ -242,7 +242,7 @@ protected:
 	SparseMatrixTransform();
 	~SparseMatrixTransform(){};
 
-	enum MatrixType { PHI, S, SPRIME };
+	enum WeightsMatrixType { PHI, S, SPRIME };
 
 	struct MatrixSectionType {
 		WeightsMatrix *matrix;
@@ -257,7 +257,7 @@ protected:
 
 	struct SMTStruct {
 		SparseMatrixTransform *Transform;
-		MatrixType type;
+		WeightsMatrixType type;
 		WeightsMatrix matrix;
 		size_t dim;
 		PointsList *vrows;
@@ -283,8 +283,8 @@ protected:
 	OriginType             m_ControlPointsOrigin;
 	DirectionType          m_ControlPointsDirection;
 	DirectionType          m_ControlPointsDirectionInverse;
-	DirectionType          m_ControlPointsIndexToPhysicalPoint;
-	DirectionType          m_ControlPointsPhysicalPointToIndex;
+	MatrixType             m_ControlPointsIndexToPhysicalPoint;
+	MatrixType             m_ControlPointsPhysicalPointToIndex;
 
 	size_t                 m_NumberOfSamples;     // This is N mesh points
 	size_t                 m_NumberOfParameters;  // This is K nodes
@@ -314,7 +314,7 @@ protected:
 	FieldPointer          m_Field;
 	FieldPointer          m_OutputField;
 
-	virtual void ComputeMatrix( MatrixType type, size_t dim = 0 );
+	virtual void ComputeMatrix( WeightsMatrixType type, size_t dim = 0 );
 	virtual void AfterThreadedComputeMatrix( SMTStruct str );
 	virtual size_t ComputeRegionOfPoint(const PointType& point, VectorType& cvector, IndexType& start, IndexType& end, OffsetTableType offsetTable );
 
