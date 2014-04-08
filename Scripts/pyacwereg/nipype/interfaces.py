@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-04 17:57:00
+# @Last Modified time: 2014-04-08 13:14:59
 
 import os
 import os.path as op
@@ -20,13 +20,17 @@ from nipype.interfaces.base import (traits, TraitedSpec, CommandLine, BaseInterf
                                     CommandLineInputSpec, BaseInterfaceInputSpec,
                                     InputMultiPath, OutputMultiPath, File,
                                     isdefined, Undefined )
+from nipype.interfaces.ants.base import (ANTSCommand, ANTSCommandInputSpec )
 
 from nipype.utils.filemanip import load_json, save_json, split_filename, fname_presuffix
+from nipype.utils.logger import logging
+
 
 warn = warnings.warn
 warnings.filterwarnings('always', category=UserWarning)
+logger = logging.getLogger('interface')
 
-class ACWERegInputGroupSpec( CommandLineInputSpec ):
+class ACWERegInputGroupSpec( ANTSCommandInputSpec ):
     # Functional options
     float_trait = traits.Either( None, traits.Float(1.0) )
     int_trait = traits.Either( None, traits.Int( 0 ) )
@@ -91,7 +95,7 @@ class ACWERegOutputSpec( TraitedSpec ):
 
 
 
-class ACWEReg( CommandLine ):
+class ACWEReg( ANTSCommand ):
     """ Wraps regseg application from ACWERegistration to perform
     joint segmentation-registration based on ACWE.
 
@@ -113,7 +117,7 @@ class ACWEReg( CommandLine ):
         super( ACWEReg, self ).__init__( command=command, **inputs )
         self.groups = self.input_group_spec()
 
-        general_names = CommandLineInputSpec().trait_names()
+        general_names = ANTSCommandInputSpec().trait_names()
 
         for name in self.groups.trait_names():
             if not any( name in s for s in general_names ):
@@ -235,7 +239,7 @@ class ACWEReg( CommandLine ):
         return outputs
 
 
-class RandomBSplineDeformationInputSpec( CommandLineInputSpec ):
+class RandomBSplineDeformationInputSpec( ANTSCommandInputSpec ):
     in_file = InputMultiPath(File(exists=True), mandatory=True, argstr="-I %s",
               desc='image(s) to be deformed')
     in_coeff = InputMultiPath(File(exists=True), mandatory=False, argstr="-C %s",
@@ -258,7 +262,7 @@ class RandomBSplineDeformationOutputSpec( TraitedSpec ):
     out_surfs = OutputMultiPath(File(desc='output warped surfaces'))
     out_mask = File(exists=True, desc='warped input mask')
 
-class RandomBSplineDeformation( CommandLine ):
+class RandomBSplineDeformation( ANTSCommand ):
     """ Use ACWEReg bspline random deformation tool to generate
     a deformation field and apply the deformation to the target
     images.
@@ -303,7 +307,7 @@ class RandomBSplineDeformation( CommandLine ):
         return outputs
 
 
-class FieldBasedWarpInputSpec( CommandLineInputSpec ):
+class FieldBasedWarpInputSpec( ANTSCommandInputSpec ):
     in_file = InputMultiPath(File(exists=True), mandatory=True, argstr="-I %s",
               desc='image(s) to be deformed')
     in_field = File(exists=True, mandatory=False, argstr="-F %s",
@@ -319,7 +323,7 @@ class FieldBasedWarpOutputSpec( TraitedSpec ):
     out_surf = OutputMultiPath(File(exists=True, desc='warped input surfaces'))
     out_mask = File(exists=True, desc='warped input mask')
 
-class FieldBasedWarp( CommandLine ):
+class FieldBasedWarp( ANTSCommand ):
     """ Use ACWEReg bspline random deformation tool to generate
     a deformation field and apply the deformation to the target
     images.
