@@ -583,17 +583,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 				*( fbuf[j] + row ) = norm;
 		}
 	}
-
-	typedef itk::ImageFileWriter< CoefficientsImageType > WW;
-	for( size_t j = 0; j < Dimension; j++ ){
-		typename WW::Pointer w = WW::New();
-		w->SetInput( this->m_Derivatives[j] );
-		std::stringstream ss;
-		ss << "derivative_" << j << ".nii.gz";
-		w->SetFileName( ss.str() );
-		w->Update();
-	}
-
 }
 
 template< class TScalar, unsigned int NDimensions >
