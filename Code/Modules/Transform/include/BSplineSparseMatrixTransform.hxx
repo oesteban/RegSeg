@@ -55,8 +55,8 @@ BSplineSparseMatrixTransform<TScalar,NDimensions, VSplineOrder >
             itk::BSplineKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
 	this->m_DerivativeKernel = dynamic_cast< KernelFunctionType * >(
             itk::BSplineDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
-	this->m_SecondDerivativeKernel = dynamic_cast< KernelFunctionType * >(
-            itk::BSplineSecondDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
+	//this->m_SecondDerivativeKernel = dynamic_cast< KernelFunctionType * >(
+    //        itk::BSplineSecondDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
 }
 
 }

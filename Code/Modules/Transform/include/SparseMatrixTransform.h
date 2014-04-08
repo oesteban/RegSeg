@@ -151,7 +151,7 @@ public:
     typedef itk::Image< VectorType, Dimension >           FieldType;
     typedef typename FieldType::Pointer                   FieldPointer;
     typedef typename FieldType::ConstPointer              FieldConstPointer;
-    typedef typename std::vector< FieldPointer >          DerivativesType;
+    //typedef typename std::vector< FieldPointer >          DerivativesType;
 
     /** Type of the input parameters. */
     typedef typename Superclass::ParametersType          ParametersType;
@@ -174,7 +174,7 @@ public:
 
     itkGetConstMacro( NumberOfParameters, size_t );
 
-    itkGetMacro( Derivatives, DerivativesType );
+    itkGetMacro( Derivatives, CoefficientsImageArray );
 
     void Interpolate();
     void UpdateField();
@@ -250,6 +250,7 @@ protected:
 		size_t section_id;
 		size_t first_row;
 		size_t num_rows;
+		size_t dim;
 	};
 
 	typedef ScalarType (Self::*FunctionalCallback)( const VectorType, const size_t );
@@ -293,7 +294,7 @@ protected:
 
 	WeightsMatrix m_OffGridValueMatrix;     // m_N points in the mesh
 	CoefficientsImageArray m_CoefficientsImages;
-
+	CoefficientsImageArray m_Derivatives;
 
 	//DimensionParametersContainer m_CoeffDerivative;  // Serialized k values in a grid
 	//DimensionVector m_Jacobian[Dimension][Dimension]; // Serialized k dimxdim matrices in a grid
@@ -309,9 +310,8 @@ protected:
 
 	KernelFunctionPointer m_KernelFunction;
 	KernelFunctionPointer m_DerivativeKernel;
-	KernelFunctionPointer m_SecondDerivativeKernel;
+	//KernelFunctionPointer m_SecondDerivativeKernel;
 	FieldPointer          m_Field;
-	DerivativesType       m_Derivatives;
 	FieldPointer          m_OutputField;
 
 	virtual void ComputeMatrix( MatrixType type, size_t dim = 0 );

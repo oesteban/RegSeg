@@ -162,13 +162,18 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
+	if ( (this->m_Alpha.GetNorm() + this->m_Beta.GetNorm()) < 1.0e-8 ) {
+		return 0;
+	}
+
 	if (!this->m_RegularizationEnergyUpdated ){
 		this->m_RegularizationEnergy=0;
 		const VectorType* fBuffer = this->m_LastField->GetBufferPointer();
-		const VectorType* dBuffer[Dimension];
+		const CoefficientsValueType* dBuffer[Dimension];
 		size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
 
-		VectorType u, d_u;
+		VectorType u;
+		CoefficientsValueType d_u;
 		InternalComputationValueType u_norm = 0.0;
 		InternalComputationValueType du_norm = 0.0;
 
@@ -189,13 +194,11 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 			u = *(fBuffer+pix);
 			for ( size_t i = 0; i<Dimension; i++) {
 				// Regularization, first term
-				energyA+= this->m_Alpha[i] * u[i] * u[i];
+				energyA+= this->m_Alpha[i] * u.GetSquaredNorm();
 
 				// Regularization, second term
 				d_u = *(dBuffer[i] + pix );
-				for( size_t j = 0; j<Dimension; j++) {
-					energyB+= this->m_Beta[j] * d_u[j] * d_u[j];
-				}
+				energyB+= this->m_Beta[i] * d_u;
 			}
 		}
 
