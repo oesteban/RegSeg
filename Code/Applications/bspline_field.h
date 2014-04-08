@@ -96,7 +96,7 @@ typedef itk::BinaryThresholdImageFilter
 		                           < ChannelType, MaskType > Binarize;
 
 
-typedef double                                               ScalarType;
+typedef float                                                ScalarType;
 typedef rstk::BSplineSparseMatrixTransform
 		                          < ScalarType, DIMENSION>   Transform;
 typedef Transform::Pointer                                   TPointer;

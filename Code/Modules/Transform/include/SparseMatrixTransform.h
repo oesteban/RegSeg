@@ -83,7 +83,7 @@ public:
 
 	itkStaticConstMacro( Dimension, unsigned int, NDimensions );
 
-	typedef typename Superclass::ScalarType          ScalarType;
+	typedef TScalar                                  ScalarType;
 
 	typedef itk::Point< ScalarType, Dimension >      PointType;
 	typedef itk::Vector< ScalarType, Dimension >     VectorType;
