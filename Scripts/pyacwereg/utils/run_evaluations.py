@@ -10,14 +10,15 @@
 
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
-from os import getcwd
 from shutil import copyfileobj
 import os
 import os.path as op
 import glob
+import sys
 
 import pyacwereg.workflows.evaluation as ev
-
+import nipype.pipeline.engine as pe
+import nipype.interfaces.utility as niu
 
 if __name__== '__main__':
     parser = ArgumentParser(description='Run evaluation workflow',
@@ -36,7 +37,8 @@ if __name__== '__main__':
     g_input.add_argument('-w', '--work_dir', action='store',
                          default=os.getcwd(),
                          help='directory where subjects are found')
-
+    g_input.add_argument( '-N', '--name', action='store', default='EvaluationTests',
+                          help='default workflow name, it will create a new folder' )
     g_output = parser.add_argument_group('Outputs')
     g_output.add_argument('-o', '--out_csv', action='store',
                           help='output summary csv file')
@@ -49,19 +51,41 @@ if __name__== '__main__':
     subjects_dir = op.join( options.data_dir, 'subjects' )
     freesurfer_dir = op.join( options.data_dir, 'FREESURFER' )
 
-    sub_list = glob.glob( op.join( subjects_dir, options.subjects ))
+    sub_list = glob.glob( op.join( freesurfer_dir, options.subjects ))
     subjects = [ op.basename( sub ) for sub in sub_list ]
+
+    if not len(subjects):
+        print 'No subject was found in %s' % options.data_dir
+        sys.exit(1)
+
+    wf = pe.Workflow( name=options.name )
+    wf.base_dir = options.work_dir
+    infosource = pe.Node( niu.IdentityInterface(fields=['subject_id']),
+                          name="infosource")
+    infosource.iterables = [('subject_id', subjects[0:3])]
 
 
     mm = ev.bspline()
     mm.base_dir = options.work_dir
-    mm.inputs.inputnode.subject_id = subjects[0]
+    mm.inputs.inputnode.subject_id = subjects[0:50]
     mm.inputs.inputnode.data_dir = options.data_dir
     mm.inputs.inputnode.grid_size = options.grid_size
+
+    wf.connect([
+        ( infosource, mm, [ ('subject_id','inputnode.subject_id') ])
+    ])
 
     if options.out_csv is None:
         mm.inputs.inputnode.out_csv = op.join( options.work_dir, mm.name, 'results.csv' )
     else:
         mm.inputs.inputnode.out_csv = options.out_csv
 
-    mm.run()
+    try:
+        wf.write_graph( graph2use='hierarchical', format='pdf', simple_form=True )
+    except RuntimeError as e:
+        print e
+
+    try:
+        wf.run()
+    except RuntimeError as e:
+        print e
