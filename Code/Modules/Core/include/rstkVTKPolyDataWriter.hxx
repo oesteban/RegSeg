@@ -145,6 +145,7 @@ VTKPolyDataWriter< TInputMesh >
           break;
         default:
           std::cerr << "Unhandled cell (volumic?)." << std::endl;
+          break;
         }
       cellIterator++;
       }
