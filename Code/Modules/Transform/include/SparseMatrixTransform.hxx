@@ -293,6 +293,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	str.Transform = this;
 	str.type = type;
 	str.dim = dim;
+	size_t nCols = this->m_OnGridPos.size();
 
 	switch( type ) {
 	case Self::PHI:
@@ -301,46 +302,49 @@ SparseMatrixTransform<TScalar,NDimensions>
 		if ( this->m_OffGridPos.size() != this->m_NumberOfSamples ) {
 			itkExceptionMacro(<< "OffGrid positions are not initialized");
 		}
-
+		this->m_Phi = WeightsMatrix( this->m_NumberOfSamples , nCols );
+		str.matrix = &this->m_Phi;
 		break;
 	case Self::S:
-	case Self::SPRIME:
+		this->m_S = WeightsMatrix( nCols, nCols );
+
 		str.vrows = &this->m_OnGridPos;
+		str.matrix = &this->m_S;
+		break;
+	case Self::SPRIME:
+		this->m_SPrime[dim] = WeightsMatrix( nCols, nCols );
+		str.vrows = &this->m_OnGridPos;
+		str.matrix = &this->m_SPrime[dim];
 		break;
 	default:
 		itkExceptionMacro(<< "Matrix computation not implemented" );
 		break;
 	}
 
-	size_t nRows = str.vrows->size();
-	size_t nCols = this->m_OnGridPos.size();
-
-	str.matrix = WeightsMatrix( nRows, nCols );
-
 	this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
 	this->GetMultiThreader()->SetSingleMethod( this->ComputeThreaderCallback, &str );
 	this->GetMultiThreader()->SingleMethodExecute();
-	this->AfterThreadedComputeMatrix(str);
+	this->AfterThreadedComputeMatrix( &str );
 }
 
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::AfterThreadedComputeMatrix( SMTStruct str ) {
-	switch( str.type ) {
-	case Self::PHI:
-		this->m_Phi = str.matrix;
-		break;
-	case Self::S:
-		this->m_S = str.matrix;
-		break;
-	case Self::SPRIME:
-		this->m_SPrime[str.dim] = str.matrix;
-		break;
-	default:
-		itkExceptionMacro( << "WeightsMatrixType not implemented");
-		break;
-	}
+::AfterThreadedComputeMatrix( SMTStruct* str ) {
+//	switch( str.type ) {
+//	case Self::PHI:
+//		this->m_Phi = str.matrix;
+//		break;
+//	case Self::S:
+//		this->m_S = str.matrix;
+//		break;
+//	case Self::SPRIME:
+//		this->m_SPrime[str.dim] = str.matrix;
+//		break;
+//	default:
+//		itkExceptionMacro( << "WeightsMatrixType not implemented");
+//		break;
+//	}
 }
 
 template< class TScalar, unsigned int NDimensions >
@@ -355,7 +359,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	str = (SMTStruct *)( ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->UserData );
 
 	MatrixSectionType splitSection;
-	splitSection.matrix = &(str->matrix);
+	splitSection.matrix = str->matrix;
 	splitSection.vrows = str->vrows;
 	splitSection.dim = str->dim;
 	total = str->Transform->SplitMatrixSection( threadId, threadCount, splitSection );

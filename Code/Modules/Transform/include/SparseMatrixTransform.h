@@ -259,10 +259,9 @@ protected:
 	struct SMTStruct {
 		SparseMatrixTransform *Transform;
 		WeightsMatrixType type;
-		WeightsMatrix matrix;
+		WeightsMatrix* matrix;
 		size_t dim;
 		PointsList *vrows;
-		PointsList *vcols;
 	};
 
 	void ThreadedComputeMatrix( MatrixSectionType& section, FunctionalCallback func, itk::ThreadIdType threadId );
@@ -317,7 +316,7 @@ protected:
 	FieldPointer          m_OutputField;
 
 	virtual void ComputeMatrix( WeightsMatrixType type, size_t dim = 0 );
-	virtual void AfterThreadedComputeMatrix( SMTStruct str );
+	virtual void AfterThreadedComputeMatrix( SMTStruct* str );
 	virtual size_t ComputeRegionOfPoint(const PointType& point, VectorType& cvector, IndexType& start, IndexType& end, OffsetTableType offsetTable );
 
 	/** Support processing data in multiple threads. */
