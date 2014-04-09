@@ -91,11 +91,16 @@ public:
     typedef itk::KernelFunctionBase<ScalarType>      KernelFunctionType;
     typedef typename KernelFunctionType::Pointer     KernelFunctionPointer;
     
-    typedef VNLSparseLUSolverTraits< ScalarType >    SolverType;
-    typedef typename SolverType::MatrixType          WeightsMatrix;
-    typedef typename SolverType::VectorType          DimensionVector;
-    typedef typename WeightsMatrix::row              SparseVectorType;
+    typedef vnl_sparse_matrix< ScalarType >          WeightsMatrix;
+    typedef typename WeightsMatrix::row              SparseMatrixRowType;
+    typedef vnl_vector< ScalarType >                 DimensionVector;
     typedef vnl_matrix< ScalarType >                 DimensionMatrixType;
+
+    typedef VNLSparseLUSolverTraits< double >        SolverTypeTraits;
+    typedef typename SolverTypeTraits::SolverType    SolverType;
+    typedef typename SolverTypeTraits::MatrixType    SolverMatrix;
+    typedef typename SolverTypeTraits::VectorType    SolverVector;
+    typedef typename SolverMatrix::pair_t            SolverPair;
     
     typedef itk::DisplacementFieldTransform< ScalarType, Dimension > DisplacementFieldTransformType;
     typedef typename DisplacementFieldTransformType::Pointer         DisplacementFieldTransformPointer;

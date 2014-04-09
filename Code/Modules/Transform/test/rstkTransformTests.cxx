@@ -304,7 +304,7 @@ TEST_F( TransformTests, InterpolateAllSamples1 ) {
 	m_transform->Interpolate();
 
 	Transform::WeightsMatrix m = m_transform->GetPhi();
-	Transform::SparseVectorType row;
+	Transform::SparseMatrixRowType row;
 
 	Transform::CoefficientsImageArray coeff = m_transform->GetCoefficientsImages();
 	size_t c;
