@@ -519,23 +519,50 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->ComputeMatrix( Self::S );
 	}
 
+	SolverVector X[Dimension], Y[Dimension];
+
 	DimensionParametersContainer fieldValues = this->VectorizeField( this->m_Field );
 	DimensionParametersContainer coeffs;
 
-	//if ( Dimension == 3 ) {
-	//	SolverType::Solve( this->m_S, fieldValues[0], fieldValues[1], fieldValues[2], coeffs[0], coeffs[1], coeffs[2]  );
-	//} else if (Dimension == 2 ) {
-	//	SolverType::Solve( this->m_S, fieldValues[0], fieldValues[1], coeffs[0], coeffs[1]  );
-	//} else {
-	//	for( size_t col = 0; col < Dimension; col++ ) {
-	//		SolverType::Solve( this->m_S, fieldValues[col], coeffs[col] );
-	//	}
-	//}
+	for ( size_t i = 0; i<Dimension; i++) {
+		vnl_copy< DimensionVector, SolverVector >( fieldValues[i], Y[i] );
+		X[i] = SolverVector( this->m_NumberOfParameters );
+	}
+
+	size_t nRows = this->m_S.rows();
+	SolverMatrix S( nRows, this->m_S.cols() );
+	SparseMatrixRowType row;
+	typedef typename SolverMatrix::row SolverRow;
+	SolverRow row_s;
+	vcl_vector< int > cols;
+	vcl_vector< double > vals;
+
+	for( size_t i = 0; i < nRows; i++ ){
+		row_s.clear();
+		row = this->m_S.get_row( i );
+
+		for( size_t j = 0; j< row.size(); j++ ) {
+			cols.push_back( row[j].first );
+			vals.push_back( static_cast< double >( row[j].second ) );
+
+		}
+		S.set_row( i, cols, vals );
+	}
+
+	if ( Dimension == 3 ) {
+		SolverTypeTraits::Solve( S, Y[0], Y[1], Y[2], X[0], X[1], X[2] );
+	} else if (Dimension == 2 ) {
+		SolverTypeTraits::Solve( S, Y[0], Y[1], X[0], X[1] );
+	} else {
+		for( size_t col = 0; col < Dimension; col++ ) {
+			SolverTypeTraits::Solve( S, Y[col], X[col] );
+		}
+	}
 
 	for( size_t col = 0; col < Dimension; col++ ) {
 		ScalarType* cbuffer = this->m_CoefficientsImages[col]->GetBufferPointer();
 		for( size_t k = 0; k<this->m_NumberOfParameters; k++) {
-			*( cbuffer + k ) = coeffs[col][k];
+			*( cbuffer + k ) = static_cast<ScalarType>(X[col][k]);
 		}
 	}
 
@@ -880,7 +907,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 		vectorized[col] = DimensionVector( image->GetLargestPossibleRegion().GetNumberOfPixels() );
 		vectorized[col].fill(0.0);
 	}
-
 
 	VectorType v;
 	const VectorType *cbuffer = image->GetBufferPointer();
