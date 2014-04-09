@@ -82,7 +82,11 @@ void
 DownsampleAveragingFilter< TInputImage, TOutputImage, TPrecisionType >
 ::SetOutputSpacing(const double *spacing)
 {
-  SpacingType s(spacing);
+  SpacingType s;
+
+  for( size_t i = 0; i < ImageDimension; i++ ) {
+	  s = static_cast<SpacingValueType>(spacing[i]);
+  }
 
   this->SetOutputSpacing(s);
 }

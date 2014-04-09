@@ -133,7 +133,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-typename FunctionalBase<TReferenceImageType, TCoordRepType>::SparseMatrix
+typename FunctionalBase<TReferenceImageType, TCoordRepType>::VNLVectorContainer
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeDerivative() {
 	size_t cpid = 0;
@@ -143,7 +143,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	this->UpdateContour();
 
-	SparseMatrix gradVector( this->m_NumberOfPoints, Dimension );
+	VNLVectorContainer gradVector;
+
+	for( size_t i = 0; i<Dimension; i++ ) {
+		gradVector[i] = VNLVector( this->m_NumberOfPoints );
+	}
 
 	for( size_t in_cid = 0; in_cid < this->m_NumberOfContours; in_cid++) {
 		sample.clear();
@@ -205,7 +209,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 				for( size_t dim = 0; dim<Dimension; dim++ ) {
 					if( fabs(ni[dim]) > MIN_GRADIENT )
-						gradVector.put( sample[i].gid, dim, ni[dim] );
+						gradVector[dim][sample[i].gid] = ni[dim];
 				}
 			} else {
 				sample[i].normal = zerov;
@@ -638,34 +642,33 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::SetCurrentDisplacements( const SparseMatrix& vals ) {
-	if ( vals.cols() != Dimension ) {
+::SetCurrentDisplacements( const VNLVectorContainer& vals ) {
+	if ( vals.Size() != Dimension ) {
 		itkExceptionMacro(<< "vals contains a wrong number of columns");
 	}
-	size_t npoints = vals.rows();
+	size_t npoints = vals[0].size();
 
 	if ( npoints != this->m_NumberOfPoints ) {
 		itkExceptionMacro( << "vals contains a wrong number of vectors");
 	}
 
 	VectorType new_ci, old_ci;
-	double norm;
+	MeasureType norm;
 	size_t modified = 0;
 	for( size_t id = 0; id<npoints; id++ ) {
 		new_ci.Fill( 0.0 );
 		norm = 0.0;
 
-		if ( !vals.empty_row( id ) ) {
-			for( size_t d = 0; d < Dimension; d++) {
-				new_ci[d] = vals( id, d );
-			}
-			old_ci = this->m_CurrentDisplacements->GetElement( id );
-			norm = (new_ci-old_ci).GetNorm();
+		for( size_t d = 0; d < Dimension; d++) {
+			new_ci[d] = vals[d][id];
+		}
 
-			if ( norm > 1.0e-8 ) {
-				modified++;
-				this->m_CurrentDisplacements->SetElement( id, new_ci );
-			}
+		old_ci = this->m_CurrentDisplacements->GetElement( id );
+		norm = (new_ci-old_ci).GetNorm();
+
+		if ( norm > 1.0e-8 ) {
+			modified++;
+			this->m_CurrentDisplacements->SetElement( id, new_ci );
 		}
 	}
 

@@ -59,7 +59,6 @@
 #include "rstkVTKPolyDataWriter.h"
 #include <itkVectorImageToImageAdaptor.h>
 #include <itkComposeImageFilter.h>
-#include <itkVectorResampleImageFilter.h>
 #include <itkBSplineInterpolateImageFunction.h>
 #include <itkDisplacementFieldTransform.h>
 #include <itkResampleImageFilter.h>
@@ -85,19 +84,19 @@ typedef itk::Vector<float, 2u>                               VectorPixelType;
 typedef itk::Image<VectorPixelType, 3u>                      ImageType;
 typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
-typedef double                                               ScalarType;
+typedef float                                                ScalarType;
 typedef BSplineSparseMatrixTransform<ScalarType,
 		                                     DIMENSION, 3u>  TransformType;
 typedef TransformType::Pointer                               TransformPointer;
 typedef typename TransformType::CoefficientsImageType        CoefficientsType;
 
 typedef itk::ResampleImageFilter
-		         < ChannelType, ChannelType, ScalarType >    ResampleFilter;
+		         < ChannelType, ChannelType >                ResampleFilter;
 typedef typename ResampleFilter::Pointer                     ResamplePointer;
 typedef itk::BSplineInterpolateImageFunction
-		                      < ChannelType, ScalarType >    BSplineInterpolateImageFunction;
+		                      < ChannelType >                DefaultInterpolator;
 
-typedef ACWERegistrationMethod< ImageType, TransformType >   RegistrationType;
+typedef ACWERegistrationMethod< ImageType, TransformType, ScalarType >   RegistrationType;
 typedef typename RegistrationType::Pointer                   RegistrationPointer;
 typedef typename RegistrationType::ContourType               ContourType;
 typedef typename ContourType::Pointer                        ContourPointer;

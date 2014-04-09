@@ -95,6 +95,7 @@ public:
     typedef typename SolverType::MatrixType          WeightsMatrix;
     typedef typename SolverType::VectorType          DimensionVector;
     typedef typename WeightsMatrix::row              SparseVectorType;
+    typedef vnl_matrix< ScalarType >                 DimensionMatrixType;
     
     typedef itk::DisplacementFieldTransform< ScalarType, Dimension > DisplacementFieldTransformType;
     typedef typename DisplacementFieldTransformType::Pointer         DisplacementFieldTransformPointer;
@@ -207,7 +208,7 @@ public:
 	virtual WeightsMatrix  GetPhi ();
 	//itkGetConstMacro( Phi, WeightsMatrix );
 	itkGetConstMacro( S, WeightsMatrix );
-	itkGetConstMacro( OffGridValueMatrix, WeightsMatrix );
+	itkGetConstMacro( OffGridFieldValues, DimensionParametersContainer );
 
     void SetControlPointsSize( size_t s ) { this->m_ControlPointsSize.Fill( s ); }
 
@@ -270,7 +271,8 @@ protected:
 
 	void InitializeCoefficientsImages();
 	DimensionVector Vectorize( const CoefficientsImageType* image );
-	WeightsMatrix VectorizeCoefficients();
+	//WeightsMatrix VectorizeCoefficients();
+	DimensionParametersContainer VectorizeCoefficients() const;
 	DimensionParametersContainer VectorizeField( const FieldType* image );
 	WeightsMatrix MatrixField( const FieldType* image );
 
@@ -280,7 +282,7 @@ protected:
 	/* Field domain definitions */
 	SizeType               m_ControlPointsSize;
 	SpacingType            m_ControlPointsSpacing;
-	OriginType             m_ControlPointsOrigin;
+	PointType              m_ControlPointsOrigin;
 	DirectionType          m_ControlPointsDirection;
 	DirectionType          m_ControlPointsDirectionInverse;
 	MatrixType             m_ControlPointsIndexToPhysicalPoint;
@@ -291,8 +293,8 @@ protected:
 
 	PointsList m_OffGridPos;           // m_N points in the mesh
 	PointsList m_OnGridPos;
+	DimensionParametersContainer m_OffGridFieldValues;     // m_N points in the mesh
 
-	WeightsMatrix m_OffGridValueMatrix;     // m_N points in the mesh
 	CoefficientsImageArray m_CoefficientsImages;
 	CoefficientsImageArray m_Derivatives;
 

@@ -100,34 +100,32 @@ template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	// Multiply phi and copy reshaped on this->m_Derivative
 	WeightsMatrix phi = this->m_Transform->GetPhi().transpose();
-	WeightsMatrix gradVector = this->m_Functional->ComputeDerivative();
-	WeightsMatrix derivative( phi.rows(), gradVector.cols() );
-
-	phi.mult( gradVector, derivative );
+	ParametersContainer gradVector = this->m_Functional->ComputeDerivative();
+	ParametersContainer derivative;
 
 	typename CoefficientsImageType::PixelType* buff[Dimension];
 	for ( size_t i = 0; i<Dimension; i++) {
+		phi.mult( gradVector[i], derivative[i] );
+
 		this->m_DerivativeCoefficients[i]->FillBuffer( 0.0 );
 		buff[i] = this->m_DerivativeCoefficients[i]->GetBufferPointer();
 	}
-	size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
 
+	size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
 	VectorType vi;
+	InternalComputationValueType val;
 	size_t dim;
 	VectorType maxSpeed;
 	maxSpeed.Fill(0.0);
 
-	typename WeightsMatrix::row row;
 	for( size_t r = 0; r<nPix; r++ ){
 		vi.Fill(0.0);
-		row = derivative.get_row( r );
-		for( size_t c = 0; c<row.size(); c++ ) {
-			dim = row[c].first;
-			vi[dim] = row[c].second;
-			*( buff[dim] + r ) = row[c].second;
+		for( size_t c=0; c<Dimension; c++) {
+			val = derivative[c][r];
+			*( buff[c] + r ) = val;
 
-			if( vi[dim] > maxSpeed[dim] )
-				maxSpeed[dim] = vi[dim];
+			if( fabs(val) > fabs(maxSpeed[c]) )
+				maxSpeed[c] = val;
 		}
 	}
 
@@ -155,7 +153,7 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 	this->SetUpdate();
 
 	this->m_Transform->Interpolate();
-	this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetOffGridValueMatrix() );
+	this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetOffGridFieldValues() );
 }
 
 

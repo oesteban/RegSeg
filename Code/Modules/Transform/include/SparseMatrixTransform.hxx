@@ -302,7 +302,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 			itkExceptionMacro(<< "OffGrid positions are not initialized");
 		}
 
-		this->m_OffGridValueMatrix = WeightsMatrix ( this->m_NumberOfSamples, Dimension );
 		break;
 	case Self::S:
 	case Self::SPRIME:
@@ -453,9 +452,12 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->ComputeMatrix( Self::PHI );
 	}
 
-	WeightsMatrix coeff = this->VectorizeCoefficients();
-	this->m_OffGridValueMatrix = WeightsMatrix( this->m_NumberOfSamples, Dimension );
-	this->m_Phi.mult( coeff, this->m_OffGridValueMatrix );
+	DimensionParametersContainer coeff = this->VectorizeCoefficients();
+
+	for( size_t i = 0; i<Dimension; i++ ) {
+		this->m_OffGridFieldValues[i] = DimensionVector( this->m_NumberOfSamples );
+		this->m_Phi.mult( coeff[i], this->m_OffGridFieldValues[i] );
+	}
 
 	SparseVectorType r;
 
@@ -467,18 +469,11 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 		for( size_t row = 0; row<this->m_NumberOfSamples; row++ ) {
 			v.Fill( 0.0 );
-			r = this->m_OffGridValueMatrix.get_row( row );
-			setVector = false;
-
-			for( size_t i = 0; i<r.size(); i++) {
-				v[r[i].first] = r[i].second;
-				setVector =  setVector || ( r[i].second != 0.0 );
+			for( size_t i = 0; i<Dimension; i++) {
+				v[i] = this->m_OffGridFieldValues[i][row];
 			}
-			if (setVector)
-				*( obuf + row ) = v;
+			*( obuf + row ) = v;
 		}
-
-
 		this->SetDisplacementField( this->m_OutputField );
 	}
 }
@@ -491,30 +486,27 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->ComputeMatrix( Self::S );
 	}
 
-	WeightsMatrix coeff = this->VectorizeCoefficients();
-	WeightsMatrix fieldValues;
+	DimensionParametersContainer coeff = this->VectorizeCoefficients();
+	DimensionParametersContainer fieldValues;
 
 	// Interpolate
-	this->m_S.mult( coeff, fieldValues );
+	for( size_t i = 0; i<Dimension; i++)
+		this->m_S.mult( coeff[i], fieldValues[i] );
 
 	VectorType v;
 	v.Fill( 0.0 );
 	this->m_Field->FillBuffer( v );
 	VectorType* fbuf = this->m_Field->GetBufferPointer();
 
-	SparseVectorType r;
 	bool setVector;
 
 	for ( size_t row = 0; row<this->m_NumberOfParameters; row++ ) {
-		setVector = false;
-		r = fieldValues.get_row( row );
-		for( size_t i = 0; i< r.size(); i++ ) {
-			v[r[i].first] = r[i].second;
-			setVector = setVector || ( r[i].second!= 0.0 );
+		v.Fill( 0.0 );
+		for ( size_t col = 0; col < Dimension; col++ ) {
+			v[col] = fieldValues[col][row];
 		}
 
-		if ( setVector )
-			*( fbuf + row ) = v;
+		*( fbuf + row ) = v;
 	}
 }
 
@@ -529,15 +521,15 @@ SparseMatrixTransform<TScalar,NDimensions>
 	DimensionParametersContainer fieldValues = this->VectorizeField( this->m_Field );
 	DimensionParametersContainer coeffs;
 
-	if ( Dimension == 3 ) {
-		SolverType::Solve( this->m_S, fieldValues[0], fieldValues[1], fieldValues[2], coeffs[0], coeffs[1], coeffs[2]  );
-	} else if (Dimension == 2 ) {
-		SolverType::Solve( this->m_S, fieldValues[0], fieldValues[1], coeffs[0], coeffs[1]  );
-	} else {
-		for( size_t col = 0; col < Dimension; col++ ) {
-			SolverType::Solve( this->m_S, fieldValues[col], coeffs[col] );
-		}
-	}
+//	if ( Dimension == 3 ) {
+//		SolverType::Solve( this->m_S, fieldValues[0], fieldValues[1], fieldValues[2], coeffs[0], coeffs[1], coeffs[2]  );
+//	} else if (Dimension == 2 ) {
+//		SolverType::Solve( this->m_S, fieldValues[0], fieldValues[1], coeffs[0], coeffs[1]  );
+//	} else {
+//		for( size_t col = 0; col < Dimension; col++ ) {
+//			SolverType::Solve( this->m_S, fieldValues[col], coeffs[col] );
+//		}
+//	}
 
 	for( size_t col = 0; col < Dimension; col++ ) {
 		ScalarType* cbuffer = this->m_CoefficientsImages[col]->GetBufferPointer();
@@ -553,19 +545,22 @@ template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
 ::ComputeGradientField( ) {
-	WeightsMatrix coeff = this->VectorizeCoefficients();
-	std::vector< WeightsMatrix > gradValues;
-	ScalarType* fbuf[Dimension];
-	WeightsMatrix result[Dimension];
 	for( size_t i = 0; i<Dimension; i++ ) {
 		if( this->m_SPrime[i].rows() == 0 || this->m_SPrime[i].cols() == 0 ) {
 			this->ComputeMatrix( Self::SPRIME, i );
 		}
+	}
+
+	DimensionParametersContainer coeff = this->VectorizeCoefficients();
+	DimensionParametersContainer result[Dimension];
+	ScalarType* fbuf[Dimension];
 
 
-		// Interpolate
-		this->m_SPrime[i].mult( coeff, result[i] );
-		gradValues.push_back( result[i] );
+	for( size_t i = 0; i<Dimension; i++ ) {
+		for( size_t j=0; j<Dimension; j++ ) {
+			// Interpolate
+			this->m_SPrime[j].mult( coeff[i], result[i][j] );
+		}
 
 		// Clear data buffer and get pointer
 		this->m_Derivatives[i]->FillBuffer( 0.0 );
@@ -573,20 +568,20 @@ SparseMatrixTransform<TScalar,NDimensions>
 	}
 
 
-	SparseVectorType r;
 	VectorType v;
 	ScalarType norm;
 
 	for ( size_t row = 0; row<this->m_NumberOfParameters; row++ ) {
-		for( size_t j = 0; j < Dimension; j++ ){
+		for( size_t i = 0; i < Dimension; i++ ){
 			v.Fill( 0.0 );
-			r = gradValues[j].get_row( row );
-			for( size_t k = 0; k< r.size(); k++ ) {
-				v[r[k].first] = r[k].second;
+
+			for( size_t j = 0; j< Dimension; j++ ) {
+				v[j] = result[i][j][row];
 			}
+
 			norm = v.GetSquaredNorm();
 			if ( norm > 1.0e-7 )
-				*( fbuf[j] + row ) = norm;
+				*( fbuf[i] + row ) = norm;
 		}
 	}
 }
@@ -682,10 +677,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 	VectorType ci;
 	ci.Fill( 0.0 );
 
-	if ( !this->m_OffGridValueMatrix.empty_row( id ) ) {
-		for( size_t d = 0; d < Dimension; d++) {
-			ci[d] = this->m_OffGridValueMatrix( id, d );
-		}
+	for( size_t d = 0; d < Dimension; d++) {
+		ci[d] = this->m_OffGridFieldValues[d][id];
 	}
 
 	return ci;
@@ -737,8 +730,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 	bool changed = false;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		if( std::isnan( pi[dim] )) pi[dim] = 0;
-		if( this->m_OffGridValueMatrix.get(id, dim) != pi[dim] ) {
-			this->m_OffGridValueMatrix.put(id, dim, pi[dim] );
+		if( this->m_OffGridFieldValues[dim][id] != pi[dim] ) {
+			this->m_OffGridFieldValues[dim][id] = pi[dim];
 			changed = true;
 		}
 	}
@@ -790,26 +783,44 @@ SparseMatrixTransform<TScalar,NDimensions>
 	);
 }
 
+//template< class TScalar, unsigned int NDimensions >
+//typename SparseMatrixTransform<TScalar,NDimensions>::WeightsMatrix
+//SparseMatrixTransform<TScalar,NDimensions>
+//::VectorizeCoefficients() {
+//	WeightsMatrix m ( this->m_NumberOfParameters, Dimension );
+//
+//	std::vector< const ScalarType *> cbuffer;
+//
+//	for( size_t col = 0; col<Dimension; col++)
+//		cbuffer.push_back( this->m_CoefficientsImages[col]->GetBufferPointer() );
+//
+//	ScalarType value;
+//	for( size_t row = 0; row<this->m_NumberOfParameters; row++ ) {
+//		for( size_t col = 0; col<Dimension; col++ ) {
+//			value = *( cbuffer[col] + row );
+//			if (value!=0) {
+//				m.put( row, col, value );
+//			}
+//		}
+//
+//	}
+//	return m;
+//}
+
+
 template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::WeightsMatrix
+typename SparseMatrixTransform<TScalar,NDimensions>::DimensionParametersContainer
 SparseMatrixTransform<TScalar,NDimensions>
-::VectorizeCoefficients() {
-	WeightsMatrix m ( this->m_NumberOfParameters, Dimension );
+::VectorizeCoefficients() const {
+	DimensionParametersContainer m;
+	const ScalarType* cbuffer;
+	for( size_t i = 0; i<Dimension; i++) {
+		m[i] = DimensionVector( this->m_NumberOfParameters );
+		cbuffer = this->m_CoefficientsImages[i]->GetBufferPointer();
 
-	std::vector< const ScalarType *> cbuffer;
-
-	for( size_t col = 0; col<Dimension; col++)
-		cbuffer.push_back( this->m_CoefficientsImages[col]->GetBufferPointer() );
-
-	ScalarType value;
-	for( size_t row = 0; row<this->m_NumberOfParameters; row++ ) {
-		for( size_t col = 0; col<Dimension; col++ ) {
-			value = *( cbuffer[col] + row );
-			if (value!=0) {
-				m.put( row, col, value );
-			}
+		for( size_t j = 0; j < this->m_NumberOfParameters; j++ ){
+			m[i][j] = *( cbuffer + j );
 		}
-
 	}
 	return m;
 }

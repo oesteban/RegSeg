@@ -32,8 +32,8 @@ int main(int argc, char **argv) {
 }
 
 
-typedef double ScalarType;
-typedef itk::ContinuousIndex< double, 3> CIndex;
+typedef float ScalarType;
+typedef itk::ContinuousIndex< ScalarType, 3> CIndex;
 
 typedef itk::Point<ScalarType, 3> PointType;
 typedef itk::Vector<ScalarType, 3 > VectorType;
@@ -101,6 +101,7 @@ public:
 
 	void InitHRField( float factor = 2.0 ) {
 		FieldType::DirectionType newDir = m_orig_field->GetDirection();
+
 		FieldType::SizeType     newSize = m_orig_field->GetLargestPossibleRegion().GetSize();
 		for ( size_t i = 0; i < 3; i++ ) newSize[i]= floor( factor * newSize[i] ) + 1;
 
@@ -114,9 +115,16 @@ public:
 		PointType domE;
 		m_orig_field->TransformContinuousIndexToPhysicalPoint(   end, domE );
 
+		typedef itk::Matrix< typename VectorType::ComponentType, 3, 3 > VectorValuedMatrix;
+		VectorValuedMatrix m; m.Fill(0.0);
+
+		for( size_t i = 0; i< 3; i++ )
+			for (size_t j=0; j<3; j++ )
+				m(i,j) = static_cast<typename VectorType::ComponentType>( newDir(i,j) );
+
 		FieldType::SpacingType newSpacing;
 		VectorType extent = domE - domS;
-		VectorType oldExt = newDir * extent;
+		VectorType oldExt = m * extent;
 		VectorType hSpacing;
 
 		for ( size_t i = 0; i < 3; i++ ) {

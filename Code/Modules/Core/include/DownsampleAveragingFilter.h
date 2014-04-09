@@ -11,6 +11,7 @@
 
 #include "itkFixedArray.h"
 #include <itkTransform.h>
+#include <itkImage.h>
 #include <itkImageRegionIterator.h>
 #include <itkImageToImageFilter.h>
 #include <itkExtrapolateImageFunction.h>
@@ -48,7 +49,7 @@ namespace rstk
  */
 template< class TInputImage,
           class TOutputImage,
-          class TPrecisionType = double>
+          class TPrecisionType = float>
 class ITK_EXPORT DownsampleAveragingFilter :
   public itk::ImageToImageFilter< TInputImage, TOutputImage >
 {
@@ -107,6 +108,7 @@ public:
 
   /** Image spacing,origin and direction typedef */
   typedef typename TOutputImage::SpacingType   SpacingType;
+  typedef typename TOutputImage::SpacingValueType   SpacingValueType;
   typedef typename TOutputImage::PointType     OriginPointType;
   typedef typename TOutputImage::DirectionType DirectionType;
 

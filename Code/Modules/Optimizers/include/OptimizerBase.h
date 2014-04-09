@@ -131,13 +131,16 @@ public:
 	typedef typename TransformType::CoefficientsImageArray          CoefficientsImageArray;
 	typedef typename TransformType::ParametersType                  ParametersType;
 	typedef typename TransformType::WeightsMatrix                   WeightsMatrix;
+	typedef typename TransformType::DimensionVector					ParametersVector;
+	typedef typename TransformType::DimensionParametersContainer    ParametersContainer;
 	typedef typename TransformType::FieldType                       FieldType;
 	typedef typename TransformType::FieldPointer                    FieldPointer;
 	typedef typename TransformType::FieldConstPointer               FieldConstPointer;
 	typedef typename TransformType::SizeType                        ControlPointsGridSizeType;
 
 	/** Type for the convergence checker */
-	typedef itk::Function::WindowConvergenceMonitoringFunction<MeasureType>	         ConvergenceMonitoringType;
+	typedef itk::Function::
+			WindowConvergenceMonitoringFunction<double>	            ConvergenceMonitoringType;
 
 	/** Accessors for Functional */
 	itkGetObjectMacro( Functional, FunctionalType );
