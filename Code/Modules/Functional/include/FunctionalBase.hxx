@@ -147,6 +147,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	for( size_t i = 0; i<Dimension; i++ ) {
 		gradVector[i] = VNLVector( this->m_NumberOfPoints );
+		gradVector[i].fill(0.0);
 	}
 
 	for( size_t in_cid = 0; in_cid < this->m_NumberOfContours; in_cid++) {

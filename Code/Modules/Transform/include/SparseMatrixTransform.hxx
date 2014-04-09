@@ -324,28 +324,13 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
 	this->GetMultiThreader()->SetSingleMethod( this->ComputeThreaderCallback, &str );
 	this->GetMultiThreader()->SingleMethodExecute();
-	this->AfterThreadedComputeMatrix( &str );
+	//this->AfterThreadedComputeMatrix( &str );
 }
 
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::AfterThreadedComputeMatrix( SMTStruct* str ) {
-//	switch( str.type ) {
-//	case Self::PHI:
-//		this->m_Phi = str.matrix;
-//		break;
-//	case Self::S:
-//		this->m_S = str.matrix;
-//		break;
-//	case Self::SPRIME:
-//		this->m_SPrime[str.dim] = str.matrix;
-//		break;
-//	default:
-//		itkExceptionMacro( << "WeightsMatrixType not implemented");
-//		break;
-//	}
-}
+::AfterThreadedComputeMatrix( SMTStruct* str ) {}
 
 template< class TScalar, unsigned int NDimensions >
 ITK_THREAD_RETURN_TYPE
@@ -463,20 +448,27 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->m_Phi.mult( coeff[i], this->m_OffGridFieldValues[i] );
 	}
 
-	SparseVectorType r;
-
 	if( this->m_UseImageOutput ) {
+		bool setVector;
+		ScalarType val;
+
 		this->m_OutputField->FillBuffer( 0.0 );
 		VectorType* obuf = this->m_OutputField->GetBufferPointer();
 		VectorType v;
-		bool setVector;
 
 		for( size_t row = 0; row<this->m_NumberOfSamples; row++ ) {
 			v.Fill( 0.0 );
+			setVector = false;
 			for( size_t i = 0; i<Dimension; i++) {
-				v[i] = this->m_OffGridFieldValues[i][row];
+				val = this->m_OffGridFieldValues[i][row];
+
+				if( fabs(val) > 1.0e-5 ){
+					v[i] = val;
+					setVector = true;
+				}
 			}
-			*( obuf + row ) = v;
+			if (setVector)
+			 *( obuf + row ) = v;
 		}
 		this->SetDisplacementField( this->m_OutputField );
 	}
@@ -498,7 +490,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->m_S.mult( coeff[i], fieldValues[i] );
 
 	VectorType v;
-	v.Fill( 0.0 );
+	ScalarType val;
 	this->m_Field->FillBuffer( v );
 	VectorType* fbuf = this->m_Field->GetBufferPointer();
 
@@ -506,11 +498,16 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 	for ( size_t row = 0; row<this->m_NumberOfParameters; row++ ) {
 		v.Fill( 0.0 );
+		setVector = false;
 		for ( size_t col = 0; col < Dimension; col++ ) {
-			v[col] = fieldValues[col][row];
+			val = fieldValues[col][row];
+			if ( fabs(val) > 1.0e-5 ){
+				v[col] = val;
+				setVector = true;
+			}
 		}
-
-		*( fbuf + row ) = v;
+		if (setVector)
+			*( fbuf + row ) = v;
 	}
 }
 
@@ -525,15 +522,15 @@ SparseMatrixTransform<TScalar,NDimensions>
 	DimensionParametersContainer fieldValues = this->VectorizeField( this->m_Field );
 	DimensionParametersContainer coeffs;
 
-//	if ( Dimension == 3 ) {
-//		SolverType::Solve( this->m_S, fieldValues[0], fieldValues[1], fieldValues[2], coeffs[0], coeffs[1], coeffs[2]  );
-//	} else if (Dimension == 2 ) {
-//		SolverType::Solve( this->m_S, fieldValues[0], fieldValues[1], coeffs[0], coeffs[1]  );
-//	} else {
-//		for( size_t col = 0; col < Dimension; col++ ) {
-//			SolverType::Solve( this->m_S, fieldValues[col], coeffs[col] );
-//		}
-//	}
+	//if ( Dimension == 3 ) {
+	//	SolverType::Solve( this->m_S, fieldValues[0], fieldValues[1], fieldValues[2], coeffs[0], coeffs[1], coeffs[2]  );
+	//} else if (Dimension == 2 ) {
+	//	SolverType::Solve( this->m_S, fieldValues[0], fieldValues[1], coeffs[0], coeffs[1]  );
+	//} else {
+	//	for( size_t col = 0; col < Dimension; col++ ) {
+	//		SolverType::Solve( this->m_S, fieldValues[col], coeffs[col] );
+	//	}
+	//}
 
 	for( size_t col = 0; col < Dimension; col++ ) {
 		ScalarType* cbuffer = this->m_CoefficientsImages[col]->GetBufferPointer();
