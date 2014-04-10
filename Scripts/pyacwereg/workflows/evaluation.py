@@ -76,8 +76,8 @@ def registration_ev( name='EvaluateMapping' ):
                                   'err_surf' ]
 
     wf.connect( [
-                ( inputnode,   row_merge, [( 'subject_id', 'in1'), ('method','in2')])
-               ,( inputnode,         csv, [( 'out_csv', 'in_file' )])
+                ( inputnode,         csv, [( 'subject_id', 'subject_id'), ('method','method'),
+                                           ( 'out_csv', 'in_file' )])
                ,( input_ref,   merge_ref, [( 'in_imag', 'in_files' )])
                ,( input_tst,   merge_tst, [( 'in_imag', 'in_files' )])
                ,( input_ref,     overlap, [( 'in_tpms', 'in_ref')] )
