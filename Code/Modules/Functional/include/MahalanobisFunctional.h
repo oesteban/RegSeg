@@ -58,7 +58,7 @@ namespace rstk {
  *
  *  \ingroup
  */
-template <typename TReferenceImageType, typename TCoordRepType = double>
+template <typename TReferenceImageType, typename TCoordRepType = float >
 class MahalanobisFunctional: public rstk::FunctionalBase< TReferenceImageType, TCoordRepType > {
 public:
 	typedef MahalanobisFunctional                         Self;

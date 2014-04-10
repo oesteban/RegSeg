@@ -70,7 +70,7 @@ namespace bpo = boost::program_options;
 
 namespace rstk {
 
-template < typename TFixedImage, typename TTransform, typename TComputationalValue = double >
+template < typename TFixedImage, typename TTransform, typename TComputationalValue = float >
 class ACWERegistrationMethod:
 		public itk::ProcessObject,
 		public ConfigurableObject
