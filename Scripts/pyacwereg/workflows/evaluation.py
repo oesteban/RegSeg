@@ -67,13 +67,6 @@ def registration_ev( name='EvaluateMapping' ):
                       name='SurfDistance')
 
     csv = pe.Node( namisc.AddCSVRow(), name="AddRow" )
-    csv.inputs.field_headings = [ 'subject_id', 'method',
-                                  'di_avg', 'di_tpm0', 'di_tpm1', 'di_tpm2',
-                                  'ji_avg', 'ji_tpm0', 'ji_tpm1', 'ji_tpm2',
-                                  'cc_im',
-                                  'err_field_avg','err_field_std','err_field_max',
-                                  'err_field_min','err_field_median',
-                                  'err_surf' ]
 
     wf.connect( [
                 ( inputnode,         csv, [( 'subject_id', 'subject_id'), ('method','method'),
