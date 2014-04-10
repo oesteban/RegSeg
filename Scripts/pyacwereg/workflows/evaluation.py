@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-04 19:39:15
+# @Last Modified time: 2014-04-10 15:35:08
 
 import os
 import os.path as op
@@ -59,7 +59,6 @@ def registration_ev( name='EvaluateMapping' ):
 
 
     overlap = pe.Node( namev.FuzzyOverlap(weighting='volume'), name='Overlap' )
-    row_merge = pe.Node( niu.Merge(9), name='MergeIndices')
     diff_im = pe.Node( Similarity(metric='cc'), name='ContrastDiff')
     inv_fld = pe.Node( iface.InverseField(), name='InvertField' )
     diff_fld = pe.Node( namev.ErrorMap(), name='FieldDiff')
@@ -93,12 +92,11 @@ def registration_ev( name='EvaluateMapping' ):
                ,( input_tst,    diff_fld, [( 'in_field', 'in_tst')])
                ,( input_ref,        mesh, [( 'in_surf', 'surface1')])
                ,( input_tst,        mesh, [( 'in_surf', 'surface2')])
-               ,( overlap,     row_merge, [( 'jaccard', 'in3'), ('class_fji','in4'),
-                                           ( 'dice', 'in5'), ('class_fdi', 'in6') ])
-               ,( diff_im,     row_merge, [( 'similarity','in7')])
-               ,( diff_fld,    row_merge, [(('out_map',_average), 'in8' ) ])
-               ,( mesh,        row_merge, [( 'distance', 'in9')])
-               ,( row_merge,         csv, [( 'out', 'new_fields')])
+               ,( overlap,           csv, [( 'jaccard', 'fji_avg'), ('class_fji','fji_tpm'),
+                                           ( 'dice', 'fdi_avg'), ('class_fdi', 'fdi_tpm') ])
+               ,( diff_im,           csv, [( 'similarity','cc_image')])
+               ,( diff_fld,          csv, [(('out_map',_average), 'fmap_error' ) ])
+               ,( mesh,              csv, [( 'distance', 'surf_dist')])
                ,( csv,        outputnode, [( 'csv_file', 'out_file')])
                ,( overlap,    outputnode, [( 'diff_file','out_tpm_diff')])
                ,( diff_fld,   outputnode, [( 'out_map', 'out_field_err')])
