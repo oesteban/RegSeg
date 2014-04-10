@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
 		im->SetOrigin( itk * ref_orig );
 
 		WarpFilterPointer res = WarpFilter::New();
-		res->SetInterpolator( itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >::New() );
+		res->SetInterpolator( DefaultInterpolator::New() );
 		res->SetOutputParametersFromImage( im );
 		res->SetInput( im );
 		res->SetDisplacementField( acwereg->GetDisplacementField() );

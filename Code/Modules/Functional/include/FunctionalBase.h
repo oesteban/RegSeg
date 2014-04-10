@@ -95,7 +95,7 @@ namespace rstk {
  */
 
 
-template <typename TReferenceImageType, typename TCoordRepType = double>
+template <typename TReferenceImageType, typename TCoordRepType = float>
 class FunctionalBase:
 		public itk::Object,
 		public ConfigurableObject  {
@@ -158,6 +158,8 @@ public:
 	typedef itk::TriangleHelper< ContourPointType >          TriangleType;
 
 	typedef vnl_sparse_matrix< PointValueType >              SparseMatrix;
+	typedef vnl_vector< PointValueType >                     VNLVector;
+	typedef itk::FixedArray< VNLVector, Dimension >          VNLVectorContainer;
 
 	typedef itk::NormalQuadEdgeMeshFilter
 			< ContourType, ContourType >                     NormalFilterType;
@@ -284,7 +286,7 @@ public:
 	itkGetMacro( Gradients, ShapeGradientList );
 	itkGetMacro( NodesPosition, PointsVector );
 
-	virtual void SetCurrentDisplacements( const SparseMatrix& vals );
+	virtual void SetCurrentDisplacements( const VNLVectorContainer& vals );
 
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	virtual void SetReferenceImage (const ReferenceImageType * _arg);
@@ -310,7 +312,7 @@ public:
 	}
 
 	MeasureType GetValue();
-	SparseMatrix ComputeDerivative();
+	VNLVectorContainer ComputeDerivative();
 	virtual void Initialize();
 	virtual void UpdateDescriptors() = 0;
 	virtual std::string PrintFormattedDescriptors() = 0;

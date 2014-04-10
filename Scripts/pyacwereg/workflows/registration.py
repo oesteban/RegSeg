@@ -29,14 +29,14 @@ def default_regseg( name='REGSEGDefault'):
 
     # Registration
     regseg = pe.Node( iface.ACWEReg(), name="ACWERegistration" )
-    regseg.inputs.iterations = [ 10, 10 ]
-    regseg.inputs.descript_update = [ 5, 15 ]
+    regseg.inputs.iterations = [ 100, 50 ]
+    regseg.inputs.descript_update = [ 10, 10 ]
     regseg.inputs.step_size = [ 0.5, 1.0 ]
-    regseg.inputs.alpha = [ 0.0, 0.001 ]
-    regseg.inputs.beta = [ 0.0, 0.01 ]
+    regseg.inputs.alpha = [ 0.01, 0.001 ]
+    regseg.inputs.beta = [ 0.1, 0.01 ]
     regseg.inputs.grid_size = [ 6, 10 ]
     regseg.inputs.convergence_energy = [ True, True ]
-    regseg.inputs.convergence_window = [ 5, 5 ]
+    regseg.inputs.convergence_window = [ 15, 5 ]
 
     # Apply tfm to tpms
     applytfm = pe.Node( iface.FieldBasedWarp(), name="ApplyWarp" )
