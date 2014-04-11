@@ -134,8 +134,12 @@ typedef typename ThresholdFilter::Pointer                      ThresholdPointer;
 typedef itk::ResampleImageFilter< ChannelType, ChannelType, ScalarType >    ResampleFilter;
 typedef typename ResampleFilter::Pointer                       ResamplePointer;
 
+typedef itk::ResampleImageFilter
+		                 < MaskType, MaskType, ScalarType >    MaskResampleFilter;
+typedef typename MaskResampleFilter::Pointer                   MaskResamplePointer;
+
 typedef itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >    BSplineInterpolateImageFunction;
-typedef itk::NearestNeighborInterpolateImageFunction< ChannelType, ScalarType >    NearestNeighborInterpolateImageFunction;
+typedef itk::NearestNeighborInterpolateImageFunction< MaskType, ScalarType >    NearestNeighborInterpolateImageFunction;
 
 typedef itk::MaskImageFilter< ChannelType, MaskType, ChannelType > MaskFilter;
 
