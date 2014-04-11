@@ -64,9 +64,12 @@ typedef itk::ImageFileReader<DisplacementFieldType>          DisplacementFieldRe
 typedef typename DisplacementFieldReaderType::Pointer        DisplacementFieldReaderPointer;
 
 typedef itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >    BSplineInterpolateImageFunction;
-typedef itk::NearestNeighborInterpolateImageFunction< ChannelType, ScalarType >    NearestNeighborInterpolateImageFunction;
+typedef itk::NearestNeighborInterpolateImageFunction< MaskType, ScalarType >    NearestNeighborInterpolateImageFunction;
 typedef itk::MaskImageFilter< ChannelType, MaskType, ChannelType > MaskFilter;
 
+typedef itk::WarpImageFilter
+	    < MaskType, MaskType, DisplacementFieldType >          WarpMaskFilter;
+typedef typename WarpMaskFilter::Pointer                       WarpMaskFilterPointer;
 
 typedef itk::ThresholdImageFilter< ChannelType >               ThresholdFilter;
 typedef typename ThresholdFilter::Pointer                      ThresholdPointer;

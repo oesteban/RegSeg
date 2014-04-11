@@ -62,33 +62,25 @@ int main(int argc, char *argv[]) {
 		rmask->SetFileName( maskfile );
 		rmask->Update();
 
-		ChannelPointer im = rmask->GetOutput();
-		im->SetDirection( dir * itk );
-		im->SetOrigin( itk * ref_orig );
-
-		WarpFilterPointer res = WarpFilter::New();
-		res->SetInput( im );
-		res->SetOutputParametersFromImage( rmask->GetOutput() );
-		res->SetInterpolator( NearestNeighborInterpolateImageFunction::New() );
-		res->SetDisplacementField( field );
-		res->Update();
-
-		ChannelPointer im_res = res->GetOutput();
-		im_res->SetDirection( dir );
-		im_res->SetOrigin( ref_orig );
-
 		typename Binarize::Pointer bin = Binarize::New();
-		bin->SetInput( im_res );
+		bin->SetInput( rmask->GetOutput() );
 		bin->SetLowerThreshold( 0.01 );
 		bin->SetOutsideValue( 0 );
 		bin->SetInsideValue( 1 );
 		bin->Update();
-		mask = bin->GetOutput();
 
-		typename MaskWriter::Pointer wm = MaskWriter::New();
-		wm->SetInput( mask );
-		wm->SetFileName( (outPrefix + "_mask_warped.nii.gz").c_str() );
-		wm->Update();
+		MaskPointer mask_bin = bin->GetOutput();
+		mask_bin->SetDirection( dir * itk );
+		mask_bin->SetOrigin( itk * ref_orig );
+
+		WarpMaskFilterPointer res = WarpMaskFilter::New();
+		res->SetInterpolator( NearestNeighborInterpolateImageFunction::New() );
+		res->SetOutputParametersFromImage( mask_bin );
+		res->SetInput( mask_bin );
+		res->SetDisplacementField( field );
+		res->Update();
+
+		mask = res->GetOutput();
 	}
 
 	// Read and transform images if present
@@ -111,14 +103,7 @@ int main(int argc, char *argv[]) {
 		res->SetDisplacementField( field );
 		res->Update();
 
-		ThresholdPointer th = ThresholdFilter::New();
-		th->SetInput( res->GetOutput() );
-		th->ThresholdBelow( 0.0 );
-		th->SetOutsideValue( 0.0 );
-
-		typename ChannelType::Pointer im_res = th->GetOutput();
-		im_res->SetDirection( dir );
-		im_res->SetOrigin( ref_orig );
+		typename ChannelType::Pointer im_res = res->GetOutput();
 
 		if (mask.IsNotNull()) {
 			typename MaskFilter::Pointer mm = MaskFilter::New();
@@ -129,15 +114,25 @@ int main(int argc, char *argv[]) {
 			im_res = mm->GetOutput();
 		}
 
+		ThresholdPointer th = ThresholdFilter::New();
+		th->SetInput( im_res );
+		th->ThresholdBelow( 0.0 );
+		th->SetOutsideValue( 0.0 );
+
+		typename ChannelType::Pointer im_res_warped = th->GetOutput();
+		im_res_warped->SetDirection( dir );
+		im_res_warped->SetOrigin( ref_orig );
+
 		std::stringstream ss;
 		ss.str("");
 		ss << outPrefix << "_warped_" << i << ".nii.gz";
 		typename WriterType::Pointer w = WriterType::New();
-		w->SetInput( im_res );
+		w->SetInput( im_res_warped );
 		w->SetFileName( ss.str().c_str() );
 		w->Update();
-
 	}
+
+
 
 	TransformPointer transform;
 	if ( movingSurfaceNames.size() > 0 ) {
@@ -171,5 +166,12 @@ int main(int argc, char *argv[]) {
 
 	}
 
+
+	if( mask.IsNotNull() ){
+		typename MaskWriter::Pointer wm = MaskWriter::New();
+		wm->SetInput( mask );
+		wm->SetFileName( (outPrefix + "_mask_warped.nii.gz").c_str() );
+		wm->Update();
+	}
 }
 
