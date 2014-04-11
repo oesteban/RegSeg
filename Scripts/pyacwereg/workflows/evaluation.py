@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-11 13:50:21
+# @Last Modified time: 2014-04-11 13:57:10
 
 import os
 import os.path as op
@@ -33,13 +33,14 @@ def registration_ev( name='EvaluateMapping' ):
     similarity, displacement fields difference, mesh distances, and overlap indices.
     """
 
-    def _average( in_file ):
+    def _stats( in_file ):
         import numpy as np
         import nibabel as nb
 
         data = nb.load( in_file ).get_data()
         data = np.ma.masked_equal( data, 0 )
-        return [ data.mean(), data.std(), data.max(), data.min(), np.ma.extras.median(data) ]
+        result = np.array([ data.mean(), data.std(), data.max(), data.min(), np.ma.extras.median(data)])
+        return result.tolist()
 
 
     wf = pe.Workflow( name=name )
@@ -62,9 +63,9 @@ def registration_ev( name='EvaluateMapping' ):
     diff_im = pe.Node( Similarity(metric='cc'), name='ContrastDiff')
     inv_fld = pe.Node( iface.InverseField(), name='InvertField' )
     diff_fld = pe.Node( namev.ErrorMap(), name='FieldDiff')
-    mesh = pe.MapNode( namesh.P2PDistance(weighting='surface'),
-                      iterfield=[ 'surface1','surface2' ],
-                      name='SurfDistance')
+#    mesh = pe.MapNode( namesh.P2PDistance(weighting='surface'),
+#                      iterfield=[ 'surface1','surface2' ],
+#                      name='SurfDistance')
 
     csv = pe.Node( namisc.AddCSVRow(), name="AddRow" )
 
@@ -83,13 +84,13 @@ def registration_ev( name='EvaluateMapping' ):
                ,( input_ref,    diff_fld, [( 'in_mask','mask')])
                ,( inv_fld,      diff_fld, [( 'out_field', 'in_ref') ])
                ,( input_tst,    diff_fld, [( 'in_field', 'in_tst')])
-               ,( input_ref,        mesh, [( 'in_surf', 'surface1')])
-               ,( input_tst,        mesh, [( 'in_surf', 'surface2')])
+#               ,( input_ref,        mesh, [( 'in_surf', 'surface1')])
+#               ,( input_tst,        mesh, [( 'in_surf', 'surface2')])
                ,( overlap,           csv, [( 'jaccard', 'fji_avg'), ('class_fji','fji_tpm'),
                                            ( 'dice', 'fdi_avg'), ('class_fdi', 'fdi_tpm') ])
                ,( diff_im,           csv, [( 'similarity','cc_image')])
-               ,( diff_fld,          csv, [(('out_map',_average), 'fmap_error' ) ])
-               ,( mesh,              csv, [( 'distance', 'surf_dist')])
+               ,( diff_fld,          csv, [(('out_map',_stats), 'fmap_error' ) ])
+#               ,( mesh,              csv, [( 'distance', 'surf_dist')])
                ,( csv,        outputnode, [( 'csv_file', 'out_file')])
                ,( overlap,    outputnode, [( 'diff_file','out_tpm_diff')])
                ,( diff_fld,   outputnode, [( 'out_map', 'out_field_err')])
@@ -159,10 +160,12 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
         evwfs.append( registration_ev( name=('Ev_%s' % reg.name) ) )
         evwfs[i].inputs.infonode.method = reg.name
 
-        norm_tpms.append( pe.Node( niu.Function( input_names=['in_files','in_mask'], output_names=['out_files'], function=normalize ), name='Normalize%02d' % i ) )
+        norm_tpms.append(pe.Node( niu.Function( input_names=['in_files','in_mask'],
+                         output_names=['out_files'], function=normalize ),
+                         name='Normalize%02d' % i ) )
 
         wf.connect( [
-             (inputnode,    evwfs[i], [ ('subject_id', 'infonode.subject_id') ] )
+             (inputnode,    evwfs[i], [('subject_id', 'infonode.subject_id') ] )
             ,(prep,              reg, [('outputnode.out_surfs','inputnode.in_surf'),
                                        ('outputnode.out_smri_brain', 'inputnode.in_orig' ),
                                        ('outputnode.out_mask', 'inputnode.in_mask' ) ])

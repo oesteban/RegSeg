@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-04 20:25:28
+# @Last Modified time: 2014-04-11 13:52:38
 
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
@@ -76,7 +76,7 @@ if __name__== '__main__':
     ])
 
     if options.out_csv is None:
-        mm.inputs.inputnode.out_csv = op.join( options.work_dir, mm.name, 'results.csv' )
+        mm.inputs.inputnode.out_csv = op.join( options.work_dir, wf.name, 'results.csv' )
     else:
         mm.inputs.inputnode.out_csv = options.out_csv
 
