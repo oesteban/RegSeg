@@ -191,34 +191,26 @@ int main(int argc, char *argv[]) {
 		rmask->SetFileName( maskfile );
 		rmask->Update();
 
-		ChannelPointer im = rmask->GetOutput();
-		im->SetDirection( dir * itk );
-		im->SetOrigin( itk * ref_orig );
+		typename Binarize::Pointer bin = Binarize::New();
+		bin->SetInput( rmask->GetOutput() );
+		bin->SetLowerThreshold( 0.01 );
+		bin->SetOutsideValue( 0 );
+		bin->SetInsideValue( 1 );
+		bin->Update();
 
-		ResamplePointer res = ResampleFilter::New();
-		res->SetInput( im );
-		res->SetReferenceImage( rmask->GetOutput() );
+		MaskPointer mask_bin = bin->GetOutput();
+		mask_bin->SetDirection( dir * itk );
+		mask_bin->SetOrigin( itk * ref_orig );
+
+		MaskResamplePointer res = MaskResampleFilter::New();
+		res->SetInput( mask_bin );
+		res->SetReferenceImage( mask_bin );
 		res->SetUseReferenceImage(true);
 		res->SetInterpolator( NearestNeighborInterpolateImageFunction::New() );
 		res->SetTransform( transform );
 		res->Update();
 
-		ChannelPointer im_res = res->GetOutput();
-		im_res->SetDirection( dir );
-		im_res->SetOrigin( ref_orig );
-
-		typename Binarize::Pointer bin = Binarize::New();
-		bin->SetInput( im_res );
-		bin->SetLowerThreshold( 0.01 );
-		bin->SetOutsideValue( 0 );
-		bin->SetInsideValue( 1 );
-		bin->Update();
-		mask = bin->GetOutput();
-
-		typename MaskWriter::Pointer wm = MaskWriter::New();
-		wm->SetInput( mask );
-		wm->SetFileName( (outPrefix + "_mask_warped.nii.gz").c_str() );
-		wm->Update();
+		mask = res->GetOutput();
 	}
 
 
@@ -232,23 +224,15 @@ int main(int argc, char *argv[]) {
 		im->SetDirection( dir * itk );
 		im->SetOrigin( itk * ref_orig );
 
-
 		ResamplePointer res = ResampleFilter::New();
 		res->SetInput( im );
-		res->SetReferenceImage( r->GetOutput() );
+		res->SetReferenceImage( im );
 		res->SetUseReferenceImage(true);
 		res->SetInterpolator( BSplineInterpolateImageFunction::New() );
 		res->SetTransform( transform );
 		res->Update();
 
-		ThresholdPointer th = ThresholdFilter::New();
-		th->SetInput( res->GetOutput() );
-		th->ThresholdBelow( 0.0 );
-		th->SetOutsideValue( 0.0 );
-
-		ChannelPointer im_res = th->GetOutput();
-		im_res->SetDirection( dir );
-		im_res->SetOrigin( ref_orig );
+		ChannelPointer im_res = res->GetOutput();
 
 		if (mask.IsNotNull()) {
 			typename MaskFilter::Pointer mm = MaskFilter::New();
@@ -259,10 +243,19 @@ int main(int argc, char *argv[]) {
 			im_res = mm->GetOutput();
 		}
 
+		ThresholdPointer th = ThresholdFilter::New();
+		th->SetInput( im_res );
+		th->ThresholdBelow( 0.0 );
+		th->SetOutsideValue( 0.0 );
+
+		ChannelPointer im_res_warped = th->GetOutput();
+		im_res_warped->SetDirection( dir );
+		im_res_warped->SetOrigin( ref_orig );
+
 		ss.str("");
 		ss << outPrefix << "_resampled_" << i << ".nii.gz";
 		WriterPointer w = WriterType::New();
-		w->SetInput( im_res );
+		w->SetInput( im_res_warped );
 		w->SetFileName( ss.str().c_str() );
 		w->Update();
 	}
@@ -293,4 +286,12 @@ int main(int argc, char *argv[]) {
 
 	}
 
+	if( mask.IsNotNull() ){
+		mask->SetDirection( dir );
+		mask->SetOrigin( ref_orig );
+		typename MaskWriter::Pointer wm = MaskWriter::New();
+		wm->SetInput( mask );
+		wm->SetFileName( (outPrefix + "_mask_warped.nii.gz").c_str() );
+		wm->Update();
+	}
 }
