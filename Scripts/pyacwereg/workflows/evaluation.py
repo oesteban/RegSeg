@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-11 13:57:10
+# @Last Modified time: 2014-04-11 15:19:09
 
 import os
 import os.path as op
@@ -38,6 +38,9 @@ def registration_ev( name='EvaluateMapping' ):
         import nibabel as nb
 
         data = nb.load( in_file ).get_data()
+
+        if ( np.all( data<1.0e-5 ) ):
+          return [ 0.0 ]*5
         data = np.ma.masked_equal( data, 0 )
         result = np.array([ data.mean(), data.std(), data.max(), data.min(), np.ma.extras.median(data)])
         return result.tolist()
