@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-11 15:19:09
+# @Last Modified time: 2014-04-11 16:59:05
 
 import os
 import os.path as op
@@ -170,10 +170,10 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
         wf.connect( [
              (inputnode,    evwfs[i], [('subject_id', 'infonode.subject_id') ] )
             ,(prep,              reg, [('outputnode.out_surfs','inputnode.in_surf'),
-                                       ('outputnode.out_smri_brain', 'inputnode.in_orig' ),
-                                       ('outputnode.out_mask', 'inputnode.in_mask' ) ])
+                                       ('outputnode.out_smri_brain', 'inputnode.in_orig' ) ])
             ,(dist,              reg, [('outputnode.out_file', 'inputnode.in_dist'),
-                                       ('outputnode.out_tpms', 'inputnode.in_tpms') ])
+                                       ('outputnode.out_tpms', 'inputnode.in_tpms'),
+                                       ('outputnode.out_mask', 'inputnode.in_mask') ])
             ,(prep,         evwfs[i], [('outputnode.out_smri_brain', 'refnode.in_imag'),
                                        ('outputnode.out_tpms',       'refnode.in_tpms'),
                                        ('outputnode.out_surfs',      'refnode.in_surf'),
