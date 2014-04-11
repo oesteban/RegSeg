@@ -6,7 +6,7 @@
 # @Author: oesteban
 # @Date:   2014-03-11 15:28:16
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-11 17:10:41
+# @Last Modified time: 2014-04-11 17:13:39
 
 import os
 import os.path as op
@@ -50,7 +50,7 @@ def isbi_workflow( name='ISBI2014' ):
 def bspline_deform( name='BSplineDistortion' ):
     """ A nipype workflow to produce bspline-based deformation fields """
     wf = pe.Workflow( name=name )
-    inputnode = pe.Node( niu.IdentityInterface(fields=['in_file','in_tpms','in_surfs','grid_size']),
+    inputnode = pe.Node( niu.IdentityInterface(fields=['in_file','in_tpms','in_mask','in_surfs','grid_size']),
                          name='inputnode' )
     outputnode = pe.Node( niu.IdentityInterface(fields=['out_file','out_tpms', 'out_surfs',
                                                        'out_field', 'out_coeff','out_mask' ]),
