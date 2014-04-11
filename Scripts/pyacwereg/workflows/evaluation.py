@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-11 13:44:30
+# @Last Modified time: 2014-04-11 13:50:21
 
 import os
 import os.path as op
@@ -162,22 +162,22 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
         norm_tpms.append( pe.Node( niu.Function( input_names=['in_files','in_mask'], output_names=['out_files'], function=normalize ), name='Normalize%02d' % i ) )
 
         wf.connect( [
-             ( inputnode, evwfs[i], [ ('subject_id', 'infonode.subject_id') ] )
-            ,( prep,     reg, [('outputnode.out_surfs','inputnode.in_surf'),
-                               ('outputnode.out_smri_brain', 'inputnode.in_orig' ),
-                               ('outputnode.out_mask', 'inputnode.in_mask' ) ])
-            ,( dist,     reg, [('outputnode.out_file', 'inputnode.in_dist'),
-                               ('outputnode.out_tpms', 'inputnode.in_tpms') ])
-            ,( prep,evwfs[i], [('outputnode.out_smri_brain', 'refnode.in_imag'),
-                               ('outputnode.out_tpms',       'refnode.in_tpms'),
-                               ('outputnode.out_surfs',      'refnode.in_surf'),
-                               ('outputnode.out_mask',       'refnode.in_mask'), ])
-            ,( dist,evwfs[i], [('outputnode.out_field',      'refnode.in_field' ) ])
-            ,( reg, norm_tpms[i], [ ('outputnode.out_tpms', 'in_files') ] )
-            ,( reg, evwfs[i], [('outputnode.out_corr', 'tstnode.in_imag'),
-                               ('outputnode.out_surf', 'tstnode.in_surf'),
-                               ('outputnode.out_field','tstnode.in_field' ) ])
-            ,( norm_tpms[i],evwfs[i], [('out_files', 'tstnode.in_tpms')])
+             (inputnode,    evwfs[i], [ ('subject_id', 'infonode.subject_id') ] )
+            ,(prep,              reg, [('outputnode.out_surfs','inputnode.in_surf'),
+                                       ('outputnode.out_smri_brain', 'inputnode.in_orig' ),
+                                       ('outputnode.out_mask', 'inputnode.in_mask' ) ])
+            ,(dist,              reg, [('outputnode.out_file', 'inputnode.in_dist'),
+                                       ('outputnode.out_tpms', 'inputnode.in_tpms') ])
+            ,(prep,         evwfs[i], [('outputnode.out_smri_brain', 'refnode.in_imag'),
+                                       ('outputnode.out_tpms',       'refnode.in_tpms'),
+                                       ('outputnode.out_surfs',      'refnode.in_surf'),
+                                       ('outputnode.out_mask',       'refnode.in_mask'), ])
+            ,(dist,         evwfs[i], [('outputnode.out_field',      'refnode.in_field' ) ])
+            ,(reg,      norm_tpms[i], [('outputnode.out_tpms', 'in_files') ] )
+            ,(reg,          evwfs[i], [('outputnode.out_corr', 'tstnode.in_imag'),
+                                       ('outputnode.out_surf', 'tstnode.in_surf'),
+                                       ('outputnode.out_field','tstnode.in_field' ) ])
+            ,(norm_tpms[i], evwfs[i], [('out_files', 'tstnode.in_tpms')])
         ])
 
         # Connect in_field in case it is an identity workflow
