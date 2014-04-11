@@ -52,6 +52,7 @@
 #include <itkVector.h>
 #include <itkVectorImage.h>
 #include <itkImage.h>
+#include <itkThresholdImageFilter.h>
 #include <itkImageFileReader.h>
 #include <itkImageFileWriter.h>
 #include <itkQuadEdgeMesh.h>
@@ -89,6 +90,10 @@ typedef BSplineSparseMatrixTransform<ScalarType,
 		                                     DIMENSION, 3u>  TransformType;
 typedef TransformType::Pointer                               TransformPointer;
 typedef typename TransformType::CoefficientsImageType        CoefficientsType;
+
+
+typedef itk::ThresholdImageFilter< ChannelType >             ThresholdFilter;
+typedef typename ThresholdFilter::Pointer                    ThresholdPointer;
 
 typedef itk::ResampleImageFilter
 		         < ChannelType, ChannelType >                ResampleFilter;
