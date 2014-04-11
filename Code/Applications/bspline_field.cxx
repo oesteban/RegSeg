@@ -287,8 +287,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	if( mask.IsNotNull() ){
-		mask->SetDirection( dir );
-		mask->SetOrigin( ref_orig );
 		typename MaskWriter::Pointer wm = MaskWriter::New();
 		wm->SetInput( mask );
 		wm->SetFileName( (outPrefix + "_mask_warped.nii.gz").c_str() );
