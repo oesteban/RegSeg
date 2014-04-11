@@ -57,6 +57,7 @@
 #include <itkImageFileReader.h>
 #include <itkImageFileWriter.h>
 #include <itkBinaryThresholdImageFilter.h>
+#include <itkThresholdImageFilter.h>
 #include <itkRandomImageSource.h>
 #include <itkGaussianImageSource.h>
 #include <itkImageRandomNonRepeatingIteratorWithIndex.h>
@@ -126,6 +127,9 @@ typedef typename MultiplyFilter::Pointer                       MultiplyPointer;
 
 typedef itk::SubtractImageFilter< CoefficientsType >           SubtractFilter;
 typedef typename SubtractFilter::Pointer                       SubtractPointer;
+
+typedef itk::ThresholdImageFilter< ChannelType >               ThresholdFilter;
+typedef typename ThresholdFilter::Pointer                      ThresholdPointer;
 
 typedef itk::ResampleImageFilter< ChannelType, ChannelType, ScalarType >    ResampleFilter;
 typedef typename ResampleFilter::Pointer                       ResamplePointer;

@@ -28,6 +28,7 @@
 #include <itkMaskImageFilter.h>
 #include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkBinaryThresholdImageFilter.h>
+#include <itkThresholdImageFilter.h>
 
 #include <itkDisplacementFieldTransform.h>
 #include <itkMesh.h>
@@ -66,9 +67,13 @@ typedef itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >    BSpli
 typedef itk::NearestNeighborInterpolateImageFunction< ChannelType, ScalarType >    NearestNeighborInterpolateImageFunction;
 typedef itk::MaskImageFilter< ChannelType, MaskType, ChannelType > MaskFilter;
 
+
+typedef itk::ThresholdImageFilter< ChannelType >               ThresholdFilter;
+typedef typename ThresholdFilter::Pointer                      ThresholdPointer;
+
 typedef itk::WarpImageFilter
-		         < ChannelType, ChannelType, DisplacementFieldType >     WarpFilter;
-typedef typename WarpFilter::Pointer                         WarpFilterPointer;
+	    < ChannelType, ChannelType, DisplacementFieldType >    WarpFilter;
+typedef typename WarpFilter::Pointer                           WarpFilterPointer;
 
 typedef typename itk::DisplacementFieldTransform
 		                           < ScalarType, DIMENSION>    TransformType;

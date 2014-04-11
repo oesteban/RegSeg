@@ -111,7 +111,12 @@ int main(int argc, char *argv[]) {
 		res->SetDisplacementField( field );
 		res->Update();
 
-		typename ChannelType::Pointer im_res = res->GetOutput();
+		ThresholdPointer th = ThresholdFilter::New();
+		th->SetInput( res->GetOutput() );
+		th->ThresholdBelow( 0.0 );
+		th->SetOutsideValue( 0.0 );
+
+		typename ChannelType::Pointer im_res = th->GetOutput();
 		im_res->SetDirection( dir );
 		im_res->SetOrigin( ref_orig );
 

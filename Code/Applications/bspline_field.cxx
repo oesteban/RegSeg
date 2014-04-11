@@ -241,7 +241,12 @@ int main(int argc, char *argv[]) {
 		res->SetTransform( transform );
 		res->Update();
 
-		ChannelPointer im_res = res->GetOutput();
+		ThresholdPointer th = ThresholdFilter::New();
+		th->SetInput( res->GetOutput() );
+		th->ThresholdBelow( 0.0 );
+		th->SetOutsideValue( 0.0 );
+
+		ChannelPointer im_res = th->GetOutput();
 		im_res->SetDirection( dir );
 		im_res->SetOrigin( ref_orig );
 
