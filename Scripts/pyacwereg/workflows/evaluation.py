@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-11 16:59:05
+# @Last Modified time: 2014-04-11 17:11:22
 
 import os
 import os.path as op
@@ -151,7 +151,8 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
             ,( inputnode,  dist, [ ('grid_size', 'inputnode.grid_size')])
             ,( prep,       dist, [ ('outputnode.out_smri_brain','inputnode.in_file'),
                                    ('outputnode.out_surfs', 'inputnode.in_surfs'),
-                                   ('outputnode.out_tpms', 'inputnode.in_tpms')])
+                                   ('outputnode.out_tpms', 'inputnode.in_tpms'),
+                                   ('outputnode.out_mask', 'inputnode.in_mask')])
             ,( dist, outputnode, [ ('outputnode.out_file','out_file'),
                                    ('outputnode.out_field','out_field'),
                                    ('outputnode.out_coeff','out_coeff')])

@@ -6,7 +6,7 @@
 # @Author: oesteban
 # @Date:   2014-03-11 15:28:16
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-03-28 16:25:25
+# @Last Modified time: 2014-04-11 17:10:41
 
 import os
 import os.path as op
@@ -53,9 +53,9 @@ def bspline_deform( name='BSplineDistortion' ):
     inputnode = pe.Node( niu.IdentityInterface(fields=['in_file','in_tpms','in_surfs','grid_size']),
                          name='inputnode' )
     outputnode = pe.Node( niu.IdentityInterface(fields=['out_file','out_tpms', 'out_surfs',
-                                                       'out_field', 'out_coeff' ]),
+                                                       'out_field', 'out_coeff','out_mask' ]),
                           name='outputnode' )
-    get_t1 = pe.Node( niu.Select(index=0), name='SelectT1')
+
     merge = pe.Node( niu.Merge(2), name='MergeInputs')
 
     distort = pe.Node( RandomBSplineDeformation(), name='bspline_field')
@@ -65,11 +65,11 @@ def bspline_deform( name='BSplineDistortion' ):
     norm_tpms = pe.Node( niu.Function( input_names=['in_files','in_mask'], output_names=['out_files'], function=normalize ), name='Normalize' )
 
     wf.connect([
-       ( inputnode,    distort, [ ('in_surfs','in_surfs'), ('grid_size','grid_size')])
+       ( inputnode,    distort, [ ('in_surfs','in_surfs'),
+                                  ('grid_size','grid_size'),
+                                  ('in_mask', 'in_mask') ])
       ,( inputnode,      merge, [ ('in_file', 'in1'), ('in_tpms','in2') ])
-      ,( inputnode,     get_t1, [ ('in_file','inlist') ])
       ,( merge,        distort, [ ('out', 'in_file' )])
-      ,( get_t1,       distort, [ ('out','in_mask')])
       ,( distort,        split, [ ('out_file', 'inlist') ])
       ,( split,      norm_tpms, [ ('out2','in_files' )])
       ,( distort,    norm_tpms, [ ('out_mask', 'in_mask' )])
@@ -77,7 +77,8 @@ def bspline_deform( name='BSplineDistortion' ):
       ,( norm_tpms, outputnode, [ ('out_files','out_tpms')])
       ,( distort,   outputnode, [ ('out_surfs', 'out_surfs'),
                                   ('out_field','out_field'),
-                                  ('out_coeff','out_coeff')])
+                                  ('out_coeff','out_coeff'),
+                                  ('out_mask','out_mask')])
         ])
 
     return wf
