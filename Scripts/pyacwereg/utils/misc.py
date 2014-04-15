@@ -110,3 +110,148 @@ def normalize_tpms( in_files, in_mask=None, out_files=[] ):
         nib.save( nib.Nifti1Image( probmap.astype(np.float32), imgs[i].get_affine(), hdr ), out_file )
 
     return out_files
+
+
+def genNiftiVol( data, dtype=np.uint8 ):
+    import numpy as np
+    import nibabel as nb
+
+    shape = np.array(np.shape( data ), dtype=np.float32 )
+    if np.ndim( data ) > 3:
+        shape = shape[1:]
+
+    affine = np.identity( 4 )
+    affine[0:3,3] = -0.5 * shape
+    hdr = nb.Nifti1Header()
+    hdr.set_data_dtype( np.uint8 )
+    hdr['xyzt_units'] = 2 # mm.
+
+    hdr['data_type'] = 2
+    hdr['qform_code'] = 2 # aligned
+    hdr['sform_code'] = 1 # scanner
+    hdr['scl_slope'] = 1.0
+    hdr['regular'] = np.array('r', dtype='|S1')
+    pixdim = np.ones( shape=(8,) )
+    pixdim[4:] = 0
+    hdr['pixdim'] = pixdim
+
+    if np.ndim( data ) > 3:
+        hdr['xyzt_units'] = 2 + 8 # mm + sec
+        pixdim[4] = 1
+        hdr['pixdim'] = pixdim
+        nii_array = []
+        for im in data:
+            nii_array.append( nb.Nifti1Image( im.astype(dtype), affine, hdr ) )
+        nii = nb.concat_images( nii_array )
+
+    else:
+        nii = nb.Nifti1Image( data.astype( dtype ), affine, hdr )
+    return nii
+
+def genBall(datashape=( 101,101,101 ), radius=17, cortex=True):
+    import pyacwereg.utils.misc as misc
+    import scipy.ndimage as ndimage
+    import numpy as np
+
+    wm = ball( datashape, radius )
+
+    if cortex:
+        ball2 = ball(11,4.4)
+        gm = ndimage.binary_dilation( wm, structure=ball2 ).astype( np.uint8 ) - wm
+        bg = np.ones_like( wm ) - (gm + wm)
+        return [ bg, wm, gm ]
+    else:
+        bg = np.ones_like( wm ) - wm
+        return [ bg, wm ]
+
+def genGyrus(datashape=(101,101,101), radius=35, cortex=True):
+    import pyacwereg.utils.misc as misc
+    import scipy.ndimage as ndimage
+    import numpy as np
+
+    modelbase = ball( datashape, radius )
+    center_pix = ((np.array( datashape )-1)*0.5).astype(np.uint8)
+    modelbase[center_pix[0],:, center_pix[2]: ] = 0
+    ball1 = ball(11,4.5)
+    wm = ndimage.binary_opening( ndimage.binary_erosion( modelbase, structure=ball1 ).astype( np.uint8 ), structure=ball1 ).astype( np.uint8 )
+
+    if cortex:
+        ball2 = ball(11,4.4)
+        gm = ndimage.binary_dilation( wm, structure=ball2 ).astype( np.uint8 ) - wm
+        bg = np.ones_like( modelbase ) - (gm + wm)
+        return [ bg, wm, gm ]
+    else:
+        bg = np.ones_like( modelbase ) - wm
+        return [ bg, wm ]
+
+def genBox( datashape=(101,101,101), coverage=0.4, cortex=True ):
+    import pyacwereg.utils.misc as misc
+    import scipy.ndimage as ndimage
+    import numpy as np
+
+    modelbase = np.zeros( shape=datashape )
+    extent = np.around(  coverage * np.array( datashape ) )
+    padding = np.around( 0.5 * (np.array( datashape ) - extent) )
+    end = np.array( datashape ) - padding
+    modelbase[padding[0]:end[0],padding[1]:end[1],padding[2]:end[2]] = 1
+
+    ball1 = ball(11,4.5)
+    wm = ndimage.binary_opening( ndimage.binary_erosion( modelbase, structure=ball1 ).astype( np.uint8 ), structure=ball1 ).astype( np.uint8 )
+
+    if cortex:
+        ball2 = ball(11,4.4)
+        gm = ndimage.binary_dilation( wm, structure=ball2 ).astype( np.uint8 ) - wm
+        bg = np.ones_like( modelbase ) - (gm + wm)
+        return [ bg, wm, gm ]
+    else:
+        bg = np.ones_like( modelbase ) - wm
+        return [ bg, wm ]
+
+def genL( datashape=(101,101,101), cortex=True ):
+    import scipy.ndimage as ndimage
+    import numpy as np
+
+    modelbase = np.zeros( shape=datashape )
+    center = np.around(  0.5 * np.array( datashape ) )
+    extent = np.around(  0.4 * np.array( datashape ) )
+    padding = np.around( 0.5 * (np.array( datashape ) - extent) )
+    end = np.array( datashape ) - padding
+    modelbase[padding[0]:end[0],padding[1]:end[1],padding[2]:end[2]] = 1
+    modelbase[center[0]:end[0],center[1]:end[1],center[2]:end[2]] = 0
+
+    ball1 = ball(11,4.5)
+    wm = ndimage.binary_opening( ndimage.binary_erosion( modelbase, structure=ball1 ).astype( np.uint8 ), structure=ball1 ).astype( np.uint8 )
+
+    if cortex:
+        ball2 = ball(11,4.4)
+        gm = ndimage.binary_dilation( wm, structure=ball2 ).astype( np.uint8 ) - wm
+        bg = np.ones_like( modelbase ) - (gm + wm)
+        return [ bg, wm, gm ]
+    else:
+        bg = np.ones_like( modelbase ) - wm
+        return [ bg, wm ]
+
+def genShape( name, cortex=True ):
+    if name == 'box':
+        return genBox( cortex=cortex )
+    elif name == 'L':
+        return genL( cortex=cortex )
+    elif name == 'ball':
+        return genBall( cortex=cortex )
+    elif name == 'gyrus':
+        return genGyrus( cortex=cortex )
+    else:
+        return genBox()
+
+def genContrast( model, values ):
+    assert( len( model ) > 1 )
+    assert( (len(model)-1) <= len(values) )
+
+    if( (len(model)-1) < len(values) ):
+        values = values[0:len(model)]
+
+
+    contrast = np.zeros_like( model[0] )
+    for c,v in zip( model[1:], values ):
+        contrast = contrast + c * v
+    return contrast
