@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-15 09:55:32
+# @Last Modified time: 2014-04-15 11:32:09
 
 import os
 import os.path as op
@@ -100,7 +100,7 @@ def registration_ev( name='EvaluateMapping' ):
 
     return wf
 
-def bspline( name='BSplineEvaluation', methods=None, results=None ):
+def bspline( name='BSplineEvaluation', n_tissues=3, methods=None, results=None ):
     """ A workflow to evaluate registration methods generating a gold standard
     with random bspline deformations.
 
@@ -127,11 +127,10 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
         outputnode.out_disp - the displacement field, at image grid resoluton
 
     """
-    wf = pe.Workflow( name=name )
-
+    wf = pe.Workflow(name=name)
 
     if methods is None:
-        methods = [ identity_wf(), default_regseg() ]
+        methods = [ identity_wf(n_tissues=n_tissues), default_regseg() ]
     else:
         methods = np.atleast_1d( methods ).tolist()
 
@@ -143,7 +142,7 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
                          'out_surfs','out_field', 'out_coeff', 'out_overlap' ]),
                          name='outputnode' )
 
-    dist = bspline_deform()
+    dist = bspline_deform(n_tissues=n_tissues)
 
     wf.connect([
              ( inputnode,  dist, [('grid_size', 'inputnode.grid_size'),

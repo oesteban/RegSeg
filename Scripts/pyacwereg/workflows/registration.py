@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-04 17:58:01
+# @Last Modified time: 2014-04-15 11:31:41
 
 import os
 import os.path as op
@@ -57,7 +57,7 @@ def default_regseg( name='REGSEGDefault'):
 
     return wf
 
-def identity_wf( name='Identity'):
+def identity_wf( name='Identity', n_tissues=3):
     """ An identity workflow to check how ideal inverse transform
     affects final evaluation scores.
     """
@@ -76,7 +76,7 @@ def identity_wf( name='Identity'):
 
     # Compute corrected images
     merge = pe.Node( niu.Merge(2), name='Merge' )
-    split = pe.Node( niu.Split(splits=[2,3]), name='Split')
+    split = pe.Node( niu.Split(splits=[2,n_tissues]), name='Split')
 
     # Apply tfm to tpms
     applytfm = pe.Node( iface.FieldBasedWarp(), name="ApplyWarp" )

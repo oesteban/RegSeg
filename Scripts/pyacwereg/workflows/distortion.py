@@ -6,7 +6,7 @@
 # @Author: oesteban
 # @Date:   2014-03-11 15:28:16
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-15 09:07:55
+# @Last Modified time: 2014-04-15 11:26:37
 
 import os
 import os.path as op
@@ -22,6 +22,9 @@ import nipype.pipeline.engine as pe
 from epi import epi_deform,fieldmap_preparation
 from pyacwereg.nipype.interfaces import RandomBSplineDeformation
 from pyacwereg.utils.misc import normalize_tpms as normalize
+
+from nipype import logging
+wflogger = logging.getLogger('workflow')
 
 def isbi_workflow( name='ISBI2014' ):
     workflow = pe.Workflow(name=name)
@@ -47,7 +50,7 @@ def isbi_workflow( name='ISBI2014' ):
 
     return workflow
 
-def bspline_deform( name='BSplineDistortion' ):
+def bspline_deform( name='BSplineDistortion', n_tissues=3 ):
     """ A nipype workflow to produce bspline-based deformation fields """
     wf = pe.Workflow( name=name )
     inputnode = pe.Node( niu.IdentityInterface(fields=['in_file','in_tpms','in_mask','in_surfs','grid_size']),
@@ -60,7 +63,8 @@ def bspline_deform( name='BSplineDistortion' ):
 
     distort = pe.Node( RandomBSplineDeformation(), name='bspline_field')
 
-    split = pe.Node( niu.Split(splits=[2,3]), name='SplitOutputs' )
+    wflogger.debug( 'n_tissues=%d' % n_tissues )
+    split = pe.Node( niu.Split(splits=[2,n_tissues]), name='SplitOutputs' )
 
     norm_tpms = pe.Node( niu.Function( input_names=['in_files','in_mask'], output_names=['out_files'], function=normalize ), name='Normalize' )
 
