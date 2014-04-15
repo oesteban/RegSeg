@@ -63,20 +63,20 @@ typedef typename DisplacementFieldType::Pointer              DisplacementFieldPo
 typedef itk::ImageFileReader<DisplacementFieldType>          DisplacementFieldReaderType;
 typedef typename DisplacementFieldReaderType::Pointer        DisplacementFieldReaderPointer;
 
-typedef itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >    BSplineInterpolateImageFunction;
-typedef itk::NearestNeighborInterpolateImageFunction< MaskType, ScalarType >    NearestNeighborInterpolateImageFunction;
+typedef itk::BSplineInterpolateImageFunction< ChannelType >    BSplineInterpolateImageFunction;
+typedef itk::NearestNeighborInterpolateImageFunction< MaskType >    NearestNeighborInterpolateImageFunction;
 typedef itk::MaskImageFilter< ChannelType, MaskType, ChannelType > MaskFilter;
 
 typedef itk::WarpImageFilter
 	    < MaskType, MaskType, DisplacementFieldType >          WarpMaskFilter;
 typedef typename WarpMaskFilter::Pointer                       WarpMaskFilterPointer;
 
-typedef itk::ThresholdImageFilter< ChannelType >               ThresholdFilter;
-typedef typename ThresholdFilter::Pointer                      ThresholdPointer;
-
 typedef itk::WarpImageFilter
 	    < ChannelType, ChannelType, DisplacementFieldType >    WarpFilter;
 typedef typename WarpFilter::Pointer                           WarpFilterPointer;
+
+typedef itk::ThresholdImageFilter< ChannelType >               ThresholdFilter;
+typedef typename ThresholdFilter::Pointer                      ThresholdPointer;
 
 typedef typename itk::DisplacementFieldTransform
 		                           < ScalarType, DIMENSION>    TransformType;

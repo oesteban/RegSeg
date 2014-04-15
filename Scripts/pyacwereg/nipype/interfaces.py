@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-08 13:14:59
+# @Last Modified time: 2014-04-15 12:36:08
 
 import os
 import os.path as op
@@ -293,7 +293,7 @@ class RandomBSplineDeformation( ANTSCommand ):
         out_prefix = self.inputs.out_prefix
         outputs = self.output_spec().get()
 
-        outputs['out_file'] = [ op.abspath( '%s_resampled_%d.nii.gz' % ( out_prefix, i ))  for i in range(len(self.inputs.in_file)) ]
+        outputs['out_file'] = [ op.abspath( '%s_warped_%d.nii.gz' % ( out_prefix, i ))  for i in range(len(self.inputs.in_file)) ]
         outputs['out_field'] = op.abspath( '%s_dispfield.nii.gz' % out_prefix )
         outputs['out_coeff'] = [ op.abspath( '%s_coeffs_%d.nii.gz' % ( out_prefix, i ))  for i in range(3) ]
         outputs['out_field_base'] = [ op.abspath( '%s_field_cmp%d.nii.gz' % ( out_prefix, i ))  for i in range(3) ]

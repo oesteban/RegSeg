@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-15 11:31:41
+# @Last Modified time: 2014-04-15 13:08:37
 
 import os
 import os.path as op
@@ -88,7 +88,8 @@ def identity_wf( name='Identity', n_tissues=3):
         ,( inputnode,  applytfm, [ ('in_mask', 'in_mask'),
                                    ('in_surf', 'in_surf') ])
         ,( merge,      applytfm, [ ('out', 'in_file' )])
-        ,( inv,        applytfm, [ ('out_field', 'in_field')])
+        ,( inputnode,  applytfm, [ ('in_field','in_field' ) ])
+        #,( inv,        applytfm, [ ('out_field', 'in_field')])
         ,( applytfm,      split, [ ('out_file', 'inlist')])
         ,( split,    outputnode, [ ('out1', 'out_corr' ),
                                    ('out2', 'out_tpms' )])
