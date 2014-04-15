@@ -179,11 +179,14 @@ int main(int argc, char *argv[]) {
 
 	transform->Interpolate();
 
+	typename FieldType::ConstPointer field = transform->GetOutputField();
+
 	typename FieldWriter::Pointer ff = FieldWriter::New();
-	ff->SetInput( transform->GetOutputField() );
+	ff->SetInput( field );
 	ff->SetFileName( (outPrefix + "_dispfield.nii.gz").c_str() );
 	ff->Update();
 
+	// Read and transform mask, if present
 	MaskPointer mask;
 
 	if (vm.count( "mask" ) ) {
@@ -202,37 +205,37 @@ int main(int argc, char *argv[]) {
 		mask_bin->SetDirection( dir * itk );
 		mask_bin->SetOrigin( itk * ref_orig );
 
-		MaskResamplePointer res = MaskResampleFilter::New();
-		res->SetInput( mask_bin );
-		res->SetReferenceImage( mask_bin );
-		res->SetUseReferenceImage(true);
+		WarpMaskFilterPointer res = WarpMaskFilter::New();
 		res->SetInterpolator( NearestNeighborInterpolateImageFunction::New() );
-		res->SetTransform( transform );
+		res->SetOutputParametersFromImage( mask_bin );
+		res->SetInput( mask_bin );
+		res->SetDisplacementField( field );
 		res->Update();
 
 		mask = res->GetOutput();
 	}
 
-
 	// Read and transform images if present
 	for( size_t i = 0; i<fixedImageNames.size(); i++) {
-		ReaderPointer r = ReaderType::New();
+		typename ReaderType::Pointer r = ReaderType::New();
 		r->SetFileName( fixedImageNames[i] );
 		r->Update();
 
-		ChannelPointer im = r->GetOutput();
+		typename ChannelType::Pointer im = r->GetOutput();
+		typename ChannelType::DirectionType dir = im->GetDirection();
+		typename ChannelType::PointType ref_orig = im->GetOrigin();
+
 		im->SetDirection( dir * itk );
 		im->SetOrigin( itk * ref_orig );
 
-		ResamplePointer res = ResampleFilter::New();
-		res->SetInput( im );
-		res->SetReferenceImage( im );
-		res->SetUseReferenceImage(true);
+		WarpFilterPointer res = WarpFilter::New();
 		res->SetInterpolator( BSplineInterpolateImageFunction::New() );
-		res->SetTransform( transform );
+		res->SetOutputParametersFromImage( im );
+		res->SetInput( im );
+		res->SetDisplacementField( field );
 		res->Update();
 
-		ChannelPointer im_res = res->GetOutput();
+		typename ChannelType::Pointer im_res = res->GetOutput();
 
 		if (mask.IsNotNull()) {
 			typename MaskFilter::Pointer mm = MaskFilter::New();
@@ -248,13 +251,14 @@ int main(int argc, char *argv[]) {
 		th->ThresholdBelow( 0.0 );
 		th->SetOutsideValue( 0.0 );
 
-		ChannelPointer im_res_warped = th->GetOutput();
+		typename ChannelType::Pointer im_res_warped = th->GetOutput();
 		im_res_warped->SetDirection( dir );
 		im_res_warped->SetOrigin( ref_orig );
 
+		std::stringstream ss;
 		ss.str("");
-		ss << outPrefix << "_resampled_" << i << ".nii.gz";
-		WriterPointer w = WriterType::New();
+		ss << outPrefix << "_warped_" << i << ".nii.gz";
+		typename WriterType::Pointer w = WriterType::New();
 		w->SetInput( im_res_warped );
 		w->SetFileName( ss.str().c_str() );
 		w->Update();
