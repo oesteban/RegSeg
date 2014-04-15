@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-11 17:11:22
+# @Last Modified time: 2014-04-15 09:26:48
 
 import os
 import os.path as op
@@ -24,7 +24,6 @@ import nipype.pipeline.engine as pe             # pipeline engine
 import pyacwereg.nipype.interfaces as iface
 from pyacwereg.utils.misc import normalize_tpms as normalize
 
-from smri import prepare_smri
 from distortion import bspline_deform
 from registration import identity_wf,default_regseg
 
@@ -136,26 +135,25 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
     else:
         methods = np.atleast_1d( methods ).tolist()
 
-    inputnode = pe.Node( niu.IdentityInterface( fields=[ 'subject_id', 'data_dir',
-                                                         'grid_size', 'out_csv' ] ),
+    inputnode = pe.Node(niu.IdentityInterface(
+                        fields=['subject_id','data_dir','grid_size', 'out_csv',
+                                'in_file','in_surfs','in_tpms','in_mask'] ),
                         name='inputnode' )
     outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_tpms',
                          'out_surfs','out_field', 'out_coeff', 'out_overlap' ]),
                          name='outputnode' )
 
-    prep = prepare_smri()
     dist = bspline_deform()
 
     wf.connect([
-             ( inputnode,  prep, [ ('subject_id','inputnode.subject_id'),('data_dir','inputnode.data_dir') ])
-            ,( inputnode,  dist, [ ('grid_size', 'inputnode.grid_size')])
-            ,( prep,       dist, [ ('outputnode.out_smri_brain','inputnode.in_file'),
-                                   ('outputnode.out_surfs', 'inputnode.in_surfs'),
-                                   ('outputnode.out_tpms', 'inputnode.in_tpms'),
-                                   ('outputnode.out_mask', 'inputnode.in_mask')])
-            ,( dist, outputnode, [ ('outputnode.out_file','out_file'),
-                                   ('outputnode.out_field','out_field'),
-                                   ('outputnode.out_coeff','out_coeff')])
+             ( inputnode,  dist, [('grid_size', 'inputnode.grid_size'),
+                                  ('in_file','inputnode.in_file'),
+                                  ('in_surfs', 'inputnode.in_surfs'),
+                                  ('in_tpms', 'inputnode.in_tpms'),
+                                  ('in_mask', 'inputnode.in_mask')])
+            ,( dist, outputnode, [('outputnode.out_file','out_file'),
+                                  ('outputnode.out_field','out_field'),
+                                  ('outputnode.out_coeff','out_coeff')])
     ])
 
     evwfs = []
@@ -169,17 +167,17 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
                          name='Normalize%02d' % i ) )
 
         wf.connect( [
-             (inputnode,    evwfs[i], [('subject_id', 'infonode.subject_id') ] )
-            ,(prep,              reg, [('outputnode.out_surfs','inputnode.in_surf'),
-                                       ('outputnode.out_smri_brain', 'inputnode.in_orig' ) ])
+             (inputnode,    evwfs[i], [('subject_id', 'infonode.subject_id'),
+                                       ('in_file',    'refnode.in_imag'),
+                                       ('in_tpms',    'refnode.in_tpms'),
+                                       ('in_surfs',   'refnode.in_surf'),
+                                       ('in_mask',    'refnode.in_mask'), ])
+            ,(inputnode,         reg, [('in_surfs','inputnode.in_surf'),
+                                       ('in_file', 'inputnode.in_orig' ) ])
             ,(dist,              reg, [('outputnode.out_file', 'inputnode.in_dist'),
                                        ('outputnode.out_tpms', 'inputnode.in_tpms'),
                                        ('outputnode.out_mask', 'inputnode.in_mask') ])
-            ,(prep,         evwfs[i], [('outputnode.out_smri_brain', 'refnode.in_imag'),
-                                       ('outputnode.out_tpms',       'refnode.in_tpms'),
-                                       ('outputnode.out_surfs',      'refnode.in_surf'),
-                                       ('outputnode.out_mask',       'refnode.in_mask'), ])
-            ,(dist,         evwfs[i], [('outputnode.out_field',      'refnode.in_field' ) ])
+            ,(dist,         evwfs[i], [('outputnode.out_field','refnode.in_field' ) ])
             ,(reg,      norm_tpms[i], [('outputnode.out_tpms', 'in_files') ] )
             ,(reg,          evwfs[i], [('outputnode.out_corr', 'tstnode.in_imag'),
                                        ('outputnode.out_surf', 'tstnode.in_surf'),
@@ -200,6 +198,4 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
             wf.connect([
              ( inputnode, evwfs[i], [ ('out_csv', 'infonode.out_csv') ])
             ])
-
-
     return wf

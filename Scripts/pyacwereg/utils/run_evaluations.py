@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-11 13:52:38
+# @Last Modified time: 2014-04-15 09:23:47
 
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
@@ -17,6 +17,7 @@ import glob
 import sys
 
 import pyacwereg.workflows.evaluation as ev
+from pyacwereg.workflows.smri import prepare_smri
 import nipype.pipeline.engine as pe
 import nipype.interfaces.utility as niu
 
@@ -64,21 +65,24 @@ if __name__== '__main__':
                           name="infosource")
     infosource.iterables = [('subject_id', subjects[0:3])]
 
+    prep = prepare_smri()
+    prep.inputs.inputnode.data_dir = options.data_dir
 
-    mm = ev.bspline()
-    mm.base_dir = options.work_dir
-    mm.inputs.inputnode.subject_id = subjects[0:50]
-    mm.inputs.inputnode.data_dir = options.data_dir
-    mm.inputs.inputnode.grid_size = options.grid_size
+    bs = ev.bspline()
+    bs.inputs.inputnode.grid_size = options.grid_size
 
     wf.connect([
-        ( infosource, mm, [ ('subject_id','inputnode.subject_id') ])
+        ( infosource,  prep, [('subject_id','inputnode.subject_id')])
+       ,( prep,          bs, [('outputnode.out_smri_brain','inputnode.in_file'),
+                              ('outputnode.out_surfs', 'inputnode.in_surfs'),
+                              ('outputnode.out_tpms', 'inputnode.in_tpms'),
+                              ('outputnode.out_mask', 'inputnode.in_mask')])
     ])
 
     if options.out_csv is None:
-        mm.inputs.inputnode.out_csv = op.join( options.work_dir, wf.name, 'results.csv' )
+        bs.inputs.inputnode.out_csv = op.join( options.work_dir, wf.name, 'results.csv' )
     else:
-        mm.inputs.inputnode.out_csv = options.out_csv
+        bs.inputs.inputnode.out_csv = options.out_csv
 
     try:
         wf.write_graph( graph2use='hierarchical', format='pdf', simple_form=True )
