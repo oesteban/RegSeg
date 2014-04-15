@@ -64,7 +64,7 @@ if __name__== '__main__':
     infosource = pe.Node( niu.IdentityInterface(fields=['subject_id', 'data_dir']),
                           name="infosource")
     infosource.iterables = [('subject_id', subjects[0:3])]
-    infosource.inputs.inputnode.data_dir = options.data_dir
+    infosource.inputs.data_dir = options.data_dir
 
     prep = prepare_smri()
 
