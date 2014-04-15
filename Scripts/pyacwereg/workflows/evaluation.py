@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-15 09:26:48
+# @Last Modified time: 2014-04-15 09:55:32
 
 import os
 import os.path as op
@@ -136,7 +136,7 @@ def bspline( name='BSplineEvaluation', methods=None, results=None ):
         methods = np.atleast_1d( methods ).tolist()
 
     inputnode = pe.Node(niu.IdentityInterface(
-                        fields=['subject_id','data_dir','grid_size', 'out_csv',
+                        fields=['subject_id','grid_size', 'out_csv',
                                 'in_file','in_surfs','in_tpms','in_mask'] ),
                         name='inputnode' )
     outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_tpms',

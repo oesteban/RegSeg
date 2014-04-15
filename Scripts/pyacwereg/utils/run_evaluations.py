@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-15 09:23:47
+# @Last Modified time: 2014-04-15 09:57:10
 
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
@@ -61,18 +61,20 @@ if __name__== '__main__':
 
     wf = pe.Workflow( name=options.name )
     wf.base_dir = options.work_dir
-    infosource = pe.Node( niu.IdentityInterface(fields=['subject_id']),
+    infosource = pe.Node( niu.IdentityInterface(fields=['subject_id', 'data_dir']),
                           name="infosource")
     infosource.iterables = [('subject_id', subjects[0:3])]
+    infosource.inputs.inputnode.data_dir = options.data_dir
 
     prep = prepare_smri()
-    prep.inputs.inputnode.data_dir = options.data_dir
 
     bs = ev.bspline()
     bs.inputs.inputnode.grid_size = options.grid_size
 
     wf.connect([
-        ( infosource,  prep, [('subject_id','inputnode.subject_id')])
+        ( infosource,  prep, [('subject_id','inputnode.subject_id'),
+                              ('data_dir','inputnode.data_dir')])
+       ,( infosource,    bs, [('subject_id','inputnode.subject_id')])
        ,( prep,          bs, [('outputnode.out_smri_brain','inputnode.in_file'),
                               ('outputnode.out_surfs', 'inputnode.in_surfs'),
                               ('outputnode.out_tpms', 'inputnode.in_tpms'),
