@@ -189,14 +189,17 @@ void
 SparseMatrixTransform<TScalar,NDimensions>
 ::SetOutputReference( const DomainBase* image ) {
 	this->m_UseImageOutput = true;
-	this->m_OutputField = FieldType::New();
-	this->m_OutputField->SetRegions( image->GetLargestPossibleRegion().GetSize() );
-	this->m_OutputField->SetOrigin( image->GetOrigin() );
-	this->m_OutputField->SetSpacing( image->GetSpacing() );
-	this->m_OutputField->SetDirection( image->GetDirection() );
-	this->m_OutputField->Allocate();
 	VectorType zerov; zerov.Fill( 0.0 );
-	this->m_OutputField->FillBuffer( zerov );
+
+	FieldPointer newfield = FieldType::New();
+	newfield->SetRegions( image->GetLargestPossibleRegion().GetSize() );
+	newfield->SetOrigin( image->GetOrigin() );
+	newfield->SetSpacing( image->GetSpacing() );
+	newfield->SetDirection( image->GetDirection() );
+	newfield->Allocate();
+	newfield->FillBuffer( zerov );
+	this->SetDisplacementField( newfield );
+
 	this->m_NumberOfSamples = image->GetLargestPossibleRegion().GetNumberOfPixels();
 
 	// Initialize off-grid positions
@@ -451,10 +454,18 @@ SparseMatrixTransform<TScalar,NDimensions>
 	if( this->m_UseImageOutput ) {
 		bool setVector;
 		ScalarType val;
+		VectorType v; v.Fill(0.0);
 
-		this->m_OutputField->FillBuffer( 0.0 );
-		VectorType* obuf = this->m_OutputField->GetBufferPointer();
-		VectorType v;
+		FieldPointer newfield = FieldType::New();
+		newfield->SetRegions( this->m_DisplacementField->GetLargestPossibleRegion().GetSize() );
+		newfield->SetOrigin( this->m_DisplacementField->GetOrigin() );
+		newfield->SetSpacing( this->m_DisplacementField->GetSpacing() );
+		newfield->SetDirection( this->m_DisplacementField->GetDirection() );
+		newfield->Allocate();
+		newfield->FillBuffer( v );
+
+		VectorType* obuf = this->m_DisplacementField->GetBufferPointer();
+		VectorType* ibuf = newfield->GetBufferPointer();
 
 		for( size_t row = 0; row<this->m_NumberOfSamples; row++ ) {
 			v.Fill( 0.0 );
@@ -467,11 +478,15 @@ SparseMatrixTransform<TScalar,NDimensions>
 					setVector = true;
 				}
 			}
-			if (setVector)
-			 *( obuf + row ) = v;
+			if (setVector) {
+				*( obuf + row ) = v;
+				*( ibuf + row ) = -v;
+			}
 		}
-		this->SetDisplacementField( this->m_OutputField );
+		this->SetInverseDisplacementField( newfield );
+
 	}
+
 }
 
 template< class TScalar, unsigned int NDimensions >
