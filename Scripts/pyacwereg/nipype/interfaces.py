@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-15 12:36:08
+# @Last Modified time: 2014-04-16 19:03:51
 
 import os
 import os.path as op
@@ -299,7 +299,7 @@ class RandomBSplineDeformation( ANTSCommand ):
         outputs['out_field_base'] = [ op.abspath( '%s_field_cmp%d.nii.gz' % ( out_prefix, i ))  for i in range(3) ]
 
         if isdefined( self.inputs.in_surfs ):
-            outputs['out_surfs'] = [ op.abspath( '%s_surf_%d.vtk' % ( out_prefix, i ))  for i in range(len(self.inputs.in_surfs)) ]
+            outputs['out_surfs'] = [ op.abspath( '%s_warped_%d.vtk' % ( out_prefix, i ))  for i in range(len(self.inputs.in_surfs)) ]
 
         if isdefined( self.inputs.in_mask ):
             outputs['out_mask'] = op.abspath( '%s_mask_warped.nii.gz' % out_prefix )
@@ -311,7 +311,9 @@ class FieldBasedWarpInputSpec( ANTSCommandInputSpec ):
     in_file = InputMultiPath(File(exists=True), mandatory=True, argstr="-I %s",
               desc='image(s) to be deformed')
     in_field = File(exists=True, mandatory=False, argstr="-F %s",
-               desc='field')
+               desc='forward field', xor='in_inv_field' )
+    in_inv_field = File(exists=True, mandatory=False, argstr="-R %s",
+               desc='backward field', xor='in_field' )
     in_mask = File(exists=True, argstr='-M %s', desc='set a mask')
     in_surf = InputMultiPath(File(exists=True), argstr="-S %s",
               desc='surface(s) to be deformed')
@@ -336,7 +338,7 @@ class FieldBasedWarp( ANTSCommand ):
     >>> warp.inputs.in_surf = [ 'lh.white.vtk', 'rh.white.vtk' ]
     >>> warp.inputs.out_prefix = 'myprefix'
     >>> warp.cmdline
-    'warp_image -I moving.nii -f field.nii -S lh.white.vtk rh.white.vtk -o myprefix'
+    'warp_image -I moving.nii -F field.nii -S lh.white.vtk rh.white.vtk -o myprefix'
     """
 
     input_spec = FieldBasedWarpInputSpec

@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
 
 		MeshWriterPointer wmesh = MeshWriterType::New();
 		std::stringstream ss;
-		ss << outPrefix << "_surf_" << i << ".vtk";
+		ss << outPrefix << "_warped_" << i << ".vtk";
 		wmesh->SetFileName( ss.str().c_str() );
 		wmesh->SetInput( mesh );
 		wmesh->Update();
