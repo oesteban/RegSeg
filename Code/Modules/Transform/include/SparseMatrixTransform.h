@@ -236,7 +236,7 @@ public:
     	if (!this->m_UseImageOutput){
     		itkExceptionMacro( << "UseImageOutput is false, output field is not gridded" );
     	}
-    	return this->m_OutputField;
+    	return this->m_DisplacementField;
     }
 
     /** Return the multithreader used by this class. */
@@ -318,7 +318,6 @@ protected:
 	KernelFunctionPointer m_DerivativeKernel;
 	//KernelFunctionPointer m_SecondDerivativeKernel;
 	FieldPointer          m_Field;
-	FieldPointer          m_OutputField;
 
 	virtual void ComputeMatrix( WeightsMatrixType type, size_t dim = 0 );
 	virtual void AfterThreadedComputeMatrix( SMTStruct* str );

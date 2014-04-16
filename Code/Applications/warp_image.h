@@ -23,6 +23,7 @@
 #include <itkImageFileReader.h>
 #include <itkImageFileWriter.h>
 #include <itkWarpImageFilter.h>
+#include <itkResampleImageFilter.h>
 #include <itkBSplineInterpolateImageFunction.h>
 
 #include <itkMaskImageFilter.h>
@@ -58,22 +59,31 @@ typedef itk::BinaryThresholdImageFilter
 typedef double                                               ScalarType;
 
 typedef itk::Vector< ScalarType, DIMENSION >                 VectorType;
-typedef itk::Image< VectorType, DIMENSION >                  DisplacementFieldType;
-typedef typename DisplacementFieldType::Pointer              DisplacementFieldPointer;
-typedef itk::ImageFileReader<DisplacementFieldType>          DisplacementFieldReaderType;
+typedef itk::Image< VectorType, DIMENSION >                  FieldType;
+typedef typename FieldType::Pointer              			 DisplacementFieldPointer;
+typedef itk::ImageFileReader<FieldType>          			 DisplacementFieldReaderType;
 typedef typename DisplacementFieldReaderType::Pointer        DisplacementFieldReaderPointer;
 
-typedef itk::BSplineInterpolateImageFunction< ChannelType >    BSplineInterpolateImageFunction;
-typedef itk::NearestNeighborInterpolateImageFunction< MaskType >    NearestNeighborInterpolateImageFunction;
 typedef itk::MaskImageFilter< ChannelType, MaskType, ChannelType > MaskFilter;
 
-typedef itk::WarpImageFilter
-	    < MaskType, MaskType, DisplacementFieldType >          WarpMaskFilter;
-typedef typename WarpMaskFilter::Pointer                       WarpMaskFilterPointer;
+typedef itk::ResampleImageFilter< ChannelType, ChannelType, ScalarType >    ResampleFilter;
+typedef typename ResampleFilter::Pointer                       ResamplePointer;
+typedef itk::BSplineInterpolateImageFunction< ChannelType, ScalarType >    ResampleInterpolator;
+
+typedef itk::ResampleImageFilter
+		                 < MaskType, MaskType, ScalarType >    ResampleMaskFilter;
+typedef typename ResampleMaskFilter::Pointer                   ResampleMaskPointer;
+typedef itk::NearestNeighborInterpolateImageFunction< MaskType, ScalarType >    ResampleMaskInterpolator;
 
 typedef itk::WarpImageFilter
-	    < ChannelType, ChannelType, DisplacementFieldType >    WarpFilter;
+	    < MaskType, MaskType, FieldType >                      WarpMaskFilter;
+typedef typename WarpMaskFilter::Pointer                       WarpMaskFilterPointer;
+typedef itk::NearestNeighborInterpolateImageFunction< MaskType >    WarpMaskInterpolator;
+
+typedef itk::WarpImageFilter
+	    < ChannelType, ChannelType, FieldType >                WarpFilter;
 typedef typename WarpFilter::Pointer                           WarpFilterPointer;
+typedef itk::BSplineInterpolateImageFunction< ChannelType >    WarpInterpolator;
 
 typedef itk::ThresholdImageFilter< ChannelType >               ThresholdFilter;
 typedef typename ThresholdFilter::Pointer                      ThresholdPointer;

@@ -14,6 +14,7 @@
 #include <vnl/vnl_diag_matrix.h>
 #include <sstream>
 
+
 int main(int argc, char *argv[]) {
 	std::string outPrefix = "";
 	std::string maskfile;
@@ -44,15 +45,18 @@ int main(int argc, char *argv[]) {
 	readref->SetFileName( fixedImageNames[0] );
 	readref->Update();
 	ChannelPointer ref = readref->GetOutput();
-	typename ChannelType::DirectionType dir = ref->GetDirection();
+	typename ChannelType::DirectionType ref_dir(ref->GetDirection());
 	typename ChannelType::PointType ref_orig = ref->GetOrigin();
 
 	typename ChannelType::DirectionType itk;
 	itk.SetIdentity();
 	itk(0,0)=-1.0;
 	itk(1,1)=-1.0;
-	ref->SetDirection( dir * itk );
-	ref->SetOrigin( itk * ref_orig );
+
+	typename ChannelType::DirectionType int_dir(itk * ref_dir);
+	typename ChannelType::PointType int_orig( itk * ref_orig );
+	ref->SetDirection( int_dir );
+	ref->SetOrigin( int_orig );
 
 	typename CoefficientsType::SizeType size;
 	typename CoefficientsType::SpacingType spacing;
@@ -179,12 +183,17 @@ int main(int argc, char *argv[]) {
 
 	transform->Interpolate();
 
-	typename FieldType::ConstPointer field = transform->GetOutputField();
 
+	typename FieldType::Pointer field = transform->GetDisplacementField();
 	typename FieldWriter::Pointer ff = FieldWriter::New();
 	ff->SetInput( field );
 	ff->SetFileName( (outPrefix + "_dispfield.nii.gz").c_str() );
 	ff->Update();
+
+	ff->SetInput( transform->GetInverseDisplacementField() );
+	ff->SetFileName( (outPrefix + "_dispfieldinv.nii.gz").c_str() );
+	ff->Update();
+
 
 	// Read and transform mask, if present
 	MaskPointer mask;
@@ -194,75 +203,83 @@ int main(int argc, char *argv[]) {
 		rmask->SetFileName( maskfile );
 		rmask->Update();
 
+		typename ChannelType::Pointer im = rmask->GetOutput();
+		im->SetDirection( int_dir );
+		im->SetOrigin( int_orig );
+
 		typename Binarize::Pointer bin = Binarize::New();
-		bin->SetInput( rmask->GetOutput() );
+		bin->SetInput( im );
 		bin->SetLowerThreshold( 0.01 );
 		bin->SetOutsideValue( 0 );
 		bin->SetInsideValue( 1 );
 		bin->Update();
 
-		MaskPointer mask_bin = bin->GetOutput();
-		mask_bin->SetDirection( dir * itk );
-		mask_bin->SetOrigin( itk * ref_orig );
+		WarpMaskFilterPointer wrp = WarpMaskFilter::New();
+		wrp->SetInterpolator( WarpMaskInterpolator::New() );
+		wrp->SetOutputParametersFromImage( bin->GetOutput() );
+		wrp->SetInput( bin->GetOutput() );
+		wrp->SetDisplacementField( field );
+		wrp->Update();
+		mask = wrp->GetOutput();
 
-		WarpMaskFilterPointer res = WarpMaskFilter::New();
-		res->SetInterpolator( NearestNeighborInterpolateImageFunction::New() );
-		res->SetOutputParametersFromImage( mask_bin );
-		res->SetInput( mask_bin );
-		res->SetDisplacementField( field );
-		res->Update();
+		mask->SetDirection( ref_dir );
+		mask->SetOrigin( ref_orig );
 
-		mask = res->GetOutput();
+		typename MaskWriter::Pointer wm = MaskWriter::New();
+		wm->SetInput( mask );
+		wm->SetFileName( (outPrefix + "_mask_warped.nii.gz").c_str() );
+		wm->Update();
 	}
 
 	// Read and transform images if present
 	for( size_t i = 0; i<fixedImageNames.size(); i++) {
+		std::stringstream ss;
+		typename WriterType::Pointer w = WriterType::New();
+
 		typename ReaderType::Pointer r = ReaderType::New();
 		r->SetFileName( fixedImageNames[i] );
 		r->Update();
 
 		typename ChannelType::Pointer im = r->GetOutput();
-		typename ChannelType::DirectionType dir = im->GetDirection();
-		typename ChannelType::PointType ref_orig = im->GetOrigin();
+		im->SetDirection( int_dir );
+		im->SetOrigin( int_orig );
 
-		im->SetDirection( dir * itk );
-		im->SetOrigin( itk * ref_orig );
+		WarpFilterPointer wrp = WarpFilter::New();
+		wrp->SetInterpolator( WarpInterpolator::New() );
+		wrp->SetOutputParametersFromImage( im );
+		wrp->SetInput( im );
+		wrp->SetDisplacementField( field );
+		wrp->Update();
 
-		WarpFilterPointer res = WarpFilter::New();
-		res->SetInterpolator( BSplineInterpolateImageFunction::New() );
-		res->SetOutputParametersFromImage( im );
-		res->SetInput( im );
-		res->SetDisplacementField( field );
-		res->Update();
+		ThresholdPointer th = ThresholdFilter::New();
+		th->SetInput( wrp->GetOutput() );
+		th->ThresholdBelow( 0.0 );
+		th->SetOutsideValue( 0.0 );
+		th->Update();
 
-		typename ChannelType::Pointer im_res = res->GetOutput();
+		typename ChannelType::Pointer im_wrp = th->GetOutput();
+		im_wrp->SetDirection( ref_dir );
+		im_wrp->SetOrigin( ref_orig );
 
 		if (mask.IsNotNull()) {
 			typename MaskFilter::Pointer mm = MaskFilter::New();
 			mm->SetMaskImage( mask );
-			mm->SetInput( im_res );
+			mm->SetInput( im_wrp );
 			mm->Update();
-
-			im_res = mm->GetOutput();
+			im_wrp = mm->GetOutput();
 		}
 
-		ThresholdPointer th = ThresholdFilter::New();
-		th->SetInput( im_res );
-		th->ThresholdBelow( 0.0 );
-		th->SetOutsideValue( 0.0 );
-
-		typename ChannelType::Pointer im_res_warped = th->GetOutput();
-		im_res_warped->SetDirection( dir );
-		im_res_warped->SetOrigin( ref_orig );
-
-		std::stringstream ss;
 		ss.str("");
 		ss << outPrefix << "_warped_" << i << ".nii.gz";
-		typename WriterType::Pointer w = WriterType::New();
-		w->SetInput( im_res_warped );
+		w->SetInput( im_wrp );
 		w->SetFileName( ss.str().c_str() );
 		w->Update();
 	}
+
+
+	// Warp surfaces --------------------------------------------------
+	DisplacementFieldTransformPointer tf_inv = DisplacementFieldTransformType::New();
+	tf_inv->SetDisplacementField( transform->GetInverseDisplacementField() );
 
 	for( size_t i = 0; i<movingSurfaceNames.size(); i++){
 		MeshReaderPointer r = MeshReaderType::New();
@@ -277,7 +294,7 @@ int main(int argc, char *argv[]) {
 		MeshPointType p;
 		while ( p_it!=p_end ) {
 			p = p_it.Value();
-			p_it.Value()+= p - transform->TransformPoint( p );
+			p_it.Value() = tf_inv->TransformPoint( p );
 			++p_it;
 		}
 
@@ -287,13 +304,5 @@ int main(int argc, char *argv[]) {
 		wmesh->SetFileName( ss.str().c_str() );
 		wmesh->SetInput( mesh );
 		wmesh->Update();
-
-	}
-
-	if( mask.IsNotNull() ){
-		typename MaskWriter::Pointer wm = MaskWriter::New();
-		wm->SetInput( mask );
-		wm->SetFileName( (outPrefix + "_mask_warped.nii.gz").c_str() );
-		wm->Update();
 	}
 }
