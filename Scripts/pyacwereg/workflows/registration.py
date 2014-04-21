@@ -28,15 +28,16 @@ def default_regseg( name='REGSEGDefault'):
                          name='outputnode' )
 
     # Registration
+    # Good config for box phantom (2014/04/21): [ -a 0.0 -b 0.0 -u 20 -g 6 -i 500 -s 1.0]
     regseg = pe.Node( iface.ACWEReg(), name="ACWERegistration" )
-    regseg.inputs.iterations = [ 100, 50 ]
-    regseg.inputs.descript_update = [ 10, 10 ]
-    regseg.inputs.step_size = [ 0.5, 1.0 ]
-    regseg.inputs.alpha = [ 0.01, 0.001 ]
-    regseg.inputs.beta = [ 0.1, 0.01 ]
-    regseg.inputs.grid_size = [ 6, 10 ]
-    regseg.inputs.convergence_energy = [ True, True ]
-    regseg.inputs.convergence_window = [ 15, 5 ]
+    regseg.inputs.iterations = [ 500 ]
+    regseg.inputs.descript_update = [ 20 ]
+    regseg.inputs.step_size = [ 1.0 ]
+    regseg.inputs.alpha = [ 0.0 ]
+    regseg.inputs.beta = [ 0.0 ]
+    regseg.inputs.grid_size = [ 6 ]
+    #regseg.inputs.convergence_energy = [ False ]
+    #regseg.inputs.convergence_window = [ 15, 5 ]
 
     # Apply tfm to tpms
     applytfm = pe.Node( iface.FieldBasedWarp(), name="ApplyWarp" )

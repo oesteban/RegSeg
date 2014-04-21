@@ -34,11 +34,19 @@ int main(int argc, char *argv[]) {
 			("mask-inputs", bpo::bool_switch(), "use deformed mask to filter input files");
 
 	bpo::variables_map vm;
-	bpo::store(	bpo::parse_command_line( argc, argv, all_desc ), vm);
-	bpo::notify(vm);
 
-	if (vm.count("help") || vm.size() == 0 ) {
-		std::cout << all_desc << std::endl;
+	try {
+		bpo::store(	bpo::parse_command_line( argc, argv, all_desc ), vm);
+
+		if (vm.count("help")) {
+			std::cout << all_desc << std::endl;
+			return 1;
+		}
+
+		bpo::notify(vm);
+	} catch ( bpo::error& e ) {
+		std::cerr << "Error: " << e.what() << std::endl << std::endl;
+		std::cerr << all_desc << std::endl;
 		return 1;
 	}
 
@@ -257,7 +265,7 @@ int main(int argc, char *argv[]) {
 		im_wrp->SetDirection( ref_dir );
 		im_wrp->SetOrigin( ref_orig );
 
-		if (mask.IsNotNull() && vm.count("mask-inputs")) {
+		if (mask.IsNotNull() && (vm.count("mask-inputs") && vm["mask-inputs"].as<bool>() ) ) {
 			typename MaskFilter::Pointer mm = MaskFilter::New();
 			mm->SetMaskImage( mask );
 			mm->SetInput( im_wrp );
