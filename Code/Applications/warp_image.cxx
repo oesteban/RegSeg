@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
 	std::string outPrefix = "displ";
 	std::string fieldname,maskfile,invfieldname;
 	std::vector< std::string > fixedImageNames, movingSurfaceNames;
+	size_t grid_size;
 
 	bpo::options_description all_desc("Usage");
 	all_desc.add_options()
@@ -24,7 +25,9 @@ int main(int argc, char *argv[]) {
 			("displacement-field,F", bpo::value < std::string >(&fieldname), "forward displacement field" )
 			("inverse-displacement-field,R", bpo::value < std::string >(&invfieldname), "backward displacement field" )
 			("mask,M", bpo::value< std::string >(&maskfile), "mask file" )
+			("compute-inverse", bpo::bool_switch(), "compute precise inversion of the input field (requires -F)")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files");
+			//("grid-size,g", bpo::value< std::vector<size_t> >(&grid_size)->multitoken(), "size of grid of bspline control points (default is 10x10x10)");
 
 	bpo::variables_map vm;
 	bpo::store(	bpo::parse_command_line( argc, argv, all_desc ), vm);
@@ -35,21 +38,67 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	if (vm.count("displacement-field")==0 && vm.count("inverse-displacement-field")==0 ) {
+	if ( !vm.count("displacement-field") && !vm.count("inverse-displacement-field") ) {
 		std::cerr << "One of -F or -R options should be specified" << std::endl;
 		return 1;
 	}
 
+	if ( vm.count("displacement-field") && vm.count("inverse-displacement-field") ) {
+		std::cerr << "-F or -R options are mutually exclusive" << std::endl;
+		return 1;
+	}
+
+	bool isFwdField = vm.count("displacement-field");
+	bool computeInv = vm.count("compute-inverse");
+
+	DisplacementFieldPointer field, field_inv, input_field;
 	DisplacementFieldReaderPointer fread = DisplacementFieldReaderType::New();
-	DisplacementFieldPointer field, field_inv;
+	fread->SetFileName( isFwdField?fieldname:invfieldname );
+	fread->Update();
+	input_field = fread->GetOutput();
+
+	/*
+	if ( computeInv ) {
+		// Define a grid size
+		typename CoefficientsType::SizeType size;
+		typename CoefficientsType::SpacingType spacing;
+		size.Fill(10);
+		if( grid_size.size() == 1 ) {
+			size.Fill( grid_size[0] );
+		}
+		else if ( grid_size.size() == DIMENSION ) {
+			for( size_t i = 0; i < DIMENSION; i++) size[i] = grid_size[i];
+		}
+		else {
+			std::cout << "error with grid size" << std::endl;
+			return 1;
+		}
+
+		// Set up a sparse matrix transform
+		TPointer tf = Transform::New();
+#ifndef NDEBUG
+		tf->SetNumberOfThreads( 2 );
+#endif
+		tf->SetControlPointsSize( size );
+		tf->SetPhysicalDomainInformation( input_field );
+		tf->SetOutputReference( input_field );
+
+		// Find all new targets
+
+		// Set inverse vector in new targets
+
+		// Interpolate()
+
+		// Set new field
+		input_field = tf->GetDisplacementField();
+	}
+*/
 
 	const VectorType* ofb;
 	VectorType* ifb;
 
-	if( vm.count("displacement-field") ) {
-		fread->SetFileName( fieldname );
-		fread->Update();
-		field = fread->GetOutput();
+	if( isFwdField ) {
+		field = input_field;
 		field_inv = FieldType::New();
 		field_inv->SetRegions( field->GetLargestPossibleRegion());
 		field_inv->SetOrigin( field->GetOrigin());
@@ -59,9 +108,7 @@ int main(int argc, char *argv[]) {
 		ofb = field->GetBufferPointer();
 		ifb = field_inv->GetBufferPointer();
 	} else {
-		fread->SetFileName( invfieldname );
-		fread->Update();
-		field_inv = fread->GetOutput();
+		field_inv = input_field;
 		field = FieldType::New();
 		field->SetRegions( field_inv->GetLargestPossibleRegion());
 		field->SetOrigin( field_inv->GetOrigin());

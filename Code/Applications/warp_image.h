@@ -35,6 +35,7 @@
 #include <itkMesh.h>
 #include <itkVTKPolyDataReader.h>
 #include "rstkVTKPolyDataWriter.h"
+#include "BSplineSparseMatrixTransform.h"
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
@@ -56,10 +57,16 @@ typedef itk::ImageFileWriter<MaskType>                       MaskWriter;
 typedef itk::BinaryThresholdImageFilter
 		                           < ChannelType, MaskType > Binarize;
 
-typedef double                                               ScalarType;
 
-typedef itk::Vector< ScalarType, DIMENSION >                 VectorType;
-typedef itk::Image< VectorType, DIMENSION >                  FieldType;
+typedef float                                                ScalarType;
+typedef rstk::BSplineSparseMatrixTransform
+		                          < ScalarType, DIMENSION>   Transform;
+typedef Transform::Pointer                                   TPointer;
+typedef typename Transform::CoefficientsImageType            CoefficientsType;
+typedef typename Transform::CoefficientsImageArray           CoefficientsImageArray;
+typedef typename Transform::FieldType                        FieldType;
+typedef typename Transform::VectorType                       VectorType;
+
 typedef typename FieldType::Pointer              			 DisplacementFieldPointer;
 typedef itk::ImageFileReader<FieldType>          			 DisplacementFieldReaderType;
 typedef typename DisplacementFieldReaderType::Pointer        DisplacementFieldReaderPointer;
