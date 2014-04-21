@@ -247,7 +247,7 @@ class RandomBSplineDeformationInputSpec( ANTSCommandInputSpec ):
     in_surfs = InputMultiPath(File(exists=True), mandatory=False, argstr="-S %s",
                desc='apply deformation field to surfaces')
     in_mask = File(exists=True, argstr='-M %s', desc='set a mask')
-    apply_mask = Bool(False, argstr='--mask-inputs', desc='True if inputs should be \
+    apply_mask = traits.Bool(False, argstr='--mask-inputs', desc='True if inputs should be \
                       masked out using deformed mask after transformation')
     grid_size_item_trait = traits.Int(10, usedefault=True )
     grid_size = traits.Either( grid_size_item_trait, traits.List(grid_size_item_trait),
