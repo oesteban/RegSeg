@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-16 19:03:51
+# @Last Modified time: 2014-04-21 12:11:19
 
 import os
 import os.path as op
@@ -247,6 +247,8 @@ class RandomBSplineDeformationInputSpec( ANTSCommandInputSpec ):
     in_surfs = InputMultiPath(File(exists=True), mandatory=False, argstr="-S %s",
                desc='apply deformation field to surfaces')
     in_mask = File(exists=True, argstr='-M %s', desc='set a mask')
+    apply_mask = Bool(False, argstr='--mask-inputs', desc='True if inputs should be \
+                      masked out using deformed mask after transformation')
     grid_size_item_trait = traits.Int(10, usedefault=True )
     grid_size = traits.Either( grid_size_item_trait, traits.List(grid_size_item_trait),
                                xor=['in_coeff'], default=10, usedefault=True,

@@ -30,7 +30,8 @@ int main(int argc, char *argv[]) {
 			("mask,M", bpo::value< std::string >(&maskfile), "mask file" )
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
 			("num-threads", bpo::value < unsigned int >()->default_value(NUM_THREADS), "use num-threads")
-			("grid-size,g", bpo::value< std::vector<size_t> >(&grid_size)->multitoken(), "size of grid of bspline control points (default is 10x10x10)");
+			("grid-size,g", bpo::value< std::vector<size_t> >(&grid_size)->multitoken(), "size of grid of bspline control points (default is 10x10x10)")
+			("mask-inputs", bpo::bool_switch(), "use deformed mask to filter input files");
 
 	bpo::variables_map vm;
 	bpo::store(	bpo::parse_command_line( argc, argv, all_desc ), vm);
@@ -190,11 +191,6 @@ int main(int argc, char *argv[]) {
 	ff->SetFileName( (outPrefix + "_dispfield.nii.gz").c_str() );
 	ff->Update();
 
-	ff->SetInput( transform->GetInverseDisplacementField() );
-	ff->SetFileName( (outPrefix + "_dispfieldinv.nii.gz").c_str() );
-	ff->Update();
-
-
 	// Read and transform mask, if present
 	MaskPointer mask;
 
@@ -261,7 +257,7 @@ int main(int argc, char *argv[]) {
 		im_wrp->SetDirection( ref_dir );
 		im_wrp->SetOrigin( ref_orig );
 
-		if (mask.IsNotNull()) {
+		if (mask.IsNotNull() && vm.count("mask-inputs")) {
 			typename MaskFilter::Pointer mm = MaskFilter::New();
 			mm->SetMaskImage( mask );
 			mm->SetInput( im_wrp );
