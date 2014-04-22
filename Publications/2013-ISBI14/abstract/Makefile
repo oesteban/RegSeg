@@ -1,4 +1,4 @@
-SUBDIRS = Figures 
+SUBDIRS = ../figures/
 
 all: 00-main.pdf
 
@@ -22,8 +22,6 @@ $(SUBDIRS):
 99-references.bib:
 	echo "" > 99-references.bib
 	cat ../Bibliography/*.bib >> 99-references.bib
-
-
 
 cleanall: clean
 	rm -f *.pdf *.acn *.glo *.ist *.toc *.spl *.dvi *.ps
