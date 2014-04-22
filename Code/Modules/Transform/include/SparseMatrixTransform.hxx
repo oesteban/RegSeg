@@ -80,6 +80,10 @@ m_UseImageOutput(false) {
 
 	this->m_ControlPointsIndexToPhysicalPoint.SetIdentity();
 	this->m_ControlPointsPhysicalPointToIndex.SetIdentity();
+
+	for( size_t i = 0; i<Dimension; i++ ) {
+		this->m_OffGridFieldValues[i] = DimensionVector();
+	}
 }
 
 template< class TScalar, unsigned int NDimensions >
@@ -447,7 +451,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	DimensionParametersContainer coeff = this->VectorizeCoefficients();
 
 	for( size_t i = 0; i<Dimension; i++ ) {
-		this->m_OffGridFieldValues[i] = DimensionVector( this->m_NumberOfSamples );
+		this->m_OffGridFieldValues[i].set_size( this->m_NumberOfSamples );
 		this->m_Phi.mult( coeff[i], this->m_OffGridFieldValues[i] );
 	}
 
@@ -540,6 +544,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	DimensionParametersContainer coeffs;
 
 	for ( size_t i = 0; i<Dimension; i++) {
+		Y[i] = SolverVector( this->m_NumberOfSamples );
 		vnl_copy< DimensionVector, SolverVector >( fieldValues[i], Y[i] );
 		X[i] = SolverVector( this->m_NumberOfParameters );
 	}
@@ -659,6 +664,7 @@ inline size_t
 SparseMatrixTransform<TScalar,NDimensions>
 ::AddOffGridPos(typename SparseMatrixTransform<TScalar,NDimensions>::PointType pi ){
 	this->m_OffGridPos.push_back( pi );
+
 	this->m_NumberOfSamples++;
 	return (this->m_NumberOfSamples-1);
 }
