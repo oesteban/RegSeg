@@ -1,20 +1,9 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%2345678901234567890123456789012345678901234567890123456789012345678901234567890
-%        1         2         3         4         5         6         7         8
+\documentclass{article}
 
-\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
-%\IEEEoverridecommandlockouts                              % This command is only needed if 
-                                                          % you want to use the \thanks command
-%\overrideIEEEmargins                                      % Needed to meet printer requirements.
-% See the \addtolength command later in the file to balance the column lengths
-% on the last page of the document
-%\documentclass{article}
-
-% The following packages can be found on http:\\www.ctan.org
 \usepackage[pdftex]{graphicx} % for pdf, bitmapped graphics files
-\graphicspath{{Figures/}}
+\graphicspath{{../figures/}}
 \pdfminorversion=7
-%\usepackage{epsfig} % for postscript graphics files
+
 %\usepackage{mathptmx} % assumes new font selection scheme installed
 %\usepackage{times} % assumes new font selection scheme installed
 \usepackage{amsmath} % assumes amsmath package installed
@@ -22,32 +11,42 @@
 %\usepackage[numbers,sort&compress]{natbib}
 %\usepackage{IEEEtran}
 
-
-\usepackage{spconf}
+\usepackage{myspconf}
 \usepackage{cite}
 \usepackage{glossaries}
 \usepackage[breaklinks,hidelinks]{hyperref}
 
-\title{Impact of susceptibility distortions in connectivity analysis}
+\usepackage[T1]{fontenc}
+  \usepackage{textcomp}
+\usepackage[scaled=.7]{beramono}
+\usepackage{tabularx}
+\newcolumntype{Z}{>{\center\arraybackslash}X}
+\usepackage{balance}
+
+\title{Simulation-based evaluation of susceptibility distortion
+correction methods in diffusion MRI for connectivity analysis}
 
 \name{%
-\shortstack{Oscar Esteban$^{1,2}$, %
+\shortstack{Oscar Esteban$^{1,2,*}$, %
 Alessandro Daducci$^{2}$, %
 Emmanuel Caruyer$^{3}$, %
 Kieran O'Brien$^{4}$,\\%
-Mar\'ia Jes\'us Ledesma-Carbayo$^{1}$, %
-Meritxell Bach-Cuadra$^{2}$, %
+Mar\'ia J. Ledesma-Carbayo$^{1}$, %
+Meritxell Bach-Cuadra$^{5,2}$, %
 and Andr\'es Santos$^{1}$}%
 }
 
 \address{%
 $^{1}$Biomedical Image Technologies (BIT), ETSI Telecom.,
 U. Polit\'ecnica de Madrid and CIBER-BBN, Spain. \\
-$^{2}$ Signal Processing Laboratory (LTS5), \'Ecole Polytechnique
+$^{2}$Signal Processing Laboratory (LTS5), \'Ecole Polytechnique
 F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland. \\
-$^{3}$ Section of Biomedical Image Analysis, Dept. of Radiology,
+$^{3}$Section of Biomedical Image Analysis, Dpt. of Radiology,
 University of Pennsylvania, Philadelphia, PA, USA. \\
-$^{4}$  Department of Radiology, University of Geneva, Geneva, Switzerland.
+$^{4}$Centre d'Imagerie Biom\'edicale (CIBM), and Dpt. of Radiology, University of Geneva, Geneva, Switzerland. \\
+$^{5}$Radiology Department, CIBM, Lausanne University Hospital Center (CHUV)
+and Lausanne University (UNIL), Switzerland.
+$^{*}$Corresponding author (email: \texttt{oscar.esteban@upm.es})
 }
 
 
@@ -80,6 +79,7 @@ $^{4}$  Department of Radiology, University of Geneva, Geneva, Switzerland.
 \input{02-introduction}
 \input{03-methods}
 \input{04-results}
+\balance
 \input{05-conclusions}
 
 
@@ -112,9 +112,6 @@ $^{4}$  Department of Radiology, University of Geneva, Geneva, Switzerland.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \bibliographystyle{IEEEtran}
-% argument is your BibTeX string definitions and bibliography database(s)
 \bibliography{IEEEabrv,99-references}
-
-
 
 \end{document}

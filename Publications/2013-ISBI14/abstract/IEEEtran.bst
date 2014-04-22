@@ -96,7 +96,7 @@ FUNCTION {default.is.use.paper} { #1 }
 
 % #0 turns off the forced use of "et al."
 % #1 enables
-FUNCTION {default.is.forced.et.al} { #0 }
+FUNCTION {default.is.forced.et.al} { #1 }
 
 % The maximum number of names that can be present beyond which an "et al."
 % usage is forced. Be sure that num.names.shown.with.forced.et.al (below)
@@ -104,7 +104,7 @@ FUNCTION {default.is.forced.et.al} { #0 }
 % Note: There are many instances of references in IEEE journals which have
 % a very large number of authors as well as instances in which "et al." is
 % used profusely.
-FUNCTION {default.max.num.names.before.forced.et.al} { #10 }
+FUNCTION {default.max.num.names.before.forced.et.al} { #1 }
 
 % The number of names that will be shown with a forced "et al.".
 % Must be less than or equal to max.num.names.before.forced.et.al
@@ -282,6 +282,7 @@ ENTRY
     publisher
     school
     series
+    shorttitle
     revision
     title
     type
@@ -1171,6 +1172,55 @@ FUNCTION {format.address.org.or.pub.date}
 }
 
 
+% FUNCTION {format.names}
+% { 's :=
+%   "" 't :=
+%   #1 'nameptr :=
+%   s num.names$ 'numnames :=
+%   numnames 'namesleft :=
+%     { namesleft #0 > }
+%     { s nameptr
+%       "{vv~}{ll}{, jj}{, f{.}.}"
+%       format.name$
+%       't :=
+%       nameptr #1 >
+%         {
+%           nameptr #1
+%           #1 + =
+%           numnames #3
+%           > and
+%             { "others" 't :=
+%               #1 'namesleft := }
+%             'skip$
+%           if$
+%           namesleft #1 >
+%             { ", " * t * }
+%             {
+%               s nameptr "{ll}" format.name$ duplicate$ "others" =
+%                 { 't := }
+%                 { pop$ }
+%               if$
+%               t "others" =
+%                 {
+%                   " et~al" *
+%                 }
+%                 {
+%                   " and "
+%                   * t *
+%                 }
+%               if$
+%             }
+%           if$
+%         }
+%         't
+%       if$
+%       nameptr #1 + 'nameptr :=
+%       namesleft #1 - 'namesleft :=
+%     }
+%   while$
+% }
+
+
 FUNCTION {format.names}
 { 'bibinfo :=
   duplicate$ empty$ 'skip$ {
@@ -1417,6 +1467,28 @@ FUNCTION {format.article.title}
   if$
 }
 
+FUNCTION {format.shorttitle}
+{ shorttitle duplicate$ empty$
+    { format.article.title "title" output.warn }
+    { this.to.prev.status
+      this.status.std
+      "t" change.case$
+    }
+  if$
+  "shorttitle" bibinfo.check
+  duplicate$ empty$ 'skip$
+    { quote.close 'this.status.quote :=
+      is.last.char.not.punct
+        { punct.std 'this.status.punct := }
+        { punct.no 'this.status.punct := }
+      if$
+      select.language
+      "``" swap$ *
+      cap.status.std
+    }
+  if$
+}
+
 FUNCTION {format.article.title.electronic}
 { title duplicate$ empty$ 'skip$
     { this.to.prev.status
@@ -1540,6 +1612,35 @@ FUNCTION {format.school}
 
 
 %% volume/number/series/chapter/pages
+FUNCTION {format.bpages}
+{ pages empty$ 'skip$
+    { pages is.multiple.pages
+        { n.dashify }
+        { skip$ }
+      if$
+    }
+  if$
+}
+
+
+
+FUNCTION {format.bvolume}
+{ volume empty.field.to.null.string
+  duplicate$ empty$ 'skip$
+    { this.to.prev.status
+      this.status.std
+      "volume" bibinfo.check 
+      number empty$ 'skip$
+         { "(" * number * ")" * }
+        if$
+      pages empty$ 'skip$
+        { ":" * pages * }
+        if$
+      cap.status.std
+    }
+  if$
+}
+
 
 FUNCTION {format.volume}
 { volume empty.field.to.null.string
@@ -1929,9 +2030,10 @@ FUNCTION {article}
   name.or.dash
   format.article.title "title" output.warn
   format.journal "journal" bibinfo.check "journal" output.warn
-  format.volume output
-  format.number.if.use.for.article output
-  format.pages output
+%  format.volume output
+%  format.number.if.use.for.article output
+  format.bvolume output
+%  format.pages output
   format.date "year" output.warn
 %  format.note output
 %  format.url output
@@ -2026,7 +2128,7 @@ FUNCTION {incollection}
 %  if.url.alt.interword.spacing
   format.authors "author" output.warn
   name.or.dash
-  format.article.title "title" output.warn
+  format.article.title output
   format.in.booktitle.edition "booktitle" output.warn
   format.series output
   format.editors output
@@ -2063,6 +2165,7 @@ FUNCTION {inproceedings}
   format.pages output
 %  format.note output
 %  format.url output
+  format.date "year" output.warn
   fin.entry
 %  if.url.std.interword.spacing
 }
