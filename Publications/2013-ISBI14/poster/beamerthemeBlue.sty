@@ -13,25 +13,23 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % headline colors and fonts
-\setbeamercolor{headline}{fg=white,bg=darkblue}
-\setbeamercolor{title in headline}{fg=white}
-\setbeamercolor{author in headline}{fg=lightblue}
-\setbeamercolor{institute in headline}{fg=taskyblue}
-\setbeamercolor{logo in headline}{fg=black,bg=i6colorscheme3}
+\setbeamercolor{headline}{bg=white,fg=darkblue}
+\setbeamercolor{headline title}{fg=white,bg=darkblue}
+\setbeamercolor{headline authors}{fg=darkblue,bg=white}
+\setbeamercolor{headline institutions}{fg=black,bg=white}
 
-%\setbeamercolor{framesubtitle}{bg=ta2skyblue}
-%\setbeamercolor{author in head/foot}{bg=black}
-%\setbeamercolor{title in head/foot}{bg=black}
-
-
-
-
-% lines
-\setbeamercolor{separation line}{bg=taskyblue}
 
 % footline colors and fonts
 \setbeamercolor{footline}{fg=white,bg=darkblue}
 \setbeamerfont{footline}{fg=white,size=\normalsize,series=\tt}
+
+\setbeamercolor{framesubtitle}{bg=white}
+%\setbeamercolor{author in head/foot}{bg=black}
+%\setbeamercolor{title in head/foot}{bg=black}
+
+
+% lines
+\setbeamercolor{separation line}{bg=taskyblue}
 
 % poster background, body colors, and fonts
 \setbeamercolor*{normal text}{bg=lightblue, fg=black}
@@ -69,33 +67,28 @@
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\setbeamertemplate{headline}{  
-  \leavevmode
-
-  \begin{beamercolorbox}[wd=\paperwidth]{headline}
-    \begin{columns}[T]
-      \begin{column}{.02\paperwidth}
-      \end{column}
-      \begin{column}{.7\paperwidth}
-        \vskip4ex
-        \raggedleft
-        \usebeamercolor{title in headline}{\color{fg}\textbf{\LARGE{\inserttitle}}\\[1ex]}
-        \usebeamercolor{author in headline}{\color{fg}\large{\insertauthor}\\[1ex]}
-        \usebeamercolor{institute in headline}{\color{fg}\normalsize{\insertinstitute}\\[1ex]}     
-      \end{column}
-      \begin{column}{.25\paperwidth}
-        \vskip3ex
-        \begin{center}
-          \includegraphics[width=.75\linewidth]{all}
-        \end{center}
-        \vskip2ex
-      \end{column}
-      \begin{column}{.02\paperwidth}
-      \end{column}
-    \end{columns}
-    \vskip2ex
+\setbeamertemplate{headline}{
+  \nointerlineskip%
+  \begin{beamercolorbox}[wd=\paperwidth,center,dp=5.0ex]{headline title}
+    \vbox{}\vskip3ex%
+    \strut%
+    \usebeamercolor{title in headline}{\color{fg}\textbf{\LARGE{\inserttitle}}}%
+    \strut%
+    \vskip-0.8ex%
   \end{beamercolorbox}
-
+  \nointerlineskip%
+  \begin{beamercolorbox}[wd=\paperwidth,center]{headline authors}
+    \vbox{}\vskip3ex%
+    \strut%
+    \usebeamercolor{author in authors}{\color{fg}\large{\insertauthor}}\newline%
+    \strut%
+    \vbox{}\vskip1ex%
+    \strut%
+    \usebeamercolor{institute in institutions}{\color{fg}\normalsize{\insertinstitute}}%
+    \strut%
+    \vskip3ex%
+  \end{beamercolorbox}
+  
   \begin{beamercolorbox}[wd=\paperwidth]{lower separation line head}
     \rule{0pt}{3pt}
   \end{beamercolorbox}

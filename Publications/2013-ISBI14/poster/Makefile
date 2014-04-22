@@ -16,7 +16,7 @@ $(SUBDIRS):
 00-main.blg: 00-main.aux 99-references.bib
 	biber 00-main
 
-00-main.aux: *.tex
+00-main.aux: *.tex beamerthemeBlue.sty beamerposter.sty
 	pdflatex -shell-escape 00-main.tex 
 
 99-references.bib:
