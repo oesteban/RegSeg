@@ -25,9 +25,9 @@ int main(int argc, char *argv[]) {
 			("displacement-field,F", bpo::value < std::string >(&fieldname), "forward displacement field" )
 			("inverse-displacement-field,R", bpo::value < std::string >(&invfieldname), "backward displacement field" )
 			("mask,M", bpo::value< std::string >(&maskfile), "mask file" )
-			("compute-inverse", bpo::bool_switch(), "compute precise inversion of the input field (requires -F)")
-			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files");
-			//("grid-size,g", bpo::value< std::vector<size_t> >(&grid_size)->multitoken(), "size of grid of bspline control points (default is 10x10x10)");
+			//("compute-inverse", bpo::bool_switch(), "compute precise inversion of the input field (requires -F)")
+			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
+			("mask-inputs", bpo::bool_switch(), "use deformed mask to filter input files");
 
 	bpo::variables_map vm;
 	bpo::store(	bpo::parse_command_line( argc, argv, all_desc ), vm);
@@ -56,43 +56,6 @@ int main(int argc, char *argv[]) {
 	fread->SetFileName( isFwdField?fieldname:invfieldname );
 	fread->Update();
 	input_field = fread->GetOutput();
-
-	/*
-	if ( computeInv ) {
-		// Define a grid size
-		typename CoefficientsType::SizeType size;
-		typename CoefficientsType::SpacingType spacing;
-		size.Fill(10);
-		if( grid_size.size() == 1 ) {
-			size.Fill( grid_size[0] );
-		}
-		else if ( grid_size.size() == DIMENSION ) {
-			for( size_t i = 0; i < DIMENSION; i++) size[i] = grid_size[i];
-		}
-		else {
-			std::cout << "error with grid size" << std::endl;
-			return 1;
-		}
-
-		// Set up a sparse matrix transform
-		TPointer tf = Transform::New();
-#ifndef NDEBUG
-		tf->SetNumberOfThreads( 2 );
-#endif
-		tf->SetControlPointsSize( size );
-		tf->SetPhysicalDomainInformation( input_field );
-		tf->SetOutputReference( input_field );
-
-		// Find all new targets
-
-		// Set inverse vector in new targets
-
-		// Interpolate()
-
-		// Set new field
-		input_field = tf->GetDisplacementField();
-	}
-*/
 
 	const VectorType* ofb;
 	VectorType* ifb;
@@ -210,7 +173,7 @@ int main(int argc, char *argv[]) {
 		im_wrp->SetDirection( ref_dir );
 		im_wrp->SetOrigin( ref_orig );
 
-		if (mask.IsNotNull()) {
+		if (mask.IsNotNull() && (vm.count("mask-inputs") && vm["mask-inputs"].as<bool>() ) ) {
 			typename MaskFilter::Pointer mm = MaskFilter::New();
 			mm->SetMaskImage( mask );
 			mm->SetInput( im_wrp );

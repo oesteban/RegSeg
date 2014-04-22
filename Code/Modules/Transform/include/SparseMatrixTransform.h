@@ -176,7 +176,26 @@ public:
     itkGetConstReferenceObjectMacro(KernelFunction, KernelFunctionType);
 
     itkGetConstMacro( NumberOfSamples, size_t );
-    itkSetMacro( NumberOfSamples, size_t );
+
+    void SetNumberOfSamples(size_t n) {
+    	if( this->m_UseImageOutput ) {
+    		itkExceptionMacro(<< "SetNumberOfSamples should not be used with OutputReference");
+    	}
+
+    	size_t oldsize = this->m_OffGridFieldValues[0].size();
+    	if ( oldsize!=0 && oldsize!=n ) {
+    		itkWarningMacro( << "this action will empty off-grid values set so-far" );
+    	}
+
+    	this->m_NumberOfSamples = n;
+
+    	for (size_t i=0; i<Dimension; i++) {
+    		this->m_OffGridFieldValues[i].set_size( n );
+    		this->m_OffGridFieldValues[i].fill( 0.0 );
+    	}
+
+    	this->Modified();
+    }
 
     itkGetConstMacro( NumberOfParameters, size_t );
 
