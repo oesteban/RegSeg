@@ -121,6 +121,17 @@ void OptimizerBase<TFunctional>::Start() {
 	this->InitializeParameters();
 	this->InitializeAuxiliarParameters();
 
+	if( this->m_UseDescriptorRecomputation ) {
+		this->m_UseDescriptorRecomputation = (this->m_DescriptorRecomputationFreq > 0)
+				&& (this->m_DescriptorRecomputationFreq < this->m_NumberOfIterations);
+	}
+
+
+	if( this->m_UseDescriptorRecomputation && this->m_ConvergenceWindowSize > this->m_DescriptorRecomputationFreq ) {
+		itkWarningMacro( << "Convergence window size (" << this->m_ConvergenceWindowSize << ") is greater than descriptor recomputation frequency ("<<
+				this->m_DescriptorRecomputationFreq << std::endl );
+	}
+
 	/* Initialize convergence checker */
 	this->m_ConvergenceMonitoring = ConvergenceMonitoringType::New();
 	this->m_ConvergenceMonitoring->SetWindowSize( this->m_ConvergenceWindowSize );
@@ -129,12 +140,6 @@ void OptimizerBase<TFunctional>::Start() {
 //		this->m_BestParameters = this->GetCurrentPosition( );
 //		this->m_CurrentBestValue = NumericTraits< MeasureType >::max();
 //	}
-
-	if( this->m_UseDescriptorRecomputation ) {
-		this->m_UseDescriptorRecomputation = (this->m_DescriptorRecomputationFreq > 0)
-				&& (this->m_DescriptorRecomputationFreq < this->m_NumberOfIterations);
-	}
-
 
 	this->InvokeEvent( itk::StartEvent() );
 
@@ -172,6 +177,7 @@ void OptimizerBase<TFunctional>::Resume() {
 		if( this->m_UseDescriptorRecomputation && ( this->m_CurrentIteration%this->m_DescriptorRecomputationFreq == 0 ) ) {
 			this->m_Functional->UpdateDescriptors();
 			this->InvokeEvent( FunctionalModifiedEvent() );
+			this->m_ConvergenceMonitoring->ClearEnergyValues();
 		}
 
 
