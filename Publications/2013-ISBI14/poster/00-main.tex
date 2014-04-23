@@ -1,7 +1,7 @@
 % @Author: oesteban
 % @Date:   2014-04-22 08:55:40
 % @Last Modified by:   oesteban
-% @Last Modified time: 2014-04-23 10:39:28
+% @Last Modified time: 2014-04-23 16:15:17
 
 \documentclass[final,hyperref={pdfpagelabels=false}]{beamer}
 \setbeamertemplate{bibliography item}[text]
@@ -9,6 +9,7 @@
 \providecommand\thispdfpagelabel[1]{}
 \mode<presentation>{\usetheme{Blue}}
 
+\usepackage{float}
 \usepackage{glossaries}
 \usepackage[english]{babel}
 
@@ -21,6 +22,7 @@
 \usepackage{lmodern}
 \usefonttheme[onlymath]{serif}
 %\boldmath
+\usepackage[labelformat=empty]{caption}
 \usepackage[orientation=portrait,size=a0,scale=1.4]{beamerposter}
 
 \usepackage{graphicx,epstopdf}
@@ -67,7 +69,7 @@ $^{5}$~\includegraphics[height=2cm]{logos/CHUV.pdf}~\includegraphics[height=2cm]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newlength{\columnheight}
-\setlength{\columnheight}{100cm}
+\setlength{\columnheight}{102cm}
 
 \input{../abstract/98-acronyms}
 
@@ -178,13 +180,21 @@ $^{5}$~\includegraphics[height=2cm]{logos/CHUV.pdf}~\includegraphics[height=2cm]
             }
             \end{block}
             \vfill
-            \begin{alertblock}{}
-            \begin{minipage}[T]{\textwidth}
-            \noindent
-            \includegraphics[height=4cm]{logos/qrcode-github}\hfill
-            \includegraphics[height=4cm]{logos/qrcode-paper}
-            \end{minipage}
-            \end{alertblock}
+            \begin{exampleblock}{}
+            \begin{figure}
+                \centering
+                \begin{minipage}{0.45\textwidth}
+                \centering
+                \includegraphics[height=3.5cm]{logos/qrcode-github}
+                \caption{\tiny My GitHub}
+                \end{minipage}\hfill
+                \begin{minipage}{0.45\textwidth}
+                \centering
+                \includegraphics[height=3.5cm]{logos/qrcode-paper}
+                \caption{\tiny Paper}
+                \end{minipage}
+                \end{figure}
+            \end{exampleblock}
           }
         \end{minipage}
       \end{beamercolorbox}
@@ -203,22 +213,19 @@ $^{5}$~\includegraphics[height=2cm]{logos/CHUV.pdf}~\includegraphics[height=2cm]
             % fill each column with content
           \begin{block}{Conclusions and references}
             \begin{itemize}
-              \item DTI dataset was rejected in evaluation: extracted
-                    connectivity matrices were biased, as the phantom
-                    is designed for high angular resolution methods.
-              \item In terms of geometry, the results indicate
-                    that REB method ranks first.
+              \item In terms of geometry, REB ranked first.
               \item In terms of tractography, visual assessment and
-                    quantitative results suggest that FMB could be
-                    better.
-              \item Connectivity matrices are evaluated, but a more appropriate
-                    phantom is required. A phantom with the connecting interface
-                    densely covered by the seeding regions may be the key
-                    to characterize the impact on connectivity.
+                    quantitative results suggested that FMB and REB perform better.
+              \item Only HARDI yielded useful results. DTI-based tractography erroneously
+                    estimated crossing and kissing fibers, therefore it was discarded
+                    from evaluation.
+              \item Connectivity matrices from HARDI were evaluated. Still, a more appropriate
+                    phantom is required, presenting its connecting interface
+                    densely covered by the seeding regions.
               \item Connectome analyses demand the standardization of
                     processing techniques and pipelining sofware tools to
-                    ensure replicability of experiments and reliability of
-                    results.
+                    ensure the reproducibility of experiments and the 
+                    reliability of results.
             \end{itemize}
 
             \noindent{\vskip1cm\textbf{Links and references}}\par
