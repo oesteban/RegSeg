@@ -77,8 +77,8 @@
   \vskip.75ex
   {\ifbeamercolorempty[bg]{block alerted body}{}{\nointerlineskip\vskip-0.5pt}}%
   \usebeamerfont{block alerted body}%
-  \begin{beamercolorbox}[leftskip=1em,colsep*=.75ex,sep=0.5ex,vmode]{block alerted body}%
-    \ifbeamercolorempty[bg]{block alerted body}{\vskip-.25ex}{\vskip-.75ex}\vbox{}%
+  \begin{beamercolorbox}[colsep*=.75ex,vmode]{block alerted body}%
+    \ifbeamercolorempty[bg]{block alerted body}{}{}\vbox{}%
   }
   \setbeamertemplate{block alerted end}{
   \end{beamercolorbox}
@@ -149,7 +149,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Display a grid to help align images ... and it looks nice with this color scheme
-\beamertemplategridbackground[1cm]
+%\beamertemplategridbackground[1cm]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \mode<all>

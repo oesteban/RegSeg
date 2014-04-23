@@ -1,7 +1,7 @@
 % @Author: oesteban
 % @Date:   2014-04-22 08:55:40
 % @Last Modified by:   oesteban
-% @Last Modified time: 2014-04-22 20:49:46
+% @Last Modified time: 2014-04-23 10:39:28
 
 \documentclass[final,hyperref={pdfpagelabels=false}]{beamer}
 \setbeamertemplate{bibliography item}[text]
@@ -77,7 +77,7 @@ $^{5}$~\includegraphics[height=2cm]{logos/CHUV.pdf}~\includegraphics[height=2cm]
   \noindent\makebox[\textwidth][c]{%}
   \begin{minipage}[t][\columnheight][c]{0.95\textwidth}
   \parbox[t][\columnheight][c]{\textwidth}{%
-  \begin{columns}[T,totalwidth=\textwidth]
+  \begin{columns}[t,totalwidth=\textwidth]
     \begin{column}{.34\linewidth}
       \begin{beamercolorbox}[center,wd=\textwidth]{postercolumn}
         \begin{minipage}[T]{.95\textwidth}  % tweaks the width, makes a new \textwidth
@@ -146,23 +146,19 @@ $^{5}$~\includegraphics[height=2cm]{logos/CHUV.pdf}~\includegraphics[height=2cm]
     % ---------------------------------------------------------%
     % end the column
   \end{columns}
-  \noindent
   \vfill
-      \begin{beamercolorbox}[wd=\textwidth]{postercolumn}
-        \begin{minipage}[T]{\textwidth} % tweaks the width, makes a new \textwidth
-          \parbox[t]{\textwidth}{ % must be some better way to set the the height, width and textwidth simultaneously
-            % Since all columns are the same length, it is all nice and tidy.  You have to get the height empirically
-            % ---------------------------------------------------------%
-            % fill each column with content
+  \noindent\makebox[\textwidth][l]{
+  \begin{minipage}{0.978\textwidth}
+      \begin{beamercolorbox}[]{postercolumn}
             \begin{block}{Visual results}
               \begin{figure}
                  \centering
                  \includegraphics[width=\textwidth]{Fig02-Results}
               \end{figure}
             \end{block}
-            }
-        \end{minipage}
       \end{beamercolorbox}
+  \end{minipage}
+  }
   \vfill
   \begin{columns}[T,totalwidth=\textwidth]
     \begin{column}{.34\textwidth}
@@ -175,13 +171,20 @@ $^{5}$~\includegraphics[height=2cm]{logos/CHUV.pdf}~\includegraphics[height=2cm]
             \vfill            
             \begin{block}{Quantitative results}
             \noindent\makebox[\textwidth][c]{%}
-            \begin{minipage}[T]{.75\textwidth} 
+            \begin{minipage}[T][][c]{.75\textwidth} 
             \input{../abstract/041-results-table}
             \input{../abstract/042-results-tractography}
             \end{minipage}
             }
             \end{block}
             \vfill
+            \begin{alertblock}{}
+            \begin{minipage}[T]{\textwidth}
+            \noindent
+            \includegraphics[height=4cm]{logos/qrcode-github}\hfill
+            \includegraphics[height=4cm]{logos/qrcode-paper}
+            \end{minipage}
+            \end{alertblock}
           }
         \end{minipage}
       \end{beamercolorbox}
