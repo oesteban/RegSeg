@@ -442,14 +442,11 @@ SparseMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::Interpolate() {
+::Interpolate( const DimensionParametersContainer& coeff ) {
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
 		this->ComputeMatrix( Self::PHI );
 	}
-
-	DimensionParametersContainer coeff = this->VectorizeCoefficients();
-
 	for( size_t i = 0; i<Dimension; i++ ) {
 		this->m_OffGridFieldValues[i].set_size( this->m_NumberOfSamples );
 		this->m_Phi.mult( coeff[i], this->m_OffGridFieldValues[i] );
@@ -490,7 +487,28 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->SetInverseDisplacementField( newfield );
 
 	}
+}
 
+template< class TScalar, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalar,NDimensions>
+::InvertField() {
+	// Check m_Phi_inverse and initializations
+	if( this->m_Phi_inverse.rows() == 0 || this->m_Phi_inverse.cols() == 0 ) {
+		this->InvertPhi();
+	}
+
+	DimensionParametersContainer coeff;
+	// Compute coefficients
+	for( size_t i = 0; i<Dimension; i++ ) {
+		coeff[i] = DimensionVector( this->m_NumberOfSamples );
+		this->m_Phi_inverse.mult( this->m_OffGridFieldValues[i], coeff[i] );
+	}
+
+	// TODO set coeff here or inside Interpolate( coeff )
+
+	// Interpolation with new coefficients
+	this->Interpolate( coeff );
 }
 
 template< class TScalar, unsigned int NDimensions >
@@ -632,6 +650,60 @@ SparseMatrixTransform<TScalar,NDimensions>
 				*( fbuf[i] + row ) = norm;
 		}
 	}
+}
+
+template< class TScalar, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalar,NDimensions>
+::InvertPhi() {
+	// Check m_Phi
+	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
+		this->ComputeMatrix( Self::PHI );
+	}
+
+	this->m_Phi_inverse = WeightsMatrix( this->m_NumberOfParameters, this->m_NumberOfSamples );
+
+	size_t nRows = this->m_Phi.rows();
+	size_t nCols = this->m_Phi.cols();
+
+	ScalarType val;
+	SolverMatrix A( nRows, nCols );
+	SparseMatrixRowType row;
+	typedef typename SolverMatrix::row SolverRow;
+	SolverRow row_s;
+	vcl_vector< int > cols;
+	vcl_vector< double > vals;
+
+	for( size_t i = 0; i < nRows; i++ ){
+		row_s.clear();
+		row = this->m_Phi.get_row( i );
+
+		for( size_t j = 0; j< row.size(); j++ ) {
+			cols.push_back( row[j].first );
+			vals.push_back( static_cast< double >( row[j].second ) );
+		}
+		A.set_row( i, cols, vals );
+	}
+
+	SolverVector X, B;
+	for( size_t col = 0; col<nRows; col++ ) {
+		B = SolverVector( nCols );
+		B.fill( 0.0 );
+		B(col) = 1.0;
+		X = SolverVector( nCols );
+
+		SolverTypeTraits::Solve( A, B, X );
+
+		for( size_t row = 0; row<nCols; row++ ) {
+			val = X[row];
+			if( fabs(val) > 1.0e-8 ) {
+				this->m_Phi_inverse.put( row, col, val );
+			}
+		}
+	}
+
+	this->Modified();
+
 }
 
 template< class TScalar, unsigned int NDimensions >
