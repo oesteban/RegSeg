@@ -201,8 +201,10 @@ public:
 
     itkGetMacro( Derivatives, CoefficientsImageArray );
 
-    void Interpolate();
+    void Interpolate() { this->Interpolate( this->VectorizeCoefficients() ); }
     void UpdateField();
+    void InvertField();
+
     //void ComputeCoeffDerivatives( void );
     void ComputeGradientField();
     void ComputeCoefficients();
@@ -267,7 +269,7 @@ protected:
 	SparseMatrixTransform();
 	~SparseMatrixTransform(){};
 
-	enum WeightsMatrixType { PHI, S, SPRIME };
+	enum WeightsMatrixType { PHI, S, SPRIME, PHI_INV };
 
 	struct MatrixSectionType {
 		WeightsMatrix *matrix;
@@ -287,6 +289,9 @@ protected:
 		size_t dim;
 		PointsList *vrows;
 	};
+
+	void Interpolate( const DimensionParametersContainer& coeff );
+	void InvertPhi();
 
 	void ThreadedComputeMatrix( MatrixSectionType& section, FunctionalCallback func, itk::ThreadIdType threadId );
 	itk::ThreadIdType SplitMatrixSection( itk::ThreadIdType i, itk::ThreadIdType num, MatrixSectionType& section );
@@ -325,6 +330,7 @@ protected:
 	//DimensionVector m_Jacobian[Dimension][Dimension]; // Serialized k dimxdim matrices in a grid
 
 	WeightsMatrix   m_Phi;
+	WeightsMatrix   m_Phi_inverse;
 	WeightsMatrix   m_S;
 	WeightsMatrix   m_SPrime[Dimension];
 
