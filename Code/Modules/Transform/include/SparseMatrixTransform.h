@@ -202,7 +202,7 @@ public:
     itkGetMacro( Derivatives, CoefficientsImageArray );
 
     void Interpolate() { this->Interpolate( this->VectorizeCoefficients() ); }
-    void UpdateField();
+    void UpdateField() { this->UpdateField( this->VectorizeCoefficients() ); }
     void InvertField();
 
     //void ComputeCoeffDerivatives( void );
@@ -291,6 +291,7 @@ protected:
 	};
 
 	void Interpolate( const DimensionParametersContainer& coeff );
+	void UpdateField( const DimensionParametersContainer& coeff );
 	void InvertPhi();
 
 	void ThreadedComputeMatrix( MatrixSectionType& section, FunctionalCallback func, itk::ThreadIdType threadId );
