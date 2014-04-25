@@ -508,18 +508,17 @@ SparseMatrixTransform<TScalar,NDimensions>
 	// TODO set coeff here or inside Interpolate( coeff )
 
 	// Interpolation with new coefficients
-	this->Interpolate( coeff );
+	this->UpdateField( coeff );
 }
 
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::UpdateField() {
+::UpdateField( const DimensionParametersContainer& coeff ) {
 	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
 		this->ComputeMatrix( Self::S );
 	}
 
-	DimensionParametersContainer coeff = this->VectorizeCoefficients();
 	DimensionParametersContainer fieldValues;
 
 	// Interpolate
@@ -661,10 +660,10 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->ComputeMatrix( Self::PHI );
 	}
 
-	this->m_Phi_inverse = WeightsMatrix( this->m_NumberOfParameters, this->m_NumberOfSamples );
-
 	size_t nRows = this->m_Phi.rows();
 	size_t nCols = this->m_Phi.cols();
+
+	this->m_Phi_inverse = WeightsMatrix( nCols, nRows );
 
 	ScalarType val;
 	SolverMatrix A( nRows, nCols );
