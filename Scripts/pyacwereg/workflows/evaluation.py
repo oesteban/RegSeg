@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-15 11:32:09
+# @Last Modified time: 2014-10-14 19:33:31
 
 import os
 import os.path as op
@@ -25,82 +25,82 @@ import pyacwereg.nipype.interfaces as iface
 from pyacwereg.utils.misc import normalize_tpms as normalize
 
 from distortion import bspline_deform
-from registration import identity_wf,default_regseg
+from registration import identity_wf, default_regseg
 
-def registration_ev( name='EvaluateMapping' ):
-    """ Workflow that provides different scores comparing two registration methods. It compares images
-    similarity, displacement fields difference, mesh distances, and overlap indices.
+
+def registration_ev(name='EvaluateMapping'):
+    """
+    Workflow that provides different scores comparing two registration methods.
+    It compares images similarity, displacement fields difference,
+    mesh distances, and overlap indices.
     """
 
-    def _stats( in_file ):
+    def _stats(in_file):
         import numpy as np
         import nibabel as nb
-
-        data = nb.load( in_file ).get_data()
-
-        if ( np.all( data<1.0e-5 ) ):
-          return [ 0.0 ]*5
-        data = np.ma.masked_equal( data, 0 )
-        result = np.array([ data.mean(), data.std(), data.max(), data.min(), np.ma.extras.median(data)])
+        data = nb.load(in_file).get_data()
+        if (np.all(data < 1.0e-5)):
+            return [0.0] * 5
+        data = np.ma.masked_equal(data, 0)
+        result = np.array([data.mean(), data.std(), data.max(), data.min(),
+                          np.ma.extras.median(data)])
         return result.tolist()
 
+    input_ref = pe.Node(niu.IdentityInterface(fields=['in_imag',
+                        'in_tpms', 'in_surf', 'in_field', 'in_mask']),
+                        name='refnode')
+    input_tst = pe.Node(niu.IdentityInterface(fields=['in_imag', 'in_tpms',
+                                                      'in_surf', 'in_field']),
+                        name='tstnode')
+    inputnode = pe.Node(niu.IdentityInterface(fields=['subject_id', 'method', 'out_csv']),
+                        name='infonode')
+    outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_tpm_diff', 'out_field_err']),
+                         name='outputnode')
+    merge_ref = pe.Node(fsl.Merge(dimension='t'), name='ConcatRefInputs')
+    merge_tst = pe.Node(fsl.Merge(dimension='t'), name='ConcatTestInputs')
+    overlap = pe.Node(namev.FuzzyOverlap(weighting='volume'), name='Overlap')
+    diff_im = pe.Node(Similarity(metric='cc'), name='ContrastDiff')
+    inv_fld = pe.Node(iface.InverseField(), name='InvertField')
+    diff_fld = pe.Node(namev.ErrorMap(), name='FieldDiff')
+    # mesh = pe.MapNode( namesh.P2PDistance(weighting='surface'),
+    #                   iterfield=[ 'surface1','surface2' ],
+    #                   name='SurfDistance')
+    csv = pe.Node(namisc.AddCSVRow(), name="AddRow")
 
-    wf = pe.Workflow( name=name )
-    input_ref = pe.Node( niu.IdentityInterface( fields=[ 'in_imag',
-                        'in_tpms','in_surf','in_field', 'in_mask' ] ),
-                        name='refnode' )
-    input_tst = pe.Node( niu.IdentityInterface( fields=['in_imag', 'in_tpms',
-                                                        'in_surf','in_field' ] ),
-                        name='tstnode' )
-    inputnode = pe.Node( niu.IdentityInterface( fields=['subject_id', 'method', 'out_csv']),
-                         name='infonode' )
-    outputnode = pe.Node(niu.IdentityInterface(fields=[ 'out_file', 'out_tpm_diff', 'out_field_err' ]),
-                         name='outputnode' )
-
-    merge_ref = pe.Node( fsl.Merge(dimension='t'), name='ConcatRefInputs' )
-    merge_tst = pe.Node( fsl.Merge(dimension='t'), name='ConcatTestInputs' )
-
-
-    overlap = pe.Node( namev.FuzzyOverlap(weighting='volume'), name='Overlap' )
-    diff_im = pe.Node( Similarity(metric='cc'), name='ContrastDiff')
-    inv_fld = pe.Node( iface.InverseField(), name='InvertField' )
-    diff_fld = pe.Node( namev.ErrorMap(), name='FieldDiff')
-#    mesh = pe.MapNode( namesh.P2PDistance(weighting='surface'),
-#                      iterfield=[ 'surface1','surface2' ],
-#                      name='SurfDistance')
-
-    csv = pe.Node( namisc.AddCSVRow(), name="AddRow" )
-
-    wf.connect( [
-                ( inputnode,         csv, [( 'subject_id', 'subject_id'), ('method','method'),
-                                           ( 'out_csv', 'in_file' )])
-               ,( input_ref,   merge_ref, [( 'in_imag', 'in_files' )])
-               ,( input_tst,   merge_tst, [( 'in_imag', 'in_files' )])
-               ,( input_ref,     overlap, [( 'in_tpms', 'in_ref')] )
-               ,( input_tst,     overlap, [( 'in_tpms', 'in_tst')] )
-               ,( input_ref,     diff_im, [( 'in_mask','mask1'),
-                                           ( 'in_mask','mask2')])
-               ,( merge_ref,     diff_im, [( 'merged_file', 'volume1')])
-               ,( merge_tst,     diff_im, [( 'merged_file', 'volume2')])
-               ,( input_ref,     inv_fld, [( 'in_field', 'in_field') ])
-               ,( input_ref,    diff_fld, [( 'in_mask','mask')])
-               ,( inv_fld,      diff_fld, [( 'out_field', 'in_ref') ])
-               ,( input_tst,    diff_fld, [( 'in_field', 'in_tst')])
-#               ,( input_ref,        mesh, [( 'in_surf', 'surface1')])
-#               ,( input_tst,        mesh, [( 'in_surf', 'surface2')])
-               ,( overlap,           csv, [( 'jaccard', 'fji_avg'), ('class_fji','fji_tpm'),
-                                           ( 'dice', 'fdi_avg'), ('class_fdi', 'fdi_tpm') ])
-               ,( diff_im,           csv, [( 'similarity','cc_image')])
-               ,( diff_fld,          csv, [(('out_map',_stats), 'fmap_error' ) ])
-#               ,( mesh,              csv, [( 'distance', 'surf_dist')])
-               ,( csv,        outputnode, [( 'csv_file', 'out_file')])
-               ,( overlap,    outputnode, [( 'diff_file','out_tpm_diff')])
-               ,( diff_fld,   outputnode, [( 'out_map', 'out_field_err')])
-    ])
+    wf = pe.Workflow(name=name)
+    wf.connect([
+        (inputnode,        csv, [('subject_id', 'subject_id'),
+                                 ('method', 'method'),
+                                 ('out_csv', 'in_file')]),
+        (input_ref,  merge_ref, [('in_imag', 'in_files')]),
+        (input_tst,  merge_tst, [('in_imag', 'in_files')]),
+        (input_ref,    overlap, [('in_tpms', 'in_ref')]),
+        (input_tst,    overlap, [('in_tpms', 'in_tst')]),
+        (input_ref,    diff_im, [('in_mask', 'mask1'),
+                                 ('in_mask', 'mask2')]),
+        (merge_ref,    diff_im, [('merged_file', 'volume1')]),
+        (merge_tst,    diff_im, [('merged_file', 'volume2')]),
+        (input_ref,    inv_fld, [('in_field', 'in_field')]),
+        (input_ref,   diff_fld, [('in_mask', 'mask')]),
+        (inv_fld,     diff_fld, [('out_field', 'in_ref')]),
+        (input_tst,   diff_fld, [('in_field', 'in_tst')]),
+        # (input_ref,       mesh, [('in_surf', 'surface1')]),
+        # (input_tst,       mesh, [('in_surf', 'surface2')]),
+        (overlap,          csv, [('jaccard', 'fji_avg'),
+                                 ('class_fji', 'fji_tpm'),
+                                 ('dice', 'fdi_avg'),
+                                 ('class_fdi', 'fdi_tpm')]),
+        (diff_im,          csv, [('similarity', 'cc_image')]),
+        (diff_fld,         csv, [('out_map', _stats), 'fmap_error')]),
+        # (mesh,             csv, [('distance', 'surf_dist')]),
+        (csv,       outputnode, [('csv_file', 'out_file')]),
+        (overlap,   outputnode, [('diff_file', 'out_tpm_diff')]),
+        (diff_fld,  outputnode, [('out_map', 'out_field_err')])])
 
     return wf
 
-def bspline( name='BSplineEvaluation', n_tissues=3, methods=None, results=None ):
+
+def bspline(name = 'BSplineEvaluation', n_tissues = 3, methods = None, results = None):
     """ A workflow to evaluate registration methods generating a gold standard
     with random bspline deformations.
 
@@ -127,74 +127,76 @@ def bspline( name='BSplineEvaluation', n_tissues=3, methods=None, results=None )
         outputnode.out_disp - the displacement field, at image grid resoluton
 
     """
-    wf = pe.Workflow(name=name)
+    wf=pe.Workflow(name = name)
 
     if methods is None:
-        methods = [ identity_wf(n_tissues=n_tissues), default_regseg() ]
+        methods=[identity_wf(n_tissues = n_tissues), default_regseg()]
     else:
-        methods = np.atleast_1d( methods ).tolist()
+        methods=np.atleast_1d(methods).tolist()
 
-    inputnode = pe.Node(niu.IdentityInterface(
-                        fields=['subject_id','grid_size', 'out_csv',
-                                'in_file','in_surfs','in_tpms','in_mask'] ),
-                        name='inputnode' )
-    outputnode = pe.Node(niu.IdentityInterface(fields=['out_file', 'out_tpms',
-                         'out_surfs','out_field', 'out_coeff', 'out_overlap' ]),
-                         name='outputnode' )
+    inputnode=pe.Node(niu.IdentityInterface(
+                        fields=['subject_id', 'grid_size', 'out_csv',
+                                'in_file', 'in_surfs', 'in_tpms', 'in_mask']),
+                        name = 'inputnode')
+    outputnode=pe.Node(niu.IdentityInterface(fields=['out_file', 'out_tpms',
+                         'out_surfs', 'out_field', 'out_coeff', 'out_overlap']),
+                         name = 'outputnode')
 
-    dist = bspline_deform(n_tissues=n_tissues)
+    dist=bspline_deform(n_tissues = n_tissues)
 
     wf.connect([
-             ( inputnode,  dist, [('grid_size', 'inputnode.grid_size'),
-                                  ('in_file','inputnode.in_file'),
+             (inputnode,  dist, [('grid_size', 'inputnode.grid_size'),
+                                  ('in_file', 'inputnode.in_file'),
                                   ('in_surfs', 'inputnode.in_surfs'),
                                   ('in_tpms', 'inputnode.in_tpms'),
-                                  ('in_mask', 'inputnode.in_mask')])
-            ,( dist, outputnode, [('outputnode.out_file','out_file'),
-                                  ('outputnode.out_field','out_field'),
-                                  ('outputnode.out_coeff','out_coeff')])
+                                  ('in_mask', 'inputnode.in_mask')]), (dist, outputnode, [('outputnode.out_file', 'out_file'),
+                                  ('outputnode.out_field', 'out_field'),
+                                  ('outputnode.out_coeff', 'out_coeff')])
     ])
 
-    evwfs = []
-    norm_tpms = []
-    for i,reg in enumerate(methods):
-        evwfs.append( registration_ev( name=('Ev_%s' % reg.name) ) )
-        evwfs[i].inputs.infonode.method = reg.name
+    evwfs=[]
+    norm_tpms=[]
+    for i, reg in enumerate(methods):
+        evwfs.append(registration_ev(name=('Ev_%s' % reg.name)))
+        evwfs[i].inputs.infonode.method=reg.name
 
-        norm_tpms.append(pe.Node( niu.Function( input_names=['in_files','in_mask'],
-                         output_names=['out_files'], function=normalize ),
-                         name='Normalize%02d' % i ) )
+        norm_tpms.append(pe.Node(niu.Function(input_names=['in_files', 'in_mask'],
+                         output_names=['out_files'], function=normalize),
+                         name='Normalize%02d' % i))
 
-        wf.connect( [
-             (inputnode,    evwfs[i], [('subject_id', 'infonode.subject_id'),
-                                       ('in_file',    'refnode.in_imag'),
-                                       ('in_tpms',    'refnode.in_tpms'),
-                                       ('in_surfs',   'refnode.in_surf'),
-                                       ('in_mask',    'refnode.in_mask'), ])
-            ,(inputnode,         reg, [('in_surfs','inputnode.in_surf'),
-                                       ('in_file', 'inputnode.in_orig' ) ])
-            ,(dist,              reg, [('outputnode.out_file', 'inputnode.in_dist'),
-                                       ('outputnode.out_tpms', 'inputnode.in_tpms'),
-                                       ('outputnode.out_mask', 'inputnode.in_mask') ])
-            ,(dist,         evwfs[i], [('outputnode.out_field','refnode.in_field' ) ])
-            ,(reg,      norm_tpms[i], [('outputnode.out_tpms', 'in_files') ] )
-            ,(reg,          evwfs[i], [('outputnode.out_corr', 'tstnode.in_imag'),
-                                       ('outputnode.out_surf', 'tstnode.in_surf'),
-                                       ('outputnode.out_field','tstnode.in_field' ) ])
-            ,(norm_tpms[i], evwfs[i], [('out_files', 'tstnode.in_tpms')])
+        wf.connect([
+            (inputnode,    evwfs[i], [('subject_id', 'infonode.subject_id'),
+                                      ('in_file',    'refnode.in_imag'),
+                                      ('in_tpms',    'refnode.in_tpms'),
+                                      ('in_surfs',   'refnode.in_surf'),
+                                      ('in_mask',    'refnode.in_mask'), ]),
+            (inputnode,         reg, [('in_surfs', 'inputnode.in_surf'),
+                                      ('in_file', 'inputnode.in_orig')]),
+            (dist,              reg, [('outputnode.out_file', 'inputnode.in_dist'),
+                                      ('outputnode.out_tpms',
+                                       'inputnode.in_tpms'),
+                                      ('outputnode.out_mask', 'inputnode.in_mask')]),
+            (dist,         evwfs[i], [
+             ('outputnode.out_field', 'refnode.in_field')]),
+            (reg,      norm_tpms[i], [('outputnode.out_tpms', 'in_files')]),
+            (reg,          evwfs[i], [('outputnode.out_corr', 'tstnode.in_imag'),
+                                      ('outputnode.out_surf',
+                                       'tstnode.in_surf'),
+                                      ('outputnode.out_field', 'tstnode.in_field')]),
+            (norm_tpms[i], evwfs[i], [('out_files', 'tstnode.in_tpms')])
         ])
 
         # Connect in_field in case it is an identity workflow
-        if 'in_field' in [ item[0] for item in reg.inputs.inputnode.items() ]:
-            wf.connect( [
-                ( dist, reg, [( 'outputnode.out_field', 'inputnode.in_field')])
+        if 'in_field' in [item[0] for item in reg.inputs.inputnode.items()]:
+            wf.connect([
+                (dist, reg, [('outputnode.out_field', 'inputnode.in_field')])
             ])
 
         # Connect results output file
         if not results is None:
-            evwfs[i].inputs.infonode.out_csv = results
+            evwfs[i].inputs.infonode.out_csv=results
         else:
             wf.connect([
-             ( inputnode, evwfs[i], [ ('out_csv', 'infonode.out_csv') ])
+             (inputnode, evwfs[i], [('out_csv', 'infonode.out_csv')])
             ])
     return wf
