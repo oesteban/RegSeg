@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-14 19:37:54
+# @Last Modified time: 2014-10-15 00:19:30
 
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
@@ -67,7 +67,6 @@ if __name__ == '__main__':
     infosource.inputs.data_dir = options.data_dir
 
     prep = prepare_smri()
-
     bs = ev.bspline()
     bs.inputs.inputnode.grid_size = options.grid_size
 
