@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-10-15 12:11:35
+# @Last Modified time: 2014-10-15 12:21:09
 
 import os
 import os.path as op
@@ -15,7 +15,7 @@ import nipype.pipeline.engine as pe             # pipeline engine
 from nipype.interfaces import io as nio              # Data i/o
 from nipype.interfaces import utility as niu         # utility
 
-from pysdcev.interfaces.warps import FieldBasedWarp, InverseField
+from pyacwreg.interfaces.warps import FieldBasedWarp, InverseField
 from pyacwreg.interfaces.acwereg import ACWEReg
 
 

@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-15 12:09:42
+# @Last Modified time: 2014-10-15 12:20:48
 
 import os
 import os.path as op
@@ -22,7 +22,7 @@ from nipype.algorithms import metrics as namev
 from nipype.interfaces import fsl as fsl
 from nipype.interfaces.nipy.utils import Similarity
 
-from pysdcev.interfaces.warps import InverseField
+from pyacwereg.interfaces.warps import InverseField
 from pysdcev.workflows.distortion import bspline_deform
 from registration import identity_wf, default_regseg
 
