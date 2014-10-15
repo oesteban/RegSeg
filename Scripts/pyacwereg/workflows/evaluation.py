@@ -6,25 +6,24 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-15 12:03:49
+# @Last Modified time: 2014-10-15 12:09:42
 
 import os
 import os.path as op
 import numpy as np
 
-import nipype.interfaces.io as nio              # Data i/o
-import nipype.interfaces.utility as niu         # utility
-import nipype.algorithms.misc as namisc         # misc algorithms
-import nipype.algorithms.mesh as namesh
-import nipype.algorithms.eval as namev
-import nipype.interfaces.fsl as fsl
-from nipype.interfaces.nipy.utils import Similarity
 import nipype.pipeline.engine as pe             # pipeline engine
+from nipype.interfaces import io as nio              # Data i/o
+from nipype.interfaces import utility as niu         # utility
+from nipype.algorithms import misc as namisc         # misc algorithms
+from nipype.algorithms.misc import NormalizeProbabilityMapSet as Normalize
+from nipype.algorithms import mesh as namesh
+from nipype.algorithms import metrics as namev
+from nipype.interfaces import fsl as fsl
+from nipype.interfaces.nipy.utils import Similarity
 
-import pyacwereg.nipype.interfaces as iface
-from pyacwereg.utils.misc import normalize_tpms as normalize
-
-from distortion import bspline_deform
+from pysdcev.interfaces.warps import InverseField
+from pysdcev.workflows.distortion import bspline_deform
 from registration import identity_wf, default_regseg
 
 
@@ -89,11 +88,7 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
     for i, reg in enumerate(methods):
         evwfs.append(registration_ev(name=('Ev_%s' % reg.name)))
         evwfs[i].inputs.infonode.method = reg.name
-
-        norm_tpms.append(pe.Node(niu.Function(
-            input_names=['in_files', 'in_mask'],
-            output_names=['out_files'], function=normalize),
-            name='Normalize%02d' % i))
+        norm_tpms.append(pe.Node(Normalize(), name='Normalize%02d' % i))
 
         wf.connect([
             (inputnode,    evwfs[i], [('subject_id', 'infonode.subject_id'),
@@ -166,9 +161,9 @@ def registration_ev(name='EvaluateMapping'):
     merge_tst = pe.Node(fsl.Merge(dimension='t'), name='ConcatTestInputs')
     overlap = pe.Node(namev.FuzzyOverlap(weighting='volume'), name='Overlap')
     diff_im = pe.Node(Similarity(metric='cc'), name='ContrastDiff')
-    inv_fld = pe.Node(iface.InverseField(), name='InvertField')
+    inv_fld = pe.Node(InverseField(), name='InvertField')
     diff_fld = pe.Node(namev.ErrorMap(), name='FieldDiff')
-    # mesh = pe.MapNode( namesh.P2PDistance(weighting='surface'),
+    # mesh = pe.MapNode(namesh.P2PDistance(weighting='surface'),
     #                   iterfield=[ 'surface1','surface2' ],
     #                   name='SurfDistance')
     csv = pe.Node(namisc.AddCSVRow(), name="AddRow")

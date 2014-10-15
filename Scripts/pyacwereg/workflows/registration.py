@@ -5,16 +5,18 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
-# @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-15 11:34:25
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2014-10-15 12:11:35
 
 import os
 import os.path as op
 
-import nipype.interfaces.io as nio              # Data i/o
-import nipype.interfaces.utility as niu         # utility
 import nipype.pipeline.engine as pe             # pipeline engine
-import pyacwereg.nipype.interfaces as iface
+from nipype.interfaces import io as nio              # Data i/o
+from nipype.interfaces import utility as niu         # utility
+
+from pysdcev.interfaces.warps import FieldBasedWarp, InverseField
+from pyacwreg.interfaces.acwereg import ACWEReg
 
 
 def default_regseg(name='REGSEGDefault'):
@@ -32,7 +34,7 @@ def default_regseg(name='REGSEGDefault'):
     # Registration
     # Good config for box phantom (2014/04/21): [ -a 0.0 -b 0.0 -u 20 -g 6 -i
     # 500 -s 1.0]
-    regseg = pe.Node(iface.ACWEReg(), name="ACWERegistration")
+    regseg = pe.Node(ACWEReg(), name="ACWERegistration")
     regseg.inputs.iterations = [500]
     regseg.inputs.descript_update = [20]
     regseg.inputs.step_size = [1.0]
@@ -43,7 +45,7 @@ def default_regseg(name='REGSEGDefault'):
     # regseg.inputs.convergence_window = [ 15, 5 ]
 
     # Apply tfm to tpms
-    applytfm = pe.Node(iface.FieldBasedWarp(), name="ApplyWarp")
+    applytfm = pe.Node(FieldBasedWarp(), name="ApplyWarp")
 
     # Connect
     wf.connect([
@@ -80,14 +82,14 @@ def identity_wf(name='Identity', n_tissues=3):
                          name='outputnode')
 
     # Invert field
-    inv = pe.Node(iface.InverseField(), name='InvertField')
+    inv = pe.Node(InverseField(), name='InvertField')
 
     # Compute corrected images
     merge = pe.Node(niu.Merge(2), name='Merge')
     split = pe.Node(niu.Split(splits=[2, n_tissues]), name='Split')
 
     # Apply tfm to tpms
-    applytfm = pe.Node(iface.FieldBasedWarp(), name="ApplyWarp")
+    applytfm = pe.Node(FieldBasedWarp(), name="ApplyWarp")
 
     # Connect
     wf.connect([

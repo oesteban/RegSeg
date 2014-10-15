@@ -5,7 +5,6 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 15:50:50
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-15 00:15:42
+# @Last Modified time: 2014-10-15 12:12:57
 
-from acwereg import ACWEReg,
-from warps import RandomBSplineDeformation, FieldBasedWarp
+from acwereg import ACWEReg
