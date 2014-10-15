@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-14 19:37:17
+# @Last Modified time: 2014-10-15 12:32:46
 
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
@@ -27,25 +27,28 @@ if __name__ == '__main__':
 
     g_input = parser.add_argument_group('Inputs')
 
-    g_input.add_argument('-D', '--data_dir', action='store',
-                         default=op.join(
-                             os.getenv('NEURO_DATA_HOME', os.getcwd()), 'phantoms'),
-                         help='directory where subjects are found')
-    g_input.add_argument('-s', '--subject_id', action='store',
-                         default='S001', help='selects phantom\'s shape model')
-    g_input.add_argument('-n', '--n_regions', action='store',
-                         default='1', help='selects phantom\'s number of regions')
-    g_input.add_argument('-g', '--grid_size', action='store',
-                         default=[6, 6, 6], nargs='+',
-                         help='number of control points')
-    g_input.add_argument('-w', '--work_dir', action='store',
-                         default=os.getcwd(),
-                         help='directory where subjects are found')
-    g_input.add_argument('-N', '--name', action='store', default='PhantomTests',
-                         help='default workflow name, it will create a new folder')
+    g_input.add_argument(
+        '-D', '--data_dir', action='store',
+        default=op.join(os.getenv('NEURO_DATA_HOME', os.getcwd()), 'phantoms'),
+        help='directory where subjects are found')
+    g_input.add_argument(
+        '-s', '--subject_id', action='store', default='S001',
+        help='selects phantom\'s shape model')
+    g_input.add_argument(
+        '-n', '--n_regions', action='store', default='1',
+        help='selects phantom\'s number of regions')
+    g_input.add_argument(
+        '-g', '--grid_size', action='store', default=[6, 6, 6], nargs='+',
+        help='number of control points')
+    g_input.add_argument(
+        '-w', '--work_dir', action='store', default=os.getcwd(),
+        help='directory where subjects are found')
+    g_input.add_argument(
+        '-N', '--name', action='store', default='PhantomTests',
+        help='default workflow name, it will create a new folder')
     g_output = parser.add_argument_group('Outputs')
-    g_output.add_argument('-o', '--out_csv', action='store',
-                          help='output summary csv file')
+    g_output.add_argument(
+        '-o', '--out_csv', action='store', help='output summary csv file')
 
     options = parser.parse_args()
 
@@ -59,9 +62,9 @@ if __name__ == '__main__':
     wf = pe.Workflow(name=options.name)
     wf.base_dir = options.work_dir
     infosource = pe.Node(niu.IdentityInterface(
-                         fields=['subject_id', 'data_dir', 'in_file',
-                                 'in_surfs', 'in_tpms', 'in_mask']),
-                         name="infosource")
+        fields=['subject_id', 'data_dir', 'in_file', 'in_surfs', 'in_tpms',
+                'in_mask']),
+        name="infosource")
 
     infosource.inputs.subject_id = subject_id
     infosource.inputs.in_file = [op.join(subject_dir, 'T1-SNR30.nii.gz'),
