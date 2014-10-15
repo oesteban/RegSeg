@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-15 00:15:29
+# @Last Modified time: 2014-10-15 10:48:22
 
 import os
 import os.path as op
@@ -101,7 +101,7 @@ class ACWERegOutputSpec(TraitedSpec):
                                           'target space')))
     out_field = File(exists=True, desc='output field')
     out_log = File(exists=True, desc='log JSON file')
-    #out_coeff = OutputMultiPath( File(desc='output coefficients') )
+    # out_coeff = OutputMultiPath( File(desc='output coefficients') )
 
 
 class ACWEReg(ANTSCommand):
@@ -184,7 +184,7 @@ pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
         for name, spec in sorted(self.inputs.traits(**metadata).items()):
             if skip and name in skip:
                 continue
-            if not name in self._grouped_traits:
+            if name not in self._grouped_traits:
                 continue
 
             value = getattr(self.inputs, name)

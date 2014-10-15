@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-04-15 13:08:37
+# @Last Modified time: 2014-10-15 11:34:25
 
 import os
 import os.path as op
@@ -16,87 +16,95 @@ import nipype.interfaces.utility as niu         # utility
 import nipype.pipeline.engine as pe             # pipeline engine
 import pyacwereg.nipype.interfaces as iface
 
-def default_regseg( name='REGSEGDefault'):
-    wf = pe.Workflow( name=name )
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=['in_orig', 'in_dist', 'in_tpms', 'in_surf',
-                        'in_mask' ]),
-                        name='inputnode' )
+def default_regseg(name='REGSEGDefault'):
+    wf = pe.Workflow(name=name)
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=['out_corr', 'out_tpms',
-                         'out_surf', 'out_field', 'out_mask' ]),
-                         name='outputnode' )
+    inputnode = pe.Node(niu.IdentityInterface(
+                        fields=['in_orig', 'in_dist', 'in_tpms', 'in_surf',
+                                'in_mask']), name='inputnode')
+
+    outputnode = pe.Node(niu.IdentityInterface(
+                         fields=['out_corr', 'out_tpms',
+                                 'out_surf', 'out_field', 'out_mask']),
+                         name='outputnode')
 
     # Registration
-    # Good config for box phantom (2014/04/21): [ -a 0.0 -b 0.0 -u 20 -g 6 -i 500 -s 1.0]
-    regseg = pe.Node( iface.ACWEReg(), name="ACWERegistration" )
-    regseg.inputs.iterations = [ 500 ]
-    regseg.inputs.descript_update = [ 20 ]
-    regseg.inputs.step_size = [ 1.0 ]
-    regseg.inputs.alpha = [ 0.0 ]
-    regseg.inputs.beta = [ 0.0 ]
-    regseg.inputs.grid_size = [ 6 ]
-    #regseg.inputs.convergence_energy = [ False ]
-    #regseg.inputs.convergence_window = [ 15, 5 ]
+    # Good config for box phantom (2014/04/21): [ -a 0.0 -b 0.0 -u 20 -g 6 -i
+    # 500 -s 1.0]
+    regseg = pe.Node(iface.ACWEReg(), name="ACWERegistration")
+    regseg.inputs.iterations = [500]
+    regseg.inputs.descript_update = [20]
+    regseg.inputs.step_size = [1.0]
+    regseg.inputs.alpha = [0.0]
+    regseg.inputs.beta = [0.0]
+    regseg.inputs.grid_size = [6]
+    # regseg.inputs.convergence_energy = [ False ]
+    # regseg.inputs.convergence_window = [ 15, 5 ]
 
     # Apply tfm to tpms
-    applytfm = pe.Node( iface.FieldBasedWarp(), name="ApplyWarp" )
+    applytfm = pe.Node(iface.FieldBasedWarp(), name="ApplyWarp")
 
     # Connect
     wf.connect([
-         ( inputnode,   regseg, [ ('in_surf','in_prior' ),
-                                  ('in_dist','in_fixed' ) ])
-        ,( inputnode, applytfm, [ ('in_tpms', 'in_file' ),
-                                  ('in_mask', 'in_mask') ])
-        ,( regseg,    applytfm, [ ('out_field','in_field')])
-        ,( regseg,  outputnode, [ ('out_warped','out_corr'),
-                                  ('out_field','out_field'),
-                                  ('out_surfs', 'out_surf') ])
-        ,( applytfm,outputnode, [ ('out_file', 'out_tpms'),
-                                  ('out_mask', 'out_mask')])
+        (inputnode,   regseg, [('in_surf', 'in_prior'),
+                               ('in_dist', 'in_fixed')]),
+        (inputnode, applytfm, [('in_tpms', 'in_file'),
+                               ('in_mask', 'in_mask')]),
+        (regseg,    applytfm, [('out_field', 'in_field')]),
+        (regseg,  outputnode, [('out_warped', 'out_corr'),
+                               ('out_field', 'out_field'),
+                               ('out_surfs', 'out_surf')]),
+        (applytfm, outputnode, [('out_file', 'out_tpms'),
+                                ('out_mask', 'out_mask')])
     ])
 
     return wf
 
-def identity_wf( name='Identity', n_tissues=3):
-    """ An identity workflow to check how ideal inverse transform
+
+def identity_wf(name='Identity', n_tissues=3):
+    """
+    An identity workflow to check how ideal inverse transform
     affects final evaluation scores.
     """
-    wf = pe.Workflow( name=name )
+    wf = pe.Workflow(name=name)
 
-    inputnode = pe.Node(niu.IdentityInterface(fields=['in_orig', 'in_dist', 'in_tpms', 'in_surf',
-                        'in_mask', 'in_field' ]),
-                        name='inputnode' )
+    inputnode = pe.Node(niu.IdentityInterface(
+                        fields=['in_orig', 'in_dist', 'in_tpms', 'in_surf',
+                                'in_mask', 'in_field']),
+                        name='inputnode')
 
-    outputnode = pe.Node(niu.IdentityInterface(fields=['out_corr', 'out_tpms',
-                         'out_surf', 'out_field', 'out_mask' ]),
-                         name='outputnode' )
+    outputnode = pe.Node(niu.IdentityInterface(
+                         fields=['out_corr', 'out_tpms',
+                                 'out_surf', 'out_field', 'out_mask']),
+                         name='outputnode')
 
     # Invert field
-    inv = pe.Node( iface.InverseField(), name='InvertField' )
+    inv = pe.Node(iface.InverseField(), name='InvertField')
 
     # Compute corrected images
-    merge = pe.Node( niu.Merge(2), name='Merge' )
-    split = pe.Node( niu.Split(splits=[2,n_tissues]), name='Split')
+    merge = pe.Node(niu.Merge(2), name='Merge')
+    split = pe.Node(niu.Split(splits=[2, n_tissues]), name='Split')
 
     # Apply tfm to tpms
-    applytfm = pe.Node( iface.FieldBasedWarp(), name="ApplyWarp" )
+    applytfm = pe.Node(iface.FieldBasedWarp(), name="ApplyWarp")
 
     # Connect
     wf.connect([
-         ( inputnode,       inv, [ ('in_field','in_field' ) ])
-        ,( inputnode,     merge, [ ('in_dist', 'in1'), ('in_tpms', 'in2' ) ])
-        ,( inputnode,  applytfm, [ ('in_mask', 'in_mask'),
-                                   ('in_surf', 'in_surf') ])
-        ,( merge,      applytfm, [ ('out', 'in_file' )])
-        ,( inputnode,  applytfm, [ ('in_field','in_field' ) ])
-        #,( inv,        applytfm, [ ('out_field', 'in_field')])
-        ,( applytfm,      split, [ ('out_file', 'inlist')])
-        ,( split,    outputnode, [ ('out1', 'out_corr' ),
-                                   ('out2', 'out_tpms' )])
-        ,( inv,      outputnode, [ ('out_field','out_field') ])
-        ,( applytfm, outputnode, [ ('out_surf', 'out_surf'),
-                                   ('out_mask', 'out_mask')])
+        (inputnode,       inv, [('in_field', 'in_field')]),
+        (inputnode,     merge, [('in_dist', 'in1'),
+                                ('in_tpms', 'in2')]),
+        (inputnode,  applytfm, [('in_mask', 'in_mask'),
+                                ('in_surf', 'in_surf')]),
+        (merge,      applytfm, [('out', 'in_file')]),
+        (inputnode,  applytfm, [('in_field', 'in_field')]),
+        # ( inv,        applytfm, [ ('out_field', 'in_field')]),
+        (applytfm,      split, [('out_file', 'inlist')]),
+        (split,    outputnode, [('out1', 'out_corr'), ,
+                                ('out2', 'out_tpms')]),
+        (inv,      outputnode, [('out_field', 'out_field')]),
+        (applytfm, outputnode, [('out_surf', 'out_surf'),
+                                ('out_mask', 'out_mask')])
     ])
 
     return wf
