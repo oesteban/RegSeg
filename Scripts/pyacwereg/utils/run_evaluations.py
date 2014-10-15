@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-15 00:19:30
+# @Last Modified time: 2014-10-15 11:58:11
 
 from argparse import ArgumentParser
 from argparse import RawTextHelpFormatter
@@ -38,8 +38,9 @@ if __name__ == '__main__':
     g_input.add_argument('-w', '--work_dir', action='store',
                          default=os.getcwd(),
                          help='directory where subjects are found')
-    g_input.add_argument('-N', '--name', action='store', default='EvaluationTests',
-                         help='default workflow name, it will create a new folder')
+    g_input.add_argument(
+        '-N', '--name', action='store', default='EvaluationTests',
+        help='default workflow name, it will create a new folder')
     g_output = parser.add_argument_group('Outputs')
     g_output.add_argument('-o', '--out_csv', action='store',
                           help='output summary csv file')
@@ -61,23 +62,23 @@ if __name__ == '__main__':
 
     wf = pe.Workflow(name=options.name)
     wf.base_dir = options.work_dir
-    infosource = pe.Node(niu.IdentityInterface(fields=['subject_id', 'data_dir']),
-                         name="infosource")
-    infosource.iterables = [('subject_id', subjects[0:3])]
-    infosource.inputs.data_dir = options.data_dir
+    ds = pe.Node(niu.IdentityInterface(fields=['subject_id', 'data_dir']),
+                 name="infosource")
+    ds.iterables = [('subject_id', subjects[0:3])]
+    ds.inputs.data_dir = options.data_dir
 
     prep = prepare_smri()
     bs = ev.bspline()
     bs.inputs.inputnode.grid_size = options.grid_size
 
     wf.connect([
-        (infosource,  prep, [('subject_id', 'inputnode.subject_id'),
-                             ('data_dir', 'inputnode.data_dir')]),
-        (infosource,    bs, [('subject_id', 'inputnode.subject_id')]),
-        (prep,          bs, [('outputnode.out_smri_brain', 'inputnode.in_file'),
-                             ('outputnode.out_surfs', 'inputnode.in_surfs'),
-                             ('outputnode.out_tpms', 'inputnode.in_tpms'),
-                             ('outputnode.out_mask', 'inputnode.in_mask')])
+        (ds,   prep, [('subject_id', 'inputnode.subject_id'),
+                      ('data_dir', 'inputnode.data_dir')]),
+        (ds,   bs,   [('subject_id', 'inputnode.subject_id')]),
+        (prep, bs,   [('outputnode.out_smri_brain', 'inputnode.in_file'),
+                      ('outputnode.out_surfs', 'inputnode.in_surfs'),
+                      ('outputnode.out_tpms', 'inputnode.in_tpms'),
+                      ('outputnode.out_mask', 'inputnode.in_mask')])
     ])
 
     if options.out_csv is None:
