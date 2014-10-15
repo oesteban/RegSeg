@@ -509,12 +509,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		ROIPixelType* roiBuffer = tempROI->GetBufferPointer();
 
+		double total = 0.0;
 		for( size_t pix = 0; pix < nPix; pix++ ) {
 			if( *(regionsBuffer+pix) == unassigned && *( roiBuffer + pix )==1 ) {
 				*(regionsBuffer+pix) = idx;
+				total += 1;
 			} else {
 				*( roiBuffer + pix ) = 0;
 			}
+		}
+
+		if (total == 0.0) {
+			itkWarningMacro(<< " ROI " << idx << " is empty.")
 		}
 
 		this->m_CurrentROIs[idx] = tempROI;
