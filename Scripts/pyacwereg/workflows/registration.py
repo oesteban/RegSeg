@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-10-15 12:21:09
+# @Last Modified time: 2014-10-15 12:43:32
 
 import os
 import os.path as op
@@ -15,8 +15,8 @@ import nipype.pipeline.engine as pe             # pipeline engine
 from nipype.interfaces import io as nio              # Data i/o
 from nipype.interfaces import utility as niu         # utility
 
-from pyacwreg.interfaces.warps import FieldBasedWarp, InverseField
-from pyacwreg.interfaces.acwereg import ACWEReg
+from pyacwereg.interfaces.acwereg import ACWEReg
+from pyacwereg.interfaces.warps import FieldBasedWarp, InverseField
 
 
 def default_regseg(name='REGSEGDefault'):
@@ -102,7 +102,7 @@ def identity_wf(name='Identity', n_tissues=3):
         (inputnode,  applytfm, [('in_field', 'in_field')]),
         # ( inv,        applytfm, [ ('out_field', 'in_field')]),
         (applytfm,      split, [('out_file', 'inlist')]),
-        (split,    outputnode, [('out1', 'out_corr'), ,
+        (split,    outputnode, [('out1', 'out_corr'),
                                 ('out2', 'out_tpms')]),
         (inv,      outputnode, [('out_field', 'out_field')]),
         (applytfm, outputnode, [('out_surf', 'out_surf'),
