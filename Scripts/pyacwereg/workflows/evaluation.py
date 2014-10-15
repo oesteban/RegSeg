@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
-# @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-15 12:44:06
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2014-10-15 13:36:41
 
 import os
 import os.path as op
@@ -146,12 +146,12 @@ def registration_ev(name='EvaluateMapping'):
                            np.ma.extras.median(data)])
         return result.tolist()
 
-    input_ref = pe.Node(niu.IdentityInterface(fields=['in_imag',
-                                                      'in_tpms', 'in_surf', 'in_field', 'in_mask']),
-                        name='refnode')
-    input_tst = pe.Node(niu.IdentityInterface(fields=['in_imag', 'in_tpms',
-                                                      'in_surf', 'in_field']),
-                        name='tstnode')
+    input_ref = pe.Node(niu.IdentityInterface(
+        fields=['in_imag', 'in_tpms', 'in_surf', 'in_field', 'in_mask']),
+        name='refnode')
+    input_tst = pe.Node(niu.IdentityInterface(
+        fields=['in_imag', 'in_tpms', 'in_surf', 'in_field']),
+        name='tstnode')
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['subject_id', 'method', 'out_csv']), name='infonode')
     outputnode = pe.Node(niu.IdentityInterface(
