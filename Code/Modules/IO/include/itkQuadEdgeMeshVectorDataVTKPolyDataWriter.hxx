@@ -32,8 +32,8 @@ template< class TMesh >
 QuadEdgeMeshVectorDataVTKPolyDataWriter<TMesh> 
 ::QuadEdgeMeshVectorDataVTKPolyDataWriter() 
 {
-  m_CellDataName = "";
-  m_PointDataName = "";
+  m_CellDataName = "celldatascalar";
+  m_PointDataName = "pointdatavecs";
 }
 
 // 
@@ -70,19 +70,8 @@ QuadEdgeMeshVectorDataVTKPolyDataWriter<TMesh>
 
       outputFile <<"CELL_DATA " <<this->m_Input->GetNumberOfFaces() <<std::endl;
       outputFile <<"SCALARS ";
-
-      if( m_CellDataName != "" )
-        {
-        outputFile <<m_CellDataName <<" " <<m_CellDataName <<std::endl;
-        }
-      else
-        {
-        outputFile <<"double double" <<std::endl;
-        }
-      
+      outputFile <<m_CellDataName <<" double 1" <<std::endl;
       outputFile <<"LOOKUP_TABLE default" <<std::endl;
-
-      unsigned long k(0);
 
       CellsContainerConstPointer cells = this->m_Input->GetCells();
       CellsContainerConstIterator it = cells->Begin();
@@ -92,14 +81,7 @@ QuadEdgeMeshVectorDataVTKPolyDataWriter<TMesh>
       while( c_it != celldata->End() )
         {
         CellType* cellPointer = it.Value();
-        if( cellPointer->GetType() != 1 )
-          {
-          outputFile <<c_it.Value();
-          if( k++ % 3 == 0 )
-            {
-            outputFile <<std::endl;
-            }
-          }
+        outputFile <<c_it.Value();
         ++c_it;
         ++it;
         }
@@ -121,24 +103,13 @@ QuadEdgeMeshVectorDataVTKPolyDataWriter<TMesh>
     std::ofstream outputFile( this->m_FileName.c_str(), std::ios_base::app );
 
     outputFile <<"POINT_DATA " <<this->m_Input->GetNumberOfPoints() <<std::endl;
-    outputFile <<"VECTORS ";
-
-    if( m_PointDataName != "" )
-      {
-      outputFile << m_PointDataName << " double" <<std::endl;
-      }
-    else
-      {
-      outputFile <<"vectors double"<<std::endl;
-      }
-
-    unsigned long k = 0;
+    outputFile <<"vectors ";
 
     PointDataContainerIterator c_it = pointdata->Begin();
-
     typedef typename MeshType::PointDataContainer::Element VectorType;
     typedef NumericTraits<VectorType> ElementTraits;
     const unsigned int vectorSize =  ElementTraits::GetLength( c_it.Value() );
+    outputFile << m_PointDataName << " double" << std::endl;
 
     VectorType v;
     while(  c_it != pointdata->End() )
@@ -148,7 +119,7 @@ QuadEdgeMeshVectorDataVTKPolyDataWriter<TMesh>
     	  v = c_it.Value();
     	  outputFile << static_cast< double >( v[j] );
 
-    	  if( j % vectorSize == 0 ) {
+    	  if( (j + 1) % vectorSize == 0 ) {
     		  outputFile << std::endl;
     	  } else {
     		  outputFile << " ";

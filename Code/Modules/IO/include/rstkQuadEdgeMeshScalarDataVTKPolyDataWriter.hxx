@@ -30,8 +30,8 @@ template< typename TMesh >
 QuadEdgeMeshScalarDataVTKPolyDataWriter< TMesh >
 ::QuadEdgeMeshScalarDataVTKPolyDataWriter()
 {
-  m_CellDataName = "scalars";
-  m_PointDataName = "scalars";
+  m_CellDataName = "celldatascalar";
+  m_PointDataName = "pointdatascalar";
 }
 
 //
