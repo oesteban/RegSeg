@@ -216,9 +216,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				sample[i].normal = zerov;
 				sample[i].grad = 0.0;
 				sample[i].w = 0.0;
+				ni = zerov;
 			}
 
-			gradmesh->GetPointData()->SetElement( sample[i].cid, sample[i].grad );
+			gradmesh->GetPointData()->SetElement( sample[i].cid, ni );
 		}
 	}
 

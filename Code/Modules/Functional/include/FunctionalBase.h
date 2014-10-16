@@ -46,6 +46,7 @@
 #include <itkVectorImage.h>
 #include <itkVectorLinearInterpolateImageFunction.h>
 #include <itkNearestNeighborInterpolateImageFunction.h>
+#include <itkQuadEdgeMeshTraits.h>
 #include <itkQuadEdgeMesh.h>
 #include <itkNormalQuadEdgeMeshFilter.h>
 #include <itkWarpMeshFilter.h>
@@ -224,7 +225,9 @@ public:
 	typedef typename std::vector< PointsVector >             PointsList;
 
 
-	typedef itk::QuadEdgeMesh< float, Dimension >            ShapeGradientType;
+//	typedef itk::QuadEdgeMeshTraits< float, Dimension, bool, bool >
+//															 ShapeGradientTraits;
+	typedef itk::QuadEdgeMesh< VectorType, Dimension> 	  	 ShapeGradientType;
 	typedef typename ShapeGradientType::Pointer              ShapeGradientPointer;
 	typedef typename ShapeGradientType::PointDataContainer   ShapeGradientsContainer;
     typedef typename ShapeGradientsContainer::Pointer        ShapeGradientsContainerPointer;
