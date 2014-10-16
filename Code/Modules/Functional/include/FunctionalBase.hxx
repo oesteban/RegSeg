@@ -140,7 +140,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	NormalFilterPointer normalsFilter;
 	SampleType sample;
 	VectorType zerov; zerov.Fill(0.0);
-
+	PointValueType scaler = this->m_Scale;
 	this->UpdateContour();
 
 	VNLVectorContainer gradVector;
@@ -184,27 +184,22 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				ci_prime = c_it.Value();
 				normals->GetPointData( pid, &ni );           // Normal ni in point c'_i
 				wi = this->ComputePointArea( pid, normals );  // Area of c'_i
-				gi = this->EvaluateGradient( ci_prime, out_cid, in_cid );
+				gi = scaler * this->EvaluateGradient( ci_prime, out_cid, in_cid );
 				totalArea+=wi;
 				gradSum+=gi;
 			}
-
 			sample.push_back( GradientSample( gi, wi, ni, pid, cpid, in_cid ) );
 			++c_it;
 			cpid++;
 		}
 
 		PointValueType gradient;
-
-		PointValueType scaler = ( this->m_Scale /totalArea);
-
 		ShapeGradientPointer gradmesh = this->m_Gradients[in_cid];
 		gradSum = 0.0;
 		for( size_t i = 0; i< sample.size(); i++) {
 			if ( sample[i].w > 0.0 ) {
-				gradient = scaler * sample[i].grad * sample[i].w;
+				gradient = scaler * sample[i].grad;
 				sample[i].grad = gradient;
-				sample[i].w = 1.0;
 				gradSum+= gradient;
 				ni = gradient * sample[i].normal;  // Project to normal
 
@@ -268,7 +263,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			++p_it;
 			gpid++;
 		}
-
 
 		ShapeCopyPointer copyShape = ShapeCopyType::New();
 		copyShape->SetInput( this->m_CurrentContours[contid] );
