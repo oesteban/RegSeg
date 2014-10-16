@@ -145,7 +145,7 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 	MeasureType meanDisp = this->ComputeIterationChange();
 
 	if ( this->m_UseLightWeightConvergenceChecking ) {
-		this->m_CurrentValue = log( meanDisp );
+		this->m_CurrentValue = meanDisp;
 	} else {
 		this->m_CurrentValue = this->GetCurrentEnergy();
 	}
@@ -175,10 +175,7 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 		InternalComputationValueType u_norm = 0.0;
 		InternalComputationValueType du_norm = 0.0;
 
-
 		this->m_Transform->ComputeGradientField();
-
-
 		double normalizer = 1.0;
 		MeasureType energyA = 0;
 		MeasureType energyB = 0;
