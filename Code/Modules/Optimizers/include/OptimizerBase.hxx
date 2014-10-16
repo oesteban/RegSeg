@@ -71,8 +71,8 @@ namespace rstk {
 template< typename TFunctional >
 OptimizerBase<TFunctional>::OptimizerBase():
 m_LearningRate( 2.0 ),
-m_MinimumConvergenceValue( 1e-7 ),
-m_ConvergenceWindowSize( 50 ),
+m_MinimumConvergenceValue( 1e-8 ),
+m_ConvergenceWindowSize( 15 ),
 m_ConvergenceValue( 0.0 ),
 m_Stop( false ),
 m_StopCondition(MAXIMUM_NUMBER_OF_ITERATIONS),
