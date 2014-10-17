@@ -81,7 +81,7 @@ MeanFunctional<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 inline typename MeanFunctional<TReferenceImageType,TCoordRepType>::MeasureType
 MeanFunctional<TReferenceImageType,TCoordRepType>
-::GetEnergyOfSample( typename MeanFunctional<TReferenceImageType,TCoordRepType>::ReferencePixelType value, size_t roi ) const {
+::GetEnergyOfSample( typename MeanFunctional<TReferenceImageType,TCoordRepType>::ReferencePixelType value, size_t roi, bool bias ) const {
 	ReferencePixelType dist = value - this->m_Parameters[roi].mean;
 	MeasureType val = dist.GetNorm();
 	return val * val;

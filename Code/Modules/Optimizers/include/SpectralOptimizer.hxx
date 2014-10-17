@@ -75,8 +75,8 @@ m_RegularizationEnergy( 0.0 ),
 m_CurrentTotalEnergy(itk::NumericTraits<MeasureType>::infinity()),
 m_RegularizationEnergyUpdated(true)
 {
-	this->m_Alpha.Fill( 1.0e-2 );
-	this->m_Beta.Fill( 1.0e-1 );
+	this->m_Alpha.Fill( 1.0 );
+	this->m_Beta.Fill( 1.0 );
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 5 );
 	this->m_GridSpacing.Fill( 0.0 );
@@ -94,6 +94,8 @@ void SpectralOptimizer<TFunctional>
 	os << indent << "Current iteration: " << this->m_CurrentIteration << std::endl;
 	os << indent << "Stop condition:" << this->m_StopCondition << std::endl;
 	os << indent << "Stop condition description: " << this->m_StopConditionDescription.str() << std::endl;
+	os << indent << "Alpha: " << (this->m_Alpha * this->m_ParamFactor) << std::endl;
+	os << indent << "Beta: " << (this->m_Beta * this->m_ParamFactor) << std::endl;
 }
 
 template< typename TFunctional >
@@ -129,9 +131,9 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 		}
 	}
 
-	if( this->m_AutoStepSize && this->m_CurrentIteration < 5 ) {
-		this->m_StepSize = (this->m_StepSize  + this->m_LearningRate * ( this->m_MaxDisplacement.GetNorm() / maxSpeed.GetNorm() ) )*0.5;
-	}
+	//if( this->m_AutoStepSize && this->m_CurrentIteration < 5 ) {
+	//	this->m_StepSize = (this->m_StepSize  + this->m_LearningRate * ( this->m_MaxDisplacement.GetNorm() / maxSpeed.GetNorm() ) )*0.5;
+	//}
 }
 
 template< typename TFunctional >
@@ -145,7 +147,7 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 	MeasureType meanDisp = this->ComputeIterationChange();
 
 	if ( this->m_UseLightWeightConvergenceChecking ) {
-		this->m_CurrentValue = meanDisp;
+		this->m_CurrentValue = log( 1.0 + meanDisp );
 	} else {
 		this->m_CurrentValue = this->GetCurrentEnergy();
 	}
@@ -160,7 +162,7 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
-	if ( (this->m_Alpha.GetNorm() + this->m_Beta.GetNorm()) < 1.0e-8 ) {
+	if ( ( (this->m_Alpha * this->m_ParamFactor).GetNorm() + (this->m_Beta * this->m_ParamFactor).GetNorm()) < 1.0e-8 ) {
 		return 0;
 	}
 
@@ -170,34 +172,34 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 		const CoefficientsValueType* dBuffer[Dimension];
 		size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
 
+		this->m_Transform->ComputeGradientField();
+
 		VectorType u;
 		CoefficientsValueType d_u;
-		InternalComputationValueType u_norm = 0.0;
-		InternalComputationValueType du_norm = 0.0;
-
-		this->m_Transform->ComputeGradientField();
-		double normalizer = 1.0;
+		double vxvol = 1.0;
 		MeasureType energyA = 0;
 		MeasureType energyB = 0;
 
 		for (size_t i = 0; i<Dimension; i++ ) {
 			dBuffer[i] =  this->m_Transform->GetDerivatives()[i]->GetBufferPointer();
-			normalizer*= this->m_LastField->GetSpacing()[i];
+			vxvol*= this->m_LastField->GetSpacing()[i];
 		}
 
+		double totalVol = 0.0;
 		for ( size_t pix = 0; pix<nPix; pix++) {
+			totalVol += vxvol;
 			u = *(fBuffer+pix);
 			for ( size_t i = 0; i<Dimension; i++) {
 				// Regularization, first term
-				energyA+= this->m_Alpha[i] * u.GetSquaredNorm();
+				energyA+= vxvol * this->m_Alpha[i] * this->m_ParamFactor * u[i] * u[i];
 
 				// Regularization, second term
 				d_u = *(dBuffer[i] + pix );
-				energyB+= this->m_Beta[i] * d_u;
+				energyB+= vxvol * this->m_Beta[i] * this->m_ParamFactor * d_u * d_u;
 			}
 		}
 
-		this->m_RegularizationEnergy = normalizer * ( energyA + energyB );
+		this->m_RegularizationEnergy = ( energyA + energyB ) / totalVol;
 		this->m_RegularizationEnergyUpdated = true;
 	}
 	return this->m_RegularizationEnergy;
@@ -216,7 +218,7 @@ void SpectralOptimizer<TFunctional>::SpectralUpdate(
 	typename MultiplyFilterType::Pointer dir_filter;
 
 	typename MultiplyFilterType::Pointer r_filter = MultiplyFilterType::New();
-	r_filter->SetConstant( 1.0/this->m_StepSize );
+	r_filter->SetConstant( 1.0/(this->m_StepSize * this->m_StepFactor) );
 
 	//size_t nPix = this->m_Transform->GetNumberOfParameters();
 
@@ -300,7 +302,7 @@ void SpectralOptimizer<TFunctional>
 	ControlPointsGridSizeType size = reference->GetLargestPossibleRegion().GetSize();
 
 	for (size_t i = 0; i<Dimension; i++) {
-		PointValueType initVal = (1.0/this->m_StepSize) + this->m_Alpha[i];
+		PointValueType initVal = (1.0/(this->m_StepSize * this->m_StepFactor)) + this->m_Alpha[i]  * this->m_ParamFactor;
 
 		CoefficientsImagePointer dimDdor = CoefficientsImageType::New();
 		dimDdor->SetSpacing(   reference->GetSpacing() );
@@ -462,10 +464,7 @@ void SpectralOptimizer<TFunctional>
 	opts.add_options()
 			("alpha,a", bpo::value< float > (), "alpha value in regularization")
 			("beta,b", bpo::value< float > (), "beta value in regularization")
-			//("step-size,s", bpo::value< float > (), "step-size value in optimization")
-			//("iterations,i", bpo::value< size_t > (), "number of iterations")
 			("grid-size,g", bpo::value< size_t > (), "grid size");
-			//("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)");
 }
 
 template< typename TFunctional >
@@ -482,27 +481,11 @@ void SpectralOptimizer<TFunctional>
 		bpo::variable_value v = this->m_Settings["beta"];
 		this->SetBeta( v.as< float >() );
 	}
-	//if( this->m_Settings.count( "step-size" ) ){
-	//	bpo::variable_value v = this->m_Settings["step-size"];
-	//	this->SetStepSize( v.as< float >() );
-	//}
-    //
-	//if( this->m_Settings.count( "iterations" ) ){
-	//	bpo::variable_value v = this->m_Settings["iterations"];
-	//	this->SetNumberOfIterations( v.as< size_t >() );
-	//}
 
 	if( this->m_Settings.count( "grid-size" ) ){
 		bpo::variable_value v = this->m_Settings["grid-size"];
 		this->SetGridSize( v.as< size_t >() );
 	}
-	//if (this->m_Settings.count("update-descriptors")) {
-	//	bpo::variable_value v = this->m_Settings["update-descriptors"];
-	//	size_t updDesc =  v.as<size_t>();
-	//	this->SetUseDescriptorRecomputation(true);
-	//	this->SetDescriptorRecomputationFreq( updDesc );
-	//}
-
 }
 
 } // end namespace rstk
