@@ -220,6 +220,7 @@ public:
 
 	virtual void SetStepSize (const InternalComputationValueType _arg);
 	itkGetConstMacro( StepSize, InternalComputationValueType );
+	itkGetConstMacro( Momentum, InternalComputationValueType );
 
 	itkSetMacro(Coefficients, CoefficientsImageArray);
 	itkGetConstMacro(Coefficients, CoefficientsImageArray);
@@ -261,6 +262,7 @@ protected:
 	 * automatic learning rate estimation if enabled. See main documentation.
 	 */
 	InternalComputationValueType  m_LearningRate;
+	InternalComputationValueType  m_Momentum;
 
 	/** Minimum convergence value for convergence checking.
 	 *  The convergence checker calculates convergence value by fitting to
@@ -293,12 +295,16 @@ protected:
 	bool                          m_UseDescriptorRecomputation;
 
 	InternalComputationValueType  m_StepSize;
+	InternalComputationValueType  m_StepFactor;
+	InternalComputationValueType  m_ParamFactor;
 	bool                          m_AutoStepSize;
 	bool                          m_IsDiffeomorphic;
 	bool                          m_UseLightWeightConvergenceChecking;
 
 	/* Energy tracking */
 	MeasureType                  m_CurrentValue;
+	MeasureType                  m_LastValue;
+	MeasureType                  m_InitialValue;
 
 	ControlPointsGridSizeType    m_GridSize;
 	ControlPointsGridSpacingType m_GridSpacing;

@@ -295,6 +295,8 @@ public:
 	virtual void SetReferenceImage (const ReferenceImageType * _arg);
 
 	itkGetMacro( ApplySmoothing, bool );
+	itkSetMacro( Background, bool );
+	itkGetMacro( Background, bool );
 	itkGetMacro( Sigma, SigmaArrayType );
 	itkSetMacro( Sigma, SigmaArrayType );
 
@@ -341,7 +343,7 @@ protected:
 
 	void InitializeSamplingGrid( void );
 
-	virtual MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roi ) const = 0;
+	virtual MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roim, bool bias = false ) const = 0;
 	MeasureType GetEnergyAtPoint( PointType& point, size_t roi ) const;
 	MeasureType GetEnergyAtPoint( PointType& point, size_t roi, ReferencePixelType& value ) const;
 	MeasureType EvaluateGradient( PointType& point, size_t outer_roi, size_t inner_roi ) const;
@@ -355,13 +357,13 @@ protected:
 	size_t m_NumberOfPoints;
 	size_t m_NumberOfNodes;
 	size_t m_SamplingFactor;
-	double m_Scale;
 	SigmaArrayType m_Sigma;
 	float m_DecileThreshold;
 	bool m_DisplacementsUpdated;
 	bool m_EnergyUpdated;
 	bool m_RegionsUpdated;
 	bool m_ApplySmoothing;
+	bool m_Background;
 
 
 	mutable MeasureType m_Value;
