@@ -540,6 +540,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	DimensionParametersContainer coeffs;
 
 	for ( size_t i = 0; i<Dimension; i++) {
+		Y[i] = SolverVector( fieldValues[i].size() );
 		vnl_copy< DimensionVector, SolverVector >( fieldValues[i], Y[i] );
 		X[i] = SolverVector( this->m_NumberOfParameters );
 	}
