@@ -78,9 +78,13 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 inline typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::MeasureType
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
-::GetEnergyOfSample( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ReferencePixelType value, size_t roi ) const {
+::GetEnergyOfSample( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ReferencePixelType value, size_t roi, bool bias ) const {
 	ReferencePixelType dist = value - this->m_Parameters[roi].mean;
-	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() ) + this->m_Parameters[roi].bias;
+	double biasVal = 0.0;
+	if (bias) {
+		biasVal = this->m_Parameters[roi].bias;
+	}
+	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() ) + biasVal;
 }
 
 
@@ -101,6 +105,15 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	ParametersType newParameters;
 	ProbabilityMapConstPointer roipm = this->GetCurrentMap( idx );
 
+	if (this->m_Background && (idx == this->m_NumberOfRegions - 1)) {
+		newParameters.mean.Fill(0.0);
+		newParameters.cov.SetIdentity();
+		for (size_t row = 0; row < Components; row ++ ) {
+			newParameters.cov(row, row) = 5.0;
+		}
+		return newParameters;
+	}
+
 	// Apply weighted mean/covariance estimators from ITK
 	typename CovarianceFilter::WeightArrayType weights;
 	ReferenceSamplePointer sample = ReferenceSampleType::New();
@@ -110,9 +123,20 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	weights.SetSize( sampleSize );
 	weights.Fill( 0.0 );
 
+	double totalWeight = 0.0;
+	double w;
 	const typename ProbabilityMapType::PixelType* roipmb = roipm->GetBufferPointer();
 	for ( size_t pidx = 0; pidx < sampleSize; pidx++) {
-		weights[pidx] = *( roipmb + pidx );
+		w = *( roipmb + pidx );
+		if (w > 0.8) {
+			weights[pidx] = w;
+			totalWeight+= w;
+		}
+	}
+
+	if (totalWeight <= vnl_math::eps) {
+		itkWarningMacro(<< " the probablity map of ROI " << idx << " is empty.");
+		return m_Parameters[idx];
 	}
 
 	CovarianceFilterPointer covFilter = CovarianceFilter::New();

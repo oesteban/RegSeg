@@ -81,7 +81,7 @@ MeanFunctional<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 inline typename MeanFunctional<TReferenceImageType,TCoordRepType>::MeasureType
 MeanFunctional<TReferenceImageType,TCoordRepType>
-::GetEnergyOfSample( typename MeanFunctional<TReferenceImageType,TCoordRepType>::ReferencePixelType value, size_t roi ) const {
+::GetEnergyOfSample( typename MeanFunctional<TReferenceImageType,TCoordRepType>::ReferencePixelType value, size_t roi, bool bias ) const {
 	ReferencePixelType dist = value - this->m_Parameters[roi].mean;
 	MeasureType val = dist.GetNorm();
 	return val * val;
@@ -113,9 +113,16 @@ MeanFunctional<TReferenceImageType,TCoordRepType>
 	weights.SetSize( sampleSize );
 	weights.Fill( 0.0 );
 
+	double totalWeight = 0.0;
 	const typename ProbabilityMapType::PixelType* roipmb = roipm->GetBufferPointer();
 	for ( size_t pidx = 0; pidx < sampleSize; pidx++) {
 		weights[pidx] = *( roipmb + pidx );
+		totalWeight+= *( roipmb + pidx );
+	}
+
+	if (totalWeight <= vnl_math::eps) {
+		itkWarningMacro(<< " the probablity map of ROI " << idx << " is empty.");
+		return m_Parameters[idx];
 	}
 
 	CovarianceFilterPointer covFilter = CovarianceFilter::New();

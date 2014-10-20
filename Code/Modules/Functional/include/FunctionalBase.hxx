@@ -67,12 +67,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_NumberOfPoints(0),
  m_NumberOfNodes(0),
  m_SamplingFactor(2),
- m_Scale(1.0),
  m_DecileThreshold(0.05),
  m_DisplacementsUpdated(true),
  m_EnergyUpdated(false),
  m_RegionsUpdated(false),
- m_ApplySmoothing(false)
+ m_ApplySmoothing(false),
+ m_Background(true)
  {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_Sigma.Fill(0.0);
@@ -140,7 +140,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	NormalFilterPointer normalsFilter;
 	SampleType sample;
 	VectorType zerov; zerov.Fill(0.0);
-
 	this->UpdateContour();
 
 	VNLVectorContainer gradVector;
@@ -188,23 +187,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				totalArea+=wi;
 				gradSum+=gi;
 			}
-
 			sample.push_back( GradientSample( gi, wi, ni, pid, cpid, in_cid ) );
 			++c_it;
 			cpid++;
 		}
 
 		PointValueType gradient;
-
-		PointValueType scaler = ( this->m_Scale /totalArea);
-
 		ShapeGradientPointer gradmesh = this->m_Gradients[in_cid];
 		gradSum = 0.0;
 		for( size_t i = 0; i< sample.size(); i++) {
 			if ( sample[i].w > 0.0 ) {
-				gradient = scaler * sample[i].grad * sample[i].w;
+				gradient = sample[i].grad;
 				sample[i].grad = gradient;
-				sample[i].w = 1.0;
 				gradSum+= gradient;
 				ni = gradient * sample[i].normal;  // Project to normal
 
@@ -216,9 +210,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				sample[i].normal = zerov;
 				sample[i].grad = 0.0;
 				sample[i].w = 0.0;
+				ni = zerov;
 			}
 
-			gradmesh->GetPointData()->SetElement( sample[i].cid, sample[i].grad );
+			gradmesh->GetPointData()->SetElement( sample[i].cid, ni );
 		}
 	}
 
@@ -268,7 +263,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			gpid++;
 		}
 
-
 		ShapeCopyPointer copyShape = ShapeCopyType::New();
 		copyShape->SetInput( this->m_CurrentContours[contid] );
 		copyShape->Update();
@@ -291,12 +285,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	if ( !this->m_EnergyUpdated ) {
 		this->m_Value = 0.0;
 
-		double normalizer = 1.0;
+		double vxvol = 1.0;
 
 		for(size_t i = 0; i<Dimension; i++)
-			normalizer *= this->GetCurrentMap(0)->GetSpacing()[i];
+			vxvol *= this->GetCurrentMap(0)->GetSpacing()[i];
 
+		MeasureType roi_value = 0.0;
 		for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
+			double totalVol = 0.0;
 			ProbabilityMapConstPointer roipm = this->GetCurrentMap( roi );
 			const typename ProbabilityMapType::PixelType* roiBuffer = roipm->GetBufferPointer();
 			const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
@@ -307,15 +303,16 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			typename ProbabilityMapType::PixelType w;
 
 			for( size_t i = 0; i < nPix; i++) {
-				w = *( roiBuffer + i );
-				if ( w > 0.0 ) {
+				w = *( roiBuffer + i ) * vxvol;
+				if ( w > 1.0e-8 ) {
 					val = *(refBuffer+i);
-					this->m_Value +=  w * this->GetEnergyOfSample( val, roi );
+					roi_value +=  w * this->GetEnergyOfSample( val, roi, true );
+					totalVol += w;
 				}
 			}
+			roi_value = roi_value / totalVol;
+			this->m_Value += roi_value;
 		}
-
-		this->m_Value = normalizer*this->m_Value;
 		this->m_EnergyUpdated = true;
 	}
 	return this->m_Value;
@@ -509,12 +506,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		ROIPixelType* roiBuffer = tempROI->GetBufferPointer();
 
+		double total = 0.0;
 		for( size_t pix = 0; pix < nPix; pix++ ) {
 			if( *(regionsBuffer+pix) == unassigned && *( roiBuffer + pix )==1 ) {
 				*(regionsBuffer+pix) = idx;
+				total += 1;
 			} else {
 				*( roiBuffer + pix ) = 0;
 			}
+		}
+
+		if (total == 0.0) {
+			itkWarningMacro(<< " ROI " << idx << " is empty.")
 		}
 
 		this->m_CurrentROIs[idx] = tempROI;
@@ -605,7 +608,6 @@ void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::AddOptions( SettingsDesc& opts ) {
 	opts.add_options()
-			("functional-scale,f", bpo::value< float > (), "scale functional gradients")
 			("smoothing,S", bpo::value< float > (), "apply isotropic smoothing filter on target image, with kernel sigma=S mm.")
 			("smooth-auto", bpo::bool_switch(), "apply isotropic smoothing filter on target image, with automatic computation of kernel sigma.")
 			("decile-threshold,d", bpo::value< float > (), "set (decile) threshold to consider a computed gradient as outlier (ranges 0.0-0.5)");
@@ -615,10 +617,6 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ParseSettings() {
-	if( this->m_Settings.count( "functional-scale" ) ) {
-		bpo::variable_value v = this->m_Settings["functional-scale"];
-		this->m_Scale = v.as<float> ();
-	}
 	if( this->m_Settings.count( "smoothing" ) ) {
 		this->m_ApplySmoothing = true;
 		bpo::variable_value v = this->m_Settings["smoothing"];
