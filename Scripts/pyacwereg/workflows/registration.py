@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-20 08:47:49
+# @Last Modified time: 2014-10-20 10:54:13
 
 import os
 import os.path as op
@@ -42,7 +42,7 @@ def default_regseg(name='REGSEGDefault'):
     regseg.inputs.beta = [0.0]
     regseg.inputs.grid_size = [6]
     regseg.inputs.convergence_energy = [True]
-    regseg.inputs.convergence_window = [15, 5]
+    regseg.inputs.convergence_window = [50]
 
     # Apply tfm to tpms
     applytfm = pe.MapNode(FieldBasedWarp(), name="ApplyWarp",

@@ -91,7 +91,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		s->SetSigmaArray( this->m_Sigma );
 		s->Update();
 		this->m_ReferenceImage = s->GetOutput();
-		//this->SetReferenceImage( s->GetOutput() );
 	}
 
 	this->InitializeCurrentContours();
