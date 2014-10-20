@@ -51,7 +51,7 @@
 % graphicx was written by David Carlisle and Sebastian Rahtz. It is
 % required if you want graphics, photos, etc. graphicx.sty is already
 % installed on most LaTeX systems. The latest version and documentation
-% can be obtained at: 
+% can be obtained at:
 % http://www.ctan.org/tex-archive/macros/latex/required/graphics/
 % Another good source of documentation is "Using Imported Graphics in
 % LaTeX2e" by Keith Reckdahl which can be found at:
@@ -70,28 +70,10 @@
 \usepackage[colorinlistoftodos]{todonotes}
 
 
-
-
-% *** MATH PACKAGES ***
-%
-\usepackage[cmex10]{amsmath}
-% A popular package from the American Mathematical Society that provides
-% many useful and powerful commands for dealing with mathematics. If using
-% it, be sure to load this package with the cmex10 option to ensure that
-% only type 1 fonts will utilized at all point sizes. Without this option,
-% it is possible that some math symbols, particularly those within
-% footnotes, will be rendered in bitmap form which will result in a
-% document that can not be IEEE Xplore compliant!
-%
-% Also, note that the amsmath package sets \interdisplaylinepenalty to 10000
-% thus preventing page breaks from occurring within multiline equations. Use:
-\interdisplaylinepenalty=2500
-% after loading amsmath to restore such page breaks as IEEEtran.cls normally
-% does. amsmath.sty is already installed on most LaTeX systems. The latest
-% version and documentation can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/required/amslatex/math/
-
+%\usepackage[cmex10,intlimits]{amsmath}
+\usepackage{amsmath}
 \usepackage{amssymb}
+%\usepackage{algorithmic}
 \DeclareMathOperator{\tr}{tr}
 \DeclareMathOperator{\argmax}{argmax}
 \DeclareMathOperator{\argmin}{argmin}
@@ -103,30 +85,6 @@
 \let\oldhat\hat
 \renewcommand{\vec}[1]{\mathbf{#1}}
 \providecommand{\nvec}[1]{\hat{\mathbf{#1}}}
-
-%\newcommand{\Upd}{\operatorname{U}^{\mathrm{M}}}
-
-
-% *** SPECIALIZED LIST PACKAGES ***
-%
-\usepackage{algorithmic}
-% algorithmic.sty was written by Peter Williams and Rogerio Brito.
-% This package provides an algorithmic environment fo describing algorithms.
-% You can use the algorithmic environment in-text or within a figure
-% environment to provide for a floating algorithm. Do NOT use the algorithm
-% floating environment provided by algorithm.sty (by the same authors) or
-% algorithm2e.sty (by Christophe Fiorio) as IEEE does not use dedicated
-% algorithm float types and packages that provide these will not provide
-% correct IEEE style captions. The latest version and documentation of
-% algorithmic.sty can be obtained at:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/algorithms/
-% There is also a support site at:
-% http://algorithms.berlios.de/index.html
-% Also of interest may be the (relatively newer and more customizable)
-% algorithmicx.sty package by Szasz Janos:
-% http://www.ctan.org/tex-archive/macros/latex/contrib/algorithmicx/
-
-
 
 
 % *** ALIGNMENT PACKAGES ***
@@ -223,8 +181,8 @@
 % \let\MYoriglatexcaption\caption
 % \renewcommand{\caption}[2][\relax]{\MYoriglatexcaption[#2]{#2}}
 %\fi
-% endfloat.sty was written by James Darrell McCauley, Jeff Goldberg and 
-% Axel Sommerfeldt. This package may be useful when used in conjunction with 
+% endfloat.sty was written by James Darrell McCauley, Jeff Goldberg and
+% Axel Sommerfeldt. This package may be useful when used in conjunction with
 % IEEEtran.cls'  captionsoff option. Some IEEE journals/societies require that
 % submissions have lists of figures/tables at the end of the paper and that
 % figures/tables without any captions are placed on a page by themselves at
@@ -253,7 +211,7 @@
 % http://www.ctan.org/tex-archive/macros/latex/contrib/endfloat/
 %
 % The IEEEtran \ifCLASSOPTIONcaptionsoff conditional can also be used
-% later in the document, say, to conditionally put the References on a 
+% later in the document, say, to conditionally put the References on a
 % page by themselves.
 
 
@@ -309,7 +267,7 @@
         Andr\'es~Santos,
         and~Dominique~Zosso% <-this % stops a space
 \thanks{Manuscript received XXX XX, 2013; revised XXX XX, 2013.
-This study is supported by: the Spain's Ministry of Science and Innovation 
+This study is supported by: the Spain's Ministry of Science and Innovation
 (projects TEC2010-21619- C04-03, TEC2011-28972-C02-02, CDTI-CENIT
 AMIT and INNPACTO PRECISION), Comunidad de Madrid (ARTEMIS) and
 European Regional Development Funds; the Center for Biomedical Imaging
@@ -327,15 +285,15 @@ F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland, and Dept. of Radiology, 
 Hospital Center (CHUV) and University of Lausanne (UNIL), Lausanne, Switzerland.}%
 \thanks{A. Santos is with the Biomedical Image Technologies (BIT), ETSI Telecomunicaci\'on,
 Universidad Polit\'ecnica de Madrid and CIBER-BBN, Madrid, Spain.}% <-this % stops a space
-\thanks{D. Zosso is with the Department of Mathematics, University of California, 
-Los Angeles (UCLA), Los Angeles, CA, US and is supported by the Swiss National 
+\thanks{D. Zosso is with the Department of Mathematics, University of California,
+Los Angeles (UCLA), Los Angeles, CA, US and is supported by the Swiss National
 Science Foundation (SNF) under grant PBELP2-137727.}% <-this % stops a space
 }
 
-% note the % following the last \IEEEmembership and also \thanks - 
+% note the % following the last \IEEEmembership and also \thanks -
 % these prevent an unwanted space from occurring between the last author name
 % and the end of the author line. i.e., if you had this:
-% 
+%
 % \author{....lastname \thanks{...} \thanks{...} }
 %                     ^------------^------------^----Do not want these spaces!
 %
@@ -357,7 +315,7 @@ Science Foundation (SNF) under grant PBELP2-137727.}% <-this % stops a space
 {Esteban \MakeLowercase{\textit{et al.}}: FIXME: Running title}
 % The only time the second header will appear is for the odd numbered pages
 % after the title page when using the twoside option.
-% 
+%
 % *** Note that you probably will NOT want to include the author's ***
 % *** name in the headers of peer review papers.                   ***
 % You can use \ifCLASSOPTIONpeerreview for conditional compilation here if
@@ -434,7 +392,7 @@ diffusion MRI,~susceptibility~distortion,~segmentation,~registration,~parcellati
 %\begin{figure}[!t]
 %\centering
 %\includegraphics[width=2.5in]{myfigure}
-% where an .eps filename suffix will be assumed under latex, 
+% where an .eps filename suffix will be assumed under latex,
 % and a .pdf suffix will be assumed for pdflatex; or what has been declared
 % via \DeclareGraphicsExtensions.
 %\caption{Simulation Results.}
@@ -450,7 +408,7 @@ diffusion MRI,~susceptibility~distortion,~segmentation,~registration,~parcellati
 % The subfigure \label commands are set within each subfloat command,
 % and the \label for the overall figure must come after \caption.
 % \hfil is used as a separator to get equal spacing.
-% Watch out that the combined width of all the subfigures on a 
+% Watch out that the combined width of all the subfigures on a
 % line do not exceed the text width or a line break will occur.
 %
 %\begin{figure*}[!t]
@@ -469,7 +427,7 @@ diffusion MRI,~susceptibility~distortion,~segmentation,~registration,~parcellati
 % reference/describe all of them (a), (b), etc., within the main caption.
 
 
-% An example of a floating table. Note that, for IEEE style tables, the 
+% An example of a floating table. Note that, for IEEE style tables, the
 % \caption command should come BEFORE the table. Table text will default to
 % \footnotesize as IEEE normally uses this smaller font for tables.
 % The \label must come after \caption as always.
@@ -537,11 +495,10 @@ diffusion MRI,~susceptibility~distortion,~segmentation,~registration,~parcellati
 %\bibliographystyle{IEEEtran}
 \bibliographystyle{myplainnat}
 % argument is your BibTeX string definitions and bibliography database(s)
-\bibliography{ACWE}
-
+\bibliography{Remote}
 
 % biography section
-% 
+%
 % If you have an EPS/PDF photo (graphicx package needed) extra braces are
 % needed around the contents of the optional argument to biography to prevent
 % the LaTeX parser from getting confused when it sees the complicated

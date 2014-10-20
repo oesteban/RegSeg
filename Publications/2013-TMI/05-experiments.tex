@@ -1,3 +1,4 @@
+% -*- root: 00-main.tex -*-
 \section{Data and experiments}
 \label{sec:experiments}
 %
@@ -9,20 +10,20 @@
 \subsubsection{Simulated digital phantom} %
 %
 The lack of a widely accepted \emph{gold}-standard in the application
-field has been addressed by several authors \citep{cote_tractometer:_2013}
+field has been addressed by several authors \citep{cote_tractometer_2013}
 In this work, we use one of the most complete, and publicly available,
 digital phantoms (\url{http://hardi.epfl.ch/static/events/2013_ISBI/testing_data.html}).
-The phantom is a spherical volume containing a set of fiber bundles, that connect 
-one area of a ``cortex'' to another. The model accounts for \gls{pve} using 
+The phantom is a spherical volume containing a set of fiber bundles, that connect
+one area of a ``cortex'' to another. The model accounts for \gls{pve} using
 a similar approach to \citep{close_software_2009} and for \gls{csf} contamination
 as well.
 
 \subsubsection{Real \gls{mri} datasets} %
 %
 We used image data from XX healthy volunteers with no history of neurological
-conditions (ages XX$\pm$XX, X female) to illustrate the applicability of our 
+conditions (ages XX$\pm$XX, X female) to illustrate the applicability of our
 approach. All the subjects were scanned in a 3T MR Scanner (Siemens Magnetom
-TrioTim, Siemens, Erlangen, Germany) with a standard 12-channel head coil. 
+TrioTim, Siemens, Erlangen, Germany) with a standard 12-channel head coil.
 \todo[inline]{check coil \# channels}
 Subjects were scanned twice with the same protocol,
 described hereafter. After being scanned the first time, each subject exited the
@@ -33,12 +34,12 @@ before each scan and re-scan session. The scan session protocol was as follows:
 \item Triplanar survey (Localizer).
 \item Field Mapping: field mapping using GRE sequence was performed before \gls{dwi}
 acquisition for susceptibility correction purposes.
-\item DTI: \gls{dwi} were acquired with axial in-plane 
-isotropic resolution $2mm$, slice thickness $2mm$, $XXX \times XXX \times XXX$ 
+\item DTI: \gls{dwi} were acquired with axial in-plane
+isotropic resolution $2mm$, slice thickness $2mm$, $XXX \times XXX \times XXX$
 image matrix, TR= XXXX ms, TE = XX ms, NEX = X, BW = XXXX Hz/pixel, GRAPPA
 acceleration factor 2. The series included images acquired with diffusion
 weighting along 30 non-collinear directions ( $b$=700sm$^{-2}$ ) sampled
-twice for averaging, and 5 interleaved images acquired without diffusion 
+twice for averaging, and 5 interleaved images acquired without diffusion
 weighting ( $b=0$ ).
 \item Field Mapping (same as before DTI)
 \item Structural T1: An MPRAGE T1-weighted acquisition, sagittal
@@ -54,33 +55,33 @@ $XXX \times XXX \times XXX$ image matrix, TR=3200 ms, TE= 408 ms, NEX=X, BW= 751
 \label{sec:preprocessing}
 %
 Regardless the dataset type (simulated or real), all \gls{dwi} datasets were processed
-using the standard \gls{dti} reconstruction methods provided by FSL \footnote{DTIFIT, 
-included in the FMRIB's Software Library (FSL), 
+using the standard \gls{dti} reconstruction methods provided by FSL \footnote{DTIFIT,
+included in the FMRIB's Software Library (FSL),
 \url{http://fsl.fmrib.ox.ac.uk/fsl/fsl-4.1.9/fdt/fdt_dtifit.html}} to fit
 the tensor model and produce scalar maps of the required features.
 The properties of the reconstructed tensors and derived scalar maps have
 been studied by \cite{ennis_orthogonal_2006}. Based on their
 findings, \gls{fa}~\eqref{eq:fa} and \gls{md}~\eqref{eq:md} are
-considered complementary features, and therefore we selected them for the 
-energy model \eqref{eq:complete_energy} in driving the 
-registration-segmentation process. 
-Whereas \gls{fa} informs mainly about the \emph{shape} of diffusion, 
+considered complementary features, and therefore we selected them for the
+energy model \eqref{eq:complete_energy} in driving the
+registration-segmentation process.
+Whereas \gls{fa} informs mainly about the \emph{shape} of diffusion,
 the \gls{md} is more related to the \emph{magnitude} of the process:
 
 \begin{align}
 \mathrm{FA} &= \sqrt{ \frac{1}{2}}\,\frac{\sqrt{ (\lambda_1 - \lambda_2)^2 + (\lambda_2 - \lambda_3)^2 + (\lambda_3 - \lambda_1)^2}}{\sqrt{ {\lambda_1}^2 + {\lambda_2}^2 + {\lambda_3}^2}} \label{eq:fa} \\
 \mathrm{MD} &= ( \lambda_1 + \lambda_2 + \lambda_3 ) / 3 \label{eq:md}
 \end{align}
-where $\lambda_i$ are the eigenvalues of the diffusion tensor 
-associated with the diffusion signal $S(\vec{q})$. There exist 
-two main reasons to justify their choice. 
+where $\lambda_i$ are the eigenvalues of the diffusion tensor
+associated with the diffusion signal $S(\vec{q})$. There exist
+two main reasons to justify their choice.
 First, they are well-understood and standardized in clinical routine.
 Second, together they contain most of the information that is
 usually extracted from the \gls{dwi}-derived scalar maps
 \cite{ennis_orthogonal_2006}.
 
 
-Preprocessing differed between simulated and real datasets in the 
+Preprocessing differed between simulated and real datasets in the
 shape-prior surfaces generation, as we describe hereafter.
 
 
@@ -89,7 +90,7 @@ A description goes here: surfaces extraction, synthetic susceptibility artifact 
 
 \subsubsection {Real \gls{mri} data} %
 
-We used a standard automated method 
+We used a standard automated method
 available in \emph{FreeSurfer} \citep{fischl_freesurfer_2012} to obtain the
 cortical gray/white boundary from the T1 scan \citep{greve_accurate_2009}.
 Parcellations used to evaluate the repeatability of the method are also
@@ -103,7 +104,7 @@ obtained from \emph{FreeSurfer}.
 \label{sec:validation_phantom}
 We firstly evaluated our approach on the simulated data, using
 the distorted data with a deformation field similar to the
-susceptibility artifact that affects real \gls{dwi} data. To 
+susceptibility artifact that affects real \gls{dwi} data. To
 this end, we report the following indices:
 \begin{itemize}
 \item \gls{se}, a distance between the one-to-one corresponding
@@ -128,16 +129,16 @@ data and the processed data.
 \end{itemize}
 
 Additionally, the entropy of data is studied in both
-original and recovered datasets to draw another possible basis for the 
+original and recovered datasets to draw another possible basis for the
 assessment of the real datasets. We also report the same indices for the
-outcome of a widely-used methodology that combines field-map susceptibility 
+outcome of a widely-used methodology that combines field-map susceptibility
 correction and T1-T2-\gls{dwi} registration .
-\todo[inline]{I suggest to give it a compact name and define it in the 
+\todo[inline]{I suggest to give it a compact name and define it in the
 pre-processing section or even before in the intro}
 
 \subsubsection{Evaluation on real datasets}
 For the real datasets there is no published \emph{gold}-standard to validate results.
 Thus, visual results are provided to let compare the performance with the NICEACRONYM
-standard methodology. Additionally, cross-comparison of repeatability results are 
-provided. In this second evaluation strategy, all the indices defined in 
+standard methodology. Additionally, cross-comparison of repeatability results are
+provided. In this second evaluation strategy, all the indices defined in
 \autoref{sec:validation_phantom} are reported.
