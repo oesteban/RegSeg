@@ -158,7 +158,7 @@ protected:
 
 	//void InitializeSamplingGrid( void );
 
-	inline MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roi ) const;
+	inline MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roi, bool bias = false ) const;
 
 	ParametersType UpdateParametersOfRegion( const size_t idx );
 	ParametersList m_Parameters;

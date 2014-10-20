@@ -54,6 +54,7 @@ public:
 				itnode["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
     		}
     		itnode["descriptors"] = this->ParseTree( this->m_Optimizer->GetFunctional()->PrintFormattedDescriptors() );
+    		itnode["step_size"] = this->m_Optimizer->GetStepSize();
 
     		JSONValue size = Json::Value( Json::arrayValue );
     		JSONValue spacing = Json::Value( Json::arrayValue );
@@ -78,6 +79,8 @@ public:
 				itnode["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
 			}
 			itnode["norm"] = this->m_Optimizer->GetCurrentValue();
+			itnode["step_size"] = this->m_Optimizer->GetStepSize();
+			itnode["momentum"] = this->m_Optimizer->GetMomentum();
 		}
 
 		if( typeid( event ) == typeid( FunctionalModifiedEvent ) )  {
@@ -86,6 +89,8 @@ public:
 
 		if( typeid( event ) == typeid( itk::EndEvent ) ) {
 			itnode["norm"] = this->m_Optimizer->GetCurrentValue();
+			itnode["step_size"] = this->m_Optimizer->GetStepSize();
+			itnode["momentum"] = this->m_Optimizer->GetMomentum();
 			m_StopTime = clock();
 			float tot_t = (float) (((double) (m_StopTime - m_StartTime)) / CLOCKS_PER_SEC);
 			// JSON Summary

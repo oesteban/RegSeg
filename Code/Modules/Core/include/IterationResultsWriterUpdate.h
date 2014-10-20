@@ -13,6 +13,8 @@
 #include <itkImageFileWriter.h>
 #include "DisplacementFieldFileWriter.h"
 #include "DisplacementFieldComponentsFileWriter.h"
+#include "rstkQuadEdgeMeshScalarDataVTKPolyDataWriter.h"
+#include "itkQuadEdgeMeshVectorDataVTKPolyDataWriter.h"
 
 namespace rstk {
 
@@ -35,10 +37,12 @@ public:
 	typedef typename FunctionalType::ROIType                    ROIType;
 	typedef typename FunctionalType::ProbabilityMapType 		ProbabilityMapType;
 	typedef typename FunctionalType::ShapeGradientType          ShapeGradientType;
-	typedef itk::QuadEdgeMeshScalarDataVTKPolyDataWriter
-			                             < ShapeGradientType >  ContourWriterType;
-	typedef typename ContourWriterType::Pointer                 ContourWriterPointer;
-
+	typedef QuadEdgeMeshScalarDataVTKPolyDataWriter
+			                             < ShapeGradientType >  ContourScalarWriterType;
+	typedef typename ContourScalarWriterType::Pointer           ContourScalarWriterPointer;
+	typedef itk::QuadEdgeMeshVectorDataVTKPolyDataWriter
+			                             < ShapeGradientType >  ContourVectorWriterType;
+	typedef typename ContourVectorWriterType::Pointer           ContourVectorWriterPointer;
 
 	typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> ComponentsWriter;
 	typedef itk::ImageFileWriter< ProbabilityMapType >  MapWriter;
@@ -112,7 +116,8 @@ public:
     		if( this->m_Verbosity > 1 ) {
 				typename FunctionalType::ShapeGradientList grads = this->m_Optimizer->GetFunctional()->GetGradients();
 				for( size_t r = 0; r < nContours; r++ ) {
-					ContourWriterPointer wc = ContourWriterType::New();
+					ContourVectorWriterPointer wc = ContourVectorWriterType::New();
+					wc->SetPointDataName("gradients");
 					std::stringstream ss;
 					ss << this->m_Prefix << "contour_lev" << this->m_Level << "_it" << std::setfill('0')<< std::setw(3) << this->m_Optimizer->GetCurrentIteration() << std::setw(2) << "_cont"<< r << ".vtk";
 					wc->SetFileName( ss.str().c_str() );

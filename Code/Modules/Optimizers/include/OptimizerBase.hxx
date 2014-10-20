@@ -70,9 +70,10 @@ namespace rstk {
  */
 template< typename TFunctional >
 OptimizerBase<TFunctional>::OptimizerBase():
-m_LearningRate( 2.0 ),
-m_MinimumConvergenceValue( 1e-7 ),
-m_ConvergenceWindowSize( 50 ),
+m_LearningRate( 1.0 ),
+m_Momentum( 0.0 ),
+m_MinimumConvergenceValue( 1e-8 ),
+m_ConvergenceWindowSize( 15 ),
 m_ConvergenceValue( 0.0 ),
 m_Stop( false ),
 m_StopCondition(MAXIMUM_NUMBER_OF_ITERATIONS),
@@ -81,10 +82,14 @@ m_NumberOfIterations( 250 ),
 m_DescriptorRecomputationFreq(0),
 m_UseDescriptorRecomputation(false),
 m_StepSize(1.0),
+m_StepFactor(1.0e-5),
+m_ParamFactor(1.0),
 m_AutoStepSize(true),
 m_IsDiffeomorphic(true),
 m_UseLightWeightConvergenceChecking(true),
-m_CurrentValue(itk::NumericTraits<MeasureType>::infinity())
+m_CurrentValue(itk::NumericTraits<MeasureType>::infinity()),
+m_LastValue(itk::NumericTraits<MeasureType>::infinity()),
+m_InitialValue(itk::NumericTraits<MeasureType>::infinity())
 {
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 0 );
@@ -121,6 +126,16 @@ void OptimizerBase<TFunctional>::Start() {
 	this->InitializeParameters();
 	this->InitializeAuxiliarParameters();
 
+	if( this->m_UseDescriptorRecomputation ) {
+		this->m_UseDescriptorRecomputation = (this->m_DescriptorRecomputationFreq > 0)
+				&& (this->m_DescriptorRecomputationFreq < this->m_NumberOfIterations);
+	}
+
+	if( this->m_UseDescriptorRecomputation && this->m_ConvergenceWindowSize > this->m_DescriptorRecomputationFreq ) {
+		itkWarningMacro( << "Convergence window size (" << this->m_ConvergenceWindowSize << ") is greater than descriptor recomputation frequency ("<<
+				this->m_DescriptorRecomputationFreq << ")." << std::endl );
+	}
+
 	/* Initialize convergence checker */
 	this->m_ConvergenceMonitoring = ConvergenceMonitoringType::New();
 	this->m_ConvergenceMonitoring->SetWindowSize( this->m_ConvergenceWindowSize );
@@ -129,12 +144,6 @@ void OptimizerBase<TFunctional>::Start() {
 //		this->m_BestParameters = this->GetCurrentPosition( );
 //		this->m_CurrentBestValue = NumericTraits< MeasureType >::max();
 //	}
-
-	if( this->m_UseDescriptorRecomputation ) {
-		this->m_UseDescriptorRecomputation = (this->m_DescriptorRecomputationFreq > 0)
-				&& (this->m_DescriptorRecomputationFreq < this->m_NumberOfIterations);
-	}
-
 
 	this->InvokeEvent( itk::StartEvent() );
 
@@ -171,7 +180,9 @@ void OptimizerBase<TFunctional>::Resume() {
 	while( ! this->m_Stop )	{
 		if( this->m_UseDescriptorRecomputation && ( this->m_CurrentIteration%this->m_DescriptorRecomputationFreq == 0 ) ) {
 			this->m_Functional->UpdateDescriptors();
+			this->m_StepSize = this->m_StepSize * 1.0e-4;
 			this->InvokeEvent( FunctionalModifiedEvent() );
+			this->m_ConvergenceMonitoring->ClearEnergyValues();
 		}
 
 
@@ -213,6 +224,7 @@ void OptimizerBase<TFunctional>::Resume() {
 		 * Check the convergence by WindowConvergenceMonitoringFunction.
 		 */
 		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentValue );
+
 		try {
 			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
 			if (this->m_ConvergenceValue <= this->m_MinimumConvergenceValue) {
@@ -227,14 +239,6 @@ void OptimizerBase<TFunctional>::Resume() {
 		}
 
 
-		if( fabs(this->m_CurrentValue) < 1e-8 ) {
-			this->m_StopConditionDescription << "Parameters field changed below the minimum threshold.";
-			this->m_StopCondition = Self::STEP_TOO_SMALL;
-			this->Stop();
-			break;
-		}
-
-
 		/* Update and check iteration count */
 		if ( this->m_CurrentIteration >= this->m_NumberOfIterations ) {
 			this->m_StopConditionDescription << "Maximum number of iterations (" << this->m_NumberOfIterations << ") exceeded.";
@@ -243,7 +247,24 @@ void OptimizerBase<TFunctional>::Resume() {
 			break;
 		}
 
+		if (this->m_LastValue != itk::NumericTraits<MeasureType>::infinity()){
+			double inc = (this->m_LastValue - this->m_CurrentValue) / this->m_InitialValue;
+			if (inc < 0.0) {
+				inc *= 0.5;
+			}
+			this->m_Momentum = this->m_Momentum + 1.0e-4 * (this->m_LearningRate * inc);
+			this->m_StepSize = this->m_StepSize - (this->m_Momentum * this->m_StepSize);
+		} else {
+			this->m_InitialValue = this->m_CurrentValue;
+		}
 
+		if( this->m_StepSize < 1e-8 ) {
+			this->m_StopConditionDescription << "Parameters field changed below the minimum threshold.";
+			this->m_StopCondition = Self::STEP_TOO_SMALL;
+			this->Stop();
+			break;
+		}
+		this->m_LastValue = this->m_CurrentValue;
 		this->InvokeEvent( itk::IterationEvent() );
 		this->m_CurrentIteration++;
 	} //while (!m_Stop)
@@ -266,7 +287,8 @@ void OptimizerBase<TFunctional>
 	opts.add_options()
 			("alpha,a", bpo::value< float > (), "alpha value in regularization")
 			("beta,b", bpo::value< float > (), "beta value in regularization")
-			("step-size,s", bpo::value< float > (), "step-size value in optimization")
+			("step-size,s", bpo::value< double > (), "step-size value in optimization")
+			("learning-rate,r", bpo::value< float > (), "learning rate to update step size")
 			("iterations,i", bpo::value< size_t > (), "number of iterations")
 			("convergence-window,w", bpo::value< size_t > (), "number of iterations of convergence window")
 			("grid-size,g", bpo::value< size_t > (), "grid size")
@@ -282,7 +304,12 @@ void OptimizerBase<TFunctional>
 
 	if( this->m_Settings.count( "step-size" ) ){
 		bpo::variable_value v = this->m_Settings["step-size"];
-		this->SetStepSize( v.as< float >() );
+		this->SetStepSize( v.as< double >() );
+	}
+
+	if( this->m_Settings.count( "learning-rate" ) ){
+		bpo::variable_value v = this->m_Settings["learning-rate"];
+		this->SetLearningRate( v.as< float >() );
 	}
 
 	if( this->m_Settings.count( "iterations" ) ){

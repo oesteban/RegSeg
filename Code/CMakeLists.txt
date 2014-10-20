@@ -38,6 +38,8 @@ find_library(JsonCpp_LIBRARY
 )
 
 SET( CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Core )
+SET( IO_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/IO )
+
 
 SET( LEVELSETS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Functional )
 SET( LEVELSETS_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Functional )
@@ -52,6 +54,7 @@ SET( TRANSFORM_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Transform )
 INCLUDE_DIRECTORIES( ${OPTIMIZERS_SOURCE_DIR}/include
                      ${LEVELSETS_SOURCE_DIR}/include
                      ${TRANSFORM_SOURCE_DIR}/include
+                     ${IO_SOURCE_DIR}/include
                      ${CORE_SOURCE_DIR}/include
                      
 )
