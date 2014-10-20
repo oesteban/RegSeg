@@ -1,16 +1,18 @@
-In whole-brain connectivity analysis of diffusion MRI (dMRI) data,
-an accurate delineation of the white-matter and grey-matter 
-interfaces is required. While high-standard segmentation is readily 
-available for structural MRI, dMRI typically present significant cerebrospinal
-fluid contamination effects, mainly derived from its typical low resolution,
-and severe geometrical distortions. We propose a segmentation-registration 
-variational framework that exploits the detailed anatomy extracted from 
-structural MRI as shape-prior. We use an ``active contours without edges''-like 
-model to search for a deformation field that optimally maps the shape prior 
-on multivariate dMRI-derived data in diffusion space, registering structural
-and diffusion coordinate spaces and implicitly segmenting dMRI data. The approach
-proven the intrinsic coupling of segmentation and distortion correction and
-we evaluate its results on a digital simulated phantom and real datasets. 
-Therefore, precise and consistent cortical parcellation on dMRI is 
-straightforward by projection from T1 space, avoiding additional registration,
-segmentation and/or surface matching steps.
+% -*- root: 00-main.tex -*-
+Integrating information from different images within- and between-subjects
+  is an ubiquitous necessity required in current neuroimage analyses.
+Many algorithms have been proposed to register image pairs from the same
+  subject and between subjects to resolve the problem.
+Both images are required to present comparable features on top of which
+  an objective function is built to evaluate fitness of the solution.
+However, oftentimes one of the images is not available or the objective
+  function is not adequate or numerically tractable.
+
+We propose a surface-to-volume variational solution to the registration problem,
+  that exploits the detailed anatomy extracted manually or from structural images.
+We use an ``active contours without edges''-like model to search for a
+  deformation field that optimally maps the surface prior onto the data
+  in the target space, implicitly segmenting with sub-pixel resolution the
+  volume.
+We demonstrate the usefulness of the approach on a digital phantom, and on
+  10 real datasets randomly selected from the Human Connectome Project.
