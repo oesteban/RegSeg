@@ -96,7 +96,8 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
                                       ('in_surfs',   'refnode.in_surf'),
                                       ('in_mask',    'refnode.in_mask'), ]),
             (inputnode,         reg, [('in_surfs', 'inputnode.in_surf'),
-                                      ('in_file', 'inputnode.in_orig')]),
+                                      ('in_file', 'inputnode.in_orig'),
+                                      ('grid_size', 'inputnode.grid_size')]),
             (dist,              reg, [
                 ('outputnode.out_file', 'inputnode.in_dist'),
                 ('outputnode.out_tpms', 'inputnode.in_tpms'),

@@ -24,7 +24,7 @@ def default_regseg(name='REGSEGDefault'):
 
     inputnode = pe.Node(niu.IdentityInterface(
                         fields=['in_orig', 'in_dist', 'in_tpms', 'in_surf',
-                                'in_mask']), name='inputnode')
+                                'in_mask', 'grid_size']), name='inputnode')
 
     outputnode = pe.Node(niu.IdentityInterface(
                          fields=['out_corr', 'out_tpms',
@@ -40,7 +40,7 @@ def default_regseg(name='REGSEGDefault'):
     regseg.inputs.step_size = [1.0]
     regseg.inputs.alpha = [0.0]
     regseg.inputs.beta = [0.0]
-    regseg.inputs.grid_size = [6]
+    # regseg.inputs.grid_size = [10]
     regseg.inputs.convergence_energy = [True]
     regseg.inputs.convergence_window = [50]
 
@@ -51,7 +51,8 @@ def default_regseg(name='REGSEGDefault'):
     # Connect
     wf.connect([
         (inputnode,   regseg, [('in_surf', 'in_prior'),
-                               ('in_dist', 'in_fixed')]),
+                               ('in_dist', 'in_fixed'),
+                               ('grid_size', 'grid_size')]),
         (inputnode, applytfm, [('in_tpms', 'in_file'),
                                ('in_mask', 'in_mask')]),
         (regseg,    applytfm, [('out_field', 'in_field')]),
@@ -74,7 +75,7 @@ def identity_wf(name='Identity', n_tissues=3):
 
     inputnode = pe.Node(niu.IdentityInterface(
                         fields=['in_orig', 'in_dist', 'in_tpms', 'in_surf',
-                                'in_mask', 'in_field']),
+                                'in_mask', 'in_field', 'grid_size']),
                         name='inputnode')
 
     outputnode = pe.Node(niu.IdentityInterface(
@@ -98,10 +99,11 @@ def identity_wf(name='Identity', n_tissues=3):
         (inputnode,     merge, [('in_dist', 'in1'),
                                 ('in_tpms', 'in2')]),
         (inputnode,  applytfm, [('in_mask', 'in_mask'),
-                                ('in_surf', 'in_surf')]),
+                                ('in_surf', 'in_surf'),
+                                ('grid_size', 'grid_size')]),
         (merge,      applytfm, [('out', 'in_file')]),
-        (inputnode,  applytfm, [('in_field', 'in_field')]),
-        # ( inv,        applytfm, [ ('out_field', 'in_field')]),
+        # (inputnode,  applytfm, [('in_field', 'in_field')]),
+        ( inv,        applytfm, [ ('out_field', 'in_field')]),
         (applytfm,      split, [('out_file', 'inlist')]),
         (split,    outputnode, [('out1', 'out_corr'),
                                 ('out2', 'out_tpms')]),
