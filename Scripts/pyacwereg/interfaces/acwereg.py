@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-15 10:48:22
+# @Last Modified time: 2014-10-20 08:38:40
 
 import os
 import os.path as op
@@ -29,10 +29,6 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
     int_trait = traits.Either(None, traits.Int(0))
     bool_trait = traits.Either(None, traits.Bool(False))
 
-    f_scale = traits.Either(float_trait, traits.List(float_trait), default=1.0,
-                            desc=('scales to be applied to computed shape '
-                                  'gradients'),
-                            argstr='-f %0.5f')
     f_smooth = traits.Either(float_trait, traits.List(float_trait),
                              default=2.0, argstr='-S %0.2f',
                              desc='smoothing kernel')
@@ -58,7 +54,7 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
                               desc=('bspline control points per dimension and '
                                     'level'), argstr='-g %d')
     descript_update = traits.Either(int_trait, traits.List(int_trait),
-                                    default=5, argstr='-u %d',
+                                    argstr='-u %d',
                                     desc=('update descriptors every N '
                                           'iterations, per level'))
     step_size = traits.Either(float_trait, traits.List(float_trait),

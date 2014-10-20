@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-10-15 12:43:32
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-10-20 08:47:49
 
 import os
 import os.path as op
@@ -36,16 +36,17 @@ def default_regseg(name='REGSEGDefault'):
     # 500 -s 1.0]
     regseg = pe.Node(ACWEReg(), name="ACWERegistration")
     regseg.inputs.iterations = [500]
-    regseg.inputs.descript_update = [20]
+    #regseg.inputs.descript_update = [20]
     regseg.inputs.step_size = [1.0]
     regseg.inputs.alpha = [0.0]
     regseg.inputs.beta = [0.0]
     regseg.inputs.grid_size = [6]
-    # regseg.inputs.convergence_energy = [ False ]
-    # regseg.inputs.convergence_window = [ 15, 5 ]
+    regseg.inputs.convergence_energy = [True]
+    regseg.inputs.convergence_window = [15, 5]
 
     # Apply tfm to tpms
-    applytfm = pe.Node(FieldBasedWarp(), name="ApplyWarp")
+    applytfm = pe.MapNode(FieldBasedWarp(), name="ApplyWarp",
+                          iterfield=['in_file'])
 
     # Connect
     wf.connect([
