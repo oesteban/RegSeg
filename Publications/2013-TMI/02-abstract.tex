@@ -9,10 +9,11 @@ However, oftentimes one of the images is not available or the objective
   function is not adequate or numerically tractable.
 
 We propose a surface-to-volume variational solution to the registration problem,
-  that exploits the detailed anatomy extracted manually or from structural images.
-We use an ``active contours without edges''-like model to search for a
-  deformation field that optimally maps the surface prior onto the data
-  in the target space, implicitly segmenting with sub-pixel resolution the
-  volume.
+  that exploits the detailed anatomy extracted manually or automatically
+  from structural images.
+We use an ``active contours without edges'' model to search for a
+  deformation field of B-Spline functions that optimally maps the
+  surface prior onto the data in the target space.
+The strategy implicitly segments with sub-pixel resolution the image.
 We demonstrate the usefulness of the approach on a digital phantom, and on
   10 real datasets randomly selected from the Human Connectome Project.
