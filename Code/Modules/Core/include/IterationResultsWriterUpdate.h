@@ -12,6 +12,7 @@
 
 #include <itkImageFileWriter.h>
 #include "DisplacementFieldFileWriter.h"
+#include "ComponentsFileWriter.h"
 #include "DisplacementFieldComponentsFileWriter.h"
 #include "rstkQuadEdgeMeshScalarDataVTKPolyDataWriter.h"
 #include "itkQuadEdgeMeshVectorDataVTKPolyDataWriter.h"
@@ -47,6 +48,7 @@ public:
 	typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> ComponentsWriter;
 	typedef itk::ImageFileWriter< ProbabilityMapType >  MapWriter;
 	typedef typename itk::ImageFileWriter< CoefficientsImageType > CoefficientsWriter;
+	typedef rstk::ComponentsFileWriter<ReferenceImageType>       ReferenceWriter;
 
 	itkTypeMacro( IterationResultWriterUpdate, IterationUpdate ); // Run-time type information (and related methods)
 	itkNewMacro( Self );
@@ -78,7 +80,7 @@ public:
 
     		size_t nContours =this->m_Optimizer->GetFunctional()->GetCurrentContours().size();
 
-    		if (this->m_Verbosity > 2 ) {
+    		if (this->m_Verbosity > 3 ) {
 				CoefficientsImageArray coeff = this->m_Optimizer->GetCoefficients();
 				CoefficientsImageArray speed = this->m_Optimizer->GetDerivativeCoefficients();
 
@@ -126,7 +128,7 @@ public:
 				}
        		}
 
-    		if ( this->m_Verbosity > 0 ) {
+    		if ( this->m_Verbosity > 2 ) {
 				for( size_t r = 0; r <= nContours; r++){
 					ss.str("");
 					ss << this->m_Prefix << "region_" << r  << "lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
@@ -150,10 +152,11 @@ public:
 				w->Update();
     		}
 
-    		if ( this->m_Verbosity > 2 && this->m_Level==0 ) {
-				typedef itk::ImageFileWriter< ReferenceImageType > WriteRef;
-				typename WriteRef::Pointer w2 = WriteRef::New();
-				w2->SetFileName( this->m_Prefix +  "fixed_reoriented.nii.gz" );
+    		if ( this->m_Verbosity > 1 ) {
+				typename ReferenceWriter::Pointer w2 = ReferenceWriter::New();
+				std::stringstream ss;
+				ss << this->m_Prefix << "reference_lev" << this->m_Level << ".nii.gz";
+				w2->SetFileName( ss.str().c_str() );
 				w2->SetInput( this->m_Optimizer->GetFunctional()->GetReferenceImage() );
 				w2->Update();
     		}

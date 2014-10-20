@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
 	std::string outPrefix = "displ";
 	std::string fieldname,maskfile,invfieldname;
 	std::vector< std::string > fixedImageNames, movingSurfaceNames;
-	size_t grid_size;
+	std::vector<size_t> grid_size;
 
 	bpo::options_description all_desc("Usage");
 	all_desc.add_options()
@@ -27,7 +27,8 @@ int main(int argc, char *argv[]) {
 			("mask,M", bpo::value< std::string >(&maskfile), "mask file" )
 			//("compute-inverse", bpo::bool_switch(), "compute precise inversion of the input field (requires -F)")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
-			("mask-inputs", bpo::bool_switch(), "use deformed mask to filter input files");
+			("mask-inputs", bpo::bool_switch(), "use deformed mask to filter input files")
+			("grid-size,g", bpo::value< std::vector<size_t> >(&grid_size)->multitoken(), "size of grid of bspline control points (default is 10x10x10)");
 
 	bpo::variables_map vm;
 	bpo::store(	bpo::parse_command_line( argc, argv, all_desc ), vm);
@@ -190,8 +191,29 @@ int main(int argc, char *argv[]) {
 
 
 	// Warp surfaces --------------------------------------------------
-	TransformPointer tf_inv = TransformType::New();
-	tf_inv->SetDisplacementField( field_inv );
+	typename FieldType::SizeType size;
+	if( vm.count("grid-size") ){
+		if( grid_size.size() == 1 ) {
+			size.Fill( grid_size[0] );
+		}
+		else if ( grid_size.size() == FieldType::ImageDimension ) {
+			for( size_t i = 0; i < FieldType::ImageDimension; i++)
+				size[i] = grid_size[i];
+		}
+		else {
+			std::cout << "error with grid size" << std::endl;
+			return 1;
+		}
+	}
+
+	TPointer tf_mesh = Transform::New();
+	tf_mesh->SetControlPointsSize(size);
+	tf_mesh->SetPhysicalDomainInformation( field );
+	tf_mesh->SetField( field );
+	tf_mesh->ComputeCoefficients();
+
+	// TransformPointer tf_inv = TransformType::New();
+	// tf_inv->SetDisplacementField( field_inv );
 
 
 	for( size_t i = 0; i<movingSurfaceNames.size(); i++){
@@ -199,15 +221,33 @@ int main(int argc, char *argv[]) {
 		r->SetFileName( movingSurfaceNames[i] );
 		r->Update();
 
-		MeshPointer mesh = r->GetOutput();
+		MeshPointer cur_mesh = r->GetOutput();
+		PointsIterator p_it = cur_mesh->GetPoints()->Begin();
+		PointsIterator p_end = cur_mesh->GetPoints()->End();
 
-		PointsIterator p_it = mesh->GetPoints()->Begin();
-		PointsIterator p_end = mesh->GetPoints()->End();
+		MeshPointType p;
+		while ( p_it!=p_end ) {
+			tf_mesh->AddOffGridPos(p_it.Value());
+			++p_it;
+		}
+	}
+
+	tf_mesh->Interpolate();
+
+	size_t pointId = 0;
+	for( size_t i = 0; i<movingSurfaceNames.size(); i++){
+		MeshReaderPointer r = MeshReaderType::New();
+		r->SetFileName( movingSurfaceNames[i] );
+		r->Update();
+
+		MeshPointer cur_mesh = r->GetOutput();
+		PointsIterator p_it = cur_mesh->GetPoints()->Begin();
+		PointsIterator p_end = cur_mesh->GetPoints()->End();
 
 		MeshPointType p;
 		while ( p_it!=p_end ) {
 			p = p_it.Value();
-			p_it.Value() = tf_inv->TransformPoint( p );
+			p_it.Value() += tf_mesh->GetOffGridValue(pointId);
 			++p_it;
 		}
 
@@ -215,7 +255,7 @@ int main(int argc, char *argv[]) {
 		std::stringstream ss;
 		ss << outPrefix << "_warped_" << i << ".vtk";
 		wmesh->SetFileName( ss.str().c_str() );
-		wmesh->SetInput( mesh );
+		wmesh->SetInput( cur_mesh );
 		wmesh->Update();
 	}
 }

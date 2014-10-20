@@ -125,6 +125,12 @@ class FieldBasedWarpInputSpec(ANTSCommandInputSpec):
                              desc='surface(s) to be deformed')
     out_prefix = traits.Str("fbased", argstr="-o %s", usedefault=True,
                             mandatory=True, desc='output files prefix')
+    grid_size_item_trait = traits.Int(10, usedefault=True)
+    grid_size = traits.Either(grid_size_item_trait,
+                              traits.List(grid_size_item_trait), default=10,
+                              argstr="-g %s", xor=['in_coeff'],
+                              usedefault=True,
+                              desc='size of control points grid')
 
 
 class FieldBasedWarpOutputSpec(TraitedSpec):

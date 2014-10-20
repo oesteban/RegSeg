@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-15 13:20:05
+# @Last Modified time: 2014-10-20 09:30:48
 import os.path as op
 
 
@@ -18,7 +18,7 @@ def phantoms_wf(options):
 
     subject_id = options.subject_id
     subject_dir = op.join(options.data_dir, subject_id)
-    tpms = glob.glob(op.join(subject_dir, 'tpm_*.nii.gz'))
+    tpms = glob.glob(op.join(subject_dir, 'tpms', '*.nii.gz'))
 
     wf = pe.Workflow(name=options.name)
     wf.base_dir = options.work_dir

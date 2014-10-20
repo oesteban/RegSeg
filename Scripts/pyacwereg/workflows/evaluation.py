@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-10-15 13:36:41
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-10-20 10:56:41
 
 import os
 import os.path as op
@@ -20,7 +20,6 @@ from nipype.algorithms.misc import NormalizeProbabilityMapSet as Normalize
 from nipype.algorithms import mesh as namesh
 from nipype.algorithms import metrics as namev
 from nipype.interfaces import fsl as fsl
-from nipype.interfaces.nipy.utils import Similarity
 
 from pyacwereg.interfaces.warps import InverseField
 from pysdcev.workflows.distortion import bspline_deform
@@ -97,7 +96,8 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
                                       ('in_surfs',   'refnode.in_surf'),
                                       ('in_mask',    'refnode.in_mask'), ]),
             (inputnode,         reg, [('in_surfs', 'inputnode.in_surf'),
-                                      ('in_file', 'inputnode.in_orig')]),
+                                      ('in_file', 'inputnode.in_orig'),
+                                      ('grid_size', 'inputnode.grid_size')]),
             (dist,              reg, [
                 ('outputnode.out_file', 'inputnode.in_dist'),
                 ('outputnode.out_tpms', 'inputnode.in_tpms'),
@@ -160,12 +160,12 @@ def registration_ev(name='EvaluateMapping'):
     merge_ref = pe.Node(fsl.Merge(dimension='t'), name='ConcatRefInputs')
     merge_tst = pe.Node(fsl.Merge(dimension='t'), name='ConcatTestInputs')
     overlap = pe.Node(namev.FuzzyOverlap(weighting='volume'), name='Overlap')
-    diff_im = pe.Node(Similarity(metric='cc'), name='ContrastDiff')
+    diff_im = pe.Node(namev.Similarity(metric='cc'), name='ContrastDiff')
     inv_fld = pe.Node(InverseField(), name='InvertField')
     diff_fld = pe.Node(namev.ErrorMap(), name='FieldDiff')
-    # mesh = pe.MapNode(namesh.P2PDistance(weighting='surface'),
-    #                   iterfield=[ 'surface1','surface2' ],
-    #                   name='SurfDistance')
+    mesh = pe.MapNode(namesh.P2PDistance(weighting='surface'),
+                      iterfield=['surface1', 'surface2'],
+                      name='SurfDistance')
     csv = pe.Node(namisc.AddCSVRow(), name="AddRow")
     wf = pe.Workflow(name=name)
     wf.connect([
@@ -192,9 +192,9 @@ def registration_ev(name='EvaluateMapping'):
         (diff_fld,         csv, [(('out_map', _stats), 'fmap_error')]),
         (csv,       outputnode, [('csv_file', 'out_file')]),
         (overlap,   outputnode, [('diff_file', 'out_tpm_diff')]),
-        (diff_fld,  outputnode, [('out_map', 'out_field_err')])
-        # (input_ref,       mesh, [('in_surf', 'surface1')]),
-        # (input_tst,       mesh, [('in_surf', 'surface2')]),
-        # (mesh,             csv, [('distance', 'surf_dist')]),
+        (diff_fld,  outputnode, [('out_map', 'out_field_err')]),
+        (input_ref,       mesh, [('in_surf', 'surface1')]),
+        (input_tst,       mesh, [('in_surf', 'surface2')]),
+        (mesh,             csv, [('distance', 'surf_dist')])
     ])
     return wf
