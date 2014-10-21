@@ -71,8 +71,9 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
                 'out_overlap']), name='outputnode')
 
     dist = bspline_deform(n_tissues=n_tissues)
-    smooth = pe.Node(fsl.Smooth(fwhm=2.0), name='Smooth')
-    regrid = pe.Node(fs.MRIConvert(vox_size=(2.3, 2.3, 2.3)), name='Regrid')
+    smooth = pe.MapNode(fsl.Smooth(fwhm=2.0), iterfield=['in_file'], name='Smooth')
+    regrid = pe.MapNode(fs.MRIConvert(vox_size=(2.3, 2.3, 2.3)),
+                        iterfield=['in_file'], name='Regrid')
 
     wf.connect([
         (inputnode,  dist, [('grid_size', 'inputnode.grid_size'),
@@ -84,7 +85,7 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
                             ('outputnode.out_field', 'out_field'),
                             ('outputnode.out_coeff', 'out_coeff')]),
         (dist,     smooth, [('outputnode.out_file', 'in_file')]),
-        (smooth,   regrid, [('out_file', 'in_file')])
+        (smooth,   regrid, [('smoothed_file', 'in_file')])
     ])
 
     evwfs = []
@@ -103,7 +104,7 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
             (inputnode,         reg, [('in_surfs', 'inputnode.in_surf'),
                                       ('in_file', 'inputnode.in_orig'),
                                       ('grid_size', 'inputnode.grid_size')]),
-            (smooth,            reg, [('out_file', 'inputnode.in_dist')]),
+            (regrid,            reg, [('out_file', 'inputnode.in_dist')]),
             (dist,              reg, [
                 ('outputnode.out_tpms', 'inputnode.in_tpms'),
                 ('outputnode.out_mask', 'inputnode.in_mask')]),
