@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-22 01:14:03
+# @Last Modified time: 2014-10-22 01:50:29
 
 import os
 import os.path as op
@@ -71,7 +71,8 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
                 'out_overlap']), name='outputnode')
 
     dist = bspline_deform(n_tissues=n_tissues)
-    smooth = pe.MapNode(fsl.Smooth(fwhm=2.0), iterfield=['in_file'], name='Smooth')
+    smooth = pe.MapNode(fsl.Smooth(fwhm=2.0), iterfield=['in_file'],
+                        name='Smooth')
     regrid = pe.MapNode(fs.MRIConvert(vox_size=(2.3, 2.3, 2.3)),
                         iterfield=['in_file'], name='Regrid')
 

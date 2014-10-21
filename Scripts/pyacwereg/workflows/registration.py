@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-20 10:54:13
+# @Last Modified time: 2014-10-22 01:54:00
 
 import os
 import os.path as op
@@ -37,7 +37,7 @@ def default_regseg(name='REGSEGDefault'):
     regseg = pe.Node(ACWEReg(), name="ACWERegistration")
     regseg.inputs.iterations = [500, 500, 500]
     #regseg.inputs.descript_update = [20]
-    regseg.inputs.step_size = [0.1, 0.1, 0.05]
+    regseg.inputs.step_size = [0.1, 0.01, 0.005]
     regseg.inputs.alpha = [0.0, 0.1, 0.2]
     regseg.inputs.beta = [0.0, 0.1, 0.2]
     regseg.inputs.grid_size = [4, 5, 6]
@@ -103,7 +103,7 @@ def identity_wf(name='Identity', n_tissues=3):
                                 ('grid_size', 'grid_size')]),
         (merge,      applytfm, [('out', 'in_file')]),
         # (inputnode,  applytfm, [('in_field', 'in_field')]),
-        ( inv,        applytfm, [ ('out_field', 'in_field')]),
+        (inv,        applytfm, [('out_field', 'in_field')]),
         (applytfm,      split, [('out_file', 'inlist')]),
         (split,    outputnode, [('out1', 'out_corr'),
                                 ('out2', 'out_tpms')]),
