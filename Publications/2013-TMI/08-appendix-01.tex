@@ -12,7 +12,7 @@
 % starts a section numbered zero.)
 %
 
-\appendices
+\appendix
 
 \section{Proof of duality between the probabilistic and the presented frameworks}
 Here the demonstration that we are preparing.
@@ -73,3 +73,77 @@ E(K) = \sum\limits_k \int_{\Omega_k} \left( \frac{1}{2} \log{ \left( (2\pi)^{C}\
 \begin{equation}
 E(K) = \sum\limits_k \left( \frac{ V_k }{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right| \right)}+ \frac{1}{2} \int_{\Omega_k} \Delta^2_k (\mathbf{s}) \,d\mathbf{x}+\nu_B \left|K\right| \right)
 \end{equation}
+
+{\color{red} {Using the region descriptors derived in \autoref{sec:methods_map}, we propose
+an \gls{adf}-like, \gls{acwe}-based, piece-wise constant, image segmentation
+model (where the unknown is the deformation field)
+\cite{chan_active_2001} with the energy functional obtained in
+\eqref{eq:final_map_energy}. This inverse problem is ill-posed
+\cite{bertero_illposed_1988,hadamard_sur_1902}.
+In order to account for deformation field regularity and to render the
+problem well-posed, we include limiting and regularization terms into
+the energy functional \cite{morozov_linear_1975,tichonov_solution_1963}:
+%
+\begin{multline}
+E(u) = \sum\limits_l \int_{\Omega'_l} \mdist{f}{l} \,d\vec{x} \\
++ \int \vec{u}^T \, A \, \vec{u} \, d\vec{x} + \int \tr\{(\nabla \vec{u}^T)^T B (\nabla \vec{u}^T)\} d\vec{x}
+\label{eq:complete_energy}
+\end{multline}
+%
+These regularity terms ensure that the segmenting contours in
+\gls{dwi} space are still close to their native shape. The model
+easily allows to incorporate inhomogeneous and anisotropic
+regularization \cite{nagel_investigation_1986} to better regularize
+the \gls{epi} distortion.}}
+
+\todo[inline]{this last paragraphs in red color were located a bit
+further, but I think we can keep some of the refs and still reproduce
+the continuous version of the energy functional}
+
+\section{Extensions}
+
+\subsubsection{Semi-implicit Euler-forward optimization}
+It is necessary to discretize $t$ in order to obtain a numerical
+implementation of the equation \eqref{eq:gradient_final}:
+\begin{align}
+\frac{\vec{u}_k^{t+1}-\vec{u}_k^t}{\tau} =
+&- \underset{l,m}{\sum} \underset{i}{\sum}
+\left[ \mdist{f_i'}{l} - \mdist{f_i'}{m}\right]
+\psi_k(\vec{c}_i)\, \hat{\vec{n}}_i \notag\\
+&+2\, \boldsymbol{\alpha} \vec{u}_k^{t+1}
+-2\, \boldsymbol{\beta} \Delta \vec{u}_k^{t+1}.
+\end{align}
+
+The associated Euler-Lagrange equation is found as:
+\begin{equation}
+(\tau^{-1} +2\, \boldsymbol{\alpha} - 2\, \boldsymbol{\beta} \Delta )\, \vec{u}_k^{t+1} =
+\tau^{-1} \vec{u}_k^t - \frac{\partial}{\partial \vec{u}_k} E_{data}(\vec{u}_k^t),
+\end{equation}
+that is a linear system that we translate into Fourier domain,
+to obtain the next deformation field $\vec{u}_k^{t+1}$:
+\begin{multline}
+\vec{u}_k^{t+1} = \\
+ \mathcal{F}^{-1} \left\lbrace
+\frac{\mathcal{F}\lbrace \tau^{-1}\vec{u}_{k}^{t} - \underset{l,m}{\sum} \underset{i}{\sum}
+\left[ \mdist{f_i'}{l} - \mdist{f_i'}{m}\right] \rbrace}
+     {\mathcal{F}\lbrace (\tau^{-1} +2\,\boldsymbol{\alpha})\mathcal{I} - 2\,\boldsymbol{\beta} \Delta ) \rbrace}
+     \right\rbrace
+\end{multline}
+
+Here, we rewrite the Laplacian as a linear combination of the identity and shift operators:
+\begin{equation}
+\Delta = \sum\limits_d \mathcal{S}_d^- + \mathcal{S}_d^+ - 2 \mathcal{I}
+\end{equation}
+where $\mathcal{S}_{d}^{\pm}$ stands for the forward ($+$) and backward ($-$) shift
+operator along coordinates axis $d$, of which the Fourier transform is found easily as
+\begin{equation}
+\mathcal{F}\{\mathcal{S}_{d}^{\pm}\} = e^{\pm \vec{i}\omega_{d}},
+\end{equation}
+where $\omega_{d}$ is the normalized pulsation along $d$-direction. Accordingly, the
+Fourier transform of the discrete Laplacian is found as
+\begin{equation}
+\mathcal{F}\{\Delta\} = \sum\limits_d e^{-\vec{i}\omega_d } + e^{\vec{i}\omega_d } - 2 = \sum\limits_d \left( 2\cos(\omega_d) - 2 \right)
+\end{equation}
+
+The remaining transforms are trivial or can be computed using the \gls{fft}
+as in \citep{estellers_efficient_2011}.

@@ -2,15 +2,19 @@
 \section{Introduction}
 \label{sec:introduction}
 
-\IEEEPARstart{F}{usion} of information from different images is a difficult
-  task in image processing, especially when the scale of the imaged structures
-  is in the range of the image resolution or below.
+\IEEEPARstart{N}{onlinear} registration of images is a difficult task required
+  in an endless number of image analysis applications, producing a vast amount of
+  methods \citep{sotiras_deformable_2013} over the past decades.
+
+   especially when the scale of the imaged structures is in the range of the
+  image resolution or below.
 In the case of the human brain, the cortex has a typical thickness of up to 5 mm
   \citep{fischl_measuring_2000}.
 Moreover, as the cortex is densely folded, points located afar in the topological
   manifold of the brain's surface can be very close in the corresponding 3D space.
 Consequently, accuracy and precision are very difficult to achieve, but necessary properties
   of registration algorithms.
+
 
 -> Volume-based registration is a traditional technique
 
@@ -22,6 +26,112 @@ or similar.
 
 Atlas-based segmentation Nonlinear registration and  are fundamental techniques applied in
   image processing.
+
+\subsection{Related work}
+\label{sec:methods_background}
+
+We suggest clustering the
+current methodologies of template-based segmentation methods into three groups.
+The first group typically adds a shape prior term to the energy functional of
+\citep{chan_level_2005,chen_using_2002,cremers_kernel_2006,gastaud_combining_2004,wyatt_map_2003,paragios_level_2003,yezzi_variational_2003,gorthi_segmentation_2009,pohl_unifying_2005,pohl_bayesian_2006,wang_joint_2006,guyader_combined_2011,besson_dream2s_2003,bertero_illposed_1988,cote_tractometer_2013}
+an evolving active contour \citep{bresson_variational_2006, chan_level_2005,
+chen_using_2002,cremers_kernel_2006,gastaud_combining_2004}.
+These methods generally have an explicit description of the expected relative boundary
+locations of the object to be delineated, and some even model the statistical deviations
+from this average shape. By including a coordinates mapping, it is possible to perform
+active contours based registration between timesteps in a time-series or between different
+images \citep{bertalmio_morphing_2000,wyatt_map_2003,paragios_level_2003,vemuri_joint_2003,
+yezzi_variational_2003}.
+A summary of these second set of techniques is performed in \citep{droske_mumfordshah_2009},
+proposing two different approaches to applying the Mumford-Shah \citep{mumford_optimal_1989}
+functional in joint registration and segmentation. Finally, a derivation of the
+latter groups is composed by atlas-based segmentation methods
+\citep{gorthi_segmentation_2009,gorthi_active_2011,pohl_unifying_2005,
+pohl_bayesian_2006,wang_joint_2006}, where the prior
+imposes consistent voxel-based classification of contiguous regions.
+A comprehensive summary of the \gls{acwe}-derived methodologies with special attention
+to joint registration-segmentation methods is found in \citep{gorthi_active_2011}.
+\Gls{acwe} and level-set based formulations have been widely applied in image
+processing, as reviewed in \citep{suri_shape_2002}.
+
+The first joint ``morphing''-segmentation approach (it was not a proper
+registration method) was proposed in \citep{bertalmio_morphing_2000}. The first
+registration framework is presented by \citep{yezzi_variational_2001} where the
+energy functional is defined simultaneously in the moving and target images with
+an affine transformation supporting the coordinates mapping (``2 \glspl*{pde} approach'').
+\citep{vemuri_joint_2003} proposed the first atlas-based registration based on the
+level set framework and using only one \gls*{pde}. \citep{unal_coupled_2005} extended the
+idea of \citep{bertalmio_morphing_2000,yezzi_variational_2001} for non-linear
+registration with a dense deformation field as mapping function. \citep{droske_mumfordshah_2009}
+combining ideas from both branches and proposed the propagation of the
+deformation field from the contours to the whole image definition. Finally,
+\citep{gorthi_active_2011} present a comprehensive generalization of the methodologies.
+
+Even though the historical evolution
+of joint segmentation and registration procedures is strongly linked
+to the level sets approximation, our work is based in derivations of
+the \gls{acwe} framework \citep{chan_active_2001}, and related to
+\citep{guyader_combined_2011}.
+{\color{red} {The main diverging points with respect to
+\citep{gorthi_active_2011} are: 1) there is no need for an explicit level set function
+$\Phi_G$, as we replace the level set gradient computation $N_{\Phi_G}$ with shape
+gradients \citep{besson_dream2s_2003,herbulot_segmentation_2006};
+2) regularization is also based on linear diffusion smoothing \citep{thirion_image_1998},
+but we replace the Gaussian filtering by other constraints
+studied in \citep{nagel_investigation_1986} to better the problem;
+3) optimization is applied in the spectral
+domain, observing anisotropic and inhomogeneous mappings along each direction.
+With respect \citep{guyader_combined_2011}, the main differences are
+the distance function, and the spectral solution to the optimization updates,
+as we shall cover in \autoref{sec:numerical_implementation}.}}
+
+\todo[inline]{The previous paragraphs in red color are marked by Dominique
+as ``to rework'', and I totally agree}
+
+\subsection{Our framework}
+\label{sec:our_framework}
+
+In this paper we formulate the joint registration-segmentation
+problem as follows. We look for a spatial mapping (with, typically,
+$n=3$ for the 3-dimensional case):
+
+\begin{align}
+U\colon T \subset \mathbb{R}^n &\to D \subset \mathbb{R}^n \notag\\
+\vec{x} &\mapsto \vec{x}' =\vec{x}+u(\vec{x}),
+\label{eq:transform}
+\end{align}
+such that the known contours in anatomical space $T$ optimally segment
+the diffusion space $D$.
+
+
+Whereas related \glspl*{adf} introduced in \autoref{sec:methods_background}
+make use of explicit level-set formulations to solve \eqref{eq:gradient_descent},
+we alternatively use \emph{shape-gradients}
+\cite{besson_dream2s_2003,herbulot_segmentation_2006}.
+Let $r(\vec{x})$ be an ``arbitrary'' function over the image domain,
+and $\Omega$ a certain image region with $\Gamma_{l,m}$ its corresponding
+outer boundary as defined in \autoref{sec:methods_map}.
+We now derive the domain integral w.r.t. $t$:
+\begin{equation*}
+\frac{\partial}{\partial t} \int_\Omega r(\vec{x}') d\vec{x} = \int_\Omega \frac{\partial}{\partial t}r(\vec{x}') d\vec{x} - \int_{\Gamma_{l,m}} r(\vec{x}') \left\langle \frac{\partial \Gamma_{l,m} }{\partial t}, N_{\Gamma_{l,m}}\right\rangle d\vec{x}
+\end{equation*}
+where $\left\langle\frac{\partial\Gamma_{l,m}}{\partial t}, N_{\Gamma_{l,m}}\right\rangle$ is
+the projection of the boundary movement on the unit inward normal $N_{\Gamma_{l,m}}$. Assuming
+that the region descriptors $\Theta_l$ vary slowly enough, we can consider
+that $\frac{\partial}{\partial t} r(\vec{x}') = 0$ and thus:
+\begin{equation}
+\frac{\partial}{\partial t} \int_\Omega r(\vec{x}') d\vec{x} =
+- \int_{\Gamma_{l,m}} r(\vec{x}') \left\langle \frac{\partial \Gamma_{l,m} }{\partial t}, N_{\Gamma_{l,m}}\right\rangle d\vec{x}
+\label{eq:shape_gradients}
+\end{equation}
+
+Let us denote by $\vec{x}$ the voxel and $F(\vec{x}) = [ f_1, f_2, \ldots, f_N]^T$
+  its associated feature vector in the following.
+
+In our application, these surfaces are precise tissue interfaces of interest extracted
+  from a high-resolution, anatomically correct reference volume using
+  the well-established
+
 In this paper we propose a novel registration framework to simultaneously
 solving the segmentation, distortion and cortical parcellation challenges,
 by exploiting as strong shape-prior the detailed morphology extracted
@@ -65,3 +175,25 @@ Then we provide a more detailed description of the data and experimental setup i
 \autoref{sec:experiments}.
 We present results in \autoref{sec:results} and conclude
 in \autoref{sec:conclusion}.
+
+
+The properties of the reconstructed tensors and derived scalar maps have
+been studied by \cite{ennis_orthogonal_2006}. Based on their
+findings, \gls{fa}~\eqref{eq:fa} and \gls{md}~\eqref{eq:md} are
+considered complementary features, and therefore we selected them for the
+energy model \eqref{eq:complete_energy} in driving the
+registration-segmentation process.
+Whereas \gls{fa} informs mainly about the \emph{shape} of diffusion,
+the \gls{md} is more related to the \emph{magnitude} of the process:
+
+\begin{align}
+\mathrm{FA} &= \sqrt{ \frac{1}{2}}\,\frac{\sqrt{ (\lambda_1 - \lambda_2)^2 + (\lambda_2 - \lambda_3)^2 + (\lambda_3 - \lambda_1)^2}}{\sqrt{ {\lambda_1}^2 + {\lambda_2}^2 + {\lambda_3}^2}} \label{eq:fa} \\
+\mathrm{MD} &= ( \lambda_1 + \lambda_2 + \lambda_3 ) / 3 \label{eq:md}
+\end{align}
+where $\lambda_i$ are the eigenvalues of the diffusion tensor
+associated with the diffusion signal $S(\vec{q})$. There exist
+two main reasons to justify their choice.
+First, they are well-understood and standardized in clinical routine.
+Second, together they contain most of the information that is
+usually extracted from the \gls{dwi}-derived scalar maps
+\cite{ennis_orthogonal_2006}.
