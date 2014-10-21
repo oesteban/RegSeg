@@ -1,0 +1,26 @@
+% -*- root: 00-main.tex -*-
+
+\section{Extended formulations}
+
+\subsection{Shape priors}
+\label{app:shape_priors}
+Let $R(\vec{r})$ be an ``arbitrary'' function over the image domain,
+and $\Omega$ a certain image region with $\Gamma_{l,m}$ its corresponding
+outer boundary as defined in \autoref{sec:methods_map}.
+We now derive the domain integral w.r.t. $t$:
+  \begin{align*}
+  \frac{\partial}{\partial t} \int_\Omega R(\vec{r}') d\vec{r} &=
+  \int_\Omega \frac{\partial}{\partial t}R(\vec{r}') d\vec{r} \notag\\
+  &- \int_{\Gamma_{l,m}} R(\vec{r}') \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
+  N_{\Gamma_{l,m}}\right\rangle d\vec{r},
+  \end{align*}
+  where $\left\langle\frac{\partial\Gamma_{l,m}}{\partial t}, N_{\Gamma_{l,m}}\right\rangle$ is
+  the projection of the boundary movement on the unit inward normal $N_{\Gamma_{l,m}}$.
+Assuming that the region descriptors $\Theta_l$ vary slowly enough, we can consider
+  that $\frac{\partial}{\partial t} R(\vec{r}') = 0$ and thus:
+  \begin{equation}
+  \frac{\partial}{\partial t} \int_\Omega R(\vec{r}') d\vec{r} =
+  - \int_{\Gamma_{l,m}} R(\vec{r}') \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
+  N_{\Gamma_{l,m}}\right\rangle d\vec{r}
+  \label{eq:shape_gradients}
+  \end{equation}

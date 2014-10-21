@@ -1,32 +1,16 @@
+% -*- root: 00-main.tex -*-
 \section{Conclusion}
 \label{sec:conclusion}
 %
-A novel application for the \gls{acwe} framework is proposed,
-with the aim at recovering the displacement field underlying 
-the \gls{epi} geometrical distortions. Exploiting the segmentation
-properties of the \gls{acwe} and optimizing the displacement
-field, we describe a registration-segmentation methodology that
-simultaneously segmented and restored the distortion on 
-\gls{dwi}-like synthetic data. Visual results and quantitative
-results are provided.
-
-We implemented the methodology upon the widely used
-Insight Registration and Segmentation 
-Toolkit~\footnote{\url{http://www.itk.org}} (ITK)
-for its computational benefits, the standardized code, and 
-with the aim at making the procedure publicly available 
-when ready for sharing with the research community.
-
-Once proven the aptness of the methodology to the application
-with simplistic synthetic data, in further studies we will 
-cover the actual performance on real images and the benefits 
-of overcoming the described challenges (segmentation and 
-\gls{epi} distortion correction) in one single step. Additional
-research lines regard with the use of more adequate 
-optimization schemes and the use of an energy model 
-better adapted to the specific nature of the \gls{dwi} data.
-
-We conclude recalling the importance of tackling with
-the numerous challenges that exist on the \gls{dwi} data 
-processing in order to achieve reliable results on the
-whole-brain connectivity analysis.
+We propose and make publicly available a novel methodology for
+  simultaneous distortion correction and consistent parcellation
+  of \gls*{dmri} images using a joint registration-segmentation
+  framework.
+From the Bayesian approach to image segmentation, we derive
+  a cost function that models piecewise smooth regions with
+  multivariate normal distributions.
+This is, implicitly, an \acrlong*{acwe} model, in wich the
+  contours evolve optimizing a B-Spline deformation
+  model.
+We demonstrate the aptness of the method with quantitative
+  evaluations on digital phantoms and real \gls*{mri} data.

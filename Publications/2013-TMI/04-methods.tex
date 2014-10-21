@@ -30,12 +30,12 @@ Then, the \gls*{map} criterium \citep{leemput_automated_1999} is used
 First, we assume independence between pixels, and thus break down the
   global data likelihood into a product of pixel-wise conditional probabilities:
   \begin{equation}
-  P(F \mid U,\Omega) = \underset{l}{\prod} \underset{\vec{x}\in \Omega_l}{\prod}
+  P(F \mid U,\Omega) = \underset{l}{\prod} \underset{\vec{r}\in \Omega_l}{\prod}
     P\left( \vec{f}' \mid U \right),
   \label{eq:bayes_aposteriori}
   \end{equation}
-  where $\vec{f}' = F(\vec{x}')$ is the feature vector at the displaced
-  position $\vec{x}'$ (\autoref{eq:transform}) of the multispectral target
+  where $\vec{f}' = F(\vec{r}')$ is the feature vector at the displaced
+  position $\vec{r}'$ (\autoref{eq:transform}) of the multispectral target
   volume.
 For convenience, and because it has been shown to be appropriate approximations
   \citep{cuadra_comparison_2005}, we introduce two assumptions for each
@@ -51,9 +51,9 @@ For convenience, and because it has been shown to be appropriate approximations
 We then insert \autoref{eq:likelihood} into \autoref{eq:bayes_rule} to obtain the full
   formulation of the \emph{data term} of our registration model:
  	\begin{align}
-  P( F \mid U, \Omega ) &= \underset{l}{\prod} \underset{\vec{x} \in \Omega_l}{\prod}
+  P( F \mid U, \Omega ) &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod}
   \mathcal{N} ( \vec{f} \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} ) \notag\\
-  &= \underset{l}{\prod} \underset{\vec{x} \in \Omega_l}{\prod} \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}
+  &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod} \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}
   \mdist{f'}{l} \right)}},
   \label{eq:pdf}
   \end{align}
@@ -64,22 +64,22 @@ We then insert \autoref{eq:likelihood} into \autoref{eq:bayes_rule} to obtain th
 
 We choose a Thikonov regularization prior as follows:
   \begin{equation*}
-  P(U) = \underset{\vec{x}}{\prod} p(u(\vec{x})),
+  P(U) = \underset{\vec{r}}{\prod} p(u(\vec{r})) =
+  \underset{\vec{r}}{\prod} p_0(u(\vec{r})) \, p_1(u(\vec{r})),
   \end{equation*}
   with further:
   \begin{align*}
-  p(u(\vec{x})) &= p_0(u(\vec{x})) \, p_1(u(\vec{x})) \notag\\
-  p_0(u(\vec{x})) &= \mathcal{N}( u(\vec{x}) \mid 0, A^{-1}) \notag\\
-  p_1(u(\vec{x})) &= \mathcal{N}(  \nabla \cdot u(\vec{x}) \mid 0, B^{-1}),
+  p_0(u(\vec{r})) &= \mathcal{N}( u(\vec{r}) \mid 0, A^{-1}), \notag\\
+  p_1(u(\vec{r})) &= \mathcal{N}(  \nabla \cdot u(\vec{r}) \mid 0, B^{-1}),
   \end{align*}
   imposing that the distortion and its gradient have zero
   mean and variance governed by $A$ and $B$.
 Since the anisotropy is generally aligned with the imaging axes, these will be simplified
   in the following for the sake of clarity:
   \begin{align}
-    p_0(u(\vec{x})) &= \underset{\vec{x}}{\sum} \mathcal{N}( u(\vec{x}) \mid 0,
+    p_0(u(\vec{r})) &= \underset{\vec{r}}{\sum} \mathcal{N}( u(\vec{r}) \mid 0,
       (\boldsymbol{\alpha}^{\circ\frac12}\,\vec{I}_n)^{-1}), \notag\\
-    p_1(u(\vec{x})) &= \underset{\vec{x}}{\sum} \mathcal{N}( \nabla \cdot u(\vec{x}) \mid 0,
+    p_1(u(\vec{r})) &= \underset{\vec{r}}{\sum} \mathcal{N}( \nabla \cdot u(\vec{r}) \mid 0,
       (\boldsymbol{\beta}^{\circ\frac12}\,\vec{I}_n)^{-1}).
   \label{eq:priors}
   \end{align}
@@ -88,13 +88,13 @@ Finally, the \gls{map} problem is adapted into a variational one applying the
   following log-transform:
   \begin{align}
   E(F \mid U) &= -\log \underset{l}{\prod}
-  \underset{\vec{x} \in \Omega_l}{\prod}
-  \mathcal{N} \left( \vec{f}' \mid \Theta_l \right)\,p_0( u(\vec{x}))\,p_1( u(\vec{x})), \notag\\
+  \underset{\vec{r} \in \Omega_l}{\prod}
+  \mathcal{N} \left( \vec{f}' \mid \Theta_l \right)\,p_0( u(\vec{r}))\,p_1( u(\vec{r})) \notag\\
   &= C + \underset{l}{\sum}
-  \underset{\vec{x} \in \Omega_l}{\sum}
-  \mdist{f'}{l}, \notag\\
-  &+ \underset{\vec{x} \in \Omega}{\sum} \boldsymbol{\alpha} \cdot u(\vec{x})^{\circ2}
-  + \underset{\vec{x} \in \Omega}{\sum} \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{x}))^{\circ2},
+  \underset{\vec{r} \in \Omega_l}{\sum}
+  \mdist{f'}{l} \notag\\
+  &+ \underset{\vec{r} \in \Omega}{\sum} \boldsymbol{\alpha} \cdot u(\vec{r})^{\circ2}
+  + \underset{\vec{r} \in \Omega}{\sum} \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{r}))^{\circ2},
   \label{eq:energy}
   \end{align}
   that is the dual expression to the energy functional corresponding
@@ -114,17 +114,17 @@ Let us denote $\{\vec{c}_i\}_{i=1 \ldots N_c}$ the nodes of one or several prior
 In our application, these surfaces are extracted using \emph{FreeSurfer}
   \citep{fischl_freesurfer_2012} in the case of real datasets.
 The transformation from the structural space into the coordinate space of the
-  target image is achieved through a dense deformation field $u(\vec{x})$, such that:
+  target image is achieved through a dense deformation field $u(\vec{r})$, such that:
   \begin{equation}
   \vec{c}_i' = U\{\vec{c}_i\} = \vec{c}_i + u(\vec{c}_i),
   \label{eq:nodes_tfm}
   \end{equation}
   where $U$ is defined in \eqref{eq:transform}.
 Since the nodes of the anatomical surfaces likely lay off-grid, it is required to
-  derive $u(\vec{x})$ from a discrete set of parameters $\{\vec{u}_k\}_{k=1 \ldots K}$.
+  derive $u(\vec{r})$ from a discrete set of parameters $\{\vec{u}_k\}_{k=1 \ldots K}$.
 Densification is achieved through a set of associated basis functions $\psi_k$:
   \begin{equation}
-  u(\vec{x}) = \sum_k \psi_k(\vec{x}) \vec{u}_k.
+  u(\vec{r}) = \sum_k \psi_k(\vec{r}) \vec{u}_k.
   \label{eq:intp_kernel}
   \end{equation}
 %
@@ -134,7 +134,7 @@ Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
   $\psi$ by the actual kernel function, the transformation writes:
   \begin{equation}
     \vec{c}_i' = \vec{c}_i + \sum_k \left[ \vec{u}_k \, \underset{d}{\prod}
-      B_3( (\vec{c}_i - \vec{x}_k) \cdot \hat{\mathbf{e}}_d ) \right],
+      B_3( (\vec{c}_i - \vec{r}_k) \cdot \hat{\mathbf{e}}_d ) \right],
   \label{eq:transformation}
   \end{equation}
   with $\hat{\mathbf{e}}_d$ being the unitary vector along axis $d$.
@@ -146,7 +146,7 @@ To find the minimum of the energy functional \eqref{eq:energy},
   we propose a gradient-descent approach with respect to the underlying
   deformation field through the following \gls*{pde}:
   \begin{equation}
-  \frac{\partial u(\vec{x},t)}{\partial t} \propto - \frac{\partial E(\vec{u})}{\partial \vec{u}_k},
+  \frac{\partial u(\vec{r},t)}{\partial t} \propto - \frac{\partial E(\vec{u})}{\partial \vec{u}_k},
   \label{eq:general_gradient_descent}
   \end{equation}
   with $t$ being an artificial time parameter of the contour
@@ -157,9 +157,9 @@ Now, we introduce \eqref{eq:energy} in \eqref{eq:general_gradient_descent}:
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
   \frac{ \partial }{\partial \vec{u}_k} \Big\{
   C + \underset{l}{\sum}
-  \underset{\vec{x} \in \Omega_l}{\sum} \mdist{f'}{l} \notag\\
-  &+ \underset{\vec{x} \in \Omega}{\sum} \boldsymbol{\alpha} \cdot u(\vec{x})^{\circ2}
-  + \underset{\vec{x} \in \Omega}{\sum} \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{x}))^{\circ2}
+  \underset{\vec{r} \in \Omega_l}{\sum} \mdist{f'}{l} \notag\\
+  &+ \underset{\vec{r} \in \Omega}{\sum} \boldsymbol{\alpha} \cdot u(\vec{r})^{\circ2}
+  + \underset{\vec{r} \in \Omega}{\sum} \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{r}))^{\circ2}
   \Big\}.
   \label{eq:gradient_descent}
   \end{align}

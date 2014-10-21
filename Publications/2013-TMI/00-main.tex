@@ -260,11 +260,11 @@
 % a separate \thanks must be used for each paragraph as LaTeX2e's \thanks
 % was not built to handle multiple paragraphs
 %
-\author{Oscar~Esteban$^{*}$,
-        Alessandro~Daducci,
-        Meritxell~Bach-Cuadra,
-        Jean-Philippe~Thiran,
-        Andr\'es~Santos,
+\author{Oscar~Esteban$^{*}$ %,
+%        Alessandro~Daducci,
+%        Meritxell~Bach-Cuadra,
+%        Jean-Philippe~Thiran,
+%        Andr\'es~Santos,
         and~Dominique~Zosso% <-this % stops a space
 \thanks{Manuscript received XXX XX, 2013; revised XXX XX, 2013.
 This study is supported by: the Spain's Ministry of Science and Innovation
@@ -275,16 +275,15 @@ European Regional Development Funds; the Center for Biomedical Imaging
 Leenaards and Louis Jeantet foundations.\emph{~Asterisk indicates corresponding
 author}.}%
 \thanks{$^{*}$O. Esteban is with the Biomedical Image Technologies (BIT), ETSI Telecomunicaci\'on,
-Universidad Polit\'ecnica de Madrid and CIBER-BBN, Madrid, Spain,
-and the Signal Processing Laboratory (LTS5), \'Ecole Polytechnique
-F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland (e-mail: phd@oscaresteban.es).}% <-this % stops a space
-\thanks{A. Daducci is with the Signal Processing Laboratory (LTS5), \'Ecole Polytechnique
-F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland.}%
-\thanks{M. Bach-Cuadra and JP. Thiran are with the Signal Processing Laboratory (LTS5), \'Ecole Polytechnique
-F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland, and Dept. of Radiology, University
-Hospital Center (CHUV) and University of Lausanne (UNIL), Lausanne, Switzerland.}%
-\thanks{A. Santos is with the Biomedical Image Technologies (BIT), ETSI Telecomunicaci\'on,
-Universidad Polit\'ecnica de Madrid and CIBER-BBN, Madrid, Spain.}% <-this % stops a space
+Universidad Polit\'ecnica de Madrid and CIBER-BBN, Madrid, Spain
+(e-mail: phd@oscaresteban.es).}% <-this % stops a space
+%\thanks{A. Daducci is with the Signal Processing Laboratory (LTS5), \'Ecole Polytechnique
+%F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland.}%
+%\thanks{M. Bach-Cuadra and JP. Thiran are with the Signal Processing Laboratory (LTS5), \'Ecole Polytechnique
+%F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland, and Dept. of Radiology, University
+%Hospital Center (CHUV) and University of Lausanne (UNIL), Lausanne, Switzerland.}%
+%\thanks{A. Santos is with the Biomedical Image Technologies (BIT), ETSI Telecomunicaci\'on,
+%Universidad Polit\'ecnica de Madrid and CIBER-BBN, Madrid, Spain.}% <-this % stops a space
 \thanks{D. Zosso is with the Department of Mathematics, University of California,
 Los Angeles (UCLA), Los Angeles, CA, US and is supported by the Swiss National
 Science Foundation (SNF) under grant PBELP2-137727.}% <-this % stops a space
@@ -311,7 +310,7 @@ Science Foundation (SNF) under grant PBELP2-137727.}% <-this % stops a space
 
 
 % The paper headers
-\markboth{IEEE TRANSACTIONS ON MEDICAL IMAGING,~Vol.~??, No.~?, MAY~2013}%
+\markboth{IEEE TRANSACTIONS ON MEDICAL IMAGING,~Vol.~??, No.~?, MAY~2015}%
 {Esteban \MakeLowercase{\textit{et al.}}: FIXME: Running title}
 % The only time the second header will appear is for the odd numbered pages
 % after the title page when using the twoside option.
@@ -463,7 +462,9 @@ diffusion MRI,~susceptibility~distortion,~segmentation,~registration,~parcellati
 
 
 % Add appendices
-%\input{08-appendix-01}
+\appendices
+%\numberwithin{equation}{section}
+\input{08-appendix-00-shapepriors}
 
 % ACKs
 \input{08-acknowledgements}
