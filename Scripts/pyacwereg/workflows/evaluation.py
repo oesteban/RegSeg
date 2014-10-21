@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-20 10:56:41
+# @Last Modified time: 2014-10-22 01:14:03
 
 import os
 import os.path as op
@@ -20,6 +20,7 @@ from nipype.algorithms.misc import NormalizeProbabilityMapSet as Normalize
 from nipype.algorithms import mesh as namesh
 from nipype.algorithms import metrics as namev
 from nipype.interfaces import fsl as fsl
+from nipype.interfaces import freesurfer as fs
 
 from pyacwereg.interfaces.warps import InverseField
 from pysdcev.workflows.distortion import bspline_deform
@@ -70,6 +71,8 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
                 'out_overlap']), name='outputnode')
 
     dist = bspline_deform(n_tissues=n_tissues)
+    smooth = pe.Node(fsl.Smooth(fwhm=2.0), name='Smooth')
+    regrid = pe.Node(fs.MRIConvert(vox_size=(2.3, 2.3, 2.3)), name='Regrid')
 
     wf.connect([
         (inputnode,  dist, [('grid_size', 'inputnode.grid_size'),
@@ -79,7 +82,9 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
                             ('in_mask', 'inputnode.in_mask')]),
         (dist, outputnode, [('outputnode.out_file', 'out_file'),
                             ('outputnode.out_field', 'out_field'),
-                            ('outputnode.out_coeff', 'out_coeff')])
+                            ('outputnode.out_coeff', 'out_coeff')]),
+        (dist,     smooth, [('outputnode.out_file', 'in_file')]),
+        (smooth,   regrid, [('out_file', 'in_file')])
     ])
 
     evwfs = []
@@ -98,8 +103,8 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
             (inputnode,         reg, [('in_surfs', 'inputnode.in_surf'),
                                       ('in_file', 'inputnode.in_orig'),
                                       ('grid_size', 'inputnode.grid_size')]),
+            (smooth,            reg, [('out_file', 'inputnode.in_dist')]),
             (dist,              reg, [
-                ('outputnode.out_file', 'inputnode.in_dist'),
                 ('outputnode.out_tpms', 'inputnode.in_tpms'),
                 ('outputnode.out_mask', 'inputnode.in_mask')]),
             (dist,         evwfs[i], [
