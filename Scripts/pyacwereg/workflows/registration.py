@@ -35,14 +35,15 @@ def default_regseg(name='REGSEGDefault'):
     # Good config for box phantom (2014/04/21): [ -a 0.0 -b 0.0 -u 20 -g 6 -i
     # 500 -s 1.0]
     regseg = pe.Node(ACWEReg(), name="ACWERegistration")
-    regseg.inputs.iterations = [500]
+    regseg.inputs.iterations = [500, 500, 500]
     #regseg.inputs.descript_update = [20]
-    regseg.inputs.step_size = [1.0]
-    regseg.inputs.alpha = [0.0]
-    regseg.inputs.beta = [0.0]
-    # regseg.inputs.grid_size = [10]
-    regseg.inputs.convergence_energy = [True]
-    regseg.inputs.convergence_window = [50]
+    regseg.inputs.step_size = [0.1, 0.1, 0.05]
+    regseg.inputs.alpha = [0.0, 0.1, 0.2]
+    regseg.inputs.beta = [0.0, 0.1, 0.2]
+    regseg.inputs.grid_size = [4, 5, 6]
+    regseg.inputs.convergence_energy = [True] * 3
+    regseg.inputs.convergence_window = [8, 12, 15]
+    regseg.inputs.f_smooth = [2.0, 1.0, None]
 
     # Apply tfm to tpms
     applytfm = pe.MapNode(FieldBasedWarp(), name="ApplyWarp",
@@ -51,8 +52,7 @@ def default_regseg(name='REGSEGDefault'):
     # Connect
     wf.connect([
         (inputnode,   regseg, [('in_surf', 'in_prior'),
-                               ('in_dist', 'in_fixed'),
-                               ('grid_size', 'grid_size')]),
+                               ('in_dist', 'in_fixed')]),
         (inputnode, applytfm, [('in_tpms', 'in_file'),
                                ('in_mask', 'in_mask')]),
         (regseg,    applytfm, [('out_field', 'in_field')]),
