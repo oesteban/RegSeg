@@ -289,6 +289,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		for(size_t i = 0; i<Dimension; i++)
 			vxvol *= this->GetCurrentMap(0)->GetSpacing()[i];
 
+		size_t nPix = this->GetCurrentMap(0)->GetLargestPossibleRegion().GetNumberOfPixels();
+
 		MeasureType roi_value = 0.0;
 		for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
 			double totalVol = 0.0;
@@ -296,7 +298,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			const typename ProbabilityMapType::PixelType* roiBuffer = roipm->GetBufferPointer();
 			const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
 
-			size_t nPix = roipm->GetLargestPossibleRegion().GetNumberOfPixels();
 			ReferencePointType pos;
 			ReferencePixelType val;
 			typename ProbabilityMapType::PixelType w;
@@ -309,8 +310,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					totalVol += w;
 				}
 			}
-			roi_value = roi_value / totalVol;
-			this->m_Value += roi_value;
+			this->m_Value+= roi_value / totalVol;
 		}
 		this->m_EnergyUpdated = true;
 	}

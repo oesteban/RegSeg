@@ -59,8 +59,6 @@
 
 using namespace std;
 
-#include "DisplacementFieldFileWriter.h"
-#include "DisplacementFieldComponentsFileWriter.h"
 
 namespace rstk {
 
@@ -83,6 +81,10 @@ m_RegularizationEnergyUpdated(true)
 	SplineTransformPointer defaultTransform = SplineTransformType::New();
 	this->m_Transform = itkDynamicCastInDebugMode< TransformType* >( defaultTransform.GetPointer() );
 	this->m_Transform->SetNumberOfThreads( this->GetNumberOfThreads() );
+
+	SplineTransformPointer initTransform = SplineTransformType::New();
+	this->m_TotalTransform = itkDynamicCastInDebugMode< TransformType* >( initTransform.GetPointer() );
+	this->m_TotalTransform->SetNumberOfThreads( this->GetNumberOfThreads() );
 }
 
 template< typename TFunctional >
@@ -113,7 +115,7 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 		buff[i] = this->m_DerivativeCoefficients[i]->GetBufferPointer();
 	}
 
-	size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
+	size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
 	VectorType vi;
 	InternalComputationValueType val;
 	size_t dim;
@@ -130,7 +132,6 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 				maxSpeed[c] = val;
 		}
 	}
-
 	//if( this->m_AutoStepSize && this->m_CurrentIteration < 5 ) {
 	//	this->m_StepSize = (this->m_StepSize  + this->m_LearningRate * ( this->m_MaxDisplacement.GetNorm() / maxSpeed.GetNorm() ) )*0.5;
 	//}
@@ -162,44 +163,82 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
-	if ( ( (this->m_Alpha * this->m_ParamFactor).GetNorm() + (this->m_Beta * this->m_ParamFactor).GetNorm()) < 1.0e-8 ) {
+	if ( ( (this->m_Alpha).GetNorm() + (this->m_Beta).GetNorm()) < 1.0e-8 ) {
 		return 0;
 	}
 
 	if (!this->m_RegularizationEnergyUpdated ){
 		this->m_RegularizationEnergy=0;
-		const VectorType* fBuffer = this->m_LastField->GetBufferPointer();
-		const CoefficientsValueType* dBuffer[Dimension];
-		size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
 
-		this->m_Transform->ComputeGradientField();
+		// Add current coefficients to the corresponding ones at init
+		this->m_FieldCoeffAdder->SetInput2(this->m_LastCoeff);
+		this->m_FieldCoeffAdder->Update();
+		this->m_TotalTransform->SetCoefficientsVectorImage(this->m_FieldCoeffAdder->GetOutput());
+		this->m_TotalTransform->Interpolate();
+
+		// Set interpolated field (total field) in a local container
+		// as we are to replace it by the gradients field
+		VectorType zerov; zerov.Fill(0.0);
+		FieldPointer totalField = FieldType::New();
+		totalField->SetSpacing(this->m_TotalTransform->GetField()->GetSpacing());
+		totalField->SetRegions(this->m_TotalTransform->GetField()->GetLargestPossibleRegion());
+		totalField->SetOrigin(this->m_TotalTransform->GetField()->GetOrigin());
+		totalField->SetDirection(this->m_TotalTransform->GetField()->GetDirection());
+		totalField->Allocate();
+		totalField->FillBuffer(zerov);
+		size_t nPix = totalField->GetLargestPossibleRegion().GetNumberOfPixels();
+
+		itk::ImageAlgorithm::Copy<FieldType, FieldType>(
+				this->m_TotalTransform->GetField(),
+				totalField,
+				this->m_TotalTransform->GetField()->GetLargestPossibleRegion(),
+				totalField->GetLargestPossibleRegion());
+
+		// Compute current total gradients and interpolate to field
+		this->m_TotalTransform->ComputeGradientField();
+		this->m_TotalTransform->InterpolateGradient();
+
+		// Get pointers
+		const VectorType* fBuffer = totalField->GetBufferPointer();
+		const VectorType* dBuffer = this->m_TotalTransform->GetField()->GetBufferPointer();
+
+		// Initialize dimensional parameters
+		double alpha[Dimension];
+		double beta[Dimension];
+		double vxvol = 1.0;
+		for (size_t i = 0; i<Dimension; i++ ) {
+			alpha[i] = this->m_Alpha[i] * this->m_ParamFactor;
+			beta[i] = this->m_Beta[i] * this->m_ParamFactor;
+			vxvol*= totalField->GetSpacing()[i];
+		}
 
 		VectorType u;
-		CoefficientsValueType d_u;
-		double vxvol = 1.0;
-		MeasureType energyA = 0;
-		MeasureType energyB = 0;
-
-		for (size_t i = 0; i<Dimension; i++ ) {
-			dBuffer[i] =  this->m_Transform->GetDerivatives()[i]->GetBufferPointer();
-			vxvol*= this->m_LastField->GetSpacing()[i];
-		}
-
+		VectorType du;
+		double u2, du2;
+		double energy = 0.0;
 		double totalVol = 0.0;
+		double eA, eB, e;
 		for ( size_t pix = 0; pix<nPix; pix++) {
-			totalVol += vxvol;
 			u = *(fBuffer+pix);
+			du = *(dBuffer + pix );
+			e = 0.0;
+			eA = 0.0;
+			eB = 0.0;
 			for ( size_t i = 0; i<Dimension; i++) {
 				// Regularization, first term
-				energyA+= vxvol * this->m_Alpha[i] * this->m_ParamFactor * u[i] * u[i];
+				u2 = u[i] * u[i];
+				if (u2 > 1.0e-4)
+					eA+= alpha[i] * u2;
 
 				// Regularization, second term
-				d_u = *(dBuffer[i] + pix );
-				energyB+= vxvol * this->m_Beta[i] * this->m_ParamFactor * d_u * d_u;
+				du2 = du[i] * du[i];
+				if (du2 > 1.0e-5)
+					eB+= beta[i] * du2;
 			}
+			energy+= vxvol * (eA + eB);
 		}
 
-		this->m_RegularizationEnergy = ( energyA + energyB ) / totalVol;
+		this->m_RegularizationEnergy = energy / (vxvol * nPix);
 		this->m_RegularizationEnergyUpdated = true;
 	}
 	return this->m_RegularizationEnergy;
@@ -210,8 +249,7 @@ void SpectralOptimizer<TFunctional>::SpectralUpdate(
 		CoefficientsImageArray parameters,
 		const CoefficientsImageArray lambda,
 		CoefficientsImageArray nextParameters,
-		bool changeDirection )
-{
+		bool changeDirection ) {
 	itkDebugMacro("Optimizer Spectral Update");
 
 	typename AddFilterType::Pointer add_filter = AddFilterType::New();
@@ -340,9 +378,9 @@ template< typename TFunctional >
 void
 SpectralOptimizer<TFunctional>::UpdateField() {
 	itk::ImageAlgorithm::Copy<FieldType, FieldType>(
-		this->m_Transform->GetField(), this->m_CurrentDisplacementField,
+		this->m_Transform->GetField(), this->m_CurrentCoefficients,
 		this->m_Transform->GetField()->GetLargestPossibleRegion(),
-		this->m_CurrentDisplacementField->GetLargestPossibleRegion()
+		this->m_CurrentCoefficients->GetLargestPossibleRegion()
 	);
 
 
@@ -351,9 +389,9 @@ SpectralOptimizer<TFunctional>::UpdateField() {
 template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::ComputeIterationChange() {
-	const VectorType* fnextBuffer = this->m_CurrentDisplacementField->GetBufferPointer();
-	VectorType* fBuffer = this->m_LastField->GetBufferPointer();
-	size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
+	const VectorType* fnextBuffer = this->m_CurrentCoefficients->GetBufferPointer();
+	VectorType* fBuffer = this->m_LastCoeff->GetBufferPointer();
+	size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
 
 	InternalComputationValueType totalNorm = 0;
 	VectorType t0,t1;
@@ -366,9 +404,7 @@ SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 		t1 = *(fnextBuffer+pix);
 		diff = ( t1 - t0 ).GetNorm();
 		totalNorm += diff;
-
 		*(fBuffer+pix) = t1; // Copy current to last, once evaluated
-
 
 		if ( this->m_IsDiffeomorphic ) {
 			for( size_t i = 0; i<Dimension; i++) {
@@ -431,21 +467,51 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 		this->m_DerivativeCoefficients[i]->FillBuffer( 0.0 );
 	}
 
-	this->m_LastField = FieldType::New();
-	this->m_LastField->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
-	this->m_LastField->SetSpacing(   coeff[0]->GetSpacing() );
-	this->m_LastField->SetDirection( coeff[0]->GetDirection() );
-	this->m_LastField->SetOrigin(    coeff[0]->GetOrigin() );
-	this->m_LastField->Allocate();
-	this->m_LastField->FillBuffer( zerov );
+	this->m_LastCoeff = FieldType::New();
+	this->m_LastCoeff->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
+	this->m_LastCoeff->SetSpacing(   coeff[0]->GetSpacing() );
+	this->m_LastCoeff->SetDirection( coeff[0]->GetDirection() );
+	this->m_LastCoeff->SetOrigin(    coeff[0]->GetOrigin() );
+	this->m_LastCoeff->Allocate();
+	this->m_LastCoeff->FillBuffer( zerov );
 
-	this->m_CurrentDisplacementField = FieldType::New();
-	this->m_CurrentDisplacementField->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
-	this->m_CurrentDisplacementField->SetSpacing(   coeff[0]->GetSpacing() );
-	this->m_CurrentDisplacementField->SetDirection( coeff[0]->GetDirection() );
-	this->m_CurrentDisplacementField->SetOrigin(    coeff[0]->GetOrigin() );
-	this->m_CurrentDisplacementField->Allocate();
-	this->m_CurrentDisplacementField->FillBuffer( zerov );
+	this->m_CurrentCoefficients = FieldType::New();
+	this->m_CurrentCoefficients->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
+	this->m_CurrentCoefficients->SetSpacing(   coeff[0]->GetSpacing() );
+	this->m_CurrentCoefficients->SetDirection( coeff[0]->GetDirection() );
+	this->m_CurrentCoefficients->SetOrigin(    coeff[0]->GetOrigin() );
+	this->m_CurrentCoefficients->Allocate();
+	this->m_CurrentCoefficients->FillBuffer( zerov );
+
+	if( this->m_InitialDisplacementField.IsNull() ) {
+		this->m_InitialDisplacementField = FieldType::New();
+		this->m_InitialDisplacementField->SetRegions(   this->m_Functional->GetReferenceImage()->GetLargestPossibleRegion() );
+		this->m_InitialDisplacementField->SetSpacing(   this->m_Functional->GetReferenceImage()->GetSpacing() );
+		this->m_InitialDisplacementField->SetDirection( this->m_Functional->GetReferenceImage()->GetDirection() );
+		this->m_InitialDisplacementField->SetOrigin(    this->m_Functional->GetReferenceImage()->GetOrigin() );
+		this->m_InitialDisplacementField->Allocate();
+		this->m_InitialDisplacementField->FillBuffer( zerov );
+	}
+
+	this->m_TotalTransform->CopyGridInformation( coeff[0] );
+	this->m_TotalTransform->SetOutputReference(this->m_InitialDisplacementField);
+	this->m_TotalTransform->SetField(this->m_InitialDisplacementField);
+	this->m_TotalTransform->ComputeCoefficients();
+
+	this->m_InitialCoeff = FieldType::New();
+	this->m_InitialCoeff->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
+	this->m_InitialCoeff->SetSpacing(   coeff[0]->GetSpacing() );
+	this->m_InitialCoeff->SetDirection( coeff[0]->GetDirection() );
+	this->m_InitialCoeff->SetOrigin(    coeff[0]->GetOrigin() );
+	this->m_InitialCoeff->Allocate();
+	this->m_InitialCoeff->FillBuffer( zerov );
+
+	itk::ImageAlgorithm::Copy<FieldType, FieldType>(this->m_TotalTransform->GetCoefficientsVectorImage(),
+			this->m_InitialCoeff, this->m_TotalTransform->GetCoefficientsVectorImage()->GetLargestPossibleRegion(),
+			this->m_InitialCoeff->GetLargestPossibleRegion());
+
+	this->m_FieldCoeffAdder = AddFieldFilterType::New();
+	this->m_FieldCoeffAdder->SetInput1(this->m_InitialCoeff);
 }
 
 

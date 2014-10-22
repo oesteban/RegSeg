@@ -202,6 +202,7 @@ public:
     itkGetMacro( Derivatives, CoefficientsImageArray );
 
     void Interpolate() { this->Interpolate( this->VectorizeCoefficients() ); }
+    void InterpolateGradient() { this->Interpolate( this->VectorizeDerivatives() ); };
     void UpdateField() { this->UpdateField( this->VectorizeCoefficients() ); }
     void InvertField();
 
@@ -249,6 +250,7 @@ public:
     void SetCoefficientsImages( const CoefficientsImageArray & images );
     void SetCoefficientsImage( size_t dim, const CoefficientsImageType* c );
     void SetCoefficientsVectorImage( const FieldType* f );
+    void AddCoefficientsVectorImage( const FieldType* f );
     const FieldType* GetCoefficientsVectorImage();
 
     void SetPhysicalDomainInformation( const DomainBase* image );
@@ -303,6 +305,7 @@ protected:
 	DimensionVector Vectorize( const CoefficientsImageType* image );
 	//WeightsMatrix VectorizeCoefficients();
 	DimensionParametersContainer VectorizeCoefficients() const;
+	DimensionParametersContainer VectorizeDerivatives() const;
 	DimensionParametersContainer VectorizeField( const FieldType* image );
 	WeightsMatrix MatrixField( const FieldType* image );
 

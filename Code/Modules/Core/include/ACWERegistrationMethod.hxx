@@ -248,6 +248,11 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		this->m_Optimizers[level]->GetTransform()->SetNumberOfThreads( this->m_TransformNumberOfThreads );
 	}
 
+	if (level>0) {
+		this->ConcatenateFields(level);
+		this->m_Optimizers[level]->SetInitialDisplacementField(this->m_DisplacementField);
+	}
+
 	this->m_CurrentLogger = JSONLoggerType::New();
 	this->m_CurrentLogger->SetOptimizer( this->m_Optimizers[level] );
 	this->m_CurrentLogger->SetLevel( level );
@@ -304,7 +309,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
 void
 ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
-::GenerateFinalDisplacementField() {
+::ConcatenateFields( size_t level ) {
 	ReferenceImageConstPointer refim = this->GetFixedImage();
 
 	OutputVectorType zerov;
@@ -328,9 +333,9 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->m_InverseDisplacementField->FillBuffer(0.0);
 	OutputVectorType* outinvbuff = this->m_InverseDisplacementField->GetBufferPointer();
 
-	const OutputVectorType* tfbuff[this->m_NumberOfLevels];
+	const OutputVectorType* tfbuff[level];
 
-	for( size_t i = 0; i < this->m_NumberOfLevels; i++ ) {
+	for( size_t i = 0; i < level; i++ ) {
 		this->m_Transforms[i]->Interpolate();
 		tfbuff[i] = this->m_Transforms[i]->GetOutputField()->GetBufferPointer();
 	}
@@ -338,16 +343,21 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	size_t nPix = this->m_DisplacementField->GetLargestPossibleRegion().GetNumberOfPixels();
 
 	for( size_t i = 0; i < nPix; i++ ) {
-		for ( size_t j = 0; j < this->m_NumberOfLevels; j++) {
+		for ( size_t j = 0; j < level; j++) {
 			*( outbuff + i ) += *( tfbuff[j] + i );
 			*( outinvbuff + i ) -= *( tfbuff[j] + i );
 		}
 	}
+}
 
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+void
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+::GenerateFinalDisplacementField() {
+	this->ConcatenateFields(this->m_NumberOfLevels);
 	this->m_OutputTransform->SetDisplacementField( this->m_DisplacementField );
 	this->m_OutputInverseTransform->SetDisplacementField( this->m_InverseDisplacementField );
 }
-
 /*
  *  Get output transform
  */

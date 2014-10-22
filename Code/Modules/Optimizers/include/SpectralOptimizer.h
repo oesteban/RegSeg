@@ -132,6 +132,8 @@ public:
 
 	typedef itk::MultiplyImageFilter<CoefficientsImageType, CoefficientsImageType, CoefficientsImageType> MultiplyFilterType;
 	typedef itk::AddImageFilter<CoefficientsImageType, CoefficientsImageType, CoefficientsImageType>      AddFilterType;
+	typedef itk::AddImageFilter<FieldType, FieldType, FieldType> AddFieldFilterType;
+	typedef typename AddFieldFilterType::Pointer                 AddFieldFilterPointer;
 
 	typedef BSplineSparseMatrixTransform
 			                      < PointValueType, Dimension, 3u > SplineTransformType;
@@ -191,7 +193,8 @@ public:
 	itkSetMacro( UseDescriptorRecomputation, bool );
 	itkGetConstMacro( UseDescriptorRecomputation, bool );
 
-	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
+	itkGetConstObjectMacro(CurrentCoefficients, FieldType);
+	itkSetObjectMacro(InitialDisplacementField, FieldType);
 
 	const FieldType * GetCurrentCoefficientsField () const {
 		return this->m_Transform->GetCoefficientsVectorImage();
@@ -234,8 +237,11 @@ protected:
 
 	CoefficientsImageArray       m_NextCoefficients;
 	CoefficientsImageArray       m_Denominator;
-	FieldPointer                 m_LastField;
-	FieldPointer                 m_CurrentDisplacementField;
+	FieldPointer                 m_LastCoeff;
+	FieldPointer                 m_InitialCoeff;
+	FieldPointer                 m_CurrentCoefficients;
+	FieldPointer                 m_InitialDisplacementField;
+	AddFieldFilterPointer        m_FieldCoeffAdder;
 private:
 	SpectralOptimizer( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
