@@ -72,7 +72,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_EnergyUpdated(false),
  m_RegionsUpdated(false),
  m_ApplySmoothing(false),
- m_Background(true)
+ m_Background(false),
+ m_Value(1.0)
  {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_Sigma.Fill(0.0);
