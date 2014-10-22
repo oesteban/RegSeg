@@ -205,10 +205,15 @@ int main(int argc, char *argv[]) {
 	//
 
 	// Displacementfield
-	typename FieldWriter::Pointer p = FieldWriter::New();
-	p->SetFileName( (outPrefix + "_displacement_field.nii.gz" ).c_str() );
-	p->SetInput( acwereg->GetDisplacementField() );
-	p->Update();
+	typename FieldWriter::Pointer fwrite = FieldWriter::New();
+	fwrite->SetFileName( (outPrefix + "_field.nii.gz" ).c_str() );
+	fwrite->SetInput( acwereg->GetDisplacementField() );
+	fwrite->Update();
+
+	typename FieldWriter::Pointer cwrite = FieldWriter::New();
+	cwrite->SetFileName( (outPrefix + "_coeff.nii.gz" ).c_str() );
+	cwrite->SetInput( acwereg->GetCoefficientsField() );
+	cwrite->Update();
 
 	// Contours and regions
 	ContourList conts = acwereg->GetCurrentContours();

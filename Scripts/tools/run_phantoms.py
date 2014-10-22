@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-20 09:30:48
+# @Last Modified time: 2014-10-22 10:09:27
 import os.path as op
 
 
@@ -62,6 +62,11 @@ if __name__ == '__main__':
     import os
     parser = ArgumentParser(description='Run evaluation workflow',
                             formatter_class=RawTextHelpFormatter)
+    try:
+        from enthought.etsconfig.api import ETSConfig
+        ETSConfig.toolkit = 'null'
+    except:
+        pass
 
     g_input = parser.add_argument_group('Inputs')
 

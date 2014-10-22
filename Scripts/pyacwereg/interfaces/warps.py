@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-15 00:15:22
+# @Last Modified time: 2014-10-22 12:27:53
 
 import os
 import os.path as op
@@ -114,14 +114,10 @@ class RandomBSplineDeformation(ANTSCommand):
 
 
 class FieldBasedWarpInputSpec(ANTSCommandInputSpec):
-    in_file = InputMultiPath(File(exists=True), mandatory=True, argstr="-I %s",
+    in_file = InputMultiPath(File(exists=True), mandatory=True, argstr="-i %s",
                              desc='image(s) to be deformed')
-    in_field = File(exists=True, mandatory=False, argstr="-F %s",
-                    desc='forward field', xor='in_inv_field')
-    in_inv_field = File(exists=True, mandatory=False, argstr="-R %s",
-                        desc='backward field', xor='in_field')
-    in_mask = File(exists=True, argstr='-M %s', desc='set a mask')
-    in_surf = InputMultiPath(File(exists=True), argstr="-S %s",
+    in_mask = File(exists=True, argstr='-m %s', desc='set a mask')
+    in_surf = InputMultiPath(File(exists=True), argstr="-s %s",
                              desc='surface(s) to be deformed')
     out_prefix = traits.Str("fbased", argstr="-o %s", usedefault=True,
                             mandatory=True, desc='output files prefix')
@@ -131,6 +127,15 @@ class FieldBasedWarpInputSpec(ANTSCommandInputSpec):
                               argstr="-g %s", xor=['in_coeff'],
                               usedefault=True,
                               desc='size of control points grid')
+
+    in_field = File(exists=True, mandatory=False, argstr="-F %s",
+                    desc='forward field', xor='in_inv_field')
+    in_inv_field = File(exists=True, mandatory=False, argstr="-R %s",
+                        desc='backward field', xor='in_field')
+    in_coeff = File(exists=True, mandatory=False, argstr="-C %s",
+                    desc='forward field', xor='in_inv_field')
+    in_inv_coeff = File(exists=True, mandatory=False, argstr="-I %s",
+                        desc='backward field', xor='in_field')
 
 
 class FieldBasedWarpOutputSpec(TraitedSpec):
@@ -182,6 +187,14 @@ class FieldBasedWarp(ANTSCommand):
 class InverseFieldInputSpec(BaseInterfaceInputSpec):
     in_field = File(exists=True, mandatory=True,
                     desc='Displacements field to be inverted')
+    # in_field = File(exists=True, mandatory=False, argstr='-F %s',
+    #                 xorg=['in_coeff'],
+    #                 desc='Displacements field to be inverted')
+    # in_coeff = File(exists=True, mandatory=False, argstr="-C %s",
+    #                 xorg=['in_field'], requires=['reference'],
+    #                 desc='forward field coefficients')
+    # reference = File(exists=True, mandatory=False, argstr="-r %s",
+    #                  desc='reference physical space')
     out_field = File(desc='Output file name')
 
 

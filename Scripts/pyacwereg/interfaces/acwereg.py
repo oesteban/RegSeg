@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-20 08:38:40
+# @Last Modified time: 2014-10-22 12:30:33
 
 import os
 import os.path as op
@@ -97,7 +97,7 @@ class ACWERegOutputSpec(TraitedSpec):
                                           'target space')))
     out_field = File(exists=True, desc='output field')
     out_log = File(exists=True, desc='log JSON file')
-    # out_coeff = OutputMultiPath( File(desc='output coefficients') )
+    out_coeff = OutputMultiPath(File(desc='output coefficients'))
 
 
 class ACWEReg(ANTSCommand):
@@ -241,8 +241,8 @@ pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
             out_prefix, i)) for i in range(len(self.inputs.in_prior) + 1)]
         outputs['out_surfs'] = [op.abspath('%s_warped_%s' % (
             out_prefix, op.basename(name))) for name in self.inputs.in_prior]
-        outputs['out_field'] = op.abspath(
-            '%s_displacement_field.nii.gz' % out_prefix)
+        outputs['out_field'] = op.abspath('%s_field.nii.gz' % out_prefix)
+        outputs['out_coeff'] = op.abspath('%s_coeff.nii.gz' % out_prefix)
 
         logname = ''
         if isdefined(self.inputs.log_filename):
