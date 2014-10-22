@@ -193,6 +193,10 @@ public:
 
 	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
 
+	const FieldType * GetCurrentCoefficientsField () const {
+		return this->m_Transform->GetCoefficientsVectorImage();
+	}
+
 	static void AddOptions( SettingsDesc& opts );
 protected:
 	SpectralOptimizer();

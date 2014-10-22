@@ -68,6 +68,7 @@ typedef typename Transform::FieldType                        FieldType;
 typedef typename Transform::VectorType                       VectorType;
 
 typedef typename FieldType::Pointer              			 DisplacementFieldPointer;
+typedef typename FieldType::ConstPointer              		 DisplacementFieldConstPointer;
 typedef itk::ImageFileReader<FieldType>          			 DisplacementFieldReaderType;
 typedef typename DisplacementFieldReaderType::Pointer        DisplacementFieldReaderPointer;
 

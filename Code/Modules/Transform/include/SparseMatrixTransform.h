@@ -249,6 +249,7 @@ public:
     void SetCoefficientsImages( const CoefficientsImageArray & images );
     void SetCoefficientsImage( size_t dim, const CoefficientsImageType* c );
     void SetCoefficientsVectorImage( const FieldType* f );
+    const FieldType* GetCoefficientsVectorImage();
 
     void SetPhysicalDomainInformation( const DomainBase* image );
     void CopyGridInformation( const DomainBase* image );
@@ -344,6 +345,7 @@ protected:
 	KernelFunctionPointer m_DerivativeKernel;
 	//KernelFunctionPointer m_SecondDerivativeKernel;
 	FieldPointer          m_Field;
+	FieldPointer          m_CoefficientsField;
 
 	virtual void ComputeMatrix( WeightsMatrixType type, size_t dim = 0 );
 	virtual void AfterThreadedComputeMatrix( SMTStruct* str );

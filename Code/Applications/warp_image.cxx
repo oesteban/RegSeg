@@ -10,6 +10,25 @@
 #include <vnl/vnl_matrix.h>
 #include <vnl/vnl_diag_matrix.h>
 #include <sstream>
+#include <vector>
+
+void conflicting_options(const boost::program_options::variables_map & vm,
+						 const std::vector<std::string> & opts) {
+
+	size_t optsset = 0;
+	std::stringstream sopts;
+	for (size_t i = 0; i<opts.size(); i++) {
+		optsset+= int((vm.count(opts[i]) && !vm[opts[i]].defaulted()));
+		sopts << " --" << opts[i];
+		if (i!=(opts.size()-1))
+			sopts << ",";
+	}
+
+	if (optsset != 1) {
+		std::string s("One option of ");
+		throw std::logic_error(std::string("One option of" + sopts.str() + " must be specified."));
+	}
+}
 
 int main(int argc, char *argv[]) {
 	std::string outPrefix = "displ";
@@ -20,18 +39,26 @@ int main(int argc, char *argv[]) {
 	bpo::options_description all_desc("Usage");
 	all_desc.add_options()
 			("help,h", "show help message")
-			("images,I", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
-			("surfaces,S", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken(),	"moving image file")
-			("displacement-field,F", bpo::value < std::string >(&fieldname), "forward displacement field" )
-			("inverse-displacement-field,R", bpo::value < std::string >(&invfieldname), "backward displacement field" )
-			("mask,M", bpo::value< std::string >(&maskfile), "mask file" )
-			//("compute-inverse", bpo::bool_switch(), "compute precise inversion of the input field (requires -F)")
+			("images,i", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
+			("surfaces,s", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken(),	"moving image file")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
+			("mask,m", bpo::value< std::string >(&maskfile), "mask file" )
 			("mask-inputs", bpo::bool_switch(), "use deformed mask to filter input files")
+			("field,F", bpo::value < std::string >(&fieldname), "forward displacement field" )
+			("inv-field,R", bpo::value < std::string >(&invfieldname), "backward displacement field" )
+			("coeff,C", bpo::value < std::string >(&fieldname), "forward displacement field" )
+			("inv-coeff,I", bpo::value < std::string >(&invfieldname), "backward displacement field" )
+			//("compute-inverse", bpo::bool_switch(), "compute precise inversion of the input field (requires -F)")
 			("grid-size,g", bpo::value< std::vector<size_t> >(&grid_size)->multitoken(), "size of grid of bspline control points (default is 10x10x10)");
+	std::vector<std::string> opt_conf;
+	opt_conf.push_back("field");
+	opt_conf.push_back("inv-field");
+	opt_conf.push_back("coeff");
+	opt_conf.push_back("inv-coeff");
 
 	bpo::variables_map vm;
 	bpo::store(	bpo::parse_command_line( argc, argv, all_desc ), vm);
+	conflicting_options(vm, opt_conf);
 	bpo::notify(vm);
 
 	if (vm.count("help") || vm.size() == 0 ) {
@@ -39,56 +66,9 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	if ( !vm.count("displacement-field") && !vm.count("inverse-displacement-field") ) {
-		std::cerr << "One of -F or -R options should be specified" << std::endl;
-		return 1;
-	}
-
-	if ( vm.count("displacement-field") && vm.count("inverse-displacement-field") ) {
-		std::cerr << "-F or -R options are mutually exclusive" << std::endl;
-		return 1;
-	}
-
-	bool isFwdField = vm.count("displacement-field");
+	bool isField = vm.count("field") || vm.count("inv-field");
+	bool isFwd = vm.count("field") || vm.count("coeff");
 	bool computeInv = vm.count("compute-inverse");
-
-	DisplacementFieldPointer field, field_inv, input_field;
-	DisplacementFieldReaderPointer fread = DisplacementFieldReaderType::New();
-	fread->SetFileName( isFwdField?fieldname:invfieldname );
-	fread->Update();
-	input_field = fread->GetOutput();
-
-	const VectorType* ofb;
-	VectorType* ifb;
-
-	if( isFwdField ) {
-		field = input_field;
-		field_inv = FieldType::New();
-		field_inv->SetRegions( field->GetLargestPossibleRegion());
-		field_inv->SetOrigin( field->GetOrigin());
-		field_inv->SetDirection( field->GetDirection() );
-		field_inv->Allocate();
-
-		ofb = field->GetBufferPointer();
-		ifb = field_inv->GetBufferPointer();
-	} else {
-		field_inv = input_field;
-		field = FieldType::New();
-		field->SetRegions( field_inv->GetLargestPossibleRegion());
-		field->SetOrigin( field_inv->GetOrigin());
-		field->SetDirection( field_inv->GetDirection() );
-		field->Allocate();
-
-		ofb = field_inv->GetBufferPointer();
-		ifb = field->GetBufferPointer();
-	}
-
-	size_t nPix = field->GetLargestPossibleRegion().GetNumberOfPixels();
-	VectorType v;
-	for( size_t i = 0; i<nPix; i++ ) {
-		v = *( ofb+i );
-		*( ifb + i ) = -v;
-	}
 
 	// Direction issues
 	typename ChannelType::DirectionType itk;
@@ -105,6 +85,60 @@ int main(int argc, char *argv[]) {
 	typename ChannelType::PointType ref_orig = ref->GetOrigin();
 	typename ChannelType::DirectionType int_dir(itk * ref_dir);
 	typename ChannelType::PointType int_orig( itk * ref_orig );
+
+
+	DisplacementFieldPointer field, field_inv;
+	DisplacementFieldConstPointer input_field;
+	DisplacementFieldReaderPointer fread = DisplacementFieldReaderType::New();
+	fread->SetFileName( isFwd?fieldname:invfieldname );
+	fread->Update();
+	input_field = fread->GetOutput();
+
+	if (!isField) {
+		ref->SetDirection( int_dir );
+		ref->SetOrigin( int_orig );
+		TPointer tf_from_coeff = Transform::New();
+		tf_from_coeff->SetCoefficientsVectorImage(input_field);
+		tf_from_coeff->SetPhysicalDomainInformation(ref);
+		tf_from_coeff->Interpolate();
+		input_field = tf_from_coeff->GetField();
+	}
+
+	const VectorType* ofb;
+	VectorType* ifb;
+
+	field = FieldType::New();
+	field->SetRegions( input_field->GetLargestPossibleRegion());
+	field->SetOrigin( input_field->GetOrigin());
+	field->SetDirection( input_field->GetDirection() );
+	field->Allocate();
+
+	field_inv = FieldType::New();
+	field_inv->SetRegions( input_field->GetLargestPossibleRegion());
+	field_inv->SetOrigin( input_field->GetOrigin());
+	field_inv->SetDirection( input_field->GetDirection() );
+	field_inv->Allocate();
+
+	if( isFwd ) {
+		itk::ImageAlgorithm::Copy<FieldType, FieldType>(input_field, field,
+				input_field->GetLargestPossibleRegion(),
+				field->GetLargestPossibleRegion());
+		ofb = field->GetBufferPointer();
+		ifb = field_inv->GetBufferPointer();
+	} else {
+		itk::ImageAlgorithm::Copy<FieldType, FieldType>(input_field, field_inv,
+				input_field->GetLargestPossibleRegion(),
+				field_inv->GetLargestPossibleRegion());
+		ofb = field_inv->GetBufferPointer();
+		ifb = field->GetBufferPointer();
+	}
+
+	size_t nPix = field->GetLargestPossibleRegion().GetNumberOfPixels();
+	VectorType v;
+	for( size_t i = 0; i<nPix; i++ ) {
+		v = *( ofb+i );
+		*( ifb + i ) = -v;
+	}
 
 	TransformPointer transform = TransformType::New();
 	transform->SetDisplacementField(field);

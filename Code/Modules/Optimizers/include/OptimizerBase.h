@@ -231,6 +231,7 @@ public:
 	itkGetObjectMacro( Transform, TransformType );
 
 	virtual const FieldType * GetCurrentDisplacementField () const = 0;
+	virtual const FieldType * GetCurrentCoefficientsField () const = 0;
 
 	/** Start and run the optimization */
 	void Start();

@@ -876,6 +876,14 @@ SparseMatrixTransform<TScalar,NDimensions>
 ::SetCoefficientsVectorImage( const FieldType* images ) {
 	ScalarType* buff[Dimension];
 
+	if (this->m_NumberOfParameters == 0) {
+		this->m_ControlPointsDirection = images->GetDirection();
+		this->m_ControlPointsOrigin = images->GetOrigin();
+		this->m_ControlPointsSize = images->GetLargestPossibleRegion().GetSize();
+		this->m_ControlPointsSpacing = images->GetSpacing();
+		this->InitializeCoefficientsImages();
+	}
+
 	for( size_t dim = 0; dim < Dimension; dim++ ) {
 		buff[dim] = this->m_CoefficientsImages[dim]->GetBufferPointer();
 	}
@@ -888,6 +896,35 @@ SparseMatrixTransform<TScalar,NDimensions>
 			*( buff[dim] + row ) = v[dim];
 		}
 	}
+}
+
+template< class TScalar, unsigned int NDimensions >
+const typename SparseMatrixTransform<TScalar,NDimensions>::FieldType*
+SparseMatrixTransform<TScalar,NDimensions>
+::GetCoefficientsVectorImage(){
+	if (this->m_CoefficientsField.IsNull()){
+		this->m_CoefficientsField = FieldType::New();
+		this->m_CoefficientsField->SetRegions(this->m_ControlPointsSize);
+		this->m_CoefficientsField->SetSpacing(this->m_ControlPointsSpacing);
+		this->m_CoefficientsField->SetDirection(this->m_ControlPointsDirection);
+		this->m_CoefficientsField->SetOrigin(this->m_ControlPointsOrigin);
+		this->m_CoefficientsField->Allocate();
+	}
+
+	const ScalarType* buff[Dimension];
+	for( size_t dim = 0; dim < Dimension; dim++ ) {
+		buff[dim] = this->m_CoefficientsImages[dim]->GetBufferPointer();
+	}
+
+	VectorType* fbuf = this->m_CoefficientsField->GetBufferPointer();
+	VectorType v;
+	for( size_t row = 0; row < this->m_NumberOfParameters; row++ ) {
+		for( size_t dim = 0; dim < Dimension; dim++ ) {
+			v[dim] = *( buff[dim] + row );
+		}
+		*(fbuf + row) = v;
+	}
+	return this->m_CoefficientsField;
 }
 
 

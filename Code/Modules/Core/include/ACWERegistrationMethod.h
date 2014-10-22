@@ -242,6 +242,10 @@ public:
 		return static_cast<const FieldType* >(this->m_Optimizers[this->m_CurrentLevel-1]->GetCurrentDisplacementField());
 	}
 
+	const FieldType* GetCoefficientsField() const {
+		return static_cast<const FieldType* >(this->m_Optimizers[this->m_CurrentLevel-1]->GetCurrentCoefficientsField());
+	}
+
 	PriorsList GetCurrentContours() const {
 		PriorsList contours;
 		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
