@@ -44,7 +44,7 @@
 #define SPECTRALOPTIMIZER_HXX_
 
 #include "SpectralOptimizer.h"
-
+#include <algorithm>
 #include <vector>
 #include <vnl/vnl_math.h>
 #include <vnl/vnl_matrix.h>
@@ -119,19 +119,24 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	VectorType vi;
 	InternalComputationValueType val;
 	size_t dim;
-	VectorType maxSpeed;
+	VectorType maxSpeed, vs;
 	maxSpeed.Fill(0.0);
+
+	double norm = this->m_Functional->GetMaxEnergy();
+	std::vector< double > speednorms;
 
 	for( size_t r = 0; r<nPix; r++ ){
 		vi.Fill(0.0);
 		for( size_t c=0; c<Dimension; c++) {
-			val = derivative[c][r];
+			val = derivative[c][r] / norm;
+			vs[c] = val;
 			*( buff[c] + r ) = val;
-
-			if( fabs(val) > fabs(maxSpeed[c]) )
-				maxSpeed[c] = val;
 		}
+		speednorms.push_back(vs.GetNorm());
 	}
+	std::sort(speednorms.begin(), speednorms.end());
+
+	std::cout << "minspeed=" << speednorms.front() << ", maxspeed=" << speednorms.back() << ", mean=" << speednorms[int(0.5*speednorms.size())]<< std::endl;
 	//if( this->m_AutoStepSize && this->m_CurrentIteration < 5 ) {
 	//	this->m_StepSize = (this->m_StepSize  + this->m_LearningRate * ( this->m_MaxDisplacement.GetNorm() / maxSpeed.GetNorm() ) )*0.5;
 	//}

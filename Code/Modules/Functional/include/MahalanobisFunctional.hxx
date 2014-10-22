@@ -96,6 +96,17 @@ void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 		ParametersType param = this->UpdateParametersOfRegion(roi);
 		this->SetParameters(roi, param);
 	}
+
+	MeasureType m;
+	MeasureType v = itk::NumericTraits<MeasureType>::min();
+	for( size_t roi1 = 0; roi1 < this->m_NumberOfRegions; roi1++) {
+		for( size_t roi2 = 0; roi2 < this->m_NumberOfRegions; roi2++) {
+			m = this->GetEnergyOfSample(this->m_Parameters[roi1].mean, roi2, true);
+
+			if (m > v)	v = m;
+		}
+	}
+	this->m_MaxEnergy = fabs(v);
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>

@@ -300,6 +300,8 @@ public:
 	itkGetMacro( Sigma, SigmaArrayType );
 	itkSetMacro( Sigma, SigmaArrayType );
 
+	itkGetMacro( MaxEnergy, MeasureType );
+
 	void SetSigma( float s ) {
 		itkDebugMacro( "set Sigma to " << s );
 		bool modified = false;
@@ -367,6 +369,7 @@ protected:
 
 
 	mutable MeasureType m_Value;
+	mutable MeasureType m_MaxEnergy;
 	FieldPointer m_ReferenceSamplingGrid;
 	ContourList m_CurrentContours;
 	ShapeGradientList m_Gradients;
