@@ -268,6 +268,7 @@ protected:
 	void Initialize();
 	void GenerateSchedule();
 	void GenerateFinalDisplacementField();
+	void ConcatenateFields( size_t level = 0 );
 	void SetUpLevel( size_t level );
 	void Stop( StopConditionType code, std::string msg );
 

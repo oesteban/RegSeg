@@ -104,11 +104,11 @@ public:
 					}
 				}
 
-				typename FieldType::ConstPointer field = this->m_Optimizer->GetCurrentDisplacementField();
+				typename FieldType::ConstPointer field = this->m_Optimizer->GetCurrentCoefficients();
 				if ( field.IsNotNull() ) {
 					typename ComponentsWriter::Pointer f = ComponentsWriter::New();
 					ss.str("");
-					ss << this->m_Prefix << "field_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration();
+					ss << this->m_Prefix << "coeff_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration();
 					f->SetFileName( ss.str().c_str() );
 					f->SetInput( field );
 					f->Update();

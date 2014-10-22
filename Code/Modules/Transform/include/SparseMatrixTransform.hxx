@@ -205,7 +205,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->SetDisplacementField( newfield );
 
 	this->m_NumberOfSamples = image->GetLargestPossibleRegion().GetNumberOfPixels();
-
 	// Initialize off-grid positions
 	PointType p;
 	for( size_t i = 0; i < this->m_NumberOfSamples; i++ ) {
@@ -305,7 +304,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 	switch( type ) {
 	case Self::PHI:
 		str.vrows = &this->m_OffGridPos;
-
 		if ( this->m_OffGridPos.size() != this->m_NumberOfSamples ) {
 			itkExceptionMacro(<< "OffGrid positions are not initialized");
 		}
@@ -551,6 +549,10 @@ template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
 ::ComputeCoefficients() {
+	if ( this->m_NumberOfParameters == 0 ) {
+		this->InitializeCoefficientsImages();
+	}
+
 	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
 		this->ComputeMatrix( Self::S );
 	}
@@ -899,6 +901,32 @@ SparseMatrixTransform<TScalar,NDimensions>
 }
 
 template< class TScalar, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalar,NDimensions>
+::AddCoefficientsVectorImage( const FieldType* images ) {
+	ScalarType* buff[Dimension];
+
+	if (this->m_NumberOfParameters == 0) {
+		this->SetCoefficientsVectorImage(images);
+	} else {
+		this->ComputeCoefficients();
+
+		for( size_t dim = 0; dim < Dimension; dim++ ) {
+			buff[dim] = this->m_CoefficientsImages[dim]->GetBufferPointer();
+		}
+
+		const VectorType* fbuf = images->GetBufferPointer();
+		VectorType v;
+		for( size_t row = 0; row < this->m_NumberOfParameters; row++ ) {
+			v = *( fbuf + row );
+			for( size_t dim = 0; dim < Dimension; dim++ ) {
+				*( buff[dim] + row ) += v[dim];
+			}
+		}
+	}
+}
+
+template< class TScalar, unsigned int NDimensions >
 const typename SparseMatrixTransform<TScalar,NDimensions>::FieldType*
 SparseMatrixTransform<TScalar,NDimensions>
 ::GetCoefficientsVectorImage(){
@@ -976,6 +1004,23 @@ SparseMatrixTransform<TScalar,NDimensions>
 	for( size_t i = 0; i<Dimension; i++) {
 		m[i] = DimensionVector( this->m_NumberOfParameters );
 		cbuffer = this->m_CoefficientsImages[i]->GetBufferPointer();
+
+		for( size_t j = 0; j < this->m_NumberOfParameters; j++ ){
+			m[i][j] = *( cbuffer + j );
+		}
+	}
+	return m;
+}
+
+template< class TScalar, unsigned int NDimensions >
+typename SparseMatrixTransform<TScalar,NDimensions>::DimensionParametersContainer
+SparseMatrixTransform<TScalar,NDimensions>
+::VectorizeDerivatives() const {
+	DimensionParametersContainer m;
+	const ScalarType* cbuffer;
+	for( size_t i = 0; i<Dimension; i++) {
+		m[i] = DimensionVector( this->m_NumberOfParameters );
+		cbuffer = this->m_Derivatives[i]->GetBufferPointer();
 
 		for( size_t j = 0; j < this->m_NumberOfParameters; j++ ){
 			m[i][j] = *( cbuffer + j );
