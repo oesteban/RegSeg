@@ -249,13 +249,13 @@ void OptimizerBase<TFunctional>::Resume() {
 			break;
 		}
 
-		if (this->m_LastValue != itk::NumericTraits<MeasureType>::infinity()){
-			double inc = this->m_LastMaximumGradient - this->m_MaximumGradient;
+		if (this->m_LastMaximumGradient > 0.0){
+			double inc = 1.0 - (this->m_LastMaximumGradient / this->m_MaximumGradient);
 			if (inc < 0.0) {
-				inc *= 0.5;
+				inc *= -0.5;
 			}
 			this->m_Momentum = this->m_Momentum + this->m_LearningRate * inc;
-			this->m_StepSize = this->m_Momentum * this->m_StepSize;
+			this->m_StepSize = (1.0 + this->m_Momentum) * this->m_StepSize;
 		} else {
 			this->m_InitialValue = this->m_CurrentValue;
 		}
@@ -267,6 +267,8 @@ void OptimizerBase<TFunctional>::Resume() {
 			break;
 		}
 		this->m_LastValue = this->m_CurrentValue;
+		this->m_LastMaximumGradient = this->m_MaximumGradient;
+
 		this->InvokeEvent( itk::IterationEvent() );
 		this->m_CurrentIteration++;
 	} //while (!m_Stop)

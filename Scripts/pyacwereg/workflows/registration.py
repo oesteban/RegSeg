@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-23 09:42:15
+# @Last Modified time: 2014-10-23 12:03:26
 
 import os
 import os.path as op
@@ -42,7 +42,7 @@ def default_regseg(name='REGSEGDefault'):
     regseg.inputs.beta = [0.0, 0.0, 0.0]
     regseg.inputs.grid_size = [4, 5, 6]
     regseg.inputs.convergence_energy = [True] * 3
-    regseg.inputs.convergence_window = [500, 500, 500]
+    regseg.inputs.convergence_window = [5, 5, 5]
     regseg.inputs.f_smooth = [2.0, 1.0, None]
 
     # Apply tfm to tpms
