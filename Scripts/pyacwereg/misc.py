@@ -24,9 +24,11 @@ __email__ = "code@oscaresteban.es"
 __status__ = "Prototype"
 
 
+import os.path as op
 import numpy as np
-import nibabel as nib
+import nibabel as nb
 from math import sqrt
+from scipy import ndimage
 
 
 def ball(volsize, radius, dims=3):
@@ -70,9 +72,6 @@ def gen_noise(image, mask=None, snr_db=10.0):
 
 
 def genNiftiVol(data, dtype=np.uint8):
-    import numpy as np
-    import nibabel as nb
-
     shape = np.array(np.shape(data), dtype=np.float32)
     if np.ndim(data) > 3:
         shape = shape[1:]
@@ -173,9 +172,6 @@ def genBox(datashape=(101, 101, 101), coverage=0.4, cortex=True):
 
 
 def genL(datashape=(101, 101, 101), cortex=True):
-    import scipy.ndimage as ndimage
-    import numpy as np
-
     modelbase = np.zeros(shape=datashape)
     center = np.around(0.5 * np.array(datashape))
     extent = np.around(0.4 * np.array(datashape))
@@ -222,3 +218,41 @@ def genContrast(model, values):
     for c, v in zip(model[1:], values):
         contrast = contrast + c * v
     return contrast
+
+
+def draw_circle(grid, x0, y0, radius):
+    """
+    http://stackoverflow.com/questions/9689173/shape-recognition-with-numpy-scipy-perhaps
+    """
+    ny, nx = grid.shape
+    y, x = np.ogrid[:ny, :nx]
+    dist = np.hypot(x - x0, y - y0)
+    grid[dist < radius] = True
+    return grid
+
+
+def genSurface(data, fname):
+    from tvtk.api import tvtk
+    grid = tvtk.ImageData(spacing=(1, 1, 1), origin=(0, 0, 0))
+    grid.point_data.scalars = data.T.ravel()  # It wants fortran order???
+    grid.point_data.scalars.name = 'scalars'
+    grid.dimensions = data.shape
+    iso = tvtk.ImageMarchingCubes(input=grid)
+    w = tvtk.PolyDataWriter(
+        input=iso.output, file_name=os.path.join(model_path, fname))
+    w.write()
+
+
+def nii2vtk(in_file, out_file=None):
+    from evtk.hl import imageToVTK
+    nii = nb.load(in_file)
+    data = np.array(nii.get_data(), order='C')
+
+    if out_file is None:
+        out_file, ext = op.splitext(op.basename(in_file))
+        if ext == '.gz':
+            out_file, _ = op.splitext(out_file)
+
+    out_file = op.abspath(out_file)
+    imageToVTK(out_file, pointData={'scalar': data})
+    return out_file
