@@ -118,7 +118,7 @@ typedef rstk::DisplacementFieldComponentsFileWriter
 		                                         <FieldType> ComponentsWriter;
 typedef itk::ImageFileWriter< ProbabilityMapType >           ProbabilityMapWriter;
 typedef itk::ImageFileWriter< CoefficientsType >             CoefficientsWriter;
-typedef itk::ImageFileWriter< FieldType >                    FieldWriter;
+typedef rstk::DisplacementFieldFileWriter< FieldType >       FieldWriter;
 
 typedef itk::WarpImageFilter
 		         < ChannelType, ChannelType, FieldType >     WarpFilter;
