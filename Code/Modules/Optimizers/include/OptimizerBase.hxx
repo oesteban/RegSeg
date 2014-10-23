@@ -250,12 +250,20 @@ void OptimizerBase<TFunctional>::Resume() {
 		}
 
 		if (this->m_LastMaximumGradient > 0.0){
-			double inc = 1.0 - (this->m_LastMaximumGradient / this->m_MaximumGradient);
+			double inc = 1.0 - (this->m_MaximumGradient / this->m_LastMaximumGradient);
 			if (inc < 0.0) {
-				inc *= -0.5;
+				inc *= 100;
 			}
 			this->m_Momentum = this->m_Momentum + this->m_LearningRate * inc;
-			this->m_StepSize = (1.0 + this->m_Momentum) * this->m_StepSize;
+			if (this->m_Momentum <= -0.8) {
+				this->m_Momentum = -0.8;
+			}
+
+			if (this->m_Momentum > 0.01) {
+				this->m_Momentum = 0.01;
+			} else {
+				this->m_StepSize = (1.0 + this->m_Momentum) * this->m_StepSize;
+			}
 		} else {
 			this->m_InitialValue = this->m_CurrentValue;
 		}
