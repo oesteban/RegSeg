@@ -136,12 +136,13 @@ DownsampleAveragingFilter< TInputImage, TOutputImage, TPrecisionType >
   size_t tmpN = 1;
 
   SizeType inputSize = this->GetInput()->GetLargestPossibleRegion().GetSize();
+  SpacingType inputSpacing = this->GetInput()->GetSpacing();
+
+  double inVolume = 1.0;
+  double outVolume = 1.0;
   // Compute pixel ratios
   for( size_t i = 0; i<ImageDimension; i++) {
-    m_WindowSize[i] = vcl_floor( inputSize[i] / m_Size[i] );
-    if ( m_WindowSize[i] % 2 == 0 )
-    	m_WindowSize[i]--;
-    tmpN*=m_WindowSize[i];
+	  m_WindowSize[i] = vcl_ceil( inputSpacing[i] / m_OutputSpacing[i]) + 1;
   }
   m_WindowN = tmpN;
 
