@@ -77,7 +77,7 @@ def genNiftiVol(data, dtype=np.uint8):
         shape = shape[1:]
 
     affine = np.identity(4)
-    affine[0:3, 3] = -0.5 * shape
+    affine[0:3, 3] = -0.5 * shape[:3]
     hdr = nb.Nifti1Header()
     hdr.set_data_dtype(np.uint8)
     hdr.set_xyzt_units('mm')

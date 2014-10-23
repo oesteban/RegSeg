@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
-# @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-22 10:09:27
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2014-10-23 19:44:07
 import os.path as op
 
 
@@ -18,42 +18,22 @@ def phantoms_wf(options):
 
     subject_id = options.subject_id
     subject_dir = op.join(options.data_dir, subject_id)
-    tpms = glob.glob(op.join(subject_dir, 'tpms', '*.nii.gz'))
 
-    wf = pe.Workflow(name=options.name)
-    wf.base_dir = options.work_dir
-    infosource = pe.Node(niu.IdentityInterface(
-        fields=['subject_id', 'data_dir', 'in_file', 'in_surfs', 'in_tpms',
-                'in_mask']),
-        name="infosource")
+    bs = ev.bspline(name=options.name)
 
-    infosource.inputs.subject_id = subject_id
-    infosource.inputs.in_file = [
-        op.join(subject_dir, 't1_weighted_SNR%d.nii.gz' % options.noise_snr),
-        op.join(subject_dir, 't2_weighted_SNR%d.nii.gz' % options.noise_snr)]
-    infosource.inputs.in_tpms = tpms
-    infosource.inputs.in_surfs = glob.glob(
-        op.join(subject_dir, 'surfs', '*.vtk'))
-    infosource.inputs.in_mask = op.join(subject_dir, 'signal_mask.nii.gz')
-
-    bs = ev.bspline(n_tissues=len(tpms))
-    bs.inputs.inputnode.grid_size = options.grid_size
-
-    wf.connect([
-        (infosource,    bs, [('subject_id', 'inputnode.subject_id'),
-                             ('in_file', 'inputnode.in_file'),
-                             ('in_surfs', 'inputnode.in_surfs'),
-                             ('in_tpms', 'inputnode.in_tpms'),
-                             ('in_mask', 'inputnode.in_mask')])
-    ])
+    grid_size = options.grid_size
+    if len(grid_size) == 1:
+        grid_size = grid_size * 3
+    bs.inputs.inputnode.grid_size = grid_size
+    bs.inputs.inputnode.subject_id = subject_id
 
     if options.out_csv is None:
         bs.inputs.inputnode.out_csv = op.join(
-            options.work_dir, wf.name, 'results.csv')
+            options.work_dir, bs.name, 'results.csv')
     else:
         bs.inputs.inputnode.out_csv = options.out_csv
 
-    return wf
+    return bs
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -99,5 +79,6 @@ if __name__ == '__main__':
         os.makedirs(options.work_dir)
 
     wf = phantoms_wf(options)
+    wf.base_dir = options.work_dir
     wf.write_graph(graph2use='hierarchical', format='pdf', simple_form=True)
     wf.run()

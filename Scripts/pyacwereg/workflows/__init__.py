@@ -3,3 +3,4 @@
 
 from registration import default_regseg, identity_wf
 from evaluation import bspline, registration_ev
+from model import generate_phantom

@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-22 01:50:29
+# @Last Modified time: 2014-10-23 19:45:30
 
 import os
 import os.path as op
@@ -23,11 +23,12 @@ from nipype.interfaces import fsl as fsl
 from nipype.interfaces import freesurfer as fs
 
 from pyacwereg.interfaces.warps import InverseField
-from pysdcev.workflows.distortion import bspline_deform
+from pyacwereg.workflows.model import generate_phantom
+# from pysdcev.workflows.distortion import bspline_deform
 from registration import identity_wf, default_regseg
 
 
-def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
+def bspline(name='BSplineEvaluation', methods=None, results=None):
     """ A workflow to evaluate registration methods generating a gold standard
     with random bspline deformations.
 
@@ -58,36 +59,19 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
     wf = pe.Workflow(name=name)
 
     if methods is None:
-        methods = [identity_wf(n_tissues=n_tissues), default_regseg()]
+        # methods = [identity_wf(n_tissues=2), default_regseg()]
+        methods = [default_regseg()]
     else:
         methods = np.atleast_1d(methods).tolist()
 
     inputnode = pe.Node(niu.IdentityInterface(
-                        fields=['subject_id', 'grid_size', 'out_csv',
-                                'in_file', 'in_surfs', 'in_tpms', 'in_mask']),
+                        fields=['subject_id', 'grid_size', 'out_csv']),
                         name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['out_file', 'out_tpms', 'out_surfs', 'out_field', 'out_coeff',
                 'out_overlap']), name='outputnode')
 
-    dist = bspline_deform(n_tissues=n_tissues)
-    smooth = pe.MapNode(fsl.Smooth(fwhm=2.0), iterfield=['in_file'],
-                        name='Smooth')
-    regrid = pe.MapNode(fs.MRIConvert(vox_size=(2.3, 2.3, 2.3)),
-                        iterfield=['in_file'], name='Regrid')
-
-    wf.connect([
-        (inputnode,  dist, [('grid_size', 'inputnode.grid_size'),
-                            ('in_file', 'inputnode.in_file'),
-                            ('in_surfs', 'inputnode.in_surfs'),
-                            ('in_tpms', 'inputnode.in_tpms'),
-                            ('in_mask', 'inputnode.in_mask')]),
-        (dist, outputnode, [('outputnode.out_file', 'out_file'),
-                            ('outputnode.out_field', 'out_field'),
-                            ('outputnode.out_coeff', 'out_coeff')]),
-        (dist,     smooth, [('outputnode.out_file', 'in_file')]),
-        (smooth,   regrid, [('smoothed_file', 'in_file')])
-    ])
+    phantom = generate_phantom()
 
     evwfs = []
     norm_tpms = []
@@ -97,20 +81,20 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
         norm_tpms.append(pe.Node(Normalize(), name='Normalize%02d' % i))
 
         wf.connect([
-            (inputnode,    evwfs[i], [('subject_id', 'infonode.subject_id'),
-                                      ('in_file',    'refnode.in_imag'),
-                                      ('in_tpms',    'refnode.in_tpms'),
-                                      ('in_surfs',   'refnode.in_surf'),
-                                      ('in_mask',    'refnode.in_mask'), ]),
-            (inputnode,         reg, [('in_surfs', 'inputnode.in_surf'),
-                                      ('in_file', 'inputnode.in_orig'),
-                                      ('grid_size', 'inputnode.grid_size')]),
-            (regrid,            reg, [('out_file', 'inputnode.in_dist')]),
-            (dist,              reg, [
+            (inputnode,    evwfs[i], [('subject_id', 'infonode.subject_id')]),
+            (phantom,      evwfs[i], [
+                ('refnode.out_signal',    'refnode.in_imag'),
+                ('refnode.out_tpms',    'refnode.in_tpms'),
+                ('outputnode.out_surfs',   'refnode.in_surf'),
+                ('refnode.out_mask',    'refnode.in_mask'),
+                ('outputnode.out_field', 'refnode.in_field')]),
+            (phantom,         reg, [
+                ('refnode.out_surfs', 'inputnode.in_surf'),
+                ('refnode.out_signal', 'inputnode.in_orig'),
+                ('outputnode.grid_size', 'inputnode.grid_size'),
+                ('outputnode.out_signal', 'inputnode.in_dist'),
                 ('outputnode.out_tpms', 'inputnode.in_tpms'),
                 ('outputnode.out_mask', 'inputnode.in_mask')]),
-            (dist,         evwfs[i], [
-                ('outputnode.out_field', 'refnode.in_field')]),
             (reg,      norm_tpms[i], [('outputnode.out_tpms', 'in_files')]),
             (reg,          evwfs[i], [
                 ('outputnode.out_corr', 'tstnode.in_imag'),
@@ -122,7 +106,7 @@ def bspline(name='BSplineEvaluation', n_tissues=3, methods=None, results=None):
         # Connect in_field in case it is an identity workflow
         if 'in_field' in [item[0] for item in reg.inputs.inputnode.items()]:
             wf.connect([
-                (dist, reg, [('outputnode.out_field', 'inputnode.in_field')])
+                (phantom, reg, [('outputnode.out_field', 'inputnode.in_field')])
             ])
 
         # Connect results output file

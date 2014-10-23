@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2014-10-23 14:45:06
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-10-23 17:22:54
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-10-23 18:23:20
 import os
 import os.path as op
 import nibabel as nb
@@ -36,6 +36,7 @@ class PhantomInputSpec(BaseInterfaceInputSpec):
 
 class PhantomOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc='output file name')
+    out_mask = File(exists=True, desc='output file name')
 
 
 class Phantom(BaseInterface):
@@ -54,11 +55,28 @@ class Phantom(BaseInterface):
                            cortex=self.inputs.cortex)
         nii = pm.genNiftiVol(data)
         nii.to_filename(op.abspath(self.inputs.out_file))
+
+        mask = (np.ones_like(data[0]) - data[0]).astype(np.uint8)
+        hdr = nii.get_header().copy()
+        hdr.set_data_dtype(np.uint8)
+        hdr.set_data_shape(mask.shape)
+        hdr['data_type'] = 2
+        nb.Nifti1Image(mask, nii.get_affine(), hdr).to_filename(
+            self._get_outmsk())
         return runtime
+
+    def _get_outmsk(self):
+        out_mask, ext = op.splitext(op.abspath(self.inputs.out_file))
+        if ext == '.gz':
+            out_mask, ext2 = op.splitext(out_mask)
+            ext = ext2 + ext
+        out_mask = out_mask + '_mask' + ext
+        return out_mask
 
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs['out_file'] = op.abspath(self.inputs.out_file)
+        outputs['out_mask'] = self._get_outmsk()
         return outputs
 
 
