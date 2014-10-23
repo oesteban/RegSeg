@@ -135,8 +135,8 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 		speednorms.push_back(vs.GetNorm());
 	}
 	std::sort(speednorms.begin(), speednorms.end());
+	this->m_MaximumGradient = speednorms.back();
 
-	std::cout << "minspeed=" << speednorms.front() << ", maxspeed=" << speednorms.back() << ", mean=" << speednorms[int(0.5*speednorms.size())]<< std::endl;
 	//if( this->m_AutoStepSize && this->m_CurrentIteration < 5 ) {
 	//	this->m_StepSize = (this->m_StepSize  + this->m_LearningRate * ( this->m_MaxDisplacement.GetNorm() / maxSpeed.GetNorm() ) )*0.5;
 	//}
