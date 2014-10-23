@@ -72,6 +72,8 @@ template< typename TFunctional >
 OptimizerBase<TFunctional>::OptimizerBase():
 m_LearningRate( 1.0 ),
 m_Momentum( 0.0 ),
+m_LastMaximumGradient(0.0),
+m_MaximumGradient(0.0),
 m_MinimumConvergenceValue( 1e-8 ),
 m_ConvergenceWindowSize( 15 ),
 m_ConvergenceValue( 0.0 ),
@@ -248,12 +250,12 @@ void OptimizerBase<TFunctional>::Resume() {
 		}
 
 		if (this->m_LastValue != itk::NumericTraits<MeasureType>::infinity()){
-			double inc = (this->m_LastValue - this->m_CurrentValue) / this->m_InitialValue;
+			double inc = this->m_LastMaximumGradient - this->m_MaximumGradient;
 			if (inc < 0.0) {
 				inc *= 0.5;
 			}
-			this->m_Momentum = this->m_Momentum + 1.0e-4 * (this->m_LearningRate * inc);
-			this->m_StepSize = this->m_StepSize - (this->m_Momentum * this->m_StepSize);
+			this->m_Momentum = this->m_Momentum + this->m_LearningRate * inc;
+			this->m_StepSize = this->m_Momentum * this->m_StepSize;
 		} else {
 			this->m_InitialValue = this->m_CurrentValue;
 		}

@@ -194,7 +194,7 @@ public:
 	/** Get the current iteration number. */
 	itkGetConstMacro(CurrentIteration, SizeValueType);
 
-	itkGetConstMacro( CurrentValue, MeasureType );
+	itkGetConstMacro(CurrentValue, MeasureType);
 
 	itkSetMacro( DescriptorRecomputationFreq, SizeValueType );
 	itkGetConstMacro( DescriptorRecomputationFreq, SizeValueType );
@@ -221,6 +221,7 @@ public:
 	virtual void SetStepSize (const InternalComputationValueType _arg);
 	itkGetConstMacro( StepSize, InternalComputationValueType );
 	itkGetConstMacro( Momentum, InternalComputationValueType );
+	itkGetConstMacro( MaximumGradient, InternalComputationValueType );
 
 	itkSetMacro(Coefficients, CoefficientsImageArray);
 	itkGetConstMacro(Coefficients, CoefficientsImageArray);
@@ -265,6 +266,8 @@ protected:
 	 */
 	InternalComputationValueType  m_LearningRate;
 	InternalComputationValueType  m_Momentum;
+	InternalComputationValueType  m_LastMaximumGradient;
+	InternalComputationValueType  m_MaximumGradient;
 
 	/** Minimum convergence value for convergence checking.
 	 *  The convergence checker calculates convergence value by fitting to
