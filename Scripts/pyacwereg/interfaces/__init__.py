@@ -5,7 +5,8 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 15:50:50
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-15 12:41:07
+# @Last Modified time: 2014-10-23 17:11:54
 
 from warps import RandomBSplineDeformation, FieldBasedWarp, InverseField
 from acwereg import ACWEReg
+from phantoms import Phantom, SimulateSMRI, DownsampleAveraging

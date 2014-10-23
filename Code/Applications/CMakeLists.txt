@@ -16,6 +16,9 @@ TARGET_LINK_LIBRARIES(bspline_invert ${ITK_LIBRARIES} ${Boost_LIBRARIES} ${JsonC
 ADD_EXECUTABLE(warp_image warp_image.cxx ) 
 TARGET_LINK_LIBRARIES(warp_image ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 
-INSTALL(TARGETS bspline_field bspline_invert regseg warp_image
+ADD_EXECUTABLE(regridavg regridavg.cxx ) 
+TARGET_LINK_LIBRARIES(regridavg ${ITK_LIBRARIES} ${Boost_LIBRARIES})
+
+INSTALL(TARGETS bspline_field bspline_invert regseg warp_image regridavg
   RUNTIME DESTINATION bin
 )

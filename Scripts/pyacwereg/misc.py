@@ -80,7 +80,8 @@ def genNiftiVol(data, dtype=np.uint8):
     affine[0:3, 3] = -0.5 * shape
     hdr = nb.Nifti1Header()
     hdr.set_data_dtype(np.uint8)
-    hdr['xyzt_units'] = 2  # mm.
+    hdr.set_xyzt_units('mm')
+    hdr.set_data_dtype(dtype)
 
     hdr['data_type'] = 2
     hdr['qform_code'] = 2  # aligned
@@ -92,7 +93,8 @@ def genNiftiVol(data, dtype=np.uint8):
     hdr['pixdim'] = pixdim
 
     if np.ndim(data) > 3:
-        hdr['xyzt_units'] = 2 + 8  # mm + sec
+        hdr.set_xyzt_units('mm', 'sec')
+        # hdr['xyzt_units'] = 2 + 8  # mm + sec
         pixdim[4] = 1
         hdr['pixdim'] = pixdim
         nii_array = []
@@ -106,10 +108,6 @@ def genNiftiVol(data, dtype=np.uint8):
 
 
 def genBall(datashape=(101, 101, 101), radius=17, cortex=True):
-    import pyacwereg.utils.misc as misc
-    import scipy.ndimage as ndimage
-    import numpy as np
-
     wm = ball(datashape, radius)
 
     if cortex:
@@ -123,13 +121,11 @@ def genBall(datashape=(101, 101, 101), radius=17, cortex=True):
 
 
 def genGyrus(datashape=(101, 101, 101), radius=35, cortex=True):
-    import pyacwereg.utils.misc as misc
-    import scipy.ndimage as ndimage
-    import numpy as np
-
     modelbase = ball(datashape, radius)
     center_pix = ((np.array(datashape) - 1) * 0.5).astype(np.uint8)
-    modelbase[center_pix[0], :, center_pix[2]:] = 0
+    displ_pix = ((np.array(datashape) - 1) * 0.25).astype(np.uint8)
+    modelbase[center_pix[0], center_pix[1]:, :] = 0
+    modelbase[:displ_pix[0], center_pix[1], :] = 0
     ball1 = ball(11, 4.5)
     wm = ndimage.binary_opening(ndimage.binary_erosion(
         modelbase, structure=ball1).astype(np.uint8),
@@ -146,10 +142,6 @@ def genGyrus(datashape=(101, 101, 101), radius=35, cortex=True):
 
 
 def genBox(datashape=(101, 101, 101), coverage=0.4, cortex=True):
-    import pyacwereg.utils.misc as misc
-    import scipy.ndimage as ndimage
-    import numpy as np
-
     modelbase = np.zeros(shape=datashape)
     extent = np.around(coverage * np.array(datashape))
     padding = np.around(0.5 * (np.array(datashape) - extent))
@@ -194,15 +186,15 @@ def genL(datashape=(101, 101, 101), cortex=True):
         return [bg, wm]
 
 
-def genShape(name, cortex=True):
+def genShape(name, datashape=(101, 101, 101), cortex=True):
     if name == 'box':
-        return genBox(cortex=cortex)
+        return genBox(datashape=datashape, cortex=cortex)
     elif name == 'L':
-        return genL(cortex=cortex)
+        return genL(datashape=datashape, cortex=cortex)
     elif name == 'ball':
-        return genBall(cortex=cortex)
+        return genBall(datashape=datashape, cortex=cortex)
     elif name == 'gyrus':
-        return genGyrus(cortex=cortex)
+        return genGyrus(datashape=datashape, cortex=cortex)
     else:
         return genBox()
 
