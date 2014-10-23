@@ -70,6 +70,7 @@
 #include <itkMesh.h>
 #include <itkVTKPolyDataReader.h>
 #include "rstkVTKPolyDataWriter.h"
+#include "DisplacementFieldFileWriter.h"
 #include "BSplineSparseMatrixTransform.h"
 
 namespace bpo = boost::program_options;
@@ -147,7 +148,7 @@ typedef rstk::VTKPolyDataWriter<MeshType>                      MeshWriterType;
 typedef typename MeshWriterType::Pointer                       MeshWriterPointer;
 
 
-typedef itk::ImageFileWriter< FieldType >                      FieldWriter;
+typedef rstk::DisplacementFieldFileWriter< FieldType >         FieldWriter;
 
 int main(int argc, char *argv[]);
 

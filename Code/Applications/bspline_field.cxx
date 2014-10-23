@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
 	typename FieldType::Pointer field = transform->GetDisplacementField();
 	typename FieldWriter::Pointer ff = FieldWriter::New();
 	ff->SetInput( field );
-	ff->SetFileName( (outPrefix + "_dispfield.nii.gz").c_str() );
+	ff->SetFileName( (outPrefix + "_field.nii.gz").c_str() );
 	ff->Update();
 
 	// Read and transform mask, if present
