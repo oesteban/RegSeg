@@ -74,6 +74,7 @@
 #include <itkOrientImageFilter.h>
 #include "BSplineSparseMatrixTransform.h"
 #include "DisplacementFieldComponentsFileWriter.h"
+#include "DisplacementFieldFileWriter.h"
 
 #include <itkMesh.h>
 #include <itkVTKPolyDataReader.h>
@@ -160,7 +161,7 @@ typedef typename WarpFilter::Pointer                           WarpFilterPointer
 typedef itk::BSplineInterpolateImageFunction< ChannelType >    WarpInterpolator;
 
 typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> ComponentsWriter;
-typedef itk::ImageFileWriter< FieldType >                      FieldWriter;
+typedef rstk::DisplacementFieldFileWriter< FieldType >         FieldWriter;
 
 typedef itk::Matrix< float, DIMENSION, DIMENSION >             MatrixType;
 typedef itk::Mesh< float, DIMENSION >                          MeshType;
