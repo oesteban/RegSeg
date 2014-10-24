@@ -84,8 +84,9 @@ m_NumberOfIterations( 250 ),
 m_DescriptorRecomputationFreq(0),
 m_UseDescriptorRecomputation(false),
 m_StepSize(1.0),
-m_StepFactor(1.0),
-m_ParamFactor(1.0),
+m_MaxSpeed(0.0),
+m_MeanSpeed(0.0),
+m_AvgSpeed(0.0),
 m_AutoStepSize(true),
 m_IsDiffeomorphic(true),
 m_UseLightWeightConvergenceChecking(true),
@@ -249,8 +250,10 @@ void OptimizerBase<TFunctional>::Resume() {
 			break;
 		}
 
+		std::cout << "Speed=" << this->m_MaximumGradient << "/" << this->m_MaxSpeed << std::endl;
+
 		if (this->m_LastMaximumGradient > 0.0){
-			double inc = 1.0 - (this->m_MaximumGradient / this->m_LastMaximumGradient);
+			double inc = 1.0 - (this->m_MaxSpeed / this->m_LastMaximumGradient);
 			if (inc < 0.0) {
 				inc *= 100;
 			}
@@ -275,7 +278,7 @@ void OptimizerBase<TFunctional>::Resume() {
 			break;
 		}
 		this->m_LastValue = this->m_CurrentValue;
-		this->m_LastMaximumGradient = this->m_MaximumGradient;
+		this->m_LastMaximumGradient = this->m_MaxSpeed;
 
 		this->InvokeEvent( itk::IterationEvent() );
 		this->m_CurrentIteration++;

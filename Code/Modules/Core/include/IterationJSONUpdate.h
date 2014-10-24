@@ -80,8 +80,11 @@ public:
 			}
 			itnode["convergence"]["norm"] = this->m_Optimizer->GetCurrentValue();
 			itnode["convergence"]["step_size"] = this->m_Optimizer->GetStepSize();
-			itnode["convergence"]["max_speed"] = this->m_Optimizer->GetMaximumGradient();
+			itnode["convergence"]["max_gradient"] = this->m_Optimizer->GetMaximumGradient();
 			itnode["convergence"]["momentum"] = this->m_Optimizer->GetMomentum();
+			itnode["speed"]["max"] = this->m_Optimizer->GetMaxSpeed();
+			itnode["speed"]["median"] = this->m_Optimizer->GetMeanSpeed();
+			itnode["speed"]["average"] = this->m_Optimizer->GetAvgSpeed();
 		}
 
 		if( typeid( event ) == typeid( FunctionalModifiedEvent ) )  {
@@ -91,8 +94,11 @@ public:
 		if( typeid( event ) == typeid( itk::EndEvent ) ) {
 			itnode["convergence"]["norm"] = this->m_Optimizer->GetCurrentValue();
 			itnode["convergence"]["step_size"] = this->m_Optimizer->GetStepSize();
-			itnode["convergence"]["max_speed"] = this->m_Optimizer->GetMaximumGradient();
+			itnode["convergence"]["max_gradient"] = this->m_Optimizer->GetMaximumGradient();
 			itnode["convergence"]["momentum"] = this->m_Optimizer->GetMomentum();
+			itnode["speed"]["max"] = this->m_Optimizer->GetMaxSpeed();
+			itnode["speed"]["median"] = this->m_Optimizer->GetMeanSpeed();
+			itnode["speed"]["average"] = this->m_Optimizer->GetAvgSpeed();
 			m_StopTime = clock();
 			float tot_t = (float) (((double) (m_StopTime - m_StartTime)) / CLOCKS_PER_SEC);
 			// JSON Summary
