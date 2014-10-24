@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-10-23 19:44:07
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-10-24 09:54:44
 import os.path as op
 
 
@@ -24,6 +24,7 @@ def phantoms_wf(options):
     grid_size = options.grid_size
     if len(grid_size) == 1:
         grid_size = grid_size * 3
+
     bs.inputs.inputnode.grid_size = grid_size
     bs.inputs.inputnode.subject_id = subject_id
 

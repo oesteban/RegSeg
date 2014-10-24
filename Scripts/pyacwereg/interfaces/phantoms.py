@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-10-23 14:45:06
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-23 18:23:20
+# @Last Modified time: 2014-10-24 10:03:12
 import os
 import os.path as op
 import nibabel as nb

@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-23 12:51:15
+# @Last Modified time: 2014-10-24 10:12:51
 
 import os
 import os.path as op
@@ -36,14 +36,15 @@ def default_regseg(name='REGSEGDefault'):
     # 500 -s 1.0]
     regseg = pe.Node(ACWEReg(), name="ACWERegistration")
     regseg.inputs.iterations = [500, 500, 500]
-    #regseg.inputs.descript_update = [20]
-    regseg.inputs.step_size = [.001, .1, .1]
-    regseg.inputs.alpha = [0.0, 0.0, 0.0]
-    regseg.inputs.beta = [0.0, 0.0, 0.0]
+    # regseg.inputs.descript_update = [20]
+    regseg.inputs.step_size = [.005, .01, .01]
+    regseg.inputs.alpha = [0.0, 0.1, 1.0]
+    regseg.inputs.beta = [0.0, 0.1, 0.4]
     regseg.inputs.grid_size = [4, 5, 6]
     regseg.inputs.convergence_energy = [True] * 3
     regseg.inputs.convergence_window = [50, 25, 15]
     regseg.inputs.f_smooth = [2.0, 1.0, None]
+    regseg.inputs.images_verbosity = 3
 
     # Apply tfm to tpms
     applytfm = pe.MapNode(FieldBasedWarp(), name="ApplyWarp",

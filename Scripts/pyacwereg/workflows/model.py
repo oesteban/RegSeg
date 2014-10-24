@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-10-23 14:43:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-23 19:33:24
+# @Last Modified time: 2014-10-24 09:50:52
 
 import os
 import os.path as op
@@ -47,6 +47,7 @@ def generate_phantom(name='PhantomGeneration'):
     sels1 = pe.Node(niu.Split(splits=[1, 1, 1], squeeze=True),
                     name='SepModel1')
     signal0 = pe.Node(pip.SimulateSMRI(), name='Simulate0')
+    merge0 = pe.Node(niu.Merge(2), name='SimMerge0')
 
     surf0 = extract_surface('GenSurf0')
     surf0.inputs.inputnode.labels = [1]
@@ -110,7 +111,12 @@ def generate_phantom(name='PhantomGeneration'):
                                     ('outputnode.out_coeff', 'out_coeff'),
                                     ('outputnode.out_surfs', 'out_surfs')]),
         (inputnode,   outputnode,  [('grid_size', 'grid_size')]),
-        (msurf,       refnode,     [('out', 'out_surfs')])
+        (signal0,     merge0,      [('out_t1w', 'in1'),
+                                    ('out_t2w', 'in2')]),
+        (msurf,       refnode,     [('out', 'out_surfs')]),
+        (sels0,       refnode,     [('out2', 'out_tpms')]),
+        (model,       refnode,     [('out_mask', 'out_mask')]),
+        (merge0,      refnode,     [('out', 'out_signal')])
     ])
     return wf
 

@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-23 19:45:30
+# @Last Modified time: 2014-10-24 09:56:12
 
 import os
 import os.path as op
@@ -72,6 +72,11 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
                 'out_overlap']), name='outputnode')
 
     phantom = generate_phantom()
+    phantom.inputs.inputnode.lo_matrix = 51
+    phantom.inputs.inputnode.hi_matrix = 101
+    phantom.inputs.inputnode.shape = 'gyrus'
+    phantom.inputs.inputnode.snr = 400.0
+    phantom.inputs.inputnode.cortex = True
 
     evwfs = []
     norm_tpms = []
