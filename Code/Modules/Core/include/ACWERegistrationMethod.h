@@ -140,6 +140,8 @@ public:
 
 	typedef typename OptimizerType::FieldType                 FieldType;
 	typedef typename FieldType::Pointer                       FieldPointer;
+	typedef typename FieldType::ConstPointer                  FieldConstPointer;
+	typedef std::vector< FieldConstPointer >                  FieldList;
 
 	//typedef MeanFunctional< ReferenceImageType >       DefaultFunctionalType;
 	//typedef SegmentationOptimizer< FunctionalType >    DefaultOptimizerType;
@@ -242,9 +244,7 @@ public:
 		return static_cast<const FieldType* >(this->m_Optimizers[this->m_CurrentLevel-1]->GetCurrentDisplacementField());
 	}
 
-	const FieldType* GetCoefficientsField() const {
-		return static_cast<const FieldType* >(this->m_Optimizers[this->m_CurrentLevel-1]->GetCurrentCoefficientsField());
-	}
+	FieldList GetCoefficientsField();
 
 	PriorsList GetCurrentContours() const {
 		PriorsList contours;
@@ -306,6 +306,7 @@ private:
 	OutputTransformPointer m_OutputInverseTransform;
 	FieldPointer m_DisplacementField;
 	FieldPointer m_InverseDisplacementField;
+	FieldList m_CoefficientsContainer;
 	OptCompValueList m_StepSize;
 	OptCompValueList m_Alpha;
 	OptCompValueList m_Beta;

@@ -210,10 +210,16 @@ int main(int argc, char *argv[]) {
 	fwrite->SetInput( acwereg->GetDisplacementField() );
 	fwrite->Update();
 
-	typename FieldWriter::Pointer cwrite = FieldWriter::New();
-	cwrite->SetFileName( (outPrefix + "_coeff.nii.gz" ).c_str() );
-	cwrite->SetInput( acwereg->GetCoefficientsField() );
-	cwrite->Update();
+	typename RegistrationType::FieldList coeffs = acwereg->GetCoefficientsField();
+
+	for (size_t i = 0; i < coeffs.size(); i++) {
+		typename FieldWriter::Pointer cwrite = FieldWriter::New();
+		std::stringstream ss;
+		ss << outPrefix << "_coeff_" << i << ".nii.gz";
+		cwrite->SetFileName( ss.str().c_str() );
+		cwrite->SetInput( coeffs[i] );
+		cwrite->Update();
+	}
 
 	// Contours and regions
 	ContourList conts = acwereg->GetCurrentContours();
