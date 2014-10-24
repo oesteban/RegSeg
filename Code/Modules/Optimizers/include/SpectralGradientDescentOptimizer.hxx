@@ -67,7 +67,11 @@ void SpectralGradientDescentOptimizer<TFunctional>
 template< typename TFunctional >
 void SpectralGradientDescentOptimizer<TFunctional>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
-	this->SpectralUpdate( this->m_Coefficients, this->m_DerivativeCoefficients, this->m_NextCoefficients, true );
+	if (this->m_Alpha.GetNorm() == 0 && this->m_Beta.GetNorm()==0) {
+		this->TrivialUpdate(this->m_Coefficients, this->m_DerivativeCoefficients, this->m_NextCoefficients);
+	} else {
+		this->SpectralUpdate( this->m_Coefficients, this->m_DerivativeCoefficients, this->m_NextCoefficients, true );
+	}
 }
 
 template< typename TFunctional >

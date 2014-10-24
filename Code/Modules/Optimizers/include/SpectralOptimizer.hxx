@@ -249,9 +249,17 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 }
 
 template< typename TFunctional >
+void SpectralOptimizer<TFunctional>::TrivialUpdate(
+		CoefficientsImageArray uk,
+		const CoefficientsImageArray gk,
+		CoefficientsImageArray nextParameters){
+
+}
+
+template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::SpectralUpdate(
-		CoefficientsImageArray parameters,
-		const CoefficientsImageArray lambda,
+		CoefficientsImageArray uk,
+		const CoefficientsImageArray gk,
 		CoefficientsImageArray nextParameters,
 		bool changeDirection ) {
 	itkDebugMacro("Optimizer Spectral Update");
@@ -265,16 +273,16 @@ void SpectralOptimizer<TFunctional>::SpectralUpdate(
 	//size_t nPix = this->m_Transform->GetNumberOfParameters();
 
 	for( size_t d = 0; d < Dimension; d++ ) {
-		r_filter->SetInput( parameters[d] );
+		r_filter->SetInput( uk[d] );
 		add_filter->SetInput1( r_filter->GetOutput() );
 
 		if (changeDirection) {
 			dir_filter = MultiplyFilterType::New();
 			dir_filter->SetConstant( -1.0 );
-			dir_filter->SetInput( lambda[d] );
+			dir_filter->SetInput( gk[d] );
 			add_filter->SetInput2( dir_filter->GetOutput() );
 		} else {
-			add_filter->SetInput2( lambda[2] );
+			add_filter->SetInput2( gk[2] );
 		}
 		add_filter->Update();
 
@@ -449,7 +457,7 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 
 
 	VectorType zerov; zerov.Fill( 0.0 );
-	/* Initialize next parameters */
+	/* Initialize next uk */
 	for ( size_t i=0; i<coeff.Size(); i++ ) {
 		this->m_Coefficients[i] = CoefficientsImageType::New();
 		this->m_Coefficients[i]->SetRegions(   coeff[0]->GetLargestPossibleRegion() );

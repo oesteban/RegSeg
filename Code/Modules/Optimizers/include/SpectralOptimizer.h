@@ -214,10 +214,14 @@ protected:
 	virtual void InitializeAuxiliarParameters() = 0;
 
 	/* SpectralOptimizer specific members */
-	void SpectralUpdate( CoefficientsImageArray parameters,
-			             const CoefficientsImageArray lambda,
-			             CoefficientsImageArray nextParameters,
+	void SpectralUpdate( CoefficientsImageArray uk,
+			             const CoefficientsImageArray gk,
+			             CoefficientsImageArray next_uk,
 			             bool changeDirection = false );
+
+	void TrivialUpdate(CoefficientsImageArray uk,
+			           const CoefficientsImageArray gk,
+			           CoefficientsImageArray next_uk);
 
 	virtual void SetUpdate() = 0;
 
