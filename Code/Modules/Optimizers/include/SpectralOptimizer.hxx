@@ -73,8 +73,8 @@ m_RegularizationEnergy( 0.0 ),
 m_CurrentTotalEnergy(itk::NumericTraits<MeasureType>::infinity()),
 m_RegularizationEnergyUpdated(true)
 {
-	this->m_Alpha.Fill( 1.0 );
-	this->m_Beta.Fill( 1.0 );
+	this->m_Alpha.Fill( 0.0 );
+	this->m_Beta.Fill( 0.0 );
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 5 );
 	this->m_GridSpacing.Fill( 0.0 );
@@ -96,8 +96,8 @@ void SpectralOptimizer<TFunctional>
 	os << indent << "Current iteration: " << this->m_CurrentIteration << std::endl;
 	os << indent << "Stop condition:" << this->m_StopCondition << std::endl;
 	os << indent << "Stop condition description: " << this->m_StopConditionDescription.str() << std::endl;
-	os << indent << "Alpha: " << (this->m_Alpha * this->m_ParamFactor) << std::endl;
-	os << indent << "Beta: " << (this->m_Beta * this->m_ParamFactor) << std::endl;
+	os << indent << "Alpha: " << this->m_Alpha << std::endl;
+	os << indent << "Beta: " << this->m_Beta << std::endl;
 }
 
 template< typename TFunctional >
@@ -150,10 +150,9 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 
 	this->UpdateField();
 
-	MeasureType meanDisp = this->ComputeIterationChange();
-
+	this->ComputeIterationSpeed();
 	if ( this->m_UseLightWeightConvergenceChecking ) {
-		this->m_CurrentValue = log( 1.0 + meanDisp );
+		this->m_CurrentValue = log( 1.0 + this->m_MaxSpeed );
 	} else {
 		this->m_CurrentValue = this->GetCurrentEnergy();
 	}
@@ -212,8 +211,8 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 		double beta[Dimension];
 		double vxvol = 1.0;
 		for (size_t i = 0; i<Dimension; i++ ) {
-			alpha[i] = this->m_Alpha[i] * this->m_ParamFactor;
-			beta[i] = this->m_Beta[i] * this->m_ParamFactor;
+			alpha[i] = this->m_Alpha[i];
+			beta[i] = this->m_Beta[i];
 			vxvol*= totalField->GetSpacing()[i];
 		}
 
@@ -261,7 +260,7 @@ void SpectralOptimizer<TFunctional>::SpectralUpdate(
 	typename MultiplyFilterType::Pointer dir_filter;
 
 	typename MultiplyFilterType::Pointer r_filter = MultiplyFilterType::New();
-	r_filter->SetConstant( 1.0/(this->m_StepSize * this->m_StepFactor) );
+	r_filter->SetConstant( 1.0/this->m_StepSize );
 
 	//size_t nPix = this->m_Transform->GetNumberOfParameters();
 
@@ -345,7 +344,7 @@ void SpectralOptimizer<TFunctional>
 	ControlPointsGridSizeType size = reference->GetLargestPossibleRegion().GetSize();
 
 	for (size_t i = 0; i<Dimension; i++) {
-		PointValueType initVal = (1.0/(this->m_StepSize * this->m_StepFactor)) + this->m_Alpha[i]  * this->m_ParamFactor;
+		PointValueType initVal = (1.0/(this->m_StepSize)) + this->m_Alpha[i];
 
 		CoefficientsImagePointer dimDdor = CoefficientsImageType::New();
 		dimDdor->SetSpacing(   reference->GetSpacing() );
@@ -392,8 +391,8 @@ SpectralOptimizer<TFunctional>::UpdateField() {
 }
 
 template< typename TFunctional >
-typename SpectralOptimizer<TFunctional>::MeasureType
-SpectralOptimizer<TFunctional>::ComputeIterationChange() {
+void
+SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 	const VectorType* fnextBuffer = this->m_CurrentCoefficients->GetBufferPointer();
 	VectorType* fBuffer = this->m_LastCoeff->GetBufferPointer();
 	size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
@@ -403,12 +402,13 @@ SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 	InternalComputationValueType diff = 0.0;
 
 	this->m_IsDiffeomorphic = true;
-
+	std::vector< InternalComputationValueType > speednorms;
 	for (size_t pix = 0; pix < nPix; pix++ ) {
 		t0 = *(fBuffer+pix);
 		t1 = *(fnextBuffer+pix);
 		diff = ( t1 - t0 ).GetNorm();
 		totalNorm += diff;
+		speednorms.push_back(diff);
 		*(fBuffer+pix) = t1; // Copy current to last, once evaluated
 
 		if ( this->m_IsDiffeomorphic ) {
@@ -421,7 +421,11 @@ SpectralOptimizer<TFunctional>::ComputeIterationChange() {
 	}
 
 	this->m_RegularizationEnergyUpdated = (totalNorm==0);
-	return totalNorm/nPix;
+
+	std::sort(speednorms.begin(), speednorms.end());
+	this->m_MaxSpeed = speednorms.back();
+	this->m_MeanSpeed = speednorms[int(0.5*(speednorms.size()-1))];
+	this->m_AvgSpeed = totalNorm / nPix;
 }
 
 

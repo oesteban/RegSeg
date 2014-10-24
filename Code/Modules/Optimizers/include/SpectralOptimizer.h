@@ -183,7 +183,7 @@ public:
 	itkSetMacro( GridSize, ControlPointsGridSizeType );
 	void SetGridSize( double val ) { this->m_GridSize.Fill(val); }
 
-	MeasureType ComputeIterationChange();
+	void ComputeIterationSpeed();
 	MeasureType GetCurrentRegularizationEnergy();
 	MeasureType GetCurrentEnergy();
 

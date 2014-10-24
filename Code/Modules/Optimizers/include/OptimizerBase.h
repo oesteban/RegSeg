@@ -223,6 +223,10 @@ public:
 	itkGetConstMacro( Momentum, InternalComputationValueType );
 	itkGetConstMacro( MaximumGradient, InternalComputationValueType );
 
+	itkGetConstMacro( MaxSpeed, InternalComputationValueType );
+	itkGetConstMacro( AvgSpeed, InternalComputationValueType );
+	itkGetConstMacro( MeanSpeed, InternalComputationValueType );
+
 	itkSetMacro(Coefficients, CoefficientsImageArray);
 	itkGetConstMacro(Coefficients, CoefficientsImageArray);
 
@@ -300,8 +304,9 @@ protected:
 	bool                          m_UseDescriptorRecomputation;
 
 	InternalComputationValueType  m_StepSize;
-	InternalComputationValueType  m_StepFactor;
-	InternalComputationValueType  m_ParamFactor;
+	InternalComputationValueType  m_MaxSpeed;
+	InternalComputationValueType  m_MeanSpeed;
+	InternalComputationValueType  m_AvgSpeed;
 	bool                          m_AutoStepSize;
 	bool                          m_IsDiffeomorphic;
 	bool                          m_UseLightWeightConvergenceChecking;
