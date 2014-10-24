@@ -382,7 +382,20 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->Modified();
 }
 
-} // namespace rstk
 
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+typename ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >::FieldList
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+::GetCoefficientsField() {
+	this->m_CoefficientsContainer.clear();
+
+	for (size_t i = 0; i<this->m_NumberOfLevels; i++) {
+		this->m_CoefficientsContainer.push_back(static_cast<const FieldType* >(this->m_Optimizers[i]->GetCurrentCoefficientsField()));
+	}
+	return this->m_CoefficientsContainer;
+}
+
+
+} // namespace rstk
 
 #endif /* ACWEREGISTRATIONMETHOD_HXX_ */
