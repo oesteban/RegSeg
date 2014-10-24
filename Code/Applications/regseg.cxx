@@ -221,8 +221,10 @@ int main(int argc, char *argv[]) {
     for ( size_t contid = 0; contid < nCont; contid++) {
     	bfs::path contPath(movingSurfaceNames[contid]);
     	WriterType::Pointer polyDataWriter = WriterType::New();
+    	std::stringstream ss;
+    	ss << outPrefix << "_swarped_" << contid << ".vtk";
     	polyDataWriter->SetInput( conts[contid] );
-    	polyDataWriter->SetFileName( (outPrefix + "_warped_" + contPath.filename().string()).c_str() );
+    	polyDataWriter->SetFileName( ss.str().c_str() );
     	polyDataWriter->Update();
     }
 
