@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-24 09:56:12
+# @Last Modified time: 2014-10-24 10:57:26
 
 import os
 import os.path as op
@@ -168,27 +168,27 @@ def registration_ev(name='EvaluateMapping'):
         (inputnode,        csv, [('subject_id', 'subject_id'),
                                  ('method', 'method'),
                                  ('out_csv', 'in_file')]),
-        (input_ref,  merge_ref, [('in_imag', 'in_files')]),
-        (input_tst,  merge_tst, [('in_imag', 'in_files')]),
-        (input_ref,    overlap, [('in_tpms', 'in_ref')]),
-        (input_tst,    overlap, [('in_tpms', 'in_tst')]),
-        (input_ref,    diff_im, [('in_mask', 'mask1'),
-                                 ('in_mask', 'mask2')]),
-        (merge_ref,    diff_im, [('merged_file', 'volume1')]),
-        (merge_tst,    diff_im, [('merged_file', 'volume2')]),
-        (input_ref,    inv_fld, [('in_field', 'in_field')]),
-        (input_ref,   diff_fld, [('in_mask', 'mask')]),
-        (inv_fld,     diff_fld, [('out_field', 'in_ref')]),
-        (input_tst,   diff_fld, [('in_field', 'in_tst')]),
-        (overlap,          csv, [('jaccard', 'fji_avg'),
-                                 ('class_fji', 'fji_tpm'),
-                                 ('dice', 'fdi_avg'),
-                                 ('class_fdi', 'fdi_tpm')]),
-        (diff_im,          csv, [('similarity', 'cc_image')]),
-        (diff_fld,         csv, [(('out_map', _stats), 'fmap_error')]),
-        (csv,       outputnode, [('csv_file', 'out_file')]),
-        (overlap,   outputnode, [('diff_file', 'out_tpm_diff')]),
-        (diff_fld,  outputnode, [('out_map', 'out_field_err')]),
+        # (input_ref,  merge_ref, [('in_imag', 'in_files')]),
+        # (input_tst,  merge_tst, [('in_imag', 'in_files')]),
+        # (input_ref,    overlap, [('in_tpms', 'in_ref')]),
+        # (input_tst,    overlap, [('in_tpms', 'in_tst')]),
+        # (input_ref,    diff_im, [('in_mask', 'mask1'),
+        #                          ('in_mask', 'mask2')]),
+        # (merge_ref,    diff_im, [('merged_file', 'volume1')]),
+        # (merge_tst,    diff_im, [('merged_file', 'volume2')]),
+        # (input_ref,    inv_fld, [('in_field', 'in_field')]),
+        # (input_ref,   diff_fld, [('in_mask', 'mask')]),
+        # (inv_fld,     diff_fld, [('out_field', 'in_ref')]),
+        # (input_tst,   diff_fld, [('in_field', 'in_tst')]),
+        # (overlap,          csv, [('jaccard', 'fji_avg'),
+        #                          ('class_fji', 'fji_tpm'),
+        #                          ('dice', 'fdi_avg'),
+        #                          ('class_fdi', 'fdi_tpm')]),
+        # (diff_im,          csv, [('similarity', 'cc_image')]),
+        # (diff_fld,         csv, [(('out_map', _stats), 'fmap_error')]),
+        # (csv,       outputnode, [('csv_file', 'out_file')]),
+        # (overlap,   outputnode, [('diff_file', 'out_tpm_diff')]),
+        # (diff_fld,  outputnode, [('out_map', 'out_field_err')]),
         (input_ref,       mesh, [('in_surf', 'surface1')]),
         (input_tst,       mesh, [('in_surf', 'surface2')]),
         (mesh,             csv, [('distance', 'surf_dist')])
