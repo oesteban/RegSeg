@@ -110,7 +110,7 @@ template< typename TFunctional >
 void SpectralADMMOptimizer<TFunctional>::UpdateV() {
 	itkDebugMacro("Optimizer Update v");
 
-	this->SpectralUpdate( this->m_NextParameters, this->m_CurrentSpeeds, this->m_vFieldNext, true);
+	this->ComputeUpdate( this->m_NextParameters, this->m_CurrentSpeeds, this->m_vFieldNext, true);
 
 //#ifndef NDEBUG
 //	typedef rstk::DisplacementFieldComponentsFileWriter<DeformationFieldType> Writer;
