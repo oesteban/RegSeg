@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-27 16:11:45
+# @Last Modified time: 2014-10-27 16:25:52
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -144,8 +144,8 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
         (dti,  mdti,   [('outputnode.fa', 'in1'),
                         ('outputnode.md', 'in2')]),
         (mdti, regseg, [('out', 'inputnode.in_fixed')]),
-        (ds,   regseg, [('surf', 'inputnode.in_surf')]),
-        (st1,  regseg, [('out_dis_set.tpms', 'inputnode.in_tpms')]),
+        (st1,  regseg, [('out_dis_set.tpms', 'inputnode.in_tpms'),
+                        ('out_ref_set.surf', 'inputnode.in_surf')]),
         (st1,  msk,    [('out_dis_set.segs', 'inlist')]),
         (msk,  regseg, [('out', 'inputnode.in_mask')])
     ])
