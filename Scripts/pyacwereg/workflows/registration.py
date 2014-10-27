@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-24 12:17:07
+# @Last Modified time: 2014-10-27 16:12:12
 
 import os
 import os.path as op
@@ -19,12 +19,16 @@ from pyacwereg.interfaces.acwereg import ACWEReg
 from pyacwereg.interfaces.warps import FieldBasedWarp, InverseField
 
 
-def default_regseg(name='REGSEGDefault'):
+def regseg_wf(name='REGSEG'):
     wf = pe.Workflow(name=name)
 
+    regseg_inputs = ['iterations', 'alpha', 'beta', 'step_size', 'grid_size',
+                     'convergence_energy', 'convergence_window', 'f_smooth',
+                     'images_verbosity']
+
+    wf_inputs = ['in_fixed', 'in_tpms', 'in_surf', 'in_mask']
     inputnode = pe.Node(niu.IdentityInterface(
-                        fields=['in_orig', 'in_dist', 'in_tpms', 'in_surf',
-                                'in_mask', 'grid_size']), name='inputnode')
+                        fields=regseg_inputs+wf_inputs), name='inputnode')
 
     outputnode = pe.Node(niu.IdentityInterface(
                          fields=['out_corr', 'out_tpms',
@@ -32,19 +36,7 @@ def default_regseg(name='REGSEGDefault'):
                          name='outputnode')
 
     # Registration
-    # Good config for box phantom (2014/04/21): [ -a 0.0 -b 0.0 -u 20 -g 6 -i
-    # 500 -s 1.0]
     regseg = pe.Node(ACWEReg(), name="ACWERegistration")
-    regseg.inputs.iterations = [500, 500]
-    # regseg.inputs.descript_update = [20]
-    regseg.inputs.step_size = [1.0, .01]
-    regseg.inputs.alpha = [1.0, 100.0]
-    regseg.inputs.beta = [0.1, 1.]
-    regseg.inputs.grid_size = [6, 8]
-    regseg.inputs.convergence_energy = [True] * 2
-    regseg.inputs.convergence_window = [50, 25]
-    regseg.inputs.f_smooth = [2.0, None]
-    regseg.inputs.images_verbosity = 3
 
     # Apply tfm to tpms
     applytfm = pe.MapNode(FieldBasedWarp(), name="ApplyWarp",
@@ -52,8 +44,9 @@ def default_regseg(name='REGSEGDefault'):
 
     # Connect
     wf.connect([
+        (inputnode,   regseg, [(f, f) for f in regseg_inputs]),
         (inputnode,   regseg, [('in_surf', 'in_prior'),
-                               ('in_dist', 'in_fixed')]),
+                               ('in_fixed', 'in_fixed')]),
         (inputnode, applytfm, [('in_tpms', 'in_file'),
                                ('in_mask', 'in_mask')]),
         (regseg,    applytfm, [('out_field', 'in_field')]),
@@ -67,6 +60,25 @@ def default_regseg(name='REGSEGDefault'):
     return wf
 
 
+def default_regseg(name='REGSEGDefault'):
+    wf = regseg_wf(name=name)
+
+    # Registration
+    # Good config for box phantom (2014/04/21): [ -a 0.0 -b 0.0 -u 20 -g 6 -i
+    # 500 -s 1.0]
+    wf.inputs.inputnode.iterations = [500, 500]
+    # wf.inputs.inputnode.descript_update = [20]
+    wf.inputs.inputnode.step_size = [1.0, .01]
+    wf.inputs.inputnode.alpha = [0.0, 100.0]
+    wf.inputs.inputnode.beta = [0.1, 1.]
+    wf.inputs.inputnode.grid_size = [6, 8]
+    wf.inputs.inputnode.convergence_energy = [True] * 2
+    wf.inputs.inputnode.convergence_window = [50, 25]
+    wf.inputs.inputnode.f_smooth = [2.0, None]
+    wf.inputs.inputnode.images_verbosity = 3
+    return wf
+
+
 def identity_wf(name='Identity', n_tissues=3):
     """
     An identity workflow to check how ideal inverse transform
@@ -75,7 +87,7 @@ def identity_wf(name='Identity', n_tissues=3):
     wf = pe.Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
-                        fields=['in_orig', 'in_dist', 'in_tpms', 'in_surf',
+                        fields=['in_fixed', 'in_tpms', 'in_surf',
                                 'in_mask', 'in_field', 'grid_size']),
                         name='inputnode')
 
@@ -97,7 +109,7 @@ def identity_wf(name='Identity', n_tissues=3):
     # Connect
     wf.connect([
         (inputnode,       inv, [('in_field', 'in_field')]),
-        (inputnode,     merge, [('in_dist', 'in1'),
+        (inputnode,     merge, [('in_fixed', 'in1'),
                                 ('in_tpms', 'in2')]),
         (inputnode,  applytfm, [('in_mask', 'in_mask'),
                                 ('in_surf', 'in_surf'),

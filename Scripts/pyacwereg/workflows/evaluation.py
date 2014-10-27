@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-24 10:57:26
+# @Last Modified time: 2014-10-27 15:39:21
 
 import os
 import os.path as op
@@ -95,9 +95,9 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
                 ('outputnode.out_field', 'refnode.in_field')]),
             (phantom,         reg, [
                 ('refnode.out_surfs', 'inputnode.in_surf'),
-                ('refnode.out_signal', 'inputnode.in_orig'),
+                # ('refnode.out_signal', 'inputnode.in_orig'),
                 ('outputnode.grid_size', 'inputnode.grid_size'),
-                ('outputnode.out_signal', 'inputnode.in_dist'),
+                ('outputnode.out_signal', 'inputnode.in_fixed'),
                 ('outputnode.out_tpms', 'inputnode.in_tpms'),
                 ('outputnode.out_mask', 'inputnode.in_mask')]),
             (reg,      norm_tpms[i], [('outputnode.out_tpms', 'in_files')]),
