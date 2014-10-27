@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-27 18:49:17
+# @Last Modified time: 2014-10-28 00:01:41
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -33,6 +33,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     from nipype.pipeline import engine as pe
     from nipype.interfaces import utility as niu
     from nipype.interfaces import io as nio
+    from nipype.workflows.fsl.artifacts import sdc_fmb
     from pysdcev.utils import all2RAS
     from pyacwereg.workflows.registration import regseg_wf
     from pyacwereg.workflows import evaluation as ev
@@ -147,6 +148,19 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                         ('out_ref_set.surf', 'inputnode.in_surf')]),
         (st1,  msk,    [('out_dis_set.segs', 'inlist')]),
         (msk,  regseg, [('out', 'inputnode.in_mask')])
+    ])
+
+    cmethod0 = sdc_fmb(bmap_params=dict(delta_te=2.46e-3),
+                       epi_params=dict(echospacing=0.77e-3,
+                                       acc_factor=3,
+                                       enc_dir='y-')
+
+    wf.connect([
+        (st1,       cmethod0, [('out_dis_set.dwi', 'inputnode.in_file'),
+                               ('out_dis_set.dwi_mask', 'inputnode.in_mask')]),
+        (ds,        cmethod0, [('bval', 'inputnode.in_bval')]),
+        (bmap_prep, cmethod0, [('outputnode.magnitude', 'inputnode.bmap_mag'),
+                               ('outputnode.wrapped', 'inputnode.bmap_pha')])
     ])
 
     # pysdcev = pipeline()
