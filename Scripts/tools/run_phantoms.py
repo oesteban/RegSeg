@@ -6,7 +6,24 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-24 09:54:44
+# @Last Modified time: 2014-10-27 18:51:37
+
+__author__ = "Oscar Esteban"
+__copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
+                 Universidad Politécnica de Madrid"
+__credits__ = "Oscar Esteban"
+__license__ = "FreeBSD"
+__version__ = "0.1"
+__maintainer__ = "Oscar Esteban"
+__email__ = "code@oscaresteban.es"
+__status__ = "Prototype"
+
+try:
+    from enthought.etsconfig.api import ETSConfig
+    ETSConfig.toolkit = 'null'
+except:
+    pass
+import os
 import os.path as op
 
 
@@ -40,14 +57,9 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
     from argparse import RawTextHelpFormatter
     from shutil import copyfileobj
-    import os
+
     parser = ArgumentParser(description='Run evaluation workflow',
                             formatter_class=RawTextHelpFormatter)
-    try:
-        from enthought.etsconfig.api import ETSConfig
-        ETSConfig.toolkit = 'null'
-    except:
-        pass
 
     g_input = parser.add_argument_group('Inputs')
 

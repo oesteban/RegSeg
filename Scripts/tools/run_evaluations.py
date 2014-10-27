@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-27 16:25:52
+# @Last Modified time: 2014-10-27 18:49:17
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -18,11 +18,12 @@ __maintainer__ = "Oscar Esteban"
 __email__ = "code@oscaresteban.es"
 __status__ = "Prototype"
 
-from shutil import copyfileobj
+try:
+    from enthought.etsconfig.api import ETSConfig
+    ETSConfig.toolkit = 'null'
+except:
+    pass
 import os
-import os.path as op
-import glob
-import sys
 
 
 def hcp_workflow(name='HCP_TMI2015', settings={}):
@@ -83,7 +84,6 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
               if (('brain' in k) or ('aseg' in k))}
 
     # reorient = all2RAS(input_fields=rfield, input_param=rparam)
-
     bmap_prep = bmap_registration()
 
     wf = pe.Workflow(name=name)
@@ -99,7 +99,6 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     ])
 
     st1 = stage1()
-
     wf.connect([
         (ds,        st1, [('t1w', 'inputnode.t1w'),
                           ('t2w', 'inputnode.t2w'),
@@ -165,6 +164,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
 if __name__ == '__main__':
     from argparse import ArgumentParser
     from argparse import RawTextHelpFormatter
+    import os.path as op
 
     parser = ArgumentParser(description='TMI2015 - Experiment on HCP data',
                             formatter_class=RawTextHelpFormatter)
