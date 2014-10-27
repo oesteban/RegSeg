@@ -253,17 +253,17 @@ void OptimizerBase<TFunctional>::Resume() {
 		std::cout << "Speed=" << this->m_MaximumGradient << "/" << this->m_MaxSpeed << std::endl;
 
 		if (this->m_LastMaximumGradient > 0.0){
-			double inc = 1.0 - (this->m_MaxSpeed / this->m_LastMaximumGradient);
+			double inc = 1.0 - (this->m_MaximumGradient / this->m_LastMaximumGradient);
 			if (inc < 0.0) {
-				inc *= 100;
+				inc *= 5;
 			}
 			this->m_Momentum = this->m_Momentum + this->m_LearningRate * inc;
 			if (this->m_Momentum <= -0.8) {
 				this->m_Momentum = -0.8;
 			}
 
-			if (this->m_Momentum > 0.01) {
-				this->m_Momentum = 0.01;
+			if (this->m_Momentum > 0.2) {
+				this->m_Momentum = 0.2;
 			} else {
 				this->m_StepSize = (1.0 + this->m_Momentum) * this->m_StepSize;
 			}
@@ -278,7 +278,7 @@ void OptimizerBase<TFunctional>::Resume() {
 			break;
 		}
 		this->m_LastValue = this->m_CurrentValue;
-		this->m_LastMaximumGradient = this->m_MaxSpeed;
+		this->m_LastMaximumGradient = this->m_MaximumGradient;
 
 		this->InvokeEvent( itk::IterationEvent() );
 		this->m_CurrentIteration++;

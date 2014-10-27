@@ -147,17 +147,17 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 	/* Update the deformation field */
 	this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
 	this->m_Transform->UpdateField();
+	//this->UpdateField();
 
-	this->UpdateField();
-
+	this->SetUpdate();
 	this->ComputeIterationSpeed();
+
 	if ( this->m_UseLightWeightConvergenceChecking ) {
 		this->m_CurrentValue = log( 1.0 + this->m_MaxSpeed );
 	} else {
 		this->m_CurrentValue = this->GetCurrentEnergy();
 	}
 
-	this->SetUpdate();
 
 	this->m_Transform->Interpolate();
 	this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetOffGridFieldValues() );
@@ -249,99 +249,139 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 }
 
 template< typename TFunctional >
-void SpectralOptimizer<TFunctional>::TrivialUpdate(
+void SpectralOptimizer<TFunctional>::ComputeUpdate(
 		CoefficientsImageArray uk,
 		const CoefficientsImageArray gk,
-		CoefficientsImageArray nextParameters){
+		CoefficientsImageArray next_uk,
+		bool changeDirection){
 
-}
-
-template< typename TFunctional >
-void SpectralOptimizer<TFunctional>::SpectralUpdate(
-		CoefficientsImageArray uk,
-		const CoefficientsImageArray gk,
-		CoefficientsImageArray nextParameters,
-		bool changeDirection ) {
-	itkDebugMacro("Optimizer Spectral Update");
-
-	typename AddFilterType::Pointer add_filter = AddFilterType::New();
+	typename AddFilterType::Pointer add_f = AddFilterType::New();
 	typename MultiplyFilterType::Pointer dir_filter;
 
-	typename MultiplyFilterType::Pointer r_filter = MultiplyFilterType::New();
-	r_filter->SetConstant( 1.0/this->m_StepSize );
+	typename MultiplyFilterType::Pointer step_f = MultiplyFilterType::New();
+	if (changeDirection) {
+		step_f->SetConstant( -1.0 * this->m_StepSize );
+	} else {
+		step_f->SetConstant( this->m_StepSize );
+	}
 
-	//size_t nPix = this->m_Transform->GetNumberOfParameters();
+	typename MultiplyFilterType::Pointer scale_f = MultiplyFilterType::New();
+	CoefficientsImagePointer result;
+	InternalVectorType s;
 
 	for( size_t d = 0; d < Dimension; d++ ) {
-		r_filter->SetInput( uk[d] );
-		add_filter->SetInput1( r_filter->GetOutput() );
+		step_f->SetInput( gk[d] );
+		step_f->Update();
+		add_f->SetInput1( uk[d] );
+		add_f->SetInput2( step_f->GetOutput() );
+		add_f->Update();
+		s[d] = 1.0;
 
-		if (changeDirection) {
-			dir_filter = MultiplyFilterType::New();
-			dir_filter->SetConstant( -1.0 );
-			dir_filter->SetInput( gk[d] );
-			add_filter->SetInput2( dir_filter->GetOutput() );
+		if( this->m_Alpha[d] > 1.0e-8) {
+			s[d] = 1.0 / (1.0 + 2.0 * this->m_Alpha[d] * this->m_StepSize);
+			scale_f->SetConstant( s[d] );
+			scale_f->SetInput(add_f->GetOutput());
+			scale_f->Update();
+			result = scale_f->GetOutput();
 		} else {
-			add_filter->SetInput2( gk[2] );
-		}
-		add_filter->Update();
-
-		CoefficientsImagePointer numerator = add_filter->GetOutput();
-
-		FFTPointer fftFilter = FFTType::New();
-		fftFilter->SetInput( numerator );
-		fftFilter->Update();  // This is required for computing the denominator for first time
-		FTDomainPointer fftComponent =  fftFilter->GetOutput();
-
-		this->ApplyRegularizationComponent(d, fftComponent );
-
-		IFFTPointer ifft = IFFTType::New();
-		ifft->SetInput( fftComponent );
-
-		try {
-			ifft->Update();
-		}
-		catch ( itk::ExceptionObject & err ) {
-			this->m_StopCondition = Superclass::UPDATE_PARAMETERS_ERROR;
-			this->m_StopConditionDescription << "Optimizer error: spectral update failed";
-			this->Stop();
-			// Pass exception to caller
-			throw err;
+			result = add_f->GetOutput();
 		}
 
-		// Set component in destination buffer of coefficients
-		itk::ImageAlgorithm::Copy< CoefficientsImageType, CoefficientsImageType >(
-			ifft->GetOutput(),
-			nextParameters[d],
-			ifft->GetOutput()->GetLargestPossibleRegion(),
-			nextParameters[d]->GetLargestPossibleRegion()
-		);
+		if( this->m_Beta[d] > 1.0e-8) {
+			InternalComputationValueType scaler = 2.0 * this->m_Beta[d] * this->m_StepSize * s[d];
+			this->BetaRegularization(result, next_uk, scaler, d);
+		} else {
+			// Set component in destination buffer of coefficients
+			itk::ImageAlgorithm::Copy< CoefficientsImageType, CoefficientsImageType >(
+				result, next_uk[d],
+				result->GetLargestPossibleRegion(),
+				next_uk[d]->GetLargestPossibleRegion()
+			);
+		}
 	}
+
+//	double norm = 0.0;
+//	double maxs = 0.0;
+//	VectorType v;
+//	const typename CoefficientsImageType::PixelType* buffer[3];
+//	size_t nPix = next_uk[0]->GetLargestPossibleRegion().GetNumberOfPixels();
+//	for( size_t d = 0; d < Dimension; d++ ) {
+//		buffer[d] = next_uk[d]->GetBufferPointer();
+//	}
+//	for(size_t i = 0; i < nPix; i++) {
+//		for(size_t d = 0; d < Dimension; d++) {
+//			v[d] = *(buffer[d] + i);
+//		}
+//		norm = v.GetNorm();
+//		if (norm > maxs) {
+//			maxs = norm;
+//		}
+//	}
+//
+//	std::cout << "Speed=" << maxs << "." << std::endl;
 }
 
 template< typename TFunctional >
-void SpectralOptimizer<TFunctional>
-::ApplyRegularizationComponent( size_t d, typename SpectralOptimizer<TFunctional>::FTDomainType* reference ){
+void SpectralOptimizer<TFunctional>::BetaRegularization(
+		CoefficientsImagePointer numerator,
+		CoefficientsImageArray next_uk,
+		InternalComputationValueType s,
+		size_t d) {
+	itkDebugMacro("Optimizer Spectral Update");
+
+	FFTPointer fftFilter = FFTType::New();
+	fftFilter->SetInput( numerator );
+	fftFilter->Update();  // This is required for computing the denominator for first time
 
 	if ( !this->m_DenominatorCached )
-		this->InitializeDenominator( reference );
+		this->InitializeDenominator( fftFilter->GetOutput() );
 
-	size_t nPix = this->m_Denominator[d]->GetLargestPossibleRegion().GetNumberOfPixels();
+	typename FTMultiplyFilterType::Pointer scale_f = FTMultiplyFilterType::New();
+	scale_f->SetInput(this->m_FTLaplacian);
+	scale_f->SetConstant( -1.0 * s);
 
-	// Fill reference buffer with elements updated with the filter
-	ComplexType* nBuffer = reference->GetBufferPointer();
-	PointValueType* dBuffer = this->m_Denominator[d]->GetBufferPointer();
+	typename FTAddFilterType::Pointer add_f = FTAddFilterType::New();
+	add_f->SetInput1(this->m_FTOnes);
+	add_f->SetInput2(scale_f->GetOutput());
 
-	ComplexType curval;
-	ComplexType ddor;
-	ComplexType res;
+	typename FTDivideFilterType::Pointer div_f = FTDivideFilterType::New();
+	div_f->SetInput1(fftFilter->GetOutput());
+	div_f->SetInput2(add_f->GetOutput());
+	div_f->Update();
 
-	for (size_t pix = 0; pix < nPix; pix++ ) {
-		curval = *(nBuffer+pix);
-		ddor = ComplexType( *(dBuffer+pix), 0.0 );
-		res = curval * ddor;
-		*(nBuffer+pix) = curval * ddor;
+	IFFTPointer ifft = IFFTType::New();
+	ifft->SetInput( div_f->GetOutput() );
+
+	try {
+		ifft->Update();
 	}
+	catch ( itk::ExceptionObject & err ) {
+		this->m_StopCondition = Superclass::UPDATE_PARAMETERS_ERROR;
+		this->m_StopConditionDescription << "Optimizer error: spectral update failed";
+		this->Stop();
+		// Pass exception to caller
+		throw err;
+	}
+
+	// Set component in destination buffer of coefficients
+	itk::ImageAlgorithm::Copy< CoefficientsImageType, CoefficientsImageType >(
+		ifft->GetOutput(),
+		next_uk[d],
+		ifft->GetOutput()->GetLargestPossibleRegion(),
+		next_uk[d]->GetLargestPossibleRegion()
+	);
+
+	// typedef itk::ComplexToRealImageFilter<FTDomainType, CoefficientsImageType> RealFilterType;
+	// typename RealFilterType::Pointer realFilter = RealFilterType::New();
+	// realFilter->SetInput(add_f->GetOutput());
+	// realFilter->Update();
+    //
+	// std::stringstream ss;
+	// ss << "test_coeff" << d << "_it" << this->m_CurrentIteration << ".nii.gz";
+	// typename itk::ImageFileWriter<CoefficientsImageType>::Pointer w = itk::ImageFileWriter<CoefficientsImageType>::New();
+	// w->SetFileName(ss.str().c_str());
+	// w->SetInput(realFilter->GetOutput());
+	// w->Update();
 }
 
 template< typename TFunctional >
@@ -351,36 +391,32 @@ void SpectralOptimizer<TFunctional>
 	size_t nPix = reference->GetLargestPossibleRegion().GetNumberOfPixels();
 	ControlPointsGridSizeType size = reference->GetLargestPossibleRegion().GetSize();
 
-	for (size_t i = 0; i<Dimension; i++) {
-		PointValueType initVal = (1.0/(this->m_StepSize)) + this->m_Alpha[i];
+	ComplexType one = itk::NumericTraits<ComplexType>::One;
+	this->m_FTOnes = FTDomainType::New();
+	this->m_FTOnes->SetSpacing(   reference->GetSpacing() );
+	this->m_FTOnes->SetDirection( reference->GetDirection() );
+	this->m_FTOnes->SetRegions(   reference->GetLargestPossibleRegion().GetSize() );
+	this->m_FTOnes->Allocate();
+	this->m_FTOnes->FillBuffer(one);
 
-		CoefficientsImagePointer dimDdor = CoefficientsImageType::New();
-		dimDdor->SetSpacing(   reference->GetSpacing() );
-		dimDdor->SetDirection( reference->GetDirection() );
-		dimDdor->SetRegions(   reference->GetLargestPossibleRegion().GetSize() );
-		dimDdor->Allocate();
+	this->m_FTLaplacian = FTDomainType::New();
+	this->m_FTLaplacian->SetSpacing(   reference->GetSpacing() );
+	this->m_FTLaplacian->SetDirection( reference->GetDirection() );
+	this->m_FTLaplacian->SetRegions(   reference->GetLargestPossibleRegion().GetSize() );
+	this->m_FTLaplacian->Allocate();
+	this->m_FTLaplacian->FillBuffer( itk::NumericTraits<ComplexType>::Zero);
 
-		PointValueType* buffer = dimDdor->GetBufferPointer();
-
-		if( this->m_Beta.GetNorm() > 0.0 ) {
-			// Fill Buffer with denominator data
-			PointValueType lag_el; // accumulates the FT{lagrange operator}.
-			typename CoefficientsImageType::IndexType idx;
-			for (size_t pix = 0; pix < nPix; pix++ ) {
-				lag_el = 0.0;
-				idx = dimDdor->ComputeIndex( pix );
-				for(size_t d = 0; d < Dimension; d++ ) {
-					lag_el+= 2.0 * cos( (pi2*idx[d])/size[d] ) - 2.0;
-				}
-				*(buffer+pix) = 1.0 / (initVal - m_Beta[i] * lag_el);
-			}
+	// Fill Buffer with denominator data
+	ComplexType* buffer = this->m_FTLaplacian->GetBufferPointer();
+	InternalComputationValueType lag_el; // accumulates the FT{lagrange operator}.
+	typename FTDomainType::IndexType idx;
+	for (size_t pix = 0; pix < nPix; pix++ ) {
+		lag_el = 0.0;
+		idx = this->m_FTLaplacian->ComputeIndex(pix);
+		for(size_t d = 0; d < Dimension; d++ ) {
+			lag_el+= 2.0 * cos( (pi2*idx[d])/size[d] ) - 2.0;
 		}
-		else {
-			dimDdor->FillBuffer( 1.0 / initVal );
-		}
-
-
-		this->m_Denominator[i] = dimDdor;
+		*(buffer+pix) = one * lag_el;
 	}
 	this->m_DenominatorCached = true;
 }

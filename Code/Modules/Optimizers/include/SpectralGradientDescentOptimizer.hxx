@@ -67,23 +67,33 @@ void SpectralGradientDescentOptimizer<TFunctional>
 template< typename TFunctional >
 void SpectralGradientDescentOptimizer<TFunctional>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
-	if (this->m_Alpha.GetNorm() == 0 && this->m_Beta.GetNorm()==0) {
-		this->TrivialUpdate(this->m_Coefficients, this->m_DerivativeCoefficients, this->m_NextCoefficients);
-	} else {
-		this->SpectralUpdate( this->m_Coefficients, this->m_DerivativeCoefficients, this->m_NextCoefficients, true );
-	}
+	this->ComputeUpdate(this->m_Coefficients, this->m_DerivativeCoefficients, this->m_NextCoefficients, true);
 }
 
 template< typename TFunctional >
 void SpectralGradientDescentOptimizer<TFunctional>
 ::SetUpdate() {
+	const typename CoefficientsImageType::PixelType* current[Dimension];
 	for (size_t i = 0; i < Dimension; i++) {
+		current[i] = this->m_NextCoefficients[i]->GetBufferPointer();
 		itk::ImageAlgorithm::Copy< CoefficientsImageType, CoefficientsImageType > (
 			this->m_NextCoefficients[i],
 			this->m_Coefficients[i],
 			this->m_NextCoefficients[i]->GetLargestPossibleRegion(),
 			this->m_Coefficients[i]->GetLargestPossibleRegion()
 		);
+	}
+
+	VectorType v;
+	VectorType* buffer = this->m_CurrentCoefficients->GetBufferPointer();
+	size_t nPix = this->m_NextCoefficients[0]->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	for(size_t i = 0; i < nPix; i++) {
+		for(size_t d=0; d < Dimension; d++) {
+			v[d] = *(current[d] + i);
+		}
+		*(buffer + i) = v;
+
 	}
 }
 

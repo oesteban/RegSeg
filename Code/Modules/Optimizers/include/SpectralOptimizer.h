@@ -55,6 +55,7 @@
 #include <itkImageIteratorWithIndex.h>
 #include <itkImageAlgorithm.h>
 #include <itkMultiplyImageFilter.h>
+#include <itkDivideImageFilter.h>
 #include <itkAddImageFilter.h>
 
 
@@ -144,7 +145,14 @@ public:
 	typedef typename FFTType::Pointer                               FFTPointer;
 	typedef typename FFTType::OutputImageType                       FTDomainType;
 	typedef typename FTDomainType::Pointer                          FTDomainPointer;
+	typedef itk::FixedArray< FTDomainPointer, Dimension >           FTDomainArray;
 	typedef typename FTDomainType::PixelType                        ComplexType;
+	typedef itk::AddImageFilter<FTDomainType, FTDomainType, FTDomainType>
+																	FTAddFilterType;
+	typedef itk::MultiplyImageFilter<FTDomainType, FTDomainType, FTDomainType>
+																	FTMultiplyFilterType;
+	typedef itk::DivideImageFilter<FTDomainType, FTDomainType, FTDomainType>
+																	FTDivideFilterType;
 
 	/** Internal computation value type */
 	typedef typename ComplexType::value_type                        InternalComputationValueType;
@@ -214,14 +222,14 @@ protected:
 	virtual void InitializeAuxiliarParameters() = 0;
 
 	/* SpectralOptimizer specific members */
-	void SpectralUpdate( CoefficientsImageArray uk,
-			             const CoefficientsImageArray gk,
-			             CoefficientsImageArray next_uk,
-			             bool changeDirection = false );
-
-	void TrivialUpdate(CoefficientsImageArray uk,
+	void ComputeUpdate(CoefficientsImageArray uk,
 			           const CoefficientsImageArray gk,
-			           CoefficientsImageArray next_uk);
+			           CoefficientsImageArray next_uk,
+			           bool changeDirection = false );
+	void BetaRegularization(CoefficientsImagePointer numerator,
+			                CoefficientsImageArray next_uk,
+			                InternalComputationValueType s,
+			                size_t d);
 
 	virtual void SetUpdate() = 0;
 
@@ -241,6 +249,8 @@ protected:
 
 	CoefficientsImageArray       m_NextCoefficients;
 	CoefficientsImageArray       m_Denominator;
+	FTDomainPointer              m_FTLaplacian;
+	FTDomainPointer              m_FTOnes;
 	FieldPointer                 m_LastCoeff;
 	FieldPointer                 m_InitialCoeff;
 	FieldPointer                 m_CurrentCoefficients;
