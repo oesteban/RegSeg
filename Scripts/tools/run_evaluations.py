@@ -33,6 +33,8 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     from nipype.pipeline import engine as pe
     from nipype.interfaces import utility as niu
     from nipype.interfaces import io as nio
+    from nipype.algorithms.mesh import P2PDistance
+    from nipype.algorithms.misc import AddCSVRow
     from nipype.workflows.dmri.fsl.artifacts import sdc_fmb
     from pysdcev.utils import all2RAS
     from pyacwereg.workflows.registration import regseg_wf
@@ -165,21 +167,21 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                                ('out2', 'inputnode.bmap_pha')])
     ])
 
-    mesh0 = pe.MapNode(namesh.P2PDistance(weighting='surface'),
+    mesh0 = pe.MapNode(P2PDistance(weighting='surface'),
                        iterfield=['surface1', 'surface2'],
                        name='REGSEGSurfDistance')
-    csv0 = pe.Node(namisc.AddCSVRow(in_file=settings['out_csv']),
+    csv0 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
                    name="REGSEGAddRow")
     csv0.inputs.method = 'REGSEG'
 
-    # mesh1 = pe.MapNode(namesh.P2PDistance(weighting='surface'),
+    # mesh1 = pe.MapNode(P2PDistance(weighting='surface'),
     #                    iterfield=['surface1', 'surface2'],
     #                    name='FMBSurfDistance')
-    # csv1 = pe.Node(namisc.AddCSVRow(in_file=settings['out_csv']),
+    # csv1 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
     #                name="FMBAddRow")
 
     wf.connect([
-        (st1,       mesh0, [('out_dis_set.surfs', 'surface1')]),
+        (st1,       mesh0, [('out_dis_set.surf', 'surface1')]),
         (regseg,    mesh0, [('outputnode.out_surf', 'surface2')]),
         (inputnode,  csv0, [('subject_id', 'subject_id')]),
         (mesh0,      csv0, [('distance', 'surf_dist')])
