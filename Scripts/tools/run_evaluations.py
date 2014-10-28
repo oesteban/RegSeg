@@ -33,7 +33,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     from nipype.pipeline import engine as pe
     from nipype.interfaces import utility as niu
     from nipype.interfaces import io as nio
-    from nipype.workflows.fsl.artifacts import sdc_fmb
+    from nipype.workflows.dmri.fsl.artifacts import sdc_fmb
     from pysdcev.utils import all2RAS
     from pyacwereg.workflows.registration import regseg_wf
     from pyacwereg.workflows import evaluation as ev
@@ -153,7 +153,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     cmethod0 = sdc_fmb(bmap_params=dict(delta_te=2.46e-3),
                        epi_params=dict(echospacing=0.77e-3,
                                        acc_factor=3,
-                                       enc_dir='y-')
+                                       enc_dir='y-'))
 
     wf.connect([
         (st1,       cmethod0, [('out_dis_set.dwi', 'inputnode.in_file'),
