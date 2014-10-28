@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-28 00:01:41
+# @Last Modified time: 2014-10-28 10:09:35
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -154,13 +154,14 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                        epi_params=dict(echospacing=0.77e-3,
                                        acc_factor=3,
                                        enc_dir='y-'))
-
+    selbmap = pe.Node(niu.Split(splits=[1, 1], squeeze=True), name='SelectBmap')
     wf.connect([
         (st1,       cmethod0, [('out_dis_set.dwi', 'inputnode.in_file'),
                                ('out_dis_set.dwi_mask', 'inputnode.in_mask')]),
         (ds,        cmethod0, [('bval', 'inputnode.in_bval')]),
-        (bmap_prep, cmethod0, [('outputnode.magnitude', 'inputnode.bmap_mag'),
-                               ('outputnode.wrapped', 'inputnode.bmap_pha')])
+        (bmap_prep,  selbmap, [('outputnode.wrapped', 'inputnode.bmap_pha')]),
+        (selbmap,   cmethod0, [('out1', 'inputnode.bmap_mag'),
+                               ('out2', 'inputnode.bmap_pha')])
     ])
 
     # pysdcev = pipeline()
