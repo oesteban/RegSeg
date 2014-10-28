@@ -200,6 +200,7 @@ public:
     itkGetConstMacro( NumberOfParameters, size_t );
 
     itkGetMacro( Derivatives, CoefficientsImageArray );
+    itkGetConstObjectMacro( GradientField, FieldType );
 
     void Interpolate() { this->Interpolate( this->VectorizeCoefficients() ); }
     void InterpolateGradient() { this->Interpolate( this->VectorizeDerivatives() ); };
@@ -349,6 +350,7 @@ protected:
 	//KernelFunctionPointer m_SecondDerivativeKernel;
 	FieldPointer          m_Field;
 	FieldPointer          m_CoefficientsField;
+	FieldPointer          m_GradientField;
 
 	virtual void ComputeMatrix( WeightsMatrixType type, size_t dim = 0 );
 	virtual void AfterThreadedComputeMatrix( SMTStruct* str );

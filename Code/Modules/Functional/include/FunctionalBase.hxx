@@ -286,7 +286,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		this->m_Value = 0.0;
 
 		double vxvol = 1.0;
-
 		for(size_t i = 0; i<Dimension; i++)
 			vxvol *= this->GetCurrentMap(0)->GetSpacing()[i];
 
@@ -304,7 +303,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			typename ProbabilityMapType::PixelType w;
 
 			for( size_t i = 0; i < nPix; i++) {
-				w = *( roiBuffer + i ) * vxvol;
+				w = *( roiBuffer + i );
 				if ( w > 1.0e-8 ) {
 					val = *(refBuffer+i);
 					roi_value +=  w * this->GetEnergyOfSample( val, roi, true );

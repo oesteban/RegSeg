@@ -167,7 +167,10 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
-	if ( ( (this->m_Alpha).GetNorm() + (this->m_Beta).GetNorm()) < 1.0e-8 ) {
+	bool haveAlpha = this->m_Alpha.GetNorm() > 1.0e-8;
+	bool haveBeta = this->m_Beta.GetNorm() > 1.0e-8;
+
+	if (!haveAlpha && !haveBeta) {
 		return 0;
 	}
 
@@ -177,34 +180,18 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 		// Add current coefficients to the corresponding ones at init
 		this->m_FieldCoeffAdder->SetInput2(this->m_LastCoeff);
 		this->m_FieldCoeffAdder->Update();
-		this->m_TotalTransform->SetCoefficientsVectorImage(this->m_FieldCoeffAdder->GetOutput());
-		this->m_TotalTransform->Interpolate();
+		FieldConstPointer currCoeff = this->m_FieldCoeffAdder->GetOutput();
 
-		// Set interpolated field (total field) in a local container
-		// as we are to replace it by the gradients field
-		VectorType zerov; zerov.Fill(0.0);
-		FieldPointer totalField = FieldType::New();
-		totalField->SetSpacing(this->m_TotalTransform->GetField()->GetSpacing());
-		totalField->SetRegions(this->m_TotalTransform->GetField()->GetLargestPossibleRegion());
-		totalField->SetOrigin(this->m_TotalTransform->GetField()->GetOrigin());
-		totalField->SetDirection(this->m_TotalTransform->GetField()->GetDirection());
-		totalField->Allocate();
-		totalField->FillBuffer(zerov);
-		size_t nPix = totalField->GetLargestPossibleRegion().GetNumberOfPixels();
+		const VectorType* fBuffer = currCoeff->GetBufferPointer();
+		const VectorType* dBuffer;
+		FieldConstPointer derivCoeff;
 
-		itk::ImageAlgorithm::Copy<FieldType, FieldType>(
-				this->m_TotalTransform->GetField(),
-				totalField,
-				this->m_TotalTransform->GetField()->GetLargestPossibleRegion(),
-				totalField->GetLargestPossibleRegion());
-
-		// Compute current total gradients and interpolate to field
-		this->m_TotalTransform->ComputeGradientField();
-		this->m_TotalTransform->InterpolateGradient();
-
-		// Get pointers
-		const VectorType* fBuffer = totalField->GetBufferPointer();
-		const VectorType* dBuffer = this->m_TotalTransform->GetField()->GetBufferPointer();
+		if (haveBeta) {
+			this->m_TotalTransform->SetCoefficientsVectorImage(currCoeff);
+			this->m_TotalTransform->ComputeGradientField();
+			derivCoeff = this->m_TotalTransform->GetGradientField();
+			dBuffer = derivCoeff->GetBufferPointer();
+		}
 
 		// Initialize dimensional parameters
 		double alpha[Dimension];
@@ -213,7 +200,7 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 		for (size_t i = 0; i<Dimension; i++ ) {
 			alpha[i] = this->m_Alpha[i];
 			beta[i] = this->m_Beta[i];
-			vxvol*= totalField->GetSpacing()[i];
+			vxvol*= currCoeff->GetSpacing()[i];
 		}
 
 		VectorType u;
@@ -222,9 +209,14 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 		double energy = 0.0;
 		double totalVol = 0.0;
 		double eA, eB, e;
+		size_t nPix = currCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
+
+		u.Fill(0.0);
+		du.Fill(0.0);
 		for ( size_t pix = 0; pix<nPix; pix++) {
-			u = *(fBuffer+pix);
-			du = *(dBuffer + pix );
+			if (haveAlpha) u = *(fBuffer+pix);
+			if (haveBeta) du = *(dBuffer + pix);
+
 			e = 0.0;
 			eA = 0.0;
 			eB = 0.0;
@@ -239,10 +231,10 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 				if (du2 > 1.0e-5)
 					eB+= beta[i] * du2;
 			}
-			energy+= vxvol * (eA + eB);
+			energy+= (eA + eB);
 		}
 
-		this->m_RegularizationEnergy = energy / (vxvol * nPix);
+		this->m_RegularizationEnergy = energy;
 		this->m_RegularizationEnergyUpdated = true;
 	}
 	return this->m_RegularizationEnergy;
@@ -593,12 +585,27 @@ void SpectralOptimizer<TFunctional>
 
 	if( this->m_Settings.count( "alpha" ) ) {
 		bpo::variable_value v = this->m_Settings["alpha"];
-		InternalComputationValueType alpha = v.as<float> ();
-		this->SetAlpha( alpha );
+		std::vector<float> alpha = v.as< std::vector<float> > ();
+		if (alpha.size() == 1) {
+			this->SetAlpha( alpha[0] );
+		} else if (alpha.size() == Dimension) {
+			InternalVectorType v;
+			for( size_t i = 0; i < Dimension; i++)
+				v[i] = alpha[i];
+			this->SetAlpha(v);
+		}
 	}
 	if( this->m_Settings.count( "beta" ) ){
 		bpo::variable_value v = this->m_Settings["beta"];
-		this->SetBeta( v.as< float >() );
+		std::vector<float> beta = v.as< std::vector<float> > ();
+		if (beta.size() == 1) {
+			this->SetBeta( beta[0] );
+		} else if (beta.size() == Dimension) {
+			InternalVectorType v;
+			for( size_t i = 0; i < Dimension; i++)
+				v[i] = beta[i];
+			this->SetBeta(v);
+		}
 	}
 
 	if( this->m_Settings.count( "grid-size" ) ){

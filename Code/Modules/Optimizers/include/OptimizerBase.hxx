@@ -252,6 +252,13 @@ void OptimizerBase<TFunctional>::Resume() {
 
 		std::cout << "Speed=" << this->m_MaximumGradient << "/" << this->m_MaxSpeed << std::endl;
 
+		if( this->m_MaximumGradient < 1e-8 ) {
+			this->m_StopConditionDescription << "Maximum gradient update changed below the minimum threshold.";
+			this->m_StopCondition = Self::STEP_TOO_SMALL;
+			this->Stop();
+			break;
+		}
+
 		if (this->m_LastMaximumGradient > 0.0){
 			double inc = 1.0 - (this->m_MaximumGradient / this->m_LastMaximumGradient);
 			if (inc < 0.0) {
@@ -300,8 +307,8 @@ template< typename TFunctional >
 void OptimizerBase<TFunctional>
 ::AddOptions( SettingsDesc& opts ) {
 	opts.add_options()
-			("alpha,a", bpo::value< float > (), "alpha value in regularization")
-			("beta,b", bpo::value< float > (), "beta value in regularization")
+			("alpha,a", bpo::value< std::vector<float> > (), "alpha value in regularization")
+			("beta,b", bpo::value< std::vector<float> > (), "beta value in regularization")
 			("step-size,s", bpo::value< double > (), "step-size value in optimization")
 			("learning-rate,r", bpo::value< float > (), "learning rate to update step size")
 			("iterations,i", bpo::value< size_t > (), "number of iterations")

@@ -636,11 +636,23 @@ SparseMatrixTransform<TScalar,NDimensions>
 		fbuf[i] = this->m_Derivatives[i]->GetBufferPointer();
 	}
 
+	if (this->m_GradientField.IsNull()) {
+		VectorType zero;
+		zero.Fill(0.0);
+		this->m_GradientField = FieldType::New();
+		this->m_GradientField->SetRegions(this->m_Derivatives[0]->GetLargestPossibleRegion());
+		this->m_GradientField->Allocate();
+		this->m_GradientField->FillBuffer(zero);
+	}
+	VectorType* gbuf = this->m_GradientField->GetBufferPointer();
+
 
 	VectorType v;
+	VectorType g;
 	ScalarType norm;
 
 	for ( size_t row = 0; row<this->m_NumberOfParameters; row++ ) {
+		g.Fill(0.0);
 		for( size_t i = 0; i < Dimension; i++ ){
 			v.Fill( 0.0 );
 
@@ -651,7 +663,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 			norm = v.GetSquaredNorm();
 			if ( norm > 1.0e-7 )
 				*( fbuf[i] + row ) = norm;
+				g[i] = norm;
 		}
+		*( gbuf + row ) = g;
 	}
 }
 
