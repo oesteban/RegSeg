@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
-# @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-28 11:50:49
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2014-10-28 12:20:56
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -41,6 +41,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     from pyacwereg.workflows.registration import regseg_wf
     from pyacwereg.workflows import evaluation as ev
     from pysdcev.workflows.fieldmap import bmap_registration
+    from pysdcev.workflows.warpings import process_vsm
     from pysdcev.workflows.smri import preprocess_t2, preprocess_dwi
     from pysdcev.workflows.tractography import mrtrix_dti
     from pysdcev.stages.stage1 import stage1
@@ -164,13 +165,24 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                                        enc_dir='y-'))
     selbmap = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
                       name='SelectBmap')
+    dfm = process_vsm()
+    dfm.inputs.inputnode.scaling = 1.0
+    dfm.inputs.inputnode.enc_dir = 'y-'
+    sunwarp = pe.MapNode(WarpPoints(), iterfield=['points'],
+                         name='UnwarpSurfs')
+
     wf.connect([
         (st1,       cmethod0, [('out_dis_set.dwi', 'inputnode.in_file'),
                                ('out_dis_set.dwi_mask', 'inputnode.in_mask')]),
         (ds,        cmethod0, [('bval', 'inputnode.in_bval')]),
         (bmap_prep,  selbmap, [('outputnode.wrapped', 'inlist')]),
         (selbmap,   cmethod0, [('out1', 'inputnode.bmap_mag'),
-                               ('out2', 'inputnode.bmap_pha')])
+                               ('out2', 'inputnode.bmap_pha')]),
+        (cmethod0,       dfm, [('outputnode.out_vsm', 'inputnode.vsm')]),
+        (st1,            dfm, [
+            ('out_dis_set.dwi_mask', 'inputnode.reference')]),
+        (dfm,        sunwarp, [('outputnode.dfm_inv', 'warp')]),
+        (st1,        sunwarp, [('out_dis_set.surf', 'points')])
     ])
 
     mesh0 = pe.MapNode(P2PDistance(weighting='surface'),
@@ -180,17 +192,25 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                    name="REGSEGAddRow")
     csv0.inputs.method = 'REGSEG'
 
-    # mesh1 = pe.MapNode(P2PDistance(weighting='surface'),
-    #                    iterfield=['surface1', 'surface2'],
-    #                    name='FMBSurfDistance')
-    # csv1 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
-    #                name="FMBAddRow")
-
     wf.connect([
         (st1,       mesh0, [('out_dis_set.surf', 'surface1')]),
         (regseg,    mesh0, [('outputnode.out_surf', 'surface2')]),
         (inputnode,  csv0, [('subject_id', 'subject_id')]),
         (mesh0,      csv0, [('distance', 'surf_dist')])
+    ])
+
+    mesh1 = pe.MapNode(P2PDistance(weighting='surface'),
+                       iterfield=['surface1', 'surface2'],
+                       name='FMBSurfDistance')
+    csv1 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
+                   name="FMBAddRow")
+    csv1.inputs.method = 'FMB'
+
+    wf.connect([
+        (st1,       mesh1, [('out_ref_set.surf', 'surface1')]),
+        (sunwarp,   mesh1, [('out_points', 'surface2')]),
+        (inputnode,  csv1, [('subject_id', 'subject_id')]),
+        (mesh1,      csv1, [('distance', 'surf_dist')])
     ])
 
     return wf
