@@ -31,6 +31,34 @@ from math import sqrt
 from scipy import ndimage
 
 
+def sort_surfs(surfs):
+    import os.path as op
+
+    if not isinstance(surfs, list):
+        return surfs
+    if len(surfs) == 1:
+        return surfs
+
+    out = [None] * len(surfs)
+    inames = [s.lower() for s in op.basename(surfs)]
+
+    for fname, iname in zip(surfs, surfs):
+        index = -1
+        if 'white' in iname:
+            if ('lh' in iname) or ('.l.' in iname):
+                index = 0
+            elif ('rh' in iname) or ('.r' in iname):
+                index = 1
+        elif 'pial' in iname:
+            if ('lh' in iname) or ('.l.' in iname):
+                index = 2
+            elif ('rh' in iname) or ('.r' in iname):
+                index = 3
+        out.insert(index, fname)
+
+    return out
+
+
 def ball(volsize, radius, dims=3):
     volsize = np.array(volsize)
     if volsize.ndim == 0:

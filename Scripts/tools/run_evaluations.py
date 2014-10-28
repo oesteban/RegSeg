@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-28 10:47:28
+# @Last Modified time: 2014-10-28 11:50:49
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -36,7 +36,8 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     from nipype.algorithms.mesh import P2PDistance
     from nipype.algorithms.misc import AddCSVRow
     from nipype.workflows.dmri.fsl.artifacts import sdc_fmb
-    from pysdcev.utils import all2RAS
+    # from pysdcev.utils import all2RAS
+    from pyacwereg import misc as acwregmisc
     from pyacwereg.workflows.registration import regseg_wf
     from pyacwereg.workflows import evaluation as ev
     from pysdcev.workflows.fieldmap import bmap_registration
@@ -71,6 +72,10 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                                 for k in ds_tpl_args.keys()}
     ds.inputs.template_args = ds_tpl_args
 
+    surfsort = pe.Node(niu.Function(function=acwregmisc.sort_surfs,
+                       input_names=['surfs'], output_names=['out']),
+                       name='SurfSorted')
+
     bmapnames = dict(mag='FM_mag.nii.gz',
                      pha='FM_pha.nii.gz',
                      param='parameters.txt')
@@ -103,6 +108,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
 
     st1 = stage1()
     wf.connect([
+        (ds,   surfsort, [('surf', 'surfs')]),
         (ds,        st1, [('t1w', 'inputnode.t1w'),
                           ('t2w', 'inputnode.t2w'),
                           ('t1w_brain', 'inputnode.t1w_brain'),
@@ -114,8 +120,8 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                           ('bvec', 'inputnode.bvec'),
                           ('bval', 'inputnode.bval'),
                           ('aseg', 'inputnode.aseg'),
-                          ('aseg', 'inputnode.parcellation'),
-                          ('surf', 'inputnode.surf')]),
+                          ('aseg', 'inputnode.parcellation')]),
+        (surfsort,  st1, [('out', 'inputnode.surf')]),
         (ds_bmap,   st1, [('param', 'inputnode.mr_params')]),
         (bmap_prep, st1, [
             ('outputnode.wrapped', 'inputnode.bmap_wrapped'),
