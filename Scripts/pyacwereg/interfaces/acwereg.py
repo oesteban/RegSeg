@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-24 11:25:30
+# @Last Modified time: 2014-10-28 14:03:55
 
 import os
 import os.path as op
@@ -61,10 +61,15 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
                               default=1.0, argstr='-s %0.5f',
                               desc=('update step size in gradient descent '
                                     'optimization'))
-    alpha = traits.Either(float_trait, traits.List(float_trait), default=1.0,
-                          argstr='-a %0.5f', desc='alpha scalar')
-    beta = traits.Either(float_trait, traits.List(float_trait), default=1.0,
-                         argstr='-b %0.5f', desc='beta scalar')
+
+    regularization_trait = traits.Either(float_trait, traits.Tuple(float_trait,
+                                         float_trait, float_trait))
+    alpha = traits.Either(
+        regularization_trait, traits.List(regularization_trait), default=1.0,
+        argstr='-a %0.5f', desc='alpha scalar')
+    beta = traits.Either(
+        regularization_trait, traits.List(regularization_trait), default=1.0,
+        argstr='-b %0.5f', desc='beta scalar')
 
 
 class ACWERegInputSpec(ACWERegInputGroupSpec):
@@ -188,7 +193,10 @@ pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
             if not isdefined(value):
                 continue
 
-            value = np.atleast_1d(value)
+            if isinstance(value, tuple):
+                value = [value]
+            else:
+                value = np.atleast_1d(value)
 
             if not len(value) == self._num_levels:
                 raise RuntimeError(
@@ -207,6 +215,13 @@ pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
                 return spec.argstr
             else:
                 return ''
+
+        if isinstance(value, tuple):
+            print spec.argstr
+            flag, pattern = spec.argstr.split(' %', 1)
+            pattern = '%' + pattern
+            formatted = flag + ' ' + ' '.join(pattern % elt for elt in value)
+            return formatted
 
         if value is None or value.__class__.__name__ == 'NoneType':
             return ''
