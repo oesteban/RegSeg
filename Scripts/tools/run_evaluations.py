@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-28 10:09:35
+# @Last Modified time: 2014-10-28 10:47:28
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -154,7 +154,8 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                        epi_params=dict(echospacing=0.77e-3,
                                        acc_factor=3,
                                        enc_dir='y-'))
-    selbmap = pe.Node(niu.Split(splits=[1, 1], squeeze=True), name='SelectBmap')
+    selbmap = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
+                      name='SelectBmap')
     wf.connect([
         (st1,       cmethod0, [('out_dis_set.dwi', 'inputnode.in_file'),
                                ('out_dis_set.dwi_mask', 'inputnode.in_mask')]),
@@ -164,15 +165,25 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                                ('out2', 'inputnode.bmap_pha')])
     ])
 
-    # pysdcev = pipeline()
-    # wf.connect([
-    #     (ds,        pysdcev, [(f, 'inputnode.%s' % f) for f in fnames.keys()]),
-    #     (ds,        pysdcev, [('aseg', 'inputnode.parcellation')]),
-    #     (ds_bmap,   pysdcev, [('param', 'inputnode.mr_params')]),
-    #     (bmap_prep, pysdcev, [
-    #         ('outputnode.wrapped', 'inputnode.bmap_wrapped'),
-    #         ('outputnode.unwrapped', 'inputnode.bmap_unwrapped')])
-    # ])
+    mesh0 = pe.MapNode(namesh.P2PDistance(weighting='surface'),
+                       iterfield=['surface1', 'surface2'],
+                       name='REGSEGSurfDistance')
+    csv0 = pe.Node(namisc.AddCSVRow(in_file=settings['out_csv']),
+                   name="REGSEGAddRow")
+    csv0.inputs.method = 'REGSEG'
+
+    # mesh1 = pe.MapNode(namesh.P2PDistance(weighting='surface'),
+    #                    iterfield=['surface1', 'surface2'],
+    #                    name='FMBSurfDistance')
+    # csv1 = pe.Node(namisc.AddCSVRow(in_file=settings['out_csv']),
+    #                name="FMBAddRow")
+
+    wf.connect([
+        (st1,       mesh0, [('out_dis_set.surfs', 'surface1')]),
+        (regseg,    mesh0, [('outputnode.out_surf', 'surface2')]),
+        (inputnode,  csv0, [('subject_id', 'subject_id')]),
+        (mesh0,      csv0, [('distance', 'surf_dist')])
+    ])
 
     return wf
 

@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-27 15:39:21
+# @Last Modified time: 2014-10-28 11:23:55
 
 import os
 import os.path as op
@@ -110,9 +110,8 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
 
         # Connect in_field in case it is an identity workflow
         if 'in_field' in [item[0] for item in reg.inputs.inputnode.items()]:
-            wf.connect([
-                (phantom, reg, [('outputnode.out_field', 'inputnode.in_field')])
-            ])
+            wf.connect(phantom, 'outputnode.out_field',
+                       reg, 'inputnode.in_field')
 
         # Connect results output file
         if results is not None:
