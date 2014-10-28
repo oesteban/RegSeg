@@ -40,9 +40,9 @@ def sort_surfs(surfs):
         return surfs
 
     out = [None] * len(surfs)
-    inames = [s.lower() for s in op.basename(surfs)]
+    inames = [op.basename(s).lower() for s in surfs]
 
-    for fname, iname in zip(surfs, surfs):
+    for fname, iname in zip(surfs, inames):
         index = -1
         if 'white' in iname:
             if ('lh' in iname) or ('.l.' in iname):
@@ -52,10 +52,9 @@ def sort_surfs(surfs):
         elif 'pial' in iname:
             if ('lh' in iname) or ('.l.' in iname):
                 index = 2
-            elif ('rh' in iname) or ('.r' in iname):
+            elif ('rh' in iname) or ('.r.' in iname):
                 index = 3
-        out.insert(index, fname)
-
+        out[index] = fname
     return out
 
 
