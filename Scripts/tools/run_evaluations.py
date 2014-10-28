@@ -160,7 +160,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
         (st1,       cmethod0, [('out_dis_set.dwi', 'inputnode.in_file'),
                                ('out_dis_set.dwi_mask', 'inputnode.in_mask')]),
         (ds,        cmethod0, [('bval', 'inputnode.in_bval')]),
-        (bmap_prep,  selbmap, [('outputnode.wrapped', 'inputnode.bmap_pha')]),
+        (bmap_prep,  selbmap, [('outputnode.wrapped', 'inlist')]),
         (selbmap,   cmethod0, [('out1', 'inputnode.bmap_mag'),
                                ('out2', 'inputnode.bmap_pha')])
     ])
