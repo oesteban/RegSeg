@@ -307,8 +307,8 @@ template< typename TFunctional >
 void OptimizerBase<TFunctional>
 ::AddOptions( SettingsDesc& opts ) {
 	opts.add_options()
-			("alpha,a", bpo::value< std::vector<float> > (), "alpha value in regularization")
-			("beta,b", bpo::value< std::vector<float> > (), "beta value in regularization")
+			("alpha,a", bpo::value< std::vector<float> >()->multitoken(), "alpha value in regularization")
+			("beta,b", bpo::value< std::vector<float> >()->multitoken(), "beta value in regularization")
 			("step-size,s", bpo::value< double > (), "step-size value in optimization")
 			("learning-rate,r", bpo::value< float > (), "learning rate to update step size")
 			("iterations,i", bpo::value< size_t > (), "number of iterations")
