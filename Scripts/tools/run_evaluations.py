@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-29 16:43:47
+# @Last Modified time: 2014-10-29 17:43:47
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -93,7 +93,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
               if (('brain' in k) or ('aseg' in k))}
 
     # reorient = all2RAS(input_fields=rfield, input_param=rparam)
-    bmap_prep = bmap_registration(factor=10.0)
+    bmap_prep = bmap_registration(factor=6.0)
 
     wf = pe.Workflow(name=name)
     wf.connect([
