@@ -33,7 +33,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     from nipype.pipeline import engine as pe
     from nipype.interfaces import utility as niu
     from nipype.interfaces import io as nio
-    from nipype.algorithms.mesh import P2PDistance
+    from nipype.algorithms.mesh import P2PDistance, WarpPoints
     from nipype.algorithms.misc import AddCSVRow
     from nipype.workflows.dmri.fsl.artifacts import sdc_fmb
     # from pysdcev.utils import all2RAS
@@ -181,7 +181,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
         (cmethod0,       dfm, [('outputnode.out_vsm', 'inputnode.vsm')]),
         (st1,            dfm, [
             ('out_dis_set.dwi_mask', 'inputnode.reference')]),
-        (dfm,        sunwarp, [('outputnode.dfm_inv', 'warp')]),
+        (dfm,        sunwarp, [('outputnode.inv_dfm', 'warp')]),
         (st1,        sunwarp, [('out_dis_set.surf', 'points')])
     ])
 
