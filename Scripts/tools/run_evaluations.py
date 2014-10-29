@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-10-28 12:20:56
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-10-29 16:43:47
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -47,7 +47,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     from pysdcev.stages.stage1 import stage1
 
     inputnode = pe.Node(niu.IdentityInterface(fields=['subject_id',
-                        'data_dir', 'bmap_id']), name='inputnode')
+                                                      'data_dir', 'bmap_id']), name='inputnode')
     inputnode.inputs.subject_id = settings['subject_id']
     inputnode.inputs.data_dir = settings['data_dir']
     inputnode.inputs.bmap_id = settings['bmap_id']
@@ -67,14 +67,14 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     ds_tpl_args = {k: [['subject_id', [v]]] for k, v in fnames.iteritems()}
 
     ds = pe.Node(nio.DataGrabber(infields=['subject_id'],
-                 outfields=ds_tpl_args.keys(), sort_filelist=False,
-                 template='*'), name='sMRISource')
+                                 outfields=ds_tpl_args.keys(), sort_filelist=False,
+                                 template='*'), name='sMRISource')
     ds.inputs.field_template = {k: 'subjects/%s/%s'
                                 for k in ds_tpl_args.keys()}
     ds.inputs.template_args = ds_tpl_args
 
     surfsort = pe.Node(niu.Function(function=acwregmisc.sort_surfs,
-                       input_names=['surfs'], output_names=['out']),
+                                    input_names=['surfs'], output_names=['out']),
                        name='SurfSorted')
 
     bmapnames = dict(mag='FM_mag.nii.gz',
@@ -82,8 +82,8 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                      param='parameters.txt')
     bm_tpl_args = {k: [['bmap_id', [v]]] for k, v in bmapnames.iteritems()}
     ds_bmap = pe.Node(nio.DataGrabber(infields=['bmap_id'],
-                      outfields=bm_tpl_args.keys(), sort_filelist=False,
-                      template='*'), name='FieldmapSource')
+                                      outfields=bm_tpl_args.keys(), sort_filelist=False,
+                                      template='*'), name='FieldmapSource')
     ds_bmap.inputs.field_template = {k: 'fieldmaps/%s/%s'
                                      for k in bm_tpl_args.keys()}
     ds_bmap.inputs.template_args = bm_tpl_args
@@ -93,7 +93,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
               if (('brain' in k) or ('aseg' in k))}
 
     # reorient = all2RAS(input_fields=rfield, input_param=rparam)
-    bmap_prep = bmap_registration()
+    bmap_prep = bmap_registration(factor=10.0)
 
     wf = pe.Workflow(name=name)
     wf.connect([
