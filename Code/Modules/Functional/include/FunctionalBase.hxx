@@ -607,7 +607,7 @@ void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::AddOptions( SettingsDesc& opts ) {
 	opts.add_options()
-			("smoothing,S", bpo::value< float > (), "apply isotropic smoothing filter on target image, with kernel sigma=S mm.")
+			("smoothing", bpo::value< float > (), "apply isotropic smoothing filter on target image, with kernel sigma=S mm.")
 			("smooth-auto", bpo::bool_switch(), "apply isotropic smoothing filter on target image, with automatic computation of kernel sigma.")
 			("decile-threshold,d", bpo::value< float > (), "set (decile) threshold to consider a computed gradient as outlier (ranges 0.0-0.5)");
 }

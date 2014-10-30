@@ -312,11 +312,11 @@ void OptimizerBase<TFunctional>
 			("alpha,a", bpo::value< std::vector<float> >()->multitoken(), "alpha value in regularization")
 			("beta,b", bpo::value< std::vector<float> >()->multitoken(), "beta value in regularization")
 			("step-size,s", bpo::value< double > (), "step-size value in optimization")
-			("gradient-scales,gs", bpo::value< std::vector<float> >()->multitoken(), "alpha value in regularization")
+			("gradient-scales,g", bpo::value< std::vector<float> >()->multitoken(), "alpha value in regularization")
 			("learning-rate,r", bpo::value< float > (), "learning rate to update step size")
 			("iterations,i", bpo::value< size_t > (), "number of iterations")
 			("convergence-window,w", bpo::value< size_t > (), "number of iterations of convergence window")
-			("grid-size,g", bpo::value< size_t > (), "grid size")
+			("grid-size,S", bpo::value< size_t > (), "grid size")
 			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)")
 			("convergence-energy", bpo::bool_switch(), "disables lazy convergence tracking: instead of fast computation of the mean norm of "
 					"the displacement field, it computes the full energy functional");

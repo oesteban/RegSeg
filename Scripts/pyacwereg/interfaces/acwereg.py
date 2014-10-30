@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-28 14:03:55
+# @Last Modified time: 2014-10-30 13:18:12
 
 import os
 import os.path as op
@@ -30,7 +30,7 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
     bool_trait = traits.Either(None, traits.Bool(False))
 
     f_smooth = traits.Either(float_trait, traits.List(float_trait),
-                             default=2.0, argstr='-S %0.2f',
+                             default=2.0, argstr='--smoothing %0.2f',
                              desc='smoothing kernel')
     f_decile = traits.Either(float_trait, traits.List(float_trait),
                              default=1.0, argstr='-d %0.5f',
@@ -52,7 +52,7 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
                                              'energy tracking'))
     grid_size = traits.Either(int_trait, traits.List(int_trait), default=8,
                               desc=('bspline control points per dimension and '
-                                    'level'), argstr='-g %d')
+                                    'level'), argstr='-S %d')
     descript_update = traits.Either(int_trait, traits.List(int_trait),
                                     argstr='-u %d',
                                     desc=('update descriptors every N '
@@ -63,13 +63,16 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
                                     'optimization'))
 
     regularization_trait = traits.Either(float_trait, traits.Tuple(float_trait,
-                                         float_trait, float_trait))
+                                                                   float_trait, float_trait))
     alpha = traits.Either(
         regularization_trait, traits.List(regularization_trait), default=1.0,
         argstr='-a %0.5f', desc='alpha scalar')
     beta = traits.Either(
         regularization_trait, traits.List(regularization_trait), default=1.0,
         argstr='-b %0.5f', desc='beta scalar')
+    scales = traits.Either(
+        regularization_trait, traits.List(regularization_trait), default=1.0,
+        argstr='-g %0.5f', desc='alpha scalar')
 
 
 class ACWERegInputSpec(ACWERegInputGroupSpec):
