@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-27 16:12:12
+# @Last Modified time: 2014-10-30 12:04:03
 
 import os
 import os.path as op
@@ -28,12 +28,16 @@ def regseg_wf(name='REGSEG'):
 
     wf_inputs = ['in_fixed', 'in_tpms', 'in_surf', 'in_mask']
     inputnode = pe.Node(niu.IdentityInterface(
-                        fields=regseg_inputs+wf_inputs), name='inputnode')
+                        fields=regseg_inputs + wf_inputs), name='inputnode')
 
     outputnode = pe.Node(niu.IdentityInterface(
                          fields=['out_corr', 'out_tpms',
                                  'out_surf', 'out_field', 'out_mask']),
                          name='outputnode')
+
+    enh = pe.MapNode(niu.Function(function=enh_image, input_names=['in_file'],
+                                  output_names=['out_file']),
+                     iterfield=['in_file'], name='Enhance')
 
     # Registration
     regseg = pe.Node(ACWEReg(), name="ACWERegistration")
@@ -45,8 +49,9 @@ def regseg_wf(name='REGSEG'):
     # Connect
     wf.connect([
         (inputnode,   regseg, [(f, f) for f in regseg_inputs]),
-        (inputnode,   regseg, [('in_surf', 'in_prior'),
-                               ('in_fixed', 'in_fixed')]),
+        (inputnode,      enh, [('in_fixed', 'in_file')]),
+        (enh,         regseg, [('out_file', 'in_fixed')]),
+        (inputnode,   regseg, [('in_surf', 'in_prior')]),
         (inputnode, applytfm, [('in_tpms', 'in_file'),
                                ('in_mask', 'in_mask')]),
         (regseg,    applytfm, [('out_field', 'in_field')]),
@@ -126,3 +131,25 @@ def identity_wf(name='Identity', n_tissues=3):
     ])
 
     return wf
+
+
+def enh_image(in_file, irange=2000., out_file=None):
+    import numpy as np
+    import nibabel as nb
+    import os.path as op
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_enh.nii.gz' % fname)
+
+    nii = nb.load(in_file)
+    data = nii.get_data()
+    data[data < 0] = 0.0
+    imax = data.max()
+    data = (irange / imax) * data
+
+    nb.Nifti1Image(data, nii.get_affine(), nii.get_header()).to_filename(
+        out_file)
+    return out_file
