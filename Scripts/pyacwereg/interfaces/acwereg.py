@@ -196,10 +196,8 @@ pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
             if not isdefined(value):
                 continue
 
-            if isinstance(value, tuple):
+            if not isinstance(value, list):
                 value = [value]
-            else:
-                value = np.atleast_1d(value)
 
             if not len(value) == self._num_levels:
                 raise RuntimeError(

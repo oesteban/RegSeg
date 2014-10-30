@@ -135,7 +135,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
 
     regseg = regseg_wf()
     regseg.inputs.inputnode.iterations = [500, 500]
-    regseg.inputs.inputnode.scales = [[0.1, 1.0, 0.1], [0.0, 1.0, 0.0]]
+    regseg.inputs.inputnode.scales = [(0.1, 1.0, 0.1), (0.0, 1.0, 0.0)]
     # wf.inputs.inputnode.descript_update = [20]
     regseg.inputs.inputnode.step_size = [1.0, .01]
     regseg.inputs.inputnode.alpha = [0.0, 100.0]
