@@ -85,6 +85,9 @@ m_RegularizationEnergyUpdated(true)
 	SplineTransformPointer initTransform = SplineTransformType::New();
 	this->m_TotalTransform = itkDynamicCastInDebugMode< TransformType* >( initTransform.GetPointer() );
 	this->m_TotalTransform->SetNumberOfThreads( this->GetNumberOfThreads() );
+
+	this->m_Scales.SetSize(Dimension);
+	this->m_Scales.Fill(1.0);
 }
 
 template< typename TFunctional >
