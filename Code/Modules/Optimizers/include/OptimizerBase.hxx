@@ -96,6 +96,8 @@ m_InitialValue(itk::NumericTraits<MeasureType>::infinity())
 {
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 0 );
+	this->m_Scales(Dimension);
+	this->m_Scales.Fill(1.0);
 }
 
 template< typename TFunctional >
@@ -310,6 +312,7 @@ void OptimizerBase<TFunctional>
 			("alpha,a", bpo::value< std::vector<float> >()->multitoken(), "alpha value in regularization")
 			("beta,b", bpo::value< std::vector<float> >()->multitoken(), "beta value in regularization")
 			("step-size,s", bpo::value< double > (), "step-size value in optimization")
+			("gradient-scales,gs", bpo::value< std::vector<float> >()->multitoken(), "alpha value in regularization")
 			("learning-rate,r", bpo::value< float > (), "learning rate to update step size")
 			("iterations,i", bpo::value< size_t > (), "number of iterations")
 			("convergence-window,w", bpo::value< size_t > (), "number of iterations of convergence window")
@@ -327,6 +330,19 @@ void OptimizerBase<TFunctional>
 	if( this->m_Settings.count( "step-size" ) ){
 		bpo::variable_value v = this->m_Settings["step-size"];
 		this->SetStepSize( v.as< double >() );
+	}
+
+	if( this->m_Settings.count( "gradient-scales" ) ){
+		bpo::variable_value v = this->m_Settings["gradient-scales"];
+		std::vector<float> s = v.as< std::vector<float> > ();
+		ScalesType scales(Dimension);
+		if (scales.size() == 1) {
+			scales.Fill(s[0]);
+		} else if (scales.size() == Dimension) {
+			for( size_t i = 0; i < Dimension; i++)
+				scales[i] = s[i];
+		}
+		this->SetScales(scales);
 	}
 
 	if( this->m_Settings.count( "learning-rate" ) ){
