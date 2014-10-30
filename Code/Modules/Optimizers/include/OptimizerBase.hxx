@@ -96,8 +96,6 @@ m_InitialValue(itk::NumericTraits<MeasureType>::infinity())
 {
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 0 );
-	this->m_Scales(Dimension);
-	this->m_Scales.Fill(1.0);
 }
 
 template< typename TFunctional >
@@ -252,7 +250,9 @@ void OptimizerBase<TFunctional>::Resume() {
 			break;
 		}
 
+#ifndef NDEBUG
 		std::cout << "Speed=" << this->m_MaximumGradient << "/" << this->m_MaxSpeed << std::endl;
+#endif
 
 		if( this->m_MaximumGradient < 1e-8 ) {
 			this->m_StopConditionDescription << "Maximum gradient update changed below the minimum threshold.";
