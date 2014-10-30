@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-30 12:04:03
+# @Last Modified time: 2014-10-30 12:46:42
 
 import os
 import os.path as op
@@ -120,7 +120,6 @@ def identity_wf(name='Identity', n_tissues=3):
                                 ('in_surf', 'in_surf'),
                                 ('grid_size', 'grid_size')]),
         (merge,      applytfm, [('out', 'in_file')]),
-        # (inputnode,  applytfm, [('in_field', 'in_field')]),
         (inv,        applytfm, [('out_field', 'in_field')]),
         (applytfm,      split, [('out_file', 'inlist')]),
         (split,    outputnode, [('out1', 'out_corr'),
@@ -147,6 +146,7 @@ def enh_image(in_file, irange=2000., out_file=None):
     nii = nb.load(in_file)
     data = nii.get_data()
     data[data < 0] = 0.0
+    data[data > 1.0] = 0.0
     imax = data.max()
     data = (irange / imax) * data
 
