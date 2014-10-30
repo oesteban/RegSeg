@@ -115,6 +115,8 @@ public:
 	typedef size_t                                                  SizeValueType;
 	typedef itk::FixedArray< double, Dimension >                    ControlPointsGridSpacingType;
 
+	typedef typename Superclass::ScalesType                         ScalesType;
+
 	/** Functional definitions */
 	typedef typename FunctionalType::Pointer                        FunctionalPointer;
 	typedef typename FunctionalType::MeasureType                    MeasureType;
@@ -230,6 +232,9 @@ public:
 	itkSetMacro(Coefficients, CoefficientsImageArray);
 	itkGetConstMacro(Coefficients, CoefficientsImageArray);
 
+	//itkSetMacro(Scales, ScalesType);
+	//itkGetConstMacro(Scales, ScalesType);
+
 	itkSetMacro(DerivativeCoefficients, CoefficientsImageArray);
 	itkGetConstMacro(DerivativeCoefficients, CoefficientsImageArray);
 
@@ -316,6 +321,7 @@ protected:
 	MeasureType                  m_LastValue;
 	MeasureType                  m_InitialValue;
 
+	//ScalesType                   m_Scales;
 	ControlPointsGridSizeType    m_GridSize;
 	ControlPointsGridSpacingType m_GridSpacing;
 	VectorType                   m_MaxDisplacement;
