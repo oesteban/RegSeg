@@ -116,11 +116,11 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	ParametersType newParameters;
 	ProbabilityMapConstPointer roipm = this->GetCurrentMap( idx );
 
-	if (this->m_Background && (idx == this->m_NumberOfRegions - 1)) {
+	if (this->m_UseBackground && (idx == this->m_NumberOfRegions - 1)) {
 		newParameters.mean.Fill(0.0);
 		newParameters.cov.SetIdentity();
 		for (size_t row = 0; row < Components; row ++ ) {
-			newParameters.cov(row, row) = 5.0;
+			newParameters.cov(row, row) = 15.0;
 		}
 		return newParameters;
 	}
