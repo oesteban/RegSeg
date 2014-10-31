@@ -54,7 +54,7 @@
 namespace rstk {
 
 template< class TScalar, unsigned int NDimensions = 3u >
-class CompositeMatrixTransform: public itk::DisplacementFieldTransform< TScalar, NDimensions >
+class CompositeMatrixTransform : public itk::DisplacementFieldTransform< TScalar, NDimensions >
 {
 public:
     /* Standard class typedefs. */
@@ -96,12 +96,21 @@ public:
 
     typedef typename Superclass::DisplacementFieldType               DisplacementFieldType;
     typedef typename DisplacementFieldType::Pointer                  DisplacementFieldPointer;
+    typedef typename DisplacementFieldType::PixelType                DisplacementType;
 
     typedef typename SparseMatrixTransform< ScalarType >             TransformComponentType;
     typedef typename TransformComponentType::Pointer                 TransformComponentPointer;
 
     typedef typename TransformType::CoefficientsImageType            CoefficientsImageType;
     typedef typename TransformType::CoefficientsImageArray           CoefficientsImageArray;
+    typedef typename TransformType::FieldType                        TransformFieldType;
+    typedef typename TransformFieldType::Pointer                     TransformFieldPointer;
+    typedef typename TransformFieldType::ConstPointer                TransformFieldConstPointer;
+    typedef typename TransformType::DomainBase                       DomainBaseType;
+    typedef typename DomainBaseType::SizeType                        DomainSizeType;
+    typedef typename DomainBaseType::DirectionType                   DomainDirectionType;
+    typedef typename DomainBaseType::OriginType                      DomainOriginType;
+    typedef typename DomainBaseType::SpacingType                     DomainSpacingType;
     typedef typename std::vector< const CoefficientsImageArray >     CoefficientsContainer;
 
     itkSetMacro(NumberOfTransforms, size_t);
@@ -111,6 +120,8 @@ public:
     	this->m_Coefficients.push_back(coeffs);
     	this->m_NumberOfTransforms = this->m_Coefficients.size();
     }
+
+    void SetPhysicalDomainInformation( const DomainBaseType* image );
 
 protected:
     CompositeMatrixTransform();
@@ -124,6 +135,10 @@ private:
 
 	CoefficientsContainer m_Coefficients;
 	size_t m_NumberOfTransforms;
+	DomainSizeType m_ReferenceSize;
+	DomainDirectionType m_ReferenceDirection;
+	DomainOriginType m_ReferenceOrigin;
+	DomainSpacingType m_ReferenceSpacing;
 };
 } // end namespace rstk
 
