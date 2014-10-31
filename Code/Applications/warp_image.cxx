@@ -32,8 +32,8 @@ void conflicting_options(const boost::program_options::variables_map & vm,
 
 int main(int argc, char *argv[]) {
 	std::string outPrefix = "displ";
-	std::string fieldname,maskfile,invfieldname;
-	std::vector< std::string > fixedImageNames, movingSurfaceNames;
+	std::string maskfile;
+	std::vector< std::string > fixedImageNames, movingSurfaceNames, fieldname, invfieldname;
 	std::vector<size_t> grid_size;
 
 	bpo::options_description all_desc("Usage");
@@ -44,10 +44,10 @@ int main(int argc, char *argv[]) {
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
 			("mask,m", bpo::value< std::string >(&maskfile), "mask file" )
 			("mask-inputs", bpo::bool_switch(), "use deformed mask to filter input files")
-			("field,F", bpo::value < std::string >(&fieldname), "forward displacement field" )
-			("inv-field,R", bpo::value < std::string >(&invfieldname), "backward displacement field" )
-			("coeff,C", bpo::value < std::string >(&fieldname), "forward displacement field" )
-			("inv-coeff,I", bpo::value < std::string >(&invfieldname), "backward displacement field" )
+			("field,F", bpo::value < std::vector< std::string > >(&fieldname), "forward displacement field" )
+			("inv-field,R", bpo::value < std::vector< std::string > >(&invfieldname), "backward displacement field" )
+			("coeff,C", bpo::value < std::vector< std::string > >(&fieldname), "forward displacement field" )
+			("inv-coeff,I", bpo::value < std::vector< std::string > >(&invfieldname), "backward displacement field" )
 			//("compute-inverse", bpo::bool_switch(), "compute precise inversion of the input field (requires -F)")
 			("grid-size,g", bpo::value< std::vector<size_t> >(&grid_size)->multitoken(), "size of grid of bspline control points (default is 10x10x10)");
 	std::vector<std::string> opt_conf;
@@ -89,19 +89,26 @@ int main(int argc, char *argv[]) {
 
 	DisplacementFieldPointer field, field_inv;
 	DisplacementFieldConstPointer input_field;
-	DisplacementFieldReaderPointer fread = DisplacementFieldReaderType::New();
-	fread->SetFileName( isFwd?fieldname:invfieldname );
-	fread->Update();
-	input_field = fread->GetOutput();
+
+	std::vector< std::string > fnames = isFwd?fieldname:invfieldname;
 
 	if (!isField) {
-		ref->SetDirection( int_dir );
-		ref->SetOrigin( int_orig );
-		TPointer tf_from_coeff = Transform::New();
-		tf_from_coeff->SetCoefficientsVectorImage(input_field);
+		CompositeTransformPointer tf_from_coeff = CompositeTransform::New();
 		tf_from_coeff->SetPhysicalDomainInformation(ref);
-		tf_from_coeff->Interpolate();
-		input_field = tf_from_coeff->GetField();
+
+		for (size_t i = 0; i < fnames.size(); i++) {
+			DisplacementFieldReaderPointer fread = DisplacementFieldReaderType::New();
+			fread->SetFileName( fnames[i] );
+			fread->Update();
+			tf_from_coeff->PushBackCoefficients(fread->GetOutput());
+		}
+		tf_from_coeff->Update();
+		input_field = tf_from_coeff->GetDisplacementField();
+	} else {
+		DisplacementFieldReaderPointer fread = DisplacementFieldReaderType::New();
+		fread->SetFileName( fnames[0] );
+		fread->Update();
+		input_field = fread->GetOutput();
 	}
 
 	const VectorType* ofb;
@@ -226,71 +233,80 @@ int main(int argc, char *argv[]) {
 
 	// Warp surfaces --------------------------------------------------
 	typename FieldType::SizeType size;
-	if( vm.count("grid-size") ){
-		if( grid_size.size() == 1 ) {
-			size.Fill( grid_size[0] );
-		}
-		else if ( grid_size.size() == FieldType::ImageDimension ) {
-			for( size_t i = 0; i < FieldType::ImageDimension; i++)
-				size[i] = grid_size[i];
-		}
-		else {
-			std::cout << "error with grid size" << std::endl;
-			return 1;
-		}
-	}
+	BSplineTransformPointer tf_mesh;
 
-	TPointer tf_mesh = Transform::New();
-	tf_mesh->SetControlPointsSize(size);
-	tf_mesh->SetPhysicalDomainInformation( field );
-	tf_mesh->SetField( field );
-	tf_mesh->ComputeCoefficients();
-
-	// TransformPointer tf_inv = TransformType::New();
-	// tf_inv->SetDisplacementField( field_inv );
+	if( movingSurfaceNames.size() > 0 ){
+			if(isField) {
+				if( vm.count("grid-size") ){
+						if( grid_size.size() == 1 ) {
+							size.Fill( grid_size[0] );
+						}
+						else if ( grid_size.size() == FieldType::ImageDimension ) {
+							for( size_t i = 0; i < FieldType::ImageDimension; i++)
+								size[i] = grid_size[i];
+						}
+						else {
+							std::cout << "error with grid size" << std::endl;
+							return 1;
+						}
+					}
+			} else {
+				// implement me!
+			}
 
 
-	for( size_t i = 0; i<movingSurfaceNames.size(); i++){
-		MeshReaderPointer r = MeshReaderType::New();
-		r->SetFileName( movingSurfaceNames[i] );
-		r->Update();
+			tf_mesh = BSplineTransform::New();
+			tf_mesh->SetControlPointsSize(size);
+			tf_mesh->SetPhysicalDomainInformation( field );
+			tf_mesh->SetField( field );
+			tf_mesh->ComputeCoefficients();
 
-		MeshPointer cur_mesh = r->GetOutput();
-		PointsIterator p_it = cur_mesh->GetPoints()->Begin();
-		PointsIterator p_end = cur_mesh->GetPoints()->End();
+			// TransformPointer tf_inv = TransformType::New();
+			// tf_inv->SetDisplacementField( field_inv );
 
-		MeshPointType p;
-		while ( p_it!=p_end ) {
-			tf_mesh->AddOffGridPos(p_it.Value());
-			++p_it;
-		}
-	}
 
-	tf_mesh->Interpolate();
+			for( size_t i = 0; i<movingSurfaceNames.size(); i++){
+				MeshReaderPointer r = MeshReaderType::New();
+				r->SetFileName( movingSurfaceNames[i] );
+				r->Update();
 
-	size_t pointId = 0;
-	for( size_t i = 0; i<movingSurfaceNames.size(); i++){
-		MeshReaderPointer r = MeshReaderType::New();
-		r->SetFileName( movingSurfaceNames[i] );
-		r->Update();
+				MeshPointer cur_mesh = r->GetOutput();
+				PointsIterator p_it = cur_mesh->GetPoints()->Begin();
+				PointsIterator p_end = cur_mesh->GetPoints()->End();
 
-		MeshPointer cur_mesh = r->GetOutput();
-		PointsIterator p_it = cur_mesh->GetPoints()->Begin();
-		PointsIterator p_end = cur_mesh->GetPoints()->End();
+				MeshPointType p;
+				while ( p_it!=p_end ) {
+					tf_mesh->AddOffGridPos(p_it.Value());
+					++p_it;
+				}
+			}
 
-		MeshPointType p;
-		while ( p_it!=p_end ) {
-			p = p_it.Value();
-			p_it.Value() += tf_mesh->GetOffGridValue(pointId);
-			++p_it;
-		}
+			tf_mesh->Interpolate();
 
-		MeshWriterPointer wmesh = MeshWriterType::New();
-		std::stringstream ss;
-		ss << outPrefix << "_warped_" << i << ".vtk";
-		wmesh->SetFileName( ss.str().c_str() );
-		wmesh->SetInput( cur_mesh );
-		wmesh->Update();
+			size_t pointId = 0;
+			for( size_t i = 0; i<movingSurfaceNames.size(); i++){
+				MeshReaderPointer r = MeshReaderType::New();
+				r->SetFileName( movingSurfaceNames[i] );
+				r->Update();
+
+				MeshPointer cur_mesh = r->GetOutput();
+				PointsIterator p_it = cur_mesh->GetPoints()->Begin();
+				PointsIterator p_end = cur_mesh->GetPoints()->End();
+
+				MeshPointType p;
+				while ( p_it!=p_end ) {
+					p = p_it.Value();
+					p_it.Value() += tf_mesh->GetOffGridValue(pointId);
+					++p_it;
+				}
+
+				MeshWriterPointer wmesh = MeshWriterType::New();
+				std::stringstream ss;
+				ss << outPrefix << "_warped_" << i << ".vtk";
+				wmesh->SetFileName( ss.str().c_str() );
+				wmesh->SetInput( cur_mesh );
+				wmesh->Update();
+			}
 	}
 }
 

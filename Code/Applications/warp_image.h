@@ -35,6 +35,7 @@
 #include <itkMesh.h>
 #include <itkVTKPolyDataReader.h>
 #include "rstkVTKPolyDataWriter.h"
+#include "CompositeMatrixTransform.h"
 #include "BSplineSparseMatrixTransform.h"
 
 namespace bpo = boost::program_options;
@@ -60,12 +61,17 @@ typedef itk::BinaryThresholdImageFilter
 
 typedef float                                                ScalarType;
 typedef rstk::BSplineSparseMatrixTransform
-		                          < ScalarType, DIMENSION>   Transform;
-typedef Transform::Pointer                                   TPointer;
-typedef typename Transform::CoefficientsImageType            CoefficientsType;
-typedef typename Transform::CoefficientsImageArray           CoefficientsImageArray;
-typedef typename Transform::FieldType                        FieldType;
-typedef typename Transform::VectorType                       VectorType;
+		                          < ScalarType, DIMENSION>   BSplineTransform;
+typedef BSplineTransform::Pointer                            BSplineTransformPointer;
+typedef rstk::CompositeMatrixTransform
+		                          < ScalarType, DIMENSION>   CompositeTransform;
+typedef CompositeTransform::Pointer                          CompositeTransformPointer;
+
+
+typedef typename BSplineTransform::CoefficientsImageType     CoefficientsType;
+typedef typename BSplineTransform::CoefficientsImageArray    CoefficientsImageArray;
+typedef typename BSplineTransform::FieldType                 FieldType;
+typedef typename BSplineTransform::VectorType                VectorType;
 
 typedef typename FieldType::Pointer              			 DisplacementFieldPointer;
 typedef typename FieldType::ConstPointer              		 DisplacementFieldConstPointer;
