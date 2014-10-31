@@ -49,6 +49,7 @@
 #include <itkMatrix.h>
 
 #include "SparseMatrixTransform.h"
+#include "BSplineSparseMatrixTransform.h"
 #include "rstkMacro.h"
 
 namespace rstk {
@@ -64,7 +65,7 @@ public:
     typedef itk::SmartPointer< Self >         Pointer;
     typedef itk::SmartPointer< const Self >   ConstPointer;
 
-    itkTypeMacro( CompositeMatrixTransform, Transform );
+    itkTypeMacro( CompositeMatrixTransform, DisplacementFieldTransform );
     itkNewMacro( Self );
 
     itkStaticConstMacro( Dimension, unsigned int, NDimensions );
@@ -98,30 +99,34 @@ public:
     typedef typename DisplacementFieldType::Pointer                  DisplacementFieldPointer;
     typedef typename DisplacementFieldType::PixelType                DisplacementType;
 
-    typedef typename SparseMatrixTransform< ScalarType >             TransformComponentType;
+    typedef BSplineSparseMatrixTransform< ScalarType >               TransformComponentType;
     typedef typename TransformComponentType::Pointer                 TransformComponentPointer;
 
-    typedef typename TransformType::CoefficientsImageType            CoefficientsImageType;
-    typedef typename TransformType::CoefficientsImageArray           CoefficientsImageArray;
-    typedef typename TransformType::FieldType                        TransformFieldType;
+    typedef typename TransformComponentType::FieldType               TransformFieldType;
     typedef typename TransformFieldType::Pointer                     TransformFieldPointer;
     typedef typename TransformFieldType::ConstPointer                TransformFieldConstPointer;
-    typedef typename TransformType::DomainBase                       DomainBaseType;
+    typedef typename TransformComponentType::CoefficientsImageType   CoefficientsImageType;
+    typedef typename TransformComponentType::CoefficientsImageArray  CoefficientsImageArray;
+    typedef typename TransformComponentType::FieldType               CoefficientsFieldType;
+    typedef typename CoefficientsFieldType::Pointer                  CoefficientsFieldTypePointer;
+    typedef typename CoefficientsFieldType::ConstPointer             CoefficientsFieldTypeConstPointer;
+    typedef typename TransformComponentType::DomainBase              DomainBaseType;
     typedef typename DomainBaseType::SizeType                        DomainSizeType;
     typedef typename DomainBaseType::DirectionType                   DomainDirectionType;
-    typedef typename DomainBaseType::OriginType                      DomainOriginType;
+    typedef typename DomainBaseType::PointType                       DomainOriginType;
     typedef typename DomainBaseType::SpacingType                     DomainSpacingType;
-    typedef typename std::vector< const CoefficientsImageArray >     CoefficientsContainer;
+    typedef typename std::vector<CoefficientsFieldTypeConstPointer>  CoefficientsContainer;
 
     itkSetMacro(NumberOfTransforms, size_t);
     itkGetConstMacro(NumberOfTransforms, size_t);
 
-    void PushBackCoefficients(const CoefficientsImageArray& coeffs) {
+    void PushBackCoefficients(const CoefficientsFieldType* coeffs) {
     	this->m_Coefficients.push_back(coeffs);
     	this->m_NumberOfTransforms = this->m_Coefficients.size();
     }
 
     void SetPhysicalDomainInformation( const DomainBaseType* image );
+    void Update() { this->Compute(); }
 
 protected:
     CompositeMatrixTransform();

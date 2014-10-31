@@ -11,11 +11,37 @@
 namespace rstk {
 
 template< class TScalar, unsigned int NDimensions >
+CompositeMatrixTransform<TScalar,NDimensions>
+::CompositeMatrixTransform():
+Superclass(),
+m_NumberOfTransforms(0) {
+	m_ReferenceSize.Fill(0.0);
+	m_ReferenceDirection.SetIdentity();
+	m_ReferenceOrigin.Fill(0.0);
+	m_ReferenceSpacing.Fill(0.0);
+
+}
+
+template< class TScalar, unsigned int NDimensions >
+void
+CompositeMatrixTransform<TScalar,NDimensions>
+::PrintSelf(std::ostream& os, itk::Indent indent) const {
+	Superclass::PrintSelf(os, indent);
+	os << indent << indent << "Number of transforms: "<< this->m_NumberOfTransforms << std::endl;
+	os << indent << indent << "Reference size = " << this->m_ReferenceSize << std::endl;
+}
+
+template< class TScalar, unsigned int NDimensions >
 void
 CompositeMatrixTransform<TScalar,NDimensions>
 ::Compute() {
 	if ((this->m_NumberOfTransforms == 0) || (this->m_Coefficients.size()!=this->m_NumberOfTransforms)) {
 		itkExceptionMacro(<< "number of transforms is zero or it does not match the number of stored coefficients sets.");
+	}
+
+	for (size_t d = 0; d < Dimension; d++) {
+		if (this->m_ReferenceSize[d] ==0)
+			itkExceptionMacro(<< "physical domain is not initialized.");
 	}
 
 	DisplacementType zerov; zerov.Fill(0.0);
@@ -30,17 +56,20 @@ CompositeMatrixTransform<TScalar,NDimensions>
 	DisplacementType* dfbuffer = this->m_DisplacementField->GetBufferPointer();
 	size_t nPix = this->m_DisplacementField->GetLargestPossibleRegion().GetNumberOfPixels();
 
+	DisplacementType v;
 	for( size_t c = 0; c < this->m_NumberOfTransforms; c++) {
 		TransformComponentPointer tf = TransformComponentType::New();
-		tf->SetPhysicalDomainInformation(this->m_DisplacementField);
-		tf->SetCoefficientsImages(this->m_Coefficients[c]);
+		tf->SetOutputReference(this->m_DisplacementField);
+		tf->SetCoefficientsVectorImage(this->m_Coefficients[c]);
 		tf->Interpolate();
 		TransformFieldConstPointer f = tf->GetField();
 
-		const typename TransformFieldType::PixelType* cbuffer = f->GetBufferPointer();
-
+		const DisplacementType* cbuffer = f->GetBufferPointer();
+		DisplacementType vc;
 		for( size_t i = 0; i < nPix; i++) {
-			*(dfbuffer + i) = *(dfbuffer + i) + *(cbuffer + i);
+			vc = *(cbuffer + i);
+			v = *(dfbuffer + i);
+			*(dfbuffer + i)+= vc;
 		}
 	}
 }

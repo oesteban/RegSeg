@@ -51,7 +51,7 @@
 
 namespace rstk {
 
-template< class TScalar, unsigned int NDimensions, unsigned int VSplineOrder = 3u >
+template< class TScalar, unsigned int NDimensions = 3u, unsigned int VSplineOrder = 3u >
 class BSplineSparseMatrixTransform: public SparseMatrixTransform< TScalar, NDimensions > {
 public:
 	typedef BSplineSparseMatrixTransform< TScalar, NDimensions, VSplineOrder >          Self;
