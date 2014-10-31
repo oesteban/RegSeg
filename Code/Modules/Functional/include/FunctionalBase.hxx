@@ -72,7 +72,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_EnergyUpdated(false),
  m_RegionsUpdated(false),
  m_ApplySmoothing(false),
- m_Background(false),
+ m_UseBackground(false),
  m_Value(1.0)
  {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
@@ -609,6 +609,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	opts.add_options()
 			("smoothing", bpo::value< float > (), "apply isotropic smoothing filter on target image, with kernel sigma=S mm.")
 			("smooth-auto", bpo::bool_switch(), "apply isotropic smoothing filter on target image, with automatic computation of kernel sigma.")
+			("use-background", bpo::bool_switch(), "consider last ROI as background and do not compute descriptors.")
 			("decile-threshold,d", bpo::value< float > (), "set (decile) threshold to consider a computed gradient as outlier (ranges 0.0-0.5)");
 }
 
@@ -627,6 +628,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		if ( v.as<bool>() ) {
 			this->m_ApplySmoothing= v.as<bool> ();
 			this->m_Sigma.Fill( 0.0 );
+		}
+	}
+
+	if( this->m_Settings.count( "use-background" ) ) {
+		bpo::variable_value v = this->m_Settings["use-background"];
+		if ( v.as<bool>() ) {
+			this->SetUseBackground(true);
 		}
 	}
 

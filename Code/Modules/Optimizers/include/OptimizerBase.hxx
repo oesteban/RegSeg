@@ -181,9 +181,9 @@ void OptimizerBase<TFunctional>::Resume() {
 	this->m_Stop = false;
 
 	while( ! this->m_Stop )	{
-		if( this->m_UseDescriptorRecomputation && ( this->m_CurrentIteration%this->m_DescriptorRecomputationFreq == 0 ) ) {
+		if( this->m_CurrentIteration > this->m_DescriptorRecomputationFreq  && this->m_UseDescriptorRecomputation && ( (this->m_CurrentIteration -1) %this->m_DescriptorRecomputationFreq == 0 ) ) {
 			this->m_Functional->UpdateDescriptors();
-			this->m_StepSize = this->m_StepSize * 1.0e-4;
+			// this->m_StepSize = this->m_StepSize * 1.0e-4;
 			this->InvokeEvent( FunctionalModifiedEvent() );
 			this->m_ConvergenceMonitoring->ClearEnergyValues();
 		}
@@ -254,31 +254,31 @@ void OptimizerBase<TFunctional>::Resume() {
 		std::cout << "Speed=" << this->m_MaximumGradient << "/" << this->m_MaxSpeed << std::endl;
 #endif
 
-		if( this->m_MaximumGradient < 1e-8 ) {
+		if( this->m_MaximumGradient < 1e-5 ) {
 			this->m_StopConditionDescription << "Maximum gradient update changed below the minimum threshold.";
 			this->m_StopCondition = Self::STEP_TOO_SMALL;
 			this->Stop();
 			break;
 		}
 
-		if (this->m_LastMaximumGradient > 0.0){
-			double inc = 1.0 - (this->m_MaximumGradient / this->m_LastMaximumGradient);
-			if (inc < 0.0) {
-				inc *= 5;
-			}
-			this->m_Momentum = this->m_Momentum + this->m_LearningRate * inc;
-			if (this->m_Momentum <= -0.8) {
-				this->m_Momentum = -0.8;
-			}
-
-			if (this->m_Momentum > 0.2) {
-				this->m_Momentum = 0.2;
-			} else {
-				this->m_StepSize = (1.0 + this->m_Momentum) * this->m_StepSize;
-			}
-		} else {
-			this->m_InitialValue = this->m_CurrentValue;
-		}
+		// if (this->m_LastMaximumGradient > 0.0){
+		// 	double inc = 1.0 - (this->m_MaximumGradient / this->m_LastMaximumGradient);
+		// 	if (inc < 0.0) {
+		// 		inc *= 5;
+		// 	}
+		// 	this->m_Momentum = this->m_Momentum + this->m_LearningRate * inc;
+		// 	if (this->m_Momentum <= -0.8) {
+		// 		this->m_Momentum = -0.8;
+		// 	}
+        //
+		// 	if (this->m_Momentum > 0.2) {
+		// 		this->m_Momentum = 0.2;
+		// 	} else {
+		// 		this->m_StepSize = (1.0 + this->m_Momentum) * this->m_StepSize;
+		// 	}
+		// } else {
+		// 	this->m_InitialValue = this->m_CurrentValue;
+		// }
 
 		if( this->m_StepSize < 1e-8 ) {
 			this->m_StopConditionDescription << "Parameters field changed below the minimum threshold.";

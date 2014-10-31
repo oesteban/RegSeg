@@ -295,8 +295,8 @@ public:
 	virtual void SetReferenceImage (const ReferenceImageType * _arg);
 
 	itkGetMacro( ApplySmoothing, bool );
-	itkSetMacro( Background, bool );
-	itkGetMacro( Background, bool );
+	itkSetMacro( UseBackground, bool );
+	itkGetMacro( UseBackground, bool );
 	itkGetMacro( Sigma, SigmaArrayType );
 	itkSetMacro( Sigma, SigmaArrayType );
 
@@ -365,7 +365,7 @@ protected:
 	bool m_EnergyUpdated;
 	bool m_RegionsUpdated;
 	bool m_ApplySmoothing;
-	bool m_Background;
+	bool m_UseBackground;
 
 
 	mutable MeasureType m_Value;
