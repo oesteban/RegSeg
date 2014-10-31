@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------------
-// File:          CompositeBSplineTransform.h
+// File:          CompositeMatrixTransform.h
 // Date:          Oct 30, 2014
 // Author:        code@oscaresteban.es (Oscar Esteban)
 // Version:       1.0 beta
@@ -40,44 +40,31 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef COMPOSITEBSPLINETRANSFORM_H_
-#define COMPOSITEBSPLINETRANSFORM_H_
+#ifndef COMPOSITEMATRIXTRANSFORM_H_
+#define COMPOSITEMATRIXTRANSFORM_H_
 
-#include <functional>
-
-#include <itkTransform.h>
-#include <itkPoint.h>
-#include <itkVector.h>
-#include <itkMatrix.h>
-#include <itkPointSet.h>
-#include <itkImage.h>
-#include <itkDefaultStaticMeshTraits.h>
-#include <itkKernelFunctionBase.h>
-#include <VNLSparseLUSolverTraits.h>
+#include <vector>
+#include <iostream>
 #include <itkDisplacementFieldTransform.h>
-#include <itkImageHelper.h>
-#include <itkImageTransformHelper.h>
+#include <itkMatrix.h>
 
-#include <vnl/vnl_sparse_matrix.h>
-#include <vnl/vnl_vector.h>
-#include <vnl/vnl_matrix.h>
-#include <vnl/algo/vnl_sparse_lu.h>
-
+#include "SparseMatrixTransform.h"
 #include "rstkMacro.h"
 
 namespace rstk {
 
 template< class TScalar, unsigned int NDimensions = 3u >
-class CompositeBSplineTransform: public itk::DisplacementFieldTransform< TScalar, NDimensions >
+class CompositeMatrixTransform: public itk::DisplacementFieldTransform< TScalar, NDimensions >
 {
 public:
     /* Standard class typedefs. */
-    typedef CompositeBSplineTransform         Self;
-    typedef itk::DisplacementFieldTransform< TScalar, NDimensions > Superclass;
+    typedef CompositeMatrixTransform          Self;
+    typedef itk::DisplacementFieldTransform
+    		         < TScalar, NDimensions > Superclass;
     typedef itk::SmartPointer< Self >         Pointer;
     typedef itk::SmartPointer< const Self >   ConstPointer;
 
-    itkTypeMacro( CompositeBSplineTransform, Transform );
+    itkTypeMacro( CompositeMatrixTransform, Transform );
     itkNewMacro( Self );
 
     itkStaticConstMacro( Dimension, unsigned int, NDimensions );
@@ -91,47 +78,58 @@ public:
     typedef itk::DisplacementFieldTransform< ScalarType, Dimension > DisplacementFieldTransformType;
     typedef typename DisplacementFieldTransformType::Pointer         DisplacementFieldTransformPointer;
 
-    typedef itk::FixedArray< DimensionVector, NDimensions > DimensionParametersContainer;
-
-    typedef std::vector< PointType >                 PointsList;
-
-    typedef itk::Matrix< ScalarType, Dimension, Dimension >        JacobianType;
-
-    typedef itk::DefaultStaticMeshTraits<TScalar, NDimensions, NDimensions, TScalar, TScalar> PointSetTraitsType;
-    typedef itk::PointSet<PointType, NDimensions, PointSetTraitsType>                                     PointSetType;
-    typedef typename PointSetType::Pointer           PointSetPointer;
-
-
     /** Standard coordinate point type for this class. */
-    typedef typename Superclass::InputPointType  InputPointType;
-    typedef typename Superclass::OutputPointType OutputPointType;
+    typedef typename Superclass::InputPointType                      InputPointType;
+    typedef typename Superclass::OutputPointType                     OutputPointType;
 
     /** Standard vector type for this class. */
-    typedef typename Superclass::InputVectorType  InputVectorType;
-    typedef typename Superclass::OutputVectorType OutputVectorType;
+    typedef typename Superclass::InputVectorType                     InputVectorType;
+    typedef typename Superclass::OutputVectorType                    OutputVectorType;
 
     /** Standard covariant vector type for this class */
-    typedef typename Superclass::InputCovariantVectorType  InputCovariantVectorType;
-    typedef typename Superclass::OutputCovariantVectorType OutputCovariantVectorType;
+    typedef typename Superclass::InputCovariantVectorType            InputCovariantVectorType;
+    typedef typename Superclass::OutputCovariantVectorType           OutputCovariantVectorType;
 
     /** Standard vnl_vector type for this class. */
-    typedef typename Superclass::InputVnlVectorType  InputVnlVectorType;
-    typedef typename Superclass::OutputVnlVectorType OutputVnlVectorType;
+    typedef typename Superclass::InputVnlVectorType                  InputVnlVectorType;
+    typedef typename Superclass::OutputVnlVectorType                 OutputVnlVectorType;
+
+    typedef typename Superclass::DisplacementFieldType               DisplacementFieldType;
+    typedef typename DisplacementFieldType::Pointer                  DisplacementFieldPointer;
+
+    typedef typename SparseMatrixTransform< ScalarType >             TransformComponentType;
+    typedef typename TransformComponentType::Pointer                 TransformComponentPointer;
+
+    typedef typename TransformType::CoefficientsImageType            CoefficientsImageType;
+    typedef typename TransformType::CoefficientsImageArray           CoefficientsImageArray;
+    typedef typename std::vector< const CoefficientsImageArray >     CoefficientsContainer;
+
+    itkSetMacro(NumberOfTransforms, size_t);
+    itkGetConstMacro(NumberOfTransforms, size_t);
+
+    void PushBackCoefficients(const CoefficientsImageArray& coeffs) {
+    	this->m_Coefficients.push_back(coeffs);
+    	this->m_NumberOfTransforms = this->m_Coefficients.size();
+    }
 
 protected:
-    CompositeBSplineTransform();
-	~CompositeBSplineTransform(){};
-
+    CompositeMatrixTransform();
+	~CompositeMatrixTransform(){};
+    void PrintSelf( std::ostream& os, itk::Indent indent ) const;
+    void Compute();
 
 private:
-	CompositeBSplineTransform( const Self & );
+	CompositeMatrixTransform( const Self & );
 	void operator=( const Self & );
+
+	CoefficientsContainer m_Coefficients;
+	size_t m_NumberOfTransforms;
 };
 } // end namespace rstk
 
 #ifndef ITK_MANUAL_INSTANTIATION
-#include "CompositeBSplineTransform.hxx"
+#include "CompositeMatrixTransform.hxx"
 #endif
 
 
-#endif /* COMPOSITEBSPLINETRANSFORM_H_ */
+#endif /* COMPOSITEMATRIXTRANSFORM_H_ */
