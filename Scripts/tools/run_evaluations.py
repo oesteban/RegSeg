@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-03 10:16:46
+# @Last Modified time: 2014-11-03 16:50:52
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -135,16 +135,17 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     msk = pe.Node(niu.Select(index=[2]), name='SelectHIresMask')
 
     regseg = regseg_wf()
-    regseg.inputs.inputnode.iterations = [500, 500]
-    regseg.inputs.inputnode.scales = [(0.1, 1.0, 0.1), (0.0, 1.0, 0.0)]
-    # wf.inputs.inputnode.descript_update = [20]
-    regseg.inputs.inputnode.step_size = [1.0, .01]
-    regseg.inputs.inputnode.alpha = [0.0, 100.0]
-    regseg.inputs.inputnode.beta = [0.1, 1.]
-    regseg.inputs.inputnode.grid_size = [6, 8]
-    regseg.inputs.inputnode.convergence_energy = [False, True]
-    regseg.inputs.inputnode.convergence_window = [50, 25]
-    regseg.inputs.inputnode.f_smooth = [2.0, None]
+    regseg.inputs.inputnode.iterations = [150, 100, 100]
+    regseg.inputs.inputnode.scales = [
+        (0.0, 1.0, 0.0), (0.0, 1.0, 0.0), (0.0, 1.0, 0.0)]
+    wf.inputs.inputnode.descript_update = [26, 16, 11]
+    regseg.inputs.inputnode.step_size = [200.0, 100.0, 10.0]
+    regseg.inputs.inputnode.alpha = [0.0, 0.0, 0.0]
+    regseg.inputs.inputnode.beta = [0.0, 0.0, 0.0]
+    regseg.inputs.inputnode.grid_size = [(6, 4, 6), (6, 6, 6), (8, 8, 8)]
+    regseg.inputs.inputnode.convergence_energy = [True, True]
+    regseg.inputs.inputnode.convergence_window = [25, 15, 10]
+    regseg.inputs.inputnode.f_smooth = [2.4, 2.0, None]
     regseg.inputs.inputnode.images_verbosity = 3
 
     wf.connect([
