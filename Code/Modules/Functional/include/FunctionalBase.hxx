@@ -292,7 +292,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		size_t nPix = this->GetCurrentMap(0)->GetLargestPossibleRegion().GetNumberOfPixels();
 
 		MeasureType roi_value = 0.0;
-		for( size_t roi = 0; roi < m_ROIs.size(); roi++ ) {
+		size_t nrois = m_ROIs.size();
+		if (this->m_UseBackground) {
+			nrois-=1;
+		}
+
+		for( size_t roi = 0; roi < nrois; roi++ ) {
 			double totalVol = 0.0;
 			ProbabilityMapConstPointer roipm = this->GetCurrentMap( roi );
 			const typename ProbabilityMapType::PixelType* roiBuffer = roipm->GetBufferPointer();
