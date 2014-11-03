@@ -120,6 +120,7 @@ public:
 	/** Functional definitions */
 	typedef typename FunctionalType::Pointer                        FunctionalPointer;
 	typedef typename FunctionalType::MeasureType                    MeasureType;
+	typedef itk::Array< MeasureType >                               MeasureArray;
 	typedef typename FunctionalType::PointType                      PointType;
 	typedef typename FunctionalType::VectorType                     VectorType;
 	typedef typename FunctionalType::PointValueType                 PointValueType;
@@ -306,6 +307,9 @@ protected:
 	SizeValueType                 m_CurrentIteration;
 	SizeValueType                 m_NumberOfIterations;
 	SizeValueType                 m_DescriptorRecomputationFreq;
+	SizeValueType                 m_ValueOscillations;
+	SizeValueType                 m_ValueOscillationsMax;
+	SizeValueType                 m_ValueOscillationsLast;
 	bool                          m_UseDescriptorRecomputation;
 
 	InternalComputationValueType  m_StepSize;
@@ -320,6 +324,8 @@ protected:
 	MeasureType                  m_CurrentValue;
 	MeasureType                  m_LastValue;
 	MeasureType                  m_InitialValue;
+	MeasureArray                 m_ValueWindow;
+
 
 	//ScalesType                   m_Scales;
 	ControlPointsGridSizeType    m_GridSize;

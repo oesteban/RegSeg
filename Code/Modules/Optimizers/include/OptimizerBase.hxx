@@ -82,6 +82,9 @@ m_StopCondition(MAXIMUM_NUMBER_OF_ITERATIONS),
 m_CurrentIteration( 0 ),
 m_NumberOfIterations( 250 ),
 m_DescriptorRecomputationFreq(0),
+m_ValueOscillations(0),
+m_ValueOscillationsMax(2),
+m_ValueOscillationsLast(0),
 m_UseDescriptorRecomputation(false),
 m_StepSize(1.0),
 m_MaxSpeed(0.0),
@@ -92,7 +95,7 @@ m_IsDiffeomorphic(true),
 m_UseLightWeightConvergenceChecking(true),
 m_CurrentValue(itk::NumericTraits<MeasureType>::infinity()),
 m_LastValue(itk::NumericTraits<MeasureType>::infinity()),
-m_InitialValue(itk::NumericTraits<MeasureType>::infinity())
+m_InitialValue(0.0)
 {
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 0 );
@@ -261,24 +264,24 @@ void OptimizerBase<TFunctional>::Resume() {
 			break;
 		}
 
-		// if (this->m_LastMaximumGradient > 0.0){
-		// 	double inc = 1.0 - (this->m_MaximumGradient / this->m_LastMaximumGradient);
-		// 	if (inc < 0.0) {
-		// 		inc *= 5;
-		// 	}
-		// 	this->m_Momentum = this->m_Momentum + this->m_LearningRate * inc;
-		// 	if (this->m_Momentum <= -0.8) {
-		// 		this->m_Momentum = -0.8;
-		// 	}
-        //
-		// 	if (this->m_Momentum > 0.2) {
-		// 		this->m_Momentum = 0.2;
-		// 	} else {
-		// 		this->m_StepSize = (1.0 + this->m_Momentum) * this->m_StepSize;
-		// 	}
-		// } else {
-		// 	this->m_InitialValue = this->m_CurrentValue;
-		// }
+		if (this->m_InitialValue > 0.0){
+			if (this->m_LastValue <= this->m_CurrentValue) {
+				this->m_ValueOscillations += 1;
+				this->m_ValueOscillationsLast = this->m_CurrentIteration;
+			} else {
+				if ((this->m_CurrentIteration - this->m_ValueOscillationsLast) > this->m_ValueOscillationsMax) {
+					this->m_ValueOscillations = 0;
+					this->m_StepSize *= 1.05;
+				}
+			}
+
+			if (this->m_ValueOscillations >= this->m_ValueOscillationsMax) {
+				this->m_StepSize *= 0.75;
+				this->m_ValueOscillations = 0;
+			}
+		} else {
+			this->m_InitialValue = this->m_CurrentValue;
+		}
 
 		if( this->m_StepSize < 1e-8 ) {
 			this->m_StopConditionDescription << "Parameters field changed below the minimum threshold.";

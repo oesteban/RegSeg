@@ -84,7 +84,12 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	if (bias) {
 		biasVal = this->m_Parameters[roi].bias;
 	}
-	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() ) + biasVal;
+
+	if (this->m_UseBackground && (roi == this->m_NumberOfRegions - 1) && (fabs(value.GetNorm()) < 1.0e-3) ) {
+		return this->m_MaxEnergy;
+	} else {
+		return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() ) + biasVal;
+	}
 }
 
 
@@ -120,7 +125,7 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 		newParameters.mean.Fill(0.0);
 		newParameters.cov.SetIdentity();
 		for (size_t row = 0; row < Components; row ++ ) {
-			newParameters.cov(row, row) = 15.0;
+			newParameters.cov(row, row) = 2.0;
 		}
 		return newParameters;
 	}
