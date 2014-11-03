@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-31 15:34:18
+# @Last Modified time: 2014-11-03 17:11:12
 
 import os
 import os.path as op
@@ -53,16 +53,18 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
         bool_trait, traits.List(bool_trait), default=False,
         argstr='--use-background', desc=('do not compute background'
                                          'descriptors'))
-    grid_size = traits.Either(
-        int_trait, traits.List(int_trait), default=8, argstr='-S %d',
-        desc=('bspline control points per dimension and level'))
-
     descript_update = traits.Either(
         int_trait, traits.List(int_trait), argstr='-u %d',
         desc=('update descriptors every N iterations, per level'))
     step_size = traits.Either(
         float_trait, traits.List(float_trait), default=1.0, argstr='-s %0.5f',
         desc=('update step size in gradient descent optimization'))
+
+    gridsize_trait = traits.Either(
+        int_trait, traits.Tuple(int_trait, int_trait, int_trait))
+    grid_size = traits.Either(
+        gridsize_trait, traits.List(gridsize_trait), default=8, argstr='-S %d',
+        desc=('bspline control points per dimension and level'))
 
     regularization_trait = traits.Either(
         float_trait, traits.Tuple(float_trait, float_trait, float_trait))
