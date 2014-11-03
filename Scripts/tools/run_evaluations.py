@@ -145,7 +145,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     regseg.inputs.inputnode.f_smooth = [2.4, 2.0, None]
     regseg.inputs.inputnode.images_verbosity = 3
     regseg.inputs.inputnode.scales = [(0.0, 1.0, 0.0)] * 3
-    regseg.inputs.inputnode.grid_size = [(6, 4, 6), (6,), (8,)]
+    regseg.inputs.inputnode.grid_size = [(6, 4, 6), 6, 8]
 
     wf.connect([
         (st1,  dti,    [('out_dis_set.dwi', 'inputnode.in_dwi'),
