@@ -205,6 +205,10 @@ public:
 	typedef typename ProbabilityMapType::ConstPointer        ProbabilityMapConstPointer;
 	typedef std::vector< ProbabilityMapPointer >             ProbabilityMapList;
 
+	typedef itk::LinearInterpolateImageFunction
+			< ProbabilityMapType >                           ProbmapInterpolatorType;
+	typedef typename ProbmapInterpolatorType::Pointer        ProbmapInterpolatorPointer;
+
 	typedef typename itk::MeshSpatialObject<ContourType>     ContourSpatialObject;
 	typedef typename ContourSpatialObject::Pointer           ContourSpatialPointer;
 	typedef typename ContourSpatialObject::ConstPointer      ContourSpatialConstPointer;
@@ -327,6 +331,9 @@ public:
 	ROIConstPointer GetCurrentRegion( size_t idx );
 	itkGetConstObjectMacro( CurrentRegions, ROIType );
 
+	itkGetConstObjectMacro( BackgroundMask, ProbabilityMapType);
+	itkSetConstObjectMacro( BackgroundMask, ProbabilityMapType);
+
 	const ProbabilityMapType* GetCurrentMap( size_t idx );
 
 	size_t AddShapePrior( const ContourType* prior );
@@ -381,6 +388,7 @@ protected:
 	ROIList m_ROIs;
 	ROIList m_CurrentROIs;
 	ProbabilityMapList m_CurrentMaps;
+	ProbabilityMapConstPointer m_BackgroundMask;
 	ROIPointer m_CurrentRegions;
 	ReferenceImageConstPointer m_ReferenceImage;
 	ContourOuterRegionsList m_OuterList;
@@ -395,6 +403,7 @@ protected:
 
 
 	InterpolatorPointer m_Interp;
+	ProbmapInterpolatorPointer m_MaskInterp;
 	PointDataContainerPointer m_CurrentDisplacements;
 	PointsVector m_NodesPosition;
 
