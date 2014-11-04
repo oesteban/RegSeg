@@ -159,6 +159,7 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 			newParameters.cov(row,col) = cov(row,col);
 		}
 	}
+	//std::cout << "ROI " << idx << " mean=" << newParameters.mean << std::endl;
 
 	return newParameters;
 }

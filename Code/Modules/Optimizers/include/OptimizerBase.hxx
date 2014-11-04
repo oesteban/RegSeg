@@ -83,7 +83,7 @@ m_CurrentIteration( 0 ),
 m_NumberOfIterations( 250 ),
 m_DescriptorRecomputationFreq(0),
 m_ValueOscillations(0),
-m_ValueOscillationsMax(2),
+m_ValueOscillationsMax(1),
 m_ValueOscillationsLast(0),
 m_UseDescriptorRecomputation(false),
 m_StepSize(1.0),
@@ -265,24 +265,28 @@ void OptimizerBase<TFunctional>::Resume() {
 		}
 
 		if (this->m_InitialValue > 0.0){
-			if (this->m_LastValue <= this->m_CurrentValue) {
+			float inc = this->m_LastValue / this->m_CurrentValue;
+			if (inc < 1.0) {
 				this->m_ValueOscillations += 1;
 				this->m_ValueOscillationsLast = this->m_CurrentIteration;
-			} else {
+			} else if (inc > 1.0) {
 				if ((this->m_CurrentIteration - this->m_ValueOscillationsLast) > this->m_ValueOscillationsMax) {
+					float factor = 1.05 * inc * (1.0 - this->m_CurrentIteration/ this->m_NumberOfIterations);
 					this->m_ValueOscillations = 0;
-					this->m_StepSize *= 1.05;
+					this->m_StepSize *=  factor;
 				}
 			}
 
 			if (this->m_ValueOscillations >= this->m_ValueOscillationsMax) {
-				this->m_StepSize *= 0.75;
+				this->m_StepSize *= 0.5;
 				this->m_ValueOscillations = 0;
+				this->m_ConvergenceMonitoring->ClearEnergyValues();
 			}
 		} else {
 			this->m_InitialValue = this->m_CurrentValue;
 		}
 
+		//std::cout << "StepSize=" << this->m_StepSize << std::endl;
 		if( this->m_StepSize < 1e-8 ) {
 			this->m_StopConditionDescription << "Parameters field changed below the minimum threshold.";
 			this->m_StopCondition = Self::STEP_TOO_SMALL;
