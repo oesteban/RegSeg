@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-28 11:23:55
+# @Last Modified time: 2014-11-04 16:18:11
 
 import os
 import os.path as op
@@ -65,18 +65,21 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
         methods = np.atleast_1d(methods).tolist()
 
     inputnode = pe.Node(niu.IdentityInterface(
-                        fields=['subject_id', 'grid_size', 'out_csv']),
-                        name='inputnode')
+        fields=['subject_id', 'grid_size', 'out_csv', 'lo_matrix',
+                'hi_matrix', 'snr', 'cortex', 'shape']),
+        name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['out_file', 'out_tpms', 'out_surfs', 'out_field', 'out_coeff',
                 'out_overlap']), name='outputnode')
 
     phantom = generate_phantom()
-    phantom.inputs.inputnode.lo_matrix = 51
-    phantom.inputs.inputnode.hi_matrix = 101
-    phantom.inputs.inputnode.shape = 'gyrus'
-    phantom.inputs.inputnode.snr = 400.0
-    phantom.inputs.inputnode.cortex = True
+    wf.connect([
+        (inputnode,  phantom, [('shape', 'inputnode.shape'),
+                               ('lo_matrix', 'inputnode.lo_matrix'),
+                               ('hi_matrix', 'inputnode.hi_matrix'),
+                               ('snr', 'inputnode.snr'),
+                               ('cortex', 'inputnode.cortex')])
+    ])
 
     evwfs = []
     norm_tpms = []
@@ -96,7 +99,7 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
             (phantom,         reg, [
                 ('refnode.out_surfs', 'inputnode.in_surf'),
                 # ('refnode.out_signal', 'inputnode.in_orig'),
-                ('outputnode.grid_size', 'inputnode.grid_size'),
+                # ('outputnode.grid_size', 'inputnode.grid_size'),
                 ('outputnode.out_signal', 'inputnode.in_fixed'),
                 ('outputnode.out_tpms', 'inputnode.in_tpms'),
                 ('outputnode.out_mask', 'inputnode.in_mask')]),

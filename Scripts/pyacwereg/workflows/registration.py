@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
-# @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-04 15:03:18
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2014-11-04 16:26:42
 
 import os
 import os.path as op
@@ -14,12 +14,13 @@ import os.path as op
 import nipype.pipeline.engine as pe             # pipeline engine
 from nipype.interfaces import io as nio              # Data i/o
 from nipype.interfaces import utility as niu         # utility
+from nipype.interfaces import fsl
 
 from pyacwereg.interfaces.acwereg import ACWEReg
 from pyacwereg.interfaces.warps import FieldBasedWarp, InverseField
 
 
-def regseg_wf(name='REGSEG'):
+def regseg_wf(name='REGSEG', enhance_inputs=True):
     wf = pe.Workflow(name=name)
 
     regseg_inputs = ['iterations', 'alpha', 'beta', 'step_size', 'grid_size',
@@ -35,10 +36,8 @@ def regseg_wf(name='REGSEG'):
                                  'out_surf', 'out_field', 'out_mask']),
                          name='outputnode')
 
-    enh = pe.MapNode(niu.Function(function=enh_image, input_names=['in_file'],
-                                  output_names=['out_file']),
-                     iterfield=['in_file'], name='Enhance')
-
+    dilate = pe.Node(fsl.maths.MathsCommand(
+        nan2zeros=True, args='-kernel sphere 5 -dilM'), name='MskDilate')
     # Registration
     regseg = pe.Node(ACWEReg(), name="ACWERegistration")
 
@@ -49,10 +48,9 @@ def regseg_wf(name='REGSEG'):
     # Connect
     wf.connect([
         (inputnode,   regseg, [(f, f) for f in regseg_inputs]),
-        (inputnode,      enh, [('in_fixed', 'in_file')]),
-        (enh,         regseg, [('out_file', 'in_fixed')]),
         (inputnode,   regseg, [('in_surf', 'in_prior')]),
-        (inputnode,   regseg, [('in_mask', 'in_mask')]),
+        (inputnode,   dilate, [('in_mask', 'in_file')]),
+        (dilate,      regseg, [('out_file', 'in_mask')]),
         (inputnode, applytfm, [('in_tpms', 'in_file'),
                                ('in_mask', 'in_mask')]),
         (regseg,    applytfm, [('out_field', 'in_field')]),
@@ -63,24 +61,35 @@ def regseg_wf(name='REGSEG'):
                                 ('out_mask', 'out_mask')])
     ])
 
+    if enhance_inputs:
+        enh = pe.MapNode(niu.Function(
+            function=enh_image, input_names=['in_file'],
+            output_names=['out_file']), iterfield=['in_file'], name='Enhance')
+        wf.connect([
+            (inputnode,      enh, [('in_fixed', 'in_file')]),
+            (enh,         regseg, [('out_file', 'in_fixed')]),
+        ])
+    else:
+        wf.connect(inputnode, 'in_fixed', regseg, 'in_fixed')
+
     return wf
 
 
 def default_regseg(name='REGSEGDefault'):
-    wf = regseg_wf(name=name)
+    wf = regseg_wf(name=name, enhance_inputs=False)
 
     # Registration
     # Good config for box phantom (2014/04/21): [ -a 0.0 -b 0.0 -u 20 -g 6 -i
     # 500 -s 1.0]
     wf.inputs.inputnode.iterations = [100, 150, 200]
     wf.inputs.inputnode.descript_update = [None] * 3
-    wf.inputs.inputnode.step_size = [0.7, .1, .02]
+    wf.inputs.inputnode.step_size = [0.1, .1, .02]
     wf.inputs.inputnode.alpha = [0.0, 0.0, 0.1]
     wf.inputs.inputnode.beta = [0.0, 0.0, 0.1]
     wf.inputs.inputnode.grid_size = [4, 6, 8]
     wf.inputs.inputnode.convergence_energy = [True] * 3
     wf.inputs.inputnode.convergence_window = [10, 15, 20]
-    wf.inputs.inputnode.f_smooth = [1.0, None, None]
+    wf.inputs.inputnode.f_smooth = [1.5, 1.0, None]
     wf.inputs.inputnode.images_verbosity = 3
     return wf
 
