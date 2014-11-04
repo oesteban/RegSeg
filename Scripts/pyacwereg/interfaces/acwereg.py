@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-03 17:11:12
+# @Last Modified time: 2014-11-04 12:18:39
 
 import os
 import os.path as op
@@ -81,17 +81,19 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
 
 class ACWERegInputSpec(ACWERegInputGroupSpec):
     in_fixed = InputMultiPath(
-        File(exists=True), argstr="-F %s", mandatory=True,
+        File(exists=True), argstr='-F %s', mandatory=True,
         desc=('target volume/image(s) contrast to register contours to'))
 
     in_prior = InputMultiPath(
-        File(exists=True), argstr="-M %s", mandatory=True,
+        File(exists=True), argstr='-P %s', mandatory=True,
         desc=('vtk contours that will be registered to in_fixed. Should be '
               'given in hierarchical order (from top to bottom, last is bg)'))
+    in_mask = File(exists=True, argstr='-M %s', desc='fixed mask file')
+
     levels = traits.Int(
         1, argstr='-L %d', desc='number of levels in multi-resolution schemes')
     out_prefix = traits.Str(
-        'regseg', argstr="-o %s", usedefault=True, desc='output files prefix')
+        'regseg', argstr='-o %s', usedefault=True, desc='output files prefix')
     log_filename = File(desc='filepath for log file', argstr='-l %s')
     images_verbosity = traits.Int(
         1, argstr='-v %d', desc=('verbosity of intermediate results output'))
@@ -213,7 +215,7 @@ pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
             retval.append(' ' + argval)
 
         retval.append(']')
-        return "".join(retval)
+        return ''.join(retval)
 
     def _format_group_arg(self, name, spec, value):
         if isinstance(value, bool) or isinstance(value, np.bool_):

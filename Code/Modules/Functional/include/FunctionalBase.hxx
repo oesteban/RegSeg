@@ -73,11 +73,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_RegionsUpdated(false),
  m_ApplySmoothing(false),
  m_UseBackground(false),
- m_Value(1.0)
+ m_Value(0.0),
+ m_MaxEnergy(0.0)
  {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_Sigma.Fill(0.0);
 	this->m_Interp = InterpolatorType::New();
+	this->m_MaskInterp = ProbmapInterpolatorType::New();
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -92,6 +94,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		s->SetSigmaArray( this->m_Sigma );
 		s->Update();
 		this->m_ReferenceImage = s->GetOutput();
+	}
+
+	if (this->m_BackgroundMask.IsNull()) {
+		this->m_UseBackground = false;
+		ProbabilityMapPointer p = ProbabilityMapType::New();
+		p->SetRegions(this->m_ReferenceImage->GetLargestPossibleRegion());
+		p->SetSpacing(this->m_ReferenceImage->GetSpacing());
+		p->SetOrigin(this->m_ReferenceImage->GetOrigin());
+		p->SetDirection(this->m_ReferenceImage->GetDirection());
+		p->Allocate();
+		p->FillBuffer(0.0);
+		this->m_BackgroundMask = p;
 	}
 
 	this->InitializeCurrentContours();
@@ -113,11 +127,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	// Initialize interpolators
 	this->m_Interp->SetInputImage( this->m_ReferenceImage );
-
-	if (this->m_BackgroundMask.IsNotNull()) {
-		this->m_MaskInterp = ProbmapInterpolatorType::New();
-		this->m_MaskInterp->SetInputImage(this->m_BackgroundMask);
-	}
+	this->m_MaskInterp->SetInputImage(this->m_BackgroundMask);
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -295,23 +305,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			vxvol *= this->GetCurrentMap(0)->GetSpacing()[i];
 
 		size_t nPix = this->GetCurrentMap(0)->GetLargestPossibleRegion().GetNumberOfPixels();
-		bool usebg = this->m_BackgroundMask.IsNotNull();
-
 		size_t nrois = m_ROIs.size();
-		if (this->m_UseBackground) {
-			nrois-=1;
-		}
 
 		const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
+		const typename ProbabilityMapType::PixelType* bgBuffer = this->m_BackgroundMask->GetBufferPointer();
 		const typename ProbabilityMapType::PixelType* roiBuffer[nrois];
-		const typename ProbabilityMapType::PixelType* bgBuffer;
 
 		for( size_t roi = 0; roi < nrois; roi++ ) {
 			roiBuffer[roi] = this->GetCurrentMap(roi)->GetBufferPointer();
-		}
-
-		if (usebg) {
-			bgBuffer = this->m_BackgroundMask->GetBufferPointer();
 		}
 
 		ReferencePointType pos;
@@ -322,9 +323,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		MeasureType smpl_val;
 		for( size_t i = 0; i < nPix; i++) {
 			totalVol = 0.0;
-			bgw = 0.0;
-			val = *(refBuffer+i);
 			smpl_val = 0.0;
+			bgw = *(bgBuffer + i);
+
+			if (bgw >= 0.9) {
+				continue;
+			}
+
+			val = *(refBuffer+i);
 			for( size_t roi = 0; roi < nrois; roi++ ) {
 				w = *( roiBuffer[roi] + i );
 				if ( w > 1.0e-8 ) {
@@ -333,16 +339,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				}
 			}
 
-			if(usebg) {
-				bgw = *(bgBuffer + i);
-				if (bgw > 0.9) {
-					smpl_val = this->m_MaxEnergy;
-					totalVol = 1.0;
-				} else if (bgw > 1.0e-3) {
-					smpl_val+= bgw * this->m_MaxEnergy;
-					totalVol+= bgw;
-				}
+			if (bgw > 1.0e-3) {
+				smpl_val+= bgw * this->m_MaxEnergy;
+				totalVol+= bgw;
 			}
+
 			this->m_Value+= smpl_val / totalVol;
 		}
 
@@ -643,7 +644,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	opts.add_options()
 			("smoothing", bpo::value< float > (), "apply isotropic smoothing filter on target image, with kernel sigma=S mm.")
 			("smooth-auto", bpo::bool_switch(), "apply isotropic smoothing filter on target image, with automatic computation of kernel sigma.")
-			("use-background", bpo::bool_switch(), "consider last ROI as background and do not compute descriptors.")
+			//("use-background", bpo::bool_switch(), "consider last ROI as background and do not compute descriptors.")
 			("decile-threshold,d", bpo::value< float > (), "set (decile) threshold to consider a computed gradient as outlier (ranges 0.0-0.5)");
 }
 
@@ -665,12 +666,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		}
 	}
 
-	if( this->m_Settings.count( "use-background" ) ) {
-		bpo::variable_value v = this->m_Settings["use-background"];
-		if ( v.as<bool>() ) {
-			this->SetUseBackground(true);
-		}
-	}
+	//if( this->m_Settings.count( "use-background" ) ) {
+	//	bpo::variable_value v = this->m_Settings["use-background"];
+	//	if ( v.as<bool>() ) {
+	//		this->SetUseBackground(true);
+	//	}
+	//}
 
 	if( this->m_Settings.count( "decile-threshold") ) {
 		bpo::variable_value v = this->m_Settings["decile-threshold"];
@@ -779,6 +780,70 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 }
 
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::SetBackgroundMask (const ProbabilityMapType * _arg) {
+	if ( this->GetDebug() && ::itk::Object::GetGlobalWarningDisplay() ) {
+		std::ostringstream itkmsg;
+		itkmsg << "Debug: In " "/home/oesteban/workspace/ACWE-Reg/Code/Modules/Functional/include/FunctionalBase.h" ", line " << 333 << "\n" \
+				<< this->GetNameOfClass() << " (" << this << "): " "setting " << "BackgroundMask" " to " << _arg       \
+				<< "\n\n";
+		::itk::OutputWindowDisplayDebugText( itkmsg.str().c_str() );
+	}
+	if ( this->m_BackgroundMask != _arg ) {
+		DirectionType olddir = _arg->GetDirection();
+		PointType oldorig = _arg->GetOrigin();
+		ProbabilityMapPointer msk = ProbabilityMapType::New();
+		msk->CopyInformation( _arg );
+		msk->SetRegions( _arg->GetLargestPossibleRegion() );
+		msk->Allocate();
+		msk->FillBuffer(0.0);
+
+		size_t nPix = msk->GetLargestPossibleRegion().GetNumberOfPixels();
+		float* mbuffer = msk->GetBufferPointer();
+		const float* sbuffer = _arg->GetBufferPointer();
+		float w;
+
+		for (size_t i = 0; i<nPix; i++) {
+			w = *(sbuffer + i);
+
+			if (w < 1.0) {
+				w = 1.0 - w;
+				if ( w > 1.0e-3 )
+					if (w > 1.0)
+						w = 1.0;
+
+					*(mbuffer + i) = w;
+			}
+		}
+
+		DirectionType ident; ident.SetIdentity();
+		msk->SetDirection(ident);
+
+		itk::Vector<double, Dimension> ovect = oldorig.GetVectorFromOrigin();
+		msk->SetOrigin(olddir * ovect);
+
+		if ( (msk->GetLargestPossibleRegion() != this->m_ReferenceImage->GetLargestPossibleRegion()) ||
+				(msk->GetOrigin() != this->m_ReferenceImage->GetOrigin())) {
+			ProbmapResamplePointer res = ProbmapResampleType::New();
+			res->SetInput(msk);
+			res->SetSize(this->m_ReferenceSize);
+			res->SetOutputSpacing(this->m_ReferenceSpacing);
+			res->SetOutputOrigin(this->m_FirstPixelCenter);
+			res->SetOutputDirection(this->m_Direction);
+			res->SetDefaultPixelValue( 0.0 );
+			res->Update();
+
+			this->m_BackgroundMask = res->GetOutput();
+		}
+		else {
+			this->m_BackgroundMask = msk;
+		}
+		this->Modified();
+	}
+}
+
 
 template <typename TReferenceImageType, typename TCoordRepType>
 inline typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
@@ -789,10 +854,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		return 0.0;
 	}
 	ReferencePixelType value = this->m_Interp->Evaluate( point );
-	float isOutside = 0.0;
-	if (this->m_BackgroundMask.IsNotNull()){
-		isOutside = this->m_MaskInterp->Evaluate( point );
-	}
+	float isOutside = this->m_MaskInterp->Evaluate( point );
 	MeasureType grad = this->GetEnergyOfSample( value, outer_roi ) - this->GetEnergyOfSample( value, inner_roi ) + isOutside * this->m_MaxEnergy;
 	grad = (fabs(grad)>MIN_GRADIENT)?grad:0.0;
 	return grad;
@@ -804,10 +866,7 @@ inline typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetEnergyAtPoint( typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point, size_t roi ) const {
 	ReferencePixelType value = this->m_Interp->Evaluate( point );
-	float isOutside = 0.0;
-	if (this->m_BackgroundMask.IsNotNull()){
-		isOutside = this->m_MaskInterp->Evaluate( point );
-	}
+	float isOutside = this->m_MaskInterp->Evaluate( point );
 	return this->GetEnergyOfSample( value, roi ) + isOutside * this->m_MaxEnergy;
 }
 
@@ -817,10 +876,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetEnergyAtPoint( typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point, size_t roi,
 		            typename FunctionalBase<TReferenceImageType, TCoordRepType>::ReferencePixelType & value) const {
 	value = this->m_Interp->Evaluate( point );
-	float isOutside = 0.0;
-	if (this->m_BackgroundMask.IsNotNull()){
-		isOutside = this->m_MaskInterp->Evaluate( point );
-	}
+	float isOutside = this->m_MaskInterp->Evaluate( point );
 	return this->GetEnergyOfSample( value, roi ) + isOutside * this->m_MaxEnergy;
 }
 

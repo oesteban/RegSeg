@@ -229,6 +229,10 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->m_Functionals[level]->SetSettings( this->m_Config[level] );
 	this->m_Functionals[level]->SetReferenceImage( im );
 
+	if (this->m_FixedMask.IsNotNull() ) {
+		this->m_Functionals[level]->SetBackgroundMask(this->m_FixedMask);
+	}
+
 	if ( level == 0 ) {
 		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
 			this->m_Functionals[level]->AddShapePrior( this->m_Priors[i] );
