@@ -248,6 +248,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	size_t changed = 0;
 	size_t gpid = 0;
 	std::vector< size_t > invalid;
+	std::vector< size_t > outmask;
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
 		typename ContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
@@ -271,6 +272,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					invalid.push_back( gpid );
 					this->InvokeEvent( WarningEvent() );
 				}
+
+				if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
+					outmask.push_back( gpid );
+					this->InvokeEvent( WarningEvent() );
+				}
 				curPoints->SetElement( pid, ci_prime );
 				changed++;
 			}
@@ -286,6 +292,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	if ( invalid.size() > 0 ) {
 		itkWarningMacro(<< "a total of " << invalid.size() << " mesh nodes were to be moved off the image domain." );
+	}
+
+	if ( outmask.size() > 0 ) {
+		itkWarningMacro(<< "a total of " << outmask.size() << " mesh nodes were to be moved off the object mask." );
 	}
 
 	this->m_DisplacementsUpdated = true;
@@ -326,25 +336,23 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			smpl_val = 0.0;
 			bgw = *(bgBuffer + i);
 
-			if (bgw >= 0.9) {
-				continue;
-			}
-
-			val = *(refBuffer+i);
-			for( size_t roi = 0; roi < nrois; roi++ ) {
-				w = *( roiBuffer[roi] + i );
-				if ( w > 1.0e-8 ) {
-					smpl_val +=  w * this->GetEnergyOfSample( val, roi, true );
-					totalVol += w;
+			if (bgw < 1.0) {
+				val = *(refBuffer+i);
+				for( size_t roi = 0; roi < nrois; roi++ ) {
+					w = *( roiBuffer[roi] + i );
+					if ( w > 1.0e-8 ) {
+						smpl_val +=  w * this->GetEnergyOfSample( val, roi, true );
+						totalVol += w;
+					}
 				}
-			}
 
-			if (bgw > 1.0e-3) {
-				smpl_val+= bgw * this->m_MaxEnergy;
-				totalVol+= bgw;
-			}
+				if (bgw > 1.0e-3) {
+					smpl_val+= bgw * this->m_MaxEnergy;
+					totalVol+= bgw;
+				}
 
-			this->m_Value+= smpl_val / totalVol;
+				this->m_Value+= smpl_val / totalVol;
+			}
 		}
 
 		this->m_EnergyUpdated = true;
