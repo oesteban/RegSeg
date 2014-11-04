@@ -208,6 +208,9 @@ public:
 	typedef itk::LinearInterpolateImageFunction
 			< ProbabilityMapType >                           ProbmapInterpolatorType;
 	typedef typename ProbmapInterpolatorType::Pointer        ProbmapInterpolatorPointer;
+	typedef itk::ResampleImageFilter
+			< ProbabilityMapType, ProbabilityMapType >       ProbmapResampleType;
+	typedef typename ProbmapResampleType::Pointer            ProbmapResamplePointer;
 
 	typedef typename itk::MeshSpatialObject<ContourType>     ContourSpatialObject;
 	typedef typename ContourSpatialObject::Pointer           ContourSpatialPointer;
@@ -299,8 +302,6 @@ public:
 	virtual void SetReferenceImage (const ReferenceImageType * _arg);
 
 	itkGetMacro( ApplySmoothing, bool );
-	itkSetMacro( UseBackground, bool );
-	itkGetMacro( UseBackground, bool );
 	itkGetMacro( Sigma, SigmaArrayType );
 	itkSetMacro( Sigma, SigmaArrayType );
 
@@ -332,7 +333,7 @@ public:
 	itkGetConstObjectMacro( CurrentRegions, ROIType );
 
 	itkGetConstObjectMacro( BackgroundMask, ProbabilityMapType);
-	itkSetConstObjectMacro( BackgroundMask, ProbabilityMapType);
+	virtual void SetBackgroundMask (const ProbabilityMapType * _arg);
 
 	const ProbabilityMapType* GetCurrentMap( size_t idx );
 
@@ -373,7 +374,6 @@ protected:
 	bool m_RegionsUpdated;
 	bool m_ApplySmoothing;
 	bool m_UseBackground;
-
 
 	mutable MeasureType m_Value;
 	mutable MeasureType m_MaxEnergy;

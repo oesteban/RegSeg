@@ -42,7 +42,8 @@ int main(int argc, char *argv[]) {
 	general_desc.add_options()
 			("help,h", "show help message")
 			("fixed-images,F", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
-			("moving-surfaces,M", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken()->required(),	"moving image file")
+			("surface-priors,P", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken()->required(),	"shape priors")
+			("fixed-mask,M", bpo::value< std::string >(), "fixed image mask")
 			("transform-levels,L", bpo::value< size_t > (), "number of multi-resolution levels for the transform")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix)->default_value("regseg"), "prefix for output files")
 			("logfile,l", bpo::value<std::string>(&logFileName), "log filename")
@@ -166,6 +167,18 @@ int main(int argc, char *argv[]) {
 
     comb->Update();
 	acwereg->SetFixedImage( comb->GetOutput() );
+
+	// Read target mask -----------------------------------------------------------------
+	if( vm_general.count( "fixed-mask" ) ) {
+		std::string maskfname = vm_general["fixed-mask"].as< std::string >();
+		root["inputs"]["target"]["mask"] = maskfname;
+
+		ImageReader::Pointer r = ImageReader::New();
+		r->SetFileName(maskfname);
+		r->Update();
+		acwereg->SetFixedMask( r->GetOutput() );
+	}
+
 
 	// Read moving surface(s) -----------------------------------------------------------
 	root["inputs"]["moving"]["components"]["size"] = Json::Int (movingSurfaceNames.size());

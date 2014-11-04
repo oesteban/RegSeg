@@ -84,12 +84,7 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	if (bias) {
 		biasVal = this->m_Parameters[roi].bias;
 	}
-
-	if (this->m_UseBackground && (roi == this->m_NumberOfRegions - 1) && (fabs(value.GetNorm()) < 1.0e-3) ) {
-		return this->m_MaxEnergy;
-	} else {
-		return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() ) + biasVal;
-	}
+	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() ) + biasVal;
 }
 
 
@@ -121,15 +116,6 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	ParametersType newParameters;
 	ProbabilityMapConstPointer roipm = this->GetCurrentMap( idx );
 
-	if (this->m_UseBackground && (idx == this->m_NumberOfRegions - 1)) {
-		newParameters.mean.Fill(0.0);
-		newParameters.cov.SetIdentity();
-		for (size_t row = 0; row < Components; row ++ ) {
-			newParameters.cov(row, row) = 2.0;
-		}
-		return newParameters;
-	}
-
 	// Apply weighted mean/covariance estimators from ITK
 	typename CovarianceFilter::WeightArrayType weights;
 	ReferenceSamplePointer sample = ReferenceSampleType::New();
@@ -139,13 +125,18 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	weights.SetSize( sampleSize );
 	weights.Fill( 0.0 );
 
-	double totalWeight = 0.0;
-	double w;
+	const typename ProbabilityMapType::PixelType* bgBuffer = this->m_BackgroundMask->GetBufferPointer();
 	const typename ProbabilityMapType::PixelType* roipmb = roipm->GetBufferPointer();
+
+	double totalWeight = 0.0;
+	typename ProbabilityMapType::PixelType w;
+	typename ProbabilityMapType::PixelType bgw;
 	for ( size_t pidx = 0; pidx < sampleSize; pidx++) {
-		w = *( roipmb + pidx );
+		bgw = *( bgBuffer + pidx );
+		w = *( roipmb + pidx ) * (1.0 - bgw);
+
 		if (w > 0.8) {
-			weights[pidx] = w;
+			weights[pidx] = w ;
 			totalWeight+= w;
 		}
 	}
