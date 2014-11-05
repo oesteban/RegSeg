@@ -8,33 +8,33 @@
 
 In a Bayesian framework, the mappings $U$ in \autoref{eq:transform} are
   evaluated based on their posterior probability given the observed data
-  $F$.
+  $R$.
 Using the Bayes' rule, the posterior likelihood is computed as:
   \begin{equation}
-  P(U \mid F,\Gamma_{l,m}) = \frac{P(F \mid U,\Gamma_{l,m})\, P(U)}{P(F)},
+  P(U \mid R,\Gamma_{l,m}) = \frac{P(R \mid U,\Gamma_{l,m})\, P(U)}{P(R)},
   \label{eq:bayes_rule}
   \end{equation}
-  where $P(F \mid U,\Gamma_{l,m})$ is the data-likelihood, and
+  where $P(R \mid U,\Gamma_{l,m})$ is the data-likelihood, and
   $\Gamma_{l,m}$ are a set of surfaces corresponding to the interfaces
   between piecewise smooth regions $\Omega_i$, such that
   $\Gamma_{l,m} = \partial \Omega_l \cap \partial \Omega_m$ is the
   contour between tissues $l$ and $m$.
 Then, the \gls*{map} criterium \citep{leemput_automated_1999} is used
-  to find the mapping estimate $\hat{U}$ that aligns $\Gamma$ into $F$:
+  to find the mapping estimate $\hat{U}$ that aligns $\Gamma$ into $R$:
   \begin{align}
-  \hat{U} &= \underset{U}{\argmax} \left\{ P(U \mid F,\Gamma_{l,m}) \right\} \notag\\
-   &= \underset{U}{\argmax} \left\{ P(F \mid U,\Gamma_{l,m})\, P(U) \right\}.
+  \hat{U} &= \underset{U}{\argmax} \left\{ P(U \mid R,\Gamma_{l,m}) \right\} \notag\\
+   &= \underset{U}{\argmax} \left\{ P(R \mid U,\Gamma_{l,m})\, P(U) \right\}.
   \label{eq:map_u}
   \end{align}
 
 First, we assume independence between pixels, and thus break down the
   global data likelihood into a product of pixel-wise conditional probabilities:
   \begin{equation}
-  P(F \mid U,\Omega) = \underset{l}{\prod} \underset{\vec{r}\in \Omega_l}{\prod}
+  P(R \mid U,\Omega) = \underset{l}{\prod} \underset{\vec{r}\in \Omega_l}{\prod}
     P\left( \vec{f}' \mid U \right),
   \label{eq:bayes_aposteriori}
   \end{equation}
-  where $\vec{f}' = F(\vec{r}')$ is the feature vector at the displaced
+  where $\vec{f}' = R(\vec{r}')$ is the feature vector at the displaced
   position $\vec{r}'$ (\autoref{eq:transform}) of the multispectral target
   volume.
 For convenience, and because it has been shown to be appropriate approximations
@@ -51,7 +51,7 @@ For convenience, and because it has been shown to be appropriate approximations
 We then insert \autoref{eq:likelihood} into \autoref{eq:bayes_rule} to obtain the full
   formulation of the \emph{data term} of our registration model:
  	\begin{align}
-  P( F \mid U, \Omega ) &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod}
+  P( R \mid U, \Omega ) &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod}
   \mathcal{N} ( \vec{f} \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} ) \notag\\
   &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod} \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}
   \mdist{f'}{l} \right)}},
@@ -59,7 +59,7 @@ We then insert \autoref{eq:likelihood} into \autoref{eq:bayes_rule} to obtain th
   \end{align}
   using $\mdist{f}{l}$ to denote the squared \emph{Mahalanobis distance} of $\vec{f}$ with respect
   to the descriptors of region $l$ as
-  $\mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
+  $\mathcal{E}_l(\vec{r}) = \mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
 
 
 We choose a Thikonov regularization prior as follows:
@@ -87,7 +87,7 @@ Since the anisotropy is generally aligned with the imaging axes, these will be s
 Finally, the \gls{map} problem is adapted into a variational one applying the
   following log-transform:
   \begin{align}
-  E(F \mid U) &= -\log \underset{l}{\prod}
+  E(R \mid U) &= -\log \underset{l}{\prod}
   \underset{\vec{r} \in \Omega_l}{\prod}
   \mathcal{N} \left( \vec{f}' \mid \Theta_l \right)\,p_0( u(\vec{r}))\,p_1( u(\vec{r})) \notag\\
   &= C + \underset{l}{\sum}
@@ -107,16 +107,32 @@ We provide a proof of duality in {\color{red} [REF figshare?]}.
 \subsection{Numerical Implementation}
 \label{sec:numerical_implementation}
 
+\begin{figure}
+	\includegraphics[width=\linewidth]{figures/figure01.pdf}
+	\caption{The active contours are defined as the interfacing surfaces of the segmenting
+	\glspl{roi} $\Omega_i$, and represented in green and dark blue colors in this
+	close-up.
+	They iteratively through their normals $\hat{n}_i$ at each vertex $\vec{v}_i$ of the mesh.
+	The gradient speeds $\vec{s}_i$ are computed as the disparity between data energies of
+	the vertex $\vec{v}_i$ in each limiting region as described in \autoref{eq:energy}.
+	In this figure, the gradient speed corresponding to $\vec{v}_1$ is written in the lower
+	box, $\Omega_{wm}$ being the inner limiting region and $\Omega_{gm}$ the outer.
+	Finally, every $\bar{s}_i$ is projected into the grid of control points $\vec{u}_k$ that
+	support the deformation field through the corresponding weights $\psi_k(\vec{v}_i)$ obtained
+	as in \autoref{eq:basis_derivative}.
+	}\label{fig:method}
+\end{figure}
+
 \subsubsection{Deformation model}
 \label{sec:deformation_model}
-Let us denote $\{\vec{c}_i\}_{i=1 \ldots N_c}$ the nodes of one or several prior
+Let us denote $\{\vec{v}_i\}_{i=1 \ldots N_c}$ the vertices of one or several prior
   surface(s).
-In our application, these surfaces are extracted using \emph{FreeSurfer}
-  \citep{fischl_freesurfer_2012} in the case of real datasets.
+In our application, these surfaces are triangularized meshes extracted using \emph{FreeSurfer}
+  \citep{fischl_freesurfer_2012}.
 The transformation from the structural space into the coordinate space of the
   target image is achieved through a dense deformation field $u(\vec{r})$, such that:
   \begin{equation}
-  \vec{c}_i' = U\{\vec{c}_i\} = \vec{c}_i + u(\vec{c}_i),
+  \vec{v}_i' = U\{\vec{v}_i\} = \vec{v}_i + u(\vec{v}_i),
   \label{eq:nodes_tfm}
   \end{equation}
   where $U$ is defined in \eqref{eq:transform}.
@@ -133,8 +149,8 @@ In our implementation, $\psi_k$ is chosen to be a tensor-product B-Spline kernel
 Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
   $\psi$ by the actual kernel function, the transformation writes:
   \begin{equation}
-    \vec{c}_i' = \vec{c}_i + \sum_k \left[ \vec{u}_k \, \underset{d}{\prod}
-      B_3( (\vec{c}_i - \vec{r}_k) \cdot \hat{\mathbf{e}}_d ) \right],
+    \vec{v}_i' = \vec{v}_i + \sum_k \left[ \vec{u}_k \, \underset{d}{\prod}
+      B_3( (\vec{v}_i - \vec{r}_k) \cdot \hat{\mathbf{e}}_d ) \right],
   \label{eq:transformation}
   \end{equation}
   with $\hat{\mathbf{e}}_d$ being the unitary vector along axis $d$.
@@ -157,9 +173,9 @@ Now, we introduce \eqref{eq:energy} in \eqref{eq:general_gradient_descent}:
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
   \frac{ \partial }{\partial \vec{u}_k} \Big\{
   C + \underset{l}{\sum}
-  \underset{\vec{r} \in \Omega_l}{\sum} \mdist{f'}{l} \notag\\
-  &+ \underset{\vec{r} \in \Omega}{\sum} \boldsymbol{\alpha} \cdot u(\vec{r})^{\circ2}
-  + \underset{\vec{r} \in \Omega}{\sum} \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{r}))^{\circ2}
+  \int_{\Omega_l} \mdist{f'}{l} \notag\\
+  &+ \int_{\Omega_l} \boldsymbol{\alpha} \cdot u(\vec{r})^{\circ2}
+  + \int_{\Omega_l} \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{r}))^{\circ2}
   \Big\}.
   \label{eq:gradient_descent}
   \end{align}
@@ -169,34 +185,36 @@ Therefore, we can apply a discretized interpretation of \eqref{eq:shape_gradient
   \begin{align}
   \frac{\partial E_{data}(\vec{u})}{\partial \vec{u}_k} &=
   \underset{l}{\sum} \frac{ \partial }{\partial \vec{u}_k} \left\{
-   \underset{\vec{x} \in \Omega_l}{\sum} \mdist{f'}{l} \right\} \notag\\
-  &= \underset{l,m}{\sum} \underset{i}{\sum}
-  \left[ \mdist{f_i'}{l} - \mdist{f_i'}{m} \right]
-  \left\langle \frac{\partial \vec{c}_i'}{\partial \vec{u}_k}, \vec{n_i}'\right\rangle,
+   \underset{\vec{x} \in \Omega_l}{\sum} \mdist{f'}{l} \right\}
+  = \underset{l}{\sum} \underset{i}{\sum}
+   \left\langle \frac{\partial \vec{v}_i'}{\partial \vec{u}_k}, \bar{s}_i'\right\rangle,
   \label{eq:gradient_wshape}
   \end{align}
   in this case, the formulation has been adapted to the non-binary case, $l,m$
   being any pair of neighboring regions, and $\Gamma_{l,m}$ the contour separating
-  them such that $\vec{x}' = \vec{c}' \in\Gamma_{l,m} \iff \vec{x}\in \partial\Omega_i \cap \partial\Omega_j$
+  them such that $\vec{x}' = \vec{v}' \in\Gamma_{l,m} \iff \vec{x}\in \partial\Omega_i \cap \partial\Omega_j$
   and $\vec{n_i}'$ is the unit inward normal to the contour at $c_i'$.
 
 Finally, we can compute:
   \begin{align}
-  \frac{\partial \vec{c}_i'}{\partial \vec{u}_k} &= \frac{\partial}{\partial \vec{u}_k}
-  \left\{ \vec{c}_i + \sum_k \psi_k(\vec{c}_i) \vec{u}_k \right\}
-  = \psi_k(\vec{c_i})\, \hat{\vec{e}}
+  \frac{\partial \vec{v}_i'}{\partial \vec{u}_k} &= \frac{\partial}{\partial \vec{u}_k}
+  \left\{ \vec{v}_i + \sum_k \psi_k(\vec{v}_i) \vec{u}_k \right\}
+  = \psi_k(\vec{v}_i)\, \hat{\vec{e}}
+  \label{eq:basis_derivative}
   \end{align}
   where $\hat{\vec{e}}$ is the coordinates system's unit vector.
-  Projecting this gradient onto the surface normal,
-  $\left\langle \frac{\partial}{\partial \vec{u}_k}{\vec{c}_i}', \vec{n_i}'\right\rangle
-  = \psi_k(\vec{c_i})\, \hat{\vec{n}}_i$, then the
-  full gradient evolution equation \eqref{eq:gradient_descent} yields:
+The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \autoref{eq:shape_gradients},
+	are then projected to the deformation field in order to obtain the derivatives $\vec{g}_k$
+	corresponding to $\vec{u}_k$:
+  \begin{equation}
+  \vec{g}_{i,k} = \left\langle \frac{\partial}{\partial \vec{u}_k}{\vec{v}_i}', \bar{s}_i'\right\rangle
+  = - \left[ \mdist{f_i'}{l} - \mdist{f_i'}{m} \right] \psi_k(\vec{v}_i)\, \hat{\vec{e}},
+  \end{equation}
+  then the full gradient evolution equation \eqref{eq:gradient_descent} yields:
   \begin{align}
   \frac{\partial E(\vec{u}_k)}{\partial \vec{u}_k} =
-  &- \underset{l,m}{\sum} \underset{i}{\sum}
-  \left[ \mdist{f_i'}{l} - \mdist{f_i'}{m} \right]
-  \psi_k(\vec{c}_i)\, \hat{\vec{n}}_i \notag\\
-  &+2\, \boldsymbol{\alpha} \vec{u}_k
+  &\underset{l,m}{\sum} \underset{i}{\sum}
+  \vec{g}_{i,k} +2\, \boldsymbol{\alpha} \vec{u}_k
   -2\, \boldsymbol{\beta} \Delta \vec{u}_k,
   \label{eq:gradient_final}
   \end{align}
@@ -213,7 +231,7 @@ $\vec{x}' = \vec{x_0} + u(\vec{x})$.
 \subsubsection{Efficient field densification}
 As long as the dense deformation field is iteratively interpolated
 from the same set of control points that define the $L-1$ contours,
-it is possible to pre-cache all the $\psi_k(c_i)$ weights into a
+it is possible to pre-cache all the $\psi_k(\vec{v}_i)$ weights into a
 sparse matrix for fast densification. As well, we achieve a
 diffeomorphic transform by
 
