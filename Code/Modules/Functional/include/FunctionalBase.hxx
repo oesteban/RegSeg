@@ -79,7 +79,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_Sigma.Fill(0.0);
 	this->m_Interp = InterpolatorType::New();
-	this->m_MaskInterp = ProbmapInterpolatorType::New();
+	this->m_MaskInterp = MaskInterpolatorType::New();
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -331,6 +331,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename ProbabilityMapType::PixelType bgw;
 		double totalVol;
 		MeasureType smpl_val;
+		size_t lastroi = nrois -1;
 		for( size_t i = 0; i < nPix; i++) {
 			totalVol = 0.0;
 			smpl_val = 0.0;
@@ -340,18 +341,20 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				val = *(refBuffer+i);
 				for( size_t roi = 0; roi < nrois; roi++ ) {
 					w = *( roiBuffer[roi] + i );
-					if ( w > 1.0e-8 ) {
+					if ( w < 1.0e-8 ) {
+						continue;
+					}
+
+					if (roi!=lastroi && bgw > 1.0e-3) {
+						smpl_val+= bgw * w * this->m_MaxEnergy;
+						totalVol+= bgw * w;
+					} else {
 						smpl_val +=  w * this->GetEnergyOfSample( val, roi, true );
 						totalVol += w;
 					}
 				}
-
-				if (bgw > 1.0e-3) {
-					smpl_val+= bgw * this->m_MaxEnergy;
-					totalVol+= bgw;
-				}
-
-				this->m_Value+= smpl_val / totalVol;
+				if (totalVol > 1.0e-3)
+					this->m_Value+= smpl_val / totalVol;
 			}
 		}
 
@@ -863,7 +866,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 	ReferencePixelType value = this->m_Interp->Evaluate( point );
 	float isOutside = this->m_MaskInterp->Evaluate( point );
-	MeasureType grad = this->GetEnergyOfSample( value, outer_roi ) - this->GetEnergyOfSample( value, inner_roi ) + isOutside * this->m_MaxEnergy;
+	if (isOutside > 1.0)
+		isOutside = 1.0;
+	else if (isOutside < 1.0e-3)
+		isOutside = 0.0;
+	float factor = (1.0 * (this->m_NumberOfRegions - outer_roi)) / this->m_NumberOfRegions;
+
+	MeasureType grad = this->GetEnergyOfSample( value, outer_roi ) - this->GetEnergyOfSample( value, inner_roi ) + isOutside * factor * this->m_MaxEnergy;
 	grad = (fabs(grad)>MIN_GRADIENT)?grad:0.0;
 	return grad;
 }
@@ -875,7 +884,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetEnergyAtPoint( typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point, size_t roi ) const {
 	ReferencePixelType value = this->m_Interp->Evaluate( point );
 	float isOutside = this->m_MaskInterp->Evaluate( point );
-	return this->GetEnergyOfSample( value, roi ) + isOutside * this->m_MaxEnergy;
+	if (isOutside > 1.0)
+		isOutside = 1.0;
+	else if (isOutside < 1.0e-3)
+		isOutside = 0.0;
+	float factor = 1.0 * (this->m_NumberOfRegions - roi) / this->m_NumberOfRegions;
+	return this->GetEnergyOfSample( value, roi ) + isOutside * factor * this->m_MaxEnergy;
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
@@ -885,7 +899,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		            typename FunctionalBase<TReferenceImageType, TCoordRepType>::ReferencePixelType & value) const {
 	value = this->m_Interp->Evaluate( point );
 	float isOutside = this->m_MaskInterp->Evaluate( point );
-	return this->GetEnergyOfSample( value, roi ) + isOutside * this->m_MaxEnergy;
+	if (isOutside > 1.0)
+		isOutside = 1.0;
+	else if (isOutside < 1.0e-3)
+		isOutside = 0.0;
+	float factor = 1.0 * (this->m_NumberOfRegions - roi) / this->m_NumberOfRegions;
+	return this->GetEnergyOfSample( value, roi ) + isOutside * factor * this->m_MaxEnergy;
 }
 
 }
