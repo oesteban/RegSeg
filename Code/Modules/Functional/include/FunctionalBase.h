@@ -205,9 +205,9 @@ public:
 	typedef typename ProbabilityMapType::ConstPointer        ProbabilityMapConstPointer;
 	typedef std::vector< ProbabilityMapPointer >             ProbabilityMapList;
 
-	typedef itk::LinearInterpolateImageFunction
-			< ProbabilityMapType >                           ProbmapInterpolatorType;
-	typedef typename ProbmapInterpolatorType::Pointer        ProbmapInterpolatorPointer;
+	typedef itk::NearestNeighborInterpolateImageFunction
+			< ProbabilityMapType >                           MaskInterpolatorType;
+	typedef typename MaskInterpolatorType::Pointer           MaskInterpolatorPointer;
 	typedef itk::ResampleImageFilter
 			< ProbabilityMapType, ProbabilityMapType >       ProbmapResampleType;
 	typedef typename ProbmapResampleType::Pointer            ProbmapResamplePointer;
@@ -403,7 +403,7 @@ protected:
 
 
 	InterpolatorPointer m_Interp;
-	ProbmapInterpolatorPointer m_MaskInterp;
+	MaskInterpolatorPointer m_MaskInterp;
 	PointDataContainerPointer m_CurrentDisplacements;
 	PointsVector m_NodesPosition;
 
