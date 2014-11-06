@@ -2,15 +2,24 @@
 \section{Conclusion}
 \label{sec:conclusion}
 %
-We propose and make publicly available a novel methodology for
-  simultaneous distortion correction and consistent parcellation
-  of \gls*{dmri} images using a joint registration-segmentation
-  framework.
-From the Bayesian approach to image segmentation, we derive
+We propose and make publicly available a joint
+  segmentation-registration method with a proof of concept
+  on a digital phantom and an application on diffusion \gls*{mri}
+  images of the human brain.
+Starting with the Bayesian approach to image segmentation, we derive
   a cost function that models piecewise smooth regions with
   multivariate normal distributions.
-This is, implicitly, an \acrlong*{acwe} model, in wich the
-  contours evolve optimizing a B-Spline deformation
-  model.
-We demonstrate the aptness of the method with quantitative
-  evaluations on digital phantoms and real \gls*{mri} data.
+This is, implicitly, an \acrlong*{acwe} model, in which the
+  evolution of the surfaces drives the optimization of a B-Spline
+  deformation model.
+
+The phantom is used to demonstrate the success of the approach,
+  on a quantitative evaluation that demonstrated its performance
+  with sub-voxel precision (average vertex displacement close to
+  $0.7mm$ in phantoms with isometric pixels of $1.0mm$ and $2.0mm$
+  side).
+We apply the method on the correction of susceptibility-derived
+  distortions of diffusion \gls*{mri} data, and compare to
+  a widely-used method based on the acquisition of extra images
+  mapping the inhomogeneity of tissue susceptibility inside
+  the scanner.

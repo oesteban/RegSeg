@@ -90,11 +90,10 @@ Finally, the \gls{map} problem is adapted into a variational one applying the
   E(R \mid U) &= -\log \underset{l}{\prod}
   \underset{\vec{r} \in \Omega_l}{\prod}
   \mathcal{N} \left( \vec{f}' \mid \Theta_l \right)\,p_0( u(\vec{r}))\,p_1( u(\vec{r})) \notag\\
-  &= C + \underset{l}{\sum}
-  \underset{\vec{r} \in \Omega_l}{\sum}
-  \mdist{f'}{l} \notag\\
-  &+ \underset{\vec{r} \in \Omega}{\sum} \boldsymbol{\alpha} \cdot u(\vec{r})^{\circ2}
-  + \underset{\vec{r} \in \Omega}{\sum} \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{r}))^{\circ2},
+  &= C + \underset{l}{\sum} \int_{\Omega_l}
+  \mdist{f'}{l} \,d\vec{r} \notag\\
+  &+ \int_{\Omega} \left[ \boldsymbol{\alpha} \cdot u(\vec{r})^{\circ2}
+  + \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{r}))^{\circ2} \right] \,d\vec{r},
   \label{eq:energy}
   \end{align}
   that is the dual expression to the energy functional corresponding
@@ -108,12 +107,12 @@ We provide a proof of duality in {\color{red} [REF figshare?]}.
 \label{sec:numerical_implementation}
 
 \begin{figure}
-	\includegraphics[width=\linewidth]{figures/figure01.pdf}
+	\includegraphics[width=\linewidth]{figures/figure01}
 	\caption{The active contours are defined as the interfacing surfaces of the segmenting
 	\glspl{roi} $\Omega_i$, and represented in green and dark blue colors in this
 	close-up.
 	They iteratively through their normals $\hat{n}_i$ at each vertex $\vec{v}_i$ of the mesh.
-	The gradient speeds $\vec{s}_i$ are computed as the disparity between data energies of
+	The gradient speeds $\bar{s}_i$ are computed as the disparity between data energies of
 	the vertex $\vec{v}_i$ in each limiting region as described in \autoref{eq:energy}.
 	In this figure, the gradient speed corresponding to $\vec{v}_1$ is written in the lower
 	box, $\Omega_{wm}$ being the inner limiting region and $\Omega_{gm}$ the outer.
@@ -172,10 +171,9 @@ Now, we introduce \eqref{eq:energy} in \eqref{eq:general_gradient_descent}:
   \begin{align}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
   \frac{ \partial }{\partial \vec{u}_k} \Big\{
-  C + \underset{l}{\sum}
-  \int_{\Omega_l} \mdist{f'}{l} \notag\\
-  &+ \int_{\Omega_l} \boldsymbol{\alpha} \cdot u(\vec{r})^{\circ2}
-  + \int_{\Omega_l} \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{r}))^{\circ2}
+  \int_{\Omega} \underset{l}{\sum} \mdist{f'}{l} \,d\vec{r} \notag\\
+  &+ \int_{\Omega} [ \boldsymbol{\alpha} \cdot u(\vec{r})^{\circ2}
+  + \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{r}))^{\circ2} ] \,d\vec{r}
   \Big\}.
   \label{eq:gradient_descent}
   \end{align}
@@ -184,13 +182,13 @@ Therefore, we can apply a discretized interpretation of \eqref{eq:shape_gradient
   to compute the data term in \eqref{eq:gradient_descent} as follows:
   \begin{align}
   \frac{\partial E_{data}(\vec{u})}{\partial \vec{u}_k} &=
-  \underset{l}{\sum} \frac{ \partial }{\partial \vec{u}_k} \left\{
-   \underset{\vec{x} \in \Omega_l}{\sum} \mdist{f'}{l} \right\}
-  = \underset{l}{\sum} \underset{i}{\sum}
+  \frac{ \partial }{\partial \vec{u}_k} \left\{
+   \underset{\vec{x} \in \Omega_l}{\sum} \underset{l}{\sum} \mdist{f'}{l} \right\}
+  = \underset{i}{\sum}
    \left\langle \frac{\partial \vec{v}_i'}{\partial \vec{u}_k}, \bar{s}_i'\right\rangle,
   \label{eq:gradient_wshape}
   \end{align}
-  in this case, the formulation has been adapted to the non-binary case, $l,m$
+  in this case, the formulation has been adapted to the non-binary case, $\{l,m\}$
   being any pair of neighboring regions, and $\Gamma_{l,m}$ the contour separating
   them such that $\vec{x}' = \vec{v}' \in\Gamma_{l,m} \iff \vec{x}\in \partial\Omega_i \cap \partial\Omega_j$
   and $\vec{n_i}'$ is the unit inward normal to the contour at $c_i'$.
@@ -213,27 +211,53 @@ The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \autore
   then the full gradient evolution equation \eqref{eq:gradient_descent} yields:
   \begin{align}
   \frac{\partial E(\vec{u}_k)}{\partial \vec{u}_k} =
-  &\underset{l,m}{\sum} \underset{i}{\sum}
-  \vec{g}_{i,k} +2\, \boldsymbol{\alpha} \vec{u}_k
+  &\underset{i}{\sum} \vec{g}_{i,k} +2\, \boldsymbol{\alpha} \vec{u}_k
   -2\, \boldsymbol{\beta} \Delta \vec{u}_k,
   \label{eq:gradient_final}
   \end{align}
 
-\subsubsection{Region descriptor reestimation}
-In regular intervals, after certain number of iterations,
-the parameters $\Theta_l$ of the regions can be reestimated
-based on the shifted volumetric samples
-$\vec{x}' = \vec{x_0} + u(\vec{x})$.
 
-\subsubsection{Convergence}
-{\color{red} discuss choice of $\tau$, Courant-Friedrichs-Lewy (CFL) condition / Wolfe conditions, multi-resolutions on the bspline grid, image samples and surface sampling,  etc.}
 
-\subsubsection{Efficient field densification}
-As long as the dense deformation field is iteratively interpolated
-from the same set of control points that define the $L-1$ contours,
-it is possible to pre-cache all the $\psi_k(\vec{v}_i)$ weights into a
-sparse matrix for fast densification. As well, we achieve a
-diffeomorphic transform by
+\subsection{Experiments and evaluation}
+\label{sec:experiments_evaluation}
+%
+The experiments follow a five-steps design:
+\begin{enumerate}
+	\item The prior surfaces are extracted from an undistorted and high-resolution dataset
+	  (e.g. \autoref{fig:phantom}).
+	\item A plausible, synthetic distortion $U^{-1}_{true}$ is generated.
+	\item The low-resolution (target) images are warped using the synthetic distortion.
+	\item Our method is run, obtaining a $\hat{U}_{tst}$.
+	  A cross-comparison methodology is also applied, to obtain a competing $\hat{U}_{cc}$.
+	\item Results are visually and quantitatively evaluated.
+\end{enumerate}
+
+To quantitatively evaluate the registration results we computed the \gls*{swindex} as the one-to-one
+  distance between corresponding vertices of surfaces, weighted by their respective
+  Voronoi area $w_i$:
+  \begin{equation}
+  sWI = \frac{1}{P} \sum\limits_p^P \frac{1}{A_p} \sum\limits_i^{N_p} w_i\,\|
+  \vec{v}_i - \hat{\vec{v}}_i \|
+  \end{equation}
+  where $\vec{v}_i$ are the locations of the $N_p$ vertices in each $p \in \{1, \dots P\}$
+    prior, $A_p$ the total area of surface $p$, and $\hat{\vec{v}}_i$ is the location
+    recovered corresponding to the vertex $\vec{v}_i$.
+
+In the application on real data, three experts blindly rated correction results obtained
+  with the proposed method and the cross-comparison reference.
+The full report of visual results is provided within the Supplemental Materials.
+
+  % \item \gls{wi}, L2-distance between the theoretical and the recovered
+  %   deformation field.
+  %   \begin{equation}
+  %   WI = \frac{1}{N} \sum\limits_i^N \| \mathbf{d}_i - \hat{\mathbf{d}}_i \|
+  %   \end{equation}
+  %   where $\mathbf{d}_i$ is the theoretical displacement vector at position $i$
+  %   and $\hat{\mathbf{d}}_i$ is the recovered one at the same index position.
+  % \item Parcellation agreement, the Dice overlap index of the \glspl*{roi}
+  %   contained by the parcellation.
+  % \end{itemize}
+
 
 
 \subsection{Image Data and preprocessing}
@@ -242,70 +266,45 @@ diffeomorphic transform by
 \subsubsection{Simulated digital phantom} %
 \label{sec:digital_phantoms}
 %
-We first present the proof of the concept on a simplistic digital phantom,
-  simulating a spherical crust of thin tissue with a folding resembling
-  a gyrus of the brain cortex folding (see \autoref{fig1}).
-We simulated 2.0mm isotropic \gls*{t1} and \gls*{t2} images at
-  several rician noise levels, with parameters TE/TR=10/1500ms and
-  TE/TR=90/5000ms respectively using \cite{caruyer_phantomas_2014}.
+We first present the proof of the concept on a simplistic digital phantom
+  (\autoref{fig:phantom}).
+Using \cite{caruyer_phantomas_2014}, we simulated 2.0mm isotropic \gls*{t1} and
+  \gls*{t2} images at several rician noise levels, with parameters TE/TR=10/1500ms
+  and TE/TR=90/5000ms respectively.
 The reference surfaces were extracted using the marching-cubes algorithm
-  on high-resolution (1.0mm isotropic) binary versions of the corresponding
-  maps of tissue volume fractions used during the simulation step.
+  shipped with \emph{FreeSurfer} \citep{fischl_freesurfer_2012}
+  on high-resolution (1.0mm isotropic) and binary images corresponding to
+  the tissue fraction maps used in simulations.
+
+\begin{figure}
+	\includegraphics[width=\linewidth]{figures/figure02}
+	\caption{The ``cortex'' phantom is a spherical shape with two sulci and an
+	 outer crust resembling the cortical folding.
+	When the model is used to generate low resolution images, the
+	  partial volume effect turns segmentation of the sulci a
+	  challenging problem with voxel-wise clustering methods,
+	  but it is successfully segmented with the proposed method (see
+	  \autoref{fig:results_phantom}).
+	Top row shows the central-axial plane of the simulated images at
+	  high resolution and noiseless (left is \gls*{t1} and right is
+	  \gls*{t2}).
+	Bottom row represents the extracted contours that are used as shape
+	  priors to be registered to low-resolution, noise corrupted versions
+	  of the phantom.
+	}\label{fig:phantom}
+\end{figure}
 
 \subsubsection{Real \gls{mri} datasets} %
 \label{sec:human_connectome}
 %
-For the evaluation of the algorithm with real brains with \gls*{dmri} data,
-  we randomly selected 10 datasets from the minimally preprocessed
-  \citep{glasser_minimal_2013} cohort of the \gls*{hcp}.
-These datasets comprehend the preprocessed (corrected for artifacts,
-  brain-extracted and spatially normalized) \gls*{t1}, \gls*{t2} and
-  multi-shell \gls*{dmri} images, along with the most prominent results of
-  the standard processing with \emph{FreeSurfer}: \emph{aseg} and
-  \emph{aparc} segmentations, and the surfaces corresponding to the cortical
-  \gls*{gm} exterior (\emph{pial}) and the \gls*{wm}/\gls*{gm} interface
-  (\emph{white}).
-This cohort is especially convenient for their careful preprocessing,
-  making available high-standard \gls*{mri} data accurately corrected
-  for distortions and artifacts.
-For the exact details of the scanning parameters we refer the reader to
-  \citep{essen_human_2012}.
-Selecting the appropriate labels in the \emph{aseg} segmentation, we applied
-  the marching-cubes algorithm again to extract the surfaces containing the
-  \gls*{csf} of the ventricular system.
-
-As we propose the \gls*{fa} and the \gls*{md} as target features, we
-  implemented a simplified pipeline for processing \gls*{dmri} using
-  \emph{MRtrix} \citep{tournier_mrtrix_2012}.
-\todo[inline]{insert here the summary of parameters}
-
-\subsection{Experiments and evaluation}
-\label{sec:experiments_evaluation}
-%
-\subsubsection{Synthetic distortion}
-\label{sec:distortion}
-
-
-
-\subsubsection{Evaluation indices} %
-\label{sec:evaluation}
-We report the following indices:
-  \begin{itemize}
-  \item \gls{se}, a distance between the one-to-one corresponding
-    vertices, weighted by their respective Voronoi area.
-    \begin{equation}
-    MSE = \sum\limits_k \sum\limits_j^M w_j\,\| \mathbf{x}_j - \hat{\mathbf{x}}_j \|
-    \end{equation}
-    where $\mathbf{x}_j$ are the locations of the $M$ vertices of the $k$ priors,
-    $\hat{\mathbf{x}}_j$ are the corresponding locations recovered, and $w_j$ the
-    weighting factor as the relative surface of the Voronoi area.
-  \item \gls{wi}, L2-distance between the theoretical and the recovered
-    deformation field.
-    \begin{equation}
-    WI = \frac{1}{N} \sum\limits_i^N \| \mathbf{d}_i - \hat{\mathbf{d}}_i \|
-    \end{equation}
-    where $\mathbf{d}_i$ is the theoretical displacement vector at position $i$
-    and $\hat{\mathbf{d}}_i$ is the recovered one at the same index position.
-  \item Parcellation agreement, the Dice overlap index of the \glspl*{roi}
-    contained by the parcellation.
-  \end{itemize}
+For the evaluation of the algorithm to real \gls*{dmri} data of human brains,
+  we downloaded 10 datasets from the ``minimally preprocessed''
+	 database of the \gls*{hcp}.
+We refer the reader to \citep{essen_human_2012} for exact details about acquisition
+  parameters, and \citep{glasser_minimal_2013} for preprocessing issues.
+The datasets comprehend \gls*{t1}, \gls*{t2} and multi-shell \gls*{dmri} images
+  already corrected for artifacts, brain-extracted and spatially normalized,
+  along with the most prominent results of the standard processing with
+  \emph{FreeSurfer}: \emph{aparc} segmentations, and the surfaces corresponding to
+  the cortical \gls*{gm} exterior and the \gls*{wm} interface with
+  cortical \gls*{gm}.
