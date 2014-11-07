@@ -154,11 +154,9 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 
 	this->SetUpdate();
 	this->ComputeIterationSpeed();
-
-	if ( this->m_UseLightWeightConvergenceChecking ) {
-		this->m_CurrentValue = log( 1.0 + this->m_MaxSpeed );
-	} else {
-		this->m_CurrentValue = this->GetCurrentEnergy();
+	this->m_CurrentValue = this->m_MeanSpeed;
+	if (!this->m_UseLightWeightConvergenceChecking ) {
+		this->m_CurrentEnergy = this->GetCurrentEnergy();
 	}
 
 

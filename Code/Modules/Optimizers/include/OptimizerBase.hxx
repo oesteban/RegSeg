@@ -94,6 +94,7 @@ m_AutoStepSize(true),
 m_IsDiffeomorphic(true),
 m_UseLightWeightConvergenceChecking(true),
 m_CurrentValue(itk::NumericTraits<MeasureType>::infinity()),
+m_CurrentEnergy(itk::NumericTraits<MeasureType>::infinity()),
 m_LastValue(itk::NumericTraits<MeasureType>::infinity()),
 m_InitialValue(0.0)
 {
