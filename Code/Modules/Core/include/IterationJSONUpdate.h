@@ -99,6 +99,13 @@ public:
 			itnode["speed"]["max"] = this->m_Optimizer->GetMaxSpeed();
 			itnode["speed"]["median"] = this->m_Optimizer->GetMeanSpeed();
 			itnode["speed"]["average"] = this->m_Optimizer->GetAvgSpeed();
+
+			std::vector< size_t > off = this->m_Optimizer->GetFunctional()->GetOffMaskNodes();
+			JSONValue offnode = Json::Value( Json::arrayValue );
+			for (size_t c = 0; c<off.size(); c++) {
+				offnode.append(Json::UInt64(off[c]));
+			}
+			itnode["off-grid"] = offnode;
 		}
 
 		if( typeid( event ) == typeid( FunctionalModifiedEvent ) )  {
