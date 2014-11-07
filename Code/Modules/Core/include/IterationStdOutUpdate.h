@@ -97,7 +97,17 @@ public:
 				for (size_t r = 0; r < es.Size(); r++) {
 					std::cout << " " << es[r];
 				}
+
+				std::cout << " ||";
     		}
+
+			const std::vector< size_t > off = this->m_Optimizer->GetFunctional()->GetOffMaskNodes();
+			std::cout << " OffMask=(";
+			for (size_t c = 0; c<off.size(); c++) {
+				std::cout << off[c] << ", ";
+			}
+			std::cout << ")";
+
     		std::cout << "." << std::endl;
 		}
 

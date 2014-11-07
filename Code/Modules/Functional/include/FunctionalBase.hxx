@@ -128,6 +128,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_RegionValue.SetSize(this->m_NumberOfRegions);
 	this->m_RegionValue.Fill(itk::NumericTraits<MeasureType>::infinity());
 
+	this->m_OffMaskNodes.resize(this->m_NumberOfContours);
+
 	// Initialize interpolators
 	this->m_Interp->SetInputImage( this->m_ReferenceImage );
 	this->m_MaskInterp->SetInputImage(this->m_BackgroundMask);
@@ -161,6 +163,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->UpdateContour();
 
 	VNLVectorContainer gradVector;
+	std::fill(this->m_OffMaskNodes.begin(), this->m_OffMaskNodes.end(), 0.0);
 
 	for( size_t i = 0; i<Dimension; i++ ) {
 		gradVector[i] = VNLVector( this->m_NumberOfPoints );
@@ -195,10 +198,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			wi = 0.0;
 
 			pid = c_it.Index();
+			ci_prime = c_it.Value();
 			out_cid = this->m_OuterList[in_cid][pid];
 
+			if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
+				this->m_OffMaskNodes[in_cid] += 1;
+			}
+
 			if ( in_cid != out_cid ) {
-				ci_prime = c_it.Value();
 				normals->GetPointData( pid, &ni );           // Normal ni in point c'_i
 				wi = this->ComputePointArea( pid, normals );  // Area of c'_i
 				gi = this->EvaluateGradient( ci_prime, out_cid, in_cid );
@@ -251,7 +258,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	size_t changed = 0;
 	size_t gpid = 0;
 	std::vector< size_t > invalid;
-	std::vector< size_t > outmask;
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
 		typename ContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
@@ -275,11 +281,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					invalid.push_back( gpid );
 					this->InvokeEvent( WarningEvent() );
 				}
-
-				if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
-					outmask.push_back( gpid );
-					this->InvokeEvent( WarningEvent() );
-				}
 				curPoints->SetElement( pid, ci_prime );
 				changed++;
 			}
@@ -295,10 +296,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	if ( invalid.size() > 0 ) {
 		itkWarningMacro(<< "a total of " << invalid.size() << " mesh nodes were to be moved off the image domain." );
-	}
-
-	if ( outmask.size() > 0 ) {
-		itkWarningMacro(<< "a total of " << outmask.size() << " mesh nodes were to be moved off the object mask." );
 	}
 
 	this->m_DisplacementsUpdated = true;

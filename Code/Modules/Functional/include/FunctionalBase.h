@@ -338,6 +338,8 @@ public:
 	itkGetConstObjectMacro( BackgroundMask, ProbabilityMapType);
 	virtual void SetBackgroundMask (const ProbabilityMapType * _arg);
 
+	itkGetConstMacro( OffMaskNodes, std::vector<size_t>);
+
 	const ProbabilityMapType* GetCurrentMap( size_t idx );
 
 	size_t AddShapePrior( const ContourType* prior );
@@ -411,6 +413,7 @@ protected:
 	PointDataContainerPointer m_CurrentDisplacements;
 	PointsVector m_NodesPosition;
 
+	std::vector<size_t> m_OffMaskNodes;
 private:
 	FunctionalBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented
