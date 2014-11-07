@@ -74,7 +74,7 @@ m_LearningRate( 1.0 ),
 m_Momentum( 0.0 ),
 m_LastMaximumGradient(0.0),
 m_MaximumGradient(0.0),
-m_MinimumConvergenceValue( 1e-8 ),
+m_MinimumConvergenceValue( 1e-5 ),
 m_ConvergenceWindowSize( 15 ),
 m_ConvergenceValue( 0.0 ),
 m_Stop( false ),
@@ -229,7 +229,7 @@ void OptimizerBase<TFunctional>::Resume() {
 		/*
 		 * Check the convergence by WindowConvergenceMonitoringFunction.
 		 */
-		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentValue );
+		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_MeanSpeed );
 
 		try {
 			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();

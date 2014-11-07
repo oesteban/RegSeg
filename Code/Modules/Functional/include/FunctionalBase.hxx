@@ -879,7 +879,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	MeasureType grad = this->GetEnergyOfSample( value, outer_roi );
 
 	float isOutside = this->m_MaskInterp->Evaluate( point );
-	isOutside = (isOutside > 1.0)?1.0:isOutside;
+	// isOutside = (isOutside > 1.0)?1.0:isOutside;
 	if (isOutside < 1.0e-3) {
 		grad-= this->GetEnergyOfSample( value, inner_roi );
 	}
