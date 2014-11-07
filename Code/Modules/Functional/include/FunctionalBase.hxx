@@ -58,7 +58,6 @@
 
 namespace rstk {
 
-
 template< typename TReferenceImageType, typename TCoordRepType >
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::FunctionalBase():
@@ -74,7 +73,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_ApplySmoothing(false),
  m_UseBackground(false),
  m_Value(0.0),
- m_MaxEnergy(0.0)
+ m_MaxEnergy(0.0),
+ m_LastROI(0)
  {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_Sigma.Fill(0.0);
@@ -121,6 +121,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	for( size_t id = 0; id < m_ROIs.size(); id++) {
 		this->m_ROIs[id] = this->m_CurrentROIs[id];
 	}
+	this->m_LastROI = m_ROIs.size() - 1;
 
 	// Compute the outer region in each vertex
 	this->ComputeOuterRegions();
@@ -170,6 +171,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		gradVector[i].fill(0.0);
 	}
 
+	PointValueType maxgi = 0.0;
 	for( size_t in_cid = 0; in_cid < this->m_NumberOfContours; in_cid++) {
 		sample.clear();
 		double wi = 0.0;
@@ -211,6 +213,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				gi = this->EvaluateGradient( ci_prime, out_cid, in_cid );
 				totalArea+=wi;
 				gradSum+=gi;
+
+				if (fabs(gi) > maxgi)
+					maxgi = gi;
 			}
 			sample.push_back( GradientSample( gi, wi, ni, pid, cpid, in_cid ) );
 			++c_it;
@@ -237,11 +242,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				sample[i].w = 0.0;
 				ni = zerov;
 			}
-
 			gradmesh->GetPointData()->SetElement( sample[i].cid, ni );
 		}
 	}
-
 	return gradVector;
 }
 
@@ -877,9 +880,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	float isOutside = this->m_MaskInterp->Evaluate( point );
 	// isOutside = (isOutside > 1.0)?1.0:isOutside;
-	if (isOutside < 1.0e-3) {
+	if (isOutside < 1.0e-3 && outer_roi!=this->m_LastROI ) {
 		grad-= this->GetEnergyOfSample( value, inner_roi );
 	}
+	//else {
+	//	if(isOutside > 1.0) isOutside = 1.0;
+	//	grad+= 100.0 * isOutside * this->m_MaxEnergy;
+	//}
 
 	grad = (fabs(grad)>MIN_GRADIENT)?grad:0.0;
 	return grad;
