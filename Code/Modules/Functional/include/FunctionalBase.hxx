@@ -125,6 +125,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	// Compute the outer region in each vertex
 	this->ComputeOuterRegions();
 
+	this->m_RegionValue.SetSize(this->m_NumberOfRegions);
+	this->m_RegionValue.Fill(itk::NumericTraits<MeasureType>::infinity());
+
 	// Initialize interpolators
 	this->m_Interp->SetInputImage( this->m_ReferenceImage );
 	this->m_MaskInterp->SetInputImage(this->m_BackgroundMask);
@@ -309,6 +312,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetValue() {
 	if ( !this->m_EnergyUpdated ) {
 		this->m_Value = 0.0;
+		this->m_RegionValue.Fill(0.0);
 
 		double vxvol = 1.0;
 		for(size_t i = 0; i<Dimension; i++)
@@ -330,7 +334,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename ProbabilityMapType::PixelType w;
 		typename ProbabilityMapType::PixelType bgw;
 		double totalVol;
+		double regionVol[this->m_NumberOfRegions];
 		MeasureType smpl_val;
+		MeasureType e;
 		size_t lastroi = nrois -1;
 		for( size_t i = 0; i < nPix; i++) {
 			totalVol = 0.0;
@@ -346,16 +352,24 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					}
 
 					if (roi!=lastroi && bgw > 1.0e-3) {
-						smpl_val+= bgw * w * this->m_MaxEnergy;
-						totalVol+= bgw * w;
+						e = this->m_MaxEnergy;
+						w = w * bgw;
 					} else {
-						smpl_val +=  w * this->GetEnergyOfSample( val, roi, true );
-						totalVol += w;
+						e = this->GetEnergyOfSample( val, roi, true );
 					}
+					smpl_val+= w * e;
+					totalVol+= w;
+
+					this->m_RegionValue[roi]+= w * e;
+					regionVol[roi]+= w;
 				}
 				if (totalVol > 1.0e-3)
 					this->m_Value+= smpl_val / totalVol;
 			}
+		}
+
+		for( size_t roi = 0; roi < nrois; roi++ ) {
+			this->m_RegionValue[roi]*= (1.0/regionVol[roi]);
 		}
 
 		this->m_EnergyUpdated = true;

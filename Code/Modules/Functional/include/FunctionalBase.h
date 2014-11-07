@@ -131,6 +131,8 @@ public:
 	typedef typename ReferenceImageType::SizeType            ReferenceSizeType;
 	typedef typename ReferenceImageType::SpacingType         ReferenceSpacingType;
 
+	typedef itk::Array< MeasureType >                        MeasureArray;
+
 	typedef itk::SmoothingRecursiveGaussianImageFilter< ReferenceImageType >
 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 SmoothingFilterType;
 	typedef typename SmoothingFilterType::Pointer			 SmoothingFilterPointer;
@@ -324,6 +326,7 @@ public:
 	}
 
 	MeasureType GetValue();
+	itkGetConstMacro(RegionValue, MeasureArray);
 	VNLVectorContainer ComputeDerivative();
 	virtual void Initialize();
 	virtual void UpdateDescriptors() = 0;
@@ -376,6 +379,7 @@ protected:
 	bool m_UseBackground;
 
 	mutable MeasureType m_Value;
+	mutable MeasureArray m_RegionValue;
 	mutable MeasureType m_MaxEnergy;
 	FieldPointer m_ReferenceSamplingGrid;
 	ContourList m_CurrentContours;
