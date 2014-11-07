@@ -95,7 +95,7 @@ m_IsDiffeomorphic(true),
 m_UseLightWeightConvergenceChecking(true),
 m_CurrentValue(itk::NumericTraits<MeasureType>::infinity()),
 m_CurrentEnergy(itk::NumericTraits<MeasureType>::infinity()),
-m_LastValue(itk::NumericTraits<MeasureType>::infinity()),
+m_LastEnergy(itk::NumericTraits<MeasureType>::infinity()),
 m_InitialValue(0.0)
 {
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
@@ -230,7 +230,7 @@ void OptimizerBase<TFunctional>::Resume() {
 		/*
 		 * Check the convergence by WindowConvergenceMonitoringFunction.
 		 */
-		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_MeanSpeed );
+		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentValue );
 
 		try {
 			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
@@ -254,10 +254,6 @@ void OptimizerBase<TFunctional>::Resume() {
 			break;
 		}
 
-#ifndef NDEBUG
-		std::cout << "Speed=" << this->m_MaximumGradient << "/" << this->m_MaxSpeed << std::endl;
-#endif
-
 		if( this->m_MaximumGradient < 1e-5 ) {
 			this->m_StopConditionDescription << "Maximum gradient update changed below the minimum threshold.";
 			this->m_StopCondition = Self::STEP_TOO_SMALL;
@@ -265,8 +261,9 @@ void OptimizerBase<TFunctional>::Resume() {
 			break;
 		}
 
+
 		if (this->m_InitialValue > 0.0){
-			float inc = this->m_LastValue / this->m_CurrentValue;
+			float inc = this->m_LastEnergy / this->m_CurrentEnergy;
 			if (inc < 1.0) {
 				this->m_ValueOscillations += 1;
 				this->m_ValueOscillationsLast = this->m_CurrentIteration;
@@ -284,7 +281,7 @@ void OptimizerBase<TFunctional>::Resume() {
 				this->m_ConvergenceMonitoring->ClearEnergyValues();
 			}
 		} else {
-			this->m_InitialValue = this->m_CurrentValue;
+			this->m_InitialValue = this->m_CurrentEnergy;
 		}
 
 		//std::cout << "StepSize=" << this->m_StepSize << std::endl;
@@ -294,7 +291,7 @@ void OptimizerBase<TFunctional>::Resume() {
 			this->Stop();
 			break;
 		}
-		this->m_LastValue = this->m_CurrentValue;
+		this->m_LastEnergy = this->m_CurrentEnergy;
 		this->m_LastMaximumGradient = this->m_MaximumGradient;
 
 		this->InvokeEvent( itk::IterationEvent() );

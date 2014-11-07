@@ -155,10 +155,12 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 	this->SetUpdate();
 	this->ComputeIterationSpeed();
 	this->m_CurrentValue = this->m_MeanSpeed;
-	if (!this->m_UseLightWeightConvergenceChecking ) {
+
+	if (this->m_UseLightWeightConvergenceChecking) {
+		this->m_CurrentEnergy = this->m_MeanSpeed;
+	} else {
 		this->m_CurrentEnergy = this->GetCurrentEnergy();
 	}
-
 
 	this->m_Transform->Interpolate();
 	this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetOffGridFieldValues() );
