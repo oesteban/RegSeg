@@ -74,9 +74,9 @@ m_LearningRate( 1.0 ),
 m_Momentum( 0.0 ),
 m_LastMaximumGradient(0.0),
 m_MaximumGradient(0.0),
-m_MinimumConvergenceValue( 1e-5 ),
-m_ConvergenceWindowSize( 15 ),
-m_ConvergenceValue( 0.0 ),
+m_MinimumConvergenceValue( 1e-3 ),
+m_ConvergenceWindowSize( 10 ),
+m_ConvergenceValue( 4.0 ),
 m_Stop( false ),
 m_StopCondition(MAXIMUM_NUMBER_OF_ITERATIONS),
 m_CurrentIteration( 0 ),
@@ -321,6 +321,7 @@ void OptimizerBase<TFunctional>
 			("learning-rate,r", bpo::value< float > (), "learning rate to update step size")
 			("iterations,i", bpo::value< size_t > (), "number of iterations")
 			("convergence-window,w", bpo::value< size_t > (), "number of iterations of convergence window")
+			("convergence-thresh,t", bpo::value< double > (), "convergence value")
 			("grid-size,S", bpo::value< size_t > (), "grid size")
 			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)")
 			("convergence-energy", bpo::bool_switch(), "disables lazy convergence tracking: instead of fast computation of the mean norm of "
@@ -367,6 +368,11 @@ void OptimizerBase<TFunctional>
 	if( this->m_Settings.count( "convergence-window" ) ){
 			bpo::variable_value v = this->m_Settings["convergence-window"];
 			this->m_ConvergenceWindowSize = v.as< size_t >();
+	}
+
+	if( this->m_Settings.count( "convergence-thresh" ) ){
+			bpo::variable_value v = this->m_Settings["convergence-thresh"];
+			this->m_MinimumConvergenceValue = v.as< double >();
 	}
 
 	if (this->m_Settings.count("update-descriptors")) {
