@@ -30,6 +30,8 @@
 #include "regseg.h"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/asio/signal_set.hpp>
+
 
 int main(int argc, char *argv[]) {
 	std::string outPrefix;
@@ -209,9 +211,27 @@ int main(int argc, char *argv[]) {
 		acwereg->SetSettingsOfLevel( i, vm );
 	}
 
-	acwereg->Update();
+	try {
+		acwereg->Update();
+	} catch (const std::exception &exc) {
+		// Set-up & write out log file
+		root["levels"] = acwereg->GetJSONRoot();
+		root["error"]["message"] = std::string(exc.what());
+		std::ofstream logfile((outPrefix + logFileName + ".log" ).c_str());
+		logfile << root;
+		throw;
+	} catch (...) {
+		root["levels"] = acwereg->GetJSONRoot();
+		root["error"]["message"] = std::string("Unknown exception");
+		std::ofstream logfile((outPrefix + logFileName + ".log" ).c_str());
+		logfile << root;
+		throw;
+	}
 
 	root["levels"] = acwereg->GetJSONRoot();
+	// Set-up & write out log file
+	std::ofstream logfile((outPrefix + logFileName + ".log" ).c_str());
+	logfile << root;
 
 	//
 	// Write out final results ---------------------------------------------------------
@@ -299,10 +319,6 @@ int main(int argc, char *argv[]) {
 		w->Update();
 
 	}
-
-	// Set-up & write out log file
-	std::ofstream logfile((outPrefix + logFileName + ".log" ).c_str());
-	logfile << root;
 
 	return EXIT_SUCCESS;
 }
