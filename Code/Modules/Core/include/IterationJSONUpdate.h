@@ -52,6 +52,13 @@ public:
 				itnode["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
 				itnode["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
 				itnode["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
+
+				typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
+				JSONValue enode = Json::Value( Json::arrayValue );
+				for (size_t r = 0; r < es.Size(); r++) {
+					enode.append(Json::Value(es[r]));
+				}
+				itnode["energy"]["region"] = enode;
     		}
     		itnode["descriptors"] = this->ParseTree( this->m_Optimizer->GetFunctional()->PrintFormattedDescriptors() );
     		itnode["step_size"] = this->m_Optimizer->GetStepSize();
@@ -77,6 +84,13 @@ public:
 				itnode["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
 				itnode["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
 				itnode["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
+
+				typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
+				JSONValue enode = Json::Value( Json::arrayValue );
+				for (size_t r = 0; r < es.Size(); r++) {
+					enode.append(Json::Value(es[r]));
+				}
+				itnode["energy"]["region"] = enode;
 			}
 			itnode["convergence"]["norm"] = this->m_Optimizer->GetCurrentValue();
 			itnode["convergence"]["step_size"] = this->m_Optimizer->GetStepSize();
@@ -106,6 +120,14 @@ public:
 			itnode["summary"]["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
 			itnode["summary"]["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
 			itnode["summary"]["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
+
+			typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
+			JSONValue enode = Json::Value( Json::arrayValue );
+			for (size_t r = 0; r < es.Size(); r++) {
+				enode.append(Json::Value(es[r]));
+			}
+			itnode["summary"]["energy"]["region"] = enode;
+
 			itnode["summary"]["iterations"] = Json::Int (this->m_Optimizer->GetCurrentIteration());
 			itnode["summary"]["conv_status"] = this->m_Optimizer->GetStopCondition();
 			itnode["summary"]["stop_msg"] = this->m_Optimizer->GetStopConditionDescription();
