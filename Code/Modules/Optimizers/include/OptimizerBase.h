@@ -323,7 +323,7 @@ protected:
 	/* Energy tracking */
 	MeasureType                  m_CurrentValue;
 	MeasureType                  m_CurrentEnergy;
-	MeasureType                  m_LastValue;
+	MeasureType                  m_LastEnergy;
 	MeasureType                  m_InitialValue;
 	MeasureArray                 m_ValueWindow;
 
