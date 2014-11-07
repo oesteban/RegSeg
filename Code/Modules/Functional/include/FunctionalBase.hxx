@@ -865,14 +865,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		return 0.0;
 	}
 	ReferencePixelType value = this->m_Interp->Evaluate( point );
-	float isOutside = this->m_MaskInterp->Evaluate( point );
-	if (isOutside > 1.0)
-		isOutside = 1.0;
-	else if (isOutside < 1.0e-3)
-		isOutside = 0.0;
-	float factor = (1.0 * (this->m_NumberOfRegions - outer_roi)) / this->m_NumberOfRegions;
+	MeasureType grad = this->GetEnergyOfSample( value, outer_roi );
 
-	MeasureType grad = this->GetEnergyOfSample( value, outer_roi ) - this->GetEnergyOfSample( value, inner_roi ) + isOutside * factor * this->m_MaxEnergy;
+	float isOutside = this->m_MaskInterp->Evaluate( point );
+	isOutside = (isOutside > 1.0)?1.0:isOutside;
+	if (isOutside < 1.0e-3) {
+		grad-= this->GetEnergyOfSample( value, inner_roi );
+	}
+
 	grad = (fabs(grad)>MIN_GRADIENT)?grad:0.0;
 	return grad;
 }
