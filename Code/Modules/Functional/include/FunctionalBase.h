@@ -412,7 +412,7 @@ protected:
 	MaskInterpolatorPointer m_MaskInterp;
 	PointDataContainerPointer m_CurrentDisplacements;
 	PointsVector m_NodesPosition;
-
+	size_t m_LastROI;
 	std::vector<size_t> m_OffMaskNodes;
 private:
 	FunctionalBase(const Self &);  //purposely not implemented
