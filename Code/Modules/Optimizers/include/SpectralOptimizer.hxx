@@ -440,23 +440,32 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 	VectorType t0,t1;
 	InternalComputationValueType diff = 0.0;
 
+	bool limited = false;
+
 	this->m_IsDiffeomorphic = true;
 	std::vector< InternalComputationValueType > speednorms;
 	for (size_t pix = 0; pix < nPix; pix++ ) {
 		t0 = *(fBuffer+pix);
 		t1 = *(fnextBuffer+pix);
+
+		if (this->m_IsDiffeomorphic) {
+			for( size_t i = 0; i<Dimension; i++) {
+				if ( fabs(t1[i]) > this->m_MaxDisplacement[i] ) {
+					//this->m_IsDiffeomorphic = false;
+					t1[i] = this->m_MaxDisplacement[i] * (t1[i]>0)?1.0:-1.0;
+					limited = true;
+				}
+			}
+		}
+
 		diff = ( t1 - t0 ).GetNorm();
 		totalNorm += diff;
 		speednorms.push_back(diff);
 		*(fBuffer+pix) = t1; // Copy current to last, once evaluated
+	}
 
-		if ( this->m_IsDiffeomorphic ) {
-			for( size_t i = 0; i<Dimension; i++) {
-				if ( fabs(t1[i]) > this->m_MaxDisplacement[i] ) {
-					this->m_IsDiffeomorphic = false;
-				}
-			}
-		}
+	if(limited) {
+		itkWarningMacro(<< "deformation was hard-penalized.");
 	}
 
 	this->m_RegularizationEnergyUpdated = (totalNorm==0);
