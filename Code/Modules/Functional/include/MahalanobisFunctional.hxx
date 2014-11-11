@@ -237,25 +237,15 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 		} else {
 			std::sort(values[i].begin(), values[i].end());
 			newParameters.mean[i] = values[i][int(0.5*values[i].size())];
-
-			std::cout << "Mean [" << i << "], m=" << m[i] << ", median=" << newParameters.mean[i] << "." << std::endl;
 		}
 	}
 
-
-
-
-
-	//newParameters.mean = covFilter->GetMean();
 	typename CovarianceFilter::MatrixType cov = covFilter->GetCovarianceMatrix();
-
 	for (size_t row = 0; row < Components; row ++ ) {
 		for (size_t col = 0; col < Components; col ++ ) {
 			newParameters.cov(row,col) = cov(row,col);
 		}
 	}
-	//std::cout << "ROI " << idx << " mean=" << newParameters.mean << std::endl;
-
 	return newParameters;
 }
 

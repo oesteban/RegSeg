@@ -362,12 +362,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		}
 
 		this->m_Value = 0.0;
-		std::cout << "Volumes=(";
 		for( size_t roi = 0; roi < nrois; roi++ ) {
 			this->m_Value+= this->m_RegionValue[roi];
-			std::cout << regionVol[roi] << ", ";
 		}
-		std::cout << ")." << std::endl;
 
 		this->m_EnergyUpdated = true;
 	}
@@ -883,10 +880,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	if (isOutside < 1.0e-3 && outer_roi!=this->m_LastROI ) {
 		grad-= this->GetEnergyOfSample( value, inner_roi );
 	}
-	//else {
-	//	if(isOutside > 1.0) isOutside = 1.0;
-	//	grad+= 100.0 * isOutside * this->m_MaxEnergy;
-	//}
+	else {
+		if(isOutside > 1.0) isOutside = 1.0;
+		grad+= 100.0 * isOutside * this->m_MaxEnergy;
+	}
 
 	grad = (fabs(grad)>MIN_GRADIENT)?grad:0.0;
 	return grad;

@@ -269,7 +269,7 @@ void OptimizerBase<TFunctional>::Resume() {
 				this->m_ValueOscillationsLast = this->m_CurrentIteration;
 			} else if (inc > 1.0) {
 				if ((this->m_CurrentIteration - this->m_ValueOscillationsLast) > this->m_ValueOscillationsMax) {
-					float factor = 1.05 * inc * (1.0 - this->m_CurrentIteration/ this->m_NumberOfIterations);
+					float factor = 1.02 * inc * (1.0 - this->m_CurrentIteration/ this->m_NumberOfIterations);
 					this->m_ValueOscillations = 0;
 					this->m_StepSize *=  factor;
 				}
