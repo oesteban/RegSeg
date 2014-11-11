@@ -362,14 +362,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		}
 
 		this->m_Value = 0.0;
+		std::cout << "Volumes=(";
 		for( size_t roi = 0; roi < nrois; roi++ ) {
-			if (regionVol[roi] > 1.0e-3)
-				this->m_RegionValue[roi]*= (1.0/regionVol[roi]);
-			else
-				this->m_RegionValue[roi] = 0.0;
-
 			this->m_Value+= this->m_RegionValue[roi];
+			std::cout << regionVol[roi] << ", ";
 		}
+		std::cout << ")." << std::endl;
 
 		this->m_EnergyUpdated = true;
 	}
