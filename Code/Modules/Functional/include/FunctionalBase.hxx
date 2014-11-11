@@ -320,12 +320,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		size_t nPix = this->GetCurrentMap(0)->GetLargestPossibleRegion().GetNumberOfPixels();
 		size_t nrois = m_ROIs.size();
+		size_t lastroi = nrois -1;
 
 		const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
 		const typename ProbabilityMapType::PixelType* bgBuffer = this->m_BackgroundMask->GetBufferPointer();
 		const typename ProbabilityMapType::PixelType* roiBuffer[nrois];
 
-		for( size_t roi = 0; roi < nrois; roi++ ) {
+		for( size_t roi = 0; roi < lastroi; roi++ ) {
 			roiBuffer[roi] = this->GetCurrentMap(roi)->GetBufferPointer();
 		}
 
@@ -333,21 +334,22 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		ReferencePixelType val;
 		typename ProbabilityMapType::PixelType w;
 		typename ProbabilityMapType::PixelType bgw;
-		double regionVol[this->m_NumberOfRegions];
+		double regionVol[nrois];
+		regionVol[lastroi] = 0.0;
+
 		MeasureType e;
-		size_t lastroi = nrois -1;
 		for( size_t i = 0; i < nPix; i++) {
 			bgw = *(bgBuffer + i);
 
 			if (bgw < 1.0) {
 				val = *(refBuffer+i);
-				for( size_t roi = 0; roi < nrois; roi++ ) {
+				for( size_t roi = 0; roi < lastroi; roi++ ) {
 					w = *( roiBuffer[roi] + i );
 					if ( w < 1.0e-8 ) {
 						continue;
 					}
 
-					if (roi!=lastroi && bgw > 1.0e-3) {
+					if (bgw > 1.0e-3) {
 						e = this->m_MaxEnergy;
 						w = w * (1.0 - bgw);
 					} else {
