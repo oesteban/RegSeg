@@ -113,6 +113,16 @@ template <typename TReferenceImageType, typename TCoordRepType>
 typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersType
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::UpdateParametersOfRegion( const size_t idx ) {
+	if (this->m_UseRobustEstimators) {
+		return this->UpdateParametersOfRegionRobust(idx);
+	}
+	return this->UpdateParametersOfRegionGeneral(idx);
+}
+
+template <typename TReferenceImageType, typename TCoordRepType>
+typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersType
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
+::UpdateParametersOfRegionGeneral( const size_t idx ) {
 	ParametersType newParameters;
 	ProbabilityMapConstPointer roipm = this->GetCurrentMap( idx );
 
@@ -135,7 +145,8 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 		bgw = *( bgBuffer + pidx );
 		w = *( roipmb + pidx ) * (1.0 - bgw);
 
-		if (w > 0.8) {
+		// FIXME this threshold is potentially dangerous
+		if (w > 1.0e-3) {
 			weights[pidx] = w ;
 			totalWeight+= w;
 		}
@@ -164,6 +175,89 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	return newParameters;
 }
 
+template <typename TReferenceImageType, typename TCoordRepType>
+typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersType
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
+::UpdateParametersOfRegionRobust( const size_t idx ) {
+	ParametersType newParameters;
+	ProbabilityMapConstPointer roipm = this->GetCurrentMap( idx );
+
+	size_t nComp = MeanType::GetNumberOfComponents();
+	std::vector< ReferenceValueType > values[nComp];
+	ReferencePixelType v;
+
+	// Apply weighted mean/covariance estimators from ITK
+	typename CovarianceFilter::WeightArrayType weights;
+	ReferenceSamplePointer sample = ReferenceSampleType::New();
+	sample->SetImage( this->m_ReferenceImage );
+
+	size_t sampleSize = this->m_ReferenceImage->GetLargestPossibleRegion().GetNumberOfPixels();
+	weights.SetSize( sampleSize );
+	weights.Fill( 0.0 );
+
+	const typename ProbabilityMapType::PixelType* bgBuffer = this->m_BackgroundMask->GetBufferPointer();
+	const typename ProbabilityMapType::PixelType* roipmb = roipm->GetBufferPointer();
+	const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
+
+	double totalWeight = 0.0;
+	typename ProbabilityMapType::PixelType w;
+	typename ProbabilityMapType::PixelType bgw;
+	for ( size_t pidx = 0; pidx < sampleSize; pidx++) {
+		bgw = *( bgBuffer + pidx );
+		w = *( roipmb + pidx ) * (1.0 - bgw);
+
+		if (w > 1.0e-4) {
+			weights[pidx] = w ;
+			totalWeight+= w;
+		}
+
+		if (w > 0.95){
+			v = *(refBuffer+pidx);
+			for (size_t i = 0; i < nComp; i++)
+				values[i].push_back(v[i]);
+		}
+	}
+
+	if (totalWeight <= vnl_math::eps) {
+		itkWarningMacro(<< " the probablity map of ROI " << idx << " is empty.");
+		return m_Parameters[idx];
+	}
+
+	CovarianceFilterPointer covFilter = CovarianceFilter::New();
+	covFilter->SetInput( sample );
+	covFilter->SetWeights( weights );
+	covFilter->Update();
+
+	MeanType m = covFilter->GetMean();
+
+	for (size_t i = 0; i < nComp; i++) {
+		if (values[i].size() <= 10) {
+			itkWarningMacro(<< " too few samples in ROI " << idx << " for robust estimation.");
+			newParameters.mean[i] = m[i];
+		} else {
+			std::sort(values[i].begin(), values[i].end());
+			newParameters.mean[i] = values[i][int(0.5*values[i].size())];
+
+			std::cout << "Mean [" << i << "], m=" << m[i] << ", median=" << newParameters.mean[i] << "." << std::endl;
+		}
+	}
+
+
+
+
+
+	//newParameters.mean = covFilter->GetMean();
+	typename CovarianceFilter::MatrixType cov = covFilter->GetCovarianceMatrix();
+
+	for (size_t row = 0; row < Components; row ++ ) {
+		for (size_t col = 0; col < Components; col ++ ) {
+			newParameters.cov(row,col) = cov(row,col);
+		}
+	}
+	//std::cout << "ROI " << idx << " mean=" << newParameters.mean << std::endl;
+
+	return newParameters;
+}
 
 
 
