@@ -432,7 +432,7 @@ SpectralOptimizer<TFunctional>::UpdateField() {
 template< typename TFunctional >
 void
 SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
-	const VectorType* fnextBuffer = this->m_CurrentCoefficients->GetBufferPointer();
+	VectorType* fnextBuffer = this->m_CurrentCoefficients->GetBufferPointer();
 	VectorType* fBuffer = this->m_LastCoeff->GetBufferPointer();
 	size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
 
@@ -458,6 +458,7 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 			}
 		}
 
+		*(fnextBuffer+pix) = t1;
 		diff = ( t1 - t0 ).GetNorm();
 		totalNorm += diff;
 		speednorms.push_back(diff);
