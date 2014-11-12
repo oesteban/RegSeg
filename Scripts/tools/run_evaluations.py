@@ -33,6 +33,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     from nipype.pipeline import engine as pe
     from nipype.interfaces import utility as niu
     from nipype.interfaces import io as nio
+    from nipype.interfaces import freesurfer as fs
     from nipype.algorithms.mesh import P2PDistance, WarpPoints
     from nipype.algorithms.misc import AddCSVRow
     from nipype.workflows.dmri.fsl.artifacts import sdc_fmb
@@ -160,7 +161,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                          ('out_ref_set.surf', 'inputnode.in_surf')]),
         (st1,   msk,    [('out_dis_set.segs', 'inlist')]),
         (msk,   rlmsk,  [('out', 'in_file')]),
-        (dt1,   rlmsk,  [('outputnode.fa', 'reslice_like')]),
+        (dti,   rlmsk,  [('outputnode.fa', 'reslice_like')]),
         (rlmsk, regseg, [('out_file', 'inputnode.in_mask')])
     ])
 
