@@ -155,7 +155,6 @@ void OptimizerBase<TFunctional>::Start() {
 //	}
 
 	this->InvokeEvent( itk::StartEvent() );
-
 	this->m_CurrentIteration++;
 	this->Resume();
 }
