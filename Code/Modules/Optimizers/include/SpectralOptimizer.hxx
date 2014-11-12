@@ -150,11 +150,15 @@ template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::PostIteration() {
 	/* Update the deformation field */
 	this->ComputeIterationSpeed();
-	this->m_CurrentValue = this->m_MeanSpeed;
 
 	if (this->m_UseLightWeightConvergenceChecking) {
+		this->m_CurrentValue = this->m_MeanSpeed;
 		this->m_CurrentEnergy = this->m_MeanSpeed;
 	} else {
+		if (this->m_InitialValue == 0) {
+			this->m_CurrentValue = 1.0;
+			this->m_InitialValue = this->m_Functional->GetValue();
+		}
 		this->m_CurrentEnergy = this->GetCurrentEnergy();
 	}
 
@@ -468,29 +472,29 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 		diff = ( t1 - t0 ).GetNorm();
 		totalNorm += diff;
 
-		diff*= (angle( t1.GetVnlVector(), t0.GetVnlVector())> 2.8)?-1.0:1.0;
+		//diff*= (angle( t1.GetVnlVector(), t0.GetVnlVector())> 2.8)?-1.0:1.0;
 		speednorms.push_back(diff);
 	}
 	this->m_RegularizationEnergyUpdated = (totalNorm==0);
 	std::sort(speednorms.begin(), speednorms.end());
 	this->m_MaxSpeed = speednorms.back();
 	this->m_MeanSpeed = speednorms[int(0.5*(speednorms.size()-1))];
-	this->m_AvgSpeed = std::accumulate(speednorms.begin(), speednorms.end(), 0.0) / nPix;
-	// this->m_AvgSpeed = totalNorm / nPix;
+	//this->m_AvgSpeed = std::accumulate(speednorms.begin(), speednorms.end(), 0.0) / nPix;
+	this->m_AvgSpeed = totalNorm / nPix;
 
-	size_t p1_idx = int(0.15*(speednorms.size()-1));
-	size_t p2_idx = int(0.85*(speednorms.size()-1));
-	double p1 =  speednorms[p1_idx];
-	double p2 =  speednorms[p2_idx];
-	int size =  p2_idx - p1_idx;
-
-	double avg = 0.0;
-
-	for(size_t i = p1_idx; i <= p2_idx; i++) {
-		avg+=speednorms[i];
-	}
-	avg = avg / size;
-	std::cout << "Speed=["<< speednorms.front() << ", " << p1 << ", "<< this->m_MeanSpeed << ", "<< p2 << ", " << this->m_MaxSpeed << "] | " << this->m_AvgSpeed << " | " << avg << std::endl;
+	//size_t p1_idx = int(0.15*(speednorms.size()-1));
+	//size_t p2_idx = int(0.85*(speednorms.size()-1));
+	//double p1 =  speednorms[p1_idx];
+	//double p2 =  speednorms[p2_idx];
+	//int size =  p2_idx - p1_idx;
+    //
+	//double avg = 0.0;
+    //
+	//for(size_t i = p1_idx; i <= p2_idx; i++) {
+	//	avg+=speednorms[i];
+	//}
+	//avg = avg / size;
+	//std::cout << "Speed=["<< speednorms.front() << ", " << p1 << ", "<< this->m_MeanSpeed << ", "<< p2 << ", " << this->m_MaxSpeed << "] | " << this->m_AvgSpeed << " | " << avg << std::endl;
 }
 
 
