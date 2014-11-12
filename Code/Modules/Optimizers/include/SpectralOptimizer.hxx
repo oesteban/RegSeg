@@ -475,7 +475,8 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 	std::sort(speednorms.begin(), speednorms.end());
 	this->m_MaxSpeed = speednorms.back();
 	this->m_MeanSpeed = speednorms[int(0.5*(speednorms.size()-1))];
-	this->m_AvgSpeed = totalNorm / nPix;
+	this->m_AvgSpeed = std::accumulate(speednorms.begin(), speednorms.end(), 0.0) / nPix;
+	// this->m_AvgSpeed = totalNorm / nPix;
 
 	std::cout << "Speed=["<< speednorms.front() << ", " << this->m_MeanSpeed << ", " << this->m_MaxSpeed << "] | " << this->m_AvgSpeed << std::endl;
 }
