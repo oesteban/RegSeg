@@ -148,11 +148,6 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::PostIteration() {
 	/* Update the deformation field */
-	this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
-	this->m_Transform->UpdateField();
-	//this->UpdateField();
-
-	this->SetUpdate();
 	this->ComputeIterationSpeed();
 	this->m_CurrentValue = this->m_MeanSpeed;
 
@@ -162,7 +157,11 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 		this->m_CurrentEnergy = this->GetCurrentEnergy();
 	}
 
+	this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
+	this->m_Transform->UpdateField();
 	this->m_Transform->Interpolate();
+	this->SetUpdate();
+
 	this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetOffGridFieldValues() );
 }
 
@@ -432,9 +431,12 @@ SpectralOptimizer<TFunctional>::UpdateField() {
 template< typename TFunctional >
 void
 SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
-	VectorType* fnextBuffer = this->m_CurrentCoefficients->GetBufferPointer();
-	VectorType* fBuffer = this->m_LastCoeff->GetBufferPointer();
-	size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
+	VectorType* fBuffer = this->m_CurrentCoefficients->GetBufferPointer();
+	size_t nPix = this->m_CurrentCoefficients->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	PointValueType* fnextBuffer[Dimension];
+	for(size_t d = 0; d < Dimension; d++)
+		fnextBuffer[d] = this->m_NextCoefficients[d]->GetBufferPointer();
 
 	InternalComputationValueType totalNorm = 0;
 	VectorType t0,t1;
@@ -446,23 +448,20 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 	std::vector< InternalComputationValueType > speednorms;
 	for (size_t pix = 0; pix < nPix; pix++ ) {
 		t0 = *(fBuffer+pix);
-		t1 = *(fnextBuffer+pix);
+		for( size_t d = 0; d<Dimension; d++) {
+			t1[d] = *(fnextBuffer[d]+pix);
 
-		if (this->m_IsDiffeomorphic) {
-			for( size_t i = 0; i<Dimension; i++) {
-				if ( fabs(t1[i]) > this->m_MaxDisplacement[i] ) {
-					//this->m_IsDiffeomorphic = false;
-					t1[i] = this->m_MaxDisplacement[i] * (t1[i]>0)?1.0:-1.0;
-					limited = true;
-				}
+			if ( fabs(t1[d]) > this->m_MaxDisplacement[d] ) {
+				//this->m_IsDiffeomorphic = false;
+				t1[d] = this->m_MaxDisplacement[d] * (t1[d]>0)?1.0:-1.0;
+				limited = true;
 			}
+			*(fnextBuffer[d]+pix) = t1[d];
 		}
 
-		*(fnextBuffer+pix) = t1;
 		diff = ( t1 - t0 ).GetNorm();
 		totalNorm += diff;
 		speednorms.push_back(diff);
-		*(fBuffer+pix) = t1; // Copy current to last, once evaluated
 	}
 
 	if(limited) {
