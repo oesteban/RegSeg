@@ -46,6 +46,7 @@
 #include "SpectralOptimizer.h"
 #include <algorithm>
 #include <vector>
+#include <vnl/vnl_vector.h>
 #include <vnl/vnl_math.h>
 #include <vnl/vnl_matrix.h>
 #include <vnl/vnl_diag_matrix.h>
@@ -445,7 +446,11 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 	this->m_DiffeomorphismForced = false;
 	this->m_IsDiffeomorphic = true;
 	std::vector< InternalComputationValueType > speednorms;
+	std::vector< double > speedangs;
+	typedef vnl_vector< PointValueType > VNLVector;
+	VNLVector v(Dimension);
 	for (size_t pix = 0; pix < nPix; pix++ ) {
+		a = 0.0;
 		t0 = *(fBuffer+pix);
 		for( size_t d = 0; d<Dimension; d++) {
 			t1[d] = *(fnextBuffer[d]+pix);
@@ -461,16 +466,20 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 			}
 
 		}
-
 		diff = ( t1 - t0 ).GetNorm();
+		speedangs.push_back(angle( t1.GetVnlVector(), t0.GetVnlVector()));
+
 		totalNorm += diff;
 		speednorms.push_back(diff);
 	}
 	this->m_RegularizationEnergyUpdated = (totalNorm==0);
 	std::sort(speednorms.begin(), speednorms.end());
+	std::sort(speedangs.begin(), speedangs.end());
 	this->m_MaxSpeed = speednorms.back();
 	this->m_MeanSpeed = speednorms[int(0.5*(speednorms.size()-1))];
 	this->m_AvgSpeed = totalNorm / nPix;
+
+	std::cout << "Angle=" << speedangs[int(0.5*(speednorms.size()-1))] << std::endl;
 }
 
 
