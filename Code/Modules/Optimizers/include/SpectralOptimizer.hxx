@@ -450,7 +450,6 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 	typedef vnl_vector< PointValueType > VNLVector;
 	VNLVector v(Dimension);
 	for (size_t pix = 0; pix < nPix; pix++ ) {
-		a = 0.0;
 		t0 = *(fBuffer+pix);
 		for( size_t d = 0; d<Dimension; d++) {
 			t1[d] = *(fnextBuffer[d]+pix);
