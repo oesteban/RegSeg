@@ -466,19 +466,18 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 
 		}
 		diff = ( t1 - t0 ).GetNorm();
-		speedangs.push_back(angle( t1.GetVnlVector(), t0.GetVnlVector()));
-
 		totalNorm += diff;
+
+		diff*= (angle( t1.GetVnlVector(), t0.GetVnlVector())< 2.8)?1.0:-1.0;
 		speednorms.push_back(diff);
 	}
 	this->m_RegularizationEnergyUpdated = (totalNorm==0);
 	std::sort(speednorms.begin(), speednorms.end());
-	std::sort(speedangs.begin(), speedangs.end());
 	this->m_MaxSpeed = speednorms.back();
 	this->m_MeanSpeed = speednorms[int(0.5*(speednorms.size()-1))];
 	this->m_AvgSpeed = totalNorm / nPix;
 
-	std::cout << "Angles=[" << speedangs.front() << ", " << speedangs[int(0.5*(speednorms.size()-1))] << ", " << speedangs.back() << "]." << std::endl;
+	std::cout << "Speed=["<< speednorms.front() << ", " << this->m_MeanSpeed << ", " << this->m_MaxDisplacement << "] | " << this->m_AvgSpeed << std::endl;
 }
 
 
