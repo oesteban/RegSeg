@@ -211,6 +211,10 @@ public:
 	itkGetConstMacro( MaxDisplacement, VectorType );
 
 	itkGetConstMacro( IsDiffeomorphic, bool );
+	itkGetConstMacro( DiffeomorphismForced, bool );
+
+	itkGetConstMacro( ForceDiffeomorphic, bool );
+	itkSetMacro( ForceDiffeomorphic, bool );
 
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
@@ -318,6 +322,8 @@ protected:
 	InternalComputationValueType  m_AvgSpeed;
 	bool                          m_AutoStepSize;
 	bool                          m_IsDiffeomorphic;
+	bool                          m_ForceDiffeomorphic;
+	bool                          m_DiffeomorphismForced;
 	bool                          m_UseLightWeightConvergenceChecking;
 
 	/* Energy tracking */

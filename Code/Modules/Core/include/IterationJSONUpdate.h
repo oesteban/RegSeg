@@ -100,12 +100,16 @@ public:
 			itnode["speed"]["median"] = this->m_Optimizer->GetMeanSpeed();
 			itnode["speed"]["average"] = this->m_Optimizer->GetAvgSpeed();
 
+
 			std::vector< size_t > off = this->m_Optimizer->GetFunctional()->GetOffMaskNodes();
 			JSONValue offnode = Json::Value( Json::arrayValue );
 			for (size_t c = 0; c<off.size(); c++) {
 				offnode.append(Json::UInt64(off[c]));
 			}
 			itnode["off-grid"] = offnode;
+
+			itnode["diffemorphic"] = this->m_Optimizer->GetIsDiffeomorphic();
+			itnode["diffemorphism-forced"] = this->m_Optimizer->GetDiffeomorphismForced();
 		}
 
 		if( typeid( event ) == typeid( FunctionalModifiedEvent ) )  {
