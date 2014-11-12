@@ -478,7 +478,7 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 	this->m_MeanSpeed = speednorms[int(0.5*(speednorms.size()-1))];
 	this->m_AvgSpeed = totalNorm / nPix;
 
-	std::cout << "Angle=" << speedangs[int(0.5*(speednorms.size()-1))] << std::endl;
+	std::cout << "Angles=[" << speedangs.front() << ", " << speedangs[int(0.5*(speednorms.size()-1))] << ", " << speedangs.back() << "]." << std::endl;
 }
 
 
