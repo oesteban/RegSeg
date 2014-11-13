@@ -108,6 +108,8 @@ As a consequence, our approach relies on the availability of precise segmentatio
   surfaces of the objects that are to be segmented on the target volume(s).
 Connectome extraction protocols generally include the acquisition of \gls*{t1} images
   to provide with prior information about anatomy with high accuracy.
+\todo[inline]{Add sentence about comment RW\#1 of IPMI2013: incorporate knowledge of
+the EPI distortions into regularization}
 Our method solves in a single step a joint problem usually addressed in two steps.
 The first solves the linear registration of the \gls*{t1} and \gls*{dmri} data (i.e.
   \cite{greve_accurate_2009}), whereas the second corrects for the nonlinear distortions
