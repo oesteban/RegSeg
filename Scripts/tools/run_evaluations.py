@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
-# @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-12 19:20:12
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2014-11-13 12:28:20
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -109,6 +109,14 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                                  ('dwi_mask', 'inputnode.dwi_mask')])
     ])
 
+    rdti = mrtrix_dti('ReferenceDTI')
+    wf.connect([
+        (ds,    rdti,   [('dwi', 'inputnode.in_dwi'),
+                         ('dwi_mask', 'inputnode.in_mask'),
+                         ('bvec', 'inputnode.in_bvec'),
+                         ('bval', 'inputnode.in_bval')])
+    ])
+
     st1 = stage1()
     wf.connect([
         (ds,   surfsort, [('surf', 'surfs')]),
@@ -139,7 +147,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     regseg = regseg_wf()
     regseg.inputs.inputnode.iterations = [150, 100, 100]
     regseg.inputs.inputnode.descript_update = [21, 16, 11]
-    regseg.inputs.inputnode.step_size = [0.05, 0.1, 0.1]
+    regseg.inputs.inputnode.step_size = [0.001, 0.01, 0.01]
     regseg.inputs.inputnode.alpha = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.beta = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.convergence_energy = [True, True, True]
