@@ -27,6 +27,7 @@ public:
 	typedef itk::SmartPointer<Self>                   Pointer;
 	typedef itk::SmartPointer< const Self >           ConstPointer;
 	typedef Json::Value                               JSONValue;
+	typedef typename OptimizerType::InternalComputationValueType InternalOptimizerValue;
 
 	itkTypeMacro( IterationJSONUpdate, IterationUpdate ); // Run-time type information (and related methods)
 	itkNewMacro( Self );
@@ -92,7 +93,13 @@ public:
 				}
 				itnode["energy"]["region"] = enode;
 			}
-			itnode["convergence"]["value"] = this->m_Optimizer->GetConvergenceValue();
+
+			InternalOptimizerValue val = this->m_Optimizer->GetConvergenceValue();
+			if( val < itk::NumericTraits<InternalOptimizerValue>::max() ) {
+				itnode["convergence"]["value"] = val;
+			} else {
+				itnode["convergence"]["value"] = "inf";
+			}
 			itnode["convergence"]["norm"] = this->m_Optimizer->GetCurrentNorm();
 			itnode["convergence"]["step_size"] = this->m_Optimizer->GetStepSize();
 			itnode["convergence"]["max_gradient"] = this->m_Optimizer->GetMaximumGradient();
