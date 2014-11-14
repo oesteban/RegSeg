@@ -154,16 +154,12 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 	this->m_CurrentNorm = this->m_MeanSpeed;
 
 	if (this->m_UseLightWeightConvergenceChecking) {
-		this->m_CurrentValue = this->m_MeanSpeed;
 		this->m_CurrentEnergy = this->m_MeanSpeed;
 	} else {
-		if (this->m_InitialValue == 0) {
-			this->m_InitialValue = this->m_Functional->GetValue();
-		}
 		this->m_CurrentEnergy = this->GetCurrentEnergy();
-		this->m_CurrentValue = this->m_CurrentEnergy / this->m_InitialValue;
 	}
 
+	this->m_CurrentValue = this->m_CurrentEnergy;
 	this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
 	this->m_Transform->UpdateField();
 	this->m_Transform->Interpolate();

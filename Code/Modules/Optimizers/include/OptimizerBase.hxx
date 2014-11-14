@@ -76,7 +76,7 @@ m_LastMaximumGradient(0.0),
 m_MaximumGradient(0.0),
 m_MinimumConvergenceValue( 1e-5 ),
 m_ConvergenceWindowSize( 10 ),
-m_ConvergenceValue( 100 ),
+m_ConvergenceValue( itk::NumericTraits<InternalComputationValueType>::infinity() ),
 m_Stop( false ),
 m_StopCondition(MAXIMUM_NUMBER_OF_ITERATIONS),
 m_CurrentIteration( 0 ),
@@ -191,7 +191,7 @@ void OptimizerBase<TFunctional>::Resume() {
 			this->m_Functional->UpdateDescriptors();
 			// this->m_StepSize = this->m_StepSize * 1.0e-4;
 			this->InvokeEvent( FunctionalModifiedEvent() );
-			this->m_ConvergenceMonitoring->ClearEnergyValues();
+			// this->m_ConvergenceMonitoring->ClearEnergyValues();
 		}
 
 
