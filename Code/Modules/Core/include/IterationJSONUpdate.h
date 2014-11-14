@@ -92,7 +92,8 @@ public:
 				}
 				itnode["energy"]["region"] = enode;
 			}
-			itnode["convergence"]["norm"] = this->m_Optimizer->GetCurrentValue();
+			itnode["convergence"]["value"] = this->m_Optimizer->GetConvergenceValue();
+			itnode["convergence"]["norm"] = this->m_Optimizer->GetCurrentNorm();
 			itnode["convergence"]["step_size"] = this->m_Optimizer->GetStepSize();
 			itnode["convergence"]["max_gradient"] = this->m_Optimizer->GetMaximumGradient();
 			itnode["convergence"]["momentum"] = this->m_Optimizer->GetMomentum();

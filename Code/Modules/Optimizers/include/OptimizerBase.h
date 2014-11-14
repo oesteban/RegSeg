@@ -198,6 +198,7 @@ public:
 	itkGetConstMacro(CurrentIteration, SizeValueType);
 
 	itkGetConstMacro(CurrentValue, MeasureType);
+	itkGetConstMacro(CurrentNorm, MeasureType);
 
 	itkSetMacro( DescriptorRecomputationFreq, SizeValueType );
 	itkGetConstMacro( DescriptorRecomputationFreq, SizeValueType );
@@ -329,6 +330,7 @@ protected:
 	/* Energy tracking */
 	MeasureType                  m_CurrentValue;
 	MeasureType                  m_CurrentEnergy;
+	MeasureType                  m_CurrentNorm;
 	MeasureType                  m_LastEnergy;
 	MeasureType                  m_InitialValue;
 	MeasureArray                 m_ValueWindow;
