@@ -54,6 +54,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <boost/bind.hpp>
 
 #include <itkComplexToRealImageFilter.h>
 #include <itkImageAlgorithm.h>
@@ -99,10 +100,25 @@ m_CurrentValue(itk::NumericTraits<MeasureType>::infinity()),
 m_CurrentEnergy(itk::NumericTraits<MeasureType>::infinity()),
 m_CurrentNorm(0.0),
 m_LastEnergy(itk::NumericTraits<MeasureType>::infinity()),
-m_InitialValue(0.0)
+m_InitialValue(0.0),
+m_Service(),
+m_Signals(m_Service)
 {
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 0 );
+
+
+	// Construct a signal set registered for process termination.
+	this->m_Signals.add(SIGINT);
+	this->m_Signals.add(SIGTERM);
+#if defined(SIGQUIT)
+	this->m_Signals.add(SIGQUIT);
+#endif // defined(SIGQUIT)
+
+
+	// Start an asynchronous wait for one of the signals to occur.
+	this->m_Signals.async_wait(boost::bind(&Self::SignalHandler, this));
+
 }
 
 template< typename TFunctional >
@@ -116,10 +132,20 @@ void OptimizerBase<TFunctional>
 	os << indent << "Stop condition description: " << this->m_StopConditionDescription.str() << std::endl;
 }
 
+template< typename TFunctional >
+void OptimizerBase<TFunctional>
+::SignalHandler() {
+	std::cout << "Interrupt signal caught, stopping optimization..." << std::endl;
+	this->m_StopCondition = USER_REQUEST;
+	this->m_StopConditionDescription << "Stopped at user's request";
+	this->Stop();
+}
 
 template< typename TFunctional >
 void OptimizerBase<TFunctional>::Start() {
 	itkDebugMacro("OptimizerBase::Start()");
+
+	this->m_Service.run();
 
 	if ( this->m_Settings.size() > 0 ) {
 		this->ParseSettings();
@@ -172,6 +198,7 @@ void OptimizerBase<TFunctional>::Stop() {
 	itkDebugMacro( "Stop called with a description - "
 	  << this->GetStopConditionDescription() );
 	this->m_Stop = true;
+	this->m_Service.stop();
 	this->InvokeEvent( itk::EndEvent() );
 
 //	if( this->m_ReturnBestParametersAndValue )	{

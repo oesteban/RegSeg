@@ -62,7 +62,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
                             m_AutoSmoothing(false),
                             m_Stop(false),
                             m_Verbosity(1),
-                            m_TransformNumberOfThreads(0) {
+                            m_TransformNumberOfThreads(0){
 	this->m_StopCondition      = ALL_LEVELS_DONE;
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 
@@ -85,7 +85,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::PrintSelf( std::ostream &os, itk::Indent indent ) const {
 	Superclass::PrintSelf(os,indent);
 }
-
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
 void

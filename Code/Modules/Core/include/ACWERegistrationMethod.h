@@ -48,8 +48,6 @@
 #include <itkDataObjectDecorator.h>
 #include <vector>       // std::vector
 #include <iostream>     // std::cout
-
-
 #include <jsoncpp/json/json.h>
 
 #include "rstkMacro.h"
@@ -281,6 +279,7 @@ protected:
 private:
 	ACWERegistrationMethod( const Self & );
 	void operator=( const Self & );
+
 
 	FixedMaskConstPointer m_FixedMask;
 

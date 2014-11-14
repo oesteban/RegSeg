@@ -45,6 +45,7 @@
 
 
 #include <boost/program_options.hpp>
+#include <boost/asio.hpp>
 
 #include <itkObjectToObjectOptimizerBase.h>
 
@@ -59,7 +60,7 @@
 
 using namespace itk;
 namespace bpo = boost::program_options;
-
+namespace bs = boost::system;
 
 namespace rstk
 {
@@ -103,7 +104,8 @@ public:
 		STEP_TOO_SMALL,
 		QUASI_NEWTON_STEP_ERROR,
 		CONVERGENCE_CHECKER_PASSED,
-		OTHER_ERROR
+		OTHER_ERROR,
+		USER_REQUEST
 	} StopConditionType;
 
 	/** Stop condition return string type */
@@ -268,6 +270,7 @@ protected:
 	OptimizerBase();
 	~OptimizerBase() {}
 	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
+
 	virtual void ParseSettings();
 
 	virtual void InitializeParameters() = 0;
@@ -350,6 +353,10 @@ protected:
 private:
 	OptimizerBase( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
+
+	void SignalHandler();
+	boost::asio::io_service m_Service;
+	boost::asio::signal_set m_Signals;
 
 }; // End of Class
 
