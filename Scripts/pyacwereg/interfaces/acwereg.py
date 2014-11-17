@@ -46,7 +46,7 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
         desc='convergence window in iterations')
 
     convergence_value = traits.Either(
-        int_float, traits.List(int_float), default=1e-5, argstr='-t %e',
+        float_trait, traits.List(float_trait), default=1e-5, argstr='-t %e',
         desc='convergence value')
 
     convergence_energy = traits.Either(
