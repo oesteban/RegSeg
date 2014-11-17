@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-17 15:32:49
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-17 16:13:07
+# @Last Modified time: 2014-11-17 23:49:32
 
 import os
 import os.path as op
@@ -67,7 +67,7 @@ if __name__ == '__main__':
                 pass
 
             os.mkdir(dstfld)
-            
+
             for f in filesmap:
                 forig = op.abspath(op.join(tmpdir, caseid, f[0]))
                 fdest = op.abspath(op.join(dstfld, f[1]))

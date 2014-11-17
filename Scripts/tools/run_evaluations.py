@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-17 17:13:02
+# @Last Modified time: 2014-11-18 00:08:48
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -49,9 +49,9 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['subject_id', 'data_dir', 'bmap_id']), name='inputnode')
-    inputnode.inputs.subject_id = settings['subject_id']
     inputnode.inputs.data_dir = settings['data_dir']
-    inputnode.inputs.bmap_id = settings['bmap_id']
+    inputnode.iterables = [('subject_id', settings['subject_id']),
+                           ('bmap_id', settings['bmap_id'])]
 
     fnames = dict(t1w='T1w_acpc_dc_restore.nii.gz',
                   t1w_brain='T1w_acpc_dc_restore_brain.nii.gz',
@@ -200,33 +200,33 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
         (st1,        sunwarp, [('out_dis_set.surf', 'points')])
     ])
 
-    mesh0 = pe.MapNode(P2PDistance(weighting='surface'),
-                       iterfield=['surface1', 'surface2'],
-                       name='REGSEGSurfDistance')
-    csv0 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
-                   name="REGSEGAddRow")
-    csv0.inputs.method = 'REGSEG'
-
-    wf.connect([
-        (st1,       mesh0, [('out_dis_set.surf', 'surface1')]),
-        (regseg,    mesh0, [('outputnode.out_surf', 'surface2')]),
-        (inputnode,  csv0, [('subject_id', 'subject_id')]),
-        (mesh0,      csv0, [('distance', 'surf_dist')])
-    ])
-
-    mesh1 = pe.MapNode(P2PDistance(weighting='surface'),
-                       iterfield=['surface1', 'surface2'],
-                       name='FMBSurfDistance')
-    csv1 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
-                   name="FMBAddRow")
-    csv1.inputs.method = 'FMB'
-
-    wf.connect([
-        (st1,       mesh1, [('out_ref_set.surf', 'surface1')]),
-        (sunwarp,   mesh1, [('out_points', 'surface2')]),
-        (inputnode,  csv1, [('subject_id', 'subject_id')]),
-        (mesh1,      csv1, [('distance', 'surf_dist')])
-    ])
+#    mesh0 = pe.MapNode(P2PDistance(weighting='surface'),
+#                       iterfield=['surface1', 'surface2'],
+#                       name='REGSEGSurfDistance')
+#    csv0 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
+#                   name="REGSEGAddRow")
+#    csv0.inputs.method = 'REGSEG'
+#
+#    wf.connect([
+#        (st1,       mesh0, [('out_dis_set.surf', 'surface1')]),
+#        (regseg,    mesh0, [('outputnode.out_surf', 'surface2')]),
+#        (inputnode,  csv0, [('subject_id', 'subject_id')]),
+#        (mesh0,      csv0, [('distance', 'surf_dist')])
+#    ])
+#
+#    mesh1 = pe.MapNode(P2PDistance(weighting='surface'),
+#                       iterfield=['surface1', 'surface2'],
+#                       name='FMBSurfDistance')
+#    csv1 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
+#                   name="FMBAddRow")
+#    csv1.inputs.method = 'FMB'
+#
+#    wf.connect([
+#        (st1,       mesh1, [('out_ref_set.surf', 'surface1')]),
+#        (sunwarp,   mesh1, [('out_points', 'surface2')]),
+#        (inputnode,  csv1, [('subject_id', 'subject_id')]),
+#        (mesh1,      csv1, [('distance', 'surf_dist')])
+#    ])
 
     return wf
 
@@ -234,26 +234,26 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
     from argparse import RawTextHelpFormatter
     import os.path as op
+    from glob import glob
 
     parser = ArgumentParser(description='TMI2015 - Experiment on HCP data',
                             formatter_class=RawTextHelpFormatter)
 
     g_input = parser.add_argument_group('Input')
     g_input.add_argument('-S', '--subjects_dir', action='store',
-                         default=os.getenv('NEURO_DATA_HOME',
-                                           '/media/data/Diffusion'),
+                         default=os.getenv('NEURO_DATA_HOME', '..'),
                          help='directory where subjects should be found')
-    g_input.add_argument('-s', '--subject', action='store',
-                         default='S*', help='subject id or pattern')
+    g_input.add_argument('-s', '--subject', action='store', default='*',
+                         help='subject id or pattern')
     g_input.add_argument('-w', '--work_dir', action='store',
                          default=os.getcwd(),
                          help='directory to store intermediate results')
     g_input.add_argument('-f', '--fieldmap_id', action='store',
-                         default='S*', help='fieldmap id or pattern')
+                         default='*', help='fieldmap id or pattern')
     # g_input.add_argument('-t', '--tstep', action='store',
     #                      default='*', help='subject id or pattern')
     g_input.add_argument('-N', '--name', action='store',
-                         default='HCP_MRM2014',
+                         default='TMI2015_EXP2',
                          help=('default workflow name, '
                                'it will create a new folder'))
 
@@ -273,9 +273,15 @@ if __name__ == '__main__':
 
     settings = {}
     settings['work_dir'] = opts.work_dir
-    settings['data_dir'] = opts.subjects_dir
-    settings['bmap_id'] = opts.fieldmap_id
-    settings['subject_id'] = opts.subject
+    settings['data_dir'] = op.abspath(opts.subjects_dir)
+    settings['bmap_id'] = [
+        op.basename(f) for f in glob(op.join(opts.subjects_dir,
+                                     opts.fieldmap_id))]
+
+    subjects = [
+        op.basename(sub) for sub in glob(op.join(opts.subjects_dir,
+                                                 opts.subject))]
+    settings['subject_id'] = subjects
 
     if opts.out_csv is None:
         settings['out_csv'] = op.join(opts.work_dir, opts.name, 'results.csv')
