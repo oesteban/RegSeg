@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-11-13 12:28:20
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-11-17 10:59:53
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -147,7 +147,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     regseg = regseg_wf()
     regseg.inputs.inputnode.iterations = [150, 100, 100]
     regseg.inputs.inputnode.descript_update = [21, 16, 11]
-    regseg.inputs.inputnode.step_size = [0.001, 0.01, 0.01]
+    regseg.inputs.inputnode.step_size = [0.001, 0.002, 0.001]
     regseg.inputs.inputnode.alpha = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.beta = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.convergence_energy = [True, True, True]
@@ -155,7 +155,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     regseg.inputs.inputnode.f_smooth = [2.4, 1.2, None]
     regseg.inputs.inputnode.images_verbosity = 3
     regseg.inputs.inputnode.scales = [(0.0, 1.0, 0.0)] * 3
-    regseg.inputs.inputnode.grid_size = [4, 4, (8, 6, 8)]
+    regseg.inputs.inputnode.grid_size = [(4, 4, 6), (6, 4, 8), (8, 6, 8)]
 
     wf.connect([
         (st1,   dti,    [('out_dis_set.dwi', 'inputnode.in_dwi'),
