@@ -236,7 +236,7 @@ void OptimizerBase<TFunctional>::Resume() {
 
 		try {
 			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
-			if (this->m_ConvergenceValue <= this->m_MinimumConvergenceValue) {
+			if (this->m_ConvergenceValue > 0.0 && this->m_ConvergenceValue <= this->m_MinimumConvergenceValue) {
 				this->m_StopConditionDescription << "Convergence checker passed at iteration " << this->m_CurrentIteration << ".";
 				this->m_StopCondition = Self::CONVERGENCE_CHECKER_PASSED;
 				this->Stop();
@@ -272,6 +272,9 @@ void OptimizerBase<TFunctional>::Resume() {
 			} else if (inc > 1.0) {
 				if ((this->m_CurrentIteration - this->m_ValueOscillationsLast) > this->m_ValueOscillationsMax) {
 					float factor = 1.02 * inc * (1.0 - this->m_CurrentIteration/ this->m_NumberOfIterations);
+					if (factor < 1.0) {
+						factor = 1.0;
+					}
 					this->m_ValueOscillations = 0;
 					this->m_StepSize *=  factor;
 				}
@@ -280,15 +283,13 @@ void OptimizerBase<TFunctional>::Resume() {
 			if (this->m_ValueOscillations >= this->m_ValueOscillationsMax) {
 				this->m_StepSize *= 0.5;
 				this->m_ValueOscillations = 0;
-				this->m_ConvergenceMonitoring->ClearEnergyValues();
 			}
 		} else {
 			this->m_InitialValue = this->m_CurrentEnergy;
 		}
 
-		//std::cout << "StepSize=" << this->m_StepSize << std::endl;
 		if( this->m_StepSize < 1e-8 ) {
-			this->m_StopConditionDescription << "Parameters field changed below the minimum threshold.";
+			this->m_StopConditionDescription << "step size fell below the minimum.";
 			this->m_StopCondition = Self::STEP_TOO_SMALL;
 			this->Stop();
 			break;
