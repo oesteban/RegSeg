@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-17 16:54:20
+# @Last Modified time: 2014-11-17 17:13:02
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -152,6 +152,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     regseg.inputs.inputnode.beta = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.convergence_energy = [True, True, True]
     regseg.inputs.inputnode.convergence_window = [20, 15, 10]
+    regseg.inputs.inputnode.convergence_value = [1.0e-5, 1.0e-8, 1.0e-9]
     regseg.inputs.inputnode.f_smooth = [2.4, 1.2, None]
     regseg.inputs.inputnode.images_verbosity = 3
     regseg.inputs.inputnode.scales = [(0.0, 1.0, 0.0)] * 3

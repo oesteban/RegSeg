@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-04 12:18:39
+# @Last Modified time: 2014-11-17 17:11:15
 
 import os
 import os.path as op
@@ -44,6 +44,11 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
     convergence_window = traits.Either(
         int_trait, traits.List(int_trait), default=10, argstr='-w %d',
         desc='convergence window in iterations')
+
+    convergence_value = traits.Either(
+        int_float, traits.List(int_float), default=1e-5, argstr='-t %e',
+        desc='convergence value')
+
     convergence_energy = traits.Either(
         bool_trait, traits.List(bool_trait), default=False,
         argstr='--convergence-energy',

@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-11-04 16:26:42
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-11-17 17:12:26
 
 import os
 import os.path as op
@@ -25,7 +25,8 @@ def regseg_wf(name='REGSEG', enhance_inputs=True):
 
     regseg_inputs = ['iterations', 'alpha', 'beta', 'step_size', 'grid_size',
                      'convergence_energy', 'convergence_window', 'f_smooth',
-                     'images_verbosity', 'scales', 'descript_update']
+                     'images_verbosity', 'scales', 'descript_update',
+                     'convergence_value']
 
     wf_inputs = ['in_fixed', 'in_tpms', 'in_surf', 'in_mask']
     inputnode = pe.Node(niu.IdentityInterface(
@@ -91,6 +92,7 @@ def default_regseg(name='REGSEGDefault'):
     wf.inputs.inputnode.convergence_window = [10, 15, 20]
     wf.inputs.inputnode.f_smooth = [1.5, 1.0, None]
     wf.inputs.inputnode.images_verbosity = 3
+    wf.inputs.inputnode.convergence_value = [1.0e-5, 1.0e-8, 1.0e-9]
     return wf
 
 
