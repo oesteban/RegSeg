@@ -82,12 +82,16 @@
 #include <vtkRenderer.h>
 
 #include <vtkWindowToImageFilter.h>
-#include <vtkGraphicsFactory.h>
+
+#include <vtkCamera.h>
 
 #include <itkImage.h>
 #include <itkImageFileReader.h>
 #include <itkRescaleIntensityImageFilter.h>
 #include <itkImageToVTKImageFilter.h>
+#include <vtkCornerAnnotation.h>
+#include <vtkTextActor.h>
+#include <vtkTextProperty.h>
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
