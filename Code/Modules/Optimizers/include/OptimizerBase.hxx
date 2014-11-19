@@ -80,7 +80,7 @@ m_ConvergenceValue( itk::NumericTraits<InternalComputationValueType>::infinity()
 m_Stop( false ),
 m_StopCondition(MAXIMUM_NUMBER_OF_ITERATIONS),
 m_CurrentIteration( 0 ),
-m_NumberOfIterations( 250 ),
+m_NumberOfIterations(100),
 m_DescriptorRecomputationFreq(0),
 m_ValueOscillations(0),
 m_ValueOscillationsMax(1),
@@ -110,7 +110,6 @@ void OptimizerBase<TFunctional>
 ::PrintSelf(std::ostream &os, itk::Indent indent) const {
 	Superclass::PrintSelf(os,indent);
 	os << indent << "Learning rate:" << this->m_LearningRate << std::endl;
-	os << indent << "Number of iterations: " << this->m_NumberOfIterations << std::endl;
 	os << indent << "Current iteration: " << this->m_CurrentIteration << std::endl;
 	os << indent << "Stop condition:" << this->m_StopCondition << std::endl;
 	os << indent << "Stop condition description: " << this->m_StopConditionDescription.str() << std::endl;

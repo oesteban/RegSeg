@@ -114,7 +114,7 @@ public:
 
 	typedef itk::FixedArray< double, Dimension >                    ControlPointsGridSpacingType;
 
-	typedef typename Superclass::SizeValueType                      SizeValueType;
+	typedef size_t                                                  SizeValueType;
 	typedef typename Superclass::ScalesType                         ScalesType;
 
 	/** Functional definitions */
@@ -194,8 +194,7 @@ public:
 	/** Get the number of iterations. */
 	itkGetConstReferenceMacro(NumberOfIterations, SizeValueType);
 
-	/** Get the current iteration number. */
-	itkGetConstMacro(CurrentIteration, SizeValueType);
+	itkGetConstReferenceMacro(CurrentIteration, SizeValueType);
 
 	itkGetConstMacro(CurrentValue, MeasureType);
 	itkGetConstMacro(CurrentNorm, MeasureType);
