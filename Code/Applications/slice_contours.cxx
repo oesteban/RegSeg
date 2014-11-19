@@ -18,6 +18,17 @@
  * are saved to disk.
  */
 int main(int argc, char *argv[]) {
+
+#if VTK_MAJOR_VERSION < 6
+	// Setup offscreen rendering
+	vtkSmartPointer<vtkGraphicsFactory> graphics_factory = vtkSmartPointer<vtkGraphicsFactory>::New();
+	graphics_factory->SetOffScreenOnlyMode( 1);
+	graphics_factory->SetUseMesaClasses( 1 );
+
+	vtkSmartPointer<vtkImagingFactory> imaging_factory =  vtkSmartPointer<vtkImagingFactory>::New();
+	imaging_factory->SetUseMesaClasses( 1 ); 
+#endif
+
 	std::string image;
 	std::vector<std::string> surfaces, rsurfaces;
 	int slice_num, nimages;
@@ -130,7 +141,12 @@ int main(int argc, char *argv[]) {
 		vtkSmartPointer<vtkImageSliceMapper> imageSliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
 		imageSliceMapper->SliceFacesCameraOn();
 		imageSliceMapper->SetOrientation(axis);
+#if VTK_MAJOR_VERSION < 6
+		imageSliceMapper->SetInput(connector->GetOutput());
+#else
 		imageSliceMapper->SetInputData(connector->GetOutput());
+
+#endif
 
 		for (size_t sl = 0; sl < nimages; sl++) {
 			double factor = ((sl+1) / totalims);
@@ -144,7 +160,11 @@ int main(int argc, char *argv[]) {
 
 			for(size_t surf = 0; surf < rsurfaces.size(); surf++) {
 				vtkSmartPointer<vtkCutter> cutter = vtkSmartPointer<vtkCutter>::New();
+#if VTK_MAJOR_VERSION < 6
+				cutter->SetInput(vpr[surf]);
+#else
 				cutter->SetInputData(vpr[surf]);
+#endif
 				vtkSmartPointer<vtkPlane> cutPlane = vtkSmartPointer<vtkPlane>::New();
 				cutPlane->SetOrigin(c[0], c[1], c[2]);
 				cutPlane->SetNormal(normal);
@@ -164,7 +184,11 @@ int main(int argc, char *argv[]) {
 
 			for(size_t surf = 0; surf < surfaces.size(); surf++) {
 				vtkSmartPointer<vtkCutter> cutter = vtkSmartPointer<vtkCutter>::New();
+#if VTK_MAJOR_VERSION < 6
+				cutter->SetInput(vp[surf]);
+#else
 				cutter->SetInputData(vp[surf]);
+#endif
 				vtkSmartPointer<vtkPlane> cutPlane = vtkSmartPointer<vtkPlane>::New();
 				cutPlane->SetOrigin(c[0], c[1], c[2]);
 				cutPlane->SetNormal(normal);
@@ -225,8 +249,10 @@ int main(int argc, char *argv[]) {
 			renderer->ResetCamera();
 
 			vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+			renderWindow->SetOffScreenRendering(1); 
 			renderWindow->SetSize(viewExtent);
 			renderWindow->AddRenderer(renderer);
+
 
 			// Setup render window interactor
 		//	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
