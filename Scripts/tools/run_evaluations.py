@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-18 00:08:48
+# @Last Modified time: 2014-11-19 10:29:28
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -39,6 +39,7 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     from nipype.workflows.dmri.fsl.artifacts import sdc_fmb
     # from pysdcev.utils import all2RAS
     from pyacwereg import misc as acwregmisc
+    from pyacwereg.interfaces.utility import ExportSlices
     from pyacwereg.workflows.registration import regseg_wf
     from pyacwereg.workflows import evaluation as ev
     from pysdcev.workflows.fieldmap import bmap_registration
@@ -201,6 +202,21 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
             ('out_dis_set.dwi_mask', 'inputnode.reference')]),
         (dfm,        sunwarp, [('outputnode.inv_dfm', 'warp')]),
         (st1,        sunwarp, [('out_dis_set.surf', 'points')])
+    ])
+
+    export0 = pe.Node(ExportSlices(), name='ExportREGSEG')
+    export1 = pe.Node(ExportSlices(), name='ExportFMB')
+
+    def _getfirst(inlist):
+        return inlist[0]
+
+    wf.connect([
+        (regseg,   export0, [('outputnode.out_surf', 'surfaces0')]),
+        (st1,      export0, [('out_dis_set.surf', 'surfaces1')]),
+        (dti,      export0, [('outputnode.fa', 'reference')]),
+        (sunwarp,  export1, [('out_points', 'surfaces0')]),
+        (st1,      export1, [('out_ref_set.surf', 'surfaces1')]),
+        (rdti,     export1, [('outputnode.fa', 'reference')])
     ])
 
 #    mesh0 = pe.MapNode(P2PDistance(weighting='surface'),

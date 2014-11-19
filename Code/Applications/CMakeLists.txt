@@ -19,6 +19,13 @@ TARGET_LINK_LIBRARIES(warp_image ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 ADD_EXECUTABLE(regridavg regridavg.cxx ) 
 TARGET_LINK_LIBRARIES(regridavg ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 
-INSTALL(TARGETS bspline_field bspline_invert regseg warp_image regridavg
+ADD_EXECUTABLE(slice_contours slice_contours.cxx ) 
+if(VTK_LIBRARIES)
+	TARGET_LINK_LIBRARIES(slice_contours ${ITK_LIBRARIES} ${Boost_LIBRARIES} ${VTK_LIBRARIES})
+else()
+	TARGET_LINK_LIBRARIES(slice_contours ${ITK_LIBRARIES} ${Boost_LIBRARIES} vtkHybrid vtkWidgets)
+endif()
+
+INSTALL(TARGETS bspline_field bspline_invert regseg warp_image regridavg slice_contours
   RUNTIME DESTINATION bin
 )
