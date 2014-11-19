@@ -86,19 +86,24 @@ int main(int argc, char *argv[]) {
 	if (axis==1) axisname = "coronal";
 	if (axis==0) axisname = "sagittal";
 
-	vtkSmartPointer<vtkPolyData> vp[surfaces.size()];
+	size_t nsurf = surfaces.size();
+	size_t nrsurf = rsurfaces.size();
+
+
+	std::vector< vtkSmartPointer<vtkPolyData> > vp;
 	for(size_t surf = 0; surf < surfaces.size(); surf++) {
 		vtkSmartPointer<vtkPolyDataReader> reader = vtkSmartPointer<vtkPolyDataReader>::New();
 		reader->SetFileName(surfaces[surf].c_str());
 		reader->Update();
-		vp[surf] = reader->GetOutput();
+		vp.push_back(reader->GetOutput());
 	}
-	vtkSmartPointer<vtkPolyData> vpr[rsurfaces.size()];
+
+	std::vector< vtkSmartPointer<vtkPolyData> > vpr;
 	for(size_t surf = 0; surf < rsurfaces.size(); surf++) {
 		vtkSmartPointer<vtkPolyDataReader> reader = vtkSmartPointer<vtkPolyDataReader>::New();
 		reader->SetFileName(rsurfaces[surf].c_str());
 		reader->Update();
-		vpr[surf] = reader->GetOutput();
+		vpr.push_back(reader->GetOutput());
 	}
 
 	double totalims = 1.0 * (nimages+1);
@@ -125,7 +130,7 @@ int main(int argc, char *argv[]) {
 
 		for(size_t surf = 0; surf < rsurfaces.size(); surf++) {
 			vtkSmartPointer<vtkCutter> cutter = vtkSmartPointer<vtkCutter>::New();
-			cutter->SetInputData(vp[surf]);
+			cutter->SetInputData(vpr[surf]);
 			vtkSmartPointer<vtkPlane> cutPlane = vtkSmartPointer<vtkPlane>::New();
 			cutPlane->SetOrigin(c[0], c[1], c[2]);
 			cutPlane->SetNormal(normal);
@@ -145,7 +150,7 @@ int main(int argc, char *argv[]) {
 
 		for(size_t surf = 0; surf < surfaces.size(); surf++) {
 			vtkSmartPointer<vtkCutter> cutter = vtkSmartPointer<vtkCutter>::New();
-			cutter->SetInputData(vpr[surf]);
+			cutter->SetInputData(vp[surf]);
 			vtkSmartPointer<vtkPlane> cutPlane = vtkSmartPointer<vtkPlane>::New();
 			cutPlane->SetOrigin(c[0], c[1], c[2]);
 			cutPlane->SetNormal(normal);
