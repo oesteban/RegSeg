@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-19 10:14:49
+# @Last Modified time: 2014-11-19 11:44:16
 import os
 import os.path as op
 import nibabel as nb
@@ -32,6 +32,7 @@ class ExportSlicesInputSpec(CommandLineInputSpec):
     num_slices = traits.Int(14, argstr='-n %d', desc='total num. of slices')
     axis = traits.Enum(2, 0, 1, argstr='-a %d', usedefault=True,
                        desc='axis to cut through')
+    all_axis = traits.Bool(arstr='-A', desc='slice through all axes')
 
 
 class ExportSlicesOutputSpec(TraitedSpec):
@@ -51,13 +52,7 @@ class ExportSlices(CommandLine):
     def _list_outputs(self):
         from glob import glob
         outputs = self.output_spec().get()
-
-        axis = 'axial'
-        if self.inputs.axis == 0:
-            axis = 'sagittal'
-        elif self.inputs.axis == 1:
-            axis = 'coronal'
         out_path = os.getcwd()
-        out_pattern = op.join(out_path, '%s*.png' % axis)
+        out_pattern = op.join(out_path, '*.png')
         outputs['out_files'] = sorted(glob(out_pattern))
         return outputs

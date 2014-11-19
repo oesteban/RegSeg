@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-19 10:29:28
+# @Last Modified time: 2014-11-19 11:56:32
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -107,7 +107,8 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
         (ds_bmap,    bmap_prep, [('mag', 'inputnode.mag'),
                                  ('pha', 'inputnode.pha')]),
         (ds,         bmap_prep, [('t1w_brain', 'inputnode.t1w_brain'),
-                                 ('dwi_mask', 'inputnode.dwi_mask')])
+                                 ('dwi_mask', 'inputnode.dwi_mask'),
+                                 ('dwi_mask', 'inputnode.poly_mask')])
     ])
 
     rdti = mrtrix_dti('ReferenceDTI')
