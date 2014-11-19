@@ -43,6 +43,7 @@
 #ifndef SLICE_CONTOURS_H_
 #define SLICE_CONTOURS_H_
 
+
 #include <boost/program_options.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
@@ -75,23 +76,36 @@
 #include <vtkPolyDataReader.h>
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkPNGWriter.h>
-
-#include <vtkRenderWindow.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkInteractorStyleImage.h>
-#include <vtkRenderer.h>
-
-#include <vtkWindowToImageFilter.h>
-
 #include <vtkCamera.h>
+#include <vtkCornerAnnotation.h>
+#include <vtkTextActor.h>
+#include <vtkTextProperty.h>
 
 #include <itkImage.h>
 #include <itkImageFileReader.h>
 #include <itkRescaleIntensityImageFilter.h>
 #include <itkImageToVTKImageFilter.h>
-#include <vtkCornerAnnotation.h>
-#include <vtkTextActor.h>
-#include <vtkTextProperty.h>
+
+
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkInteractorStyleImage.h>
+#include <vtkRenderer.h>
+#include <vtkWindowToImageFilter.h>
+
+#if VTK_MAJOR_VERSION == 6
+// https://gist.github.com/certik/5687727
+// These 2 lines are needed due to:
+// http://www.vtk.org/Wiki/VTK/VTK_6_Migration/Factories_now_require_defines
+#include <vtkAutoInit.h>
+VTK_MODULE_INIT(vtkRenderingOpenGL);
+#define vtkRenderingCore_AUTOINIT 4(vtkInteractionStyle,vtkRenderingFreeType,vtkRenderingFreeTypeOpenGL,vtkRenderingOpenGL)
+#define vtkRenderingVolume_AUTOINIT 1(vtkRenderingVolumeOpenGL)
+#else
+#include <vtkGraphicsFactory.h>
+#include <vtkImagingFactory.h>
+#endif
+
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
