@@ -188,14 +188,6 @@ public:
 	/** Get stop condition enum */
 	itkGetConstReferenceMacro(StopCondition, StopConditionType);
 
-	/** Set the number of iterations. */
-	itkSetMacro(NumberOfIterations, SizeValueType);
-
-	/** Get the number of iterations. */
-	itkGetConstReferenceMacro(NumberOfIterations, SizeValueType);
-
-	itkGetConstReferenceMacro(CurrentIteration, SizeValueType);
-
 	itkGetConstMacro(CurrentValue, MeasureType);
 	itkGetConstMacro(CurrentNorm, MeasureType);
 
@@ -308,8 +300,6 @@ protected:
 	bool                          m_Stop;
 	StopConditionType             m_StopCondition;
 	StopConditionDescriptionType  m_StopConditionDescription;
-	SizeValueType                 m_CurrentIteration;
-	SizeValueType                 m_NumberOfIterations;
 	SizeValueType                 m_DescriptorRecomputationFreq;
 	SizeValueType                 m_ValueOscillations;
 	SizeValueType                 m_ValueOscillationsMax;
