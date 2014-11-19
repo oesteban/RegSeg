@@ -112,9 +112,9 @@ public:
 	/** Stop condition internal string type */
 	typedef std::ostringstream                                      StopConditionDescriptionType;
 
-	typedef size_t                                                  SizeValueType;
 	typedef itk::FixedArray< double, Dimension >                    ControlPointsGridSpacingType;
 
+	typedef typename Superclass::SizeValueType                      SizeValueType;
 	typedef typename Superclass::ScalesType                         ScalesType;
 
 	/** Functional definitions */
