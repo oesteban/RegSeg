@@ -48,6 +48,9 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     from pysdcev.workflows.tractography import mrtrix_dti
     from pysdcev.stages.stage1 import stage1
 
+    print 'Subjects=' + str(settings['subject_id'])
+    print 'Fieldmaps=' + str(settings['bmap_id'])
+
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['subject_id', 'data_dir', 'bmap_id']), name='inputnode')
     inputnode.inputs.data_dir = settings['data_dir']
@@ -292,11 +295,11 @@ if __name__ == '__main__':
     settings['work_dir'] = opts.work_dir
     settings['data_dir'] = op.abspath(opts.subjects_dir)
     settings['bmap_id'] = [
-        op.basename(f) for f in glob(op.join(opts.subjects_dir,
-                                             opts.fieldmap_id))]
+        op.basename(f) for f in glob(op.join(opts.subjects_dir, 'fieldmaps',
+                                     opts.fieldmap_id))]
 
     subjects = [
-        op.basename(sub) for sub in glob(op.join(opts.subjects_dir,
+        op.basename(sub) for sub in glob(op.join(opts.subjects_dir, 'subjects',
                                                  opts.subject))]
     settings['subject_id'] = subjects
 
