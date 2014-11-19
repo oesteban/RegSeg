@@ -98,7 +98,6 @@
 // These 2 lines are needed due to:
 // http://www.vtk.org/Wiki/VTK/VTK_6_Migration/Factories_now_require_defines
 #include <vtkAutoInit.h>
-VTK_MODULE_INIT(vtkRenderingOpenGL);
 #define vtkRenderingCore_AUTOINIT 4(vtkInteractionStyle,vtkRenderingFreeType,vtkRenderingFreeTypeOpenGL,vtkRenderingOpenGL)
 #define vtkRenderingVolume_AUTOINIT 1(vtkRenderingVolumeOpenGL)
 #else
