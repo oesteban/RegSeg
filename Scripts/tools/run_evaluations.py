@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-19 11:56:32
+# @Last Modified time: 2014-11-20 12:52:36
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -100,6 +100,21 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
 
     # reorient = all2RAS(input_fields=rfield, input_param=rparam)
     bmap_prep = bmap_registration(factor=6.0)
+    poly_msk = pe.Node(fs.Binarize(), name='GenPolyMask')
+    poly_msk.inputs.match = [4, 5, 43, 44, 14, 15, 72, 24, 2, 28, 31,
+                             41, 60, 63, 77, 78, 79, 85, 86, 100, 108, 109,
+                             117, 250, 251, 252, 253, 254, 255,
+                             9, 10, 48, 49, 107, 116,        # thalamus
+                             13, 52, 104, 113,               # pallidum
+                             12, 51, 102, 111, 136, 137,     # putamen
+                             11, 50, 101, 110,               # caudate
+                             26, 58, 103, 112,               # accumbens
+                             17, 53, 106, 115,               # hippocampus
+                             18, 54, 96, 97, 105, 114, 218,
+                             30, 62, 72, 75, 76, 98,
+                             ]
+    pmregrid = pe.Node(fs.MRIConvert(out_type='niigz', out_datatype='uchar'),
+                       name='RegridPolymask')
 
     wf = pe.Workflow(name=name)
     wf.connect([
@@ -109,9 +124,12 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                                  ('data_dir', 'base_directory')]),
         (ds_bmap,    bmap_prep, [('mag', 'inputnode.mag'),
                                  ('pha', 'inputnode.pha')]),
+        (ds,         poly_msk,  [('aseg', 'in_file')]),
+        (poly_msk,   pmregrid,  [('binary_file', 'in_file')]),
+        (ds,         pmregrid,  [('dwi_mask', 'reslice_like')]),
         (ds,         bmap_prep, [('t1w_brain', 'inputnode.t1w_brain'),
-                                 ('dwi_mask', 'inputnode.dwi_mask'),
-                                 ('dwi_mask', 'inputnode.poly_mask')])
+                                 ('dwi_mask', 'inputnode.dwi_mask')]),
+        (pmregrid,   bmap_prep, [('out_file', 'inputnode.poly_mask')])
     ])
 
     rdti = mrtrix_dti('ReferenceDTI')
@@ -296,7 +314,7 @@ if __name__ == '__main__':
     settings['data_dir'] = op.abspath(opts.subjects_dir)
     settings['bmap_id'] = [
         op.basename(f) for f in glob(op.join(opts.subjects_dir, 'fieldmaps',
-                                     opts.fieldmap_id))]
+                                             opts.fieldmap_id))]
 
     subjects = [
         op.basename(sub) for sub in glob(op.join(opts.subjects_dir, 'subjects',
