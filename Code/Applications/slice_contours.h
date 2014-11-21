@@ -93,6 +93,8 @@
 #include <vtkMatrix4x4.h>
 #include <vtkLookupTable.h>
 #include <vtkImageMapToColors.h>
+#include <vtkImageResliceMapper.h>
+
 
 #include <itkImage.h>
 #include <itkImageFileReader.h>
@@ -109,6 +111,8 @@
 #include <vtkRenderer.h>
 #include <vtkWindowToImageFilter.h>
 #include <vtkImageMapToWindowLevelColors.h>
+#include <vtkAxesActor.h>
+#include <vtkCubeAxesActor2D.h>
 
 
 namespace bpo = boost::program_options;

@@ -91,54 +91,11 @@ int main(int argc, char *argv[]) {
 	connector->Update();
 	vtkSmartPointer<vtkImageData> vtkim = connector->GetOutput();
 
+	double spacing[3];
+	vtkim->GetSpacing(spacing);
+
 	// Setup render window
 	int viewExtent[2] = { 600, 600 };
-
-	// Setup renderers
-	VTK_CREATE(vtkRenderer, renderer);
-
-	VTK_CREATE(vtkImageReslice, reslice);
-	reslice->SetOutputDimensionality(2);
-	reslice->InterpolateOff();
-	reslice->SetInputData(connector->GetOutput());
-	reslice->SetOutputSpacing( vtkim->GetSpacing() );
-
-	VTK_CREATE(vtkLookupTable, table);
-	table->SetRange(0, 255); // image intensity range
-	table->SetValueRange(0.0, 1.0); // from black to white
-	table->SetSaturationRange(0.0, 0.0); // no color saturation
-	table->SetRampToLinear();
-	table->Build();
-
-	VTK_CREATE(vtkImageMapToColors, color);
-	color->SetLookupTable(table);
-	color->SetInputConnection(reslice->GetOutputPort());
-
-	VTK_CREATE(vtkImageActor, imageActor);
-	imageActor->GetMapper()->SetInputConnection(color->GetOutputPort());
-	renderer->AddActor(imageActor);
-
-
-
-	//VTK_CREATE(vtkImageMagnify, imgMagnify);
-	//imgMagnify->SetInputData(connector->GetOutput());
-	//imgMagnify->SetMagnificationFactors(5, 5, 5);
-	// VTK_CREATE(vtkImageViewer2, imageViewer);
-	// imageViewer->SetInputData(connector->GetOutput());
-	//imageViewer->SetInputConnection(imgMagnify->GetOutputPort());
-	// imageViewer->GetImageActor()->InterpolateOff();
-	// renderer->AddActor( imageViewer->GetImageActor() );
-
-	VTK_CREATE(vtkTextActor, textActor);
-	textActor->GetTextProperty()->SetFontSize(40);
-	renderer->AddActor2D( textActor );
-
-	VTK_CREATE(vtkRenderWindow, renderWindow);
-	// renderWindow->SetOffScreenRendering(1);
-	//renderWindow->SetSize(viewExtent);
-	// renderWindow->OffScreenRenderingOn();
-	renderWindow->AddRenderer(renderer);
-
 
 
 	ImageType::PointType c;
@@ -154,7 +111,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (vm.count("all-axis") && vm["all-axis"].as<bool>()) {
-		axislist.empty();
+		axislist.resize(0);
 
 		for (size_t aa = 0; aa < 3; aa++) axislist.push_back(aa);
 	}
@@ -179,154 +136,178 @@ int main(int argc, char *argv[]) {
 	}
 
 	double totalims = 1.0 * (nimages+1);
+	int slice2DExtent[4];
+	int sliceExtent[6];
+	double sliceOrigin[3];
+	float height = 0.0;
 
 	for(size_t ax = 0; ax < axislist.size(); ax++) {
 		int axis = axislist[ax];
-		if (axis==1) axisname = "coronal";
-		if (axis==0) axisname = "sagittal";
-
-		double normal[DIMENSION];
-		for (size_t i = 0; i < DIMENSION; i++) {
-			normal[i] = (i==axis)?1.0:0.0;
+		vtkim->GetExtent(sliceExtent);
+		VTK_CREATE(vtkMatrix4x4, mat);
+		switch(axis) {
+		case 0:
+			axisname = "sagittal";
+			mat->DeepCopy(sagittalElements);
+			mat->SetElement(0, 3, c[0]);
+		    height = sliceExtent[1];
+		    slice2DExtent[0] = sliceExtent[2];
+		    slice2DExtent[1] = sliceExtent[3];
+		    slice2DExtent[2] = sliceExtent[4];
+		    slice2DExtent[3] = sliceExtent[5];
+		    sliceExtent[0] = 0;
+		    sliceExtent[1] = 0;
+		    break;
+		case 1:
+			axisname = "coronal";
+			mat->DeepCopy(coronalElements);
+			mat->SetElement(0, 3, c[1]);
+			height = sliceExtent[3];
+		    slice2DExtent[0] = sliceExtent[0];
+		    slice2DExtent[1] = sliceExtent[1];
+		    slice2DExtent[2] = sliceExtent[4];
+		    slice2DExtent[3] = sliceExtent[5];
+		    sliceExtent[2] = 0;
+		    sliceExtent[3] = 0;
+			break;
+		case 2:
+			axisname = "axial";
+			mat->DeepCopy(axialElements);
+			mat->SetElement(0, 3, c[2]);
+			height = sliceExtent[5];
+		    slice2DExtent[0] = sliceExtent[0];
+		    slice2DExtent[1] = sliceExtent[1];
+		    slice2DExtent[2] = sliceExtent[2];
+		    slice2DExtent[3] = sliceExtent[3];
+		    sliceExtent[4] = 0;
+		    sliceExtent[5] = 0;
+			break;
 		}
 
+		double normal[DIMENSION] = { 0.0, 0.0, 0.0 };
+		normal[axis] = 1.0;
 
-		// imageViewer->SetSliceOrientation(axis);
-		// Image slice: http://www.cmake.org/Wiki/VTK/Examples/Cxx/Images/ImageSliceMapper
-		// VTK_CREATE(vtkImageSliceMapper, imageSliceMapper);
-		// imageSliceMapper->SliceFacesCameraOn();
-		// imageSliceMapper->SetOrientation(axis);
-		// imageSliceMapper->SetInputData(connector->GetOutput());
+		std::cout << "Axis (" << axisname << ") Normal[" << axis<< "]=[" << normal[0] << ", " << normal[1] << ", " << normal[2] << "]";
 
 		for (size_t sl = 0; sl < nimages; sl++) {
-			VTK_CREATE(vtkMatrix4x4, mat);
+			// Setup renderers
+			VTK_CREATE(vtkRenderer, renderer);
+			renderer->SetViewport(0, 0, 1, 1);
+			renderer->SetBackground(1.0, 1.0, 1.0);
+			VTK_CREATE(vtkRenderWindow, renderWindow);
+			//renderWindow->SetSize(viewExtent);
+			renderWindow->OffScreenRenderingOn();
+			renderWindow->Render();
+			renderWindow->AddRenderer(renderer);
 
 			double factor = ((sl+1) / totalims);
 			idx[axis] = int( (s[axis]-1)* factor);
 			im->TransformIndexToPhysicalPoint(idx, c);
 
-			int slice2DExtent[4];
-			int sliceExtent[6];
-			vtkim->GetExtent(sliceExtent);
-			double sliceOrigin[3];
 			vtkim->GetOrigin(sliceOrigin);
+			sliceOrigin[axis] = c[axis];
 
-			switch(axis) {
-			case 0:
-				mat->DeepCopy(sagittalElements);
-				mat->SetElement(0, 3, c[0]);
-			    slice2DExtent[0] = sliceExtent[2];
-			    slice2DExtent[1] = sliceExtent[3];
-			    slice2DExtent[2] = sliceExtent[4];
-			    slice2DExtent[3] = sliceExtent[5];
-			    sliceExtent[0] = 0;
-			    sliceExtent[1] = 0;
-			    sliceOrigin[0] = c[0];
-			    break;
-				break;
-			case 1:
-				mat->DeepCopy(coronalElements);
-				mat->SetElement(0, 3, c[1]);
-			    slice2DExtent[0] = sliceExtent[0];
-			    slice2DExtent[1] = sliceExtent[1];
-			    slice2DExtent[2] = sliceExtent[4];
-			    slice2DExtent[3] = sliceExtent[5];
-			    sliceExtent[2] = 0;
-			    sliceExtent[3] = 0;
-			    sliceOrigin[1] = c[1];
-				break;
-			default:
-				mat->DeepCopy(axialElements);
-				mat->SetElement(0, 3, c[2]);
-			    slice2DExtent[0] = sliceExtent[0];
-			    slice2DExtent[1] = sliceExtent[1];
-			    slice2DExtent[2] = sliceExtent[2];
-			    slice2DExtent[3] = sliceExtent[3];
-			    sliceExtent[4] = 0;
-			    sliceExtent[5] = 0;
-			    sliceOrigin[2] = c[2];
-				break;
+			VTK_CREATE(vtkPlane, cutPlane);
+			cutPlane->SetOrigin(sliceOrigin);
+			cutPlane->SetNormal(normal);
+
+
+			// Setup image slice mapper
+			VTK_CREATE(vtkImageResliceMapper, imSliceMap);
+			imSliceMap->SetInputData(connector->GetOutput());
+			imSliceMap->BorderOn();
+			imSliceMap->SetSlicePlane(cutPlane);
+			imSliceMap->ResampleToScreenPixelsOff();
+			imSliceMap->SliceAtFocalPointOff();
+			imSliceMap->UpdateInformation();
+
+			// Image slice: http://www.cmake.org/Wiki/VTK/Examples/Cxx/Images/ImageSliceMapper
+			VTK_CREATE(vtkImageSlice, imSlice);
+			imSlice->SetMapper(imSliceMap);
+			imSlice->GetProperty()->SetInterpolationTypeToNearest();
+			renderer->AddViewProp(imSlice);
+
+			for(size_t surf = 0; surf < rsurfaces.size(); surf++) {
+				VTK_CREATE(vtkCutter, cutter);
+				cutter->SetCutFunction(cutPlane);
+#if VTK_MAJOR_VERSION <= 5
+				cutter->SetInput(vpr[surf]);
+#else
+				cutter->SetInputData(vpr[surf]);
+#endif
+
+				VTK_CREATE(vtkStripper, stripper);
+				stripper->SetInputConnection(cutter->GetOutputPort()); // valid circle
+				stripper->Update();
+
+				VTK_CREATE(vtkPolyDataMapper, contourmapper);
+				contourmapper->SetInputConnection(stripper->GetOutputPort());
+				VTK_CREATE(vtkActor, outlineActor);
+				outlineActor->SetMapper(contourmapper);
+				outlineActor->GetProperty()->SetColor(1.0,1.0,0.2);
+				outlineActor->GetProperty()->SetLineWidth(4);
+				renderer->AddActor(outlineActor);
 			}
 
-			std::cout << "Normal=(" << normal[0] << ", " << normal[1] << ", " << normal[2] << ")";
-			std::cout << ", origin=(" << sliceOrigin[0] << ", " << sliceOrigin[1] << ", " << sliceOrigin[2] << ")";
-			std::cout <<", extent=[" << sliceExtent[0] << ", " << sliceExtent[1] << ", " << sliceExtent[2] << ", ";
-			std::cout <<", " << sliceExtent[3] << ", " << sliceExtent[4] << ", " << sliceExtent[5] << "]." << std::endl;
-
-			reslice->SetResliceAxes(mat);
-			reslice->SetOutputExtent(slice2DExtent);
-			reslice->Update();
-
-			// imageSliceMapper->SetSliceNumber(idx[axis]);
-			// imageViewer->SetSlice(idx[axis]);
-
-
-//			for(size_t surf = 0; surf < rsurfaces.size(); surf++) {
-//				VTK_CREATE(vtkCutter, cutter);
-//#if VTK_MAJOR_VERSION <= 5
-//				cutter->SetInput(vpr[surf]);
-//#else
-//				cutter->SetInputData(vpr[surf]);
-//#endif
-//				VTK_CREATE(vtkPlane, cutPlane);
-//				cutPlane->SetOrigin(c[0], c[1], c[2]);
-//				cutPlane->SetNormal(normal);
-//				cutter->SetCutFunction(cutPlane);
-//				VTK_CREATE(vtkStripper, stripper);
-//				stripper->SetInputConnection(cutter->GetOutputPort()); // valid circle
-//				stripper->Update();
-//
-//				VTK_CREATE(vtkPolyDataMapper, contourmapper);
-//				contourmapper->SetInputConnection(stripper->GetOutputPort());
-//				VTK_CREATE(vtkActor, outlineActor);
-//				outlineActor->SetMapper(contourmapper);
-//				outlineActor->GetProperty()->SetColor(1.0,1.0,0.2);
-//				outlineActor->GetProperty()->SetLineWidth(2);
-//				renderer->AddActor(outlineActor);
-//			}
-//
-//			for(size_t surf = 0; surf < surfaces.size(); surf++) {
-//				VTK_CREATE(vtkCutter, cutter);
-//#if VTK_MAJOR_VERSION <= 5
-//				cutter->SetInput(vp[surf]);
-//#else
-//				cutter->SetInputData(vp[surf]);
-//#endif
-//				VTK_CREATE(vtkPlane, cutPlane);
-//				cutPlane->SetOrigin(c[0], c[1], c[2]);
-//				cutPlane->SetNormal(normal);
-//				cutter->SetCutFunction(cutPlane);
-//				VTK_CREATE(vtkStripper, stripper);
-//				stripper->SetInputConnection(cutter->GetOutputPort()); // valid circle
-//				stripper->Update();
-//				VTK_CREATE(vtkPolyDataMapper, contourmapper);
-//				contourmapper->SetInputConnection(stripper->GetOutputPort());
-//				VTK_CREATE(vtkActor, outlineActor);
-//				outlineActor->SetMapper(contourmapper);
-//				outlineActor->GetProperty()->SetColor(0.5,0.6,1.0);
-//				outlineActor->GetProperty()->SetLineWidth(2);
-//				renderer->AddActor(outlineActor);
-//			}
-
-			// VTK_CREATE(vtkImageSlice, imageSlice);
-			// imageSlice->GetProperty()->SetInterpolationTypeToNearest();
-			// imageSlice->SetMapper(imageSliceMapper);
-
-			// renderer->AddViewProp(imageSlice);
-			//renderer->AddRenderer
+			for(size_t surf = 0; surf < surfaces.size(); surf++) {
+				VTK_CREATE(vtkCutter, cutter);
+	            cutter->SetCutFunction(cutPlane);
+#if VTK_MAJOR_VERSION <= 5
+				cutter->SetInput(vp[surf]);
+#else
+				cutter->SetInputData(vp[surf]);
+#endif
+				VTK_CREATE(vtkStripper, stripper);
+				stripper->SetInputConnection(cutter->GetOutputPort()); // valid circle
+				stripper->Update();
+				VTK_CREATE(vtkPolyDataMapper, contourmapper);
+				contourmapper->SetInputConnection(stripper->GetOutputPort());
+				VTK_CREATE(vtkActor, outlineActor);
+				outlineActor->SetMapper(contourmapper);
+				outlineActor->GetProperty()->SetColor(0.5,0.6,1.0);
+				outlineActor->GetProperty()->SetLineWidth(3);
+				renderer->AddActor(outlineActor);
+			}
 
 			std::stringstream slicenumtext;
 			slicenumtext << idx[axis];
 
-			textActor->SetPosition( int(0.25*viewExtent[0]), int(0.25*viewExtent[1]));
+
+			VTK_CREATE(vtkTextActor, textActor);
+			textActor->GetTextProperty()->SetFontSize(40);
+			renderer->AddActor2D( textActor );
+			textActor->SetPosition( 10, 10 );
 			textActor->SetInput( slicenumtext.str().c_str() );
 
-//			vtkSmartPointer<vtkCamera> cam = renderer->GetActiveCamera();
-//			cam->SetPosition(normal);
-//			renderer->ResetCamera();
+//			VTK_CREATE(vtkTextActor, loc1);
+//			loc1->GetTextProperty()->SetFontSize(40);
+//			renderer->AddActor2D( loc1 );
+//			loc1->SetPosition( 280, 10 );
+//			loc1->SetInput( std::string("I").c_str() );
+//
+//			VTK_CREATE(vtkTextActor, loc2);
+//			loc2->GetTextProperty()->SetFontSize(40);
+//			renderer->AddActor2D( loc2 );
+//			loc2->SetPosition( 280, 550 );
+//			loc2->SetInput( std::string("S").c_str() );
+
+
+			vtkSmartPointer<vtkCamera> cam = renderer->GetActiveCamera();
+			cam->SetPosition(normal);
+			renderer->ResetCamera();
+			cam->ParallelProjectionOn();
+			cam->SetParallelScale(0.5 * spacing[axis] * height);
+			renderWindow->Render();
+
+//			VTK_CREATE(vtkCubeAxesActor2D, axes);
+//			axes->SetViewProp(imSlice);
+//			axes->SetCamera(cam);
 
 			VTK_CREATE(vtkWindowToImageFilter, windowToImageFilter);
 			windowToImageFilter->SetInput(renderWindow);
+			windowToImageFilter->SetMagnification(2);
+			windowToImageFilter->SetInputBufferTypeToRGBA();
+			windowToImageFilter->ReadFrontBufferOff();
 			windowToImageFilter->Update();
 
 			VTK_CREATE(vtkPNGWriter, writer);
