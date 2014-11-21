@@ -94,9 +94,9 @@
 #include <vtkWindowToImageFilter.h>
 
 #if VTK_MAJOR_VERSION == 6
-// https://gist.github.com/certik/5687727
 // These 2 lines are needed due to:
 // http://www.vtk.org/Wiki/VTK/VTK_6_Migration/Factories_now_require_defines
+// Taken from: https://gist.github.com/certik/5687727
 #include <vtkAutoInit.h>
 #define vtkRenderingCore_AUTOINIT 4(vtkInteractionStyle,vtkRenderingFreeType,vtkRenderingFreeTypeOpenGL,vtkRenderingOpenGL)
 #define vtkRenderingVolume_AUTOINIT 1(vtkRenderingVolumeOpenGL)
@@ -104,7 +104,6 @@
 #include <vtkGraphicsFactory.h>
 #include <vtkImagingFactory.h>
 #endif
-
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;

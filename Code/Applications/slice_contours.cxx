@@ -249,8 +249,8 @@ int main(int argc, char *argv[]) {
 			renderer->ResetCamera();
 
 			vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-			renderWindow->SetOffScreenRendering(1); 
-			renderWindow->SetSize(viewExtent);
+			// renderWindow->SetOffScreenRendering(1);
+			renderWindow->OffScreenRenderingOn();
 			renderWindow->AddRenderer(renderer);
 
 
@@ -269,13 +269,12 @@ int main(int argc, char *argv[]) {
 			windowToImageFilter->SetInput(renderWindow);
 			windowToImageFilter->Update();
 
-			vtkSmartPointer<vtkPNGWriter> writer =
-					vtkSmartPointer<vtkPNGWriter>::New();
+			vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
+			writer->SetInputConnection(windowToImageFilter->GetOutputPort());
 
 			std::stringstream ss;
 			ss << axisname << std::setw(4) << std::setfill('0') << idx[axis] << ".png";
 			writer->SetFileName(ss.str().c_str());
-			writer->SetInputConnection(windowToImageFilter->GetOutputPort());
 			writer->Write();
 		}
 	}
