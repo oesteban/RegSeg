@@ -37,10 +37,6 @@ find_library(JsonCpp_LIBRARY
        /usr/local/lib
 )
 
-find_package(VTK REQUIRED)
-include(${VTK_USE_FILE})
-
-
 SET( CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Core )
 SET( IO_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/IO )
 

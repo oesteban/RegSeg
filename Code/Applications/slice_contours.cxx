@@ -11,6 +11,10 @@
 #include "slice_contours.h"
 
 
+// see: https://github.com/InsightSoftwareConsortium/LesionSizingToolkit/blob/master/Utilities/Visualization/ViewImageSlicesAndSegmentationContours.cxx
+#define VTK_CREATE(type, name) \
+  vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
+
 /**
  * This example generates a sphere, cuts it with a plane and, therefore, generates a circlular contour (vtkPolyData).
  * Subsequently a binary image representation (vtkImageData) is extracted from it. Internally vtkPolyDataToImageStencil and
@@ -19,14 +23,14 @@
  */
 int main(int argc, char *argv[]) {
 
-#if VTK_MAJOR_VERSION < 6
+#if VTK_MAJOR_VERSION <= 5
 	// Setup offscreen rendering
-	vtkSmartPointer<vtkGraphicsFactory> graphics_factory = vtkSmartPointer<vtkGraphicsFactory>::New();
+	VTK_CREATE(vtkGraphicsFactory, graphics_factory);
 	graphics_factory->SetOffScreenOnlyMode( 1);
 	graphics_factory->SetUseMesaClasses( 1 );
 
-	vtkSmartPointer<vtkImagingFactory> imaging_factory =  vtkSmartPointer<vtkImagingFactory>::New();
-	imaging_factory->SetUseMesaClasses( 1 ); 
+	VTK_CREATE(vtkImagingFactory, imaging_factory);
+	imaging_factory->SetUseMesaClasses( 1 );
 #endif
 
 	std::string image;
@@ -87,6 +91,55 @@ int main(int argc, char *argv[]) {
 	connector->Update();
 	vtkSmartPointer<vtkImageData> vtkim = connector->GetOutput();
 
+	// Setup render window
+	int viewExtent[2] = { 600, 600 };
+
+	// Setup renderers
+	VTK_CREATE(vtkRenderer, renderer);
+
+	VTK_CREATE(vtkImageReslice, reslice);
+	reslice->SetOutputDimensionality(2);
+	reslice->InterpolateOff();
+	reslice->SetInputData(connector->GetOutput());
+	reslice->SetOutputSpacing( vtkim->GetSpacing() );
+
+	VTK_CREATE(vtkLookupTable, table);
+	table->SetRange(0, 255); // image intensity range
+	table->SetValueRange(0.0, 1.0); // from black to white
+	table->SetSaturationRange(0.0, 0.0); // no color saturation
+	table->SetRampToLinear();
+	table->Build();
+
+	VTK_CREATE(vtkImageMapToColors, color);
+	color->SetLookupTable(table);
+	color->SetInputConnection(reslice->GetOutputPort());
+
+	VTK_CREATE(vtkImageActor, imageActor);
+	imageActor->GetMapper()->SetInputConnection(color->GetOutputPort());
+	renderer->AddActor(imageActor);
+
+
+
+	//VTK_CREATE(vtkImageMagnify, imgMagnify);
+	//imgMagnify->SetInputData(connector->GetOutput());
+	//imgMagnify->SetMagnificationFactors(5, 5, 5);
+	// VTK_CREATE(vtkImageViewer2, imageViewer);
+	// imageViewer->SetInputData(connector->GetOutput());
+	//imageViewer->SetInputConnection(imgMagnify->GetOutputPort());
+	// imageViewer->GetImageActor()->InterpolateOff();
+	// renderer->AddActor( imageViewer->GetImageActor() );
+
+	VTK_CREATE(vtkTextActor, textActor);
+	textActor->GetTextProperty()->SetFontSize(40);
+	renderer->AddActor2D( textActor );
+
+	VTK_CREATE(vtkRenderWindow, renderWindow);
+	// renderWindow->SetOffScreenRendering(1);
+	//renderWindow->SetSize(viewExtent);
+	// renderWindow->OffScreenRenderingOn();
+	renderWindow->AddRenderer(renderer);
+
+
 
 	ImageType::PointType c;
 	ImageType::SizeType s = im->GetLargestPossibleRegion().GetSize();
@@ -111,7 +164,7 @@ int main(int argc, char *argv[]) {
 
 	std::vector< vtkSmartPointer<vtkPolyData> > vp;
 	for(size_t surf = 0; surf < surfaces.size(); surf++) {
-		vtkSmartPointer<vtkPolyDataReader> reader = vtkSmartPointer<vtkPolyDataReader>::New();
+		VTK_CREATE(vtkPolyDataReader, reader);
 		reader->SetFileName(surfaces[surf].c_str());
 		reader->Update();
 		vp.push_back(reader->GetOutput());
@@ -119,7 +172,7 @@ int main(int argc, char *argv[]) {
 
 	std::vector< vtkSmartPointer<vtkPolyData> > vpr;
 	for(size_t surf = 0; surf < rsurfaces.size(); surf++) {
-		vtkSmartPointer<vtkPolyDataReader> reader = vtkSmartPointer<vtkPolyDataReader>::New();
+		VTK_CREATE(vtkPolyDataReader, reader);
 		reader->SetFileName(rsurfaces[surf].c_str());
 		reader->Update();
 		vpr.push_back(reader->GetOutput());
@@ -137,139 +190,146 @@ int main(int argc, char *argv[]) {
 			normal[i] = (i==axis)?1.0:0.0;
 		}
 
-		// Image slice: http://www.cmake.org/Wiki/VTK/Examples/Cxx/Images/ImageSliceMapper
-		vtkSmartPointer<vtkImageSliceMapper> imageSliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
-		imageSliceMapper->SliceFacesCameraOn();
-		imageSliceMapper->SetOrientation(axis);
-#if VTK_MAJOR_VERSION < 6
-		imageSliceMapper->SetInput(connector->GetOutput());
-#else
-		imageSliceMapper->SetInputData(connector->GetOutput());
 
-#endif
+		// imageViewer->SetSliceOrientation(axis);
+		// Image slice: http://www.cmake.org/Wiki/VTK/Examples/Cxx/Images/ImageSliceMapper
+		// VTK_CREATE(vtkImageSliceMapper, imageSliceMapper);
+		// imageSliceMapper->SliceFacesCameraOn();
+		// imageSliceMapper->SetOrientation(axis);
+		// imageSliceMapper->SetInputData(connector->GetOutput());
 
 		for (size_t sl = 0; sl < nimages; sl++) {
+			VTK_CREATE(vtkMatrix4x4, mat);
+
 			double factor = ((sl+1) / totalims);
 			idx[axis] = int( (s[axis]-1)* factor);
 			im->TransformIndexToPhysicalPoint(idx, c);
 
-			imageSliceMapper->SetSliceNumber(idx[axis]);
+			int slice2DExtent[4];
+			int sliceExtent[6];
+			vtkim->GetExtent(sliceExtent);
+			double sliceOrigin[3];
+			vtkim->GetOrigin(sliceOrigin);
 
-			// Setup renderers
-			vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-
-			for(size_t surf = 0; surf < rsurfaces.size(); surf++) {
-				vtkSmartPointer<vtkCutter> cutter = vtkSmartPointer<vtkCutter>::New();
-#if VTK_MAJOR_VERSION < 6
-				cutter->SetInput(vpr[surf]);
-#else
-				cutter->SetInputData(vpr[surf]);
-#endif
-				vtkSmartPointer<vtkPlane> cutPlane = vtkSmartPointer<vtkPlane>::New();
-				cutPlane->SetOrigin(c[0], c[1], c[2]);
-				cutPlane->SetNormal(normal);
-				cutter->SetCutFunction(cutPlane);
-				vtkSmartPointer<vtkStripper> stripper = vtkSmartPointer<vtkStripper>::New();
-				stripper->SetInputConnection(cutter->GetOutputPort()); // valid circle
-				stripper->Update();
-
-				vtkSmartPointer<vtkPolyDataMapper> contourmapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-				contourmapper->SetInputConnection(stripper->GetOutputPort());
-				vtkSmartPointer<vtkActor> outlineActor = vtkSmartPointer<vtkActor>::New();
-				outlineActor->SetMapper(contourmapper);
-				outlineActor->GetProperty()->SetColor(1.0,1.0,0.2);
-				outlineActor->GetProperty()->SetLineWidth(2);
-				renderer->AddActor(outlineActor);
-			}
-
-			for(size_t surf = 0; surf < surfaces.size(); surf++) {
-				vtkSmartPointer<vtkCutter> cutter = vtkSmartPointer<vtkCutter>::New();
-#if VTK_MAJOR_VERSION < 6
-				cutter->SetInput(vp[surf]);
-#else
-				cutter->SetInputData(vp[surf]);
-#endif
-				vtkSmartPointer<vtkPlane> cutPlane = vtkSmartPointer<vtkPlane>::New();
-				cutPlane->SetOrigin(c[0], c[1], c[2]);
-				cutPlane->SetNormal(normal);
-				cutter->SetCutFunction(cutPlane);
-				vtkSmartPointer<vtkStripper> stripper = vtkSmartPointer<vtkStripper>::New();
-				stripper->SetInputConnection(cutter->GetOutputPort()); // valid circle
-				stripper->Update();
-
-				vtkSmartPointer<vtkPolyDataMapper> contourmapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-				contourmapper->SetInputConnection(stripper->GetOutputPort());
-				vtkSmartPointer<vtkActor> outlineActor = vtkSmartPointer<vtkActor>::New();
-				outlineActor->SetMapper(contourmapper);
-				outlineActor->GetProperty()->SetColor(0.5,0.6,1.0);
-				outlineActor->GetProperty()->SetLineWidth(2);
-				renderer->AddActor(outlineActor);
-			}
-
-			vtkSmartPointer<vtkImageSlice> imageSlice = vtkSmartPointer<vtkImageSlice>::New();
-			imageSlice->GetProperty()->SetInterpolationTypeToNearest();
-			imageSlice->SetMapper(imageSliceMapper);
-			// imageSlice->SetDisplayLocationToBackground();
-			renderer->AddViewProp(imageSlice);
-
-			// Setup render window
-			int viewExtent[2];
 			switch(axis) {
 			case 0:
-				viewExtent[0] = s[1]*5;
-				viewExtent[1] = s[2]*5;
+				mat->DeepCopy(sagittalElements);
+				mat->SetElement(0, 3, c[0]);
+			    slice2DExtent[0] = sliceExtent[2];
+			    slice2DExtent[1] = sliceExtent[3];
+			    slice2DExtent[2] = sliceExtent[4];
+			    slice2DExtent[3] = sliceExtent[5];
+			    sliceExtent[0] = 0;
+			    sliceExtent[1] = 0;
+			    sliceOrigin[0] = c[0];
+			    break;
 				break;
 			case 1:
-				viewExtent[0] = s[0]*5;
-				viewExtent[1] = s[2]*5;
+				mat->DeepCopy(coronalElements);
+				mat->SetElement(0, 3, c[1]);
+			    slice2DExtent[0] = sliceExtent[0];
+			    slice2DExtent[1] = sliceExtent[1];
+			    slice2DExtent[2] = sliceExtent[4];
+			    slice2DExtent[3] = sliceExtent[5];
+			    sliceExtent[2] = 0;
+			    sliceExtent[3] = 0;
+			    sliceOrigin[1] = c[1];
 				break;
 			default:
-				viewExtent[0] = s[0]*5;
-				viewExtent[1] = s[1]*5;
+				mat->DeepCopy(axialElements);
+				mat->SetElement(0, 3, c[2]);
+			    slice2DExtent[0] = sliceExtent[0];
+			    slice2DExtent[1] = sliceExtent[1];
+			    slice2DExtent[2] = sliceExtent[2];
+			    slice2DExtent[3] = sliceExtent[3];
+			    sliceExtent[4] = 0;
+			    sliceExtent[5] = 0;
+			    sliceOrigin[2] = c[2];
 				break;
 			}
+
+			std::cout << "Normal=(" << normal[0] << ", " << normal[1] << ", " << normal[2] << ")";
+			std::cout << ", origin=(" << sliceOrigin[0] << ", " << sliceOrigin[1] << ", " << sliceOrigin[2] << ")";
+			std::cout <<", extent=[" << sliceExtent[0] << ", " << sliceExtent[1] << ", " << sliceExtent[2] << ", ";
+			std::cout <<", " << sliceExtent[3] << ", " << sliceExtent[4] << ", " << sliceExtent[5] << "]." << std::endl;
+
+			reslice->SetResliceAxes(mat);
+			reslice->SetOutputExtent(slice2DExtent);
+			reslice->Update();
+
+			// imageSliceMapper->SetSliceNumber(idx[axis]);
+			// imageViewer->SetSlice(idx[axis]);
+
+
+//			for(size_t surf = 0; surf < rsurfaces.size(); surf++) {
+//				VTK_CREATE(vtkCutter, cutter);
+//#if VTK_MAJOR_VERSION <= 5
+//				cutter->SetInput(vpr[surf]);
+//#else
+//				cutter->SetInputData(vpr[surf]);
+//#endif
+//				VTK_CREATE(vtkPlane, cutPlane);
+//				cutPlane->SetOrigin(c[0], c[1], c[2]);
+//				cutPlane->SetNormal(normal);
+//				cutter->SetCutFunction(cutPlane);
+//				VTK_CREATE(vtkStripper, stripper);
+//				stripper->SetInputConnection(cutter->GetOutputPort()); // valid circle
+//				stripper->Update();
+//
+//				VTK_CREATE(vtkPolyDataMapper, contourmapper);
+//				contourmapper->SetInputConnection(stripper->GetOutputPort());
+//				VTK_CREATE(vtkActor, outlineActor);
+//				outlineActor->SetMapper(contourmapper);
+//				outlineActor->GetProperty()->SetColor(1.0,1.0,0.2);
+//				outlineActor->GetProperty()->SetLineWidth(2);
+//				renderer->AddActor(outlineActor);
+//			}
+//
+//			for(size_t surf = 0; surf < surfaces.size(); surf++) {
+//				VTK_CREATE(vtkCutter, cutter);
+//#if VTK_MAJOR_VERSION <= 5
+//				cutter->SetInput(vp[surf]);
+//#else
+//				cutter->SetInputData(vp[surf]);
+//#endif
+//				VTK_CREATE(vtkPlane, cutPlane);
+//				cutPlane->SetOrigin(c[0], c[1], c[2]);
+//				cutPlane->SetNormal(normal);
+//				cutter->SetCutFunction(cutPlane);
+//				VTK_CREATE(vtkStripper, stripper);
+//				stripper->SetInputConnection(cutter->GetOutputPort()); // valid circle
+//				stripper->Update();
+//				VTK_CREATE(vtkPolyDataMapper, contourmapper);
+//				contourmapper->SetInputConnection(stripper->GetOutputPort());
+//				VTK_CREATE(vtkActor, outlineActor);
+//				outlineActor->SetMapper(contourmapper);
+//				outlineActor->GetProperty()->SetColor(0.5,0.6,1.0);
+//				outlineActor->GetProperty()->SetLineWidth(2);
+//				renderer->AddActor(outlineActor);
+//			}
+
+			// VTK_CREATE(vtkImageSlice, imageSlice);
+			// imageSlice->GetProperty()->SetInterpolationTypeToNearest();
+			// imageSlice->SetMapper(imageSliceMapper);
+
+			// renderer->AddViewProp(imageSlice);
+			//renderer->AddRenderer
 
 			std::stringstream slicenumtext;
 			slicenumtext << idx[axis];
-			vtkSmartPointer<vtkTextActor> textActor = vtkSmartPointer<vtkTextActor>::New();
-			textActor->GetTextProperty()->SetFontSize(40);
+
 			textActor->SetPosition( int(0.25*viewExtent[0]), int(0.25*viewExtent[1]));
 			textActor->SetInput( slicenumtext.str().c_str() );
-			renderer->AddActor2D( textActor );
 
-	//		vtkSmartPointer<vtkCornerAnnotation> cornerAnnotation = vtkSmartPointer<vtkCornerAnnotation>::New();
-	//		cornerAnnotation->SetLinearFontScaleFactor(2);
-	//		cornerAnnotation->SetNonlinearFontScaleFactor(1);
-	//		cornerAnnotation->SetMaximumFontSize(30);
-	//		cornerAnnotation->SetText( 0, slicenumtext.str().c_str() );
-	//		renderer->AddViewProp(cornerAnnotation);
+//			vtkSmartPointer<vtkCamera> cam = renderer->GetActiveCamera();
+//			cam->SetPosition(normal);
+//			renderer->ResetCamera();
 
-			vtkSmartPointer<vtkCamera> cam = renderer->GetActiveCamera();
-			cam->SetPosition(normal);
-			renderer->ResetCamera();
-
-			vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-			// renderWindow->SetOffScreenRendering(1);
-			renderWindow->OffScreenRenderingOn();
-			renderWindow->AddRenderer(renderer);
-
-
-			// Setup render window interactor
-		//	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-		//	vtkSmartPointer<vtkInteractorStyleImage> style = vtkSmartPointer<vtkInteractorStyleImage>::New();
-		//	renderWindowInteractor->SetInteractorStyle(style);
-		//	// Render and start interaction
-		//	renderWindowInteractor->SetRenderWindow(renderWindow);
-		//	renderWindowInteractor->Initialize();
-		//
-		//	renderWindowInteractor->Start();
-		//
-			vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
-					vtkSmartPointer<vtkWindowToImageFilter>::New();
+			VTK_CREATE(vtkWindowToImageFilter, windowToImageFilter);
 			windowToImageFilter->SetInput(renderWindow);
 			windowToImageFilter->Update();
 
-			vtkSmartPointer<vtkPNGWriter> writer = vtkSmartPointer<vtkPNGWriter>::New();
+			VTK_CREATE(vtkPNGWriter, writer);
 			writer->SetInputConnection(windowToImageFilter->GetOutputPort());
 
 			std::stringstream ss;
