@@ -27,6 +27,7 @@ public:
 	typedef itk::SmartPointer<Self>                   Pointer;
 	typedef itk::SmartPointer< const Self >           ConstPointer;
 	typedef Json::Value                               JSONValue;
+	typedef typename OptimizerType::InternalComputationValueType InternalOptimizerValue;
 
 	itkTypeMacro( IterationJSONUpdate, IterationUpdate ); // Run-time type information (and related methods)
 	itkNewMacro( Self );
@@ -52,6 +53,13 @@ public:
 				itnode["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
 				itnode["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
 				itnode["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
+
+				typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
+				JSONValue enode = Json::Value( Json::arrayValue );
+				for (size_t r = 0; r < es.Size(); r++) {
+					enode.append(Json::Value(es[r]));
+				}
+				itnode["energy"]["region"] = enode;
     		}
     		itnode["descriptors"] = this->ParseTree( this->m_Optimizer->GetFunctional()->PrintFormattedDescriptors() );
     		itnode["step_size"] = this->m_Optimizer->GetStepSize();
@@ -77,14 +85,39 @@ public:
 				itnode["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
 				itnode["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
 				itnode["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
+
+				typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
+				JSONValue enode = Json::Value( Json::arrayValue );
+				for (size_t r = 0; r < es.Size(); r++) {
+					enode.append(Json::Value(es[r]));
+				}
+				itnode["energy"]["region"] = enode;
 			}
-			itnode["convergence"]["norm"] = this->m_Optimizer->GetCurrentValue();
+
+			InternalOptimizerValue val = this->m_Optimizer->GetConvergenceValue();
+			if( val < itk::NumericTraits<InternalOptimizerValue>::max() ) {
+				itnode["convergence"]["value"] = val;
+			} else {
+				itnode["convergence"]["value"] = "inf";
+			}
+			itnode["convergence"]["norm"] = this->m_Optimizer->GetCurrentNorm();
 			itnode["convergence"]["step_size"] = this->m_Optimizer->GetStepSize();
 			itnode["convergence"]["max_gradient"] = this->m_Optimizer->GetMaximumGradient();
 			itnode["convergence"]["momentum"] = this->m_Optimizer->GetMomentum();
 			itnode["speed"]["max"] = this->m_Optimizer->GetMaxSpeed();
 			itnode["speed"]["median"] = this->m_Optimizer->GetMeanSpeed();
 			itnode["speed"]["average"] = this->m_Optimizer->GetAvgSpeed();
+
+
+			std::vector< size_t > off = this->m_Optimizer->GetFunctional()->GetOffMaskNodes();
+			JSONValue offnode = Json::Value( Json::arrayValue );
+			for (size_t c = 0; c<off.size(); c++) {
+				offnode.append(Json::UInt64(off[c]));
+			}
+			itnode["off-grid"] = offnode;
+
+			itnode["diffemorphic"] = this->m_Optimizer->GetIsDiffeomorphic();
+			itnode["diffemorphism-forced"] = this->m_Optimizer->GetDiffeomorphismForced();
 		}
 
 		if( typeid( event ) == typeid( FunctionalModifiedEvent ) )  {
@@ -106,6 +139,14 @@ public:
 			itnode["summary"]["energy"]["total"] = this->m_Optimizer->GetCurrentEnergy();
 			itnode["summary"]["energy"]["data"] = this->m_Optimizer->GetFunctional()->GetValue();
 			itnode["summary"]["energy"]["regularization"] = this->m_Optimizer->GetCurrentRegularizationEnergy();
+
+			typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
+			JSONValue enode = Json::Value( Json::arrayValue );
+			for (size_t r = 0; r < es.Size(); r++) {
+				enode.append(Json::Value(es[r]));
+			}
+			itnode["summary"]["energy"]["region"] = enode;
+
 			itnode["summary"]["iterations"] = Json::Int (this->m_Optimizer->GetCurrentIteration());
 			itnode["summary"]["conv_status"] = this->m_Optimizer->GetStopCondition();
 			itnode["summary"]["stop_msg"] = this->m_Optimizer->GetStopConditionDescription();

@@ -74,14 +74,15 @@ m_LearningRate( 1.0 ),
 m_Momentum( 0.0 ),
 m_LastMaximumGradient(0.0),
 m_MaximumGradient(0.0),
-m_MinimumConvergenceValue( 1e-8 ),
-m_ConvergenceWindowSize( 15 ),
-m_ConvergenceValue( 0.0 ),
+m_MinimumConvergenceValue( 1e-5 ),
+m_ConvergenceWindowSize( 10 ),
+m_ConvergenceValue( itk::NumericTraits<InternalComputationValueType>::infinity() ),
 m_Stop( false ),
 m_StopCondition(MAXIMUM_NUMBER_OF_ITERATIONS),
-m_CurrentIteration( 0 ),
-m_NumberOfIterations( 250 ),
 m_DescriptorRecomputationFreq(0),
+m_ValueOscillations(0),
+m_ValueOscillationsMax(1),
+m_ValueOscillationsLast(0),
 m_UseDescriptorRecomputation(false),
 m_StepSize(1.0),
 m_MaxSpeed(0.0),
@@ -89,10 +90,14 @@ m_MeanSpeed(0.0),
 m_AvgSpeed(0.0),
 m_AutoStepSize(true),
 m_IsDiffeomorphic(true),
+m_DiffeomorphismForced(false),
+m_ForceDiffeomorphic(true),
 m_UseLightWeightConvergenceChecking(true),
 m_CurrentValue(itk::NumericTraits<MeasureType>::infinity()),
-m_LastValue(itk::NumericTraits<MeasureType>::infinity()),
-m_InitialValue(itk::NumericTraits<MeasureType>::infinity())
+m_CurrentEnergy(itk::NumericTraits<MeasureType>::infinity()),
+m_CurrentNorm(0.0),
+m_LastEnergy(itk::NumericTraits<MeasureType>::infinity()),
+m_InitialValue(0.0)
 {
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 0 );
@@ -103,8 +108,6 @@ void OptimizerBase<TFunctional>
 ::PrintSelf(std::ostream &os, itk::Indent indent) const {
 	Superclass::PrintSelf(os,indent);
 	os << indent << "Learning rate:" << this->m_LearningRate << std::endl;
-	os << indent << "Number of iterations: " << this->m_NumberOfIterations << std::endl;
-	os << indent << "Current iteration: " << this->m_CurrentIteration << std::endl;
 	os << indent << "Stop condition:" << this->m_StopCondition << std::endl;
 	os << indent << "Stop condition description: " << this->m_StopConditionDescription.str() << std::endl;
 }
@@ -149,7 +152,6 @@ void OptimizerBase<TFunctional>::Start() {
 //	}
 
 	this->InvokeEvent( itk::StartEvent() );
-
 	this->m_CurrentIteration++;
 	this->Resume();
 }
@@ -181,11 +183,11 @@ void OptimizerBase<TFunctional>::Resume() {
 	this->m_Stop = false;
 
 	while( ! this->m_Stop )	{
-		if( this->m_UseDescriptorRecomputation && ( this->m_CurrentIteration%this->m_DescriptorRecomputationFreq == 0 ) ) {
+		if( this->m_CurrentIteration > this->m_DescriptorRecomputationFreq  && this->m_UseDescriptorRecomputation && ( (this->m_CurrentIteration -1) %this->m_DescriptorRecomputationFreq == 0 ) ) {
 			this->m_Functional->UpdateDescriptors();
-			this->m_StepSize = this->m_StepSize * 1.0e-4;
+			// this->m_StepSize = this->m_StepSize * 1.0e-4;
 			this->InvokeEvent( FunctionalModifiedEvent() );
-			this->m_ConvergenceMonitoring->ClearEnergyValues();
+			// this->m_ConvergenceMonitoring->ClearEnergyValues();
 		}
 
 
@@ -230,7 +232,7 @@ void OptimizerBase<TFunctional>::Resume() {
 
 		try {
 			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
-			if (this->m_ConvergenceValue <= this->m_MinimumConvergenceValue) {
+			if (this->m_ConvergenceValue > 0.0 && this->m_ConvergenceValue <= this->m_MinimumConvergenceValue) {
 				this->m_StopConditionDescription << "Convergence checker passed at iteration " << this->m_CurrentIteration << ".";
 				this->m_StopCondition = Self::CONVERGENCE_CHECKER_PASSED;
 				this->Stop();
@@ -250,43 +252,45 @@ void OptimizerBase<TFunctional>::Resume() {
 			break;
 		}
 
-#ifndef NDEBUG
-		std::cout << "Speed=" << this->m_MaximumGradient << "/" << this->m_MaxSpeed << std::endl;
-#endif
-
-		if( this->m_MaximumGradient < 1e-8 ) {
+		if( this->m_MaximumGradient < 1e-5 ) {
 			this->m_StopConditionDescription << "Maximum gradient update changed below the minimum threshold.";
 			this->m_StopCondition = Self::STEP_TOO_SMALL;
 			this->Stop();
 			break;
 		}
 
-		if (this->m_LastMaximumGradient > 0.0){
-			double inc = 1.0 - (this->m_MaximumGradient / this->m_LastMaximumGradient);
-			if (inc < 0.0) {
-				inc *= 5;
-			}
-			this->m_Momentum = this->m_Momentum + this->m_LearningRate * inc;
-			if (this->m_Momentum <= -0.8) {
-				this->m_Momentum = -0.8;
+
+		if (this->m_InitialValue > 0.0){
+			float inc = this->m_LastEnergy / this->m_CurrentEnergy;
+			if (inc < 1.0) {
+				this->m_ValueOscillations += 1;
+				this->m_ValueOscillationsLast = this->m_CurrentIteration;
+			} else if (inc > 1.0) {
+				if ((this->m_CurrentIteration - this->m_ValueOscillationsLast) > this->m_ValueOscillationsMax) {
+					float factor = 1.02 * inc * (1.0 - this->m_CurrentIteration/ this->m_NumberOfIterations);
+					if (factor < 1.0) {
+						factor = 1.0;
+					}
+					this->m_ValueOscillations = 0;
+					this->m_StepSize *=  factor;
+				}
 			}
 
-			if (this->m_Momentum > 0.2) {
-				this->m_Momentum = 0.2;
-			} else {
-				this->m_StepSize = (1.0 + this->m_Momentum) * this->m_StepSize;
+			if (this->m_ValueOscillations >= this->m_ValueOscillationsMax) {
+				this->m_StepSize *= 0.5;
+				this->m_ValueOscillations = 0;
 			}
 		} else {
-			this->m_InitialValue = this->m_CurrentValue;
+			this->m_InitialValue = this->m_CurrentEnergy;
 		}
 
 		if( this->m_StepSize < 1e-8 ) {
-			this->m_StopConditionDescription << "Parameters field changed below the minimum threshold.";
+			this->m_StopConditionDescription << "step size fell below the minimum.";
 			this->m_StopCondition = Self::STEP_TOO_SMALL;
 			this->Stop();
 			break;
 		}
-		this->m_LastValue = this->m_CurrentValue;
+		this->m_LastEnergy = this->m_CurrentEnergy;
 		this->m_LastMaximumGradient = this->m_MaximumGradient;
 
 		this->InvokeEvent( itk::IterationEvent() );
@@ -316,6 +320,7 @@ void OptimizerBase<TFunctional>
 			("learning-rate,r", bpo::value< float > (), "learning rate to update step size")
 			("iterations,i", bpo::value< size_t > (), "number of iterations")
 			("convergence-window,w", bpo::value< size_t > (), "number of iterations of convergence window")
+			("convergence-thresh,t", bpo::value< double > (), "convergence value")
 			("grid-size,S", bpo::value< size_t > (), "grid size")
 			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)")
 			("convergence-energy", bpo::bool_switch(), "disables lazy convergence tracking: instead of fast computation of the mean norm of "
@@ -362,6 +367,11 @@ void OptimizerBase<TFunctional>
 	if( this->m_Settings.count( "convergence-window" ) ){
 			bpo::variable_value v = this->m_Settings["convergence-window"];
 			this->m_ConvergenceWindowSize = v.as< size_t >();
+	}
+
+	if( this->m_Settings.count( "convergence-thresh" ) ){
+			bpo::variable_value v = this->m_Settings["convergence-thresh"];
+			this->m_MinimumConvergenceValue = v.as< double >();
 	}
 
 	if (this->m_Settings.count("update-descriptors")) {

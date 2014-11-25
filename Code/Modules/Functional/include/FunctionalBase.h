@@ -131,6 +131,8 @@ public:
 	typedef typename ReferenceImageType::SizeType            ReferenceSizeType;
 	typedef typename ReferenceImageType::SpacingType         ReferenceSpacingType;
 
+	typedef itk::Array< MeasureType >                        MeasureArray;
+
 	typedef itk::SmoothingRecursiveGaussianImageFilter< ReferenceImageType >
 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 SmoothingFilterType;
 	typedef typename SmoothingFilterType::Pointer			 SmoothingFilterPointer;
@@ -204,6 +206,13 @@ public:
 	typedef typename ProbabilityMapType::Pointer             ProbabilityMapPointer;
 	typedef typename ProbabilityMapType::ConstPointer        ProbabilityMapConstPointer;
 	typedef std::vector< ProbabilityMapPointer >             ProbabilityMapList;
+
+	typedef itk::NearestNeighborInterpolateImageFunction
+			< ProbabilityMapType >                           MaskInterpolatorType;
+	typedef typename MaskInterpolatorType::Pointer           MaskInterpolatorPointer;
+	typedef itk::ResampleImageFilter
+			< ProbabilityMapType, ProbabilityMapType >       ProbmapResampleType;
+	typedef typename ProbmapResampleType::Pointer            ProbmapResamplePointer;
 
 	typedef typename itk::MeshSpatialObject<ContourType>     ContourSpatialObject;
 	typedef typename ContourSpatialObject::Pointer           ContourSpatialPointer;
@@ -295,8 +304,6 @@ public:
 	virtual void SetReferenceImage (const ReferenceImageType * _arg);
 
 	itkGetMacro( ApplySmoothing, bool );
-	itkSetMacro( Background, bool );
-	itkGetMacro( Background, bool );
 	itkGetMacro( Sigma, SigmaArrayType );
 	itkSetMacro( Sigma, SigmaArrayType );
 
@@ -319,6 +326,7 @@ public:
 	}
 
 	MeasureType GetValue();
+	itkGetConstMacro(RegionValue, MeasureArray);
 	VNLVectorContainer ComputeDerivative();
 	virtual void Initialize();
 	virtual void UpdateDescriptors() = 0;
@@ -326,6 +334,11 @@ public:
 
 	ROIConstPointer GetCurrentRegion( size_t idx );
 	itkGetConstObjectMacro( CurrentRegions, ROIType );
+
+	itkGetConstObjectMacro( BackgroundMask, ProbabilityMapType);
+	virtual void SetBackgroundMask (const ProbabilityMapType * _arg);
+
+	itkGetConstMacro( OffMaskNodes, std::vector<size_t>);
 
 	const ProbabilityMapType* GetCurrentMap( size_t idx );
 
@@ -365,10 +378,10 @@ protected:
 	bool m_EnergyUpdated;
 	bool m_RegionsUpdated;
 	bool m_ApplySmoothing;
-	bool m_Background;
-
+	bool m_UseBackground;
 
 	mutable MeasureType m_Value;
+	mutable MeasureArray m_RegionValue;
 	mutable MeasureType m_MaxEnergy;
 	FieldPointer m_ReferenceSamplingGrid;
 	ContourList m_CurrentContours;
@@ -381,6 +394,7 @@ protected:
 	ROIList m_ROIs;
 	ROIList m_CurrentROIs;
 	ProbabilityMapList m_CurrentMaps;
+	ProbabilityMapConstPointer m_BackgroundMask;
 	ROIPointer m_CurrentRegions;
 	ReferenceImageConstPointer m_ReferenceImage;
 	ContourOuterRegionsList m_OuterList;
@@ -395,9 +409,11 @@ protected:
 
 
 	InterpolatorPointer m_Interp;
+	MaskInterpolatorPointer m_MaskInterp;
 	PointDataContainerPointer m_CurrentDisplacements;
 	PointsVector m_NodesPosition;
-
+	size_t m_LastROI;
+	std::vector<size_t> m_OffMaskNodes;
 private:
 	FunctionalBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented

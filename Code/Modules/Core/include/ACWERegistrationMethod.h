@@ -126,6 +126,8 @@ public:
 	typedef typename FunctionalType::ContourPointer           ContourPointer;
 	typedef typename FunctionalType::ContourConstPointer      ContourConstPointer;
 	typedef std::vector< ContourConstPointer >                PriorsList;
+	typedef typename FunctionalType::ProbabilityMapType       FixedMaskType;
+	typedef typename FixedMaskType::ConstPointer              FixedMaskConstPointer;
 
 
 	typedef OptimizerBase< FunctionalType >                   OptimizerType;
@@ -177,6 +179,9 @@ public:
 
 	itkSetInputMacro( FixedImage, ReferenceImageType );
 	itkGetInputMacro( FixedImage, ReferenceImageType );
+
+	itkSetConstObjectMacro( FixedMask, FixedMaskType );
+	itkGetConstObjectMacro( FixedMask, FixedMaskType );
 
 	//itkSetMacro( NumberOfLevels, size_t );
 	void SetNumberOfLevels( size_t levels );
@@ -276,6 +281,8 @@ protected:
 private:
 	ACWERegistrationMethod( const Self & );
 	void operator=( const Self & );
+
+	FixedMaskConstPointer m_FixedMask;
 
 	size_t m_NumberOfLevels;
 	size_t m_CurrentLevel;
