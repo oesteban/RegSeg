@@ -99,7 +99,6 @@
 #include <itkImage.h>
 #include <itkImageFileReader.h>
 #include <itkRescaleIntensityImageFilter.h>
-#include <itkImageToVTKImageFilter.h>
 
 #include <vtkImageMagnify.h>
 #include <vtkImageViewer2.h>
@@ -114,6 +113,7 @@
 #include <vtkAxesActor.h>
 #include <vtkCubeAxesActor2D.h>
 
+#include "itkImageToVTKImageFilter.h"
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
