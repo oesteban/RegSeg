@@ -165,7 +165,7 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 	this->m_Transform->Interpolate();
 	this->SetUpdate();
 
-	this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetOffGridFieldValues() );
+	this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetPointValues() );
 }
 
 
@@ -495,7 +495,6 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 	//std::cout << "Speed=["<< speednorms.front() << ", " << p1 << ", "<< this->m_MeanSpeed << ", "<< p2 << ", " << this->m_MaxSpeed << "] | " << this->m_AvgSpeed << " | " << avg << std::endl;
 }
 
-
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	// Check functional exists and hold a reference image
@@ -503,9 +502,9 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 		itkExceptionMacro( << "functional must be set." );
 	}
 
-	this->m_Transform->SetControlPointsSize( this->m_GridSize );
+	this->m_Transform->SetControlGridSize( this->m_GridSize );
 	this->m_Transform->SetPhysicalDomainInformation( this->m_Functional->GetReferenceImage() );
-	this->m_Transform->SetOffGridPositions( this->m_Functional->GetNodesPosition() );
+	this->m_Transform->SetOutputPoints( this->m_Functional->GetNodesPosition() );
 
 	CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
 	this->m_GridSpacing = coeff[0]->GetSpacing();
@@ -569,7 +568,7 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 		this->m_InitialDisplacementField->FillBuffer( zerov );
 	}
 
-	this->m_TotalTransform->CopyGridInformation( coeff[0] );
+	this->m_TotalTransform->SetControlGridInformation( coeff[0] );
 	this->m_TotalTransform->SetOutputReference(this->m_InitialDisplacementField);
 	this->m_TotalTransform->SetField(this->m_InitialDisplacementField);
 	this->m_TotalTransform->ComputeCoefficients();

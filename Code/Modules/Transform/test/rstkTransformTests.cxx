@@ -90,7 +90,7 @@ public:
 
 
 		m_transform = Transform::New();
-		m_transform->CopyGridInformation( m_field );
+		m_transform->SetControlGridInformation( m_field );
 		m_transform->SetField( m_field );
 	}
 
@@ -228,12 +228,13 @@ TEST_F( TransformTests, InterpolateOneSample1 ) {
 
 	m_transform->ComputeCoefficients();
 	m_transform->UpdateField();
-	m_transform->AddOffGridPos( p );
+	// FIXME: replace addoffgridpos
+	// m_transform->AddOffGridPos( p );
 
 	m_transform->Interpolate();
 
 	Transform::WeightsMatrix m = m_transform->GetPhi();
-	VectorType v2 = m_transform->GetOffGridValue( 0 );
+	VectorType v2 = m_transform->GetPointValue( 0 );
 
 	ASSERT_NEAR( 0, (v1-v2).GetNorm(), 1.0e-5 );
 
@@ -252,13 +253,14 @@ TEST_F( TransformTests, InterpolateOneSample2 ) {
 		idx[i] = floor( (s[i]-1)*0.5 );
 	}
 	m_hr_field->TransformIndexToPhysicalPoint( idx, p );
-	m_transform->AddOffGridPos( p );
+	// FIXME: replace addoffgridpos
+	// m_transform->AddOffGridPos( p );
 	m_transform->Interpolate();
 
 	Transform::WeightsMatrix m = m_transform->GetPhi();
 
 	VectorType v1 = m_hr_field->GetPixel( idx );
-	VectorType v2 = m_transform->GetOffGridValue( 0 );
+	VectorType v2 = m_transform->GetPointValue( 0 );
 	ASSERT_NEAR( 0, (v1-v2).GetNorm(), 1.0e-5 );
 
 }
@@ -276,11 +278,12 @@ TEST_F( TransformTests, InterpolateOneSample3 ) {
 		idx[i] = floor( (s[i]-1)*0.5 );
 	}
 	m_hr_field->TransformIndexToPhysicalPoint( idx, p );
-	m_transform->AddOffGridPos( p );
+	// FIXME: replace addoffgridpos
+	//m_transform->AddOffGridPos( p );
 	m_transform->Interpolate();
 
 	VectorType v1 = m_hr_field->GetPixel( idx );
-	VectorType v2 = m_transform->GetOffGridValue( 0 );
+	VectorType v2 = m_transform->GetPointValue( 0 );
 	ASSERT_NEAR( 0, (v1-v2).GetNorm(), 1.0e-5 );
 
 }
@@ -298,7 +301,8 @@ TEST_F( TransformTests, InterpolateAllSamples1 ) {
 	for ( size_t i = 0; i<nSamples; i++ ) {
 		idx = m_hr_field->ComputeIndex( i );
 		m_hr_field->TransformIndexToPhysicalPoint( idx, p );
-		m_transform->AddOffGridPos( p );
+		// FIXME: replace addoffgridpos
+		// m_transform->AddOffGridPos( p );
 	}
 
 	m_transform->Interpolate();
@@ -315,7 +319,7 @@ TEST_F( TransformTests, InterpolateAllSamples1 ) {
 	double error = 0.0;
 	for( size_t r = 0; r<m.rows(); r++ ) {
 		row = m.get_row( r );
-		v2 = m_transform->GetOffGridValue( r );
+		v2 = m_transform->GetPointValue( r );
 		v1.Fill( 0.0 );
 
 		for( size_t i = 0; i<row.size(); i++ ) {
@@ -349,7 +353,8 @@ TEST_F( TransformTests, InterpolateAllSamples2 ) {
 	for ( size_t i = 0; i<nSamples; i++ ) {
 		idx = m_hr_field->ComputeIndex( i );
 		m_hr_field->TransformIndexToPhysicalPoint( idx, p );
-		m_transform->AddOffGridPos( p );
+		// FIXME: replace addoffgridpos
+		// m_transform->AddOffGridPos( p );
 	}
 
 	m_transform->Interpolate();
@@ -360,7 +365,7 @@ TEST_F( TransformTests, InterpolateAllSamples2 ) {
 	for ( size_t i = 0; i<nSamples; i++ ) {
 		idx = m_hr_field->ComputeIndex( i );
 		v1 = m_hr_field->GetPixel( idx );
-		v2 = m_transform->GetOffGridValue( i );
+		v2 = m_transform->GetPointValue( i );
 		error+= (v1-v2).GetNorm();
 	}
 	error/=nSamples;
@@ -385,12 +390,12 @@ TEST_F( TransformTests, CompareBSplineInterpolation ) {
 
 	VectorType v1, v2;
 	double error = 0.0;
-	for( size_t i = 0; i< m_transform->GetNumberOfSamples(); i++ ) {
+	for( size_t i = 0; i< m_transform->GetNumberOfPoints(); i++ ) {
 		v1 = *( rbuf + i );
 		v2 = *( tbuf + i );
 		error+= ( v2 - v1 ).GetNorm();
 	}
-	error*= (1.0/ m_transform->GetNumberOfSamples() );
+	error*= (1.0/ m_transform->GetNumberOfPoints() );
 	ASSERT_NEAR( 0.0, error, 1.0e-1 );
 
 }
@@ -412,17 +417,18 @@ TEST_F( TransformTests, RandomSampleTest ) {
 
 
 	TPointer tfm = Transform::New();
-	tfm->CopyGridInformation( m_transform->GetCoefficientsImages()[0] );
+	tfm->SetControlGridInformation( m_transform->GetCoefficientsImages()[0] );
 	tfm->SetCoefficientsImages( m_transform->GetCoefficientsImages() );
 
 	int rindex = 0;
 	std::vector< int > subsample;
 	Transform::PointType p;
 	for ( size_t i = 0; i<200; i++) {
-		rindex = rand() % (m_transform->GetNumberOfSamples() + 1);
+		rindex = rand() % (m_transform->GetNumberOfPoints() + 1);
 		subsample.push_back( rindex );
 		m_hr_field->TransformIndexToPhysicalPoint( m_hr_field->ComputeIndex(rindex) ,p );
-		tfm->AddOffGridPos( p );
+		// FIXME: replace addoffgridpos
+		//tfm->AddOffGridPos( p );
 	}
 
 	tfm->Interpolate();
@@ -432,7 +438,7 @@ TEST_F( TransformTests, RandomSampleTest ) {
 	double error = 0.0;
 	VectorType v1, v2;
 	for ( size_t i = 0; i<subsample.size(); i++ ) {
-		v1 = tfm->GetOffGridValue( i );
+		v1 = tfm->GetPointValue( i );
 		v2 = field->GetPixel( m_hr_field->ComputeIndex( subsample[i] ) );
 
 		//EXPECT_NEAR( v2.GetNorm(), v1.GetNorm(), 1.0e-3 );

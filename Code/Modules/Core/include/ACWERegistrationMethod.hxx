@@ -118,7 +118,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 
 		// Add JSON tree to the general logging facility
 		this->m_JSONRoot.append( this->m_CurrentLogger->GetJSONRoot() );
-		this->m_Transforms[this->m_CurrentLevel]->SetControlPointsSize( this->m_Optimizers[this->m_CurrentLevel]->GetTransform()->GetControlPointsSize() );
+		this->m_Transforms[this->m_CurrentLevel]->SetControlGridSize( this->m_Optimizers[this->m_CurrentLevel]->GetTransform()->GetControlGridSize() );
 		this->m_Transforms[this->m_CurrentLevel]->SetPhysicalDomainInformation( this->GetFixedImage() );
 		this->m_Transforms[this->m_CurrentLevel]->SetCoefficientsImages(
 						this->m_Optimizers[this->m_CurrentLevel]->GetTransform()->GetCoefficientsImages());
