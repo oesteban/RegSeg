@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-30 13:18:12
+# @Last Modified time: 2014-11-17 17:11:15
 
 import os
 import os.path as op
@@ -29,41 +29,50 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
     int_trait = traits.Either(None, traits.Int(0))
     bool_trait = traits.Either(None, traits.Bool(False))
 
-    f_smooth = traits.Either(float_trait, traits.List(float_trait),
-                             default=2.0, argstr='--smoothing %0.2f',
-                             desc='smoothing kernel')
-    f_decile = traits.Either(float_trait, traits.List(float_trait),
-                             default=1.0, argstr='-d %0.5f',
-                             desc=('set (decile) threshold to consider a '
-                                   'computed gradient as outlier (ranges '
-                                   '0.0-0.5)'))
+    f_smooth = traits.Either(
+        float_trait, traits.List(float_trait), default=2.0,
+        argstr='--smoothing %0.2f', desc='smoothing kernel')
+    f_decile = traits.Either(
+        float_trait, traits.List(float_trait), default=1.0, argstr='-d %0.5f',
+        desc=('set (decile) threshold to consider a computed gradient as '
+              'outlier (ranges 0.0-0.5)'))
 
     # Optimizer options
-    iterations = traits.Either(traits.Int(), traits.List(traits.Int()),
-                               default=50, argstr='-i %d',
-                               desc='number of iterations (per level)')
-    convergence_window = traits.Either(int_trait, traits.List(int_trait),
-                                       default=10, argstr='-w %d',
-                                       desc='convergence window in iterations')
-    convergence_energy = traits.Either(bool_trait, traits.List(bool_trait),
-                                       default=False,
-                                       argstr='--convergence-energy',
-                                       desc=('use lazy (default) or rigurous '
-                                             'energy tracking'))
-    grid_size = traits.Either(int_trait, traits.List(int_trait), default=8,
-                              desc=('bspline control points per dimension and '
-                                    'level'), argstr='-S %d')
-    descript_update = traits.Either(int_trait, traits.List(int_trait),
-                                    argstr='-u %d',
-                                    desc=('update descriptors every N '
-                                          'iterations, per level'))
-    step_size = traits.Either(float_trait, traits.List(float_trait),
-                              default=1.0, argstr='-s %0.5f',
-                              desc=('update step size in gradient descent '
-                                    'optimization'))
+    iterations = traits.Either(
+        traits.Int(), traits.List(traits.Int()), default=50, argstr='-i %d',
+        desc='number of iterations (per level)')
+    convergence_window = traits.Either(
+        int_trait, traits.List(int_trait), default=10, argstr='-w %d',
+        desc='convergence window in iterations')
 
-    regularization_trait = traits.Either(float_trait, traits.Tuple(float_trait,
-                                                                   float_trait, float_trait))
+    convergence_value = traits.Either(
+        float_trait, traits.List(float_trait), default=1e-5, argstr='-t %e',
+        desc='convergence value')
+
+    convergence_energy = traits.Either(
+        bool_trait, traits.List(bool_trait), default=False,
+        argstr='--convergence-energy',
+        desc=('use lazy (default) or rigurous energy tracking'))
+
+    use_background = traits.Either(
+        bool_trait, traits.List(bool_trait), default=False,
+        argstr='--use-background', desc=('do not compute background'
+                                         'descriptors'))
+    descript_update = traits.Either(
+        int_trait, traits.List(int_trait), argstr='-u %d',
+        desc=('update descriptors every N iterations, per level'))
+    step_size = traits.Either(
+        float_trait, traits.List(float_trait), default=1.0, argstr='-s %0.5f',
+        desc=('update step size in gradient descent optimization'))
+
+    gridsize_trait = traits.Either(
+        int_trait, traits.Tuple(int_trait, int_trait, int_trait))
+    grid_size = traits.Either(
+        gridsize_trait, traits.List(gridsize_trait), default=8, argstr='-S %d',
+        desc=('bspline control points per dimension and level'))
+
+    regularization_trait = traits.Either(
+        float_trait, traits.Tuple(float_trait, float_trait, float_trait))
     alpha = traits.Either(
         regularization_trait, traits.List(regularization_trait), default=1.0,
         argstr='-a %0.5f', desc='alpha scalar')
@@ -76,23 +85,23 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
 
 
 class ACWERegInputSpec(ACWERegInputGroupSpec):
-    in_fixed = InputMultiPath(File(exists=True), argstr="-F %s",
-                              mandatory=True,
-                              desc=('target volume/image(s) contrast to '
-                                    'register contours to'))
-    in_prior = InputMultiPath(File(exists=True), argstr="-M %s",
-                              mandatory=True,
-                              desc=('vtk contours that will be registered to '
-                                    'in_fixed. Should be given in hierarchical'
-                                    ' order (from top to bottom, last is bg)'))
-    levels = traits.Int(1, desc='number of levels in multi-resolution \
-                        schemes', argstr="-L %d")
-    out_prefix = traits.Str("regseg", desc='output files prefix',
-                            argstr="-o %s", usedefault=True)
+    in_fixed = InputMultiPath(
+        File(exists=True), argstr='-F %s', mandatory=True,
+        desc=('target volume/image(s) contrast to register contours to'))
+
+    in_prior = InputMultiPath(
+        File(exists=True), argstr='-P %s', mandatory=True,
+        desc=('vtk contours that will be registered to in_fixed. Should be '
+              'given in hierarchical order (from top to bottom, last is bg)'))
+    in_mask = File(exists=True, argstr='-M %s', desc='fixed mask file')
+
+    levels = traits.Int(
+        1, argstr='-L %d', desc='number of levels in multi-resolution schemes')
+    out_prefix = traits.Str(
+        'regseg', argstr='-o %s', usedefault=True, desc='output files prefix')
     log_filename = File(desc='filepath for log file', argstr='-l %s')
-    images_verbosity = traits.Int(1, argstr='-v %d',
-                                  desc=('verbosity of intermediate results '
-                                        'output'))
+    images_verbosity = traits.Int(
+        1, argstr='-v %d', desc=('verbosity of intermediate results output'))
 
 
 class ACWERegOutputSpec(TraitedSpec):
@@ -117,7 +126,10 @@ class ACWEReg(ANTSCommand):
     Example
     -------
     >>> regseg = ACWEReg()
-    >>>
+    >>> regseg.inputs.in_fixed = ['T1w.nii.gz', 'T2w.nii.gz']
+    >>> regseg.inputs.in_pior = ['csf.vtk', 'white_lh.vtk', 'white_rh.vtk',
+    ...                          'pial_lh.vtk', 'pial_rh.vtk']
+    >>> regseg.cmdline
     'regseg -F T1w.nii.gz T2w.nii.gz -M csf.vtk white_lh.vtk white_rh.vtk \
 pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
 -g 8 ]'
@@ -208,7 +220,7 @@ pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
             retval.append(' ' + argval)
 
         retval.append(']')
-        return "".join(retval)
+        return ''.join(retval)
 
     def _format_group_arg(self, name, spec, value):
         if isinstance(value, bool) or isinstance(value, np.bool_):

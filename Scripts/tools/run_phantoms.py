@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-27 18:51:37
+# @Last Modified time: 2014-11-04 15:55:13
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -33,7 +33,7 @@ def phantoms_wf(options):
     from nipype.interfaces import utility as niu
     from pyacwereg.workflows import evaluation as ev
 
-    subject_id = options.subject_id
+    subject_id = '%s_snr%03d' % (options.shape, options.snr)
     subject_dir = op.join(options.data_dir, subject_id)
 
     bs = ev.bspline(name=options.name)
@@ -44,6 +44,11 @@ def phantoms_wf(options):
 
     bs.inputs.inputnode.grid_size = grid_size
     bs.inputs.inputnode.subject_id = subject_id
+    bs.inputs.inputnode.lo_matrix = options.lo_matrix
+    bs.inputs.inputnode.hi_matrix = options.hi_matrix
+    bs.inputs.inputnode.shape = options.shape
+    bs.inputs.inputnode.snr = options.snr
+    bs.inputs.inputnode.cortex = options.no_cortex
 
     if options.out_csv is None:
         bs.inputs.inputnode.out_csv = op.join(
@@ -68,11 +73,22 @@ if __name__ == '__main__':
         default=op.join(os.getenv('NEURO_DATA_HOME', os.getcwd()), 'phantoms'),
         help='directory where subjects are found')
     g_input.add_argument(
-        '-s', '--subject_id', action='store', default='S001',
+        '-s', '--shape', action='store', default='gyrus',
         help='selects phantom\'s shape model')
     g_input.add_argument(
-        '-n', '--noise_snr', action='store', default=30, type=int,
-        help='selects phantom\'s number of regions')
+        '-n', '--snr', action='store', default=400, type=int,
+        help='generate signal with certain SNR')
+    g_input.add_argument(
+        '--no_cortex', action='store_false',
+        help='do not generate cortex-like crust')
+
+    g_input.add_argument(
+        '--lo_matrix', action='store', default=51, type=int,
+        help='low-resolution matrix size')
+    g_input.add_argument(
+        '--hi_matrix', action='store', default=101, type=int,
+        help='hi-resolution matrix size')
+
     g_input.add_argument(
         '-g', '--grid_size', action='store', default=[6, 6, 6], nargs='+',
         type=int, help='number of control points')
@@ -82,6 +98,7 @@ if __name__ == '__main__':
     g_input.add_argument(
         '-N', '--name', action='store', default='PhantomTests',
         help='default workflow name, it will create a new folder')
+
     g_output = parser.add_argument_group('Outputs')
     g_output.add_argument(
         '-o', '--out_csv', action='store', help='output summary csv file')

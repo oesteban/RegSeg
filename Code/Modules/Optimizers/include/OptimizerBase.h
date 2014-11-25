@@ -112,14 +112,15 @@ public:
 	/** Stop condition internal string type */
 	typedef std::ostringstream                                      StopConditionDescriptionType;
 
-	typedef size_t                                                  SizeValueType;
 	typedef itk::FixedArray< double, Dimension >                    ControlPointsGridSpacingType;
 
+	typedef size_t                                                  SizeValueType;
 	typedef typename Superclass::ScalesType                         ScalesType;
 
 	/** Functional definitions */
 	typedef typename FunctionalType::Pointer                        FunctionalPointer;
 	typedef typename FunctionalType::MeasureType                    MeasureType;
+	typedef itk::Array< MeasureType >                               MeasureArray;
 	typedef typename FunctionalType::PointType                      PointType;
 	typedef typename FunctionalType::VectorType                     VectorType;
 	typedef typename FunctionalType::PointValueType                 PointValueType;
@@ -187,16 +188,8 @@ public:
 	/** Get stop condition enum */
 	itkGetConstReferenceMacro(StopCondition, StopConditionType);
 
-	/** Set the number of iterations. */
-	itkSetMacro(NumberOfIterations, SizeValueType);
-
-	/** Get the number of iterations. */
-	itkGetConstReferenceMacro(NumberOfIterations, SizeValueType);
-
-	/** Get the current iteration number. */
-	itkGetConstMacro(CurrentIteration, SizeValueType);
-
 	itkGetConstMacro(CurrentValue, MeasureType);
+	itkGetConstMacro(CurrentNorm, MeasureType);
 
 	itkSetMacro( DescriptorRecomputationFreq, SizeValueType );
 	itkGetConstMacro( DescriptorRecomputationFreq, SizeValueType );
@@ -210,6 +203,10 @@ public:
 	itkGetConstMacro( MaxDisplacement, VectorType );
 
 	itkGetConstMacro( IsDiffeomorphic, bool );
+	itkGetConstMacro( DiffeomorphismForced, bool );
+
+	itkGetConstMacro( ForceDiffeomorphic, bool );
+	itkSetMacro( ForceDiffeomorphic, bool );
 
 	itkSetMacro(LearningRate, InternalComputationValueType);               // Set the learning rate
 	itkGetConstReferenceMacro(LearningRate, InternalComputationValueType); // Get the learning rate
@@ -303,9 +300,10 @@ protected:
 	bool                          m_Stop;
 	StopConditionType             m_StopCondition;
 	StopConditionDescriptionType  m_StopConditionDescription;
-	SizeValueType                 m_CurrentIteration;
-	SizeValueType                 m_NumberOfIterations;
 	SizeValueType                 m_DescriptorRecomputationFreq;
+	SizeValueType                 m_ValueOscillations;
+	SizeValueType                 m_ValueOscillationsMax;
+	SizeValueType                 m_ValueOscillationsLast;
 	bool                          m_UseDescriptorRecomputation;
 
 	InternalComputationValueType  m_StepSize;
@@ -314,12 +312,18 @@ protected:
 	InternalComputationValueType  m_AvgSpeed;
 	bool                          m_AutoStepSize;
 	bool                          m_IsDiffeomorphic;
+	bool                          m_ForceDiffeomorphic;
+	bool                          m_DiffeomorphismForced;
 	bool                          m_UseLightWeightConvergenceChecking;
 
 	/* Energy tracking */
 	MeasureType                  m_CurrentValue;
-	MeasureType                  m_LastValue;
+	MeasureType                  m_CurrentEnergy;
+	MeasureType                  m_CurrentNorm;
+	MeasureType                  m_LastEnergy;
 	MeasureType                  m_InitialValue;
+	MeasureArray                 m_ValueWindow;
+
 
 	//ScalesType                   m_Scales;
 	ControlPointsGridSizeType    m_GridSize;

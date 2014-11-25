@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-10-23 14:43:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-24 09:50:52
+# @Last Modified time: 2014-11-04 15:56:48
 
 import os
 import os.path as op
@@ -51,8 +51,10 @@ def generate_phantom(name='PhantomGeneration'):
 
     surf0 = extract_surface('GenSurf0')
     surf0.inputs.inputnode.labels = [1]
+    surf0.inputs.inputnode.name = '00.white'
     surf1 = extract_surface('GenSurf1')
     surf1.inputs.inputnode.labels = [1]
+    surf1.inputs.inputnode.name = '01.pial'
     msurf = pe.Node(niu.Merge(2), name='MergeSurfs')
 
     dist = bspline_deform(n_tissues=0)
@@ -63,7 +65,7 @@ def generate_phantom(name='PhantomGeneration'):
     pve = pe.MapNode(pip.DownsampleAveraging(),
                      iterfield=['in_file'], name='CreatePVE')
     msk = pe.Node(niu.Function(function=_bin_n_msk, input_names=['in_files'],
-                  output_names=['out_file']), name='binNmsk')
+                               output_names=['out_file']), name='binNmsk')
     sels = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
                    name='SeparateTissue')
     signal0 = pe.Node(pip.SimulateSMRI(), name='Simulate0')

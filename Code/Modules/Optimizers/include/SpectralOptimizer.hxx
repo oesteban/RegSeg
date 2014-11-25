@@ -46,6 +46,7 @@
 #include "SpectralOptimizer.h"
 #include <algorithm>
 #include <vector>
+#include <vnl/vnl_vector.h>
 #include <vnl/vnl_math.h>
 #include <vnl/vnl_matrix.h>
 #include <vnl/vnl_diag_matrix.h>
@@ -148,21 +149,22 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::PostIteration() {
 	/* Update the deformation field */
-	this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
-	this->m_Transform->UpdateField();
-	//this->UpdateField();
-
-	this->SetUpdate();
 	this->ComputeIterationSpeed();
 
-	if ( this->m_UseLightWeightConvergenceChecking ) {
-		this->m_CurrentValue = log( 1.0 + this->m_MaxSpeed );
+	this->m_CurrentNorm = this->m_MeanSpeed;
+
+	if (this->m_UseLightWeightConvergenceChecking) {
+		this->m_CurrentEnergy = this->m_MeanSpeed;
 	} else {
-		this->m_CurrentValue = this->GetCurrentEnergy();
+		this->m_CurrentEnergy = this->GetCurrentEnergy();
 	}
 
-
+	this->m_CurrentValue = this->m_CurrentEnergy;
+	this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
+	this->m_Transform->UpdateField();
 	this->m_Transform->Interpolate();
+	this->SetUpdate();
+
 	this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetOffGridFieldValues() );
 }
 
@@ -432,39 +434,65 @@ SpectralOptimizer<TFunctional>::UpdateField() {
 template< typename TFunctional >
 void
 SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
-	const VectorType* fnextBuffer = this->m_CurrentCoefficients->GetBufferPointer();
-	VectorType* fBuffer = this->m_LastCoeff->GetBufferPointer();
-	size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
+	VectorType* fBuffer = this->m_CurrentCoefficients->GetBufferPointer();
+	size_t nPix = this->m_CurrentCoefficients->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	PointValueType* fnextBuffer[Dimension];
+	for(size_t d = 0; d < Dimension; d++)
+		fnextBuffer[d] = this->m_NextCoefficients[d]->GetBufferPointer();
 
 	InternalComputationValueType totalNorm = 0;
 	VectorType t0,t1;
 	InternalComputationValueType diff = 0.0;
 
+	this->m_DiffeomorphismForced = false;
 	this->m_IsDiffeomorphic = true;
 	std::vector< InternalComputationValueType > speednorms;
+	std::vector< double > speedangs;
+	typedef vnl_vector< PointValueType > VNLVector;
+	VNLVector v(Dimension);
 	for (size_t pix = 0; pix < nPix; pix++ ) {
 		t0 = *(fBuffer+pix);
-		t1 = *(fnextBuffer+pix);
-		diff = ( t1 - t0 ).GetNorm();
-		totalNorm += diff;
-		speednorms.push_back(diff);
-		*(fBuffer+pix) = t1; // Copy current to last, once evaluated
+		for( size_t d = 0; d<Dimension; d++) {
+			t1[d] = *(fnextBuffer[d]+pix);
 
-		if ( this->m_IsDiffeomorphic ) {
-			for( size_t i = 0; i<Dimension; i++) {
-				if ( fabs(t1[i]) > this->m_MaxDisplacement[i] ) {
+			if ( fabs(t1[d]) > this->m_MaxDisplacement[d] ) {
+				if (this->m_ForceDiffeomorphic) {
+					t1[d] = this->m_MaxDisplacement[d] * (t1[d]>0)?1.0:-1.0;
+					this->m_DiffeomorphismForced = true;
+					*(fnextBuffer[d]+pix) = t1[d];
+				} else {
 					this->m_IsDiffeomorphic = false;
 				}
 			}
+
 		}
+		diff = ( t1 - t0 ).GetNorm();
+		totalNorm += diff;
+
+		//diff*= (angle( t1.GetVnlVector(), t0.GetVnlVector())> 2.8)?-1.0:1.0;
+		speednorms.push_back(diff);
 	}
-
 	this->m_RegularizationEnergyUpdated = (totalNorm==0);
-
 	std::sort(speednorms.begin(), speednorms.end());
 	this->m_MaxSpeed = speednorms.back();
 	this->m_MeanSpeed = speednorms[int(0.5*(speednorms.size()-1))];
+	//this->m_AvgSpeed = std::accumulate(speednorms.begin(), speednorms.end(), 0.0) / nPix;
 	this->m_AvgSpeed = totalNorm / nPix;
+
+	//size_t p1_idx = int(0.15*(speednorms.size()-1));
+	//size_t p2_idx = int(0.85*(speednorms.size()-1));
+	//double p1 =  speednorms[p1_idx];
+	//double p2 =  speednorms[p2_idx];
+	//int size =  p2_idx - p1_idx;
+    //
+	//double avg = 0.0;
+    //
+	//for(size_t i = p1_idx; i <= p2_idx; i++) {
+	//	avg+=speednorms[i];
+	//}
+	//avg = avg / size;
+	//std::cout << "Speed=["<< speednorms.front() << ", " << p1 << ", "<< this->m_MeanSpeed << ", "<< p2 << ", " << this->m_MaxSpeed << "] | " << this->m_AvgSpeed << " | " << avg << std::endl;
 }
 
 

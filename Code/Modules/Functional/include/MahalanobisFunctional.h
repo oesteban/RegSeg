@@ -149,16 +149,14 @@ public:
 
 	std::string PrintFormattedDescriptors();
 protected:
-	MahalanobisFunctional(){}
+	MahalanobisFunctional():m_UseRobustEstimators(true), Superclass(){}
 	~MahalanobisFunctional(){}
-
 	void PrintSelf( std::ostream& os, itk::Indent indent) const;
 
-	//void InitializeSamplingGrid( void );
-
 	inline MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roi, bool bias ) const;
-
 	ParametersType UpdateParametersOfRegion( const size_t idx );
+	ParametersType UpdateParametersOfRegionGeneral( const size_t idx );
+	ParametersType UpdateParametersOfRegionRobust( const size_t idx );
 	ParametersList m_Parameters;
 
 private:
@@ -166,6 +164,8 @@ private:
 	void operator=(const Self &); // purposely not implemented
 
 	bool ParametersInitialized();
+
+	bool m_UseRobustEstimators;
 
 }; // End of class MahalanobisFunctional
 } // End of namespace
