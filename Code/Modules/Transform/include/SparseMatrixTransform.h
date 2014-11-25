@@ -208,7 +208,6 @@ public:
 	virtual WeightsMatrix  GetPhi ();
 	//itkGetConstMacro( Phi, WeightsMatrix );
 	itkGetConstMacro( S, WeightsMatrix );
-	itkGetConstMacro( PointValues, DimensionParametersContainer );
 
 
     itkSetObjectMacro( Field, FieldType );
