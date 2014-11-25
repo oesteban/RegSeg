@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
 
 	if (vm.count("write-field") && vm["write-field"].as<bool>() ) {
 		FieldWriterPointer w = FieldWriter::New();
-		w->SetInput(field);
+		w->SetInput(input_field);
 		w->SetFileName((outPrefix + "_field.nii.gz").c_str());
 		w->Update();
 	}
@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
 
 
 			tf_mesh = BSplineTransform::New();
-			tf_mesh->SetControlPointsSize(size);
+			tf_mesh->SetControlGridSize(size);
 			tf_mesh->SetPhysicalDomainInformation( field );
 			tf_mesh->SetField( field );
 			tf_mesh->ComputeCoefficients();
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
 
 				MeshPointType p;
 				while ( p_it!=p_end ) {
-					tf_mesh->AddOffGridPos(p_it.Value());
+					//tf_mesh->AddOffGridPos(p_it.Value());
 					++p_it;
 				}
 			}
@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
 				MeshPointType p;
 				while ( p_it!=p_end ) {
 					p = p_it.Value();
-					p_it.Value() += tf_mesh->GetOffGridValue(pointId);
+					p_it.Value() += tf_mesh->GetPointValue(pointId);
 					++p_it;
 				}
 

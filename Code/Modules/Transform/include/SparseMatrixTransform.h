@@ -45,6 +45,7 @@
 
 #include <functional>
 
+#include "CachedMatrixTransform.h"
 #include <itkTransform.h>
 #include <itkPoint.h>
 #include <itkVector.h>
@@ -68,136 +69,123 @@
 namespace rstk {
 
 template< class TScalar, unsigned int NDimensions = 3u >
-class SparseMatrixTransform: public itk::DisplacementFieldTransform< TScalar, NDimensions >
+class SparseMatrixTransform: public rstk::CachedMatrixTransform< TScalar, NDimensions >
 {
 public:
     /* Standard class typedefs. */
-    typedef SparseMatrixTransform             Self;
-    typedef itk::DisplacementFieldTransform< TScalar, NDimensions > Superclass;
-    typedef itk::SmartPointer< Self >         Pointer;
-    typedef itk::SmartPointer< const Self >   ConstPointer;
-    
-    itkTypeMacro( SparseMatrixTransform, Transform );
-    itkNewMacro( Self );
+    typedef SparseMatrixTransform                                  Self;
+    typedef rstk::CachedMatrixTransform< TScalar, NDimensions >    Superclass;
+    typedef itk::SmartPointer< Self >                              Pointer;
+    typedef itk::SmartPointer< const Self >                        ConstPointer;
     
     itkStaticConstMacro( Dimension, unsigned int, NDimensions );
+    itkTypeMacro( SparseMatrixTransform, CachedMatrixTransform );
+    itkNewMacro( Self );
     
-    typedef typename Superclass::ScalarType          ScalarType;
-    typedef itk::Point< ScalarType, Dimension >      PointType;
-    typedef itk::Vector< ScalarType, Dimension >     VectorType;
-    typedef itk::Matrix
-    	    < ScalarType, Dimension, Dimension >     MatrixType;
-    
-    typedef itk::KernelFunctionBase<ScalarType>      KernelFunctionType;
-    typedef typename KernelFunctionType::Pointer     KernelFunctionPointer;
-    
-    typedef vnl_sparse_matrix< ScalarType >          WeightsMatrix;
-    typedef typename WeightsMatrix::row              SparseMatrixRowType;
-    typedef vnl_vector< ScalarType >                 DimensionVector;
-    typedef vnl_matrix< ScalarType >                 DimensionMatrixType;
+    typedef typename Superclass::ScalarType                        ScalarType;
+    typedef typename Superclass::PointType                         PointType;
+    typedef typename Superclass::VectorType                        VectorType;
+    typedef typename Superclass::MatrixType                        MatrixType;
 
-    typedef VNLSparseLUSolverTraits< double >        SolverTypeTraits;
-    typedef typename SolverTypeTraits::SolverType    SolverType;
-    typedef typename SolverTypeTraits::MatrixType    SolverMatrix;
-    typedef typename SolverTypeTraits::VectorType    SolverVector;
-    typedef typename SolverMatrix::pair_t            SolverPair;
+    typedef typename Superclass::WeightsMatrix                     WeightsMatrix;
+    typedef typename Superclass::SparseMatrixRowType               SparseMatrixRowType;
+    typedef typename Superclass::DimensionVector                   DimensionVector;
+    typedef typename Superclass::DimensionMatrixType               DimensionMatrixType;
+
+    typedef typename Superclass::SolverTypeTraits                  SolverTypeTraits;
+    typedef typename Superclass::SolverType                        SolverType;
+    typedef typename Superclass::SolverMatrix                      SolverMatrix;
+    typedef typename Superclass::SolverVector                      SolverVector;
+    typedef typename Superclass::SolverPair                        SolverPair;
     
-    typedef itk::DisplacementFieldTransform< ScalarType, Dimension > DisplacementFieldTransformType;
-    typedef typename DisplacementFieldTransformType::Pointer         DisplacementFieldTransformPointer;
-    
-    typedef itk::FixedArray< DimensionVector, NDimensions > DimensionParametersContainer;
-    
-    typedef std::vector< PointType >                 PointsList;
-    
-    typedef itk::Matrix< ScalarType, Dimension, Dimension >        JacobianType;
-    
-    typedef itk::DefaultStaticMeshTraits<TScalar, NDimensions, NDimensions, TScalar, TScalar> PointSetTraitsType;
-    typedef itk::PointSet<PointType, NDimensions, PointSetTraitsType>                                     PointSetType;
-    typedef typename PointSetType::Pointer           PointSetPointer;
+    typedef typename Superclass::DisplacementFieldTransformType    DisplacementFieldTransformType;
+    typedef typename Superclass::DisplacementFieldTransformPointer DisplacementFieldTransformPointer;
+    typedef typename Superclass::DimensionParametersContainer      DimensionParametersContainer;
+    typedef typename Superclass::PointsList                        PointsList;
+    typedef typename Superclass::JacobianType                      JacobianType;
+    typedef typename Superclass::PointSetTraitsType                PointSetTraitsType;
+    typedef typename Superclass::PointSetType                      PointSetType;
+    typedef typename Superclass::PointSetPointer                   PointSetPointer;
 
 
     /** Standard coordinate point type for this class. */
-    typedef typename Superclass::InputPointType  InputPointType;
-    typedef typename Superclass::OutputPointType OutputPointType;
+    typedef typename Superclass::InputPointType                    InputPointType;
+    typedef typename Superclass::OutputPointType                   OutputPointType;
 
     /** Standard vector type for this class. */
-    typedef typename Superclass::InputVectorType  InputVectorType;
-    typedef typename Superclass::OutputVectorType OutputVectorType;
+    typedef typename Superclass::InputVectorType                   InputVectorType;
+    typedef typename Superclass::OutputVectorType                  OutputVectorType;
 
     /** Standard covariant vector type for this class */
-    typedef typename Superclass::InputCovariantVectorType  InputCovariantVectorType;
-    typedef typename Superclass::OutputCovariantVectorType OutputCovariantVectorType;
+    typedef typename Superclass::InputCovariantVectorType          InputCovariantVectorType;
+    typedef typename Superclass::OutputCovariantVectorType         OutputCovariantVectorType;
 
     /** Standard vnl_vector type for this class. */
-    typedef typename Superclass::InputVnlVectorType  InputVnlVectorType;
-    typedef typename Superclass::OutputVnlVectorType OutputVnlVectorType;
+    typedef typename Superclass::InputVnlVectorType                InputVnlVectorType;
+    typedef typename Superclass::OutputVnlVectorType               OutputVnlVectorType;
 
-    typedef itk::FixedArray< ScalarType, itkGetStaticConstMacro(Dimension) >    ArrayType;
-
-    typedef itk::Image< ScalarType, Dimension >                      CoefficientsImageType;
-    typedef typename CoefficientsImageType::Pointer                  CoeffImagePointer;
-    typedef typename CoefficientsImageType::ConstPointer             CoeffImageConstPointer;
-    typedef itk::FixedArray< CoeffImagePointer, Dimension >          CoefficientsImageArray;
+    typedef typename Superclass::ArrayType                         ArrayType;
+    typedef typename Superclass::CoefficientsImageType             CoefficientsImageType;
+    typedef typename Superclass::CoeffImagePointer                 CoeffImagePointer;
+    typedef typename Superclass::CoeffImageConstPointer            CoeffImageConstPointer;
+    typedef typename Superclass::CoefficientsImageArray            CoefficientsImageArray;
 
     /** Typedefs for specifying the extent of the grid. */
-    typedef itk::ImageBase< Dimension >                   DomainBase;
-    typedef typename DomainBase::Pointer                  DomainPointer;
-    typedef itk::ImageRegion< Dimension >                 RegionType;
-    typedef typename RegionType::IndexType                IndexType;
-    typedef typename DomainBase::SizeType                 SizeType;
-    typedef typename CoefficientsImageType::SpacingType   SpacingType;
-    typedef typename CoefficientsImageType::DirectionType DirectionType;
-    typedef typename CoefficientsImageType::PointType     OriginType;
-    typedef typename CoefficientsImageType::SpacingType   PhysicalDimensionsType;
-    typedef itk::ContinuousIndex< ScalarType, Dimension>  ContinuousIndexType;
-    typedef typename IndexType::OffsetType                OffsetType;
-    typedef typename OffsetType::OffsetValueType          OffsetValueType;
-    typedef OffsetValueType                               OffsetTableType[Dimension+1];
+    typedef typename Superclass::DomainBase                        DomainBase;
+    typedef typename Superclass::DomainPointer                     DomainPointer;
+    typedef typename Superclass::RegionType                        RegionType;
+    typedef typename Superclass::IndexType                         IndexType;
+    typedef typename Superclass::SizeType                          SizeType;
+    typedef typename Superclass::SpacingType                       SpacingType;
+    typedef typename Superclass::DirectionType                     DirectionType;
+    typedef typename Superclass::OriginType                        OriginType;
+    typedef typename Superclass::PhysicalDimensionsType            PhysicalDimensionsType;
+    typedef typename Superclass::ContinuousIndexType               ContinuousIndexType;
+    typedef typename Superclass::OffsetType                        OffsetType;
+    typedef typename Superclass::OffsetValueType                   OffsetValueType;
+    typedef typename Superclass::OffsetTableType                   OffsetTableType;
 
-    typedef itk::Image< VectorType, Dimension >           FieldType;
-    typedef typename FieldType::Pointer                   FieldPointer;
-    typedef typename FieldType::ConstPointer              FieldConstPointer;
-    //typedef typename std::vector< FieldPointer >          DerivativesType;
+    typedef typename Superclass::FieldType                         FieldType;
+    typedef typename Superclass::FieldPointer                      FieldPointer;
+    typedef typename Superclass::FieldConstPointer                 FieldConstPointer;
+    //typedef typename std::vector< FieldPointer >                     DerivativesType;
 
     /** Type of the input parameters. */
-    typedef typename Superclass::ParametersType          ParametersType;
-    typedef typename Superclass::ParametersValueType     ParametersValueType;
+    typedef typename Superclass::ParametersType            ParametersType;
+    typedef typename Superclass::ParametersValueType       ParametersValueType;
 
     /** Define the internal parameter helper used to access the field */
-    typedef itk::ImageVectorOptimizerParametersHelper
-    		      < ScalarType, Dimension, Dimension>    OptimizerParametersHelperType;
-    typedef itk::ImageHelper< Dimension, Dimension >     Helper;
-    typedef itk::ImageTransformHelper< Dimension, Dimension - 1, Dimension - 1, ScalarType, ScalarType > TransformHelper;
+    typedef typename Superclass::OptimizerParametersHelperType OptimizerParametersHelperType;
+    typedef typename Superclass::Helper                        Helper;
+    typedef typename Superclass::TransformHelper               TransformHelper;
 
-    itkSetMacro( ControlPointsSize, SizeType );
-    itkGetConstMacro( ControlPointsSize, SizeType );
+
+    typedef itk::KernelFunctionBase<ScalarType>      KernelFunctionType;
+    typedef typename KernelFunctionType::Pointer     KernelFunctionPointer;
 
     itkSetObjectMacro(KernelFunction, KernelFunctionType);
     itkGetConstReferenceObjectMacro(KernelFunction, KernelFunctionType);
 
-    itkGetConstMacro( NumberOfSamples, size_t );
 
-    void SetNumberOfSamples(size_t n) {
+    void SetNumberOfPoints(size_t n) {
     	if( this->m_UseImageOutput ) {
     		itkExceptionMacro(<< "SetNumberOfSamples should not be used with OutputReference");
     	}
 
-    	size_t oldsize = this->m_OffGridFieldValues[0].size();
+    	size_t oldsize = this->m_PointValues[0].size();
     	if ( oldsize!=0 && oldsize!=n ) {
     		itkWarningMacro( << "this action will empty off-grid values set so-far" );
     	}
 
-    	this->m_NumberOfSamples = n;
+    	this->m_NumberOfPoints = n;
 
     	for (size_t i=0; i<Dimension; i++) {
-    		this->m_OffGridFieldValues[i].set_size( n );
-    		this->m_OffGridFieldValues[i].fill( 0.0 );
+    		this->m_PointValues[i].set_size( n );
+    		this->m_PointValues[i].fill( 0.0 );
     	}
 
     	this->Modified();
     }
-
-    itkGetConstMacro( NumberOfParameters, size_t );
 
     itkGetMacro( Derivatives, CoefficientsImageArray );
     itkGetConstObjectMacro( GradientField, FieldType );
@@ -211,24 +199,8 @@ public:
     void ComputeGradientField();
     void ComputeCoefficients();
 
-
-	// Setters & Getters -----------------------------------------
-	// Physical positions
-	inline void SetOffGridPos  ( size_t id, const PointType pi );
-	inline size_t AddOffGridPos  ( const PointType pi );
-	void SetOffGridPositions( const PointsList points ) {
-		this->m_OffGridPos = points;
-		this->m_NumberOfSamples = points.size();
-		this->Modified();
-	}
-
 	// Values off-grid (displacement vector of a node)
-	inline bool       SetOffGridValue( const size_t id, VectorType pi );
-	inline VectorType GetOffGridValue( const size_t id ) const;
-
-	// Values on-grid (displacement vector of a grid point)
-	//inline bool       SetOnGridValue ( const size_t id, VectorType pi );
-	//inline VectorType GetOnGridValue ( const size_t id );
+	inline bool       SetPointValue( const size_t id, VectorType pi );
 
 	// Coefficients of the interpolating kernels
 	inline VectorType GetCoefficient ( const size_t id );
@@ -236,37 +208,29 @@ public:
 	virtual WeightsMatrix  GetPhi ();
 	//itkGetConstMacro( Phi, WeightsMatrix );
 	itkGetConstMacro( S, WeightsMatrix );
-	itkGetConstMacro( OffGridFieldValues, DimensionParametersContainer );
+	itkGetConstMacro( PointValues, DimensionParametersContainer );
 
-    void SetControlPointsSize( size_t s ) { this->m_ControlPointsSize.Fill( s ); }
 
     itkSetObjectMacro( Field, FieldType );
     itkGetConstObjectMacro( Field, FieldType );
 
     /** Get the array of coefficient images. */
-    //const CoefficientsImageArray GetCoefficientsImages() const {
-    //  return this->m_CoefficientsImages;
-    //}
     itkGetConstMacro( CoefficientsImages, CoefficientsImageArray );
+
     void SetCoefficientsImages( const CoefficientsImageArray & images );
     void SetCoefficientsImage( size_t dim, const CoefficientsImageType* c );
     void SetCoefficientsVectorImage( const FieldType* f );
     void AddCoefficientsVectorImage( const FieldType* f );
     const FieldType* GetCoefficientsVectorImage();
 
-    void SetPhysicalDomainInformation( const DomainBase* image );
-    void CopyGridInformation( const DomainBase* image );
-    void SetOutputReference( const DomainBase* image );
-    const FieldType* GetOutputField() const {
-    	if (!this->m_UseImageOutput){
-    		itkExceptionMacro( << "UseImageOutput is false, output field is not gridded" );
-    	}
-    	return this->m_DisplacementField;
-    }
+
+    void SetControlGridInformation( const DomainBase* image );
+    void SetControlGridSize( size_t s ) { this->m_ControlGridSize.Fill( s ); }
+    itkSetMacro( ControlGridSize, SizeType );
+    itkGetConstMacro( ControlGridSize, SizeType );
 
     /** Return the multithreader used by this class. */
     itk::MultiThreader * GetMultiThreader() const { return m_Threader; }
-
     itkSetClampMacro( NumberOfThreads, itk::ThreadIdType, 1, ITK_MAX_THREADS);
     itkGetConstReferenceMacro(NumberOfThreads, itk::ThreadIdType);
 protected:
@@ -310,27 +274,24 @@ protected:
 	DimensionParametersContainer VectorizeField( const FieldType* image );
 	WeightsMatrix MatrixField( const FieldType* image );
 
-	inline ScalarType EvaluateFunctional( const VectorType r, const size_t dim = 0 );
+	inline ScalarType EvaluateKernel( const VectorType r, const size_t dim = 0 );
 	inline ScalarType EvaluateDerivative( const VectorType r, const size_t dim );
 
+
 	/* Field domain definitions */
-	SizeType               m_ControlPointsSize;
-	SpacingType            m_ControlPointsSpacing;
-	PointType              m_ControlPointsOrigin;
-	DirectionType          m_ControlPointsDirection;
-	DirectionType          m_ControlPointsDirectionInverse;
-	MatrixType             m_ControlPointsIndexToPhysicalPoint;
-	MatrixType             m_ControlPointsPhysicalPointToIndex;
+	SizeType                     m_ControlGridSize;
+	SpacingType                  m_ControlGridSpacing;
+	PointType                    m_ControlGridOrigin;
+	DirectionType                m_ControlGridDirection;
+	DirectionType                m_ControlGridDirectionInverse;
+	MatrixType                   m_ControlGridIndexToPhysicalPoint;
+	MatrixType                   m_ControlGridPhysicalPointToIndex;
 
-	size_t                 m_NumberOfSamples;     // This is N mesh points
-	size_t                 m_NumberOfParameters;  // This is K nodes
+	size_t                       m_NumberOfParameters;  // This is K parameters (=coefficients, control points)
+	PointsList                   m_ParamLocation;
 
-	PointsList m_OffGridPos;           // m_N points in the mesh
-	PointsList m_OnGridPos;
-	DimensionParametersContainer m_OffGridFieldValues;     // m_N points in the mesh
-
-	CoefficientsImageArray m_CoefficientsImages;
-	CoefficientsImageArray m_Derivatives;
+	CoefficientsImageArray       m_CoefficientsImages;
+	CoefficientsImageArray       m_Derivatives;
 
 	//DimensionParametersContainer m_CoeffDerivative;  // Serialized k values in a grid
 	//DimensionVector m_Jacobian[Dimension][Dimension]; // Serialized k dimxdim matrices in a grid
@@ -359,6 +320,7 @@ protected:
 	/** Support processing data in multiple threads. */
 	itk::MultiThreader::Pointer m_Threader;
 	itk::ThreadIdType           m_NumberOfThreads;
+
 private:
 	SparseMatrixTransform( const Self & );
 	void operator=( const Self & );

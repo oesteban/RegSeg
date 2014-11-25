@@ -98,7 +98,7 @@ public:
 
     typedef typename Superclass::ArrayType                                              ArrayType;
 
-
+    using Superclass::InterpolationMode;
 protected:
     BSplineSparseMatrixTransform();
     ~BSplineSparseMatrixTransform() {}

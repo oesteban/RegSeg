@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		transform->SetControlPointsSize( size );
+		transform->SetControlGridSize( size );
 		transform->SetPhysicalDomainInformation( ref );
 		transform->SetOutputReference( ref );
 		transform->UpdateField();

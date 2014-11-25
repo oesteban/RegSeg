@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 #ifndef NDEBUG
 	tf->SetNumberOfThreads( 2 );
 #endif
-	tf->SetControlPointsSize( size );
+	tf->SetControlGridSize( size );
 	tf->SetPhysicalDomainInformation( field );
 
 	VectorType disp;
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 	typename FieldType::PointType p,p_new;
 
 	size_t nPix = field->GetLargestPossibleRegion().GetNumberOfPixels();
-	tf->SetNumberOfSamples( nPix );
+	tf->SetNumberOfPoints( nPix );
 	const VectorType* fbuff = field->GetBufferPointer();
 
 	for ( size_t i=0; i<nPix; i++) {
@@ -94,8 +94,9 @@ int main(int argc, char *argv[]) {
 		disp = *( fbuff + i );
 
 		// Set inverse vector in new targets
-		tf->SetOffGridPos( i, p + disp );
-		tf->SetOffGridValue( i, -disp );
+		// FIXME: set these!
+		// tf->SetOffGridPos( i, p + disp );
+		// tf->SetOffGridValue( i, -disp );
 	}
 
 	// Approximate coefficients

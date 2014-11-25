@@ -63,36 +63,31 @@ namespace rstk {
 template< class TScalar, unsigned int NDimensions >
 SparseMatrixTransform<TScalar,NDimensions>
 ::SparseMatrixTransform():
-Superclass(),
-m_NumberOfSamples(0),
-m_NumberOfParameters(0),
-m_GridDataChanged(false),
-m_ControlDataChanged(false),
-m_UseImageOutput(false) {
-	this->m_ControlPointsSize.Fill(10);
-	this->m_ControlPointsOrigin.Fill(0.0);
-	this->m_ControlPointsSpacing.Fill(1.0);
-	this->m_ControlPointsDirection.SetIdentity();
-	this->m_ControlPointsDirectionInverse.SetIdentity();
+Superclass() {
+	this->m_ControlGridSize.Fill(10);
+	this->m_ControlGridOrigin.Fill(0.0);
+	this->m_ControlGridSpacing.Fill(1.0);
+	this->m_ControlGridDirection.SetIdentity();
+	this->m_ControlGridDirectionInverse.SetIdentity();
 
 	this->m_Threader = itk::MultiThreader::New();
 	this->m_NumberOfThreads = this->m_Threader->GetNumberOfThreads();
 
-	this->m_ControlPointsIndexToPhysicalPoint.SetIdentity();
-	this->m_ControlPointsPhysicalPointToIndex.SetIdentity();
+	this->m_ControlGridIndexToPhysicalPoint.SetIdentity();
+	this->m_ControlGridPhysicalPointToIndex.SetIdentity();
 
 	for( size_t i = 0; i<Dimension; i++ ) {
-		this->m_OffGridFieldValues[i] = DimensionVector();
+		this->m_PointValues[i] = DimensionVector();
 	}
 }
 
 template< class TScalar, unsigned int NDimensions >
 inline typename SparseMatrixTransform<TScalar,NDimensions>::ScalarType
 SparseMatrixTransform<TScalar,NDimensions>
-::EvaluateFunctional( const VectorType r, const size_t dim ) {
+::EvaluateKernel( const VectorType r, const size_t dim ) {
 	ScalarType wi=1.0;
 	for (size_t i = 0; i<Dimension; i++) {
-		wi*= this->m_KernelFunction->Evaluate( r[i] / this->m_ControlPointsSpacing[i] );
+		wi*= this->m_KernelFunction->Evaluate( r[i] / this->m_ControlGridSpacing[i] );
 	}
 	return wi;
 }
@@ -104,9 +99,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	ScalarType wi=1.0;
 	for (size_t i = 0; i<Dimension; i++) {
 		if( dim == i )
-			wi*= this->m_DerivativeKernel->Evaluate( r[i] / this->m_ControlPointsSpacing[i] );
+			wi*= this->m_DerivativeKernel->Evaluate( r[i] / this->m_ControlGridSpacing[i] );
 		else
-			wi*= this->m_KernelFunction->Evaluate( r[i] / this->m_ControlPointsSpacing[i] );
+			wi*= this->m_KernelFunction->Evaluate( r[i] / this->m_ControlGridSpacing[i] );
 	}
 	return wi;
 }
@@ -121,15 +116,15 @@ SparseMatrixTransform<TScalar,NDimensions>
 	offsetTable[0] = num;
 
     for ( size_t k = 0; k <Dimension; k++ ) {
-    	cvector[k] = point[k] - this->m_ControlPointsOrigin[k];
+    	cvector[k] = point[k] - this->m_ControlGridOrigin[k];
     }
-    cvector = this->m_ControlPointsPhysicalPointToIndex * cvector;
+    cvector = this->m_ControlGridPhysicalPointToIndex * cvector;
 
     for ( size_t k = 0; k <Dimension; k++ ) {
     	cstart[k] = cvector[k]-2.0;
     	cend[k] = cvector[k]+2.0;
 
-    	if (cend[k] < 0.0 || cstart[k] > (this->m_ControlPointsSize[k]-1) ) {
+    	if (cend[k] < 0.0 || cstart[k] > (this->m_ControlGridSize[k]-1) ) {
     		return 0;
     	}
 
@@ -138,7 +133,7 @@ SparseMatrixTransform<TScalar,NDimensions>
     	end[k] = floor( cend[k] );
 
     	if ( start[k] < 0 ) start[k] = 0;
-    	if ( end[k] > (this->m_ControlPointsSize[k]-1) ) end[k] = this->m_ControlPointsSize[k]-1;
+    	if ( end[k] > (this->m_ControlGridSize[k]-1) ) end[k] = this->m_ControlGridSize[k]-1;
 
     	if( end[k]<start[k] ) {
     		return 0;
@@ -154,73 +149,11 @@ SparseMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::SetPhysicalDomainInformation( const DomainBase* image ) {
-	for( size_t i=0; i<Dimension; i++) {
-		if( this->m_ControlPointsSize[i] < 4 ){
-			itkExceptionMacro( << "ControlPointsSize must be set and valid (>3) to set parameters this way.")
-		}
-	}
-
-	ContinuousIndexType o_idx;
-	o_idx.Fill( -0.5 );
-
-	ContinuousIndexType e_idx;
-	for ( size_t dim=0; dim< Dimension; dim++ ) {
-		e_idx[dim] = image->GetLargestPossibleRegion().GetSize()[dim] - 0.5;
-	}
-
-	PointType first;
-	PointType last;
-
-	image->TransformContinuousIndexToPhysicalPoint( o_idx, first );
-	image->TransformContinuousIndexToPhysicalPoint( e_idx, last );
-
-	PointType orig,step;
-	typename CoefficientsImageType::SpacingType spacing;
-	for( size_t dim = 0; dim < Dimension; dim++ ) {
-		step[dim] = (last[dim]-first[dim])/(1.0*this->m_ControlPointsSize[dim]);
-		this->m_ControlPointsSpacing[dim] = fabs(step[dim]);
-		this->m_ControlPointsOrigin[dim] = first[dim] + 0.5 * step[dim];
-	}
-
-	this->m_ControlPointsDirection = image->GetDirection();
-
-	this->InitializeCoefficientsImages();
-}
-
-template< class TScalar, unsigned int NDimensions >
-void
-SparseMatrixTransform<TScalar,NDimensions>
-::SetOutputReference( const DomainBase* image ) {
-	this->m_UseImageOutput = true;
-	VectorType zerov; zerov.Fill( 0.0 );
-
-	FieldPointer newfield = FieldType::New();
-	newfield->SetRegions( image->GetLargestPossibleRegion().GetSize() );
-	newfield->SetOrigin( image->GetOrigin() );
-	newfield->SetSpacing( image->GetSpacing() );
-	newfield->SetDirection( image->GetDirection() );
-	newfield->Allocate();
-	newfield->FillBuffer( zerov );
-	this->SetDisplacementField( newfield );
-
-	this->m_NumberOfSamples = image->GetLargestPossibleRegion().GetNumberOfPixels();
-	// Initialize off-grid positions
-	PointType p;
-	for( size_t i = 0; i < this->m_NumberOfSamples; i++ ) {
-		image->TransformIndexToPhysicalPoint( image->ComputeIndex( i ), p );
-		this->m_OffGridPos.push_back( p );
-	}
-}
-
-template< class TScalar, unsigned int NDimensions >
-void
-SparseMatrixTransform<TScalar,NDimensions>
-::CopyGridInformation( const DomainBase* image ) {
-	this->m_ControlPointsSize      = image->GetLargestPossibleRegion().GetSize();
-	this->m_ControlPointsOrigin    = image->GetOrigin();
-	this->m_ControlPointsSpacing   = image->GetSpacing();
-	this->m_ControlPointsDirection = image->GetDirection();
+::SetControlGridInformation( const DomainBase* image ) {
+	this->m_ControlGridSize      = image->GetLargestPossibleRegion().GetSize();
+	this->m_ControlGridOrigin    = image->GetOrigin();
+	this->m_ControlGridSpacing   = image->GetSpacing();
+	this->m_ControlGridDirection = image->GetDirection();
 	this->InitializeCoefficientsImages();
 }
 
@@ -233,30 +166,30 @@ SparseMatrixTransform<TScalar,NDimensions>
 	MatrixType scale;
 
 	for ( size_t i = 0; i < Dimension; i++ ) {
-	  if ( this->m_ControlPointsSpacing[i] == 0.0 ) {
-		itkExceptionMacro("A spacing of 0 is not allowed: Spacing is " << this->m_ControlPointsSpacing);
+	  if ( this->m_ControlGridSpacing[i] == 0.0 ) {
+		itkExceptionMacro("A spacing of 0 is not allowed: Spacing is " << this->m_ControlGridSpacing);
 	  }
-	  scale[i][i] = this->m_ControlPointsSpacing[i];
+	  scale[i][i] = this->m_ControlGridSpacing[i];
 	}
 
-	if ( vnl_determinant( this->m_ControlPointsDirection.GetVnlMatrix() ) == 0.0 ) {
-	  itkExceptionMacro(<< "Bad direction, determinant is 0. Direction is " << this->m_ControlPointsDirection);
+	if ( vnl_determinant( this->m_ControlGridDirection.GetVnlMatrix() ) == 0.0 ) {
+	  itkExceptionMacro(<< "Bad direction, determinant is 0. Direction is " << this->m_ControlGridDirection);
 	}
 
 	typedef vnl_matrix< ScalarType > InternalComputationMatrix;
 	InternalComputationMatrix dir( Dimension, Dimension );
 	typedef vnl_matrix< typename DirectionType::ValueType > DirectionVNLMatrix;
-	vnl_copy< DirectionVNLMatrix, InternalComputationMatrix >( this->m_ControlPointsDirection.GetVnlMatrix(), dir );
-	this->m_ControlPointsIndexToPhysicalPoint = MatrixType(dir) * scale;
-	this->m_ControlPointsPhysicalPointToIndex = this->m_ControlPointsIndexToPhysicalPoint.GetInverse();
+	vnl_copy< DirectionVNLMatrix, InternalComputationMatrix >( this->m_ControlGridDirection.GetVnlMatrix(), dir );
+	this->m_ControlGridIndexToPhysicalPoint = MatrixType(dir) * scale;
+	this->m_ControlGridPhysicalPointToIndex = this->m_ControlGridIndexToPhysicalPoint.GetInverse();
 
 
 	for( size_t dim = 0; dim < Dimension; dim++ ) {
 		this->m_CoefficientsImages[dim] = CoefficientsImageType::New();
-		this->m_CoefficientsImages[dim]->SetRegions(   this->m_ControlPointsSize );
-		this->m_CoefficientsImages[dim]->SetOrigin(    this->m_ControlPointsOrigin );
-		this->m_CoefficientsImages[dim]->SetSpacing(   this->m_ControlPointsSpacing );
-		this->m_CoefficientsImages[dim]->SetDirection( this->m_ControlPointsDirection );
+		this->m_CoefficientsImages[dim]->SetRegions(   this->m_ControlGridSize );
+		this->m_CoefficientsImages[dim]->SetOrigin(    this->m_ControlGridOrigin );
+		this->m_CoefficientsImages[dim]->SetSpacing(   this->m_ControlGridSpacing );
+		this->m_CoefficientsImages[dim]->SetDirection( this->m_ControlGridDirection );
 		this->m_CoefficientsImages[dim]->Allocate();
 		this->m_CoefficientsImages[dim]->FillBuffer( 0.0 );
 	}
@@ -267,24 +200,24 @@ SparseMatrixTransform<TScalar,NDimensions>
 	CoeffImageConstPointer ref =  itkDynamicCastInDebugMode< const CoefficientsImageType* >(this->m_CoefficientsImages[0].GetPointer() );
 	for( size_t i = 0; i < this->m_NumberOfParameters; i++ ) {
 		ref->TransformIndexToPhysicalPoint( ref->ComputeIndex( i ), p );
-		this->m_OnGridPos.push_back( p );
+		this->m_ParamLocation.push_back( p );
 	}
 
 	VectorType zerov; zerov.Fill( 0.0 );
 	this->m_Field = FieldType::New();
-	this->m_Field->SetRegions(   this->m_ControlPointsSize );
-	this->m_Field->SetOrigin(    this->m_ControlPointsOrigin );
-	this->m_Field->SetSpacing(   this->m_ControlPointsSpacing );
-	this->m_Field->SetDirection( this->m_ControlPointsDirection );
+	this->m_Field->SetRegions(   this->m_ControlGridSize );
+	this->m_Field->SetOrigin(    this->m_ControlGridOrigin );
+	this->m_Field->SetSpacing(   this->m_ControlGridSpacing );
+	this->m_Field->SetDirection( this->m_ControlGridDirection );
 	this->m_Field->Allocate();
 	this->m_Field->FillBuffer( zerov );
 
 	for( size_t i = 0; i<Dimension; i++ ) {
 		this->m_Derivatives[i] = CoefficientsImageType::New();
-		this->m_Derivatives[i]->SetRegions(   this->m_ControlPointsSize );
-		this->m_Derivatives[i]->SetOrigin(    this->m_ControlPointsOrigin );
-		this->m_Derivatives[i]->SetSpacing(   this->m_ControlPointsSpacing );
-		this->m_Derivatives[i]->SetDirection( this->m_ControlPointsDirection );
+		this->m_Derivatives[i]->SetRegions(   this->m_ControlGridSize );
+		this->m_Derivatives[i]->SetOrigin(    this->m_ControlGridOrigin );
+		this->m_Derivatives[i]->SetSpacing(   this->m_ControlGridSpacing );
+		this->m_Derivatives[i]->SetDirection( this->m_ControlGridDirection );
 		this->m_Derivatives[i]->Allocate();
 		this->m_Derivatives[i]->FillBuffer( 0.0 );
 	}
@@ -299,26 +232,26 @@ SparseMatrixTransform<TScalar,NDimensions>
 	str.Transform = this;
 	str.type = type;
 	str.dim = dim;
-	size_t nCols = this->m_OnGridPos.size();
+	size_t nCols = this->m_ParamLocation.size();
 
 	switch( type ) {
 	case Self::PHI:
-		str.vrows = &this->m_OffGridPos;
-		if ( this->m_OffGridPos.size() != this->m_NumberOfSamples ) {
+		str.vrows = &this->m_PointLocations;
+		if ( this->m_PointLocations.size() != this->m_NumberOfPoints ) {
 			itkExceptionMacro(<< "OffGrid positions are not initialized");
 		}
-		this->m_Phi = WeightsMatrix( this->m_NumberOfSamples , nCols );
+		this->m_Phi = WeightsMatrix( this->m_NumberOfPoints , nCols );
 		str.matrix = &this->m_Phi;
 		break;
 	case Self::S:
 		this->m_S = WeightsMatrix( nCols, nCols );
 
-		str.vrows = &this->m_OnGridPos;
+		str.vrows = &this->m_ParamLocation;
 		str.matrix = &this->m_S;
 		break;
 	case Self::SPRIME:
 		this->m_SPrime[dim] = WeightsMatrix( nCols, nCols );
-		str.vrows = &this->m_OnGridPos;
+		str.vrows = &this->m_ParamLocation;
 		str.matrix = &this->m_SPrime[dim];
 		break;
 	default:
@@ -358,7 +291,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 		if (str->type == Self::SPRIME )
 			str->Transform->ThreadedComputeMatrix( splitSection, &Self::EvaluateDerivative, threadId );
 		else
-			str->Transform->ThreadedComputeMatrix( splitSection, &Self::EvaluateFunctional, threadId );
+			str->Transform->ThreadedComputeMatrix( splitSection, &Self::EvaluateKernel, threadId );
 	}
 
 	return ITK_THREAD_RETURN_VALUE;
@@ -420,7 +353,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 		for( size_t rOffset = 0; rOffset<number_of_pixels; rOffset++) {
 			Helper::ComputeIndex( start, rOffset, rOffsetTable, current );
-			TransformHelper::TransformIndexToPhysicalPoint( this->m_ControlPointsIndexToPhysicalPoint, this->m_ControlPointsOrigin, current, uk);
+			TransformHelper::TransformIndexToPhysicalPoint( this->m_ControlGridIndexToPhysicalPoint, this->m_ControlGridOrigin, current, uk);
 			r = ci - uk;
 			wi = (this->*func)(r, dim);
 
@@ -446,8 +379,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->ComputeMatrix( Self::PHI );
 	}
 	for( size_t i = 0; i<Dimension; i++ ) {
-		this->m_OffGridFieldValues[i].set_size( this->m_NumberOfSamples );
-		this->m_Phi.mult( coeff[i], this->m_OffGridFieldValues[i] );
+		this->m_PointValues[i].set_size( this->m_NumberOfPoints );
+		this->m_Phi.mult( coeff[i], this->m_PointValues[i] );
 	}
 
 	if( this->m_UseImageOutput ) {
@@ -466,11 +399,11 @@ SparseMatrixTransform<TScalar,NDimensions>
 		VectorType* obuf = this->m_DisplacementField->GetBufferPointer();
 		VectorType* ibuf = newfield->GetBufferPointer();
 
-		for( size_t row = 0; row<this->m_NumberOfSamples; row++ ) {
+		for( size_t row = 0; row<this->m_NumberOfPoints; row++ ) {
 			v.Fill( 0.0 );
 			setVector = false;
 			for( size_t i = 0; i<Dimension; i++) {
-				val = this->m_OffGridFieldValues[i][row];
+				val = this->m_PointValues[i][row];
 
 				if( fabs(val) > 1.0e-5 ){
 					v[i] = val;
@@ -499,8 +432,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 	DimensionParametersContainer coeff;
 	// Compute coefficients
 	for( size_t i = 0; i<Dimension; i++ ) {
-		coeff[i] = DimensionVector( this->m_NumberOfSamples );
-		this->m_Phi_inverse.mult( this->m_OffGridFieldValues[i], coeff[i] );
+		coeff[i] = DimensionVector( this->m_NumberOfPoints );
+		this->m_Phi_inverse.mult( this->m_PointValues[i], coeff[i] );
 	}
 
 	// TODO set coeff here or inside Interpolate( coeff )
@@ -563,8 +496,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 	DimensionParametersContainer coeffs;
 
 	for ( size_t i = 0; i<Dimension; i++) {
-		// TODO: check m_NumberOfSamples here
-		// Y[i] = SolverVector( this->m_NumberOfSamples );
+		// TODO: check m_NumberOfPoints here
+		// Y[i] = SolverVector( this->m_NumberOfPoints );
 		Y[i] = SolverVector( fieldValues[i].size() );
 		vnl_copy< DimensionVector, SolverVector >( fieldValues[i], Y[i] );
 		X[i] = SolverVector( this->m_NumberOfParameters );
@@ -735,29 +668,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 	return this->m_Phi;
 }
 
-template< class TScalar, unsigned int NDimensions >
-inline void
-SparseMatrixTransform<TScalar,NDimensions>
-::SetOffGridPos(size_t id, typename SparseMatrixTransform<TScalar,NDimensions>::PointType pi ){
-	if ( id >= this->m_NumberOfSamples ) {
-		itkExceptionMacro(<< "Trying to set sample with id " << id << ", when NumberOfSamples is set to " << this->m_NumberOfSamples );
-	}
-	if ( this->m_OffGridPos.size() == 0 ) {
-		this->m_OffGridPos.resize( this->m_NumberOfSamples );
-	}
-	this->m_OffGridPos[id] = pi;
-}
-
-template< class TScalar, unsigned int NDimensions >
-inline size_t
-SparseMatrixTransform<TScalar,NDimensions>
-::AddOffGridPos(typename SparseMatrixTransform<TScalar,NDimensions>::PointType pi ){
-	this->m_OffGridPos.push_back( pi );
-
-	this->m_NumberOfSamples++;
-	return (this->m_NumberOfSamples-1);
-}
-
 
 //template< class TScalar, unsigned int NDimensions >
 //void
@@ -768,36 +678,36 @@ SparseMatrixTransform<TScalar,NDimensions>
 //	//	this->m_Parameters = parameters;
 //	//}
 //    //
-//	//if( this->m_OffGridPos.size() == 0 ) {
+//	//if( this->m_PointLocations.size() == 0 ) {
 //	//	itkExceptionMacro( << "Control Points should be set first." );
 //	//}
 //    //
-//	//if( this->m_NumberOfSamples != this->m_OffGridPos.size() ) {
-//	//	if (! this->m_NumberOfSamples == 0 ){
+//	//if( this->m_NumberOfPoints != this->m_PointLocations.size() ) {
+//	//	if (! this->m_NumberOfPoints == 0 ){
 //	//		itkExceptionMacro( << "N and number of control points should match." );
 //	//	} else {
-//	//		this->m_NumberOfSamples = this->m_OffGridPos.size();
+//	//		this->m_NumberOfPoints = this->m_PointLocations.size();
 //	//	}
 //	//}
 //    //
-//	//if ( this->m_NumberOfSamples != (parameters.Size() * Dimension) ) {
+//	//if ( this->m_NumberOfPoints != (parameters.Size() * Dimension) ) {
 //	//	itkExceptionMacro( << "N and number of parameters should match." );
 //	//}
 //    //
 //	//for ( size_t dim = 0; dim<Dimension; dim++) {
-//	//	if ( this->m_OffGridValue[dim].size() == 0 ) {
-//	//		this->m_OffGridValue[dim]( this->m_NumberOfSamples );
+//	//	if ( this->m_PointValue[dim].size() == 0 ) {
+//	//		this->m_PointValue[dim]( this->m_NumberOfPoints );
 //	//	}
-//	//	else if ( this->m_OffGridValue[dim].size()!=this->m_NumberOfSamples ) {
+//	//	else if ( this->m_PointValue[dim].size()!=this->m_NumberOfPoints ) {
 //	//		itkExceptionMacro( << "N and number of slots for parameter data should match." );
 //	//	}
 //	//}
 //    //
 //	//size_t didx = 0;
 //    //
-//	//while( didx < this->m_NumberOfSamples ) {
+//	//while( didx < this->m_NumberOfPoints ) {
 //	//	for ( size_t dim = 0; dim< Dimension; dim++ ) {
-//	//		this->m_OffGridValue[dim][didx] = parameters[didx+dim];
+//	//		this->m_PointValue[dim][didx] = parameters[didx+dim];
 //	//	}
 //	//	didx++;
 //	//}
@@ -808,19 +718,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 //}
 
 
-template< class TScalar, unsigned int NDimensions >
-inline typename SparseMatrixTransform<TScalar,NDimensions>::VectorType
-SparseMatrixTransform<TScalar,NDimensions>
-::GetOffGridValue( const size_t id ) const {
-	VectorType ci;
-	ci.Fill( 0.0 );
-
-	for( size_t d = 0; d < Dimension; d++) {
-		ci[d] = this->m_OffGridFieldValues[d][id];
-	}
-
-	return ci;
-}
 
 //template< class TScalar, unsigned int NDimensions >
 //inline typename SparseMatrixTransform<TScalar,NDimensions>::JacobianType
@@ -864,12 +761,12 @@ SparseMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 inline bool
 SparseMatrixTransform<TScalar,NDimensions>
-::SetOffGridValue( const size_t id, typename SparseMatrixTransform<TScalar,NDimensions>::VectorType pi ) {
+::SetPointValue( const size_t id, typename SparseMatrixTransform<TScalar,NDimensions>::VectorType pi ) {
 	bool changed = false;
 	for( size_t dim = 0; dim < Dimension; dim++) {
 		if( std::isnan( pi[dim] )) pi[dim] = 0;
-		if( this->m_OffGridFieldValues[dim][id] != pi[dim] ) {
-			this->m_OffGridFieldValues[dim][id] = pi[dim];
+		if( this->m_PointValues[dim][id] != pi[dim] ) {
+			this->m_PointValues[dim][id] = pi[dim];
 			changed = true;
 		}
 	}
@@ -893,10 +790,10 @@ SparseMatrixTransform<TScalar,NDimensions>
 	ScalarType* buff[Dimension];
 
 	if (this->m_NumberOfParameters == 0) {
-		this->m_ControlPointsDirection = images->GetDirection();
-		this->m_ControlPointsOrigin = images->GetOrigin();
-		this->m_ControlPointsSize = images->GetLargestPossibleRegion().GetSize();
-		this->m_ControlPointsSpacing = images->GetSpacing();
+		this->m_ControlGridDirection = images->GetDirection();
+		this->m_ControlGridOrigin = images->GetOrigin();
+		this->m_ControlGridSize = images->GetLargestPossibleRegion().GetSize();
+		this->m_ControlGridSpacing = images->GetSpacing();
 		this->InitializeCoefficientsImages();
 	}
 
@@ -946,10 +843,10 @@ SparseMatrixTransform<TScalar,NDimensions>
 ::GetCoefficientsVectorImage(){
 	if (this->m_CoefficientsField.IsNull()){
 		this->m_CoefficientsField = FieldType::New();
-		this->m_CoefficientsField->SetRegions(this->m_ControlPointsSize);
-		this->m_CoefficientsField->SetSpacing(this->m_ControlPointsSpacing);
-		this->m_CoefficientsField->SetDirection(this->m_ControlPointsDirection);
-		this->m_CoefficientsField->SetOrigin(this->m_ControlPointsOrigin);
+		this->m_CoefficientsField->SetRegions(this->m_ControlGridSize);
+		this->m_CoefficientsField->SetSpacing(this->m_ControlGridSpacing);
+		this->m_CoefficientsField->SetDirection(this->m_ControlGridDirection);
+		this->m_CoefficientsField->SetOrigin(this->m_ControlGridOrigin);
 		this->m_CoefficientsField->Allocate();
 	}
 
@@ -1122,10 +1019,11 @@ SparseMatrixTransform<TScalar,NDimensions>
 //
 //    for ( size_t i = 0; i < Dimension; i++ ) {
 //    	this->m_CoeffDerivative[i].fill(0.0);
-//    	this->m_Phi.pre_mult(this->m_OffGridValue[i], this->m_CoeffDerivative[i] );
+//    	this->m_Phi.pre_mult(this->m_PointValue[i], this->m_CoeffDerivative[i] );
 //    }
 //}
 
 }
+
 
 #endif /* SPARSEMATRIXTRANSFORM_HXX_ */
