@@ -42,11 +42,12 @@ int main(int argc, char *argv[]) {
 			("images,i", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
 			("surfaces,s", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken(),	"moving image file")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
+			("write-field,w", bpo::bool_switch(), "write output field")
 			("mask,m", bpo::value< std::string >(&maskfile), "mask file" )
 			("mask-inputs", bpo::bool_switch(), "use deformed mask to filter input files")
 			("field,F", bpo::value < std::vector< std::string > >(&fieldname), "forward displacement field" )
 			("inv-field,R", bpo::value < std::vector< std::string > >(&invfieldname), "backward displacement field" )
-			("coeff,C", bpo::value < std::vector< std::string > >(&fieldname), "forward displacement field" )
+			("coeff,C", bpo::value < std::vector< std::string > >(&fieldname)->multitoken(), "forward displacement field" )
 			("inv-coeff,I", bpo::value < std::vector< std::string > >(&invfieldname), "backward displacement field" )
 			//("compute-inverse", bpo::bool_switch(), "compute precise inversion of the input field (requires -F)")
 			("grid-size,g", bpo::value< std::vector<size_t> >(&grid_size)->multitoken(), "size of grid of bspline control points (default is 10x10x10)");
@@ -145,6 +146,13 @@ int main(int argc, char *argv[]) {
 	for( size_t i = 0; i<nPix; i++ ) {
 		v = *( ofb+i );
 		*( ifb + i ) = -v;
+	}
+
+	if (vm.count("write-field") && vm["write-field"].as<bool>() ) {
+		FieldWriterPointer w = FieldWriter::New();
+		w->SetInput(field);
+		w->SetFileName((outPrefix + "_field.nii.gz").c_str());
+		w->Update();
 	}
 
 	TransformPointer transform = TransformType::New();

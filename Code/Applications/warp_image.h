@@ -37,6 +37,7 @@
 #include "rstkVTKPolyDataWriter.h"
 #include "CompositeMatrixTransform.h"
 #include "BSplineSparseMatrixTransform.h"
+#include "DisplacementFieldFileWriter.h"
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
@@ -77,6 +78,9 @@ typedef typename FieldType::Pointer              			 DisplacementFieldPointer;
 typedef typename FieldType::ConstPointer              		 DisplacementFieldConstPointer;
 typedef itk::ImageFileReader<FieldType>          			 DisplacementFieldReaderType;
 typedef typename DisplacementFieldReaderType::Pointer        DisplacementFieldReaderPointer;
+
+typedef rstk::DisplacementFieldFileWriter< FieldType >       FieldWriter;
+typedef typename FieldWriter::Pointer                        FieldWriterPointer;
 
 typedef itk::MaskImageFilter< ChannelType, MaskType, ChannelType > MaskFilter;
 
