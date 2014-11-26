@@ -303,7 +303,7 @@ protected:
 	MatrixType                   m_ControlGridPhysicalPointToIndex;
 
 	size_t                       m_NumberOfParameters;  // This is K parameters (=coefficients, control points)
-	PointsList                   m_ParamLocation;
+	PointsList                   m_ParamLocations;
 
 	CoefficientsImageArray       m_CoefficientsImages;
 	CoefficientsImageArray       m_Derivatives;
@@ -316,9 +316,6 @@ protected:
 	WeightsMatrix   m_S;
 	WeightsMatrix   m_SPrime[Dimension];
 
-
-	bool            m_GridDataChanged;
-	bool            m_ControlDataChanged;
 	bool            m_UseImageOutput;
 
 	KernelFunctionPointer m_KernelFunction;
