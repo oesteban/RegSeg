@@ -63,7 +63,8 @@ namespace rstk {
 template< class TScalar, unsigned int NDimensions >
 SparseMatrixTransform<TScalar,NDimensions>
 ::SparseMatrixTransform():
-Superclass() {
+Superclass(),
+m_UseImageOutput(false) {
 	this->m_ControlGridSize.Fill(10);
 	this->m_ControlGridOrigin.Fill(0.0);
 	this->m_ControlGridSpacing.Fill(1.0);
@@ -200,7 +201,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	CoeffImageConstPointer ref =  itkDynamicCastInDebugMode< const CoefficientsImageType* >(this->m_CoefficientsImages[0].GetPointer() );
 	for( size_t i = 0; i < this->m_NumberOfParameters; i++ ) {
 		ref->TransformIndexToPhysicalPoint( ref->ComputeIndex( i ), p );
-		this->m_ParamLocation.push_back( p );
+		this->m_ParamLocations.push_back( p );
 	}
 
 	VectorType zerov; zerov.Fill( 0.0 );
@@ -232,7 +233,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	str.Transform = this;
 	str.type = type;
 	str.dim = dim;
-	size_t nCols = this->m_ParamLocation.size();
+	size_t nCols = this->m_ParamLocations.size();
 
 	switch( type ) {
 	case Self::PHI:
@@ -246,12 +247,12 @@ SparseMatrixTransform<TScalar,NDimensions>
 	case Self::S:
 		this->m_S = WeightsMatrix( nCols, nCols );
 
-		str.vrows = &this->m_ParamLocation;
+		str.vrows = &this->m_ParamLocations;
 		str.matrix = &this->m_S;
 		break;
 	case Self::SPRIME:
 		this->m_SPrime[dim] = WeightsMatrix( nCols, nCols );
-		str.vrows = &this->m_ParamLocation;
+		str.vrows = &this->m_ParamLocations;
 		str.matrix = &this->m_SPrime[dim];
 		break;
 	default:
