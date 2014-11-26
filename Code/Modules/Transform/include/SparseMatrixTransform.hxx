@@ -64,6 +64,7 @@ template< class TScalar, unsigned int NDimensions >
 SparseMatrixTransform<TScalar,NDimensions>
 ::SparseMatrixTransform():
 Superclass(),
+m_NumberOfParameters(0),
 m_UseImageOutput(false) {
 	this->m_ControlGridSize.Fill(10);
 	this->m_ControlGridOrigin.Fill(0.0);

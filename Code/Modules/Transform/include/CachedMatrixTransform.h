@@ -78,8 +78,14 @@ public:
     typedef itk::SmartPointer< const Self >   ConstPointer;
     
     itkTypeMacro( CachedMatrixTransform, DisplacementFieldTransform );
-    
     itkStaticConstMacro( Dimension, unsigned int, NDimensions );
+    
+    typedef enum {
+      UNKNOWN,
+      GRID_MODE,
+      POINTS_MODE
+    } InterpolateModeType;
+
     
     typedef typename Superclass::ScalarType                                     ScalarType;
     typedef itk::Point< ScalarType, Dimension >                                 PointType;
@@ -166,15 +172,10 @@ public:
     typedef itk::ImageHelper< Dimension, Dimension >     Helper;
     typedef itk::ImageTransformHelper< Dimension, Dimension - 1, Dimension - 1, ScalarType, ScalarType > TransformHelper;
 
-    typedef enum {
-      UNKOWN_MODE,
-      GRID_MODE,
-      POINTS_MODE
-    } InterpolationMode;
-
-    itkGetConstMacro( InterpolationMode, InterpolationMode );
+    itkGetConstMacro( InterpolationMode, InterpolateModeType );
     itkGetConstMacro( NumberOfPoints, size_t );
 
+    itkGetConstMacro( PointLocations, PointsList );
 	itkGetConstMacro( PointValues, DimensionParametersContainer );
     inline VectorType GetPointValue( const size_t id ) const;
 
@@ -220,12 +221,17 @@ protected:
 
 	PointType 					 m_DomainExtent[2];
 	DirectionType                m_DomainDirection;
+	SpacingType                  m_ReferenceSpacing;
+	SizeType                     m_ReferenceSize;
+	PointType                    m_ReferenceOrigin;
+
+
 	PointsList                   m_PointLocations;     // m_N points in the mesh
 	size_t                       m_NumberOfPoints;     // This is N mesh points
 	DimensionParametersContainer m_PointValues;     // m_N points in the mesh
 
 	bool                         m_UseImageOutput;
-	InterpolationMode            m_InterpolationMode;
+	InterpolateModeType          m_InterpolationMode;
 private:
 	CachedMatrixTransform( const Self & );
 	void operator=( const Self & );

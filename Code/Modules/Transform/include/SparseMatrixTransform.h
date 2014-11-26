@@ -82,6 +82,8 @@ public:
     itkTypeMacro( SparseMatrixTransform, CachedMatrixTransform );
     itkNewMacro( Self );
     
+    using Superclass::InterpolateModeType;
+
     typedef typename Superclass::ScalarType                        ScalarType;
     typedef typename Superclass::PointType                         PointType;
     typedef typename Superclass::VectorType                        VectorType;

@@ -89,27 +89,65 @@ int main(int argc, char *argv[]) {
 
 
 	DisplacementFieldPointer field, field_inv;
-	DisplacementFieldConstPointer input_field;
+	DisplacementFieldPointer input_field;
 
 	std::vector< std::string > fnames = isFwd?fieldname:invfieldname;
 
 	if (!isField) {
 		CompositeTransformPointer tf_from_coeff = CompositeTransform::New();
 		tf_from_coeff->SetPhysicalDomainInformation(ref);
+		tf_from_coeff->SetOutputReference(ref);
 
 		for (size_t i = 0; i < fnames.size(); i++) {
-			DisplacementFieldReaderPointer fread = DisplacementFieldReaderType::New();
+			CoefficientsImageArray coeffarr;
+			VectorFieldReaderPointer fread = VectorFieldReaderType::New();
 			fread->SetFileName( fnames[i] );
 			fread->Update();
-			tf_from_coeff->PushBackCoefficients(fread->GetOutput());
+			VectorImageType::Pointer f = fread->GetOutput();
+
+			size_t np = f->GetLargestPossibleRegion().GetNumberOfPixels();
+
+			float* dbuff[DIMENSION];
+			for (size_t dim = 0; dim < DIMENSION; dim++) {
+				coeffarr[dim] = CoefficientsImageType::New();
+				coeffarr[dim]->CopyInformation(f);
+				coeffarr[dim]->Allocate();
+				dbuff[dim] = coeffarr[dim]->GetBufferPointer();
+			}
+
+			float* sbuff = f->GetBufferPointer();
+			float svect;
+			for( size_t pix = 0; pix < np; pix++) {
+
+				for( size_t dim = 0; dim < DIMENSION; dim++) {
+					svect = *( sbuff + pix * DIMENSION + dim );
+					*( dbuff[dim] + pix ) = svect;
+					std::cout << svect << ", ";
+				}
+				std::cout <<  std::endl;
+
+			}
+			tf_from_coeff->PushBackCoefficients(coeffarr);
 		}
 		tf_from_coeff->Update();
 		input_field = tf_from_coeff->GetDisplacementField();
 	} else {
-		DisplacementFieldReaderPointer fread = DisplacementFieldReaderType::New();
-		fread->SetFileName( fnames[0] );
-		fread->Update();
-		input_field = fread->GetOutput();
+		// VectorFieldReaderPointer fread = VectorFieldReaderType::New();
+		// fread->SetFileName( fnames[0] );
+		// fread->Update();
+		// VectorImageType::Pointer f = fread->GetOutput();
+		// size_t ncomps = f->GetVectorLength();
+		// if (ncomps != DIMENSION) {
+		// 	std::cout << "Houston, we gotta problem" << std::endl;
+		// 	return 1;
+		// }
+		// input_field = FieldType::New();
+		// input_field->CopyInformation(f);
+		// input_field->SetRegions(f->GetLargestPossibleRegion());
+		// input_field->Allocate();
+        //
+		// itk::ImageAlgorithm::Copy<VectorImageType, FieldType>(f, input_field,
+		// 		f->GetLargestPossibleRegion(), input_field->GetLargestPossibleRegion());
 	}
 
 	const VectorType* ofb;
