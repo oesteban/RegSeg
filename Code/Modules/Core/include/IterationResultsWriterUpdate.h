@@ -89,7 +89,7 @@ public:
 				for ( size_t i = 0; i< coeff.Size(); i++) {
 					if ( speed[i].IsNotNull() ) {
 						ss.str("");
-						ss << this->m_Prefix << "coeff_speed_" << std::setfill('0')  << "lev" << this->m_Level << "_it" << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
+						ss << this->m_Prefix << "coeff_gk_" << std::setfill('0')  << "lev" << this->m_Level << "_it" << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
 						p->SetFileName( ss.str().c_str() );
 						p->SetInput( speed[i] );
 						p->Update();
