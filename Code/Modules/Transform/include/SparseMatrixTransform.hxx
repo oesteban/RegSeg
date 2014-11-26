@@ -221,7 +221,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->m_Derivatives[i]->Allocate();
 		this->m_Derivatives[i]->FillBuffer( 0.0 );
 	}
-
+	this->Modified();
 }
 
 template< class TScalar, unsigned int NDimensions >
