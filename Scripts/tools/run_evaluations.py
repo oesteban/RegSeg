@@ -223,17 +223,17 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
         (st1,        sunwarp, [('out_dis_set.surf', 'points')])
     ])
 
-#     export0 = pe.Node(ExportSlices(), name='ExportREGSEG')
-#     export1 = pe.Node(ExportSlices(), name='ExportFMB')
-#
-#     wf.connect([
-#         (regseg,   export0, [('outputnode.out_surf', 'surfaces0')]),
-#         (st1,      export0, [('out_dis_set.surf', 'surfaces1')]),
-#         (dti,      export0, [('outputnode.fa', 'reference')]),
-#         (sunwarp,  export1, [('out_points', 'surfaces0')]),
-#         (st1,      export1, [('out_ref_set.surf', 'surfaces1')]),
-#         (rdti,     export1, [('outputnode.fa', 'reference')])
-#     ])
+    export0 = pe.Node(ExportSlices(), name='ExportREGSEG')
+    export1 = pe.Node(ExportSlices(), name='ExportFMB')
+
+    wf.connect([
+        (regseg,   export0, [('outputnode.out_surf', 'surfaces0')]),
+        (st1,      export0, [('out_dis_set.surf', 'surfaces1')]),
+        (dti,      export0, [('outputnode.fa', 'reference')]),
+        (sunwarp,  export1, [('out_points', 'surfaces0')]),
+        (st1,      export1, [('out_ref_set.surf', 'surfaces1')]),
+        (rdti,     export1, [('outputnode.fa', 'reference')])
+    ])
 
 #    mesh0 = pe.MapNode(P2PDistance(weighting='surface'),
 #                       iterfield=['surface1', 'surface2'],
