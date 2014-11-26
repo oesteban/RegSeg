@@ -66,7 +66,7 @@ CachedMatrixTransform<TScalar,NDimensions>
 Superclass(),
 m_NumberOfPoints(0),
 m_UseImageOutput(false),
-m_InterpolationMode(UNKOWN_MODE) {
+m_InterpolationMode(UNKNOWN) {
 	for( size_t i = 0; i<Dimension; i++ ) {
 		this->m_PointValues[i] = DimensionVector();
 	}
@@ -94,9 +94,13 @@ CachedMatrixTransform<TScalar,NDimensions>
 	ContinuousIndexType o_idx;
 	o_idx.Fill( -0.5 );
 
+	this->m_ReferenceSize = image->GetLargestPossibleRegion().GetSize();
+	this->m_ReferenceSpacing = image->GetSpacing();
+	this->m_ReferenceOrigin = image->GetOrigin();
+
 	ContinuousIndexType e_idx;
 	for ( size_t dim=0; dim< Dimension; dim++ ) {
-		e_idx[dim] = image->GetLargestPossibleRegion().GetSize()[dim] - 0.5;
+		e_idx[dim] = this->m_ReferenceSize[dim] - 0.5;
 	}
 
 	this->m_DomainDirection = image->GetDirection();

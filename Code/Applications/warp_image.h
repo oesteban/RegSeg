@@ -20,8 +20,13 @@
 #include <boost/filesystem.hpp>
 
 #include <itkImage.h>
+#include <itkVectorImage.h>
+
+#include "itkVectorIndexSelectionCastImageFilter.h"
+
 #include <itkImageFileReader.h>
 #include <itkImageFileWriter.h>
+#include <itkCastImageFilter.h>
 #include <itkWarpImageFilter.h>
 #include <itkResampleImageFilter.h>
 #include <itkBSplineInterpolateImageFunction.h>
@@ -52,6 +57,10 @@ typedef typename ReaderType::Pointer                         ReaderPointer;
 typedef itk::ImageFileWriter<ChannelType>                    WriterType;
 typedef typename WriterType::Pointer                         WriterPointer;
 
+typedef typename itk::VectorImage< float, DIMENSION >        VectorImageType;
+
+typedef typename itk::ImageFileReader<VectorImageType>       VectorFieldReaderType;
+typedef typename VectorFieldReaderType::Pointer              VectorFieldReaderPointer;
 
 typedef itk::Image< unsigned char, DIMENSION >               MaskType;
 typedef typename MaskType::Pointer                           MaskPointer;
@@ -69,15 +78,17 @@ typedef rstk::CompositeMatrixTransform
 typedef CompositeTransform::Pointer                          CompositeTransformPointer;
 
 
-typedef typename BSplineTransform::CoefficientsImageType     CoefficientsType;
+typedef typename BSplineTransform::CoefficientsImageType     CoefficientsImageType;
 typedef typename BSplineTransform::CoefficientsImageArray    CoefficientsImageArray;
 typedef typename BSplineTransform::FieldType                 FieldType;
 typedef typename BSplineTransform::VectorType                VectorType;
 
+
+typedef itk::VectorIndexSelectionCastImageFilter
+		          <VectorImageType, CoefficientsImageType>   IndexSelectionType;
+typedef typename IndexSelectionType::Pointer                 IndexSelectionPointer;
 typedef typename FieldType::Pointer              			 DisplacementFieldPointer;
 typedef typename FieldType::ConstPointer              		 DisplacementFieldConstPointer;
-typedef itk::ImageFileReader<FieldType>          			 DisplacementFieldReaderType;
-typedef typename DisplacementFieldReaderType::Pointer        DisplacementFieldReaderPointer;
 
 typedef rstk::DisplacementFieldFileWriter< FieldType >       FieldWriter;
 typedef typename FieldWriter::Pointer                        FieldWriterPointer;

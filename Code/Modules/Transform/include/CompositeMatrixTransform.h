@@ -48,6 +48,7 @@
 #include <itkDisplacementFieldTransform.h>
 #include <itkMatrix.h>
 
+#include "CachedMatrixTransform.h"
 #include "SparseMatrixTransform.h"
 #include "BSplineSparseMatrixTransform.h"
 #include "rstkMacro.h"
@@ -55,29 +56,28 @@
 namespace rstk {
 
 template< class TScalar, unsigned int NDimensions = 3u >
-class CompositeMatrixTransform : public itk::DisplacementFieldTransform< TScalar, NDimensions >
+class CompositeMatrixTransform : public rstk::CachedMatrixTransform< TScalar, NDimensions >
 {
 public:
     /* Standard class typedefs. */
-    typedef CompositeMatrixTransform          Self;
-    typedef itk::DisplacementFieldTransform
-    		         < TScalar, NDimensions > Superclass;
-    typedef itk::SmartPointer< Self >         Pointer;
-    typedef itk::SmartPointer< const Self >   ConstPointer;
+    typedef CompositeMatrixTransform                                Self;
+    typedef rstk::CachedMatrixTransform< TScalar, NDimensions >     Superclass;
+    typedef itk::SmartPointer< Self >                               Pointer;
+    typedef itk::SmartPointer< const Self >                         ConstPointer;
 
-    itkTypeMacro( CompositeMatrixTransform, DisplacementFieldTransform );
+    itkTypeMacro( CompositeMatrixTransform, CachedMatrixTransform );
     itkNewMacro( Self );
-
     itkStaticConstMacro( Dimension, unsigned int, NDimensions );
 
-    typedef typename Superclass::ScalarType          ScalarType;
-    typedef itk::Point< ScalarType, Dimension >      PointType;
-    typedef itk::Vector< ScalarType, Dimension >     VectorType;
-    typedef itk::Matrix
-    	    < ScalarType, Dimension, Dimension >     MatrixType;
+    using Superclass::InterpolateModeType;
 
-    typedef itk::DisplacementFieldTransform< ScalarType, Dimension > DisplacementFieldTransformType;
-    typedef typename DisplacementFieldTransformType::Pointer         DisplacementFieldTransformPointer;
+    typedef typename Superclass::ScalarType                          ScalarType;
+    typedef typename Superclass::PointType                           PointType;
+    typedef typename Superclass::VectorType                          VectorType;
+    typedef typename Superclass::MatrixType                          MatrixType;
+
+    typedef typename Superclass::DisplacementFieldTransformType      DisplacementFieldTransformType;
+    typedef typename Superclass::DisplacementFieldTransformPointer   DisplacementFieldTransformPointer;
 
     /** Standard coordinate point type for this class. */
     typedef typename Superclass::InputPointType                      InputPointType;
@@ -99,33 +99,32 @@ public:
     typedef typename DisplacementFieldType::Pointer                  DisplacementFieldPointer;
     typedef typename DisplacementFieldType::PixelType                DisplacementType;
 
-    typedef BSplineSparseMatrixTransform< ScalarType >               TransformComponentType;
+    typedef rstk::SparseMatrixTransform< ScalarType >                TransformComponentType;
     typedef typename TransformComponentType::Pointer                 TransformComponentPointer;
+    typedef typename TransformComponentType::ConstPointer            TransformComponentConstPointer;
+    typedef std::vector<TransformComponentPointer>                   TransformsContainer;
 
-    typedef typename TransformComponentType::FieldType               TransformFieldType;
-    typedef typename TransformFieldType::Pointer                     TransformFieldPointer;
-    typedef typename TransformFieldType::ConstPointer                TransformFieldConstPointer;
-    typedef typename TransformComponentType::CoefficientsImageType   CoefficientsImageType;
-    typedef typename TransformComponentType::CoefficientsImageArray  CoefficientsImageArray;
-    typedef typename TransformComponentType::FieldType               CoefficientsFieldType;
-    typedef typename CoefficientsFieldType::Pointer                  CoefficientsFieldTypePointer;
-    typedef typename CoefficientsFieldType::ConstPointer             CoefficientsFieldTypeConstPointer;
-    typedef typename TransformComponentType::DomainBase              DomainBaseType;
-    typedef typename DomainBaseType::SizeType                        DomainSizeType;
-    typedef typename DomainBaseType::DirectionType                   DomainDirectionType;
-    typedef typename DomainBaseType::PointType                       DomainOriginType;
-    typedef typename DomainBaseType::SpacingType                     DomainSpacingType;
-    typedef typename std::vector<CoefficientsFieldTypeConstPointer>  CoefficientsContainer;
+    typedef typename Superclass::CoefficientsImageType               CoefficientsImageType;
+    typedef typename Superclass::CoefficientsImageArray              CoefficientsImageArray;
+
+    typedef typename Superclass::FieldType                           FieldType;
+    typedef typename FieldType::Pointer                              FieldPointer;
+    typedef typename FieldType::ConstPointer                         FieldConstPointer;
+
+    typedef rstk::BSplineSparseMatrixTransform< ScalarType >         BSplineComponentType;
+    typedef typename BSplineComponentType::Pointer                   BSplineComponentPointer;
+
 
     itkSetMacro(NumberOfTransforms, size_t);
     itkGetConstMacro(NumberOfTransforms, size_t);
 
-    void PushBackCoefficients(const CoefficientsFieldType* coeffs) {
-    	this->m_Coefficients.push_back(coeffs);
-    	this->m_NumberOfTransforms = this->m_Coefficients.size();
+    void PushBackTransform(TransformComponentType* tf) {
+    	this->m_Components.push_back(tf);
+    	this->m_NumberOfTransforms = this->m_Components.size();
     }
 
-    void SetPhysicalDomainInformation( const DomainBaseType* image );
+    void PushBackCoefficients(const CoefficientsImageArray & images);
+    void PushBackCoefficients(const FieldType* field);
     void Update() { this->Compute(); }
 
 protected:
@@ -138,12 +137,10 @@ private:
 	CompositeMatrixTransform( const Self & );
 	void operator=( const Self & );
 
-	CoefficientsContainer m_Coefficients;
+	void InitializeField();
+
+	TransformsContainer m_Components;
 	size_t m_NumberOfTransforms;
-	DomainSizeType m_ReferenceSize;
-	DomainDirectionType m_ReferenceDirection;
-	DomainOriginType m_ReferenceOrigin;
-	DomainSpacingType m_ReferenceSpacing;
 };
 } // end namespace rstk
 
