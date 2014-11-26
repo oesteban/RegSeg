@@ -67,7 +67,7 @@ Superclass(),
 m_UseImageOutput(false) {
 	this->m_ControlGridSize.Fill(10);
 	this->m_ControlGridOrigin.Fill(0.0);
-	this->m_ControlGridSpacing.Fill(1.0);
+	this->m_ControlGridSpacing.Fill(0.0);
 	this->m_ControlGridDirection.SetIdentity();
 	this->m_ControlGridDirectionInverse.SetIdentity();
 
@@ -162,15 +162,22 @@ template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
 ::InitializeCoefficientsImages() {
-
 	// Compute pixel conversion matrices
 	MatrixType scale;
 
+
 	for ( size_t i = 0; i < Dimension; i++ ) {
-	  if ( this->m_ControlGridSpacing[i] == 0.0 ) {
-		itkExceptionMacro("A spacing of 0 is not allowed: Spacing is " << this->m_ControlGridSpacing);
-	  }
-	  scale[i][i] = this->m_ControlGridSpacing[i];
+		if( this->m_ControlGridSize[i] == 0 ) {
+			itkExceptionMacro(<< " control points grid size is not set.");
+		}
+
+		PointType step;
+		if ( this->m_ControlGridSpacing[i] == 0.0 ) {
+			step[i] = (this->m_DomainExtent[1][i] - this->m_DomainExtent[0][i])/ (1.0*this->m_ControlGridSize[i]);
+			this->m_ControlGridSpacing[i] = fabs(step[i]);
+			this->m_ControlGridOrigin[i] = this->m_DomainExtent[0][i] + 0.5 * step[i];
+		}
+		scale[i][i] = this->m_ControlGridSpacing[i];
 	}
 
 	if ( vnl_determinant( this->m_ControlGridDirection.GetVnlMatrix() ) == 0.0 ) {
