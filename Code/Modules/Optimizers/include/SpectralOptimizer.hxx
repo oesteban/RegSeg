@@ -161,7 +161,7 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 
 	this->m_CurrentValue = this->m_CurrentEnergy;
 	this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
-	this->m_Transform->UpdateField();
+	// this->m_Transform->UpdateField();
 	this->m_Transform->Interpolate();
 	this->SetUpdate();
 
@@ -502,9 +502,10 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 		itkExceptionMacro( << "functional must be set." );
 	}
 
-	this->m_Transform->SetControlGridSize( this->m_GridSize );
+
 	this->m_Transform->SetPhysicalDomainInformation( this->m_Functional->GetReferenceImage() );
 	this->m_Transform->SetOutputPoints( this->m_Functional->GetNodesPosition() );
+	this->m_Transform->SetControlGridSize( this->m_GridSize );
 
 	CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
 	this->m_GridSpacing = coeff[0]->GetSpacing();

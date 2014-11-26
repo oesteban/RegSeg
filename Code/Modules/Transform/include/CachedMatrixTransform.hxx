@@ -99,6 +99,8 @@ CachedMatrixTransform<TScalar,NDimensions>
 		e_idx[dim] = image->GetLargestPossibleRegion().GetSize()[dim] - 0.5;
 	}
 
+	this->m_DomainDirection = image->GetDirection();
+
 	image->TransformContinuousIndexToPhysicalPoint( o_idx, m_DomainExtent[0] );
 	image->TransformContinuousIndexToPhysicalPoint( e_idx, m_DomainExtent[1] );
 

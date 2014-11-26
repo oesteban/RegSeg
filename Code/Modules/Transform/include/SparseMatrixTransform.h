@@ -224,8 +224,24 @@ public:
 
 
     void SetControlGridInformation( const DomainBase* image );
-    void SetControlGridSize( size_t s ) { this->m_ControlGridSize.Fill( s ); }
-    itkSetMacro( ControlGridSize, SizeType );
+
+    void SetControlGridSize( size_t s ) {
+    	SizeType size; size.Fill(s);
+    	this->SetControlGridSize(size);
+    }
+
+    void SetControlGridSize (const SizeType _arg) {
+        if ( this->GetDebug() && ::itk::Object::GetGlobalWarningDisplay() ) {
+          std::ostringstream itkmsg;
+          itkmsg << "Debug: In " "SparseMatrixTransform.h" ", line " << 234 << "\n"  << this->GetNameOfClass() << " (" << this << "): " "setting " "ControlGridSize" " to " << _arg  << "\n\n";                                                 \
+          ::itk::OutputWindowDisplayDebugText( itkmsg.str().c_str() );
+        }
+        if ( this->m_ControlGridSize != _arg ) {
+          this->m_ControlGridSize = _arg;
+          this->InitializeCoefficientsImages();
+        }
+    }
+
     itkGetConstMacro( ControlGridSize, SizeType );
 
     /** Return the multithreader used by this class. */
