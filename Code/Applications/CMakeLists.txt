@@ -18,7 +18,7 @@ TARGET_LINK_LIBRARIES(warp_image ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 ADD_EXECUTABLE(regridavg regridavg.cxx ) 
 TARGET_LINK_LIBRARIES(regridavg ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 
-find_package(VTK COMPONENTS vtkRenderingOpenGL vtkRenderingFreeType NO_MODULE)
+find_package(VTK COMPONENTS vtkRenderingOpenGL vtkRenderingFreeType vtkRenderingImage vtkIOLegacy NO_MODULE)
 
 ADD_EXECUTABLE(slice_contours slice_contours.cxx )
 set_property(TARGET slice_contours APPEND
