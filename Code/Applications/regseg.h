@@ -58,6 +58,7 @@
 #include <itkQuadEdgeMesh.h>
 #include <itkVTKPolyDataReader.h>
 #include "rstkVTKPolyDataWriter.h"
+#include "rstkCoefficientsWriter.h"
 #include <itkVectorImageToImageAdaptor.h>
 #include <itkComposeImageFilter.h>
 #include <itkBSplineInterpolateImageFunction.h>
@@ -65,9 +66,8 @@
 #include <itkResampleImageFilter.h>
 #include <itkWarpImageFilter.h>
 
-
 #include "ACWERegistrationMethod.h"
-
+#include "SparseMatrixTransform.h"
 #include "DisplacementFieldFileWriter.h"
 #include "DisplacementFieldComponentsFileWriter.h"
 
@@ -90,6 +90,10 @@ typedef BSplineSparseMatrixTransform<ScalarType,
 		                                     DIMENSION, 3u>  TransformType;
 typedef TransformType::Pointer                               TransformPointer;
 typedef typename TransformType::CoefficientsImageType        CoefficientsType;
+
+typedef SparseMatrixTransform<ScalarType, DIMENSION >        BaseTransformType;
+typedef BaseTransformType::Pointer                           BaseTransformPointer;
+typedef typename BaseTransformType::AltCoeffType             AltCoeffType;
 
 
 typedef itk::ThresholdImageFilter< ChannelType >             ThresholdFilter;

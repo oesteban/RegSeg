@@ -220,6 +220,7 @@ public:
 	itkGetConstObjectMacro(DisplacementField, FieldType );
 	itkGetConstObjectMacro(InverseDisplacementField, FieldType );
 
+	itkGetConstMacro(Transforms, LevelTransformList);
 	itkGetMacro( JSONRoot, JSONRoot);
 
 	rstkSetVectorElement( GridSchedule, GridSizeType );

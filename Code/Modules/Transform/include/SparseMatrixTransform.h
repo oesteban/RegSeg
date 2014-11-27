@@ -303,13 +303,6 @@ protected:
 	inline ScalarType EvaluateKernel( const VectorType r, const size_t dim = 0 );
 	inline ScalarType EvaluateDerivative( const VectorType r, const size_t dim );
 
-	inline PointType GetParameterLocation ( size_t id ) {
-		if ( id >= this->m_NumberOfParameters ) {
-			itkExceptionMacro(<< "Trying to get sample with id " << id << ", when NumberOfParameters is set to " << this->m_NumberOfParameters );
-		}
-		return this->m_ParamLocations[id];
-	}
-
 
 	/* Field domain definitions */
 	SizeType                     m_ControlGridSize;

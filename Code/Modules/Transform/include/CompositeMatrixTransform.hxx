@@ -62,13 +62,6 @@ CompositeMatrixTransform<TScalar,NDimensions>
 		this->m_Components[c]->Interpolate();
 		FieldConstPointer f = this->m_Components[c]->GetDisplacementField();
 
-		typedef rstk::CoefficientsWriter< AltCoeffType > W;
-		typename W::Pointer w = W::New();
-		w->SetFileName("test.vtk");
-		w->SetInput(this->m_Components[c]->GetFlatParameters());
-		w->Update();
-
-
 		const DisplacementType* cbuffer = f->GetBufferPointer();
 		for( size_t i = 0; i < nPix; i++) {
 			vc = *(cbuffer + i);
