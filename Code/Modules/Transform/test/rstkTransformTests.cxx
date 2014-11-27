@@ -381,12 +381,12 @@ TEST_F( TransformTests, CompareBSplineInterpolation ) {
 	m_transform->Interpolate();
 
 	Writer::Pointer w = Writer::New();
-	w->SetInput( m_transform->GetOutputField() );
+	w->SetInput( m_transform->GetDisplacementField() );
 	w->SetFileName( "interpolated_field");
 	w->Update();
 
 	const VectorType* rbuf = m_hr_field->GetBufferPointer();
-	const VectorType* tbuf = m_transform->GetOutputField()->GetBufferPointer();
+	const VectorType* tbuf = m_transform->GetDisplacementField()->GetBufferPointer();
 
 	VectorType v1, v2;
 	double error = 0.0;
@@ -411,7 +411,7 @@ TEST_F( TransformTests, RandomSampleTest ) {
 	m_transform->Interpolate();
 
 	Writer::Pointer w = Writer::New();
-	w->SetInput( m_transform->GetOutputField() );
+	w->SetInput( m_transform->GetDisplacementField() );
 	w->SetFileName( "interpolated_field_3.7");
 	w->Update();
 
@@ -433,7 +433,7 @@ TEST_F( TransformTests, RandomSampleTest ) {
 
 	tfm->Interpolate();
 
-	FieldType::ConstPointer field = m_transform->GetOutputField();
+	FieldType::ConstPointer field = m_transform->GetDisplacementField();
 
 	double error = 0.0;
 	VectorType v1, v2;

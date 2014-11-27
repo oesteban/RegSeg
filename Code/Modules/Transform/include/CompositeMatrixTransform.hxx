@@ -24,49 +24,45 @@ CompositeMatrixTransform<TScalar,NDimensions>
 	os << indent << indent << "Number of transforms: "<< this->m_NumberOfTransforms << std::endl;
 }
 
+
 template< class TScalar, unsigned int NDimensions >
 void
 CompositeMatrixTransform<TScalar,NDimensions>
-::InitializeField() {
-	if( this->m_DisplacementField.IsNull() ) {
-		OutputVectorType zerov; zerov.Fill(0.0);
-		this->m_DisplacementField = DisplacementFieldType::New();
-		this->m_DisplacementField->SetRegions(this->m_ReferenceSize);
-		this->m_DisplacementField->SetSpacing(this->m_ReferenceSpacing);
-		this->m_DisplacementField->SetOrigin(this->m_ReferenceOrigin);
-		this->m_DisplacementField->SetDirection(this->m_DomainDirection);
-		this->m_DisplacementField->Allocate();
-		this->m_DisplacementField->FillBuffer(zerov);
+::Interpolate() {
+	if ((this->m_NumberOfTransforms == 0) || (this->m_Components.size()!=this->m_NumberOfTransforms)) {
+		itkExceptionMacro(<< "number of transforms is zero or it does not match the number of stored coefficients sets.");
 	}
+
+	switch(this->m_InterpolationMode) {
+	case Superclass::GRID_MODE:
+		this->ComputeGrid();
+		break;
+	case Superclass::POINTS_MODE:
+		this->ComputePoints();
+		break;
+	default:
+		itkExceptionMacro(<< "output mode has not been initialized");
+		break;
+	}
+
 }
 
 template< class TScalar, unsigned int NDimensions >
 void
 CompositeMatrixTransform<TScalar,NDimensions>
-::Compute() {
-	if ((this->m_NumberOfTransforms == 0) || (this->m_Components.size()!=this->m_NumberOfTransforms)) {
-		itkExceptionMacro(<< "number of transforms is zero or it does not match the number of stored coefficients sets.");
-	}
-
-	if( this->m_InterpolationMode == Superclass::UNKNOWN ) {
-		itkExceptionMacro(<< "output mode has not been initialized");
-	}
-	this->InitializeField();
-
+::ComputeGrid() {
 	DisplacementType* dfbuffer = this->m_DisplacementField->GetBufferPointer();
 	size_t nPix = this->m_DisplacementField->GetLargestPossibleRegion().GetNumberOfPixels();
 
-	DisplacementType v;
+	DisplacementType vc;
 	for( size_t c = 0; c < this->m_NumberOfTransforms; c++) {
-		//itkDynamicCastInDebugMode< const CoefficientsImageType* >
+		this->m_Components[c]->SetOutputReference(this->GetDisplacementField());
 		this->m_Components[c]->Interpolate();
-		FieldConstPointer f = this->m_Components[c]->GetField();
+		FieldConstPointer f = this->m_Components[c]->GetDisplacementField();
 
 		const DisplacementType* cbuffer = f->GetBufferPointer();
-		DisplacementType vc;
 		for( size_t i = 0; i < nPix; i++) {
 			vc = *(cbuffer + i);
-			v = *(dfbuffer + i);
 			if( vc.GetNorm() > 1.e-5)
 				*(dfbuffer + i)+= vc;
 		}
@@ -76,17 +72,34 @@ CompositeMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 void
 CompositeMatrixTransform<TScalar,NDimensions>
-::PushBackCoefficients(const CoefficientsImageArray & images) {
-	BSplineComponentPointer tf = BSplineComponentType::New();
+::ComputePoints() {
+	size_t nps = this->m_PointLocations.size();
 
-	if(this->m_InterpolationMode == Superclass::POINTS_MODE) {
-		tf->SetOutputPoints( this->GetPointLocations() );
-	} else if (this->m_InterpolationMode == Superclass::GRID_MODE) {
-		tf->SetOutputReference(this->m_DisplacementField);
+	for( size_t d = 0; d<Dimension; d++) {
+		this->m_PointValues[d] = DimensionVector();
+		this->m_PointValues[d].set_size( this->m_NumberOfPoints );
+		this->m_PointValues[d].fill(0.0);
 	}
 
-	tf->SetCoefficientsImages(images);
+	VectorType vc;
+	for( size_t c = 0; c < this->m_NumberOfTransforms; c++) {
+		this->m_Components[c]->SetOutputPoints( this->GetPointLocations() );
+		this->m_Components[c]->Interpolate();
 
+		DimensionParametersContainer disp = this->m_Components[c]->GetPointValues();
+
+		for(size_t d = 0; d < Dimension; d++) {
+			this->m_PointValues[d]+= disp[d];
+		}
+	}
+}
+
+template< class TScalar, unsigned int NDimensions >
+void
+CompositeMatrixTransform<TScalar,NDimensions>
+::PushBackCoefficients(const CoefficientsImageArray & images) {
+	BSplineComponentPointer tf = BSplineComponentType::New();
+	tf->SetCoefficientsImages(images);
 	this->PushBackTransform(tf);
 }
 
@@ -95,12 +108,6 @@ void
 CompositeMatrixTransform<TScalar,NDimensions>
 ::PushBackCoefficients(const FieldType* field) {
 	BSplineComponentPointer tf = BSplineComponentType::New();
-	if(this->m_InterpolationMode == Superclass::POINTS_MODE) {
-		tf->SetOutputPoints( this->GetPointLocations() );
-	} else if (this->m_InterpolationMode == Superclass::GRID_MODE) {
-		tf->SetOutputReference(this->m_DisplacementField);
-	}
-
 	tf->SetCoefficientsVectorImage(field);
 	this->PushBackTransform(tf);
 }

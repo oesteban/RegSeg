@@ -341,7 +341,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 
 	for( size_t i = 0; i < level; i++ ) {
 		this->m_Transforms[i]->Interpolate();
-		tfbuff[i] = this->m_Transforms[i]->GetOutputField()->GetBufferPointer();
+		tfbuff[i] = this->m_Transforms[i]->GetDisplacementField()->GetBufferPointer();
 	}
 
 	size_t nPix = this->m_DisplacementField->GetLargestPossibleRegion().GetNumberOfPixels();
