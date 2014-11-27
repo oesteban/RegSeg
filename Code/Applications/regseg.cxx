@@ -219,13 +219,13 @@ int main(int argc, char *argv[]) {
 		root["error"]["message"] = std::string(exc.what());
 		std::ofstream logfile((outPrefix + logFileName + ".log" ).c_str());
 		logfile << root;
-		throw;
+		// throw;
 	} catch (...) {
 		root["levels"] = acwereg->GetJSONRoot();
 		root["error"]["message"] = std::string("Unknown exception");
 		std::ofstream logfile((outPrefix + logFileName + ".log" ).c_str());
 		logfile << root;
-		throw;
+		// throw;
 	}
 
 	root["levels"] = acwereg->GetJSONRoot();
@@ -237,22 +237,30 @@ int main(int argc, char *argv[]) {
 	// Write out final results ---------------------------------------------------------
 	//
 
+	typename RegistrationType::LevelTransformList tfs = acwereg->GetTransforms();
+
+	for (size_t i = 0; i < tfs.size(); i++) {
+		// typename FieldWriter::Pointer cwrite = FieldWriter::New();
+		// std::stringstream ss;
+		// ss << outPrefix << "_coeff_" << i << ".vti";
+		// cwrite->SetFileName( ss.str().c_str() );
+		// cwrite->SetInput( tfs[i]->GetCoefficientsField() );
+		// cwrite->Update();
+
+		std::stringstream sb;
+		sb << outPrefix << "_coeff_" << i << ".vtk";
+		typedef rstk::CoefficientsWriter< AltCoeffType > W;
+		typename W::Pointer w = W::New();
+		w->SetFileName(sb.str().c_str());
+		w->SetInput(tfs[i]->GetFlatParameters());
+		w->Update();
+	}
+
 	// Displacementfield
 	typename FieldWriter::Pointer fwrite = FieldWriter::New();
 	fwrite->SetFileName( (outPrefix + "_field.nii.gz" ).c_str() );
 	fwrite->SetInput( acwereg->GetDisplacementField() );
 	fwrite->Update();
-
-	typename RegistrationType::FieldList coeffs = acwereg->GetCoefficientsField();
-
-	for (size_t i = 0; i < coeffs.size(); i++) {
-		typename FieldWriter::Pointer cwrite = FieldWriter::New();
-		std::stringstream ss;
-		ss << outPrefix << "_coeff_" << i << ".nii.gz";
-		cwrite->SetFileName( ss.str().c_str() );
-		cwrite->SetInput( coeffs[i] );
-		cwrite->Update();
-	}
 
 	// Contours and regions
 	ContourList conts = acwereg->GetCurrentContours();

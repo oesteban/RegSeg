@@ -1034,8 +1034,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 	AltCoeffDataPointer data = this->m_FlatCoeffs->GetPointData();
 
 	for(size_t i = 0; i < this->m_NumberOfParameters; i++) {
-		points->InsertElement(i, this->GetParameterLocation(i));
-		data->InsertElement(i, this->GetParameterValue(i));
+		points->InsertElement(i, this->m_ParamLocations[i]);
+		data->InsertElement(i, this->GetCoefficient(i));
 	}
 	return this->m_FlatCoeffs;
 }
