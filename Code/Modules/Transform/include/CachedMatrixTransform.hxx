@@ -187,7 +187,6 @@ CachedMatrixTransform<TScalar,NDimensions>
 	return v;
 }
 
-
 template< class TScalar, unsigned int NDimensions >
 typename CachedMatrixTransform<TScalar,NDimensions>::DimensionParametersContainer
 CachedMatrixTransform<TScalar,NDimensions>
