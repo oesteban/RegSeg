@@ -74,9 +74,6 @@ public:
 	typedef typename Superclass::ParametersType                                         ParametersType;
 	typedef typename Superclass::PointsList                                             PointsList;
 	typedef typename Superclass::JacobianType                                           JacobianType;
-	typedef typename Superclass::PointSetTraitsType                                     PointSetTraitsType;
-	typedef typename Superclass::PointSetType                                           PointSetType;
-	typedef typename Superclass::PointSetPointer                                        PointSetPointer;
 	typedef typename Superclass::CoefficientsImageArray                                 CoefficientsImageArray;
 	typedef typename Superclass::CoefficientsImageType                                  CoefficientsImageType;
 
@@ -97,6 +94,9 @@ public:
     typedef typename Superclass::OutputVnlVectorType                                    OutputVnlVectorType;
 
     typedef typename Superclass::ArrayType                                              ArrayType;
+
+    typedef typename Superclass::AltCoeffType                        AltCoeffType;
+    typedef typename Superclass::AltCoeffPointer                     AltCoeffPointer;
 
     using Superclass::InterpolateModeType;
 protected:

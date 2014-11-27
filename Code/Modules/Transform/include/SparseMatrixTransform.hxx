@@ -1025,6 +1025,20 @@ SparseMatrixTransform<TScalar,NDimensions>
 	return vectorized;
 }
 
+template< class TScalar, unsigned int NDimensions >
+typename SparseMatrixTransform<TScalar,NDimensions>::AltCoeffPointer
+SparseMatrixTransform<TScalar,NDimensions>
+::GetFlatParameters() {
+	this->m_FlatCoeffs = AltCoeffType::New();
+	AltCoeffContainerPointer points = this->m_FlatCoeffs->GetPoints();
+	AltCoeffDataPointer data = this->m_FlatCoeffs->GetPointData();
+
+	for(size_t i = 0; i < this->m_NumberOfParameters; i++) {
+		points->InsertElement(i, this->GetParameterLocation(i));
+		data->InsertElement(i, this->GetParameterValue(i));
+	}
+	return this->m_FlatCoeffs;
+}
 
 //template< class TScalar, unsigned int NDimensions >
 //void

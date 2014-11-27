@@ -38,8 +38,10 @@
 
 #include <itkDisplacementFieldTransform.h>
 #include <itkMesh.h>
+#include <itkPointSet.h>
 #include <itkVTKPolyDataReader.h>
 #include "rstkVTKPolyDataWriter.h"
+#include "rstkCoefficientsWriter.h"
 #include "CompositeMatrixTransform.h"
 #include "BSplineSparseMatrixTransform.h"
 #include "DisplacementFieldFileWriter.h"
@@ -133,6 +135,11 @@ typedef itk::VTKPolyDataReader<MeshType>                       MeshReaderType;
 typedef typename MeshReaderType::Pointer                       MeshReaderPointer;
 typedef rstk::VTKPolyDataWriter<MeshType>                      MeshWriterType;
 typedef typename MeshWriterType::Pointer                       MeshWriterPointer;
+
+typedef itk::PointSet<VectorType, DIMENSION>                   AltCoeffType;
+typedef typename AltCoeffType::Pointer                         AltCoeffPointer;
+typedef rstk::CoefficientsWriter<AltCoeffType>                 AltCoeffWriter;
+typedef typename AltCoeffWriter::Pointer                       AltCoeffWriterPointer;
 
 int main(int argc, char *argv[]);
 

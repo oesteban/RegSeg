@@ -105,9 +105,9 @@ public:
     typedef typename Superclass::DimensionParametersContainer      DimensionParametersContainer;
     typedef typename Superclass::PointsList                        PointsList;
     typedef typename Superclass::JacobianType                      JacobianType;
-    typedef typename Superclass::PointSetTraitsType                PointSetTraitsType;
-    typedef typename Superclass::PointSetType                      PointSetType;
-    typedef typename Superclass::PointSetPointer                   PointSetPointer;
+    // typedef typename Superclass::PointSetTraitsType                PointSetTraitsType;
+    // typedef typename Superclass::PointSetType                      PointSetType;
+    // typedef typename Superclass::PointSetPointer                   PointSetPointer;
 
 
     /** Standard coordinate point type for this class. */
@@ -155,6 +155,11 @@ public:
     /** Type of the input parameters. */
     typedef typename Superclass::ParametersType            ParametersType;
     typedef typename Superclass::ParametersValueType       ParametersValueType;
+
+    typedef itk::PointSet<OutputVectorType, Dimension>                          AltCoeffType;
+    typedef typename AltCoeffType::Pointer                                      AltCoeffPointer;
+    typedef typename AltCoeffType::PointsContainerPointer                       AltCoeffContainerPointer;
+    typedef typename AltCoeffType::PointDataContainerPointer                    AltCoeffDataPointer;
 
     /** Define the internal parameter helper used to access the field */
     typedef typename Superclass::OptimizerParametersHelperType OptimizerParametersHelperType;
@@ -247,6 +252,9 @@ public:
 
 	void Interpolate() { this->Interpolate( this->VectorizeCoefficients() ); }
 
+	AltCoeffPointer GetFlatParameters();
+
+
     /** Return the multithreader used by this class. */
     itk::MultiThreader * GetMultiThreader() const { return m_Threader; }
     itkSetClampMacro( NumberOfThreads, itk::ThreadIdType, 1, ITK_MAX_THREADS);
@@ -295,6 +303,13 @@ protected:
 	inline ScalarType EvaluateKernel( const VectorType r, const size_t dim = 0 );
 	inline ScalarType EvaluateDerivative( const VectorType r, const size_t dim );
 
+	inline PointType GetParameterLocation ( size_t id ) {
+		if ( id >= this->m_NumberOfParameters ) {
+			itkExceptionMacro(<< "Trying to get sample with id " << id << ", when NumberOfParameters is set to " << this->m_NumberOfParameters );
+		}
+		return this->m_ParamLocations[id];
+	}
+
 
 	/* Field domain definitions */
 	SizeType                     m_ControlGridSize;
@@ -307,6 +322,7 @@ protected:
 
 	size_t                       m_NumberOfParameters;  // This is K parameters (=coefficients, control points)
 	PointsList                   m_ParamLocations;
+	AltCoeffPointer              m_FlatCoeffs;
 
 	CoefficientsImageArray       m_CoefficientsImages;
 	CoefficientsImageArray       m_Derivatives;

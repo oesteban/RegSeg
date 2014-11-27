@@ -49,7 +49,6 @@
 #include <itkPoint.h>
 #include <itkVector.h>
 #include <itkMatrix.h>
-#include <itkPointSet.h>
 #include <itkImage.h>
 #include <itkDefaultStaticMeshTraits.h>
 #include <itkKernelFunctionBase.h>
@@ -113,10 +112,10 @@ public:
 
     typedef itk::Matrix< ScalarType, Dimension, Dimension >                     JacobianType;
     
-    typedef itk::DefaultStaticMeshTraits
-    		              <TScalar, NDimensions, NDimensions, TScalar, TScalar> PointSetTraitsType;
-    typedef itk::PointSet<PointType, NDimensions, PointSetTraitsType>           PointSetType;
-    typedef typename PointSetType::Pointer                                      PointSetPointer;
+    // typedef itk::DefaultStaticMeshTraits
+    // 		              <TScalar, NDimensions, NDimensions, TScalar, TScalar> PointSetTraitsType;
+    // typedef itk::PointSet<PointType, NDimensions, PointSetTraitsType>           PointSetType;
+    // typedef typename PointSetType::Pointer                                      PointSetPointer;
 
 
     /** Standard coordinate point type for this class. */
@@ -185,6 +184,7 @@ public:
 	// Physical positions, will define interpolation mode
     void SetOutputReference( const DomainBase* image );
 	void SetOutputPoints( const PointsList points );
+
 
     virtual void Interpolate() = 0;
 protected:
