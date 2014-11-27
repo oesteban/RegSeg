@@ -107,6 +107,10 @@ public:
     typedef typename Superclass::CoefficientsImageType               CoefficientsImageType;
     typedef typename Superclass::CoefficientsImageArray              CoefficientsImageArray;
 
+    typedef typename Superclass::PointsList                          PointsList;
+    typedef typename Superclass::DimensionVector                     DimensionVector;
+    typedef typename Superclass::DimensionParametersContainer        DimensionParametersContainer;
+
     typedef typename Superclass::FieldType                           FieldType;
     typedef typename FieldType::Pointer                              FieldPointer;
     typedef typename FieldType::ConstPointer                         FieldConstPointer;
@@ -125,19 +129,20 @@ public:
 
     void PushBackCoefficients(const CoefficientsImageArray & images);
     void PushBackCoefficients(const FieldType* field);
-    void Update() { this->Compute(); }
 
+    void Interpolate();
 protected:
     CompositeMatrixTransform();
 	~CompositeMatrixTransform(){};
     void PrintSelf( std::ostream& os, itk::Indent indent ) const;
-    void Compute();
 
 private:
 	CompositeMatrixTransform( const Self & );
 	void operator=( const Self & );
 
-	void InitializeField();
+    void ComputeGrid();
+    void ComputePoints();
+
 
 	TransformsContainer m_Components;
 	size_t m_NumberOfTransforms;

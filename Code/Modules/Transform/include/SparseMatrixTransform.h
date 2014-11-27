@@ -170,7 +170,7 @@ public:
 
 
     void SetNumberOfPoints(size_t n) {
-    	if( this->m_UseImageOutput ) {
+    	if( this->m_InterpolationMode == Superclass::GRID_MODE ) {
     		itkExceptionMacro(<< "SetNumberOfSamples should not be used with OutputReference");
     	}
 
@@ -192,7 +192,6 @@ public:
     itkGetMacro( Derivatives, CoefficientsImageArray );
     itkGetConstObjectMacro( GradientField, FieldType );
 
-    void Interpolate() { this->Interpolate( this->VectorizeCoefficients() ); }
     void InterpolateGradient() { this->Interpolate( this->VectorizeDerivatives() ); };
     void UpdateField() { this->UpdateField( this->VectorizeCoefficients() ); }
     void InvertField();
@@ -245,6 +244,8 @@ public:
     }
 
     itkGetConstMacro( ControlGridSize, SizeType );
+
+	void Interpolate() { this->Interpolate( this->VectorizeCoefficients() ); }
 
     /** Return the multithreader used by this class. */
     itk::MultiThreader * GetMultiThreader() const { return m_Threader; }
@@ -317,8 +318,6 @@ protected:
 	WeightsMatrix   m_Phi_inverse;
 	WeightsMatrix   m_S;
 	WeightsMatrix   m_SPrime[Dimension];
-
-	bool            m_UseImageOutput;
 
 	KernelFunctionPointer m_KernelFunction;
 	KernelFunctionPointer m_DerivativeKernel;

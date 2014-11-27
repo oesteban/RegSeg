@@ -186,14 +186,7 @@ public:
     void SetOutputReference( const DomainBase* image );
 	void SetOutputPoints( const PointsList points );
 
-    void Interpolate();
-
-    const FieldType* GetOutputField() const {
-    	if (!this->m_UseImageOutput){
-    		itkExceptionMacro( << "UseImageOutput is false, output field is not gridded" );
-    	}
-    	return this->m_DisplacementField;
-    }
+    virtual void Interpolate() = 0;
 protected:
 	CachedMatrixTransform();
 	~CachedMatrixTransform(){};
@@ -220,7 +213,7 @@ protected:
 
 
 	PointType 					 m_DomainExtent[2];
-	DirectionType                m_DomainDirection;
+	DirectionType                m_ReferenceDirection;
 	SpacingType                  m_ReferenceSpacing;
 	SizeType                     m_ReferenceSize;
 	PointType                    m_ReferenceOrigin;

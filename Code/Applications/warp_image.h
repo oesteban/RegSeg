@@ -57,11 +57,6 @@ typedef typename ReaderType::Pointer                         ReaderPointer;
 typedef itk::ImageFileWriter<ChannelType>                    WriterType;
 typedef typename WriterType::Pointer                         WriterPointer;
 
-typedef typename itk::VectorImage< float, DIMENSION >        VectorImageType;
-
-typedef typename itk::ImageFileReader<VectorImageType>       VectorFieldReaderType;
-typedef typename VectorFieldReaderType::Pointer              VectorFieldReaderPointer;
-
 typedef itk::Image< unsigned char, DIMENSION >               MaskType;
 typedef typename MaskType::Pointer                           MaskPointer;
 typedef itk::ImageFileWriter<MaskType>                       MaskWriter;
@@ -70,6 +65,11 @@ typedef itk::BinaryThresholdImageFilter
 
 
 typedef float                                                ScalarType;
+
+typedef rstk::CachedMatrixTransform< ScalarType, DIMENSION>  BaseTransform;
+typedef BaseTransform::Pointer                               BaseTransformPointer;
+typedef BaseTransform::PointsList                            PointsList;
+
 typedef rstk::BSplineSparseMatrixTransform
 		                          < ScalarType, DIMENSION>   BSplineTransform;
 typedef BSplineTransform::Pointer                            BSplineTransformPointer;
@@ -80,10 +80,14 @@ typedef CompositeTransform::Pointer                          CompositeTransformP
 
 typedef typename BSplineTransform::CoefficientsImageType     CoefficientsImageType;
 typedef typename BSplineTransform::CoefficientsImageArray    CoefficientsImageArray;
-typedef typename BSplineTransform::FieldType                 FieldType;
-typedef typename BSplineTransform::VectorType                VectorType;
 
-
+typedef itk::Vector< float, DIMENSION>                       VectorType;
+typedef itk::Vector< float, 4>                               FakeVectorType;
+typedef itk::Image<VectorType, DIMENSION>                    FieldType;
+typedef itk::Image<float, 4>                    FakeFieldType;
+typedef typename itk::VectorImage< float, DIMENSION >        VectorImageType;
+typedef typename itk::ImageFileReader<FakeFieldType>         VectorFieldReaderType;
+typedef typename VectorFieldReaderType::Pointer              VectorFieldReaderPointer;
 typedef itk::VectorIndexSelectionCastImageFilter
 		          <VectorImageType, CoefficientsImageType>   IndexSelectionType;
 typedef typename IndexSelectionType::Pointer                 IndexSelectionPointer;

@@ -92,62 +92,106 @@ int main(int argc, char *argv[]) {
 	DisplacementFieldPointer input_field;
 
 	std::vector< std::string > fnames = isFwd?fieldname:invfieldname;
+	std::vector< CoefficientsImageArray > allcoeff;
 
-	if (!isField) {
-		CompositeTransformPointer tf_from_coeff = CompositeTransform::New();
-		tf_from_coeff->SetPhysicalDomainInformation(ref);
-		tf_from_coeff->SetOutputReference(ref);
-
+	if (!isField) { // Read coefficients
 		for (size_t i = 0; i < fnames.size(); i++) {
 			CoefficientsImageArray coeffarr;
 			VectorFieldReaderPointer fread = VectorFieldReaderType::New();
 			fread->SetFileName( fnames[i] );
 			fread->Update();
-			VectorImageType::Pointer f = fread->GetOutput();
+			FakeFieldType::Pointer f = fread->GetOutput();
+			size_t tnp = f->GetLargestPossibleRegion().GetNumberOfPixels();
 
-			size_t np = f->GetLargestPossibleRegion().GetNumberOfPixels();
+			CoefficientsImageType::SizeType size;
+			CoefficientsImageType::SpacingType sp;
+			CoefficientsImageType::PointType orig;
+
+			for (size_t dim = 0; dim < DIMENSION; dim++) {
+				size[dim] = f->GetLargestPossibleRegion().GetSize()[dim];
+				sp[dim] = f->GetSpacing()[dim];
+				orig[dim] = - 0.5 * size[dim] * sp[dim];
+			}
 
 			float* dbuff[DIMENSION];
 			for (size_t dim = 0; dim < DIMENSION; dim++) {
 				coeffarr[dim] = CoefficientsImageType::New();
-				coeffarr[dim]->CopyInformation(f);
+				coeffarr[dim]->SetRegions(size);
+				coeffarr[dim]->SetSpacing(sp);
+				coeffarr[dim]->SetOrigin(orig);
 				coeffarr[dim]->Allocate();
 				dbuff[dim] = coeffarr[dim]->GetBufferPointer();
 			}
+			size_t np = coeffarr[0]->GetLargestPossibleRegion().GetNumberOfPixels();
 
 			float* sbuff = f->GetBufferPointer();
 			float svect;
-			for( size_t pix = 0; pix < np; pix++) {
-
-				for( size_t dim = 0; dim < DIMENSION; dim++) {
-					svect = *( sbuff + pix * DIMENSION + dim );
-					*( dbuff[dim] + pix ) = svect;
-					std::cout << svect << ", ";
-				}
-				std::cout <<  std::endl;
-
+			size_t pixid, dim;
+			for( size_t pix = 0; pix < tnp; pix++) {
+				svect = *(sbuff + pix);
+				pixid = pix % np;
+				dim = pix / np;
+				*( dbuff[dim] + pixid ) = svect;
 			}
-			tf_from_coeff->PushBackCoefficients(coeffarr);
+			allcoeff.push_back(coeffarr);
 		}
-		tf_from_coeff->Update();
+	}
+
+	if(!isField) {
+		CompositeTransformPointer tf_from_coeff = CompositeTransform::New();
+		tf_from_coeff->SetOutputReference(ref);
+		for (size_t i = 0; i < allcoeff.size(); i++) {
+			tf_from_coeff->PushBackCoefficients(allcoeff[i]);
+		}
+		tf_from_coeff->Interpolate();
 		input_field = tf_from_coeff->GetDisplacementField();
 	} else {
-		// VectorFieldReaderPointer fread = VectorFieldReaderType::New();
-		// fread->SetFileName( fnames[0] );
-		// fread->Update();
-		// VectorImageType::Pointer f = fread->GetOutput();
-		// size_t ncomps = f->GetVectorLength();
-		// if (ncomps != DIMENSION) {
-		// 	std::cout << "Houston, we gotta problem" << std::endl;
-		// 	return 1;
-		// }
-		// input_field = FieldType::New();
-		// input_field->CopyInformation(f);
-		// input_field->SetRegions(f->GetLargestPossibleRegion());
-		// input_field->Allocate();
-        //
-		// itk::ImageAlgorithm::Copy<VectorImageType, FieldType>(f, input_field,
-		// 		f->GetLargestPossibleRegion(), input_field->GetLargestPossibleRegion());
+		VectorFieldReaderPointer fread = VectorFieldReaderType::New();
+		fread->SetFileName( fnames[0] );
+		fread->Update();
+		FakeFieldType::Pointer f = fread->GetOutput();
+		size_t tnp = f->GetLargestPossibleRegion().GetNumberOfPixels();
+
+		FieldType::SizeType size;
+		FieldType::SpacingType sp;
+		FieldType::PointType orig;
+		FieldType::DirectionType dir;
+		dir.Fill(0.0);
+
+		for (size_t dim = 0; dim < DIMENSION; dim++) {
+			size[dim] = f->GetLargestPossibleRegion().GetSize()[dim];
+			sp[dim] = f->GetSpacing()[dim];
+			orig[dim] = f->GetOrigin()[dim];
+			for (size_t j = 0; j < DIMENSION; j++) {
+				dir[dim][j] = f->GetDirection()[dim][j];
+			}
+		}
+
+
+		VectorType v;
+		v.Fill(0.0);
+		input_field = FieldType::New();
+		input_field->SetRegions(size);
+		input_field->SetSpacing(sp);
+		input_field->SetOrigin(orig);
+		input_field->SetDirection(dir);
+		input_field->Allocate();
+		input_field->FillBuffer(v);
+
+		size_t np = input_field->GetLargestPossibleRegion().GetNumberOfPixels();
+
+		float* sbuff = f->GetBufferPointer();
+		float svect;
+		VectorType* dbuff = input_field->GetBufferPointer();
+		size_t pixid, dim;
+		for( size_t pix = 0; pix < tnp; pix++) {
+			svect = *(sbuff + pix);
+			pixid = pix % np;
+			dim = pix / np;
+			v = *(dbuff + pixid);
+			v[dim] = svect;
+			*( dbuff + pixid ) = v;
+		}
 	}
 
 	const VectorType* ofb;
@@ -156,11 +200,13 @@ int main(int argc, char *argv[]) {
 	field = FieldType::New();
 	field->SetRegions( input_field->GetLargestPossibleRegion());
 	field->SetOrigin( input_field->GetOrigin());
+	field->SetSpacing( input_field->GetSpacing() );
 	field->SetDirection( input_field->GetDirection() );
 	field->Allocate();
 
 	field_inv = FieldType::New();
 	field_inv->SetRegions( input_field->GetLargestPossibleRegion());
+	field_inv->SetSpacing( input_field->GetSpacing() );
 	field_inv->SetOrigin( input_field->GetOrigin());
 	field_inv->SetDirection( input_field->GetDirection() );
 	field_inv->Allocate();
@@ -188,7 +234,7 @@ int main(int argc, char *argv[]) {
 
 	if (vm.count("write-field") && vm["write-field"].as<bool>() ) {
 		FieldWriterPointer w = FieldWriter::New();
-		w->SetInput(input_field);
+		w->SetInput(field);
 		w->SetFileName((outPrefix + "_field.nii.gz").c_str());
 		w->Update();
 	}
@@ -279,38 +325,39 @@ int main(int argc, char *argv[]) {
 
 	// Warp surfaces --------------------------------------------------
 	typename FieldType::SizeType size;
-	BSplineTransformPointer tf_mesh;
+	BaseTransformPointer tf_mesh;
 
 	if( movingSurfaceNames.size() > 0 ){
 			if(isField) {
-				if( vm.count("grid-size") ){
-						if( grid_size.size() == 1 ) {
-							size.Fill( grid_size[0] );
-						}
-						else if ( grid_size.size() == FieldType::ImageDimension ) {
-							for( size_t i = 0; i < FieldType::ImageDimension; i++)
-								size[i] = grid_size[i];
-						}
-						else {
-							std::cout << "error with grid size" << std::endl;
-							return 1;
-						}
+				if ( vm.count("grid-size") ){
+					if( grid_size.size() == 1 ) {
+						size.Fill( grid_size[0] );
 					}
+					else if ( grid_size.size() == FieldType::ImageDimension ) {
+						for( size_t i = 0; i < FieldType::ImageDimension; i++)
+							size[i] = grid_size[i];
+					}
+					else {
+						std::cout << "error with grid size" << std::endl;
+						return 1;
+					}
+				}
+				BSplineTransformPointer tfm = BSplineTransform::New();
+				tfm->SetControlGridSize(size);
+				tfm->SetPhysicalDomainInformation( field );
+				tfm->SetField( field );
+				tfm->ComputeCoefficients();
+				tf_mesh = itkDynamicCastInDebugMode< BaseTransform* >(tfm.GetPointer());
 			} else {
-				// implement me!
+				CompositeTransformPointer tfm = CompositeTransform::New();
+
+				for (size_t i = 0; i < allcoeff.size(); i++) {
+					tfm->PushBackCoefficients(allcoeff[i]);
+				}
+				tf_mesh = itkDynamicCastInDebugMode< BaseTransform* >(tfm.GetPointer());
 			}
 
-
-			tf_mesh = BSplineTransform::New();
-			tf_mesh->SetControlGridSize(size);
-			tf_mesh->SetPhysicalDomainInformation( field );
-			tf_mesh->SetField( field );
-			tf_mesh->ComputeCoefficients();
-
-			// TransformPointer tf_inv = TransformType::New();
-			// tf_inv->SetDisplacementField( field_inv );
-
-
+			PointsList points;
 			for( size_t i = 0; i<movingSurfaceNames.size(); i++){
 				MeshReaderPointer r = MeshReaderType::New();
 				r->SetFileName( movingSurfaceNames[i] );
@@ -322,11 +369,11 @@ int main(int argc, char *argv[]) {
 
 				MeshPointType p;
 				while ( p_it!=p_end ) {
-					//tf_mesh->AddOffGridPos(p_it.Value());
+					points.push_back(p_it.Value());
 					++p_it;
 				}
 			}
-
+			tf_mesh->SetOutputPoints(points);
 			tf_mesh->Interpolate();
 
 			size_t pointId = 0;
@@ -343,7 +390,9 @@ int main(int argc, char *argv[]) {
 				while ( p_it!=p_end ) {
 					p = p_it.Value();
 					p_it.Value() += tf_mesh->GetPointValue(pointId);
+
 					++p_it;
+					pointId++;
 				}
 
 				MeshWriterPointer wmesh = MeshWriterType::New();

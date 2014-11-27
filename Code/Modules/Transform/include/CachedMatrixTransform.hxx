@@ -70,6 +70,10 @@ m_InterpolationMode(UNKNOWN) {
 	for( size_t i = 0; i<Dimension; i++ ) {
 		this->m_PointValues[i] = DimensionVector();
 	}
+	this->m_ReferenceSize.Fill(0);
+	this->m_ReferenceSpacing.Fill(0.0);
+	this->m_ReferenceOrigin.Fill(0.0);
+	this->m_ReferenceDirection.Fill(0.0);
 }
 
 template< class TScalar, unsigned int NDimensions >
@@ -94,25 +98,25 @@ CachedMatrixTransform<TScalar,NDimensions>
 	ContinuousIndexType o_idx;
 	o_idx.Fill( -0.5 );
 
-	this->m_ReferenceSize = image->GetLargestPossibleRegion().GetSize();
-	this->m_ReferenceSpacing = image->GetSpacing();
-	this->m_ReferenceOrigin = image->GetOrigin();
+	SizeType size = image->GetLargestPossibleRegion().GetSize();
+	SpacingType sp = image->GetSpacing();
+	PointType orig = image->GetOrigin();
+	DirectionType dir = image->GetDirection();
 
 	ContinuousIndexType e_idx;
 	for ( size_t dim=0; dim< Dimension; dim++ ) {
-		e_idx[dim] = this->m_ReferenceSize[dim] - 0.5;
+		e_idx[dim] = size[dim] - 0.5;
 	}
-
-	this->m_DomainDirection = image->GetDirection();
 
 	image->TransformContinuousIndexToPhysicalPoint( o_idx, m_DomainExtent[0] );
 	image->TransformContinuousIndexToPhysicalPoint( e_idx, m_DomainExtent[1] );
 
 	for (size_t i = 0; i<Dimension; i++) {
 		if( m_DomainExtent[1][i] < m_DomainExtent[0][i] ) {
-			double tmp = m_DomainExtent[0][i];
-			m_DomainExtent[0][i] = m_DomainExtent[1][i];
-			m_DomainExtent[1][i] = tmp;
+			itkExceptionMacro(<< "domain is not well defined.");
+			// double tmp = m_DomainExtent[0][i];
+			// m_DomainExtent[0][i] = m_DomainExtent[1][i];
+			// m_DomainExtent[1][i] = tmp;
 		}
 	}
 }
@@ -131,14 +135,18 @@ CachedMatrixTransform<TScalar,NDimensions>
 	this->m_UseImageOutput = true;
 	VectorType zerov; zerov.Fill( 0.0 );
 
-	FieldPointer newfield = FieldType::New();
-	newfield->SetRegions( image->GetLargestPossibleRegion().GetSize() );
-	newfield->SetOrigin( image->GetOrigin() );
-	newfield->SetSpacing( image->GetSpacing() );
-	newfield->SetDirection( image->GetDirection() );
-	newfield->Allocate();
-	newfield->FillBuffer( zerov );
-	this->SetDisplacementField( newfield );
+	this->m_ReferenceSize = image->GetLargestPossibleRegion().GetSize();
+	this->m_ReferenceSpacing = image->GetSpacing();
+	this->m_ReferenceOrigin = image->GetOrigin();
+	this->m_ReferenceDirection = image->GetDirection();
+
+	this->m_DisplacementField = FieldType::New();
+	this->m_DisplacementField->SetRegions(   this->m_ReferenceSize      );
+	this->m_DisplacementField->SetSpacing(   this->m_ReferenceSpacing   );
+	this->m_DisplacementField->SetOrigin(    this->m_ReferenceOrigin    );
+	this->m_DisplacementField->SetDirection( this->m_ReferenceDirection );
+	this->m_DisplacementField->Allocate();
+	this->m_DisplacementField->FillBuffer( zerov );
 
 	this->m_NumberOfPoints = image->GetLargestPossibleRegion().GetNumberOfPixels();
 	// Initialize off-grid positions

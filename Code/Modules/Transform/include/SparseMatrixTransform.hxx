@@ -64,8 +64,7 @@ template< class TScalar, unsigned int NDimensions >
 SparseMatrixTransform<TScalar,NDimensions>
 ::SparseMatrixTransform():
 Superclass(),
-m_NumberOfParameters(0),
-m_UseImageOutput(false) {
+m_NumberOfParameters(0) {
 	this->m_ControlGridSize.Fill(10);
 	this->m_ControlGridOrigin.Fill(0.0);
 	this->m_ControlGridSpacing.Fill(0.0);
@@ -392,7 +391,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->m_Phi.mult( coeff[i], this->m_PointValues[i] );
 	}
 
-	if( this->m_UseImageOutput ) {
+	if( this->m_InterpolationMode == Superclass::GRID_MODE ) {
 		bool setVector;
 		ScalarType val;
 		VectorType v; v.Fill(0.0);
@@ -786,6 +785,16 @@ template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
 ::SetCoefficientsImages( const CoefficientsImageArray & images ) {
+
+	if (this->m_NumberOfParameters == 0) {
+		this->m_ControlGridDirection = images[0]->GetDirection();
+		this->m_ControlGridOrigin = images[0]->GetOrigin();
+		this->m_ControlGridSize = images[0]->GetLargestPossibleRegion().GetSize();
+		this->m_ControlGridSpacing = images[0]->GetSpacing();
+		this->InitializeCoefficientsImages();
+	}
+
+
 	for( size_t dim = 0; dim < Dimension; dim++ ) {
 		CoeffImageConstPointer c = itkDynamicCastInDebugMode< const CoefficientsImageType* >( images[dim].GetPointer() );
 		this->SetCoefficientsImage( dim, c );
