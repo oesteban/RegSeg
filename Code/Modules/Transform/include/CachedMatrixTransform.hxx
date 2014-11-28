@@ -74,6 +74,8 @@ m_InterpolationMode(UNKNOWN) {
 	this->m_ReferenceSpacing.Fill(0.0);
 	this->m_ReferenceOrigin.Fill(0.0);
 	this->m_ReferenceDirection.Fill(0.0);
+	PointType zero; zero.Fill(0.0);
+	this->m_DomainExtent.Fill(zero);
 }
 
 template< class TScalar, unsigned int NDimensions >

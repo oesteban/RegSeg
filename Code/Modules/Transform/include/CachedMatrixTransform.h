@@ -135,6 +135,7 @@ public:
     typedef typename Superclass::OutputVnlVectorType                            OutputVnlVectorType;
 
     typedef itk::FixedArray< ScalarType, itkGetStaticConstMacro(Dimension) >    ArrayType;
+    typedef itk::FixedArray< PointType, 2 >                                     ExtentType;
 
     typedef itk::Image< ScalarType, Dimension >                                 CoefficientsImageType;
     typedef typename CoefficientsImageType::Pointer                             CoeffImagePointer;
@@ -171,8 +172,13 @@ public:
     typedef itk::ImageHelper< Dimension, Dimension >     Helper;
     typedef itk::ImageTransformHelper< Dimension, Dimension - 1, Dimension - 1, ScalarType, ScalarType > TransformHelper;
 
+
     itkGetConstMacro( InterpolationMode, InterpolateModeType );
     itkGetConstMacro( NumberOfPoints, size_t );
+
+    itkSetMacro( DomainExtent, ExtentType );
+    itkGetConstMacro( DomainExtent, ExtentType );
+
 
     itkGetConstMacro( PointLocations, PointsList );
 	itkGetConstMacro( PointValues, DimensionParametersContainer );
@@ -185,12 +191,13 @@ public:
     void SetOutputReference( const DomainBase* image );
 	void SetOutputPoints( const PointsList points );
 
-
     virtual void Interpolate() = 0;
 protected:
 	CachedMatrixTransform();
 	~CachedMatrixTransform(){};
 
+
+	// virtual itk::LightObject::Pointer InternalClone() const;
 	DimensionVector Vectorize( const CoefficientsImageType* image );
 	DimensionParametersContainer VectorizeField( const FieldType* image );
 
@@ -212,7 +219,7 @@ protected:
 	}
 
 
-	PointType 					 m_DomainExtent[2];
+	ExtentType 					 m_DomainExtent;
 	DirectionType                m_ReferenceDirection;
 	SpacingType                  m_ReferenceSpacing;
 	SizeType                     m_ReferenceSize;

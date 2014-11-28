@@ -313,7 +313,8 @@ protected:
 	MatrixType                   m_ControlGridIndexToPhysicalPoint;
 	MatrixType                   m_ControlGridPhysicalPointToIndex;
 
-	size_t                       m_NumberOfParameters;  // This is K parameters (=coefficients, control points)
+	size_t                       m_NumberOfDimParameters;  // This is K parameters (=coefficients, control points)
+	size_t                       m_NumberOfParameters;
 	PointsList                   m_ParamLocations;
 	AltCoeffPointer              m_FlatCoeffs;
 

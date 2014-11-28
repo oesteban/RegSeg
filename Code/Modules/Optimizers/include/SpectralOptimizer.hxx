@@ -569,6 +569,8 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 		this->m_InitialDisplacementField->FillBuffer( zerov );
 	}
 
+
+	this->m_TotalTransform->SetDomainExtent(this->m_Transform->GetDomainExtent());
 	this->m_TotalTransform->SetControlGridInformation( coeff[0] );
 	this->m_TotalTransform->SetOutputReference(this->m_InitialDisplacementField);
 	this->m_TotalTransform->SetField(this->m_InitialDisplacementField);

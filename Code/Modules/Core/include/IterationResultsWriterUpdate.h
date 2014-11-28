@@ -12,6 +12,7 @@
 
 #include <itkImageFileWriter.h>
 #include "DisplacementFieldFileWriter.h"
+#include "rstkCoefficientsWriter.h"
 #include "ComponentsFileWriter.h"
 #include "DisplacementFieldComponentsFileWriter.h"
 #include "rstkQuadEdgeMeshScalarDataVTKPolyDataWriter.h"
@@ -38,6 +39,8 @@ public:
 	typedef typename FunctionalType::ROIType                    ROIType;
 	typedef typename FunctionalType::ProbabilityMapType 		ProbabilityMapType;
 	typedef typename FunctionalType::ShapeGradientType          ShapeGradientType;
+	typedef typename OptimizerType::TransformType               TransformType;
+	typedef typename TransformType::AltCoeffType                AltCoeffType;
 	typedef QuadEdgeMeshScalarDataVTKPolyDataWriter
 			                             < ShapeGradientType >  ContourScalarWriterType;
 	typedef typename ContourScalarWriterType::Pointer           ContourScalarWriterPointer;
@@ -81,37 +84,25 @@ public:
     		size_t nContours =this->m_Optimizer->GetFunctional()->GetCurrentContours().size();
 
     		if (this->m_Verbosity > 3 ) {
-				CoefficientsImageArray coeff = this->m_Optimizer->GetCoefficients();
 				CoefficientsImageArray speed = this->m_Optimizer->GetDerivativeCoefficients();
 
-				typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
+				ss.str("");
+				typedef rstk::CoefficientsWriter< AltCoeffType > W;
+				typename W::Pointer f = W::New();
+				ss << this->m_Prefix << "uk_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".vtk";
+				f->SetFileName( ss.str().c_str() );
+				f->SetInput(this->m_Optimizer->GetTransform()->GetFlatParameters());
+				f->Update();
 
-				for ( size_t i = 0; i< coeff.Size(); i++) {
+				typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
+				for ( size_t i = 0; i< speed.Size(); i++) {
 					if ( speed[i].IsNotNull() ) {
 						ss.str("");
-						ss << this->m_Prefix << "coeff_gk_" << std::setfill('0')  << "lev" << this->m_Level << "_it" << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
+						ss << this->m_Prefix << "gk_" << std::setfill('0')  << "lev" << this->m_Level << "_it" << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << i << ".vtk";
 						p->SetFileName( ss.str().c_str() );
 						p->SetInput( speed[i] );
 						p->Update();
 					}
-
-					if ( coeff[i].IsNotNull() ) {
-						ss.str("");
-						ss << this->m_Prefix << "coeff_value_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << std::setw(1) << i << ".nii.gz";
-						p->SetFileName( ss.str().c_str() );
-						p->SetInput( coeff[i] );
-						p->Update();
-					}
-				}
-
-				typename FieldType::ConstPointer field = this->m_Optimizer->GetCurrentCoefficients();
-				if ( field.IsNotNull() ) {
-					typename ComponentsWriter::Pointer f = ComponentsWriter::New();
-					ss.str("");
-					ss << this->m_Prefix << "coeff_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration();
-					f->SetFileName( ss.str().c_str() );
-					f->SetInput( field );
-					f->Update();
 				}
     		}
 

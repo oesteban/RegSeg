@@ -8,6 +8,7 @@
 // --------------------------------------------------------------------------------------
 //
 
+#include "CompositeMatrixTransform.h"
 #include "rstkCoefficientsWriter.h"
 
 namespace rstk {
@@ -35,6 +36,8 @@ CompositeMatrixTransform<TScalar,NDimensions>
 		itkExceptionMacro(<< "number of transforms is zero or it does not match the number of stored coefficients sets.");
 	}
 
+	ConsistencyCheck();
+
 	switch(this->m_InterpolationMode) {
 	case Superclass::GRID_MODE:
 		this->ComputeGrid();
@@ -45,6 +48,21 @@ CompositeMatrixTransform<TScalar,NDimensions>
 	default:
 		itkExceptionMacro(<< "output mode has not been initialized");
 		break;
+	}
+
+}
+
+template< class TScalar, unsigned int NDimensions >
+void
+CompositeMatrixTransform<TScalar,NDimensions>
+::ConsistencyCheck() {
+	for( size_t c = 0; c < this->m_NumberOfTransforms; c++) {
+		if( this->m_Components[c]->GetInterpolationMode() != this->m_InterpolationMode) {
+			TransformComponentPointer tf = this->m_Components[c]->Clone();
+			tf->SetDomainExtent(this->m_Components[c]->GetDomainExtent());
+			tf->SetCoefficientsImages(this->m_Components[c]->GetCoefficientsImages());
+			this->m_Components[c] = tf;
+		}
 	}
 
 }
