@@ -219,13 +219,13 @@ int main(int argc, char *argv[]) {
 		root["error"]["message"] = std::string(exc.what());
 		std::ofstream logfile((outPrefix + logFileName + ".log" ).c_str());
 		logfile << root;
-		// throw;
+		throw;
 	} catch (...) {
 		root["levels"] = acwereg->GetJSONRoot();
 		root["error"]["message"] = std::string("Unknown exception");
 		std::ofstream logfile((outPrefix + logFileName + ".log" ).c_str());
 		logfile << root;
-		// throw;
+		throw;
 	}
 
 	root["levels"] = acwereg->GetJSONRoot();

@@ -86,6 +86,17 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	Superclass::PrintSelf(os,indent);
 }
 
+template < typename TFixedImage, typename TTransform, typename TComputationalValue >
+void
+ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
+::Initialize() {
+	if ( ! m_Initialized ) {
+		this->m_OutputTransform->SetOutputReference(this->GetFixedImage());
+		this->GenerateSchedule();
+	}
+	m_Initialized = true;
+}
+
 
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
 void
@@ -93,10 +104,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::GenerateData() {
 	this->InvokeEvent( itk::StartEvent() );
 
-	if ( ! m_Initialized ) {
-		this->GenerateSchedule();
-	}
-
+	this->Initialize();
 
 	while( this->m_CurrentLevel < this->m_NumberOfLevels ) {
 		std::cout << "Starting registration level " << this->m_CurrentLevel << "." << std::endl;
@@ -118,12 +126,15 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 
 		// Add JSON tree to the general logging facility
 		this->m_JSONRoot.append( this->m_CurrentLogger->GetJSONRoot() );
-		this->m_Transforms[this->m_CurrentLevel]->SetControlGridSize( this->m_Optimizers[this->m_CurrentLevel]->GetTransform()->GetControlGridSize() );
-		this->m_Transforms[this->m_CurrentLevel]->SetPhysicalDomainInformation( this->GetFixedImage() );
-		this->m_Transforms[this->m_CurrentLevel]->SetCoefficientsImages(
-						this->m_Optimizers[this->m_CurrentLevel]->GetTransform()->GetCoefficientsImages());
-		this->m_Transforms[this->m_CurrentLevel]->SetOutputReference( this->GetFixedImage() );
-		this->m_Transforms[this->m_CurrentLevel]->UpdateField();
+		this->m_OutputTransform->PushBackTransform(this->m_Optimizers[this->m_CurrentLevel]->GetTransform());
+
+		// this->m_Transforms[this->m_CurrentLevel]->SetControlGridSize(this->m_Optimizers[this->m_CurrentLevel]->GetTransform()->GetControlGridSize() );
+		// this->m_Transforms[this->m_CurrentLevel]->SetPhysicalDomainInformation( this->GetFixedImage() );
+		// this->m_Transforms[this->m_CurrentLevel]->SetCoefficientsImages(
+		// 				this->m_Optimizers[this->m_CurrentLevel]->GetTransform()->GetCoefficientsImages());
+		// this->m_Transforms[this->m_CurrentLevel]->SetOutputReference( this->GetFixedImage() );
+		// this->m_Transforms[this->m_CurrentLevel]->UpdateField();
+
 
 		this->InvokeEvent( itk::IterationEvent() );
 		this->m_CurrentLevel++;
@@ -254,14 +265,15 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 
 	if (level>0) {
 		this->ConcatenateFields(level);
-		this->m_Optimizers[level]->SetInitialDisplacementField(this->m_DisplacementField);
+		this->m_OutputTransform->Interpolate();
+		this->m_Optimizers[level]->SetInitialDisplacementField(this->m_OutputTransform->GetDisplacementField());
 	}
 
 	this->m_CurrentLogger = JSONLoggerType::New();
 	this->m_CurrentLogger->SetOptimizer( this->m_Optimizers[level] );
 	this->m_CurrentLogger->SetLevel( level );
 
-	this->m_Transforms[level] = LevelTransformType::New();
+	// this->m_Transforms[level] = LevelTransformType::New();
 
 	if( this->m_Verbosity > 0 ) {
 		this->m_ImageLogger = IterationWriterUpdate::New();
@@ -288,7 +300,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->m_NumberOfLevels = levels;
 
 	m_GridSchedule.resize(m_NumberOfLevels);
-	m_Transforms.resize( this->m_NumberOfLevels );
+	// m_Transforms.resize( this->m_NumberOfLevels );
 	m_Functionals.resize( this->m_NumberOfLevels );
 	m_Optimizers.resize( this->m_NumberOfLevels );
 	m_NumberOfIterations.resize( this->m_NumberOfLevels );
@@ -358,9 +370,13 @@ template < typename TFixedImage, typename TTransform, typename TComputationalVal
 void
 ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::GenerateFinalDisplacementField() {
-	this->ConcatenateFields(this->m_NumberOfLevels);
-	this->m_OutputTransform->SetDisplacementField( this->m_DisplacementField );
-	this->m_OutputInverseTransform->SetDisplacementField( this->m_InverseDisplacementField );
+	// this->ConcatenateFields(this->m_NumberOfLevels);
+
+	this->m_OutputTransform->Interpolate();
+	this->m_DisplacementField = this->m_OutputTransform->GetDisplacementField();
+
+	// this->m_OutputTransform->SetDisplacementField( this->m_DisplacementField );
+	// this->m_OutputInverseTransform->SetDisplacementField( this->m_InverseDisplacementField );
 }
 /*
  *  Get output transform

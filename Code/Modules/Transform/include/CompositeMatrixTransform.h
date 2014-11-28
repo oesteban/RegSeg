@@ -118,8 +118,8 @@ public:
     typedef rstk::BSplineSparseMatrixTransform< ScalarType >         BSplineComponentType;
     typedef typename BSplineComponentType::Pointer                   BSplineComponentPointer;
 
-    typedef typename BSplineComponentType::AltCoeffType                        AltCoeffType;
-    typedef typename BSplineComponentType::AltCoeffPointer                     AltCoeffPointer;
+    typedef typename BSplineComponentType::AltCoeffType              AltCoeffType;
+    typedef typename BSplineComponentType::AltCoeffPointer           AltCoeffPointer;
 
 
     itkSetMacro(NumberOfTransforms, size_t);
@@ -145,7 +145,7 @@ private:
 
     void ComputeGrid();
     void ComputePoints();
-
+    void ConsistencyCheck();
 
 	TransformsContainer m_Components;
 	size_t m_NumberOfTransforms;

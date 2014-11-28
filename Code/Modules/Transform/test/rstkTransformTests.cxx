@@ -209,7 +209,7 @@ TEST_F( TransformTests, SparseMatrixComputeCoeffsTest ) {
 
 		error+= ( v2 - v1 ).GetNorm();
 	}
-	error = error * (1.0/ m_transform->GetNumberOfParameters() );
+	error = error * (3.0/ m_transform->GetNumberOfParameters());
 
 	ASSERT_NEAR( 0.0, error, 1.0e-5 );
 }

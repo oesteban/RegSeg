@@ -60,6 +60,7 @@
 #include "OptimizerBase.h"
 #include "SpectralGradientDescentOptimizer.h"
 #include "SegmentationOptimizer.h"
+#include "CompositeMatrixTransform.h"
 
 #include "IterationJSONUpdate.h"
 #include "IterationStdOutUpdate.h"
@@ -107,7 +108,7 @@ public:
 	typedef typename LevelTransformType::Pointer              LevelTransformPointer;
 	typedef std::vector< LevelTransformPointer >              LevelTransformList;
 
-	typedef itk::DisplacementFieldTransform
+	typedef rstk::CompositeMatrixTransform
 			            < InternalValuesType, Dimension >     OutputTransformType;
 	typedef typename OutputTransformType::Pointer             OutputTransformPointer;
 	typedef itk::DataObjectDecorator<OutputTransformType>     DecoratedOutputTransformType;
