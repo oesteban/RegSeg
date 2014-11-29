@@ -127,15 +127,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		// Add JSON tree to the general logging facility
 		this->m_JSONRoot.append( this->m_CurrentLogger->GetJSONRoot() );
 		this->m_OutputTransform->PushBackTransform(this->m_Optimizers[this->m_CurrentLevel]->GetTransform());
-
-		// this->m_Transforms[this->m_CurrentLevel]->SetControlGridSize(this->m_Optimizers[this->m_CurrentLevel]->GetTransform()->GetControlGridSize() );
-		// this->m_Transforms[this->m_CurrentLevel]->SetPhysicalDomainInformation( this->GetFixedImage() );
-		// this->m_Transforms[this->m_CurrentLevel]->SetCoefficientsImages(
-		// 				this->m_Optimizers[this->m_CurrentLevel]->GetTransform()->GetCoefficientsImages());
-		// this->m_Transforms[this->m_CurrentLevel]->SetOutputReference( this->GetFixedImage() );
-		// this->m_Transforms[this->m_CurrentLevel]->UpdateField();
-
-
 		this->InvokeEvent( itk::IterationEvent() );
 		this->m_CurrentLevel++;
 
@@ -273,8 +264,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->m_CurrentLogger->SetOptimizer( this->m_Optimizers[level] );
 	this->m_CurrentLogger->SetLevel( level );
 
-	// this->m_Transforms[level] = LevelTransformType::New();
-
 	if( this->m_Verbosity > 0 ) {
 		this->m_ImageLogger = IterationWriterUpdate::New();
 		this->m_ImageLogger->SetOptimizer( this->m_Optimizers[level] );
@@ -300,7 +289,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->m_NumberOfLevels = levels;
 
 	m_GridSchedule.resize(m_NumberOfLevels);
-	// m_Transforms.resize( this->m_NumberOfLevels );
 	m_Functionals.resize( this->m_NumberOfLevels );
 	m_Optimizers.resize( this->m_NumberOfLevels );
 	m_NumberOfIterations.resize( this->m_NumberOfLevels );
@@ -352,8 +340,8 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	const OutputVectorType* tfbuff[level];
 
 	for( size_t i = 0; i < level; i++ ) {
-		this->m_Transforms[i]->Interpolate();
-		tfbuff[i] = this->m_Transforms[i]->GetDisplacementField()->GetBufferPointer();
+		//this->m_Transforms[i]->Interpolate();
+		//tfbuff[i] = this->m_Transforms[i]->GetDisplacementField()->GetBufferPointer();
 	}
 
 	size_t nPix = this->m_DisplacementField->GetLargestPossibleRegion().GetNumberOfPixels();
