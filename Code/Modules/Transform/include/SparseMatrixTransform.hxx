@@ -71,6 +71,7 @@ m_NumberOfParameters(0){
 	this->m_ControlGridSpacing.Fill(0.0);
 	this->m_ControlGridDirection.SetIdentity();
 	this->m_ControlGridDirectionInverse.SetIdentity();
+	this->m_MaximumDisplacement.Fill(0.0);
 
 	this->m_Threader = itk::MultiThreader::New();
 	this->m_NumberOfThreads = this->m_Threader->GetNumberOfThreads();
@@ -155,7 +156,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->m_ControlGridSize      = image->GetLargestPossibleRegion().GetSize();
 	this->m_ControlGridOrigin    = image->GetOrigin();
 	this->m_ControlGridSpacing   = image->GetSpacing();
-	this->m_ControlGridDirection = image->GetDirection();
 	this->InitializeCoefficientsImages();
 }
 
@@ -246,6 +246,11 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->m_Derivatives[i]->Allocate();
 		this->m_Derivatives[i]->FillBuffer( 0.0 );
 	}
+
+	for (size_t i = 0; i<Dimension; i++) {
+		this->m_MaxDisplacement[i] = 0.40 * this->m_ControlGridSpacing[i];
+	}
+
 	this->Modified();
 }
 
@@ -1069,6 +1074,48 @@ SparseMatrixTransform<TScalar,NDimensions>
 		data->InsertElement(i, this->GetCoefficient(i));
 	}
 	return this->m_FlatCoeffs;
+}
+
+template< class TScalar, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalar,NDimensions>
+::Initialize() {
+	// Hypothesis 1: coefficients image reference has been set (origin, size, spacing)
+	// Nothing to do
+	return;
+
+	// Hypothesis 2: m_DomainExtent and m_ControlGridSpacing are set
+	double extent[Dimension];
+	double center[Dimension];
+	bool extentDefined = true;
+	bool spacingDefined = true;
+	for( size_t i = 0; i < Dimension; i++) {
+		center[i] = 0.5 * (m_DomainExtent[1][i] - m_DomainExtent[0][i]);
+		extent[i] = fabs(m_DomainExtent[1][i] - m_DomainExtent[0][i]);
+
+		if (extent[i] < 1.0) {
+			extentDefined = false;
+		}
+
+		if( fabs(this->m_ControlGridSpacing[i]) < 1.0) {
+			spacingDefined = false;
+		}
+	}
+
+	bool outputDefined = this->m_PointLocations.size() > 0 || this->m_ParamLocations.size() > 0;
+
+	if(extentDefined && spacingDefined) {
+		for(size_t i=0; i<Dimension; i++) {
+			size_t half = floor(0.5*extent[i]/this->m_ControlGridSpacing[i]) + 1;
+			this->m_ControlGridSize[i] = half * 2 + 1;
+			this->m_ControlGridOrigin[i] = center - (half * this->m_ControlGridSpacing[i]);
+		}
+	} else if (spacingDefined && outputDefined) {
+		// Hypothesis 3: output (points or grid) and spacing have been set
+		itkExceptionMacro(<< "not implemented");
+	}
+
+	this->InitializeCoefficientsImages();
 }
 
 //template< class TScalar, unsigned int NDimensions >

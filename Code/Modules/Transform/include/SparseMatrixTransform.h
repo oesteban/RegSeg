@@ -173,6 +173,10 @@ public:
     itkSetObjectMacro(KernelFunction, KernelFunctionType);
     itkGetConstReferenceObjectMacro(KernelFunction, KernelFunctionType);
 
+    itkGetConstMacro(ControlGridSize, SizeType);
+    itkGetConstMacro(ControlGridSpacing, SpacingType );
+    itkGetConstMacro(ControlGridOrigin, PointType );
+    itkGetConstMacro(MaximumDisplacement, SpacingType);
 
     void SetNumberOfPoints(size_t n) {
     	if( this->m_InterpolationMode == Superclass::GRID_MODE ) {
@@ -215,7 +219,6 @@ public:
 	//itkGetConstMacro( Phi, WeightsMatrix );
 	itkGetConstMacro( S, WeightsMatrix );
 
-
     itkSetObjectMacro( Field, FieldType );
     itkGetConstObjectMacro( Field, FieldType );
 
@@ -248,12 +251,10 @@ public:
         }
     }
 
-    itkGetConstMacro( ControlGridSize, SizeType );
 
+	void Initialize();
 	void Interpolate() { this->Interpolate( this->VectorizeCoefficients() ); }
-
 	AltCoeffPointer GetFlatParameters();
-
 
     /** Return the multithreader used by this class. */
     itk::MultiThreader * GetMultiThreader() const { return m_Threader; }
@@ -312,6 +313,7 @@ protected:
 	DirectionType                m_ControlGridDirectionInverse;
 	MatrixType                   m_ControlGridIndexToPhysicalPoint;
 	MatrixType                   m_ControlGridPhysicalPointToIndex;
+	SpacingType                  m_MaximumDisplacement;
 
 	size_t                       m_NumberOfDimParameters;  // This is K parameters (=coefficients, control points)
 	size_t                       m_NumberOfParameters;
