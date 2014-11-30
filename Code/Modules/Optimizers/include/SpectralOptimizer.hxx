@@ -77,8 +77,6 @@ m_RegularizationEnergyUpdated(true)
 	this->m_Alpha.Fill( 0.0 );
 	this->m_Beta.Fill( 0.0 );
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
-	this->m_GridSize.Fill( 5 );
-	this->m_GridSpacing.Fill( 0.0 );
 	SplineTransformPointer defaultTransform = SplineTransformType::New();
 	this->m_Transform = itkDynamicCastInDebugMode< TransformType* >( defaultTransform.GetPointer() );
 	this->m_Transform->SetNumberOfThreads( this->GetNumberOfThreads() );
@@ -502,60 +500,50 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 		itkExceptionMacro( << "functional must be set." );
 	}
 
-
 	this->m_Transform->SetPhysicalDomainInformation( this->m_Functional->GetReferenceImage() );
 	this->m_Transform->SetOutputPoints( this->m_Functional->GetNodesPosition() );
 	this->m_Transform->SetControlGridSize( this->m_GridSize );
-
+	this->m_Transform->SetControlGridSpacing( this->m_GridSpacing );
+	this->m_Transform->Initialize();
+	this->m_MaxDisplacement = this->m_Transform->GetMaximumDisplacement();
 	CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
-	this->m_GridSpacing = coeff[0]->GetSpacing();
-
-	for (size_t i = 0; i<Dimension; i++) {
-		this->m_MaxDisplacement[i] = 0.40 * this->m_GridSpacing[i];
-	}
-
 
 	VectorType zerov; zerov.Fill( 0.0 );
 	/* Initialize next uk */
 	for ( size_t i=0; i<coeff.Size(); i++ ) {
 		this->m_Coefficients[i] = CoefficientsImageType::New();
-		this->m_Coefficients[i]->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
-		this->m_Coefficients[i]->SetSpacing(   coeff[0]->GetSpacing() );
-		this->m_Coefficients[i]->SetDirection( coeff[0]->GetDirection() );
-		this->m_Coefficients[i]->SetOrigin(    coeff[0]->GetOrigin() );
+		this->m_Coefficients[i]->SetRegions(   this->m_Transform->GetControlGridSize() );
+		this->m_Coefficients[i]->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
+		this->m_Coefficients[i]->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
 		this->m_Coefficients[i]->Allocate();
 		this->m_Coefficients[i]->FillBuffer( 0.0 );
 
 		this->m_NextCoefficients[i] = CoefficientsImageType::New();
-		this->m_NextCoefficients[i]->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
-		this->m_NextCoefficients[i]->SetSpacing(   coeff[0]->GetSpacing() );
-		this->m_NextCoefficients[i]->SetDirection( coeff[0]->GetDirection() );
-		this->m_NextCoefficients[i]->SetOrigin(    coeff[0]->GetOrigin() );
+		this->m_NextCoefficients[i]->SetRegions(   this->m_Transform->GetControlGridSize() );
+		this->m_NextCoefficients[i]->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
+		this->m_NextCoefficients[i]->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
 		this->m_NextCoefficients[i]->Allocate();
 		this->m_NextCoefficients[i]->FillBuffer( 0.0 );
 
 		this->m_DerivativeCoefficients[i] = CoefficientsImageType::New();
-		this->m_DerivativeCoefficients[i]->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
-		this->m_DerivativeCoefficients[i]->SetSpacing(   coeff[0]->GetSpacing() );
-		this->m_DerivativeCoefficients[i]->SetDirection( coeff[0]->GetDirection() );
-		this->m_DerivativeCoefficients[i]->SetOrigin(    coeff[0]->GetOrigin() );
+		this->m_DerivativeCoefficients[i]->SetRegions(   this->m_Transform->GetControlGridSize() );
+		this->m_DerivativeCoefficients[i]->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
+		this->m_DerivativeCoefficients[i]->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
 		this->m_DerivativeCoefficients[i]->Allocate();
 		this->m_DerivativeCoefficients[i]->FillBuffer( 0.0 );
 	}
 
 	this->m_LastCoeff = FieldType::New();
-	this->m_LastCoeff->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
-	this->m_LastCoeff->SetSpacing(   coeff[0]->GetSpacing() );
-	this->m_LastCoeff->SetDirection( coeff[0]->GetDirection() );
-	this->m_LastCoeff->SetOrigin(    coeff[0]->GetOrigin() );
+	this->m_LastCoeff->SetRegions(   this->m_Transform->GetControlGridSize() );
+	this->m_LastCoeff->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
+	this->m_LastCoeff->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
 	this->m_LastCoeff->Allocate();
 	this->m_LastCoeff->FillBuffer( zerov );
 
 	this->m_CurrentCoefficients = FieldType::New();
-	this->m_CurrentCoefficients->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
-	this->m_CurrentCoefficients->SetSpacing(   coeff[0]->GetSpacing() );
-	this->m_CurrentCoefficients->SetDirection( coeff[0]->GetDirection() );
-	this->m_CurrentCoefficients->SetOrigin(    coeff[0]->GetOrigin() );
+	this->m_CurrentCoefficients->SetRegions(   this->m_Transform->GetControlGridSize() );
+	this->m_CurrentCoefficients->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
+	this->m_CurrentCoefficients->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
 	this->m_CurrentCoefficients->Allocate();
 	this->m_CurrentCoefficients->FillBuffer( zerov );
 
@@ -577,10 +565,9 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	this->m_TotalTransform->ComputeCoefficients();
 
 	this->m_InitialCoeff = FieldType::New();
-	this->m_InitialCoeff->SetRegions(   coeff[0]->GetLargestPossibleRegion() );
-	this->m_InitialCoeff->SetSpacing(   coeff[0]->GetSpacing() );
-	this->m_InitialCoeff->SetDirection( coeff[0]->GetDirection() );
-	this->m_InitialCoeff->SetOrigin(    coeff[0]->GetOrigin() );
+	this->m_InitialCoeff->SetRegions(   this->m_Transform->GetControlGridSize() );
+	this->m_InitialCoeff->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
+	this->m_InitialCoeff->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
 	this->m_InitialCoeff->Allocate();
 	this->m_InitialCoeff->FillBuffer( zerov );
 
@@ -607,8 +594,7 @@ void SpectralOptimizer<TFunctional>
 	Superclass::AddOptions( opts );
 	opts.add_options()
 			("alpha,a", bpo::value< float > (), "alpha value in regularization")
-			("beta,b", bpo::value< float > (), "beta value in regularization")
-			("grid-size,g", bpo::value< size_t > (), "grid size");
+			("beta,b", bpo::value< float > (), "beta value in regularization");
 }
 
 template< typename TFunctional >
@@ -639,11 +625,6 @@ void SpectralOptimizer<TFunctional>
 				v[i] = beta[i];
 			this->SetBeta(v);
 		}
-	}
-
-	if( this->m_Settings.count( "grid-size" ) ){
-		bpo::variable_value v = this->m_Settings["grid-size"];
-		this->SetGridSize( v.as< size_t >() );
 	}
 }
 

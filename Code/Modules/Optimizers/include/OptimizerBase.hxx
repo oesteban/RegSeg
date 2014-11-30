@@ -101,6 +101,7 @@ m_InitialValue(0.0)
 {
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 0 );
+	this->m_GridSpacing.Fill(0.0);
 }
 
 template< typename TFunctional >
@@ -321,7 +322,8 @@ void OptimizerBase<TFunctional>
 			("iterations,i", bpo::value< size_t > (), "number of iterations")
 			("convergence-window,w", bpo::value< size_t > (), "number of iterations of convergence window")
 			("convergence-thresh,t", bpo::value< double > (), "convergence value")
-			("grid-size,S", bpo::value< size_t > (), "grid size")
+			("grid-size", bpo::value< size_t > (), "size of control points grid")
+			("grid-spacing", bpo::value< float > (), "spacing between control points ")
 			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)")
 			("convergence-energy", bpo::bool_switch(), "disables lazy convergence tracking: instead of fast computation of the mean norm of "
 					"the displacement field, it computes the full energy functional");
@@ -335,6 +337,16 @@ void OptimizerBase<TFunctional>
 	if( this->m_Settings.count( "step-size" ) ){
 		bpo::variable_value v = this->m_Settings["step-size"];
 		this->SetStepSize( v.as< double >() );
+	}
+
+	if( this->m_Settings.count("grid-size") ){
+		bpo::variable_value v = this->m_Settings["grid-size"];
+		this->SetGridSize( v.as< size_t >() );
+	}
+
+	if( this->m_Settings.count("grid-spacing") ){
+		bpo::variable_value v = this->m_Settings["grid-spacing"];
+		this->SetGridSpacing( v.as< float >() );
 	}
 
 	if( this->m_Settings.count( "gradient-scales" ) ){
