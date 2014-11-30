@@ -626,6 +626,32 @@ void SpectralOptimizer<TFunctional>
 			this->SetBeta(v);
 		}
 	}
+
+	if( this->m_Settings.count( "grid-size" ) ){
+		bpo::variable_value v = this->m_Settings["grid-size"];
+		std::vector<size_t> s = v.as< std::vector<size_t> > ();
+		typename TransformType::SizeType size;
+		if (s.size() == 1) {
+			size.Fill(s[0]);
+		} else if (s.size() == Dimension) {
+			for( size_t i = 0; i < Dimension; i++)
+				size[i] = s[i];
+		}
+		this->SetGridSize(size);
+	}
+
+	if( this->m_Settings.count( "grid-spacing" ) ){
+		bpo::variable_value v = this->m_Settings["grid-spacing"];
+		std::vector<float> s = v.as< std::vector<float> > ();
+		typename TransformType::SpacingType sp;
+		if (s.size() == 1) {
+			sp.Fill(s[0]);
+		} else if (s.size() == Dimension) {
+			for( size_t i = 0; i < Dimension; i++)
+				sp[i] = s[i];
+		}
+		this->SetGridSpacing(sp);
+	}
 }
 
 } // end namespace rstk

@@ -130,6 +130,7 @@ public:
 	typedef typename Superclass::FieldPointer                   FieldPointer;
 	typedef typename Superclass::FieldConstPointer              FieldConstPointer;
 	typedef typename Superclass::ControlPointsGridSizeType      ControlPointsGridSizeType;
+	typedef typename Superclass::ControlPointsGridSpacingType   ControlPointsGridSpacingType;
 
 	typedef itk::MultiplyImageFilter<CoefficientsImageType, CoefficientsImageType, CoefficientsImageType> MultiplyFilterType;
 	typedef itk::AddImageFilter<CoefficientsImageType, CoefficientsImageType, CoefficientsImageType>      AddFilterType;
@@ -189,7 +190,10 @@ public:
 	}
 
 	itkSetMacro( GridSize, ControlPointsGridSizeType );
-	void SetGridSize( double val ) { this->m_GridSize.Fill(val); }
+	// void SetGridSize( double val ) { this->m_GridSize.Fill(val); }
+
+	itkSetMacro( GridSpacing, ControlPointsGridSpacingType );
+	// void SetGridSpacing( double val ) { this->m_GridSize.Fill(val); }
 
 	void ComputeIterationSpeed();
 	MeasureType GetCurrentRegularizationEnergy();

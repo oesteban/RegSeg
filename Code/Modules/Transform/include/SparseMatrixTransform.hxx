@@ -248,7 +248,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	}
 
 	for (size_t i = 0; i<Dimension; i++) {
-		this->m_MaxDisplacement[i] = 0.40 * this->m_ControlGridSpacing[i];
+		this->m_MaximumDisplacement[i] = 0.40 * this->m_ControlGridSpacing[i];
 	}
 
 	this->Modified();
@@ -1082,7 +1082,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 ::Initialize() {
 	// Hypothesis 1: coefficients image reference has been set (origin, size, spacing)
 	// Nothing to do
-	return;
 
 	// Hypothesis 2: m_DomainExtent and m_ControlGridSpacing are set
 	double extent[Dimension];
@@ -1090,8 +1089,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 	bool extentDefined = true;
 	bool spacingDefined = true;
 	for( size_t i = 0; i < Dimension; i++) {
-		center[i] = 0.5 * (m_DomainExtent[1][i] - m_DomainExtent[0][i]);
-		extent[i] = fabs(m_DomainExtent[1][i] - m_DomainExtent[0][i]);
+		center[i] = 0.5 * (this->m_DomainExtent[1][i] + this->m_DomainExtent[0][i]);
+		extent[i] = fabs(this->m_DomainExtent[1][i] - this->m_DomainExtent[0][i]);
 
 		if (extent[i] < 1.0) {
 			extentDefined = false;
@@ -1108,7 +1107,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 		for(size_t i=0; i<Dimension; i++) {
 			size_t half = floor(0.5*extent[i]/this->m_ControlGridSpacing[i]) + 1;
 			this->m_ControlGridSize[i] = half * 2 + 1;
-			this->m_ControlGridOrigin[i] = center - (half * this->m_ControlGridSpacing[i]);
+			this->m_ControlGridOrigin[i] = center[i] - (half * this->m_ControlGridSpacing[i]);
 		}
 	} else if (spacingDefined && outputDefined) {
 		// Hypothesis 3: output (points or grid) and spacing have been set
