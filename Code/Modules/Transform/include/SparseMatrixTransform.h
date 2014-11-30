@@ -174,9 +174,31 @@ public:
     itkGetConstReferenceObjectMacro(KernelFunction, KernelFunctionType);
 
     itkGetConstMacro(ControlGridSize, SizeType);
+    itkSetMacro(ControlGridSize, SizeType);
     itkGetConstMacro(ControlGridSpacing, SpacingType );
+    itkSetMacro(ControlGridSpacing, SpacingType );
     itkGetConstMacro(ControlGridOrigin, PointType );
+    itkSetMacro(ControlGridOrigin, PointType );
+
     itkGetConstMacro(MaximumDisplacement, SpacingType);
+
+    void SetControlGridSize( size_t s ) {
+    	SizeType size; size.Fill(s);
+    	this->SetControlGridSize(size);
+    }
+
+    void SetControlGridSpacing( float s ) {
+    	SpacingType ss;
+        ss.Fill(s);
+    	this->SetControlGridSpacing(ss);
+    }
+
+    void SetControlGridSpacing( itk::FixedArray< double, Dimension > s) {
+    	SpacingType ss;
+        for( size_t i = 0; i<Dimension; i++ )
+            ss[i] = s[i];
+    	this->SetControlGridSpacing(ss);
+    }
 
     void SetNumberOfPoints(size_t n) {
     	if( this->m_InterpolationMode == Superclass::GRID_MODE ) {
@@ -233,24 +255,6 @@ public:
 
 
     void SetControlGridInformation( const DomainBase* image );
-
-    void SetControlGridSize( size_t s ) {
-    	SizeType size; size.Fill(s);
-    	this->SetControlGridSize(size);
-    }
-
-    void SetControlGridSize (const SizeType _arg) {
-        if ( this->GetDebug() && ::itk::Object::GetGlobalWarningDisplay() ) {
-          std::ostringstream itkmsg;
-          itkmsg << "Debug: In " "SparseMatrixTransform.h" ", line " << 234 << "\n"  << this->GetNameOfClass() << " (" << this << "): " "setting " "ControlGridSize" " to " << _arg  << "\n\n";                                                 \
-          ::itk::OutputWindowDisplayDebugText( itkmsg.str().c_str() );
-        }
-        if ( this->m_ControlGridSize != _arg ) {
-          this->m_ControlGridSize = _arg;
-          this->InitializeCoefficientsImages();
-        }
-    }
-
 
 	void Initialize();
 	void Interpolate() { this->Interpolate( this->VectorizeCoefficients() ); }

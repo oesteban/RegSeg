@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-17 17:11:15
+# @Last Modified time: 2014-11-30 11:20:32
 
 import os
 import os.path as op
@@ -65,23 +65,27 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
         float_trait, traits.List(float_trait), default=1.0, argstr='-s %0.5f',
         desc=('update step size in gradient descent optimization'))
 
-    gridsize_trait = traits.Either(
+    ivect_trait = traits.Either(
         int_trait, traits.Tuple(int_trait, int_trait, int_trait))
-    grid_size = traits.Either(
-        gridsize_trait, traits.List(gridsize_trait), default=8, argstr='-S %d',
-        desc=('bspline control points per dimension and level'))
-
-    regularization_trait = traits.Either(
+    fvect_trait = traits.Either(
         float_trait, traits.Tuple(float_trait, float_trait, float_trait))
+
+    grid_size = traits.Either(
+        ivect_trait, traits.List(ivect_trait), argstr='--grid-size %d',
+        desc=('bspline control points per dimension and level'))
+    grid_spacing = traits.Either(
+        fvect_trait, traits.List(fvect_trait), argstr='--grid-spacing %0.5f',
+        desc='spacing between control points')
+
     alpha = traits.Either(
-        regularization_trait, traits.List(regularization_trait), default=1.0,
-        argstr='-a %0.5f', desc='alpha scalar')
+        fvect_trait, traits.List(fvect_trait), argstr='-a %0.5f',
+        desc='alpha scalar')
     beta = traits.Either(
-        regularization_trait, traits.List(regularization_trait), default=1.0,
-        argstr='-b %0.5f', desc='beta scalar')
+        fvect_trait, traits.List(fvect_trait), argstr='-b %0.5f',
+        desc='beta scalar')
     scales = traits.Either(
-        regularization_trait, traits.List(regularization_trait), default=1.0,
-        argstr='-g %0.5f', desc='alpha scalar')
+        fvect_trait, traits.List(fvect_trait), argstr='-g %0.5f',
+        desc='alpha scalar')
 
 
 class ACWERegInputSpec(ACWERegInputGroupSpec):

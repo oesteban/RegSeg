@@ -112,8 +112,6 @@ public:
 	/** Stop condition internal string type */
 	typedef std::ostringstream                                      StopConditionDescriptionType;
 
-	typedef itk::FixedArray< double, Dimension >                    ControlPointsGridSpacingType;
-
 	typedef size_t                                                  SizeValueType;
 	typedef typename Superclass::ScalesType                         ScalesType;
 
@@ -140,6 +138,7 @@ public:
 	typedef typename TransformType::FieldPointer                    FieldPointer;
 	typedef typename TransformType::FieldConstPointer               FieldConstPointer;
 	typedef typename TransformType::SizeType                        ControlPointsGridSizeType;
+	typedef typename TransformType::SpacingType                     ControlPointsGridSpacingType;
 
 	/** Type for the convergence checker */
 	typedef itk::Function::
