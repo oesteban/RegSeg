@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-17 17:12:26
+# @Last Modified time: 2014-12-01 13:18:49
 
 import os
 import os.path as op
@@ -23,8 +23,9 @@ from pyacwereg.interfaces.warps import FieldBasedWarp, InverseField
 def regseg_wf(name='REGSEG', enhance_inputs=True):
     wf = pe.Workflow(name=name)
 
-    regseg_inputs = ['iterations', 'alpha', 'beta', 'step_size', 'grid_size',
-                     'convergence_energy', 'convergence_window', 'f_smooth',
+    regseg_inputs = ['iterations', 'alpha', 'beta', 'step_size',
+                     'grid_spacing', 'convergence_energy',
+                     'convergence_window', 'f_smooth',
                      'images_verbosity', 'scales', 'descript_update',
                      'convergence_value']
 
@@ -87,7 +88,7 @@ def default_regseg(name='REGSEGDefault'):
     wf.inputs.inputnode.step_size = [0.1, .1, .02]
     wf.inputs.inputnode.alpha = [0.0, 0.0, 0.1]
     wf.inputs.inputnode.beta = [0.0, 0.0, 0.1]
-    wf.inputs.inputnode.grid_size = [4, 6, 8]
+    wf.inputs.inputnode.grid_spacing = [30., 20., 10.]
     wf.inputs.inputnode.convergence_energy = [True] * 3
     wf.inputs.inputnode.convergence_window = [10, 15, 20]
     wf.inputs.inputnode.f_smooth = [1.5, 1.0, None]
