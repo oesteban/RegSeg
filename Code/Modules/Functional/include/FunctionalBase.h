@@ -328,6 +328,8 @@ public:
 	MeasureType GetValue();
 	itkGetConstMacro(RegionValue, MeasureArray);
 	VNLVectorContainer ComputeDerivative();
+	VNLVectorContainer ComputeThreadedDerivative();
+
 	virtual void Initialize();
 	virtual void UpdateDescriptors() = 0;
 	virtual std::string PrintFormattedDescriptors() = 0;
@@ -346,6 +348,11 @@ public:
 
 	static void AddOptions( SettingsDesc& opts );
 
+
+    /** Return the multithreader used by this class. */
+    itk::MultiThreader * GetMultiThreader() const { return m_Threader; }
+    itkSetClampMacro( NumberOfThreads, itk::ThreadIdType, 1, ITK_MAX_THREADS);
+    itkGetConstReferenceMacro(NumberOfThreads, itk::ThreadIdType);
 protected:
 	FunctionalBase();
 	virtual ~FunctionalBase() {}
@@ -363,9 +370,10 @@ protected:
 	MeasureType GetEnergyAtPoint( PointType& point, size_t roi, ReferencePixelType& value ) const;
 	MeasureType EvaluateGradient( PointType& point, size_t outer_roi, size_t inner_roi ) const;
 
-
 	inline bool CheckExtent( ContourPointType& p, ContinuousIndex& idx ) const;
 	virtual void ParseSettings();
+
+	static ITK_THREAD_RETURN_TYPE ComputeThreaderCallback(void *arg);
 
 	size_t m_NumberOfContours;
 	size_t m_NumberOfRegions;
@@ -414,11 +422,16 @@ protected:
 	PointsVector m_NodesPosition;
 	size_t m_LastROI;
 	std::vector<size_t> m_OffMaskNodes;
+
+	/** Support processing data in multiple threads. */
+	itk::MultiThreader::Pointer m_Threader;
+	itk::ThreadIdType           m_NumberOfThreads;
 private:
 	FunctionalBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented
 
 	void UpdateContour();
+	void UpdateNormals();
 	void ComputeCurrentRegions( void );
 	void ComputeOuterRegions( void );
 	void InitializeCurrentContours( void );
