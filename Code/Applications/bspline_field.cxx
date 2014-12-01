@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		transform->SetControlGridSize( size );
-		transform->SetPhysicalDomainInformation( ref );
+		transform->SetDomainExtent( ref );
 		transform->SetOutputReference( ref );
 		transform->UpdateField();
 		coeffs = transform->GetCoefficientsImages();

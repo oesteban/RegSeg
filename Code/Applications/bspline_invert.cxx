@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 	tf->SetNumberOfThreads( 2 );
 #endif
 	tf->SetControlGridSize( size );
-	tf->SetPhysicalDomainInformation( field );
+	tf->SetDomainExtent( field );
 
 	VectorType disp;
 	typename FieldType::IndexType idx;
