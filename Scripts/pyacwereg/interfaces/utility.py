@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-19 11:44:16
+# @Last Modified time: 2014-12-01 13:42:56
 import os
 import os.path as op
 import nibabel as nb
@@ -32,7 +32,7 @@ class ExportSlicesInputSpec(CommandLineInputSpec):
     num_slices = traits.Int(14, argstr='-n %d', desc='total num. of slices')
     axis = traits.Enum(2, 0, 1, argstr='-a %d', usedefault=True,
                        desc='axis to cut through')
-    all_axis = traits.Bool(arstr='-A', desc='slice through all axes')
+    all_axis = traits.Bool(argstr='-A', desc='slice through all axes')
 
 
 class ExportSlicesOutputSpec(TraitedSpec):
