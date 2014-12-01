@@ -111,7 +111,8 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 
 	typename CoefficientsImageType::PixelType* buff[Dimension];
 	for ( size_t i = 0; i<Dimension; i++) {
-		phi.mult( gradVector[i], derivative[i] );
+		if( this->m_Scales[c] > 1.0e-8 )
+			phi.mult( gradVector[i], derivative[i] );
 
 		this->m_DerivativeCoefficients[i]->FillBuffer( 0.0 );
 		buff[i] = this->m_DerivativeCoefficients[i]->GetBufferPointer();
@@ -130,7 +131,9 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	for( size_t r = 0; r<nPix; r++ ){
 		vi.Fill(0.0);
 		for( size_t c=0; c<Dimension; c++) {
-			val = this->m_Scales[c] * derivative[c][r] / norm;
+			val = 0.0;
+			if (this->m_Scales[c] > 1.0e-8)
+				val = this->m_Scales[c] * derivative[c][r] / norm;
 			vs[c] = val;
 			*( buff[c] + r ) = val;
 		}
