@@ -134,6 +134,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	// Initialize interpolators
 	this->m_Interp->SetInputImage( this->m_ReferenceImage );
 	this->m_MaskInterp->SetInputImage(this->m_BackgroundMask);
+
+	//this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -158,10 +160,10 @@ typename FunctionalBase<TReferenceImageType, TCoordRepType>::VNLVectorContainer
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeDerivative() {
 	size_t cpid = 0;
-	NormalFilterPointer normalsFilter;
 	SampleType sample;
 	VectorType zerov; zerov.Fill(0.0);
 	this->UpdateContour();
+	this->UpdateNormals();
 
 	VNLVectorContainer gradVector;
 	std::fill(this->m_OffMaskNodes.begin(), this->m_OffMaskNodes.end(), 0.0);
@@ -178,14 +180,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		PointValueType totalArea = 0.0;
 		PointValueType gradSum = 0.0;
 
-		// Compute mesh of normals
-		normalsFilter = NormalFilterType::New();
-		normalsFilter->SetInput( this->m_CurrentContours[in_cid] );
-		normalsFilter->Update();
-		ContourPointer normals = normalsFilter->GetOutput();
-
-		typename ContourType::PointsContainerConstIterator c_it = normals->GetPoints()->Begin();
-		typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
+		typename ContourType::PointsContainerConstIterator c_it = m_Gradients[in_cid]->GetPoints()->Begin();
+		typename ContourType::PointsContainerConstIterator c_end = m_Gradients[in_cid]->GetPoints()->End();
 
 		PointType  ci_prime;
 		VectorType ni;
@@ -208,8 +204,103 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			}
 
 			if ( in_cid != out_cid ) {
-				normals->GetPointData( pid, &ni );           // Normal ni in point c'_i
-				wi = this->ComputePointArea( pid, normals );  // Area of c'_i
+				m_Gradients[in_cid]->GetPointData( pid, &ni );           // Normal ni in point c'_i
+				wi = this->ComputePointArea( pid, m_Gradients[in_cid] );  // Area of c'_i
+				gi = this->EvaluateGradient( ci_prime, out_cid, in_cid );
+				totalArea+=wi;
+				gradSum+=gi;
+
+				if (fabs(gi) > maxgi)
+					maxgi = gi;
+			}
+			sample.push_back( GradientSample( gi, wi, ni, pid, cpid, in_cid ) );
+			++c_it;
+			cpid++;
+		}
+
+		PointValueType gradient;
+		ShapeGradientPointer gradmesh = this->m_Gradients[in_cid];
+		gradSum = 0.0;
+		for( size_t i = 0; i< sample.size(); i++) {
+			if ( sample[i].w > 0.0 ) {
+				gradient = sample[i].grad;
+				sample[i].grad = gradient;
+				gradSum+= gradient;
+				ni = gradient * sample[i].normal;  // Project to normal
+
+				for( size_t dim = 0; dim<Dimension; dim++ ) {
+					if( fabs(ni[dim]) > MIN_GRADIENT )
+						gradVector[dim][sample[i].gid] = ni[dim];
+				}
+			} else {
+				sample[i].normal = zerov;
+				sample[i].grad = 0.0;
+				sample[i].w = 0.0;
+				ni = zerov;
+			}
+			gradmesh->GetPointData()->SetElement( sample[i].cid, ni );
+		}
+	}
+	return gradVector;
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+typename FunctionalBase<TReferenceImageType, TCoordRepType>::VNLVectorContainer
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::ComputeThreadedDerivative() {
+	size_t cpid = 0;
+	SampleType sample;
+	VectorType zerov; zerov.Fill(0.0);
+	this->UpdateContour();
+	this->UpdateNormals();
+
+	VNLVectorContainer gradVector;
+	std::fill(this->m_OffMaskNodes.begin(), this->m_OffMaskNodes.end(), 0.0);
+
+	for( size_t i = 0; i<Dimension; i++ ) {
+		gradVector[i] = VNLVector( this->m_NumberOfPoints );
+		gradVector[i].fill(0.0);
+	}
+
+	PointValueType maxgi = 0.0;
+	for( size_t in_cid = 0; in_cid < this->m_NumberOfContours; in_cid++) {
+		sample.clear();
+		double wi = 0.0;
+		PointValueType totalArea = 0.0;
+		PointValueType gradSum = 0.0;
+
+
+
+		typename ContourType::PointsContainerConstIterator c_it = m_Gradients[in_cid]->GetPoints()->Begin();
+		typename ContourType::PointsContainerConstIterator c_end = m_Gradients[in_cid]->GetPoints()->End();
+
+		PointType  ci_prime;
+		VectorType ni;
+		PointValueType gi;
+		typename ContourType::PointIdentifier pid;
+		size_t out_cid;
+
+		//this->GetMultiThreader()->SetSingleMethod( this->ComputeThreaderCallback, &str );
+		this->GetMultiThreader()->SingleMethodExecute();
+
+
+		// for every node in the mesh: compute gradient, assign cid and gid.
+		while (c_it!=c_end) {
+			ni = zerov;
+			gi = 0.0;
+			wi = 0.0;
+
+			pid = c_it.Index();
+			ci_prime = c_it.Value();
+			out_cid = this->m_OuterList[in_cid][pid];
+
+			if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
+				this->m_OffMaskNodes[in_cid] += 1;
+			}
+
+			if ( in_cid != out_cid ) {
+				m_Gradients[in_cid]->GetPointData( pid, &ni );           // Normal ni in point c'_i
+				wi = this->ComputePointArea( pid, m_Gradients[in_cid] );  // Area of c'_i
 				gi = this->EvaluateGradient( ci_prime, out_cid, in_cid );
 				totalArea+=wi;
 				gradSum+=gi;
@@ -290,11 +381,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			++p_it;
 			gpid++;
 		}
-
-		ShapeCopyPointer copyShape = ShapeCopyType::New();
-		copyShape->SetInput( this->m_CurrentContours[contid] );
-		copyShape->Update();
-		this->m_Gradients[contid] = copyShape->GetOutput();
 	}
 
 	if ( invalid.size() > 0 ) {
@@ -304,6 +390,20 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_DisplacementsUpdated = true;
 	this->m_RegionsUpdated = (changed==0);
 	this->m_EnergyUpdated = (changed==0);
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::UpdateNormals() {
+	NormalFilterPointer normalsFilter;
+	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
+		// Compute mesh of normals
+		normalsFilter = NormalFilterType::New();
+		normalsFilter->SetInput( this->m_CurrentContours[contid] );
+		normalsFilter->Update();
+		this->m_Gradients[contid] = normalsFilter->GetOutput();
+	}
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
