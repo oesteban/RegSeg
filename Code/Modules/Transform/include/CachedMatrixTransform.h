@@ -176,16 +176,15 @@ public:
     itkGetConstMacro( InterpolationMode, InterpolateModeType );
     itkGetConstMacro( NumberOfPoints, size_t );
 
+    // Physical domain information
     itkSetMacro( DomainExtent, ExtentType );
     itkGetConstMacro( DomainExtent, ExtentType );
-
+    void SetDomainExtent( const DomainBase* image );
 
     itkGetConstMacro( PointLocations, PointsList );
 	itkGetConstMacro( PointValues, DimensionParametersContainer );
     inline VectorType GetPointValue( const size_t id ) const;
 
-    // Physical domain information
-    void SetPhysicalDomainInformation( const DomainBase* image );
 
 	// Physical positions, will define interpolation mode
     void SetOutputReference( const DomainBase* image );

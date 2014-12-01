@@ -96,18 +96,13 @@ CachedMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 void
 CachedMatrixTransform<TScalar,NDimensions>
-::SetPhysicalDomainInformation( const DomainBase* image ) {
+::SetDomainExtent( const DomainBase* image ) {
 	ContinuousIndexType o_idx;
 	o_idx.Fill( -0.5 );
 
-	SizeType size = image->GetLargestPossibleRegion().GetSize();
-	SpacingType sp = image->GetSpacing();
-	PointType orig = image->GetOrigin();
-	DirectionType dir = image->GetDirection();
-
 	ContinuousIndexType e_idx;
 	for ( size_t dim=0; dim< Dimension; dim++ ) {
-		e_idx[dim] = size[dim] - 0.5;
+		e_idx[dim] = image->GetLargestPossibleRegion().GetSize()[dim] - 0.5;
 	}
 
 	image->TransformContinuousIndexToPhysicalPoint( o_idx, m_DomainExtent[0] );
