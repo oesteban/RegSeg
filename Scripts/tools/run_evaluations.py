@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-01 13:37:54
+# @Last Modified time: 2014-12-02 19:31:46
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -182,20 +182,26 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     regseg.inputs.inputnode.grid_spacing = [
         (20., 45., 10.), (10., 20., 10.), (10., 10., 10.)]
 
+    selpar = pe.Node(niu.Select(index=[1]), name='SelectParcellation')
+    newmsk = pe.Node(fs.Binarize(match=[0, 5000], invert=True, dilate=1),
+                     name='NoBrainstemMask')
+
     wf.connect([
-        (st1,   dti,    [('out_dis_set.dwi', 'inputnode.in_dwi'),
-                         ('out_dis_set.dwi_mask', 'inputnode.in_mask')]),
-        (ds,    dti,    [('bvec', 'inputnode.in_bvec'),
-                         ('bval', 'inputnode.in_bval')]),
-        (dti,   mdti,   [('outputnode.fa', 'in1'),
-                         ('outputnode.md', 'in2')]),
-        (mdti,  regseg, [('out', 'inputnode.in_fixed')]),
-        (st1,   regseg, [('out_dis_set.tpms', 'inputnode.in_tpms'),
-                         ('out_ref_set.surf', 'inputnode.in_surf')]),
-        (st1,   msk,    [('out_dis_set.segs', 'inlist')]),
-        (msk,   rlmsk,  [('out', 'in_file')]),
-        (dti,   rlmsk,  [('outputnode.fa', 'reslice_like')]),
-        (rlmsk, regseg, [('out_file', 'inputnode.in_mask')])
+        (st1,    dti,    [('out_dis_set.dwi', 'inputnode.in_dwi')]),
+        (ds,     dti,    [('bvec', 'inputnode.in_bvec'),
+                          ('bval', 'inputnode.in_bval')]),
+        (dti,    mdti,   [('outputnode.fa', 'in1'),
+                          ('outputnode.md', 'in2')]),
+        (mdti,   regseg, [('out', 'inputnode.in_fixed')]),
+        (st1,    regseg, [('out_dis_set.tpms', 'inputnode.in_tpms'),
+                          ('out_ref_set.surf', 'inputnode.in_surf')]),
+        (st1,    msk,    [('out_dis_set.segs', 'inlist')]),
+        (st1,    selpar, [('out_dis_set.segs', 'inlist')]),
+        (selpar, newmsk, [('out', 'in_file')]),
+        (newmsk, rlmsk,  [('binary_file', 'in_file')]),
+        (st1,    rlmsk,  [('out_dis_set.dwi_mask', 'reslice_like')]),
+        (rlmsk,  dti,    [('out_file', 'inputnode.in_mask')]),
+        (st1,    regseg, [('out_dis_set.dwi_mask', 'inputnode.in_mask')])
     ])
 
     cmethod0 = sdc_fmb(bmap_params=dict(delta_te=2.46e-3),
