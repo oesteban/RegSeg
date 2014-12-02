@@ -169,18 +169,18 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
 
     regseg = regseg_wf()
     regseg.inputs.inputnode.iterations = [150, 100, 100]
-    regseg.inputs.inputnode.descript_update = [21, 16, 11]
-    regseg.inputs.inputnode.step_size = [0.001, 0.002, 0.001]
+    regseg.inputs.inputnode.descript_update = [30, 30, 30]
+    regseg.inputs.inputnode.step_size = [0.1, 0.2, 0.3]
     regseg.inputs.inputnode.alpha = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.beta = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.convergence_energy = [True, True, True]
-    regseg.inputs.inputnode.convergence_window = [20, 15, 10]
+    regseg.inputs.inputnode.convergence_window = [8, 10, 15]
     regseg.inputs.inputnode.convergence_value = [1.0e-5, 1.0e-8, 1.0e-9]
-    regseg.inputs.inputnode.f_smooth = [2.4, 1.2, None]
+    regseg.inputs.inputnode.f_smooth = [2.0, 0.5, None]
     regseg.inputs.inputnode.images_verbosity = 3
     regseg.inputs.inputnode.scales = [(0.0, 1.0, 0.0)] * 3
     regseg.inputs.inputnode.grid_spacing = [
-        (20., 45., 10.), (10., 30., 10.), (10., 10., 10.)]
+        (20., 45., 10.), (10., 20., 10.), (10., 10., 10.)]
 
     wf.connect([
         (st1,   dti,    [('out_dis_set.dwi', 'inputnode.in_dwi'),

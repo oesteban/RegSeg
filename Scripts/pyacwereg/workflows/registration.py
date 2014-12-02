@@ -83,7 +83,7 @@ def default_regseg(name='REGSEGDefault'):
     # Registration
     # Good config for box phantom (2014/04/21): [ -a 0.0 -b 0.0 -u 20 -g 6 -i
     # 500 -s 1.0]
-    wf.inputs.inputnode.iterations = [100, 150, 200]
+    wf.inputs.inputnode.iterations = [150, 150, 200]
     wf.inputs.inputnode.descript_update = [None] * 3
     wf.inputs.inputnode.step_size = [0.1, .1, .02]
     wf.inputs.inputnode.alpha = [0.0, 0.0, 0.1]
