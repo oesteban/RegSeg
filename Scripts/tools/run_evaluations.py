@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-02 19:31:46
+# @Last Modified time: 2014-12-02 23:39:15
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -24,6 +24,33 @@ try:
 except:
     pass
 import os
+
+
+def compute_mask(aparc, labels=[0, 5000]):
+    import nibabel as nb
+    import numpy as np
+    import os.path as op
+    import scipy.ndimage as nd
+
+    segnii = nb.load(aparc)
+    seg = segnii.get_data()
+    mask = np.ones_like(seg, dtype=np.uint8)
+    for l in labels:
+        mask[seg == l] = 0
+
+    struct = nd.iterate_structure(
+        nd.generate_binary_structure(3, 1), 2)
+    mask = nd.binary_dilation(mask, structure=struct).astype(np.uint8)
+    mask = nd.binary_closing(mask)
+    mask = nd.binary_fill_holes(mask).astype(np.uint8)
+
+    hdr = segnii.get_header().copy()
+    hdr.set_data_dtype(np.uint8)
+    hdr.set_xyzt_units('mm', 'sec')
+    out_file = op.abspath('nobstem_mask.nii.gz')
+    nii = nb.Nifti1Image(mask, segnii.get_affine(), hdr).to_filename(
+        out_file)
+    return out_file
 
 
 def hcp_workflow(name='HCP_TMI2015', settings={}):
@@ -162,10 +189,15 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
             ('outputnode.unwrapped', 'inputnode.bmap_unwrapped')])
     ])
 
-    dti = mrtrix_dti()
+    selpar = pe.Node(niu.Select(index=[1]), name='SelectParcellation')
+    newmsk = pe.Node(
+        niu.Function(function=compute_mask, input_names=['aparc'],
+                     output_names=['out_file']),
+        name='NoBrainstemMask')
+
     rlmsk = pe.Node(fs.MRIConvert(), name='MaskReslice')
+    dti = mrtrix_dti()
     mdti = pe.Node(niu.Merge(2), name='MergeDTI')
-    msk = pe.Node(niu.Select(index=[2]), name='SelectHIresMask')
 
     regseg = regseg_wf()
     regseg.inputs.inputnode.iterations = [150, 100, 100]
@@ -182,10 +214,6 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     regseg.inputs.inputnode.grid_spacing = [
         (20., 45., 10.), (10., 20., 10.), (10., 10., 10.)]
 
-    selpar = pe.Node(niu.Select(index=[1]), name='SelectParcellation')
-    newmsk = pe.Node(fs.Binarize(match=[0, 5000], invert=True, dilate=1),
-                     name='NoBrainstemMask')
-
     wf.connect([
         (st1,    dti,    [('out_dis_set.dwi', 'inputnode.in_dwi')]),
         (ds,     dti,    [('bvec', 'inputnode.in_bvec'),
@@ -195,7 +223,6 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
         (mdti,   regseg, [('out', 'inputnode.in_fixed')]),
         (st1,    regseg, [('out_dis_set.tpms', 'inputnode.in_tpms'),
                           ('out_ref_set.surf', 'inputnode.in_surf')]),
-        (st1,    msk,    [('out_dis_set.segs', 'inlist')]),
         (st1,    selpar, [('out_dis_set.segs', 'inlist')]),
         (selpar, newmsk, [('out', 'in_file')]),
         (newmsk, rlmsk,  [('binary_file', 'in_file')]),
