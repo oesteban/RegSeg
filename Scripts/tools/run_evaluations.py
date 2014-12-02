@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-02 23:49:02
+# @Last Modified time: 2014-12-02 23:50:28
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -41,9 +41,10 @@ def compute_mask(aparc, labels=[0, 5000]):
     struct = nd.iterate_structure(
         nd.generate_binary_structure(3, 1), 2)
     mask = nd.binary_dilation(mask, structure=struct).astype(np.uint8)
-    mask = nd.binary_closing(mask)
-        struct = nd.iterate_structure(
+    struct = nd.iterate_structure(
         nd.generate_binary_structure(3, 1), 4)
+    mask = nd.binary_closing(mask, structure=struct)
+
     mask = nd.binary_fill_holes(mask, structure=struct).astype(np.uint8)
 
     hdr = segnii.get_header().copy()
