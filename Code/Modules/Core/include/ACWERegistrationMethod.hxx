@@ -254,12 +254,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		this->m_Optimizers[level]->GetTransform()->SetNumberOfThreads( this->m_TransformNumberOfThreads );
 	}
 
-	if (level>0) {
-		this->ConcatenateFields(level);
-		this->m_OutputTransform->Interpolate();
-		this->m_Optimizers[level]->SetInitialDisplacementField(this->m_OutputTransform->GetDisplacementField());
-	}
-
 	this->m_CurrentLogger = JSONLoggerType::New();
 	this->m_CurrentLogger->SetOptimizer( this->m_Optimizers[level] );
 	this->m_CurrentLogger->SetLevel( level );

@@ -206,7 +206,6 @@ public:
 	itkGetConstMacro( UseDescriptorRecomputation, bool );
 
 	itkGetConstObjectMacro(CurrentCoefficients, FieldType);
-	itkSetObjectMacro(InitialDisplacementField, FieldType);
 
 	const FieldType * GetCurrentCoefficientsField () const {
 		return this->m_Transform->GetCoefficientsVectorImage();
@@ -256,9 +255,7 @@ protected:
 	FTDomainPointer              m_FTLaplacian;
 	FTDomainPointer              m_FTOnes;
 	FieldPointer                 m_LastCoeff;
-	FieldPointer                 m_InitialCoeff;
 	FieldPointer                 m_CurrentCoefficients;
-	FieldPointer                 m_InitialDisplacementField;
 	AddFieldFilterPointer        m_FieldCoeffAdder;
 private:
 	SpectralOptimizer( const Self & ); // purposely not implemented

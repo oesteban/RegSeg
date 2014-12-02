@@ -81,10 +81,6 @@ m_RegularizationEnergyUpdated(true)
 	this->m_Transform = itkDynamicCastInDebugMode< TransformType* >( defaultTransform.GetPointer() );
 	this->m_Transform->SetNumberOfThreads( this->GetNumberOfThreads() );
 
-	SplineTransformPointer initTransform = SplineTransformType::New();
-	this->m_TotalTransform = itkDynamicCastInDebugMode< TransformType* >( initTransform.GetPointer() );
-	this->m_TotalTransform->SetNumberOfThreads( this->GetNumberOfThreads() );
-
 	this->m_Scales.SetSize(Dimension);
 	this->m_Scales.Fill(1.0);
 }
@@ -183,19 +179,11 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 	if (!this->m_RegularizationEnergyUpdated ){
 		this->m_RegularizationEnergy=0;
 
-		// Add current coefficients to the corresponding ones at init
-		this->m_FieldCoeffAdder->SetInput2(this->m_LastCoeff);
-		this->m_FieldCoeffAdder->Update();
-		FieldConstPointer currCoeff = this->m_FieldCoeffAdder->GetOutput();
-
-		const VectorType* fBuffer = currCoeff->GetBufferPointer();
+		const VectorType* fBuffer = this->m_LastCoeff->GetBufferPointer();
 		const VectorType* dBuffer;
 		FieldConstPointer derivCoeff;
 
 		if (haveBeta) {
-			this->m_TotalTransform->SetCoefficientsVectorImage(currCoeff);
-			this->m_TotalTransform->ComputeGradientField();
-			derivCoeff = this->m_TotalTransform->GetGradientField();
 			dBuffer = derivCoeff->GetBufferPointer();
 		}
 
@@ -206,7 +194,7 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 		for (size_t i = 0; i<Dimension; i++ ) {
 			alpha[i] = this->m_Alpha[i];
 			beta[i] = this->m_Beta[i];
-			vxvol*= currCoeff->GetSpacing()[i];
+			vxvol*= this->m_LastCoeff->GetSpacing()[i];
 		}
 
 		VectorType u;
@@ -215,7 +203,7 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 		double energy = 0.0;
 		double totalVol = 0.0;
 		double eA, eB, e;
-		size_t nPix = currCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
+		size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
 
 		u.Fill(0.0);
 		du.Fill(0.0);
@@ -549,37 +537,6 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	this->m_CurrentCoefficients->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
 	this->m_CurrentCoefficients->Allocate();
 	this->m_CurrentCoefficients->FillBuffer( zerov );
-
-	if( this->m_InitialDisplacementField.IsNull() ) {
-		this->m_InitialDisplacementField = FieldType::New();
-		this->m_InitialDisplacementField->SetRegions(   this->m_Functional->GetReferenceImage()->GetLargestPossibleRegion() );
-		this->m_InitialDisplacementField->SetSpacing(   this->m_Functional->GetReferenceImage()->GetSpacing() );
-		this->m_InitialDisplacementField->SetDirection( this->m_Functional->GetReferenceImage()->GetDirection() );
-		this->m_InitialDisplacementField->SetOrigin(    this->m_Functional->GetReferenceImage()->GetOrigin() );
-		this->m_InitialDisplacementField->Allocate();
-		this->m_InitialDisplacementField->FillBuffer( zerov );
-	}
-
-
-	this->m_TotalTransform->SetDomainExtent(this->m_Transform->GetDomainExtent());
-	this->m_TotalTransform->SetControlGridInformation( coeff[0] );
-	this->m_TotalTransform->SetOutputReference(this->m_InitialDisplacementField);
-	this->m_TotalTransform->SetField(this->m_InitialDisplacementField);
-	this->m_TotalTransform->ComputeCoefficients();
-
-	this->m_InitialCoeff = FieldType::New();
-	this->m_InitialCoeff->SetRegions(   this->m_Transform->GetControlGridSize() );
-	this->m_InitialCoeff->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
-	this->m_InitialCoeff->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
-	this->m_InitialCoeff->Allocate();
-	this->m_InitialCoeff->FillBuffer( zerov );
-
-	itk::ImageAlgorithm::Copy<FieldType, FieldType>(this->m_TotalTransform->GetCoefficientsVectorImage(),
-			this->m_InitialCoeff, this->m_TotalTransform->GetCoefficientsVectorImage()->GetLargestPossibleRegion(),
-			this->m_InitialCoeff->GetLargestPossibleRegion());
-
-	this->m_FieldCoeffAdder = AddFieldFilterType::New();
-	this->m_FieldCoeffAdder->SetInput1(this->m_InitialCoeff);
 }
 
 

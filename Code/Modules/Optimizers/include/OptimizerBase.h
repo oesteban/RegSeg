@@ -238,7 +238,6 @@ public:
 
 	virtual const FieldType * GetCurrentCoefficients() const = 0;
 	virtual const FieldType * GetCurrentCoefficientsField() const = 0;
-	virtual void SetInitialDisplacementField(FieldType* field) = 0;
 
 	/** Start and run the optimization */
 	void Start();
@@ -330,7 +329,6 @@ protected:
 	VectorType                   m_MaxDisplacement;
 
 	TransformPointer             m_Transform;
-	TransformPointer             m_TotalTransform;
 	FunctionalPointer            m_Functional;
 
 	CoefficientsImageArray       m_Coefficients;
