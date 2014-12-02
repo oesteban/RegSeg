@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-02 23:39:15
+# @Last Modified time: 2014-12-02 23:49:02
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -42,7 +42,9 @@ def compute_mask(aparc, labels=[0, 5000]):
         nd.generate_binary_structure(3, 1), 2)
     mask = nd.binary_dilation(mask, structure=struct).astype(np.uint8)
     mask = nd.binary_closing(mask)
-    mask = nd.binary_fill_holes(mask).astype(np.uint8)
+        struct = nd.iterate_structure(
+        nd.generate_binary_structure(3, 1), 4)
+    mask = nd.binary_fill_holes(mask, structure=struct).astype(np.uint8)
 
     hdr = segnii.get_header().copy()
     hdr.set_data_dtype(np.uint8)
@@ -224,8 +226,8 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
         (st1,    regseg, [('out_dis_set.tpms', 'inputnode.in_tpms'),
                           ('out_ref_set.surf', 'inputnode.in_surf')]),
         (st1,    selpar, [('out_dis_set.segs', 'inlist')]),
-        (selpar, newmsk, [('out', 'in_file')]),
-        (newmsk, rlmsk,  [('binary_file', 'in_file')]),
+        (selpar, newmsk, [('out', 'aparc')]),
+        (newmsk, rlmsk,  [('out_file', 'in_file')]),
         (st1,    rlmsk,  [('out_dis_set.dwi_mask', 'reslice_like')]),
         (rlmsk,  dti,    [('out_file', 'inputnode.in_mask')]),
         (st1,    regseg, [('out_dis_set.dwi_mask', 'inputnode.in_mask')])
