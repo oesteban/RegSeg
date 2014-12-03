@@ -45,10 +45,6 @@
 #include <math.h>
 #include <numeric>
 #include <vnl/vnl_random.h>
-#include "DisplacementFieldFileWriter.h"
-#include "DisplacementFieldComponentsFileWriter.h"
-
-#include <itkMeshFileWriter.h>
 #include <itkImageAlgorithm.h>
 #include <itkOrientImageFilter.h>
 #include <itkContinuousIndex.h>
@@ -619,6 +615,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				ROIPixelType outer = interp->Evaluate( ci - ni );
 				outerVect[pid] = outer;
 				++c_it;
+
+				if ((inner == contid) && (outer!=inner)) {
+					this->m_ValidNodes.push_back(ci);
+				}
 			}
 			this->m_OuterList.push_back( outerVect );
 		}
@@ -627,6 +627,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		std::fill( outerVect.begin(), outerVect.end(), 1 );
 		this->m_OuterList.push_back( outerVect );
 	}
+	std::cout << "Valid vertices: " << this->m_ValidNodes.size() << std::endl;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -882,7 +883,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	float isOutside = this->m_MaskInterp->Evaluate( point );
 	// isOutside = (isOutside > 1.0)?1.0:isOutside;
-	if (isOutside < 1.0e-3 && outer_roi!=this->m_LastROI ) {
+	if (isOutside < 1.0e-3 ) {
 		grad-= this->GetEnergyOfSample( value, inner_roi );
 	}
 	else {

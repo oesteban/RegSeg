@@ -409,6 +409,7 @@ protected:
 	MaskInterpolatorPointer m_MaskInterp;
 	PointDataContainerPointer m_CurrentDisplacements;
 	PointsVector m_NodesPosition;
+	PointsVector m_ValidNodes;
 	size_t m_LastROI;
 	std::vector<size_t> m_OffMaskNodes;
 
