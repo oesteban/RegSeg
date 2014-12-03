@@ -106,7 +106,6 @@ public:
 				typename FunctionalType::ShapeGradientList grads = this->m_Optimizer->GetFunctional()->GetGradients();
 				for( size_t r = 0; r < nContours; r++ ) {
 					ContourVectorWriterPointer wc = ContourVectorWriterType::New();
-					//wc->SetPointDataName("gradients");
 					std::stringstream ss;
 					ss << this->m_Prefix << "contour_lev" << this->m_Level << "_it" << std::setfill('0')<< std::setw(3) << this->m_Optimizer->GetCurrentIteration() << std::setw(2) << "_cont"<< r << ".vtk";
 					wc->SetFileName( ss.str().c_str() );

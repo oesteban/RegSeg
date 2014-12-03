@@ -233,7 +233,7 @@ void OptimizerBase<TFunctional>::Resume() {
 
 		try {
 			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
-			if (this->m_ConvergenceValue > 0.0 && this->m_ConvergenceValue <= this->m_MinimumConvergenceValue) {
+			if (fabs(this->m_ConvergenceValue) <= this->m_MinimumConvergenceValue) {
 				this->m_StopConditionDescription << "Convergence checker passed at iteration " << this->m_CurrentIteration << ".";
 				this->m_StopCondition = Self::CONVERGENCE_CHECKER_PASSED;
 				this->Stop();
@@ -262,13 +262,18 @@ void OptimizerBase<TFunctional>::Resume() {
 
 
 		if (this->m_InitialValue > 0.0){
-			float inc = this->m_LastEnergy / this->m_CurrentEnergy;
+			float inc = 1.0;
+			if (this->m_ConvergenceValue != itk::NumericTraits<InternalComputationValueType>::infinity() ) {
+				inc = 1.0 + this->m_ConvergenceValue;
+			} else {
+				inc = this->m_LastEnergy / this->m_CurrentEnergy;
+			}
 			if (inc < 1.0) {
 				this->m_ValueOscillations += 1;
 				this->m_ValueOscillationsLast = this->m_CurrentIteration;
 			} else if (inc > 1.0) {
 				if ((this->m_CurrentIteration - this->m_ValueOscillationsLast) > this->m_ValueOscillationsMax) {
-					float factor = 1.02 * inc * (1.0 - this->m_CurrentIteration/ this->m_NumberOfIterations);
+					float factor = 1.01 * inc * (1.0 - this->m_CurrentIteration / this->m_NumberOfIterations);
 					if (factor < 1.0) {
 						factor = 1.0;
 					}
