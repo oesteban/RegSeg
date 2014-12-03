@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-03 11:30:01
+# @Last Modified time: 2014-12-03 12:00:54
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -191,13 +191,6 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
             ('outputnode.unwrapped', 'inputnode.bmap_unwrapped')])
     ])
 
-    selpar = pe.Node(niu.Select(index=[1]), name='SelectParcellation')
-    newmsk = pe.Node(
-        niu.Function(function=compute_mask, input_names=['aparc'],
-                     output_names=['out_file']),
-        name='NoBrainstemMask')
-
-    rlmsk = pe.Node(fs.MRIConvert(), name='MaskReslice')
     dti = mrtrix_dti()
     mdti = pe.Node(niu.Merge(2), name='MergeDTI')
 
@@ -217,7 +210,8 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
         (20., 45., 10.), (10., 20., 10.), (10., 10., 10.)]
 
     wf.connect([
-        (st1,    dti,    [('out_dis_set.dwi', 'inputnode.in_dwi')]),
+        (st1,    dti,    [('out_dis_set.dwi', 'inputnode.in_dwi'),
+                          ('out_dis_set.dwi_mask', 'inputnode.in_mask')]),
         (ds,     dti,    [('bvec', 'inputnode.in_bvec'),
                           ('bval', 'inputnode.in_bval')]),
         (dti,    mdti,   [('outputnode.fa', 'in1'),
@@ -225,11 +219,6 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
         (mdti,   regseg, [('out', 'inputnode.in_fixed')]),
         (st1,    regseg, [('out_dis_set.tpms', 'inputnode.in_tpms'),
                           ('out_ref_set.surf', 'inputnode.in_surf')]),
-        (st1,    selpar, [('out_dis_set.segs', 'inlist')]),
-        (selpar, newmsk, [('out', 'aparc')]),
-        (newmsk, rlmsk,  [('out_file', 'in_file')]),
-        (st1,    rlmsk,  [('out_dis_set.dwi_mask', 'reslice_like')]),
-        (rlmsk,  dti,    [('out_file', 'inputnode.in_mask')]),
         (st1,    regseg, [('out_dis_set.dwi_mask', 'inputnode.in_mask')])
     ])
 
