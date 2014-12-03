@@ -325,7 +325,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		size_t nPix = this->GetCurrentMap(0)->GetLargestPossibleRegion().GetNumberOfPixels();
 		size_t nrois = m_ROIs.size();
-		size_t lastroi = nrois -1;
+		size_t lastroi = nrois;
 
 		const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
 		const typename ProbabilityMapType::PixelType* bgBuffer = this->m_BackgroundMask->GetBufferPointer();
