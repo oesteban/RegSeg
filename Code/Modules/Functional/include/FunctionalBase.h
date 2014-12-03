@@ -68,11 +68,8 @@
 #include "CopyQuadEdgeMeshFilter.h"
 #include "CopyQEMeshStructureFilter.h"
 #include "WarpQEMeshFilter.h"
-
 #include "SparseMatrixTransform.h"
 #include "DownsampleAveragingFilter.h"
-#include "itkVTKPolyDataWriter.h"
-#include "itkQuadEdgeMeshScalarDataVTKPolyDataWriter.h"
 
 namespace rstk {
 /** \class FunctionalBase
