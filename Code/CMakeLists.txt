@@ -38,6 +38,7 @@ find_library(JsonCpp_LIBRARY
 )
 
 SET( CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Core )
+SET( ITKRV_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/ITKReviewed )
 SET( IO_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/IO )
 
 
@@ -56,7 +57,7 @@ INCLUDE_DIRECTORIES( ${OPTIMIZERS_SOURCE_DIR}/include
                      ${TRANSFORM_SOURCE_DIR}/include
                      ${IO_SOURCE_DIR}/include
                      ${CORE_SOURCE_DIR}/include
-                     
+                     ${ITKRV_SOURCE_DIR}/include
 )
 
 ENABLE_TESTING()

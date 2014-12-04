@@ -48,7 +48,6 @@
 #include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkQuadEdgeMeshTraits.h>
 #include <itkQuadEdgeMesh.h>
-#include <itkNormalQuadEdgeMeshFilter.h>
 #include <itkWarpMeshFilter.h>
 #include <itkMeshSpatialObject.h>
 #include <itkGroupSpatialObject.h>
@@ -64,6 +63,7 @@
 #include <vnl/vnl_sparse_matrix.h>
 
 #include "rstkMacro.h"
+#include "NormalQuadEdgeMeshFilter.h"
 #include "ConfigurableObject.h"
 #include "CopyQuadEdgeMeshFilter.h"
 #include "CopyQEMeshStructureFilter.h"
@@ -165,7 +165,7 @@ public:
 	typedef vnl_vector< PointValueType >                     VNLVector;
 	typedef itk::FixedArray< VNLVector, Dimension >          VNLVectorContainer;
 
-	typedef itk::NormalQuadEdgeMeshFilter
+	typedef rstk::NormalQuadEdgeMeshFilter
 			< VectorContourType, VectorContourType >                     NormalFilterType;
 	typedef typename NormalFilterType::Pointer               NormalFilterPointer;
 	typedef std::vector< NormalFilterPointer >               NormalFilterList;
