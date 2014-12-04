@@ -49,6 +49,8 @@
 #include <itkOrientImageFilter.h>
 #include <itkContinuousIndex.h>
 
+#include <itkMeshFileWriter.h>
+
 #define MAX_GRADIENT 20.0
 #define MIN_GRADIENT 1.0e-5
 
@@ -137,7 +139,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 size_t
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContourType* prior ) {
+::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::VectorContourType* prior ) {
 	this->m_Priors.push_back( prior );
 
 	// Increase number of off-grid nodes to set into the sparse-dense interpolator
@@ -176,13 +178,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		PointValueType totalArea = 0.0;
 		PointValueType gradSum = 0.0;
 
-		typename ContourType::PointsContainerConstIterator c_it = m_Gradients[in_cid]->GetPoints()->Begin();
-		typename ContourType::PointsContainerConstIterator c_end = m_Gradients[in_cid]->GetPoints()->End();
+		typename VectorContourType::PointsContainerConstIterator c_it = m_Gradients[in_cid]->GetPoints()->Begin();
+		typename VectorContourType::PointsContainerConstIterator c_end = m_Gradients[in_cid]->GetPoints()->End();
 
 		PointType  ci_prime;
 		VectorType ni;
 		PointValueType gi;
-		typename ContourType::PointIdentifier pid;
+		typename VectorContourType::PointIdentifier pid;
 		size_t out_cid;
 
 		// for every node in the mesh: compute gradient, assign cid and gid.
@@ -255,8 +257,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	std::vector< size_t > invalid;
 
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
-		typename ContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
-		typename ContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
+		typename VectorContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
+		typename VectorContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
 		PointsContainerPointer curPoints = this->m_CurrentContours[contid]->GetPoints();
 
 		ContourPointType ci, ci_prime;
@@ -599,8 +601,16 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			ContourPointer normals = normalsFilter->GetOutput();
 			outerVect.resize( normals->GetNumberOfPoints() );
 
-			typename ContourType::PointsContainerConstIterator c_it  = normals->GetPoints()->Begin();
-			typename ContourType::PointsContainerConstIterator c_end = normals->GetPoints()->End();
+			bool isOutwards = this->ContourIsOutwards(normals);
+			float inc = isOutwards?-1.5:1.5;
+
+			PointsConstIterator c_it  = normals->GetPoints()->Begin();
+			PointsConstIterator c_end = normals->GetPoints()->End();
+
+			ContourCopyPointer copy = ContourCopyType::New();
+			copy->SetInput( this->m_CurrentContours[contid] );
+			copy->Update();
+			ContourPointer vcp = copy->GetOutput();
 
 			PointType ci;
 			VectorType v;
@@ -611,9 +621,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				pid = c_it.Index();
 				ci = c_it.Value();
 				normals->GetPointData( pid, &ni );
+				ni = ni * inc;
 				ROIPixelType inner = interp->Evaluate( ci + ni );
+				ROIPixelType pixel = interp->Evaluate( ci );
 				ROIPixelType outer = interp->Evaluate( ci - ni );
 				outerVect[pid] = outer;
+
+				v[0] = inner;
+				v[1] = outer;
+				v[2] = pixel;
+
+				vcp->SetPointData(pid, ni);
+
 				++c_it;
 
 				if ((inner == contid) && (outer!=inner)) {
@@ -621,19 +640,27 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				}
 			}
 			this->m_OuterList.push_back( outerVect );
+
+			std::stringstream ss;
+			ss << "normals_" << contid << ".vtk";
+			typedef typename itk::MeshFileWriter<VectorContourType> W;
+			typename W::Pointer w = W::New();
+			w->SetFileName(ss.str().c_str());
+			w->SetInput(vcp);
+			w->Update();
 		}
 	} else {
 		outerVect.resize(this->m_CurrentContours[0]->GetNumberOfPoints());
 		std::fill( outerVect.begin(), outerVect.end(), 1 );
 		this->m_OuterList.push_back( outerVect );
 	}
-	std::cout << "Valid vertices: " << this->m_ValidNodes.size() << std::endl;
+	std::cout << "Valid vertices: " << this->m_ValidNodes.size() << " of " << this->m_NodesPosition.size() << std::endl;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
 double
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::ComputePointArea(const PointIdentifier & iId, ContourType *mesh ) {
+::ComputePointArea(const PointIdentifier & iId, VectorContourType *mesh ) {
 	QEType* edge = mesh->FindEdge( iId );
 	QEType* temp = edge;
 	CellIdentifier cell_id(0);
@@ -644,7 +671,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	do {
 		cell_id = temp->GetLeft();
 
-		if ( cell_id != ContourType::m_NoFace ) {
+		if ( cell_id != VectorContourType::m_NoFace ) {
 			PolygonType *poly = dynamic_cast< PolygonType * >(
 					mesh->GetCells()->GetElement(cell_id) );
 			PolygonPointIterator pit = poly->PointIdsBegin();
@@ -659,6 +686,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		temp = temp->GetOnext();
 	} while ( temp != edge );
 	return fabs(totalArea * 0.33);
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+bool
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::ContourIsOutwards(VectorContourType *mesh ) {
+	return true;
 }
 
 
@@ -749,41 +783,49 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	itkDebugMacro("setting ReferenceImage to " << _arg);
 
 	if ( this->m_ReferenceImage != _arg ) {
-		this->m_OldDirection = _arg->GetDirection();
-		this->m_OldOrigin = _arg->GetOrigin();
+		typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >  Orienter;
+		typename Orienter::Pointer orient = Orienter::New();
+		orient->UseImageDirectionOn();
+		orient->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
+		orient->SetInput(_arg);
+		orient->Update();
+		ReferenceImagePointer ref = orient->GetOutput();
+		ReferenceSizeType size = ref->GetLargestPossibleRegion().GetSize();
 
+		// ReferenceImagePointer newref = ReferenceImageType::New();
+		// newref->CopyInformation(ref);
+		// newref->SetRegions(size);
+		// newref->Allocate();
+
+		// ReferenceIndexType i_old;
+		// ReferenceIndexType i_new;
+		// //size_t off_old, off_new;
+		// for(size_t i = 0; i< size[0]; i++) {
+		// 	i_old[0] = i;
+		// 	i_new[0] = size[0] - i - 1;
+		// 	for(size_t j = 0; j < size[1]; j++) {
+		// 		i_old[1] = j;
+		// 		i_new[1] = size[1] - j - 1;
+		// 		for(size_t k = 0; k < size[2]; k++) {
+		// 			i_old[2] = k;
+		// 			i_new[2] = k;
+		// 			newref->SetPixel(i_new, ref->GetPixel(i_old));
+		// 		}
+		// 	}
+		// }
+
+
+		DirectionType idmat; idmat.SetIdentity();
 		DirectionType itk; itk.SetIdentity();
 		itk(0,0) = -1.0; itk(1,1) = -1.0;
-		if ( this->m_OldDirection != itk ) {
-			itkWarningMacro( << "input volume is not RAS oriented.")
-		}
 
-		//typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >  Orienter;
-		//typename Orienter::Pointer orient = Orienter::New();
-		//orient->UseImageDirectionOn();
-		//orient->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
-		//orient->SetInput(_arg);
-		//orient->Update();
-		//ReferenceImagePointer ref = orient->GetOutput();
-
-		ReferenceImagePointer ref = ReferenceImageType::New();
-		ref->CopyInformation( _arg );
-		ref->SetRegions( _arg->GetLargestPossibleRegion() );
-		ref->Allocate();
-
-		itk::ImageAlgorithm::Copy< ReferenceImageType, ReferenceImageType >(
-				_arg,
-				ref,
-				_arg->GetLargestPossibleRegion(),
-				ref->GetLargestPossibleRegion()
-		);
-
-
-		DirectionType dir; dir.SetIdentity();
-		ref->SetDirection( dir );
-		ref->SetOrigin( PointType(0.0) + this->m_OldDirection*(this->m_OldOrigin).GetVectorFromOrigin() );
-
+		PointType neworig = itk * ref->GetOrigin();
+		ref->SetDirection(idmat);
+		ref->SetOrigin(neworig);
 		this->m_ReferenceImage = ref;
+
+
+
 
 		// Cache image properties
 		this->m_FirstPixelCenter  = this->m_ReferenceImage->GetOrigin();
