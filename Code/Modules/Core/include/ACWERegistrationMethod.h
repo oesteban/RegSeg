@@ -122,7 +122,7 @@ public:
 	typedef FunctionalBase< ReferenceImageType >              FunctionalType;
 	typedef typename FunctionalType::Pointer                  FunctionalPointer;
 	typedef std::vector< FunctionalPointer >                  FunctionalList;
-	typedef typename FunctionalType::ContourType              ContourType;
+	typedef typename FunctionalType::VectorContourType              VectorContourType;
 	typedef typename FunctionalType::ROIType                  ROIType;
 	typedef typename FunctionalType::ContourPointer           ContourPointer;
 	typedef typename FunctionalType::ContourConstPointer      ContourConstPointer;
@@ -237,7 +237,7 @@ public:
 	rstkGetObjectListWithLast( Optimizer, OptimizerType );
 	rstkGetObjectListWithLast( Functional, FunctionalType );
 
-	void AddShapePrior( const ContourType *prior ) { this->m_Priors.push_back( prior ); }
+	void AddShapePrior( const VectorContourType *prior ) { this->m_Priors.push_back( prior ); }
 
 	// Methods inherited from the Configurable interface
 	virtual void AddOptions( SettingsDesc& opts ) const {};
@@ -256,7 +256,7 @@ public:
 	PriorsList GetCurrentContours() const {
 		PriorsList contours;
 		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
-			contours.push_back( static_cast< const ContourType * >(this->m_Functionals[this->m_CurrentLevel-1]->GetCurrentContours()[i] ) );
+			contours.push_back( static_cast< const VectorContourType * >(this->m_Functionals[this->m_CurrentLevel-1]->GetCurrentContours()[i] ) );
 		}
 		return contours;
 	}

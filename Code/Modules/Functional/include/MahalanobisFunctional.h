@@ -77,7 +77,7 @@ public:
 	typedef typename Superclass::PointValueType              PointValueType;
 	typedef typename Superclass::ContinuousIndex             ContinuousIndex;
 
-	typedef typename Superclass::ContourType                 ContourType;
+	typedef typename Superclass::VectorContourType                 VectorContourType;
 	typedef typename Superclass::FieldType        FieldType;
 	typedef typename Superclass::FieldPointer     FieldPointer;
 	typedef typename Superclass::ContourCopyType             ContourCopyType;
@@ -141,8 +141,8 @@ public:
 
 	void SetParameters( size_t roi, ParametersType& params );
 
-	size_t AddShapePrior( ContourType* prior, ParametersType&params );
-	size_t AddShapePrior( const ContourType* prior ) { return Superclass::AddShapePrior( prior ); }
+	size_t AddShapePrior( VectorContourType* prior, ParametersType&params );
+	size_t AddShapePrior( const VectorContourType* prior ) { return Superclass::AddShapePrior( prior ); }
 
 	void Initialize();
 	void UpdateDescriptors();
