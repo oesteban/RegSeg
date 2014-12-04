@@ -1,0 +1,2 @@
+project(RSTKITKReviewed)
+set(RSTKITKReviewed_LIBRARIES RSTKITKReviewed)
