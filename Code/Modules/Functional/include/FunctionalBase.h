@@ -62,6 +62,10 @@
 #include <itkSmoothingRecursiveGaussianImageFilter.h>
 #include <vnl/vnl_sparse_matrix.h>
 
+#include <itkSimplexMesh.h>
+#include <itkSimplexMeshToTriangleMeshFilter.h>
+#include <itkTriangleMeshToSimplexMeshFilter.h>
+
 #include "rstkMacro.h"
 #include "NormalQuadEdgeMeshFilter.h"
 #include "ConfigurableObject.h"
@@ -164,6 +168,12 @@ public:
 	typedef vnl_sparse_matrix< PointValueType >              SparseMatrix;
 	typedef vnl_vector< PointValueType >                     VNLVector;
 	typedef itk::FixedArray< VNLVector, Dimension >          VNLVectorContainer;
+
+	//typedef itk::SimplexMesh< VectorType, Dimension >                SimplexContourType;
+	//typedef typename SimplexContourType::Pointer                     SimplexContourPointer;
+	//typedef itk::TriangleMeshToSimplexMeshFilter
+	//		< VectorContourType, SimplexContourType >                SimplexFilter;
+	//typedef typename SimplexFilter::Pointer                          SimplexFilterPointer;
 
 	typedef rstk::NormalQuadEdgeMeshFilter
 			< VectorContourType, VectorContourType >                     NormalFilterType;

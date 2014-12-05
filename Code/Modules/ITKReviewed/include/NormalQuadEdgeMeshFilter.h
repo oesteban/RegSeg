@@ -127,6 +127,8 @@ public:
   itkSetMacro (Weight, WeightType);
   itkGetConstMacro (Weight, WeightType);
 
+  itkGetConstMacro( IsWindingCCW, bool);
+
 protected:
   NormalQuadEdgeMeshFilter();
   ~NormalQuadEdgeMeshFilter();
@@ -173,9 +175,13 @@ protected:
   */
   void GenerateData();
 
+  void CheckTriangleWinding();
+
 private:
   NormalQuadEdgeMeshFilter (const Self &);
   void operator=(const Self &);
+
+  bool m_IsWindingCCW;
 };
 }
 
