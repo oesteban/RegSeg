@@ -21,13 +21,15 @@
 #include "NormalQuadEdgeMeshFilter.h"
 #include <vnl/vnl_math.h>
 #include <vnl/vnl_vector.h>
+#include <vnl/vnl_cross.h>
 #include <vnl/vnl_matrix.h>
 
 namespace rstk
 {
 template< typename TInputMesh, typename TOutputMesh >
 NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
-::NormalQuadEdgeMeshFilter()
+::NormalQuadEdgeMeshFilter():
+ m_IsWindingCCW(false)
 {
   this->m_Weight = THURMER;
 }
@@ -38,44 +40,50 @@ NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
 {}
 
 template< typename TInputMesh, typename TOutputMesh >
-typename NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >::OutputFaceNormalType
+void
 NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
-::ComputeFaceNormal(OutputPolygonType *iPoly)
+::CheckTriangleWinding()
 {
-  OutputMeshPointer output = this->GetOutput();
+	  OutputMeshPointer  output = this->GetOutput();
+	  OutputPolygonType *poly;
+	  OutputPointType pt[3];
 
-  OutputPointType pt[3];
-  int             k(0);
+	  int j = 0;
 
-  OutputQEType *edge = iPoly->GetEdgeRingEntry();
-  OutputQEType *temp = edge;
+	  for ( OutputCellsContainerConstIterator
+	        cell_it = output->GetCells()->Begin();
+	        cell_it != output->GetCells()->End();
+	        ++cell_it )
+	    {
+	    poly = dynamic_cast< OutputPolygonType * >( cell_it.Value() );
 
+	    if ( poly != ITK_NULLPTR )
+	      {
+	      if ( poly->GetNumberOfPoints() == 3 )
+	        {
+	    	  int             k(0);
+	    	  OutputPointType tpt[3];
+	    	  OutputQEType *edge = poly->GetEdgeRingEntry();
+	    	  OutputQEType *temp = edge;
+	    	  do
+	    	    {
+	    	    tpt[k++] = output->GetPoint( temp->GetOrigin() );
+	    	    temp = temp->GetLnext();
+	    	    }
+	    	  while ( temp != edge );
+	    	  pt[j] = TriangleType::ComputeGravityCenter(tpt[0], tpt[1], tpt[2]);
+	    	  j++;
+	    	  if (j==3) {
+	    		  break;
+	    	  }
+	        }
+	      }
+	    }
 
-  do
-    {
-    pt[k++] = output->GetPoint( temp->GetOrigin() );
-    temp = temp->GetLnext();
-    }
-  while ( temp != edge );
-
-  InputPointType ref; ref.Fill(0.0);
-  InputVectorType total;
-  total.Fill(0.0);
-  InputVectorType e1, e2;
-
-  for( size_t i = 0; i < 3; i++ ) {
-	  e1 = pt[i % 3] - ref;
-	  e2 = pt[(i+1) % 3] - ref;
-	  total+= vnl_cross_3d(e1, e2);
-  }
-  OutputFaceNormalType n = TriangleType::ComputeNormal(pt[0], pt[1], pt[2]);
-
-  double darea = dot_product(total, n);
-
-  if (darea < 0 )
-	  n *= -1.0;
-
-  return n;
+	  double test = (pt[1][0] - pt[0][0]) * (pt[1][1] + pt[0][1]) +
+			         (pt[2][0] - pt[1][0]) * (pt[2][1] + pt[1][1]) +
+			         (pt[0][0] - pt[2][0]) * (pt[0][1] + pt[2][1]);
+	  m_IsWindingCCW = (test < 0);
 }
 
 template< typename TInputMesh, typename TOutputMesh >
@@ -83,6 +91,7 @@ void
 NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
 ::ComputeAllFaceNormals()
 {
+  CheckTriangleWinding();
   OutputMeshPointer  output = this->GetOutput();
   OutputPolygonType *poly;
 
@@ -124,6 +133,50 @@ NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
 }
 
 template< typename TInputMesh, typename TOutputMesh >
+typename NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >::OutputFaceNormalType
+NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
+::ComputeFaceNormal(OutputPolygonType *iPoly)
+{
+  OutputMeshPointer output = this->GetOutput();
+
+  OutputPointType pt[3];
+  int             k(0);
+
+  OutputQEType *edge = iPoly->GetEdgeRingEntry();
+  OutputQEType *temp = edge;
+
+
+  do
+    {
+    pt[k++] = output->GetPoint( temp->GetOrigin() );
+    temp = temp->GetLnext();
+    }
+  while ( temp != edge );
+
+  // Test of winding, all normals should point inwards.
+  OutputFaceNormalType n = TriangleType::ComputeNormal(pt[0], pt[1], pt[2]);
+//  InputVectorType e1 = pt[1] - pt[0];
+//  InputVectorType e2 = pt[2] - pt[0];
+//  double test = dot_product(n.GetVnlVector(), vnl_cross_3d(e1.GetVnlVector(), e2.GetVnlVector()));
+//
+//  e1 = pt[1] - pt[2];
+//  e2 = pt[0] - pt[2];
+//  double test2 = dot_product(n.GetVnlVector(), vnl_cross_3d(e1.GetVnlVector(), e2.GetVnlVector()));
+//
+//  InputVectorType e01 = pt[1] - pt[0];
+//  InputVectorType e12 = pt[2] - pt[1];
+//  InputVectorType e20 = pt[0] - pt[2];
+//  double test = (pt[1][0] - pt[0][0]) * (pt[1][1] + pt[0][1]) +
+//		         (pt[2][0] - pt[1][0]) * (pt[2][1] + pt[1][1]) +
+//		         (pt[0][0] - pt[2][0]) * (pt[0][1] + pt[2][1]);
+
+  if (m_IsWindingCCW)
+	  n*= -1.0;
+
+  return n;
+}
+
+template< typename TInputMesh, typename TOutputMesh >
 typename NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >::OutputVertexNormalType
 NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
 ::ComputeVertexNormal(const OutputPointIdentifier & iId, OutputMeshType *outputMesh)
@@ -135,6 +188,8 @@ NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
 
   OutputVertexNormalType n(0.);
   OutputFaceNormalType   face_normal(0.);
+
+  OutputPointType pt[3];
 
   do
     {

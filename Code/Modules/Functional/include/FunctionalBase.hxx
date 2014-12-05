@@ -601,8 +601,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			ContourPointer normals = normalsFilter->GetOutput();
 			outerVect.resize( normals->GetNumberOfPoints() );
 
-			bool isOutwards = this->ContourIsOutwards(normals);
-			float inc = isOutwards?-1.5:1.5;
+			// SimplexFilterPointer simplex = SimplexFilter::New();
+			// simplex->SetInput( this->m_CurrentContours[contid] );
+			// simplex->Update();
+			// SimplexContourPointer scp = simplex->GetOutput();
 
 			PointsConstIterator c_it  = normals->GetPoints()->Begin();
 			PointsConstIterator c_end = normals->GetPoints()->End();
@@ -615,23 +617,29 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			PointType ci;
 			VectorType v;
 			VectorType ni;
+			// typename SimplexContourType::CovariantVectorType cni;
 
 			size_t pid;
 			while( c_it != c_end ) {
 				pid = c_it.Index();
 				ci = c_it.Value();
 				normals->GetPointData( pid, &ni );
-				ni = ni * inc;
+				//std::cout << scp->ComputeNormal(pid) << std::endl;
+				//ni[0] = cni[0][0];
+				//ni[1] = cni[0][1];
+				//ni[2] = cni[0][2];
+
 				ROIPixelType inner = interp->Evaluate( ci + ni );
 				ROIPixelType pixel = interp->Evaluate( ci );
 				ROIPixelType outer = interp->Evaluate( ci - ni );
 				outerVect[pid] = outer;
 
-				v[0] = inner;
-				v[1] = outer;
-				v[2] = pixel;
+				v = ni;
+				// v[0] = inner;
+				// v[1] = outer;
+				// v[2] = pixel;
 
-				vcp->SetPointData(pid, ni);
+				vcp->SetPointData(pid, v);
 
 				++c_it;
 
