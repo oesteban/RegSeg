@@ -162,6 +162,9 @@ public:
 	typedef typename itk::QuadEdgeMeshPolygonCell<CellType>          PolygonType;
 	typedef itk::TriangleHelper< ContourPointType >                  TriangleType;
 
+	typedef std::vector< PointIdentifier >                           PointIdContainer;
+	typedef typename PointIdContainer::iterator                      PointIdIterator;
+
 	typedef itk::QuadEdgeMesh< PointValueType, Dimension >           ScalarContourType;
 	typedef typename ScalarContourType::Pointer                      ScalarContourPointer;
 
@@ -311,7 +314,7 @@ public:
 
 	itkGetMacro( CurrentContours, ContourList);
 	itkGetMacro( Gradients, ShapeGradientList );
-	itkGetMacro( NodesPosition, PointsVector );
+	itkGetMacro( VerticesPosition, PointsVector );
 
 	virtual void SetCurrentDisplacements( const VNLVectorContainer& vals );
 
@@ -354,7 +357,7 @@ public:
 	itkGetConstObjectMacro( BackgroundMask, ProbabilityMapType);
 	virtual void SetBackgroundMask (const ProbabilityMapType * _arg);
 
-	itkGetConstMacro( OffMaskNodes, std::vector<size_t>);
+	itkGetConstMacro( OffMaskVertices, std::vector<size_t>);
 
 	const ProbabilityMapType* GetCurrentMap( size_t idx );
 
@@ -385,8 +388,7 @@ protected:
 
 	size_t m_NumberOfContours;
 	size_t m_NumberOfRegions;
-	size_t m_NumberOfPoints;
-	size_t m_NumberOfNodes;
+	size_t m_NumberOfVertices;
 	size_t m_SamplingFactor;
 	SigmaArrayType m_Sigma;
 	float m_DecileThreshold;
@@ -413,7 +415,6 @@ protected:
 	ProbabilityMapConstPointer m_BackgroundMask;
 	ROIPointer m_CurrentRegions;
 	ReferenceImageConstPointer m_ReferenceImage;
-	ContourOuterRegionsList m_OuterList;
 	ReferencePointType m_Origin, m_End, m_FirstPixelCenter, m_LastPixelCenter;
 	ReferencePointType m_OldOrigin;
 	ReferenceSizeType m_ReferenceSize;
@@ -427,10 +428,11 @@ protected:
 	InterpolatorPointer m_Interp;
 	MaskInterpolatorPointer m_MaskInterp;
 	PointDataContainerPointer m_CurrentDisplacements;
-	PointsVector m_NodesPosition;
-	PointsVector m_ValidNodes;
+	PointsVector m_VerticesPosition;
+	PointIdContainer m_ValidVertices;
+	PointIdContainer m_OuterRegion;
 	size_t m_LastROI;
-	std::vector<size_t> m_OffMaskNodes;
+	std::vector<size_t> m_OffMaskVertices;
 
 private:
 	FunctionalBase(const Self &);  //purposely not implemented
@@ -438,10 +440,9 @@ private:
 
 	void UpdateContour();
 	void UpdateNormals();
-	void ComputeCurrentRegions( void );
-	void ComputeOuterRegions( void );
-	void InitializeCurrentContours( void );
-	void InitializeInterpolatorGrid( void );
+	void ComputeCurrentRegions();
+	void InitializeContours();
+	void InitializeInterpolatorGrid();
 	double ComputePointArea( const PointIdentifier &iId, VectorContourType *mesh );
 
 }; // end FunctionalBase Class

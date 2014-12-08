@@ -61,8 +61,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::FunctionalBase():
  m_NumberOfContours(0),
  m_NumberOfRegions(1),
- m_NumberOfPoints(0),
- m_NumberOfNodes(0),
+ m_NumberOfVertices(0),
  m_SamplingFactor(2),
  m_DecileThreshold(0.05),
  m_DisplacementsUpdated(true),
@@ -106,8 +105,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		this->m_BackgroundMask = p;
 	}
 
-	this->InitializeCurrentContours();
-
 	// Initialize corresponding ROI /////////////////////////////
 	// Check that high-res reference sampling grid has been initialized
 	if ( this->m_ReferenceSamplingGrid.IsNull() ) {
@@ -122,12 +119,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_LastROI = m_ROIs.size() - 1;
 
 	// Compute the outer region in each vertex
-	this->ComputeOuterRegions();
+	this->InitializeContours();
 
 	this->m_RegionValue.SetSize(this->m_NumberOfRegions);
 	this->m_RegionValue.Fill(itk::NumericTraits<MeasureType>::infinity());
 
-	this->m_OffMaskNodes.resize(this->m_NumberOfContours);
+	this->m_OffMaskVertices.resize(this->m_NumberOfContours);
 
 	// Initialize interpolators
 	this->m_Interp->SetInputImage( this->m_ReferenceImage );
@@ -142,8 +139,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::VectorContourType* prior ) {
 	this->m_Priors.push_back( prior );
 
+	ContourCopyPointer copy = ContourCopyType::New();
+	copy->SetInput( prior );
+	copy->Update();
+	this->m_CurrentContours.push_back( copy->GetOutput() );
+
+	ShapeCopyPointer copyShape = ShapeCopyType::New();
+	copyShape->SetInput( prior );
+	copyShape->Update();
+	this->m_Gradients.push_back( copyShape->GetOutput() );
+
 	// Increase number of off-grid nodes to set into the sparse-dense interpolator
-	this->m_NumberOfPoints+= prior->GetNumberOfPoints();
+	this->m_NumberOfVertices+= prior->GetNumberOfPoints();
 
 	this->m_NumberOfContours++;
 	this->m_NumberOfRegions++;
@@ -157,90 +164,129 @@ template< typename TReferenceImageType, typename TCoordRepType >
 typename FunctionalBase<TReferenceImageType, TCoordRepType>::VNLVectorContainer
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeDerivative() {
-	size_t cpid = 0;
-	SampleType sample;
-	VectorType zerov; zerov.Fill(0.0);
-	this->UpdateContour();
-	this->UpdateNormals();
-
 	VNLVectorContainer gradVector;
-	std::fill(this->m_OffMaskNodes.begin(), this->m_OffMaskNodes.end(), 0.0);
-
 	for( size_t i = 0; i<Dimension; i++ ) {
-		gradVector[i] = VNLVector( this->m_NumberOfPoints );
+		gradVector[i] = VNLVector( this->m_ValidVertices.size() );
 		gradVector[i].fill(0.0);
 	}
 
-	PointValueType maxgi = 0.0;
-	for( size_t in_cid = 0; in_cid < this->m_NumberOfContours; in_cid++) {
-		sample.clear();
-		double wi = 0.0;
-		PointValueType totalArea = 0.0;
-		PointValueType gradSum = 0.0;
+	this->UpdateContour();
+	this->UpdateNormals();
 
-		typename VectorContourType::PointsContainerConstIterator c_it = m_Gradients[in_cid]->GetPoints()->Begin();
-		typename VectorContourType::PointsContainerConstIterator c_end = m_Gradients[in_cid]->GetPoints()->End();
+	PointIdIterator pid_end = this->m_ValidVertices.end();
+	PointIdentifier pid;
+	PointType  ci_prime;
+	VectorType ni;
+	PointValueType gi;
+	size_t cpid = 0;
+	for(PointIdIterator pid_it = this->m_ValidVertices.begin(); pid_it != pid_end; ++pid_it ) {
+		ni.Fill(0.0);
+		gi = 0.0;
 
-		PointType  ci_prime;
-		VectorType ni;
-		PointValueType gi;
-		typename VectorContourType::PointIdentifier pid;
-		size_t out_cid;
+		pid = *pid_it;
+		ci_prime = this->m_CurrentVertices[pid];
+		out_cid = this->m_OuterRegion[pid];
 
-		// for every node in the mesh: compute gradient, assign cid and gid.
-		while (c_it!=c_end) {
-			ni = zerov;
-			gi = 0.0;
-			wi = 0.0;
-
-			pid = c_it.Index();
-			ci_prime = c_it.Value();
-			out_cid = this->m_OuterList[in_cid][pid];
-
-			if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
-				this->m_OffMaskNodes[in_cid] += 1;
-			}
-
-			if ( in_cid != out_cid ) {
-				m_Gradients[in_cid]->GetPointData( pid, &ni );           // Normal ni in point c'_i
-				wi = this->ComputePointArea( pid, m_Gradients[in_cid] );  // Area of c'_i
-				gi = this->EvaluateGradient( ci_prime, out_cid, in_cid );
-				totalArea+=wi;
-				gradSum+=gi;
-
-				if (fabs(gi) > maxgi)
-					maxgi = gi;
-			}
-			sample.push_back( GradientSample( gi, wi, ni, pid, cpid, in_cid ) );
-			++c_it;
-			cpid++;
+		if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
+			this->m_OffMaskVertices.push_back(pid);
 		}
 
-		PointValueType gradient;
-		ShapeGradientPointer gradmesh = this->m_Gradients[in_cid];
-		gradSum = 0.0;
-		for( size_t i = 0; i< sample.size(); i++) {
-			if ( sample[i].w > 0.0 ) {
-				gradient = sample[i].grad;
-				sample[i].grad = gradient;
-				gradSum+= gradient;
-				ni = gradient * sample[i].normal;  // Project to normal
-
-				for( size_t dim = 0; dim<Dimension; dim++ ) {
-					if( fabs(ni[dim]) > MIN_GRADIENT )
-						gradVector[dim][sample[i].gid] = ni[dim];
-				}
-			} else {
-				sample[i].normal = zerov;
-				sample[i].grad = 0.0;
-				sample[i].w = 0.0;
-				ni = zerov;
-			}
-			gradmesh->GetPointData()->SetElement( sample[i].cid, ni );
+		if ( in_cid != out_cid ) {
+			m_Gradients[in_cid]->GetPointData( pid, &ni );           // Normal ni in point c'_i
+			gi = this->EvaluateGradient( ci_prime, out_cid, in_cid );
 		}
 	}
 	return gradVector;
 }
+
+// template< typename TReferenceImageType, typename TCoordRepType >
+// typename FunctionalBase<TReferenceImageType, TCoordRepType>::VNLVectorContainer
+// FunctionalBase<TReferenceImageType, TCoordRepType>
+// ::ComputeDerivative() {
+// 	size_t cpid = 0;
+// 	SampleType sample;
+// 	VectorType zerov; zerov.Fill(0.0);
+// 	this->UpdateContour();
+// 	this->UpdateNormals();
+//
+// 	VNLVectorContainer gradVector;
+//
+// 	for( size_t i = 0; i<Dimension; i++ ) {
+// 		gradVector[i] = VNLVector( this->m_NumberOfVertices );
+// 		gradVector[i].fill(0.0);
+// 	}
+//
+// 	PointValueType maxgi = 0.0;
+//
+// 	for( size_t in_cid = 0; in_cid < this->m_NumberOfContours; in_cid++) {
+// 		sample.clear();
+// 		double wi = 0.0;
+// 		PointValueType totalArea = 0.0;
+// 		PointValueType gradSum = 0.0;
+//
+// 		typename VectorContourType::PointsContainerConstIterator c_it = m_Gradients[in_cid]->GetPoints()->Begin();
+// 		typename VectorContourType::PointsContainerConstIterator c_end = m_Gradients[in_cid]->GetPoints()->End();
+//
+// 		PointType  ci_prime;
+// 		VectorType ni;
+// 		PointValueType gi;
+// 		typename VectorContourType::PointIdentifier pid;
+// 		size_t out_cid;
+//
+// 		// for every node in the mesh: compute gradient, assign cid and gid.
+// 		while (c_it!=c_end) {
+// 			ni = zerov;
+// 			gi = 0.0;
+// 			wi = 0.0;
+//
+// 			pid = c_it.Index();
+// 			ci_prime = c_it.Value();
+// 			out_cid = this->m_OuterRegion[in_cid][pid];
+//
+// 			if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
+// 				this->m_OffMaskVertices[in_cid] += 1;
+// 			}
+//
+// 			if ( in_cid != out_cid ) {
+// 				m_Gradients[in_cid]->GetPointData( pid, &ni );           // Normal ni in point c'_i
+// 				wi = this->ComputePointArea( pid, m_Gradients[in_cid] );  // Area of c'_i
+// 				gi = this->EvaluateGradient( ci_prime, out_cid, in_cid );
+// 				totalArea+=wi;
+// 				gradSum+=gi;
+//
+// 				if (fabs(gi) > maxgi)
+// 					maxgi = gi;
+// 			}
+// 			sample.push_back( GradientSample( gi, wi, ni, pid, cpid, in_cid ) );
+// 			++c_it;
+// 			cpid++;
+// 		}
+//
+// 		PointValueType gradient;
+// 		ShapeGradientPointer gradmesh = this->m_Gradients[in_cid];
+// 		gradSum = 0.0;
+// 		for( size_t i = 0; i< sample.size(); i++) {
+// 			if ( sample[i].w > 0.0 ) {
+// 				gradient = sample[i].grad;
+// 				sample[i].grad = gradient;
+// 				gradSum+= gradient;
+// 				ni = gradient * sample[i].normal;  // Project to normal
+//
+// 				for( size_t dim = 0; dim<Dimension; dim++ ) {
+// 					if( fabs(ni[dim]) > MIN_GRADIENT )
+// 						gradVector[dim][sample[i].gid] = ni[dim];
+// 				}
+// 			} else {
+// 				sample[i].normal = zerov;
+// 				sample[i].grad = 0.0;
+// 				sample[i].w = 0.0;
+// 				ni = zerov;
+// 			}
+// 			gradmesh->GetPointData()->SetElement( sample[i].cid, ni );
+// 		}
+// 	}
+// 	return gradVector;
+// }
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
@@ -479,56 +525,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_CurrentRegions->Allocate();
 }
 
-
-// Reorient contours to image direction in order that allowing pixel-wise computations
-// ReorientFilter computes the new extent of the image if the directions
-// matrix is identity. This is necessary to be able to binarize the contours
-// (that are given in physical coordinates).
-// See https://github.com/oesteban/ACWE-Registration/issues/92
-template< typename TReferenceImageType, typename TCoordRepType >
-void
-FunctionalBase<TReferenceImageType, TCoordRepType>
-::InitializeCurrentContours() {
-	// Copy contours
-	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-		ContourCopyPointer copy = ContourCopyType::New();
-		copy->SetInput( this->m_Priors[contid] );
-		copy->Update();
-		this->m_CurrentContours.push_back( copy->GetOutput() );
-
-		ShapeCopyPointer copyShape = ShapeCopyType::New();
-		copyShape->SetInput( this->m_Priors[contid] );
-		copyShape->Update();
-		this->m_Gradients.push_back( copyShape->GetOutput() );
-	}
-
-	// Fill in interpolator points
-	this->m_CurrentDisplacements = PointDataContainer::New();
-	this->m_CurrentDisplacements->Reserve( this->m_NumberOfPoints );
-	VectorType zerov;
-	zerov.Fill(0.0);
-
-	size_t identifier = 0;
-	for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-		PointsIterator c_it  = this->m_CurrentContours[contid]->GetPoints()->Begin();
-		PointsIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
-		PointType ci;
-		while( c_it != c_end ) {
-			ci = c_it.Value();
-			this->m_NodesPosition.push_back( ci );
-			this->m_CurrentDisplacements->SetElement(identifier, zerov );
-			++c_it;
-			identifier++;
-		}
-	}
-
-	if ( this->m_NumberOfPoints != this->m_NodesPosition.size() ) {
-		itkExceptionMacro( << "an error occurred initializing mesh points: NumberOfPoints in functional and" \
-				" NumberOfSamples in transform do not match" );
-
-	}
-}
-
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
@@ -584,8 +580,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::ComputeOuterRegions() {
-	ContourOuterRegions outerVect;
+::InitializeContours() {
+	this->m_OuterRegion.resize(this->m_NumberOfVertices);
+	std::fill(this->m_OuterRegion.begin(), this->m_OuterRegion.end(), 0);
+	VectorType zerov; zerov.Fill(0.0);
+
+
+	this->m_CurrentDisplacements = PointDataContainer::New();
+	this->m_CurrentDisplacements->Reserve( this->m_NumberOfVertices );
 
 	if( this->m_NumberOfRegions > 2 ) {
 		// Set up ROI interpolator
@@ -599,12 +601,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			normalsFilter->SetInput( this->m_CurrentContours[contid] );
 			normalsFilter->Update();
 			ContourPointer normals = normalsFilter->GetOutput();
-			outerVect.resize( normals->GetNumberOfPoints() );
-
-			// SimplexFilterPointer simplex = SimplexFilter::New();
-			// simplex->SetInput( this->m_CurrentContours[contid] );
-			// simplex->Update();
-			// SimplexContourPointer scp = simplex->GetOutput();
 
 			PointsConstIterator c_it  = normals->GetPoints()->Begin();
 			PointsConstIterator c_end = normals->GetPoints()->End();
@@ -617,37 +613,27 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			PointType ci;
 			VectorType v;
 			VectorType ni;
-			// typename SimplexContourType::CovariantVectorType cni;
-
 			size_t pid;
+			PointIdentifier tpid = 0;
 			while( c_it != c_end ) {
 				pid = c_it.Index();
 				ci = c_it.Value();
 				normals->GetPointData( pid, &ni );
-				//std::cout << scp->ComputeNormal(pid) << std::endl;
-				//ni[0] = cni[0][0];
-				//ni[1] = cni[0][1];
-				//ni[2] = cni[0][2];
-
 				ROIPixelType inner = interp->Evaluate( ci + ni );
 				ROIPixelType pixel = interp->Evaluate( ci );
 				ROIPixelType outer = interp->Evaluate( ci - ni );
-				outerVect[pid] = outer;
-
 				v = ni;
-				// v[0] = inner;
-				// v[1] = outer;
-				// v[2] = pixel;
-
 				vcp->SetPointData(pid, v);
 
-				++c_it;
-
+				this->m_VerticesPosition.push_back( ci );
+				this->m_CurrentDisplacements->SetElement(tpid, zerov);
 				if ((inner == contid) && (outer!=inner)) {
-					this->m_ValidNodes.push_back(ci);
+					this->m_ValidVertices.push_back(tpid);
+					this->m_OuterRegion[tpid] = outer;
 				}
+				++c_it;
+				tpid++;
 			}
-			this->m_OuterList.push_back( outerVect );
 
 			std::stringstream ss;
 			ss << "normals_" << contid << ".vtk";
@@ -658,11 +644,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			w->Update();
 		}
 	} else {
-		outerVect.resize(this->m_CurrentContours[0]->GetNumberOfPoints());
-		std::fill( outerVect.begin(), outerVect.end(), 1 );
-		this->m_OuterList.push_back( outerVect );
+		std::fill( this->m_OuterRegion.begin(), this->m_OuterRegion.end(), 1 );
 	}
-	std::cout << "Valid vertices: " << this->m_ValidNodes.size() << " of " << this->m_NodesPosition.size() << "." << std::endl;
+	std::cout << "Valid vertices: " << this->m_ValidVertices.size() << " of " << this->m_VerticesPosition.size() << "." << std::endl;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -756,7 +740,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 	size_t npoints = vals[0].size();
 
-	if ( npoints != this->m_NumberOfPoints ) {
+	if ( npoints != this->m_NumberOfVertices ) {
 		itkExceptionMacro( << "vals contains a wrong number of vectors");
 	}
 
