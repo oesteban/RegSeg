@@ -48,7 +48,6 @@
 #include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkQuadEdgeMeshTraits.h>
 #include <itkQuadEdgeMesh.h>
-#include <itkNormalQuadEdgeMeshFilter.h>
 #include <itkWarpMeshFilter.h>
 #include <itkMeshSpatialObject.h>
 #include <itkGroupSpatialObject.h>
@@ -63,7 +62,12 @@
 #include <itkSmoothingRecursiveGaussianImageFilter.h>
 #include <vnl/vnl_sparse_matrix.h>
 
+#include <itkSimplexMesh.h>
+#include <itkSimplexMeshToTriangleMeshFilter.h>
+#include <itkTriangleMeshToSimplexMeshFilter.h>
+
 #include "rstkMacro.h"
+#include "NormalQuadEdgeMeshFilter.h"
 #include "ConfigurableObject.h"
 #include "CopyQuadEdgeMeshFilter.h"
 #include "CopyQEMeshStructureFilter.h"
@@ -124,6 +128,7 @@ public:
 	typedef typename ReferenceImageType::PixelType           ReferencePixelType;
 	typedef typename ReferencePixelType::ValueType           ReferenceValueType;
 	typedef typename ReferenceImageType::PointType           ReferencePointType;
+	typedef typename ReferenceImageType::IndexType           ReferenceIndexType;
 	typedef typename ReferenceImageType::DirectionType       DirectionType;
 	typedef typename ReferenceImageType::SizeType            ReferenceSizeType;
 	typedef typename ReferenceImageType::SpacingType         ReferenceSpacingType;
@@ -139,36 +144,49 @@ public:
 			< ReferenceImageType >                           InterpolatorType;
 	typedef typename InterpolatorType::Pointer               InterpolatorPointer;
 
-	typedef itk::QuadEdgeMesh< VectorType, Dimension >       ContourType;
-	typedef typename ContourType::Pointer                    ContourPointer;
-	typedef typename ContourType::PointType                  ContourPointType;
-	typedef typename ContourType::ConstPointer               ContourConstPointer;
-	typedef typename std::vector<ContourPointer>             ContourList;
-	typedef typename std::vector<ContourConstPointer>        ConstContourList;
-	typedef typename ContourType::PointsContainerPointer     PointsContainerPointer;
-	typedef typename ContourType::PointDataContainer         PointDataContainer;
-	typedef typename ContourType::PointDataContainerPointer  PointDataContainerPointer;
-	typedef typename ContourType::PointsContainerIterator    PointsIterator;
-	typedef typename ContourType::PointsContainerConstIterator    PointsConstIterator;
-	typedef typename ContourType::PointIdentifier            PointIdentifier;
-	typedef typename ContourType::QEType                     QEType;
-	typedef typename ContourType::CellIdentifier             CellIdentifier;
-	typedef typename ContourType::CellType                   CellType;
-	typedef typename itk::QuadEdgeMeshPolygonCell<CellType>  PolygonType;
-	typedef itk::TriangleHelper< ContourPointType >          TriangleType;
+	typedef itk::QuadEdgeMesh< VectorType, Dimension >               VectorContourType;
+	typedef typename VectorContourType::Pointer                      ContourPointer;
+	typedef typename VectorContourType::PointType                    ContourPointType;
+	typedef typename VectorContourType::ConstPointer                 ContourConstPointer;
+	typedef typename std::vector<ContourPointer>                     ContourList;
+	typedef typename std::vector<ContourConstPointer>                ConstContourList;
+	typedef typename VectorContourType::PointsContainerPointer       PointsContainerPointer;
+	typedef typename VectorContourType::PointDataContainer           PointDataContainer;
+	typedef typename VectorContourType::PointDataContainerPointer    PointDataContainerPointer;
+	typedef typename VectorContourType::PointsContainerIterator      PointsIterator;
+	typedef typename VectorContourType::PointsContainerConstIterator PointsConstIterator;
+	typedef typename VectorContourType::PointIdentifier              PointIdentifier;
+	typedef typename VectorContourType::QEType                       QEType;
+	typedef typename VectorContourType::CellIdentifier               CellIdentifier;
+	typedef typename VectorContourType::CellType                     CellType;
+	typedef typename itk::QuadEdgeMeshPolygonCell<CellType>          PolygonType;
+	typedef itk::TriangleHelper< ContourPointType >                  TriangleType;
+
+	typedef itk::QuadEdgeMesh< PointValueType, Dimension >           ScalarContourType;
+	typedef typename ScalarContourType::Pointer                      ScalarContourPointer;
 
 	typedef vnl_sparse_matrix< PointValueType >              SparseMatrix;
 	typedef vnl_vector< PointValueType >                     VNLVector;
 	typedef itk::FixedArray< VNLVector, Dimension >          VNLVectorContainer;
 
-	typedef itk::NormalQuadEdgeMeshFilter
-			< ContourType, ContourType >                     NormalFilterType;
+	//typedef itk::SimplexMesh< VectorType, Dimension >                SimplexContourType;
+	//typedef typename SimplexContourType::Pointer                     SimplexContourPointer;
+	//typedef itk::TriangleMeshToSimplexMeshFilter
+	//		< VectorContourType, SimplexContourType >                SimplexFilter;
+	//typedef typename SimplexFilter::Pointer                          SimplexFilterPointer;
+
+	typedef rstk::NormalQuadEdgeMeshFilter
+			< VectorContourType, VectorContourType >                     NormalFilterType;
 	typedef typename NormalFilterType::Pointer               NormalFilterPointer;
 	typedef std::vector< NormalFilterPointer >               NormalFilterList;
 
 	typedef typename itk::CopyQuadEdgeMeshFilter
-			                  <ContourType,ContourType>      ContourCopyType;
+			      <VectorContourType,VectorContourType>      ContourCopyType;
 	typedef typename ContourCopyType::Pointer                ContourCopyPointer;
+
+	typedef typename itk::CopyQuadEdgeMeshFilter
+			      <VectorContourType,ScalarContourType>      ScalarContourCopyType;
+	typedef typename ScalarContourCopyType::Pointer          ScalarContourCopyPointer;
 
 	typedef itk::Image< VectorType, Dimension >              FieldType;
 	typedef typename FieldType::Pointer                      FieldPointer;
@@ -196,7 +214,7 @@ public:
 			< ROIType, TCoordRepType >                       ROIInterpolatorType;
 	typedef std::vector< ROIConstPointer >                   ROIList;
 	typedef itk::TriangleMeshToBinaryImageFilter
-			          <ContourType, ROIType>	             BinarizeMeshFilterType;
+			          <VectorContourType, ROIType>	             BinarizeMeshFilterType;
 	typedef typename BinarizeMeshFilterType::Pointer         BinarizeMeshFilterPointer;
 
 	typedef itk::Image< float, Dimension >                   ProbabilityMapType;
@@ -211,7 +229,7 @@ public:
 			< ProbabilityMapType, ProbabilityMapType >       ProbmapResampleType;
 	typedef typename ProbmapResampleType::Pointer            ProbmapResamplePointer;
 
-	typedef typename itk::MeshSpatialObject<ContourType>     ContourSpatialObject;
+	typedef typename itk::MeshSpatialObject<VectorContourType>     ContourSpatialObject;
 	typedef typename ContourSpatialObject::Pointer           ContourSpatialPointer;
 	typedef typename ContourSpatialObject::ConstPointer      ContourSpatialConstPointer;
 	typedef typename std::vector<ContourSpatialPointer>      SpatialObjectsVector;
@@ -239,7 +257,7 @@ public:
     typedef typename ShapeGradientsContainer::Pointer        ShapeGradientsContainerPointer;
 	typedef typename std::vector<ShapeGradientPointer>       ShapeGradientList;
 	typedef typename itk::CopyQEMeshStructureFilter
-			                <ContourType,ShapeGradientType>  ShapeCopyType;
+			                <VectorContourType,ShapeGradientType>  ShapeCopyType;
 	typedef typename ShapeCopyType::Pointer                  ShapeCopyPointer;
 
 	struct GradientSample {
@@ -340,10 +358,11 @@ public:
 
 	const ProbabilityMapType* GetCurrentMap( size_t idx );
 
-	size_t AddShapePrior( const ContourType* prior );
+	size_t AddShapePrior( const VectorContourType* prior );
 
 	static void AddOptions( SettingsDesc& opts );
 
+	bool ContourIsOutwards(VectorContourType *mesh );
 protected:
 	FunctionalBase();
 	virtual ~FunctionalBase() {}
@@ -423,7 +442,7 @@ private:
 	void ComputeOuterRegions( void );
 	void InitializeCurrentContours( void );
 	void InitializeInterpolatorGrid( void );
-	double ComputePointArea( const PointIdentifier &iId, ContourType *mesh );
+	double ComputePointArea( const PointIdentifier &iId, VectorContourType *mesh );
 
 }; // end FunctionalBase Class
 

@@ -254,7 +254,7 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 size_t
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
-::AddShapePrior( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ContourType* prior,
+::AddShapePrior( typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::VectorContourType* prior,
 		         typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersType& params){
 	size_t id = this->AddShapePrior( prior );
 	this->SetParameters( id, params );
