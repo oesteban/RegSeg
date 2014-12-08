@@ -627,7 +627,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		std::fill( outerVect.begin(), outerVect.end(), 1 );
 		this->m_OuterList.push_back( outerVect );
 	}
-	std::cout << "Valid vertices: " << this->m_ValidNodes.size() << std::endl;
+	std::cout << "Valid vertices: " << this->m_ValidNodes.size() << " of " << this->m_NodesPosition.size() << "." << std::endl;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
