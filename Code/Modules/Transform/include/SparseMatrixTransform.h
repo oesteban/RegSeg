@@ -102,6 +102,7 @@ public:
     
     typedef typename Superclass::DisplacementFieldTransformType    DisplacementFieldTransformType;
     typedef typename Superclass::DisplacementFieldTransformPointer DisplacementFieldTransformPointer;
+    typedef typename Superclass::DimensionParameters               DimensionParameters;
     typedef typename Superclass::DimensionParametersContainer      DimensionParametersContainer;
     typedef typename Superclass::PointsList                        PointsList;
     typedef typename Superclass::JacobianType                      JacobianType;
@@ -165,6 +166,8 @@ public:
     typedef typename Superclass::OptimizerParametersHelperType OptimizerParametersHelperType;
     typedef typename Superclass::Helper                        Helper;
     typedef typename Superclass::TransformHelper               TransformHelper;
+
+    typedef typename Superclass::PointIdContainer              PointIdContainer;
 
 
     typedef itk::KernelFunctionBase<ScalarType>      KernelFunctionType;
@@ -237,9 +240,10 @@ public:
 	// Coefficients of the interpolating kernels
 	inline VectorType GetCoefficient ( const size_t id );
 
-	virtual WeightsMatrix  GetPhi ();
-	//itkGetConstMacro( Phi, WeightsMatrix );
-	itkGetConstMacro( S, WeightsMatrix );
+	virtual const WeightsMatrix*  GetPhi (const bool onlyvalid = true);
+	virtual const WeightsMatrix*  GetS (){
+		return &this->m_S;
+	}
 
     itkSetObjectMacro( Field, FieldType );
     itkGetConstObjectMacro( Field, FieldType );
@@ -273,6 +277,7 @@ protected:
 	struct MatrixSectionType {
 		WeightsMatrix *matrix;
 		PointsList *vrows;
+		PointsList *vcols;
 		size_t section_id;
 		size_t first_row;
 		size_t num_rows;
@@ -287,10 +292,11 @@ protected:
 		WeightsMatrix* matrix;
 		size_t dim;
 		PointsList *vrows;
+		PointsList *vcols;
 	};
 
-	void Interpolate( const DimensionParametersContainer& coeff );
-	void UpdateField( const DimensionParametersContainer& coeff );
+	void Interpolate( const DimensionParameters& coeff );
+	void UpdateField( const DimensionParameters& coeff );
 	void InvertPhi();
 
 	void ThreadedComputeMatrix( MatrixSectionType& section, FunctionalCallback func, itk::ThreadIdType threadId );
@@ -300,9 +306,9 @@ protected:
 	void InitializeCoefficientsImages();
 	DimensionVector Vectorize( const CoefficientsImageType* image );
 	//WeightsMatrix VectorizeCoefficients();
-	DimensionParametersContainer VectorizeCoefficients() const;
-	DimensionParametersContainer VectorizeDerivatives() const;
-	DimensionParametersContainer VectorizeField( const FieldType* image );
+	DimensionParameters VectorizeCoefficients() const;
+	DimensionParameters VectorizeDerivatives() const;
+	DimensionParameters VectorizeField( const FieldType* image );
 	WeightsMatrix MatrixField( const FieldType* image );
 
 	inline ScalarType EvaluateKernel( const VectorType r, const size_t dim = 0 );
@@ -327,11 +333,12 @@ protected:
 	CoefficientsImageArray       m_CoefficientsImages;
 	CoefficientsImageArray       m_Derivatives;
 
-	//DimensionParametersContainer m_CoeffDerivative;  // Serialized k values in a grid
+	//DimensionParameters m_CoeffDerivative;  // Serialized k values in a grid
 	//DimensionVector m_Jacobian[Dimension][Dimension]; // Serialized k dimxdim matrices in a grid
 
 	WeightsMatrix   m_Phi;
 	WeightsMatrix   m_Phi_inverse;
+	WeightsMatrix   m_Phi_valid;
 	WeightsMatrix   m_S;
 	WeightsMatrix   m_SPrime[Dimension];
 
@@ -343,7 +350,7 @@ protected:
 	FieldPointer          m_GradientField;
 
 	virtual void ComputeMatrix( WeightsMatrixType type, size_t dim = 0 );
-	virtual void AfterThreadedComputeMatrix( SMTStruct* str );
+	virtual void AfterComputeMatrix( WeightsMatrixType type );
 	virtual size_t ComputeRegionOfPoint(const PointType& point, VectorType& cvector, IndexType& start, IndexType& end, OffsetTableType offsetTable );
 
 	/** Support processing data in multiple threads. */

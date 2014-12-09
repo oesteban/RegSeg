@@ -109,6 +109,7 @@ public:
 
     typedef typename Superclass::PointsList                          PointsList;
     typedef typename Superclass::DimensionVector                     DimensionVector;
+    typedef typename Superclass::DimensionParameters                 DimensionParameters;
     typedef typename Superclass::DimensionParametersContainer        DimensionParametersContainer;
 
     typedef typename Superclass::FieldType                           FieldType;

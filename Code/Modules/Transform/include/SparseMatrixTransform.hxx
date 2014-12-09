@@ -267,6 +267,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	switch( type ) {
 	case Self::PHI:
 		str.vrows = &this->m_PointLocations;
+		str.vcols = &this->m_ParamLocations;
 		if ( this->m_PointLocations.size() != this->m_NumberOfPoints ) {
 			itkExceptionMacro(<< "OffGrid positions are not initialized");
 		}
@@ -292,13 +293,44 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
 	this->GetMultiThreader()->SetSingleMethod( this->ComputeThreaderCallback, &str );
 	this->GetMultiThreader()->SingleMethodExecute();
-	//this->AfterThreadedComputeMatrix( &str );
+	this->AfterComputeMatrix(type);
 }
 
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::AfterThreadedComputeMatrix( SMTStruct* str ) {}
+::AfterComputeMatrix(WeightsMatrixType type) {
+	size_t numvalid = this->m_ValidLocations.size();
+	if(numvalid > 0 &&  numvalid < this->m_NumberOfPoints ) {
+		if (type == Self::PHI)  {
+			this->m_Phi_valid = WeightsMatrix( numvalid , this->m_NumberOfDimParameters );
+
+			size_t rid = 0;
+			typename PointIdContainer::iterator it = this->m_ValidLocations.begin();
+			typename PointIdContainer::iterator end = this->m_ValidLocations.end();
+			typename WeightsMatrix::row row;
+			vcl_vector< int > cols;
+			vcl_vector< ScalarType > vals;
+
+			while( it != end ) {
+				row = this->m_Phi.get_row(*it);
+				cols.resize(0);
+				vals.resize(0);
+
+				for(size_t i = 0; i < row.size(); i++) {
+					cols.push_back(row[i].first);
+					vals.push_back(row[i].second);
+				}
+
+				this->m_Phi_valid.set_row(rid, cols, vals);
+				rid++;
+				++it;
+			}
+		}
+	}
+
+
+}
 
 template< class TScalar, unsigned int NDimensions >
 ITK_THREAD_RETURN_TYPE
@@ -403,7 +435,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::Interpolate( const DimensionParametersContainer& coeff ) {
+::Interpolate( const DimensionParameters& coeff ) {
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
 		this->ComputeMatrix( Self::PHI );
@@ -459,7 +491,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->InvertPhi();
 	}
 
-	DimensionParametersContainer coeff;
+	DimensionParameters coeff;
 	// Compute coefficients
 	for( size_t i = 0; i<Dimension; i++ ) {
 		coeff[i] = DimensionVector( this->m_NumberOfPoints );
@@ -475,12 +507,12 @@ SparseMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::UpdateField( const DimensionParametersContainer& coeff ) {
+::UpdateField( const DimensionParameters& coeff ) {
 	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
 		this->ComputeMatrix( Self::S );
 	}
 
-	DimensionParametersContainer fieldValues;
+	DimensionParameters fieldValues;
 
 	// Interpolate
 	for( size_t i = 0; i<Dimension; i++)
@@ -522,8 +554,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 	SolverVector X[Dimension], Y[Dimension];
 
-	DimensionParametersContainer fieldValues = this->VectorizeField( this->m_Field );
-	DimensionParametersContainer coeffs;
+	DimensionParameters fieldValues = this->VectorizeField( this->m_Field );
+	DimensionParameters coeffs;
 
 	for ( size_t i = 0; i<Dimension; i++) {
 		// TODO: check m_NumberOfPoints here
@@ -585,8 +617,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 		}
 	}
 
-	DimensionParametersContainer coeff = this->VectorizeCoefficients();
-	DimensionParametersContainer result[Dimension];
+	DimensionParameters coeff = this->VectorizeCoefficients();
+	DimensionParameters result[Dimension];
 	ScalarType* fbuf[Dimension];
 
 
@@ -689,15 +721,19 @@ SparseMatrixTransform<TScalar,NDimensions>
 }
 
 template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::WeightsMatrix
+const typename SparseMatrixTransform<TScalar,NDimensions>::WeightsMatrix*
 SparseMatrixTransform<TScalar,NDimensions>
-::GetPhi() {
+::GetPhi( const bool onlyvalid) {
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
 		this->ComputeMatrix( Self::PHI );
 	}
 
-	return this->m_Phi;
+	if (onlyvalid) {
+		return &this->m_Phi_valid;
+	} else {
+		return &this->m_Phi;
+	}
 }
 
 
@@ -961,10 +997,10 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 
 template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::DimensionParametersContainer
+typename SparseMatrixTransform<TScalar,NDimensions>::DimensionParameters
 SparseMatrixTransform<TScalar,NDimensions>
 ::VectorizeCoefficients() const {
-	DimensionParametersContainer m;
+	DimensionParameters m;
 	const ScalarType* cbuffer;
 	for( size_t i = 0; i<Dimension; i++) {
 		m[i] = DimensionVector( this->m_NumberOfDimParameters );
@@ -978,10 +1014,10 @@ SparseMatrixTransform<TScalar,NDimensions>
 }
 
 template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::DimensionParametersContainer
+typename SparseMatrixTransform<TScalar,NDimensions>::DimensionParameters
 SparseMatrixTransform<TScalar,NDimensions>
 ::VectorizeDerivatives() const {
-	DimensionParametersContainer m;
+	DimensionParameters m;
 	const ScalarType* cbuffer;
 	for( size_t i = 0; i<Dimension; i++) {
 		m[i] = DimensionVector( this->m_NumberOfDimParameters );
@@ -1039,10 +1075,10 @@ SparseMatrixTransform<TScalar,NDimensions>
 }
 
 template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::DimensionParametersContainer
+typename SparseMatrixTransform<TScalar,NDimensions>::DimensionParameters
 SparseMatrixTransform<TScalar,NDimensions>
 ::VectorizeField( const FieldType* image ) {
-	DimensionParametersContainer vectorized;
+	DimensionParameters vectorized;
 
 	for( size_t col = 0; col<Dimension; col++) {
 		vectorized[col] = DimensionVector( image->GetLargestPossibleRegion().GetNumberOfPixels() );

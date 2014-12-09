@@ -133,7 +133,8 @@ public:
 	typedef typename TransformType::ParametersType                  ParametersType;
 	typedef typename TransformType::WeightsMatrix                   WeightsMatrix;
 	typedef typename TransformType::DimensionVector					ParametersVector;
-	typedef typename TransformType::DimensionParametersContainer    ParametersContainer;
+	typedef typename TransformType::DimensionParameters             ParametersContainer;
+	typedef itk::FixedArray< ParametersVector*, Dimension >         ParametersPointerContainer;
 	typedef typename TransformType::FieldType                       FieldType;
 	typedef typename TransformType::FieldPointer                    FieldPointer;
 	typedef typename TransformType::FieldConstPointer               FieldConstPointer;

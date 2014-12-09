@@ -106,7 +106,8 @@ public:
     typedef itk::DisplacementFieldTransform< ScalarType, Dimension >            DisplacementFieldTransformType;
     typedef typename DisplacementFieldTransformType::Pointer                    DisplacementFieldTransformPointer;
 
-    typedef itk::FixedArray< DimensionVector, NDimensions >                     DimensionParametersContainer;
+    typedef itk::FixedArray< DimensionVector, NDimensions >                     DimensionParameters;
+    typedef itk::FixedArray< DimensionVector*, NDimensions >                    DimensionParametersContainer;
 
     typedef std::vector< PointType >                                            PointsList;
 
@@ -172,6 +173,9 @@ public:
     typedef itk::ImageHelper< Dimension, Dimension >     Helper;
     typedef itk::ImageTransformHelper< Dimension, Dimension - 1, Dimension - 1, ScalarType, ScalarType > TransformHelper;
 
+    typedef size_t                                                              PointIdentifier;
+    typedef std::vector< PointIdentifier >                                      PointIdContainer;
+
 
     itkGetConstMacro( InterpolationMode, InterpolateModeType );
     itkGetConstMacro( NumberOfPoints, size_t );
@@ -182,13 +186,14 @@ public:
     void SetDomainExtent( const DomainBase* image );
 
     itkGetConstMacro( PointLocations, PointsList );
-	itkGetConstMacro( PointValues, DimensionParametersContainer );
+	itkGetConstMacro( PointValues, DimensionParameters );
     inline VectorType GetPointValue( const size_t id ) const;
 
 
 	// Physical positions, will define interpolation mode
     void SetOutputReference( const DomainBase* image );
 	void SetOutputPoints( const PointsList points );
+	void SetOutputPoints( const PointsList points, const PointIdContainer valid);
 
     virtual void Interpolate() = 0;
 protected:
@@ -198,7 +203,7 @@ protected:
 
 	// virtual itk::LightObject::Pointer InternalClone() const;
 	DimensionVector Vectorize( const CoefficientsImageType* image );
-	DimensionParametersContainer VectorizeField( const FieldType* image );
+	DimensionParameters VectorizeField( const FieldType* image );
 
 	// Setters & Getters -----------------------------------------
 	inline void SetPointLocation ( size_t id, const PointType pi ) {
@@ -226,8 +231,9 @@ protected:
 
 
 	PointsList                   m_PointLocations;     // m_N points in the mesh
+	PointIdContainer             m_ValidLocations;
 	size_t                       m_NumberOfPoints;     // This is N mesh points
-	DimensionParametersContainer m_PointValues;     // m_N points in the mesh
+	DimensionParameters          m_PointValues;     // m_N points in the mesh
 
 	bool                         m_UseImageOutput;
 	InterpolateModeType          m_InterpolationMode;

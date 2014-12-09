@@ -101,20 +101,35 @@ void SpectralOptimizer<TFunctional>
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	// Multiply phi and copy reshaped on this->m_Derivative
-	WeightsMatrix phi = this->m_Transform->GetPhi().transpose();
-	ParametersContainer gradVector = this->m_Functional->ComputeDerivative();
+	WeightsMatrix phi = this->m_Transform->GetPhi()->transpose();
+
+	size_t dimsize = this->m_Functional->GetValidVertices().size();
+	size_t fullsize = dimsize * Dimension;
+
+
+	ParametersVector gradVector = ParametersVector(fullsize, 0.0 );
+	float* gvdata = gradVector.data_block();
+	this->m_Functional->ComputeDerivative(gvdata);
+
 	ParametersContainer derivative;
+	ParametersVector dimVector = ParametersVector(dimsize);
 
 	typename CoefficientsImageType::PixelType* buff[Dimension];
+	float* dimdata;
 	for ( size_t i = 0; i<Dimension; i++) {
-		if( this->m_Scales[i] > 1.0e-8 )
-			phi.mult( gradVector[i], derivative[i] );
+		if( this->m_Scales[i] > 1.0e-8 ) {
+			dimdata = &gvdata[i*dimsize];
+			dimVector.copy_in(dimdata);
+			phi.mult( dimVector, derivative[i] );
+		}
 
 		this->m_DerivativeCoefficients[i]->FillBuffer( 0.0 );
 		buff[i] = this->m_DerivativeCoefficients[i]->GetBufferPointer();
 	}
 
 	size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
+	size_t nPix2 = derivative[0].size();
+
 	VectorType vi;
 	InternalComputationValueType val;
 	size_t dim;
@@ -131,7 +146,9 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 			if (this->m_Scales[c] > 1.0e-8)
 				val = this->m_Scales[c] * derivative[c][r] / norm;
 			vs[c] = val;
-			*( buff[c] + r ) = val;
+
+			if ( fabs(val) > 1.0e-8 )
+				*( buff[c] + r ) = val;
 		}
 		speednorms.push_back(vs.GetNorm());
 	}
@@ -492,7 +509,7 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	}
 
 	this->m_Transform->SetDomainExtent( this->m_Functional->GetReferenceImage() );
-	this->m_Transform->SetOutputPoints( this->m_Functional->GetNodesPosition() );
+	this->m_Transform->SetOutputPoints( this->m_Functional->GetVertices(), this->m_Functional->GetValidVertices() );
 	this->m_Transform->SetControlGridSize( this->m_GridSize );
 	this->m_Transform->SetControlGridSpacing( this->m_GridSpacing );
 	this->m_Transform->Initialize();

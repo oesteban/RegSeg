@@ -125,6 +125,7 @@ public:
 	typedef typename Superclass::ParametersType                 ParametersType;
 	typedef typename Superclass::WeightsMatrix                  WeightsMatrix;
 	typedef typename Superclass::ParametersVector				ParametersVector;
+	typedef typename Superclass::ParametersPointerContainer     ParametersPointerContainer;
 	typedef typename Superclass::ParametersContainer            ParametersContainer;
 	typedef typename Superclass::FieldType                      FieldType;
 	typedef typename Superclass::FieldPointer                   FieldPointer;

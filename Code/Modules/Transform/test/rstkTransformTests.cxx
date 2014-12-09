@@ -233,7 +233,7 @@ TEST_F( TransformTests, InterpolateOneSample1 ) {
 
 	m_transform->Interpolate();
 
-	Transform::WeightsMatrix m = m_transform->GetPhi();
+	const Transform::WeightsMatrix* m = m_transform->GetPhi();
 	VectorType v2 = m_transform->GetPointValue( 0 );
 
 	ASSERT_NEAR( 0, (v1-v2).GetNorm(), 1.0e-5 );
@@ -257,7 +257,7 @@ TEST_F( TransformTests, InterpolateOneSample2 ) {
 	// m_transform->AddOffGridPos( p );
 	m_transform->Interpolate();
 
-	Transform::WeightsMatrix m = m_transform->GetPhi();
+	const Transform::WeightsMatrix* m = m_transform->GetPhi();
 
 	VectorType v1 = m_hr_field->GetPixel( idx );
 	VectorType v2 = m_transform->GetPointValue( 0 );
@@ -307,7 +307,8 @@ TEST_F( TransformTests, InterpolateAllSamples1 ) {
 
 	m_transform->Interpolate();
 
-	Transform::WeightsMatrix m = m_transform->GetPhi();
+	Transform::WeightsMatrix m = Transform::WeightsMatrix(*(m_transform->GetPhi()));
+
 	Transform::SparseMatrixRowType row;
 
 	Transform::CoefficientsImageArray coeff = m_transform->GetCoefficientsImages();

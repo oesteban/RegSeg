@@ -109,7 +109,7 @@ public:
 			itnode["speed"]["average"] = this->m_Optimizer->GetAvgSpeed();
 
 
-			std::vector< size_t > off = this->m_Optimizer->GetFunctional()->GetOffMaskNodes();
+			std::vector< size_t > off = this->m_Optimizer->GetFunctional()->GetOffMaskVertices();
 			JSONValue offnode = Json::Value( Json::arrayValue );
 			for (size_t c = 0; c<off.size(); c++) {
 				offnode.append(Json::UInt64(off[c]));
