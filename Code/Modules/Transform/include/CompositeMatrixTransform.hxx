@@ -106,7 +106,7 @@ CompositeMatrixTransform<TScalar,NDimensions>
 		this->m_Components[c]->SetOutputPoints( this->GetPointLocations() );
 		this->m_Components[c]->Interpolate();
 
-		DimensionParametersContainer disp = this->m_Components[c]->GetPointValues();
+		DimensionParameters disp = this->m_Components[c]->GetPointValues();
 
 		for(size_t d = 0; d < Dimension; d++) {
 			this->m_PointValues[d]+= disp[d];

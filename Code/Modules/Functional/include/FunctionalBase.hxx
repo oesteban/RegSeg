@@ -137,6 +137,7 @@ template< typename TReferenceImageType, typename TCoordRepType >
 size_t
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::VectorContourType* prior ) {
+	this->m_Offsets.push_back( this->m_NumberOfVertices );
 	this->m_Priors.push_back( prior );
 
 	ContourCopyPointer copy = ContourCopyType::New();
@@ -144,13 +145,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	copy->Update();
 	this->m_CurrentContours.push_back( copy->GetOutput() );
 
-	ShapeCopyPointer copyShape = ShapeCopyType::New();
-	copyShape->SetInput( prior );
-	copyShape->Update();
-	this->m_Gradients.push_back( copyShape->GetOutput() );
-
 	// Increase number of off-grid nodes to set into the sparse-dense interpolator
 	this->m_NumberOfVertices+= prior->GetNumberOfPoints();
+
+	this->m_NormalsFilter.push_back(NormalFilterType::New());
+	this->m_NormalsFilter[this->m_NumberOfContours]->SetInput( this->m_CurrentContours[this->m_NumberOfContours] );
+	this->m_NormalsFilter[this->m_NumberOfContours]->Update();
+	this->m_Gradients.push_back(this->m_NormalsFilter[this->m_NumberOfContours]->GetOutput());
 
 	this->m_NumberOfContours++;
 	this->m_NumberOfRegions++;
@@ -161,42 +162,54 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
-typename FunctionalBase<TReferenceImageType, TCoordRepType>::VNLVectorContainer
+void
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::ComputeDerivative() {
-	VNLVectorContainer gradVector;
-	for( size_t i = 0; i<Dimension; i++ ) {
-		gradVector[i] = VNLVector( this->m_ValidVertices.size() );
-		gradVector[i].fill(0.0);
-	}
-
+::ComputeDerivative(PointValueType* grad) {
 	this->UpdateContour();
 	this->UpdateNormals();
 
-	PointIdIterator pid_end = this->m_ValidVertices.end();
-	PointIdentifier pid;
-	PointType  ci_prime;
+	PointIdentifier pid;      // universal id of vertex
+	PointIdentifier cpid;     // id of vertex in its contour
+	PointIdentifier vid = 0;  // id of vertex in valid array
+
+	ContourPointType ci_prime;
 	VectorType ni;
 	PointValueType gi;
-	size_t cpid = 0;
+	ROIPixelType ocid;
+	ROIPixelType icid = 0;
+
+	std::fill(this->m_OffMaskVertices.begin(), this->m_OffMaskVertices.end(), 0);
+
+	size_t offset = this->m_ValidVertices.size();
+	size_t fullsize = offset * Dimension;
+	PointIdIterator pid_end = this->m_ValidVertices.end();
 	for(PointIdIterator pid_it = this->m_ValidVertices.begin(); pid_it != pid_end; ++pid_it ) {
 		ni.Fill(0.0);
 		gi = 0.0;
-
 		pid = *pid_it;
-		ci_prime = this->m_CurrentVertices[pid];
-		out_cid = this->m_OuterRegion[pid];
+
+		if( pid == this->m_Offsets[icid + 1] ) {
+			icid++;
+		}
+
+		cpid = pid - this->m_Offsets[icid];
+		this->m_CurrentContours[icid]->GetPoint(cpid, &ci_prime); // Get c'_i
+		this->m_Gradients[icid]->GetPointData(cpid, &ni);   // Normal ni in point c'_i
+		ocid = this->m_OuterRegion[pid];
 
 		if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
-			this->m_OffMaskVertices.push_back(pid);
+			this->m_OffMaskVertices[icid]++;
 		}
 
-		if ( in_cid != out_cid ) {
-			m_Gradients[in_cid]->GetPointData( pid, &ni );           // Normal ni in point c'_i
-			gi = this->EvaluateGradient( ci_prime, out_cid, in_cid );
+		gi = this->EvaluateGradient( ci_prime, ocid, icid );
+		ni*= gi;
+		// this->m_Gradients[icid]->GetPointData()->SetElement( cpid, ni );
+
+		for( size_t i = 0; i < Dimension; i++ ) {
+			grad[vid + i * offset] = static_cast<float>(ni[i]);
 		}
+		vid++;
 	}
-	return gradVector;
 }
 
 // template< typename TReferenceImageType, typename TCoordRepType >
@@ -306,6 +319,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename VectorContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
 		typename VectorContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
 		PointsContainerPointer curPoints = this->m_CurrentContours[contid]->GetPoints();
+		PointsContainerPointer curGradPoints = this->m_Gradients[contid]->GetPoints();
 
 		ContourPointType ci, ci_prime;
 		VectorType disp;
@@ -325,6 +339,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					this->InvokeEvent( WarningEvent() );
 				}
 				curPoints->SetElement( pid, ci_prime );
+				curGradPoints->SetElement( pid, ci_prime );
 				changed++;
 			}
 			++p_it;
@@ -345,13 +360,9 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::UpdateNormals() {
-	NormalFilterPointer normalsFilter;
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
 		// Compute mesh of normals
-		normalsFilter = NormalFilterType::New();
-		normalsFilter->SetInput( this->m_CurrentContours[contid] );
-		normalsFilter->Update();
-		this->m_Gradients[contid] = normalsFilter->GetOutput();
+		this->m_NormalsFilter[contid]->Update();
 	}
 }
 
@@ -594,6 +605,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
 		interp->SetInputImage( this->m_CurrentRegions );
 
+
+		PointIdentifier tpid = 0;
+
 		// Set up outer regions
 		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
 			// Compute mesh of normals
@@ -614,7 +628,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			VectorType v;
 			VectorType ni;
 			size_t pid;
-			PointIdentifier tpid = 0;
 			while( c_it != c_end ) {
 				pid = c_it.Index();
 				ci = c_it.Value();
@@ -625,7 +638,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				v = ni;
 				vcp->SetPointData(pid, v);
 
-				this->m_VerticesPosition.push_back( ci );
+				this->m_Vertices.push_back( ci );
 				this->m_CurrentDisplacements->SetElement(tpid, zerov);
 				if ((inner == contid) && (outer!=inner)) {
 					this->m_ValidVertices.push_back(tpid);
@@ -646,7 +659,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	} else {
 		std::fill( this->m_OuterRegion.begin(), this->m_OuterRegion.end(), 1 );
 	}
-	std::cout << "Valid vertices: " << this->m_ValidVertices.size() << " of " << this->m_VerticesPosition.size() << "." << std::endl;
+	std::cout << "Valid vertices: " << this->m_ValidVertices.size() << " of " << this->m_Vertices.size() << "." << std::endl;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -679,14 +692,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	} while ( temp != edge );
 	return fabs(totalArea * 0.33);
 }
-
-template< typename TReferenceImageType, typename TCoordRepType >
-bool
-FunctionalBase<TReferenceImageType, TCoordRepType>
-::ContourIsOutwards(VectorContourType *mesh ) {
-	return true;
-}
-
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
@@ -907,7 +912,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 inline typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::EvaluateGradient(  typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point,
+::EvaluateGradient( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point,
 		size_t outer_roi, size_t inner_roi ) const {
 	if ( outer_roi == inner_roi ) {
 		return 0.0;
@@ -933,7 +938,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 inline typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::GetEnergyAtPoint( typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point, size_t roi ) const {
+::GetEnergyAtPoint( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point, size_t roi ) const {
 	ReferencePixelType value = this->m_Interp->Evaluate( point );
 	float isOutside = this->m_MaskInterp->Evaluate( point );
 	if (isOutside > 1.0)
@@ -947,7 +952,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template <typename TReferenceImageType, typename TCoordRepType>
 inline typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::GetEnergyAtPoint( typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point, size_t roi,
+::GetEnergyAtPoint( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point, size_t roi,
 		            typename FunctionalBase<TReferenceImageType, TCoordRepType>::ReferencePixelType & value) const {
 	value = this->m_Interp->Evaluate( point );
 	float isOutside = this->m_MaskInterp->Evaluate( point );

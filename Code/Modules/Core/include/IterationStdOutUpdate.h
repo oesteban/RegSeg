@@ -101,7 +101,7 @@ public:
 				std::cout << " ||";
     		}
 
-			const std::vector< size_t > off = this->m_Optimizer->GetFunctional()->GetOffMaskNodes();
+			const std::vector< size_t > off = this->m_Optimizer->GetFunctional()->GetOffMaskVertices();
 			std::cout << " OffMask=(";
 			for (size_t c = 0; c<off.size(); c++) {
 				std::cout << off[c] << ", ";

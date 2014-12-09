@@ -251,7 +251,6 @@ public:
 	typedef typename std::vector< PointType >                PointsVector;
 	typedef typename std::vector< PointsVector >             PointsList;
 
-
 //	typedef itk::QuadEdgeMeshTraits< float, Dimension, bool, bool >
 //															 ShapeGradientTraits;
 	typedef itk::QuadEdgeMesh< VectorType, Dimension> 	  	 ShapeGradientType;
@@ -314,7 +313,8 @@ public:
 
 	itkGetMacro( CurrentContours, ContourList);
 	itkGetMacro( Gradients, ShapeGradientList );
-	itkGetMacro( VerticesPosition, PointsVector );
+	itkGetMacro( Vertices, PointsVector );
+	itkGetMacro( ValidVertices, PointIdContainer );
 
 	virtual void SetCurrentDisplacements( const VNLVectorContainer& vals );
 
@@ -345,7 +345,7 @@ public:
 
 	MeasureType GetValue();
 	itkGetConstMacro(RegionValue, MeasureArray);
-	VNLVectorContainer ComputeDerivative();
+	void ComputeDerivative(PointValueType* gradVector);
 
 	virtual void Initialize();
 	virtual void UpdateDescriptors() = 0;
@@ -365,7 +365,6 @@ public:
 
 	static void AddOptions( SettingsDesc& opts );
 
-	bool ContourIsOutwards(VectorContourType *mesh );
 protected:
 	FunctionalBase();
 	virtual ~FunctionalBase() {}
@@ -379,9 +378,9 @@ protected:
 	void InitializeSamplingGrid( void );
 
 	virtual MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roim, bool bias = false ) const = 0;
-	MeasureType GetEnergyAtPoint( PointType& point, size_t roi ) const;
-	MeasureType GetEnergyAtPoint( PointType& point, size_t roi, ReferencePixelType& value ) const;
-	MeasureType EvaluateGradient( PointType& point, size_t outer_roi, size_t inner_roi ) const;
+	MeasureType GetEnergyAtPoint( const PointType& point, size_t roi ) const;
+	MeasureType GetEnergyAtPoint( const PointType& point, size_t roi, ReferencePixelType& value ) const;
+	MeasureType EvaluateGradient( const PointType& point, size_t outer_roi, size_t inner_roi ) const;
 
 	inline bool CheckExtent( ContourPointType& p, ContinuousIndex& idx ) const;
 	virtual void ParseSettings();
@@ -405,7 +404,7 @@ protected:
 	ContourList m_CurrentContours;
 	ShapeGradientList m_Gradients;
 	ConstContourList m_Priors;
-	NormalFilterList m_NormalFilter;
+	NormalFilterList m_NormalsFilter;
 	//WarpContourPointer m_ContourUpdater;
 	//TransformPointer m_Transform;
 	DisplacementResamplerPointer m_EnergyResampler;
@@ -428,9 +427,10 @@ protected:
 	InterpolatorPointer m_Interp;
 	MaskInterpolatorPointer m_MaskInterp;
 	PointDataContainerPointer m_CurrentDisplacements;
-	PointsVector m_VerticesPosition;
+	PointsVector m_Vertices;
 	PointIdContainer m_ValidVertices;
 	PointIdContainer m_OuterRegion;
+	PointIdContainer m_Offsets;
 	size_t m_LastROI;
 	std::vector<size_t> m_OffMaskVertices;
 

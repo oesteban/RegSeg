@@ -168,6 +168,13 @@ void CachedMatrixTransform<TScalar,NDimensions>
 	this->Modified();
 }
 
+template< class TScalar, unsigned int NDimensions >
+void CachedMatrixTransform<TScalar,NDimensions>
+::SetOutputPoints( const PointsList points, const PointIdContainer valid ){
+	this->SetOutputPoints(points);
+	this->m_ValidLocations = valid;
+}
+
 
 template< class TScalar, unsigned int NDimensions >
 typename CachedMatrixTransform<TScalar,NDimensions>::DimensionVector
@@ -185,10 +192,10 @@ CachedMatrixTransform<TScalar,NDimensions>
 }
 
 template< class TScalar, unsigned int NDimensions >
-typename CachedMatrixTransform<TScalar,NDimensions>::DimensionParametersContainer
+typename CachedMatrixTransform<TScalar,NDimensions>::DimensionParameters
 CachedMatrixTransform<TScalar,NDimensions>
 ::VectorizeField( const FieldType* image ) {
-	DimensionParametersContainer vectorized;
+	DimensionParameters vectorized;
 
 	for( size_t col = 0; col<Dimension; col++) {
 		vectorized[col] = DimensionVector( image->GetLargestPossibleRegion().GetNumberOfPixels() );
