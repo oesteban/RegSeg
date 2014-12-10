@@ -106,29 +106,36 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	size_t dimsize = this->m_Functional->GetValidVertices().size();
 	size_t fullsize = dimsize * Dimension;
 
+	GradientScales scales;
+	for( size_t i = 0; i < Dimension; i++ ) {
+		scales[i] = this->m_Scales[i];
+	}
 
 	ParametersVector gradVector = ParametersVector(fullsize, 0.0 );
 	float* gvdata = gradVector.data_block();
-	this->m_Functional->ComputeDerivative(gvdata);
+	this->m_Functional->ComputeDerivative(gvdata, scales);
 
 	ParametersContainer derivative;
 	ParametersVector dimVector = ParametersVector(dimsize);
 
 	typename CoefficientsImageType::PixelType* buff[Dimension];
 	float* dimdata;
+
+	double norm = 1.0;
 	for ( size_t i = 0; i<Dimension; i++) {
 		if( this->m_Scales[i] > 1.0e-8 ) {
 			dimdata = &gvdata[i*dimsize];
 			dimVector.copy_in(dimdata);
 			phi.mult( dimVector, derivative[i] );
-		}
 
+			double m = derivative[i].inf_norm();
+			if ( m > norm )	norm = m;
+		}
 		this->m_DerivativeCoefficients[i]->FillBuffer( 0.0 );
 		buff[i] = this->m_DerivativeCoefficients[i]->GetBufferPointer();
 	}
 
 	size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
-	size_t nPix2 = derivative[0].size();
 
 	VectorType vi;
 	InternalComputationValueType val;
@@ -136,15 +143,15 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	VectorType maxSpeed, vs;
 	maxSpeed.Fill(0.0);
 
-	double norm = this->m_Functional->GetMaxEnergy();
+	//double norm = this->m_Functional->GetValidVertices().size();
 	std::vector< double > speednorms;
 
 	for( size_t r = 0; r<nPix; r++ ){
 		vi.Fill(0.0);
 		for( size_t c=0; c<Dimension; c++) {
-			val = 0.0;
-			if (this->m_Scales[c] > 1.0e-8)
-				val = this->m_Scales[c] * derivative[c][r] / norm;
+			val = derivative[c][r] / norm;
+			if (this->m_Scales[c] < 1.0e-8)
+				val = 0.;
 			vs[c] = val;
 
 			if ( fabs(val) > 1.0e-8 )
