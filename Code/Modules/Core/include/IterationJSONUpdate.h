@@ -125,7 +125,7 @@ public:
 		}
 
 		if( typeid( event ) == typeid( itk::EndEvent ) ) {
-			itnode["convergence"]["norm"] = this->m_Optimizer->GetCurrentValue();
+			itnode["convergence"]["norm"] = this->m_Optimizer->GetCurrentNorm();
 			itnode["convergence"]["step_size"] = this->m_Optimizer->GetStepSize();
 			itnode["convergence"]["max_gradient"] = this->m_Optimizer->GetMaximumGradient();
 			itnode["convergence"]["momentum"] = this->m_Optimizer->GetMomentum();

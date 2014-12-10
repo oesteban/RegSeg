@@ -258,29 +258,28 @@ void SpectralOptimizer<TFunctional>::ComputeUpdate(
 		CoefficientsImageArray next_uk,
 		bool changeDirection){
 
-	typename AddFilterType::Pointer add_f = AddFilterType::New();
-	typename MultiplyFilterType::Pointer dir_filter;
-
-	typename MultiplyFilterType::Pointer step_f = MultiplyFilterType::New();
-	if (changeDirection) {
-		step_f->SetConstant( -1.0 * this->m_StepSize );
-	} else {
-		step_f->SetConstant( this->m_StepSize );
-	}
-
-	typename MultiplyFilterType::Pointer scale_f = MultiplyFilterType::New();
 	CoefficientsImagePointer result;
 	InternalVectorType s;
 
 	for( size_t d = 0; d < Dimension; d++ ) {
+		typename MultiplyFilterType::Pointer step_f = MultiplyFilterType::New();
+		if (changeDirection) {
+			step_f->SetConstant( -1.0 * this->m_StepSize );
+		} else {
+			step_f->SetConstant( this->m_StepSize );
+		}
+
 		step_f->SetInput( gk[d] );
 		step_f->Update();
+
+		typename AddFilterType::Pointer add_f = AddFilterType::New();
 		add_f->SetInput1( uk[d] );
 		add_f->SetInput2( step_f->GetOutput() );
 		add_f->Update();
 		s[d] = 1.0;
 
 		if( this->m_Alpha[d] > 1.0e-8) {
+			typename MultiplyFilterType::Pointer scale_f = MultiplyFilterType::New();
 			s[d] = 1.0 / (1.0 + 2.0 * this->m_Alpha[d] * this->m_StepSize);
 			scale_f->SetConstant( s[d] );
 			scale_f->SetInput(add_f->GetOutput());
@@ -474,31 +473,14 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 
 		}
 		diff = ( t1 - t0 ).GetNorm();
-		totalNorm += diff;
-
-		//diff*= (angle( t1.GetVnlVector(), t0.GetVnlVector())> 2.8)?-1.0:1.0;
 		speednorms.push_back(diff);
+		totalNorm+= diff;
 	}
 	this->m_RegularizationEnergyUpdated = (totalNorm==0);
 	std::sort(speednorms.begin(), speednorms.end());
 	this->m_MaxSpeed = speednorms.back();
 	this->m_MeanSpeed = speednorms[int(0.5*(speednorms.size()-1))];
-	//this->m_AvgSpeed = std::accumulate(speednorms.begin(), speednorms.end(), 0.0) / nPix;
 	this->m_AvgSpeed = totalNorm / nPix;
-
-	//size_t p1_idx = int(0.15*(speednorms.size()-1));
-	//size_t p2_idx = int(0.85*(speednorms.size()-1));
-	//double p1 =  speednorms[p1_idx];
-	//double p2 =  speednorms[p2_idx];
-	//int size =  p2_idx - p1_idx;
-    //
-	//double avg = 0.0;
-    //
-	//for(size_t i = p1_idx; i <= p2_idx; i++) {
-	//	avg+=speednorms[i];
-	//}
-	//avg = avg / size;
-	//std::cout << "Speed=["<< speednorms.front() << ", " << p1 << ", "<< this->m_MeanSpeed << ", "<< p2 << ", " << this->m_MaxSpeed << "] | " << this->m_AvgSpeed << " | " << avg << std::endl;
 }
 
 template< typename TFunctional >
