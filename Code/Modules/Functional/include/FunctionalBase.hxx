@@ -168,53 +168,107 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::ComputeDerivative(PointValueType* grad) {
+::ComputeDerivative(PointValueType* grad, ScalesType scales) {
 	this->UpdateContour();
 
+	size_t offset = this->m_ValidVertices.size();
+	size_t fullsize = offset * Dimension;
 	PointIdentifier pid;      // universal id of vertex
 	PointIdentifier cpid;     // id of vertex in its contour
 	PointIdentifier vid = 0;  // id of vertex in valid array
 
 	ContourPointType ci_prime;
-	VectorType ni;
-	PointValueType gi;
+	PointValueType gi[fullsize];
+	PointValueType sum = 0.0;
+	std::vector< PointValueType > sample;
 	ROIPixelType ocid;
 	ROIPixelType icid = 0;
 
 	std::fill(this->m_OffMaskVertices.begin(), this->m_OffMaskVertices.end(), 0);
 
-	size_t offset = this->m_ValidVertices.size();
-	size_t fullsize = offset * Dimension;
 	PointIdIterator pid_end = this->m_ValidVertices.end();
-	ContourPointer normals = this->m_NormalsFilter[0]->GetOutput();
 	for(PointIdIterator pid_it = this->m_ValidVertices.begin(); pid_it != pid_end; ++pid_it ) {
-		ni.Fill(0.0);
-		gi = 0.0;
 		pid = *pid_it;
 
 		if( pid == this->m_Offsets[icid + 1] ) {
 			icid++;
-			normals = this->m_NormalsFilter[icid]->GetOutput();
 		}
 
+		ocid = this->m_OuterRegion[pid];
 		cpid = pid - this->m_Offsets[icid];
 		this->m_CurrentContours[icid]->GetPoint(cpid, &ci_prime); // Get c'_i
-		normals->GetPointData(cpid, &ni);   // Normal ni in point c'_i
-		ocid = this->m_OuterRegion[pid];
-
+		gi[pid] = this->EvaluateGradient( ci_prime, ocid, icid );
+		sample.push_back(gi[pid]);
+		sum+= fabs(gi[pid]);
 		if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
 			this->m_OffMaskVertices[icid]++;
 		}
+	}
 
-		gi = this->EvaluateGradient( ci_prime, ocid, icid );
-		ni*= gi;
-		this->m_Gradients[icid]->GetPointData()->SetElement( cpid, ni * -1.0 );
+	std::sort(sample.begin(), sample.end());
+	PointValueType p15 = sample[int(0.15*(sample.size()-1))];
+	PointValueType p85 = sample[int(0.85*(sample.size()-1))];
+
+	std::cout << "Min=" << sample.front() << " Max=" << sample.back() << " Sum=" << sum << "." << std::endl;
+	std::cout << "P15=" << p15 << " P85=" << p85 << " P50=" << sample[int(0.5*(sample.size()-1))] << "." << std::endl;
+
+	ContourPointer normals = this->m_NormalsFilter[0]->GetOutput();
+	VectorType ni, v;
+	icid = 0;
+	PointValueType g;
+	for(PointIdIterator pid_it = this->m_ValidVertices.begin(); pid_it != pid_end; ++pid_it ) {
+		ni.Fill(0.0);
+		if( *pid_it == this->m_Offsets[icid + 1] ) {
+			icid++;
+			normals = this->m_NormalsFilter[icid]->GetOutput();
+		}
+
+		normals->GetPointData(cpid, &ni);
+		g = gi[*pid_it];
+
+		if ( g > p85 ) g = p85;
+		if ( g < p15 ) g = p15;
 
 		for( size_t i = 0; i < Dimension; i++ ) {
-			grad[vid + i * offset] = static_cast<float>(ni[i]);
+			v[i] = scales[i] * g * ni[i];
+			grad[vid + i * offset] = static_cast<float>(v[i]);
 		}
+		cpid = pid - this->m_Offsets[icid];
+		this->m_Gradients[icid]->GetPointData()->SetElement( cpid, v );
 		vid++;
 	}
+
+
+	//for(PointIdIterator pid_it = this->m_ValidVertices.begin(); pid_it != pid_end; ++pid_it ) {
+	//	ni.Fill(0.0);
+	//	gi = 0.0;
+	//	pid = *pid_it;
+    //
+    //
+    //
+	//	if( pid == this->m_Offsets[icid + 1] ) {
+	//		icid++;
+	//		normals = this->m_NormalsFilter[icid]->GetOutput();
+	//	}
+    //
+	//	cpid = pid - this->m_Offsets[icid];
+	//	this->m_CurrentContours[icid]->GetPoint(cpid, &ci_prime); // Get c'_i
+	//	normals->GetPointData(cpid, &ni);   // Normal ni in point c'_i
+	//	ocid = this->m_OuterRegion[pid];
+    //
+	//	if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
+	//		this->m_OffMaskVertices[icid]++;
+	//	}
+    //
+	//	gi = this->EvaluateGradient( ci_prime, ocid, icid );
+	//	for( size_t i = 0; i < Dimension; i++ ) {
+	//		v[i] = scales[i] * gi * ni[i];
+	//		grad[vid + i * offset] = static_cast<float>(v[i]);
+	//	}
+	//	this->m_Gradients[icid]->GetPointData()->SetElement( cpid, v );
+	//	vid++;
+	//}
+
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >

@@ -122,6 +122,8 @@ public:
 	typedef itk::Point< PointValueType, Dimension >          PointType;
 	typedef itk::ContinuousIndex<TCoordRepType, Dimension >  ContinuousIndex;
 
+	typedef itk::FixedArray<TCoordRepType, Dimension >       ScalesType;
+
 	typedef TReferenceImageType                              ReferenceImageType;
 	typedef typename ReferenceImageType::Pointer             ReferenceImagePointer;
 	typedef typename ReferenceImageType::ConstPointer        ReferenceImageConstPointer;
@@ -345,7 +347,7 @@ public:
 
 	MeasureType GetValue();
 	itkGetConstMacro(RegionValue, MeasureArray);
-	void ComputeDerivative(PointValueType* gradVector);
+	void ComputeDerivative(PointValueType* gradVector, ScalesType scales);
 
 	virtual void Initialize();
 	virtual void UpdateDescriptors() = 0;

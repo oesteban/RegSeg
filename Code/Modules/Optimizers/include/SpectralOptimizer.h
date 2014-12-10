@@ -99,6 +99,7 @@ public:
 
 	/** Metric type over which this class is templated */
 	typedef TFunctional                                FunctionalType;
+	typedef typename FunctionalType::ScalesType        GradientScales;
 	itkStaticConstMacro( Dimension, unsigned int, FunctionalType::Dimension );
 
 	/** Codes of stopping conditions. */
