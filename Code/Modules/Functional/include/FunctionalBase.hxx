@@ -111,6 +111,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			this->InitializeSamplingGrid();
 	}
 
+	// Initialize interpolators
+	this->m_Interp->SetInputImage( this->m_ReferenceImage );
+	this->m_MaskInterp->SetInputImage(this->m_BackgroundMask);
+
 	// Compute and set regions in m_ROIs
 	this->ComputeCurrentRegions();
 	for( size_t id = 0; id < m_ROIs.size(); id++) {
@@ -123,12 +127,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	this->m_RegionValue.SetSize(this->m_NumberOfRegions);
 	this->m_RegionValue.Fill(itk::NumericTraits<MeasureType>::infinity());
-
-	this->m_OffMaskVertices.resize(this->m_NumberOfContours);
-
-	// Initialize interpolators
-	this->m_Interp->SetInputImage( this->m_ReferenceImage );
-	this->m_MaskInterp->SetInputImage(this->m_BackgroundMask);
 
 	//this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
 }
@@ -184,8 +182,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	ROIPixelType ocid;
 	ROIPixelType icid = 0;
 
-	std::fill(this->m_OffMaskVertices.begin(), this->m_OffMaskVertices.end(), 0);
-
 	PointIdIterator pid_end = this->m_ValidVertices.end();
 	for(PointIdIterator pid_it = this->m_ValidVertices.begin(); pid_it != pid_end; ++pid_it ) {
 		pid = *pid_it;
@@ -200,17 +196,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		gi[pid] = this->EvaluateGradient( ci_prime, ocid, icid );
 		sample.push_back(gi[pid]);
 		sum+= fabs(gi[pid]);
-		if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
-			this->m_OffMaskVertices[icid]++;
-		}
 	}
 
 	std::sort(sample.begin(), sample.end());
-	PointValueType p15 = sample[int(0.15*(sample.size()-1))];
-	PointValueType p85 = sample[int(0.85*(sample.size()-1))];
+	PointValueType p15 = sample[int(0.05*(sample.size()-1))];
+	PointValueType p85 = sample[int(0.95*(sample.size()-1))];
 
-	std::cout << "Min=" << sample.front() << " Max=" << sample.back() << " Sum=" << sum << "." << std::endl;
-	std::cout << "P15=" << p15 << " P85=" << p85 << " P50=" << sample[int(0.5*(sample.size()-1))] << "." << std::endl;
+	//std::cout << "Min=" << sample.front() << " Max=" << sample.back() << " Sum=" << sum << "." << std::endl;
+	//std::cout << "P15=" << p15 << " P85=" << p85 << " P50=" << sample[int(0.5*(sample.size()-1))] << "." << std::endl;
 
 	ContourPointer normals = this->m_NormalsFilter[0]->GetOutput();
 	VectorType ni, v;
@@ -286,6 +279,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	std::vector< size_t > invalid;
 	VectorType zerov; zerov.Fill(0.0);
 
+
+	std::fill(this->m_OffMaskVertices.begin(), this->m_OffMaskVertices.end(), 0);
+
 	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
 		typename VectorContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
 		typename VectorContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
@@ -313,6 +309,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				curPoints->SetElement( pid, ci_prime );
 				curGradPoints->SetElement( pid, ci_prime );
 				changed++;
+			}
+
+			if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
+				this->m_OffMaskVertices[contid]++;
 			}
 
 			gradData->SetElement( pid, zerov );
@@ -568,10 +568,12 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::InitializeContours() {
+	this->m_OffMaskVertices.resize(this->m_NumberOfContours);
+	std::fill(this->m_OffMaskVertices.begin(), this->m_OffMaskVertices.end(), 0);
+
 	this->m_OuterRegion.resize(this->m_NumberOfVertices);
 	std::fill(this->m_OuterRegion.begin(), this->m_OuterRegion.end(), 0);
 	VectorType zerov; zerov.Fill(0.0);
-
 
 	this->m_CurrentDisplacements = PointDataContainer::New();
 	this->m_CurrentDisplacements->Reserve( this->m_NumberOfVertices );
@@ -580,6 +582,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		// Set up ROI interpolator
 		typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
 		interp->SetInputImage( this->m_CurrentRegions );
+
 
 
 		PointIdentifier tpid = 0;
@@ -619,6 +622,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					this->m_ValidVertices.push_back(tpid);
 					this->m_OuterRegion[tpid] = outer;
 				}
+
+				if ( (1.0 - this->m_MaskInterp->Evaluate(ci)) < 1.0e-5 ) {
+					this->m_OffMaskVertices[contid]++;
+				}
+
 				++c_it;
 				tpid++;
 			}
