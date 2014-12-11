@@ -1,5 +1,7 @@
 Debug/
 Release/
+temp/
+Data/
 .project
 *.sublime-*
 .ipynb_checkpoints/
@@ -46,8 +48,6 @@ Release/
 Publications/2013-TMI/ACWE.bib
 *.pdf
 papers/FINF-ITK
-temp/
-Data/Phantom*
 provenance.*
 Untitled*.ipynb
 *-notrack.ipynb
