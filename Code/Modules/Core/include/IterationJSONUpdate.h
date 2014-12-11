@@ -108,6 +108,11 @@ public:
 			itnode["speed"]["median"] = this->m_Optimizer->GetMeanSpeed();
 			itnode["speed"]["average"] = this->m_Optimizer->GetAvgSpeed();
 
+			JSONValue gnode = Json::Value( Json::arrayValue );
+			typename OptimizerType::FunctionalType::GradientStatsArray arr = this->m_Optimizer->GetFunctional()->GetGradientStatistics();
+			for (size_t a = 0; a < arr.Size(); a++)
+				gnode.append(Json::Value(arr[a]));
+			itnode["gradient_stats"] = gnode;
 
 			std::vector< size_t > off = this->m_Optimizer->GetFunctional()->GetOffMaskVertices();
 			JSONValue offnode = Json::Value( Json::arrayValue );

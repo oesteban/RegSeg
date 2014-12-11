@@ -264,6 +264,8 @@ public:
 			                <VectorContourType,ShapeGradientType>  ShapeCopyType;
 	typedef typename ShapeCopyType::Pointer                  ShapeCopyPointer;
 
+	typedef itk::FixedArray< PointValueType, 7u >            GradientStatsArray;
+
 	struct GradientSample {
 		PointValueType grad;
 		PointValueType w;
@@ -347,6 +349,7 @@ public:
 
 	MeasureType GetValue();
 	itkGetConstMacro(RegionValue, MeasureArray);
+	itkGetConstMacro(GradientStatistics, GradientStatsArray);
 	void ComputeDerivative(PointValueType* gradVector, ScalesType scales);
 
 	virtual void Initialize();
@@ -435,6 +438,8 @@ protected:
 	PointIdContainer m_Offsets;
 	size_t m_LastROI;
 	std::vector<size_t> m_OffMaskVertices;
+
+	GradientStatsArray m_GradientStatistics;
 
 private:
 	FunctionalBase(const Self &);  //purposely not implemented

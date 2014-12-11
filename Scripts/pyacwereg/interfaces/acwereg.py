@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-30 11:20:32
+# @Last Modified time: 2014-12-11 16:22:46
 
 import os
 import os.path as op
@@ -283,3 +283,70 @@ pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
 
         outputs['out_log'] = op.abspath('%s%s.log' % (out_prefix, logname))
         return outputs
+
+
+class ACWEReportInputSpec(BaseInterfaceInputSpec):
+    in_log = File(exists=True, mandatory=True, desc='Input log-file')
+    out_file = File('report.pdf', usedefault=True, desc='output report')
+
+
+class ACWEReportOutputSpec(BaseInterfaceInputSpec):
+    out_file = File(desc='output report')
+
+
+class ACWEReport(BaseInterface):
+    input_spec = ACWEReportInputSpec
+    output_spec = ACWEReportOutputSpec
+
+    def _run_interface(self, runtiome):
+        from pyacwereg import viz
+        data = parse_log(self.inputs.in_log)
+        out_file = op.abspath(self.inputs.out_file)
+        viz.plot_report(data, out_file)
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs['out_file'] = op.abspath(self.inputs.out_file)
+        return outputs
+
+
+def parse_log(in_file):
+    import pandas as pd
+    import json as pj
+
+    with open(in_file, 'r') as f:
+        data = pj.load(f)
+
+    levels = data['levels']
+    ldf = []
+
+    for ln, l in enumerate(levels):
+        d = {}
+        its = l[1:-1]
+        d['level'] = pd.Series([ln] * len(its))
+        d['iteration'] = pd.Series(range(len(its)))
+
+        d['step'] = pd.Series([e['convergence']['step_size'] for e in its])
+        d['norm'] = pd.Series([e['convergence']['norm'] for e in its])
+        d['max_gk'] = pd.Series(
+            [e['convergence']['max_gradient'] for e in its])
+        d['convergence'] = pd.Series([e['convergence']['value'] for e in its])
+
+        d['E_t'] = pd.Series([e['energy']['total'] for e in its])
+        d['E_d'] = pd.Series([e['energy']['data'] for e in its])
+        d['E_r'] = pd.Series([e['energy']['regularization'] for e in its])
+
+        for i in xrange(len(its[0]['energy']['region'])):
+            d['E_%02d' % i] = pd.Series(
+                [e['energy']['region'][i] for e in its])
+
+        for i, label in enumerate(['g_min', 'g_05', 'g_25', 'g_50',
+                                   'g_75', 'g_95', 'g_max']):
+            d[label] = pd.Series([e['gradient_stats'][i] for e in its])
+
+        df = pd.DataFrame(d)
+        df.index.name = 'index'
+        ldf.append(df)
+
+    return pd.concat(ldf), data
