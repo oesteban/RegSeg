@@ -199,11 +199,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 	std::sort(sample.begin(), sample.end());
-	PointValueType p15 = sample[int(0.05*(sample.size()-1))];
-	PointValueType p85 = sample[int(0.95*(sample.size()-1))];
 
-	//std::cout << "Min=" << sample.front() << " Max=" << sample.back() << " Sum=" << sum << "." << std::endl;
-	//std::cout << "P15=" << p15 << " P85=" << p85 << " P50=" << sample[int(0.5*(sample.size()-1))] << "." << std::endl;
+	this->m_GradientStatistics[0] = sample.front();
+	this->m_GradientStatistics[1] = sample[int(0.05 * (sample.size()-1))];
+	this->m_GradientStatistics[2] = sample[int(0.25 * (sample.size()-1))];
+	this->m_GradientStatistics[3] = sample[int(0.50 * (sample.size()-1))];
+	this->m_GradientStatistics[4] = sample[int(0.75 * (sample.size()-1))];
+	this->m_GradientStatistics[5] = sample[int(0.95 * (sample.size()-1))];
+	this->m_GradientStatistics[6] = sample.back();
 
 	ContourPointer normals = this->m_NormalsFilter[0]->GetOutput();
 	VectorType ni, v;
@@ -219,8 +222,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		normals->GetPointData(cpid, &ni);
 		g = gi[*pid_it];
 
-		if ( g > p85 ) g = p85;
-		if ( g < p15 ) g = p15;
+		if ( g > this->m_GradientStatistics[5] ) g = this->m_GradientStatistics[5];
+		if ( g < this->m_GradientStatistics[1] ) g = this->m_GradientStatistics[1];
 
 		for( size_t i = 0; i < Dimension; i++ ) {
 			v[i] = scales[i] * g * ni[i];
@@ -230,37 +233,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		this->m_Gradients[icid]->GetPointData()->SetElement( cpid, v );
 		vid++;
 	}
-
-
-	//for(PointIdIterator pid_it = this->m_ValidVertices.begin(); pid_it != pid_end; ++pid_it ) {
-	//	ni.Fill(0.0);
-	//	gi = 0.0;
-	//	pid = *pid_it;
-    //
-    //
-    //
-	//	if( pid == this->m_Offsets[icid + 1] ) {
-	//		icid++;
-	//		normals = this->m_NormalsFilter[icid]->GetOutput();
-	//	}
-    //
-	//	cpid = pid - this->m_Offsets[icid];
-	//	this->m_CurrentContours[icid]->GetPoint(cpid, &ci_prime); // Get c'_i
-	//	normals->GetPointData(cpid, &ni);   // Normal ni in point c'_i
-	//	ocid = this->m_OuterRegion[pid];
-    //
-	//	if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
-	//		this->m_OffMaskVertices[icid]++;
-	//	}
-    //
-	//	gi = this->EvaluateGradient( ci_prime, ocid, icid );
-	//	for( size_t i = 0; i < Dimension; i++ ) {
-	//		v[i] = scales[i] * gi * ni[i];
-	//		grad[vid + i * offset] = static_cast<float>(v[i]);
-	//	}
-	//	this->m_Gradients[icid]->GetPointData()->SetElement( cpid, v );
-	//	vid++;
-	//}
 
 }
 
