@@ -390,6 +390,8 @@ protected:
 	inline bool CheckExtent( ContourPointType& p, ContinuousIndex& idx ) const;
 	virtual void ParseSettings();
 
+	virtual MeasureType GetEnergyOffset(size_t roi) const = 0;
+
 	size_t m_NumberOfContours;
 	size_t m_NumberOfRegions;
 	size_t m_NumberOfVertices;

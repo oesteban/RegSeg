@@ -363,14 +363,15 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					} else {
 						e = this->GetEnergyOfSample( val, roi, true );
 					}
-					this->m_RegionValue[roi]+= w * e;
-					regionVol[roi]+= w;
+					this->m_RegionValue[roi]+= w * vxvol * e;
+					regionVol[roi]+= w * vxvol;
 				}
 			}
 		}
 
 		this->m_Value = 0.0;
 		for( size_t roi = 0; roi < nrois; roi++ ) {
+			this->m_RegionValue[roi]+= regionVol[roi] * this->GetEnergyOffset(roi);
 			this->m_Value+= this->m_RegionValue[roi];
 		}
 

@@ -154,6 +154,8 @@ protected:
 	void PrintSelf( std::ostream& os, itk::Indent indent) const;
 
 	inline MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roi, bool bias ) const;
+	MeasureType GetEnergyOffset(size_t roi) const;
+
 	ParametersType UpdateParametersOfRegion( const size_t idx );
 	ParametersType UpdateParametersOfRegionGeneral( const size_t idx );
 	ParametersType UpdateParametersOfRegionRobust( const size_t idx );
