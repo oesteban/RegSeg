@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-12-11 16:25:53
+# @Last Modified by:   oesteban
+# @Last Modified time: 2014-12-11 16:34:21
 
 
 def plot_report(df, out_file=None):
@@ -16,7 +16,7 @@ def plot_report(df, out_file=None):
 
     plt.style.use('ggplot')
     c = plt.rcParams['axes.color_cycle'][0]
-    levels = np.unique(df['level'])
+    levels = pd.Series(df.level).unique()
 
     fd = {'size': 20, 'color': 'w', 'weight': 'bold'}
     lposx = .05

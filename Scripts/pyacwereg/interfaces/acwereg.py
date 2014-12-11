@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-11 16:22:46
+# @Last Modified time: 2014-12-11 16:35:22
 
 import os
 import os.path as op
@@ -298,9 +298,9 @@ class ACWEReport(BaseInterface):
     input_spec = ACWEReportInputSpec
     output_spec = ACWEReportOutputSpec
 
-    def _run_interface(self, runtiome):
+    def _run_interface(self, runtime):
         from pyacwereg import viz
-        data = parse_log(self.inputs.in_log)
+        data, _ = parse_log(self.inputs.in_log)
         out_file = op.abspath(self.inputs.out_file)
         viz.plot_report(data, out_file)
         return runtime
