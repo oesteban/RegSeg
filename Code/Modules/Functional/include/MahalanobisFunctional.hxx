@@ -39,6 +39,9 @@
 #define MAHALANOBISLEVELSETS_HXX_
 
 #include "MahalanobisFunctional.h"
+
+#include <math.h>
+#include <vnl/vnl_math.h>
 #include <vnl/vnl_matrix.h>
 #include <vnl/vnl_diag_matrix.h>
 #include <vnl/algo/vnl_symmetric_eigensystem.h>
@@ -85,6 +88,15 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 		biasVal = this->m_Parameters[roi].bias;
 	}
 	return dot_product(dist.GetVnlVector(), this->m_Parameters[roi].invcov.GetVnlMatrix() * dist.GetVnlVector() ) + biasVal;
+}
+
+template <typename TReferenceImageType, typename TCoordRepType>
+typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::MeasureType
+MahalanobisFunctional<TReferenceImageType,TCoordRepType>
+::GetEnergyOffset(size_t roi) const {
+	double det = 1.0 / this->m_Parameters[roi].bias;
+	double pifact = this->m_Parameters[roi].mean.Size() * log(2.0 * vnl_math::pi);
+	return pifact + det;
 }
 
 
