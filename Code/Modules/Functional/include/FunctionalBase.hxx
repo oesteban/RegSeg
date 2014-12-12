@@ -169,39 +169,36 @@ void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeDerivative(PointValueType* grad, ScalesType scales) {
 	this->UpdateContour();
-
-	size_t offset = this->m_ValidVertices.size();
-	size_t fullsize = offset * Dimension;
+	size_t nvertices = this->m_ValidVertices.size();
+	size_t fullsize = nvertices * Dimension;
 	PointIdentifier pid;      // universal id of vertex
 	PointIdentifier cpid;     // id of vertex in its contour
-	PointIdentifier vid = 0;  // id of vertex in valid array
 
 	ContourPointType ci_prime;
-	PointValueType gi[fullsize];
+	PointValueType gi[nvertices];
 	PointValueType sum = 0.0;
 	std::vector< PointValueType > sample;
 	ROIPixelType ocid;
 	ROIPixelType icid = 0;
+	double wi = 0.0;
 
-	NormalFilterAreasContainer areas = this->m_NormalsFilter[0]->GetVertexAreaContainer();
-	PointIdIterator pid_end = this->m_ValidVertices.end();
-	for(PointIdIterator pid_it = this->m_ValidVertices.begin(); pid_it != pid_end; ++pid_it ) {
-		pid = *pid_it;
+	std::vector< NormalFilterAreasContainer > areas;
+	std::vector< ContourPointer > normals;
+	for (size_t i = 0; i < this->m_NumberOfContours; i++ ) {
+		areas.push_back(this->m_NormalsFilter[i]->GetVertexAreaContainer());
+		normals.push_back (this->m_NormalsFilter[i]->GetOutput() );
+	}
 
-		if( pid == this->m_Offsets[icid + 1] ) {
-			icid++;
-			areas = this->m_NormalsFilter[icid]->GetVertexAreaContainer();
-			if (areas.Size() != this->m_CurrentContours[icid]->GetNumberOfPoints() ) {
-				itkExceptionMacro(<< "areas and normals do not match.");
-			}
-		}
-
-		ocid = this->m_OuterRegion[pid];
+	for(size_t vvid = 0; vvid < nvertices; vvid++ ) {
+		icid = this->m_InnerRegion[vvid];
+		ocid = this->m_OuterRegion[vvid];
+		pid = this->m_ValidVertices[vvid];
 		cpid = pid - this->m_Offsets[icid];
 		this->m_CurrentContours[icid]->GetPoint(cpid, &ci_prime); // Get c'_i
-		gi[pid] = this->EvaluateGradient( ci_prime, ocid, icid )  * areas[cpid];
-		sample.push_back(gi[pid]);
-		sum+= fabs(gi[pid]);
+		wi = areas[icid][cpid];
+		gi[vvid] = this->EvaluateGradient( ci_prime, ocid, icid )  * wi;
+		sample.push_back(gi[vvid]);
+		sum+= fabs(gi[vvid]);
 	}
 
 	std::sort(sample.begin(), sample.end());
@@ -214,31 +211,29 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_GradientStatistics[5] = sample[int(0.95 * (sample.size()-1))];
 	this->m_GradientStatistics[6] = sample.back();
 
-	ContourPointer normals = this->m_NormalsFilter[0]->GetOutput();
 	VectorType ni, v;
 	icid = 0;
 	PointValueType g;
-	for(PointIdIterator pid_it = this->m_ValidVertices.begin(); pid_it != pid_end; ++pid_it ) {
-		pid = *pid_it;
-		ni.Fill(0.0);
+	for(size_t vvid = 0; vvid < nvertices; vvid++ ) {
+		pid = this->m_ValidVertices[vvid];
 		if( pid == this->m_Offsets[icid + 1] ) {
 			icid++;
-			normals = this->m_NormalsFilter[icid]->GetOutput();
 		}
 
-		normals->GetPointData(cpid, &ni);
-		g = gi[*pid_it];
+		cpid = pid - this->m_Offsets[icid];
+		ni.Fill(0.0);
+		normals[icid]->GetPointData(cpid, &ni);
 
+		g = gi[vvid];
 		if ( g > this->m_GradientStatistics[5] ) g = this->m_GradientStatistics[5];
 		if ( g < this->m_GradientStatistics[1] ) g = this->m_GradientStatistics[1];
 
 		for( size_t i = 0; i < Dimension; i++ ) {
 			v[i] = scales[i] * g * ni[i];
-			grad[vid + i * offset] = static_cast<float>(v[i]);
+			grad[vvid + i * nvertices] = static_cast<float>(v[i]);
 		}
-		cpid = pid - this->m_Offsets[icid];
+
 		this->m_Gradients[icid]->GetPointData()->SetElement( cpid, v );
-		vid++;
 	}
 
 }
@@ -335,7 +330,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		size_t nPix = this->GetCurrentMap(0)->GetLargestPossibleRegion().GetNumberOfPixels();
 		size_t nrois = m_ROIs.size();
-		size_t lastroi = nrois - 1;
+		size_t lastroi = nrois;
 
 		const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
 		const typename ProbabilityMapType::PixelType* bgBuffer = this->m_BackgroundMask->GetBufferPointer();
@@ -551,10 +546,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_OffMaskVertices.resize(this->m_NumberOfContours);
 	std::fill(this->m_OffMaskVertices.begin(), this->m_OffMaskVertices.end(), 0);
 
-	this->m_OuterRegion.resize(this->m_NumberOfVertices);
-	std::fill(this->m_OuterRegion.begin(), this->m_OuterRegion.end(), 0);
 	VectorType zerov; zerov.Fill(0.0);
-
 	this->m_CurrentDisplacements = PointDataContainer::New();
 	this->m_CurrentDisplacements->Reserve( this->m_NumberOfVertices );
 
@@ -578,33 +570,39 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			PointsConstIterator c_it  = normals->GetPoints()->Begin();
 			PointsConstIterator c_end = normals->GetPoints()->End();
 
-			ContourCopyPointer copy = ContourCopyType::New();
-			copy->SetInput( this->m_CurrentContours[contid] );
-			copy->Update();
-			ContourPointer vcp = copy->GetOutput();
-
 			PointType ci;
 			VectorType v;
 			VectorType ni;
 			size_t pid;
+			float step = 1;
 			while( c_it != c_end ) {
 				pid = c_it.Index();
 				ci = c_it.Value();
-				normals->GetPointData( pid, &ni );
-				ROIPixelType inner = interp->Evaluate( ci + ni );
-				ROIPixelType outer = interp->Evaluate( ci - ni );
-				v = ni;
-				vcp->SetPointData(pid, v);
 
 				this->m_Vertices.push_back( ci );
 				this->m_CurrentDisplacements->SetElement(tpid, zerov);
-				if ((inner == contid) && (outer!=inner)) {
-					this->m_ValidVertices.push_back(tpid);
-					this->m_OuterRegion[tpid] = outer;
-				}
 
 				if ( (1.0 - this->m_MaskInterp->Evaluate(ci)) < 1.0e-5 ) {
 					this->m_OffMaskVertices[contid]++;
+				}
+
+				normals->GetPointData( pid, &ni );
+				ROIPixelType inner = interp->Evaluate( ci + ni );
+				ROIPixelType outer = interp->Evaluate( ci - ni );
+
+				if ((inner == contid)) {
+					while (outer==inner) {
+						outer = interp->Evaluate( ci - (ni * step * 0.1) );
+						if (step == 9)
+							break;
+						step++;
+					}
+
+					if(outer!=inner) {
+						this->m_ValidVertices.push_back(tpid);
+						this->m_OuterRegion.push_back(outer);
+						this->m_InnerRegion.push_back(inner);
+					}
 				}
 
 				++c_it;
@@ -612,7 +610,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			}
 		}
 	} else {
-		std::fill( this->m_OuterRegion.begin(), this->m_OuterRegion.end(), 1 );
+		this->m_InnerRegion.resize(this->m_NumberOfVertices);
+		std::fill(this->m_InnerRegion.begin(), this->m_InnerRegion.end(), 0);
+		this->m_OuterRegion.resize(this->m_NumberOfVertices);
+		std::fill(this->m_OuterRegion.begin(), this->m_OuterRegion.end(), 1);
 	}
 	std::cout << "Valid vertices: " << this->m_ValidVertices.size() << " of " << this->m_Vertices.size() << "." << std::endl;
 }
@@ -873,24 +874,16 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		return 0.0;
 	}
 	ReferencePixelType value = this->m_Interp->Evaluate( point );
-	MeasureType grad = 0.0;
+	MeasureType gin  = this->GetEnergyOfSample( value, inner_roi );
+	MeasureType gout = this->GetEnergyOfSample( value, outer_roi );
 
 	float isOutside = this->m_MaskInterp->Evaluate( point );
-
-	MeasureType gin = 0.0;
-	MeasureType gout = 0.0;
-	if (isOutside < 1.0e-3 ) {
-		gin = this->GetEnergyOfSample( value, inner_roi );
-	} else {
+	if (isOutside > 1.0e-3) {
 		if(isOutside > 1.0) isOutside = 1.0;
-		gout = 100.0 * isOutside * this->m_MaxEnergy;
+		gout = isOutside * this->m_MaxEnergy;
 	}
 
-	if ( outer_roi != (this->m_NumberOfRegions - 1)) {
-		gout+= this->GetEnergyOfSample( value, outer_roi );
-	}
-
-	grad = gout - gin;
+	MeasureType grad = gin - gout;
 	grad = (fabs(grad)>MIN_GRADIENT)?grad:0.0;
 	return grad;
 }

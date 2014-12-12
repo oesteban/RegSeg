@@ -438,6 +438,7 @@ protected:
 	PointsVector m_Vertices;
 	PointIdContainer m_ValidVertices;
 	PointIdContainer m_OuterRegion;
+	PointIdContainer m_InnerRegion;
 	PointIdContainer m_Offsets;
 	size_t m_LastROI;
 	std::vector<size_t> m_OffMaskVertices;

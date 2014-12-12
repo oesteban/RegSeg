@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-11 16:34:21
+# @Last Modified time: 2014-12-12 19:20:25
 
 
 def plot_report(df, out_file=None):
@@ -55,7 +55,9 @@ def plot_report(df, out_file=None):
         allax1.append(ax1)
         ax2 = plt.Subplot(fig, innergs3[i + len(levels)])
         allax2.append(ax2)
-        ldf.plot(ax=ax1, x='iteration', y='norm')
+
+        ldf.plot(ax=ax1, x='iteration', y=['norm', 'max_gk'],
+                 secondary_y=['norm'])
         # ldf.plot(ax=ax1, x='iteration', y='max_gk', secondary_y=True)
         fig.add_subplot(ax1)
 
@@ -84,7 +86,7 @@ def plot_report(df, out_file=None):
             erois.append('E_%02d' % eid)
             eid += 1
 
-        ldf.plot(ax=ax1, x='iteration', y=erois)
+        ldf.plot(ax=ax1, x='iteration', y=erois, kind='area', stacked=True)
         fig.add_subplot(ax1)
         ax1.text(.9, .05, 'Level %d' %
                  (i + 1), ha='right', transform=ax1.transAxes, fontdict=fd)
@@ -97,7 +99,9 @@ def plot_report(df, out_file=None):
         1, len(levels), subplot_spec=outergs[3], hspace=0.0, wspace=0.05)
     for i, l in enumerate(levels):
         ax = plt.Subplot(fig, innergs2[i])
-        ldf.plot(ax=ax, x='iteration', y=['E_t', 'E_d', 'E_r'])
+        ldf.plot(ax=ax, x='iteration', y=['E_d', 'E_r'],
+                 kind='area', stacked=True)
+        plt.plot(ldf['E_t'])
         fig.add_subplot(ax)
         ax.text(.9, .05, 'Level %d' %
                 (i + 1), ha='right', transform=ax.transAxes, fontdict=fd)
@@ -112,13 +116,13 @@ def plot_report(df, out_file=None):
     fig.text(gps[3][0] - 0.38, gps[3][1] + 0.02,
              'Total energy evolution', size=20)
     fig.text(gps[3][0] - 0.38, gps[3][1] - 0.185,
-             'Step size ($\delta$) evolution', size=20)
+             r'Step size ($\delta$) evolution', size=20)
     fig.text(gps[0][0], gps[3][1] + 0.02,
              'Region-wise evolution of energy', size=20)
     fig.text(gps[3][0] - 0.38, gps[1][1] + 0.02,
              r'Update: $\max_{k}\{\Vert \mathbf{u}_k \Vert\}$', size=20)
     fig.text(gps[3][0] - 0.38, gps[1][1] - 0.185,
-             'Gradient at vertices ($\mathbf{g}_i$) distribution', size=20)
+             r'Gradient at vertices ($\mathbf{g}_i$) distribution', size=20)
     fig.text(gps[0][0], gps[1][1] + 0.02, 'Energy decomposition', size=20)
 
     if out_file is not None:
