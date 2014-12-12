@@ -183,6 +183,7 @@ public:
 	typedef rstk::NormalQuadEdgeMeshFilter
 			< VectorContourType, VectorContourType >                     NormalFilterType;
 	typedef typename NormalFilterType::Pointer               NormalFilterPointer;
+	typedef typename NormalFilterType::AreaContainerType     NormalFilterAreasContainer;
 	typedef std::vector< NormalFilterPointer >               NormalFilterList;
 
 	typedef typename itk::CopyQuadEdgeMeshFilter

@@ -104,6 +104,7 @@ public:
   typedef typename OutputMeshType::CellsContainerConstIterator OutputCellsContainerConstIterator;
 
   typedef TriangleHelper< OutputPointType > TriangleType;
+  typedef itk::Array< float > AreaContainerType;
 
   typedef QuadEdgeMeshPolygonCell< OutputCellType >   OutputPolygonType;
   typedef typename OutputPolygonType::SelfAutoPointer OutputPolygonAutoPointer;
@@ -128,6 +129,8 @@ public:
   itkGetConstMacro (Weight, WeightType);
 
   itkGetConstMacro( IsWindingCCW, bool);
+
+  itkGetConstMacro( VertexAreaContainer, AreaContainerType);
 
 protected:
   NormalQuadEdgeMeshFilter();
@@ -182,6 +185,7 @@ private:
   void operator=(const Self &);
 
   bool m_IsWindingCCW;
+  AreaContainerType m_VertexAreaContainer;
 };
 }
 
