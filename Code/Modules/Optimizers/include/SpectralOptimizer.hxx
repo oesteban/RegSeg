@@ -149,7 +149,7 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	for( size_t r = 0; r<nPix; r++ ){
 		vi.Fill(0.0);
 		for( size_t c=0; c<Dimension; c++) {
-			val = derivative[c][r] / 100;
+			val = derivative[c][r];
 			if (this->m_Scales[c] < 1.0e-8)
 				val = 0.;
 			vs[c] = val;
