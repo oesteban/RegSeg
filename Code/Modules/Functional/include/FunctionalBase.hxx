@@ -52,7 +52,7 @@
 #include <itkMeshFileWriter.h>
 
 #define MAX_GRADIENT 20.0
-#define MIN_GRADIENT 1.0e-5
+#define MIN_GRADIENT 1.0e-8
 
 namespace rstk {
 
@@ -183,18 +183,23 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	ROIPixelType ocid;
 	ROIPixelType icid = 0;
 
+	NormalFilterAreasContainer areas = this->m_NormalsFilter[0]->GetVertexAreaContainer();
 	PointIdIterator pid_end = this->m_ValidVertices.end();
 	for(PointIdIterator pid_it = this->m_ValidVertices.begin(); pid_it != pid_end; ++pid_it ) {
 		pid = *pid_it;
 
 		if( pid == this->m_Offsets[icid + 1] ) {
 			icid++;
+			areas = this->m_NormalsFilter[icid]->GetVertexAreaContainer();
+			if (areas.Size() != this->m_CurrentContours[icid]->GetNumberOfPoints() ) {
+				itkExceptionMacro(<< "areas and normals do not match.");
+			}
 		}
 
 		ocid = this->m_OuterRegion[pid];
 		cpid = pid - this->m_Offsets[icid];
 		this->m_CurrentContours[icid]->GetPoint(cpid, &ci_prime); // Get c'_i
-		gi[pid] = this->EvaluateGradient( ci_prime, ocid, icid );
+		gi[pid] = this->EvaluateGradient( ci_prime, ocid, icid )  * areas[cpid];
 		sample.push_back(gi[pid]);
 		sum+= fabs(gi[pid]);
 	}
@@ -214,8 +219,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	icid = 0;
 	PointValueType g;
 	for(PointIdIterator pid_it = this->m_ValidVertices.begin(); pid_it != pid_end; ++pid_it ) {
+		pid = *pid_it;
 		ni.Fill(0.0);
-		if( *pid_it == this->m_Offsets[icid + 1] ) {
+		if( pid == this->m_Offsets[icid + 1] ) {
 			icid++;
 			normals = this->m_NormalsFilter[icid]->GetOutput();
 		}
@@ -288,7 +294,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				this->m_OffMaskVertices[contid]++;
 			}
 
-			gradData->SetElement( pid, zerov );
+			this->m_Gradients[contid]->GetPointData()->SetElement( pid, zerov );
 			++p_it;
 			gpid++;
 		}
@@ -329,7 +335,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		size_t nPix = this->GetCurrentMap(0)->GetLargestPossibleRegion().GetNumberOfPixels();
 		size_t nrois = m_ROIs.size();
-		size_t lastroi = nrois;
+		size_t lastroi = nrois - 1;
 
 		const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
 		const typename ProbabilityMapType::PixelType* bgBuffer = this->m_BackgroundMask->GetBufferPointer();
@@ -867,18 +873,24 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		return 0.0;
 	}
 	ReferencePixelType value = this->m_Interp->Evaluate( point );
-	MeasureType grad = this->GetEnergyOfSample( value, outer_roi );
+	MeasureType grad = 0.0;
 
 	float isOutside = this->m_MaskInterp->Evaluate( point );
-	// isOutside = (isOutside > 1.0)?1.0:isOutside;
+
+	MeasureType gin = 0.0;
+	MeasureType gout = 0.0;
 	if (isOutside < 1.0e-3 ) {
-		grad-= this->GetEnergyOfSample( value, inner_roi );
-	}
-	else {
+		gin = this->GetEnergyOfSample( value, inner_roi );
+	} else {
 		if(isOutside > 1.0) isOutside = 1.0;
-		grad+= 100.0 * isOutside * this->m_MaxEnergy;
+		gout = 100.0 * isOutside * this->m_MaxEnergy;
 	}
 
+	if ( outer_roi != (this->m_NumberOfRegions - 1)) {
+		gout+= this->GetEnergyOfSample( value, outer_roi );
+	}
+
+	grad = gout - gin;
 	grad = (fabs(grad)>MIN_GRADIENT)?grad:0.0;
 	return grad;
 }

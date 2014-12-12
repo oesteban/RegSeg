@@ -191,18 +191,25 @@ NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
 
   OutputPointType pt[3];
 
+  double wi, twi;
+  size_t nfaces = 0;
+
   do
     {
     cell_id = temp->GetLeft();
     if ( cell_id != OutputMeshType::m_NoFace )
       {
       outputMesh->GetCellData(cell_id, &face_normal);
-      n += face_normal * Weight(iId, cell_id,outputMesh);
+      wi = Weight(iId, cell_id,outputMesh);
+      twi= wi;
+      nfaces++;
+      n += face_normal * wi;
       }
     temp = temp->GetOnext();
     }
   while ( temp != edge );
 
+  this->m_VertexAreaContainer[iId] = twi / nfaces;
   n.Normalize();
   return n;
 }
@@ -310,9 +317,11 @@ template< typename TInputMesh, typename TOutputMesh >
 void NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
 ::GenerateData()
 {
-  this->CopyInputMeshToOutputMesh();
-  this->ComputeAllFaceNormals();
-  this->ComputeAllVertexNormals();
+	this->CopyInputMeshToOutputMesh();
+	this->m_VertexAreaContainer.SetSize(this->GetOutput()->GetNumberOfPoints());
+	this->m_VertexAreaContainer.Fill(0.0);
+	this->ComputeAllFaceNormals();
+	this->ComputeAllVertexNormals();
 }
 
 template< typename TInputMesh, typename TOutputMesh >

@@ -149,7 +149,7 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	for( size_t r = 0; r<nPix; r++ ){
 		vi.Fill(0.0);
 		for( size_t c=0; c<Dimension; c++) {
-			val = derivative[c][r] / norm;
+			val = derivative[c][r] / 100;
 			if (this->m_Scales[c] < 1.0e-8)
 				val = 0.;
 			vs[c] = val;
@@ -270,12 +270,7 @@ void SpectralOptimizer<TFunctional>::ComputeUpdate(
 
 	for( size_t d = 0; d < Dimension; d++ ) {
 		typename MultiplyFilterType::Pointer step_f = MultiplyFilterType::New();
-		if (changeDirection) {
-			step_f->SetConstant( -1.0 * this->m_StepSize );
-		} else {
-			step_f->SetConstant( this->m_StepSize );
-		}
-
+		step_f->SetConstant( this->m_StepSize );
 		step_f->SetInput( gk[d] );
 		step_f->Update();
 
