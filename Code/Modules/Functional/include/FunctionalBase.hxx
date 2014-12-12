@@ -147,6 +147,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_NumberOfVertices+= prior->GetNumberOfPoints();
 
 	this->m_NormalsFilter.push_back(NormalFilterType::New());
+	this->m_NormalsFilter[this->m_NumberOfContours]->SetWeight(NormalFilterType::AREA);
 	this->m_NormalsFilter[this->m_NumberOfContours]->SetInput( this->m_CurrentContours[this->m_NumberOfContours] );
 	this->m_NormalsFilter[this->m_NumberOfContours]->Update();
 
