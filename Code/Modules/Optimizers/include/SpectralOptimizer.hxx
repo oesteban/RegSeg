@@ -114,6 +114,8 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	ParametersVector gradVector = ParametersVector(fullsize, 0.0 );
 	float* gvdata = gradVector.data_block();
 	this->m_Functional->ComputeDerivative(gvdata, scales);
+	this->m_MaximumGradient = fabs(this->m_Functional->GetGradientStatistics()[4] -
+			this->m_Functional->GetGradientStatistics()[2]);
 
 	ParametersContainer derivative;
 	ParametersVector dimVector = ParametersVector(dimsize);
@@ -159,7 +161,6 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 		speednorms.push_back(vs.GetNorm());
 	}
 	std::sort(speednorms.begin(), speednorms.end());
-	this->m_MaximumGradient = speednorms.back();
 
 	//if( this->m_AutoStepSize && this->m_CurrentIteration < 5 ) {
 	//	this->m_StepSize = (this->m_StepSize  + this->m_LearningRate * ( this->m_MaxDisplacement.GetNorm() / maxSpeed.GetNorm() ) )*0.5;
