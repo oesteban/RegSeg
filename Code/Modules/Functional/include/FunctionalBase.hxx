@@ -359,11 +359,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 						continue;
 					}
 
-					if (bgw > 1.0e-3) {
+					if (bgw > 1.0e-3 && roi < (nrois - 1)) {
 						e = this->m_MaxEnergy;
 						w = w * (1.0 - bgw);
 					} else {
-						e = this->GetEnergyOfSample( val, roi, true );
+						e = this->GetEnergyOfSample( val, roi );
 					}
 					this->m_RegionValue[roi]+= w * vxvol * e;
 					regionVol[roi]+= w * vxvol;
