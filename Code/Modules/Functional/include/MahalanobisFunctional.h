@@ -149,7 +149,7 @@ public:
 
 	std::string PrintFormattedDescriptors();
 protected:
-	MahalanobisFunctional():m_UseRobustEstimators(true), Superclass(){}
+	MahalanobisFunctional():m_UseRobustEstimators(false), Superclass(){}
 	~MahalanobisFunctional(){}
 	void PrintSelf( std::ostream& os, itk::Indent indent) const;
 

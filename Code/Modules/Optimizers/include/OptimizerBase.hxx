@@ -73,7 +73,7 @@ OptimizerBase<TFunctional>::OptimizerBase():
 m_LearningRate( 1.0 ),
 m_Momentum( 0.0 ),
 m_LastMaximumGradient(0.0),
-m_MaximumGradient(0.0),
+m_MaximumGradient(itk::NumericTraits<InternalComputationValueType>::infinity()),
 m_MinimumConvergenceValue( 1e-5 ),
 m_ConvergenceWindowSize( 10 ),
 m_ConvergenceValue( itk::NumericTraits<InternalComputationValueType>::infinity() ),
