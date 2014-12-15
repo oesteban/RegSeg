@@ -94,7 +94,7 @@ template <typename TReferenceImageType, typename TCoordRepType>
 typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::MeasureType
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::GetEnergyOffset(size_t roi) const {
-	double det = 1.0 / this->m_Parameters[roi].bias;
+	double det = this->m_Parameters[roi].bias;
 	double pifact = this->m_Parameters[roi].mean.Size() * log(2.0 * vnl_math::pi);
 	return pifact + det;
 }
@@ -113,8 +113,7 @@ void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	MeasureType v = itk::NumericTraits<MeasureType>::min();
 	for( size_t roi1 = 0; roi1 < this->m_NumberOfRegions; roi1++) {
 		for( size_t roi2 = 0; roi2 < this->m_NumberOfRegions; roi2++) {
-			m = this->GetEnergyOfSample(this->m_Parameters[roi1].mean, roi2, true);
-
+			m = this->GetEnergyOfSample(this->m_Parameters[roi1].mean, roi2, false);
 			if (m > v)	v = m;
 		}
 	}
@@ -390,7 +389,8 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 			if( l>0 ) ss << ",";
 			ss << this->m_Parameters[i].mean[l];
 		}
-		ss << "], \"cov\": [ ";
+		ss << "], \"determinant\": " << this->m_Parameters[i].bias;
+		ss << ", \"cov\": [ ";
 
 		for( size_t j = 0; j<this->m_Parameters[i].cov.GetVnlMatrix().rows(); j++ ) {
 			for( size_t k = 0; k<this->m_Parameters[i].cov.GetVnlMatrix().cols(); k++ ) {

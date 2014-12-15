@@ -555,8 +555,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
 		interp->SetInputImage( this->m_CurrentRegions );
 
-
-
 		PointIdentifier tpid = 0;
 
 		// Set up outer regions
@@ -586,6 +584,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					this->m_OffMaskVertices[contid]++;
 				}
 
+
+				this->m_Gradients[contid]->GetPointData()->SetElement( pid, zerov );
 				normals->GetPointData( pid, &ni );
 				ROIPixelType inner = interp->Evaluate( ci + ni );
 				ROIPixelType outer = interp->Evaluate( ci - ni );
