@@ -355,6 +355,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			bgw = *(bgBuffer + i);
 			val = *(refBuffer+i);
 
+			//if (val.GetNorm() < 1.0e-8) {
+			//	continue;
+			//}
+
 			for( size_t roi = 0; roi < lastroi; roi++ ) {
 				w = *( roiBuffer[roi] + i );
 				if ( w < 1.0e-8 ) {
@@ -365,7 +369,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					continue;
 				}
 
-				if (bgw > 1.0e-3) {
+				if (bgw > 0.0) {
 					e = this->m_MaxEnergy;
 				} else {
 					e = this->GetEnergyOfSample( val, roi );

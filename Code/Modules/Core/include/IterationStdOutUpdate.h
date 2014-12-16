@@ -92,6 +92,9 @@ public:
 				std::cout << " " << this->m_Optimizer->GetFunctional()->GetValue();
 				std::cout << " " << this->m_Optimizer->GetCurrentRegularizationEnergy();
 				std::cout << " ||";
+				std::cout << " " << this->m_Optimizer->GetMaximumGradient();
+				std::cout << " " << this->m_Optimizer->GetConvergenceValue();
+				std::cout << " ||";
 
 				typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
 				for (size_t r = 0; r < es.Size(); r++) {
