@@ -336,15 +336,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		const typename ProbabilityMapType::PixelType* bgBuffer = this->m_BackgroundMask->GetBufferPointer();
 		const typename ProbabilityMapType::PixelType* roiBuffer[nrois];
 
+
+		double regionVol[nrois];
+
 		for( size_t roi = 0; roi < lastroi; roi++ ) {
 			roiBuffer[roi] = this->GetCurrentMap(roi)->GetBufferPointer();
+			regionVol[roi] = 0.0;
 		}
 
 		ReferencePointType pos;
 		ReferencePixelType val;
 		typename ProbabilityMapType::PixelType w;
 		typename ProbabilityMapType::PixelType bgw;
-		double regionVol[nrois];
 		regionVol[lastroi] = 0.0;
 
 		MeasureType e;
@@ -359,7 +362,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 						continue;
 					}
 
-					if (bgw > 1.0e-3 && roi < (nrois - 1)) {
+					if(bgw > 1.0e-3 && roi == (nrois - 1)) {
+						continue;
+					}
+
+					if (bgw > 1.0e-3) {
 						e = this->m_MaxEnergy;
 					} else {
 						e = this->GetEnergyOfSample( val, roi );
