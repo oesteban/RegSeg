@@ -879,7 +879,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	float isOutside = this->m_MaskInterp->Evaluate( point );
 	if (isOutside > 1.0e-3) {
 		if(isOutside > 1.0) isOutside = 1.0;
-		gout = isOutside * this->m_MaxEnergy;
+		gout = 0.0;
+		gin = this->m_MaxEnergy;
 	}
 
 	MeasureType grad = gin - gout;
