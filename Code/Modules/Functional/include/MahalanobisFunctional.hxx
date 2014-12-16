@@ -117,7 +117,7 @@ void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 			if (m > v)	v = m;
 		}
 	}
-	this->m_MaxEnergy = fabs(v);
+	this->m_MaxEnergy = fabs(v) * 1e3;
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
