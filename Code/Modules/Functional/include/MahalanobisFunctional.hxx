@@ -117,7 +117,7 @@ void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 			if (m > v)	v = m;
 		}
 	}
-	this->m_MaxEnergy = fabs(v) * 1e3;
+	this->m_MaxEnergy = fabs(v) * 1e6;
 
 	//std::cout << "MaxEnergy = " << this->m_MaxEnergy << std::endl;
 }

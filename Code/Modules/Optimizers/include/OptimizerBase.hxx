@@ -186,9 +186,7 @@ void OptimizerBase<TFunctional>::Resume() {
 	while( ! this->m_Stop )	{
 		if( this->m_CurrentIteration > this->m_DescriptorRecomputationFreq  && this->m_UseDescriptorRecomputation && ( (this->m_CurrentIteration -1) %this->m_DescriptorRecomputationFreq == 0 ) ) {
 			this->m_Functional->UpdateDescriptors();
-			// this->m_StepSize = this->m_StepSize * 1.0e-4;
 			this->InvokeEvent( FunctionalModifiedEvent() );
-			// this->m_ConvergenceMonitoring->ClearEnergyValues();
 		}
 
 
@@ -244,7 +242,6 @@ void OptimizerBase<TFunctional>::Resume() {
 			std::cerr << "GetConvergenceValue() failed with exception: " << e.what() << std::endl;
 		}
 
-
 		/* Update and check iteration count */
 		if ( this->m_CurrentIteration >= this->m_NumberOfIterations ) {
 			this->m_StopConditionDescription << "Maximum number of iterations (" << this->m_NumberOfIterations << ") exceeded.";
@@ -264,14 +261,14 @@ void OptimizerBase<TFunctional>::Resume() {
 		if (this->m_InitialValue > 0.0){
 			float inc = 1.0;
 			if (this->m_ConvergenceValue != itk::NumericTraits<InternalComputationValueType>::infinity() ) {
-				inc = 1.0 + this->m_ConvergenceValue;
+				inc+= this->m_ConvergenceValue;
 			} else {
 				inc = this->m_LastEnergy / this->m_CurrentEnergy;
 			}
 			if (inc < 1.0) {
 				this->m_ValueOscillations += 1;
 				this->m_ValueOscillationsLast = this->m_CurrentIteration;
-			} else if (inc > 1.0) {
+			} else if (inc >= 1.0) {
 				if ((this->m_CurrentIteration - this->m_ValueOscillationsLast) > this->m_ValueOscillationsMax) {
 					float factor = inc * (1.0 - ((this->m_CurrentIteration * this->m_CurrentIteration) / this->m_NumberOfIterations));
 					if (factor < 1.0) {
