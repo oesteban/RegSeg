@@ -353,29 +353,29 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		MeasureType e;
 		for( size_t i = 0; i < nPix; i++) {
 			bgw = *(bgBuffer + i);
+			val = *(refBuffer+i);
 
-			if (bgw < 1.0) {
-				val = *(refBuffer+i);
-				for( size_t roi = 0; roi < lastroi; roi++ ) {
-					w = *( roiBuffer[roi] + i );
-					if ( w < 1.0e-8 ) {
-						continue;
-					}
-
-					if(bgw > 1.0e-3 && roi == (nrois - 1)) {
-						continue;
-					}
-
-					if (bgw > 1.0e-3) {
-						e = this->m_MaxEnergy;
-					} else {
-						e = this->GetEnergyOfSample( val, roi );
-					}
-					this->m_RegionValue[roi]+= w * vxvol * e;
-					regionVol[roi]+= w * vxvol;
+			for( size_t roi = 0; roi < lastroi; roi++ ) {
+				w = *( roiBuffer[roi] + i );
+				if ( w < 1.0e-8 ) {
+					continue;
 				}
+
+				if(bgw > 1.0e-3 && roi == (nrois - 1)) {
+					continue;
+				}
+
+				if (bgw > 1.0e-3) {
+					e = this->m_MaxEnergy;
+					std::cout << roi << " ";
+				} else {
+					e = this->GetEnergyOfSample( val, roi );
+				}
+				this->m_RegionValue[roi]+= w * vxvol * e;
+				regionVol[roi]+= w * vxvol;
 			}
 		}
+		std::cout << "." << std::endl;
 
 		this->m_Value = 0.0;
 		for( size_t roi = 0; roi < nrois; roi++ ) {
