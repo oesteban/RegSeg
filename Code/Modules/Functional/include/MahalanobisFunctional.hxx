@@ -119,7 +119,7 @@ void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	}
 	this->m_MaxEnergy = fabs(v) * 1e3;
 
-	std::cout << "MaxEnergy = " << this->m_MaxEnergy << std::endl;
+	//std::cout << "MaxEnergy = " << this->m_MaxEnergy << std::endl;
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>

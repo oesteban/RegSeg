@@ -367,7 +367,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 				if (bgw > 1.0e-3) {
 					e = this->m_MaxEnergy;
-					std::cout << roi << " ";
 				} else {
 					e = this->GetEnergyOfSample( val, roi );
 				}
@@ -375,7 +374,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				regionVol[roi]+= w * vxvol;
 			}
 		}
-		std::cout << "." << std::endl;
 
 		this->m_Value = 0.0;
 		for( size_t roi = 0; roi < nrois; roi++ ) {
