@@ -118,6 +118,8 @@ void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 		}
 	}
 	this->m_MaxEnergy = fabs(v) * 1e3;
+
+	std::cout << "MaxEnergy = " << this->m_MaxEnergy << std::endl;
 }
 
 template <typename TReferenceImageType, typename TCoordRepType>
@@ -154,13 +156,13 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 	typename ProbabilityMapType::PixelType bgw;
 	for ( size_t pidx = 0; pidx < sampleSize; pidx++) {
 		bgw = *( bgBuffer + pidx );
-		w = *( roipmb + pidx ) * (1.0 - bgw);
 
-		// FIXME this threshold is potentially dangerous
-		if (w > 1.0e-3) {
-			weights[pidx] = w ;
-			totalWeight+= w;
-		}
+		w = 0.0;
+		if (bgw < 1.0e-3)
+			w = *( roipmb + pidx );
+
+		weights[pidx] = w ;
+		totalWeight+= w;
 	}
 
 	if (totalWeight <= vnl_math::eps) {
