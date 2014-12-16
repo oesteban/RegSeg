@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-03 12:00:54
+# @Last Modified time: 2014-12-16 12:00:41
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -171,7 +171,6 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
 
     st1 = stage1()
     wf.connect([
-        # (ds,   surfsort, [('surf', 'surfs')]),
         (ds,        st1, [('t1w', 'inputnode.t1w'),
                           ('t2w', 'inputnode.t2w'),
                           ('t1w_brain', 'inputnode.t1w_brain'),
@@ -184,7 +183,6 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
                           ('bval', 'inputnode.bval'),
                           ('aseg', 'inputnode.aseg'),
                           ('aseg', 'inputnode.parcellation')]),
-        # (surfsort,  st1, [('out', 'inputnode.surf')]),
         (ds_bmap,   st1, [('param', 'inputnode.mr_params')]),
         (bmap_prep, st1, [
             ('outputnode.wrapped', 'inputnode.bmap_wrapped'),
@@ -202,12 +200,12 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     regseg.inputs.inputnode.beta = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.convergence_energy = [True, True, True]
     regseg.inputs.inputnode.convergence_window = [8, 10, 15]
-    regseg.inputs.inputnode.convergence_value = [1.0e-5, 1.0e-8, 1.0e-9]
+    regseg.inputs.inputnode.convergence_value = [1.0e-7, 1.0e-8, 1.0e-9]
     regseg.inputs.inputnode.f_smooth = [2.0, 0.5, None]
     regseg.inputs.inputnode.images_verbosity = 3
     regseg.inputs.inputnode.scales = [(0.0, 1.0, 0.0)] * 3
     regseg.inputs.inputnode.grid_spacing = [
-        (20., 45., 10.), (10., 20., 10.), (10., 10., 10.)]
+        (30., 60., 30.), (30., 30., 30.), (20., 30., 10.)]
 
     wf.connect([
         (st1,    dti,    [('out_dis_set.dwi', 'inputnode.in_dwi'),
