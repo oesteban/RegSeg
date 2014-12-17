@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-11 16:35:22
+# @Last Modified time: 2014-12-17 13:06:10
 
 import os
 import os.path as op
@@ -328,7 +328,7 @@ def parse_log(in_file):
         d['iteration'] = pd.Series(range(len(its)))
 
         d['step'] = pd.Series([e['convergence']['step_size'] for e in its])
-        d['norm'] = pd.Series([e['convergence']['norm'] for e in its])
+        d['max_uk'] = pd.Series([e['convergence']['norm'] for e in its])
         d['max_gk'] = pd.Series(
             [e['convergence']['max_gradient'] for e in its])
         d['convergence'] = pd.Series([e['convergence']['value'] for e in its])

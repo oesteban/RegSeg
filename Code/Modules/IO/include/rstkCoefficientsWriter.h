@@ -54,7 +54,7 @@ namespace rstk {
  * \ingroup ITKMesh
  */
 
-template<class TInputPointSet>
+template<class TInputPointSet, typename TCoordRepType = float>
 class CoefficientsWriter: public itk::Object {
 public:
 	/** Standard "Self" typedef. */
@@ -68,6 +68,10 @@ public:
 
 	/** Run-time type information (and related methods). */
 	itkTypeMacro(CoefficientsWriter, itk::Object);
+
+	itkStaticConstMacro( Dimension, unsigned int, TInputPointSet::PointDimension );
+
+	typedef TCoordRepType ScalarType;
 
 	/** Hold on to the type information specified by the template parameters.
 	 */
@@ -85,9 +89,16 @@ public:
 	typedef typename PointsContainer::ConstIterator PointIterator;
 	typedef typename PointDataContainer::ConstIterator PointDataIterator;
 
+    typedef itk::Image< ScalarType, Dimension >                                 CoefficientsImageType;
+    typedef typename CoefficientsImageType::Pointer                             CoeffImagePointer;
+    typedef typename CoefficientsImageType::ConstPointer                        CoeffImageConstPointer;
+    typedef itk::FixedArray< CoeffImagePointer, Dimension >                     CoefficientsImageArray;
+
 	void Update();
 	void Write();
 	void SetInput(const InputPointSetType *input);
+
+	void SetCoefficientsImageArrayInput(const CoefficientsImageArray arr);
 
 	/** Set/Get the name of the file where data are written. */
 	itkSetStringMacro(FileName);
@@ -101,6 +112,8 @@ protected:
 	virtual ~CoefficientsWriter() {}
 
 	virtual void GenerateData();
+	virtual void GenerateLegacyData();
+	virtual void GenerateXMLData();
 
 	std::string m_FileName;
 	InputMeshPointer m_Input;

@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-12 19:20:25
+# @Last Modified time: 2014-12-17 13:06:32
 
 
 def plot_report(df, out_file=None):
@@ -56,7 +56,7 @@ def plot_report(df, out_file=None):
         ax2 = plt.Subplot(fig, innergs3[i + len(levels)])
         allax2.append(ax2)
 
-        ldf.plot(ax=ax1, x='iteration', y=['norm', 'max_gk'],
+        ldf.plot(ax=ax1, x='iteration', y=['max_uk', 'max_gk'],
                  secondary_y=['norm'])
         # ldf.plot(ax=ax1, x='iteration', y='max_gk', secondary_y=True)
         fig.add_subplot(ax1)

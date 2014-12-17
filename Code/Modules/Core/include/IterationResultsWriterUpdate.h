@@ -44,6 +44,7 @@ public:
 	typedef itk::MeshFileWriter< ShapeGradientType >            ContourVectorWriterType;
 	typedef typename ContourVectorWriterType::Pointer           ContourVectorWriterPointer;
 
+	typedef rstk::DisplacementFieldFileWriter<FieldType> FieldWriter;
 	typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> ComponentsWriter;
 	typedef itk::ImageFileWriter< ProbabilityMapType >  MapWriter;
 	typedef typename itk::ImageFileWriter< CoefficientsImageType > CoefficientsWriter;
@@ -80,26 +81,20 @@ public:
     		size_t nContours =this->m_Optimizer->GetFunctional()->GetCurrentContours().size();
 
     		if (this->m_Verbosity > 3 ) {
-				CoefficientsImageArray speed = this->m_Optimizer->GetDerivativeCoefficients();
-
 				ss.str("");
 				typedef rstk::CoefficientsWriter< AltCoeffType > W;
 				typename W::Pointer f = W::New();
-				ss << this->m_Prefix << "uk_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".vtk";
+				ss << this->m_Prefix << "uk_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".vtu";
 				f->SetFileName( ss.str().c_str() );
 				f->SetInput(this->m_Optimizer->GetTransform()->GetFlatParameters());
 				f->Update();
 
-				typename CoefficientsWriter::Pointer p = CoefficientsWriter::New();
-				for ( size_t i = 0; i< speed.Size(); i++) {
-					if ( speed[i].IsNotNull() ) {
-						ss.str("");
-						ss << this->m_Prefix << "gk_" << std::setfill('0')  << "lev" << this->m_Level << "_it" << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << "_cmp" << i << ".vtk";
-						p->SetFileName( ss.str().c_str() );
-						p->SetInput( speed[i] );
-						p->Update();
-					}
-				}
+				ss.str("");
+				typename W::Pointer fg = W::New();
+				ss << this->m_Prefix << "gk_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".vtu";
+				fg->SetFileName( ss.str().c_str() );
+				fg->SetCoefficientsImageArrayInput(this->m_Optimizer->GetDerivativeCoefficients());
+				fg->Update();
     		}
 
     		if( this->m_Verbosity > 1 ) {
@@ -107,7 +102,7 @@ public:
 				for( size_t r = 0; r < nContours; r++ ) {
 					ContourVectorWriterPointer wc = ContourVectorWriterType::New();
 					std::stringstream ss;
-					ss << this->m_Prefix << "contour_lev" << this->m_Level << "_it" << std::setfill('0')<< std::setw(3) << this->m_Optimizer->GetCurrentIteration() << std::setw(2) << "_cont"<< r << ".vtk";
+					ss << this->m_Prefix << "gi_lev" << this->m_Level << "_it" << std::setfill('0')<< std::setw(3) << this->m_Optimizer->GetCurrentIteration() << std::setw(2) << "_cont"<< r << ".vtk";
 					wc->SetFileName( ss.str().c_str() );
 					wc->SetFileTypeAsASCII();
 					wc->SetInput( grads[r] );

@@ -51,19 +51,47 @@ namespace rstk {
 //
 // Set the input mesh
 //
-template< typename TInputPointSet >
+template< typename TInputPointSet, typename TCoordRepType >
 void
-CoefficientsWriter<TInputPointSet>
+CoefficientsWriter<TInputPointSet, TCoordRepType>
 ::SetInput(const InputPointSetType *input)
 {
   this->m_Input = input;
 }
 
+template< typename TInputPointSet, typename TCoordRepType >
+void
+CoefficientsWriter<TInputPointSet, TCoordRepType>
+::SetCoefficientsImageArrayInput(const CoefficientsImageArray arr)
+{
+	typename InputPointSetType::Pointer input = InputPointSetType::New();
+
+	CoeffImagePointer ref = arr[0];
+	size_t npix = ref->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	PointType p;
+	PixelType v;
+	typename CoefficientsImageType::IndexType idx;
+
+	for(size_t i = 0; i < npix; i++) {
+		idx = ref->ComputeIndex(i);
+		ref->TransformIndexToPhysicalPoint(idx, p);
+		input->GetPoints()->InsertElement(i, p);
+
+		for(size_t d = 0; d < Dimension; d++) {
+			v[d] = arr[d]->GetPixel(idx);
+		}
+		input->GetPointData()->InsertElement(i, v);
+	}
+
+	this->m_Input = input;
+}
+
 //
 // Write the input mesh to the output file
 //
-template< typename TInputPointSet >
-void CoefficientsWriter<TInputPointSet>
+template< typename TInputPointSet, typename TCoordRepType >
+void CoefficientsWriter<TInputPointSet, TCoordRepType>
 ::Update()
 {
   this->GenerateData();
@@ -72,24 +100,44 @@ void CoefficientsWriter<TInputPointSet>
 //
 // Write the input mesh to the output file
 //
-template< typename TInputPointSet >
-void CoefficientsWriter<TInputPointSet>
+template< typename TInputPointSet, typename TCoordRepType >
+void CoefficientsWriter<TInputPointSet, TCoordRepType>
 ::Write()
 {
   this->GenerateData();
 }
 
-template<class TInputPointSet>
-void CoefficientsWriter<TInputPointSet>::GenerateData() {
+template< typename TInputPointSet, typename TCoordRepType >
+void CoefficientsWriter<TInputPointSet, TCoordRepType>::GenerateData() {
 	if (this->m_FileName == "") {
 		itkExceptionMacro("No FileName");
 		return;
 	}
 
+
+	std::string::size_type idx;
+	std::string extension = "";
+
+	idx = this->m_FileName.rfind('.');
+
+	if(idx != std::string::npos) {
+	    extension = this->m_FileName.substr(idx+1);
+	}
+
+	if(extension.compare("vtu") == 0) {
+		this->GenerateXMLData();
+	} else {
+		this->GenerateLegacyData();
+	}
+}
+
+template< typename TInputPointSet, typename TCoordRepType >
+void CoefficientsWriter<TInputPointSet, TCoordRepType>::GenerateLegacyData() {
 	//
 	// Write to output file
 	//
 	std::ofstream outputFile(this->m_FileName.c_str());
+
 
 	if (!outputFile.is_open()) {
 		itkExceptionMacro("Unable to open file\n"
@@ -106,7 +154,7 @@ void CoefficientsWriter<TInputPointSet>::GenerateData() {
 	// POINTS go first
 
 	unsigned int numberOfPoints = this->m_Input->GetNumberOfPoints();
-	outputFile << "LOCATIONS " << TInputPointSet::PointDimension << " "
+	outputFile << "LOCATIONS " << Dimension << " "
 			<< numberOfPoints << " float" << std::endl;
 
 	const PointsContainer *points = this->m_Input->GetPoints();
@@ -120,7 +168,7 @@ void CoefficientsWriter<TInputPointSet>::GenerateData() {
 
 			outputFile << point[0] << " " << point[1];
 
-			if (TInputPointSet::PointDimension > 2) {
+			if (Dimension > 2) {
 				outputFile << " " << point[2];
 			} else {
 				outputFile << " " << "0.0";
@@ -131,7 +179,7 @@ void CoefficientsWriter<TInputPointSet>::GenerateData() {
 			pointIterator++;
 		}
 	}
-	outputFile << "DISPLACEMENTS " << TInputPointSet::PointDimension << " "
+	outputFile << "DISPLACEMENTS " << Dimension << " "
 			<< numberOfPoints << " float" << std::endl;
 
 	const PointDataContainer *data = this->m_Input->GetPointData();
@@ -144,7 +192,7 @@ void CoefficientsWriter<TInputPointSet>::GenerateData() {
 
 			outputFile << point[0] << " " << point[1];
 
-			if (TInputPointSet::PointDimension > 2) {
+			if (Dimension > 2) {
 				outputFile << " " << point[2];
 			} else {
 				outputFile << " " << "0.0";
@@ -154,6 +202,113 @@ void CoefficientsWriter<TInputPointSet>::GenerateData() {
 			pointIterator++;
 		}
 	}
+
+	outputFile.close();
+}
+
+template< typename TInputPointSet, typename TCoordRepType >
+void CoefficientsWriter<TInputPointSet, TCoordRepType>::GenerateXMLData() {
+	//
+	// Write to output file
+	//
+	std::ofstream outputFile(this->m_FileName.c_str());
+
+
+	if (!outputFile.is_open()) {
+		itkExceptionMacro("Unable to open file\n"
+				"outputFilename= " << this->m_FileName);
+		return;
+	}
+
+	size_t npoints = this->m_Input->GetNumberOfPoints();
+
+	outputFile.imbue(std::locale::classic());
+	outputFile << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\"  byte_order=\"LittleEndian\">" << std::endl;
+	outputFile << "\t<UnstructuredGrid>" << std::endl;
+	outputFile << "\t\t<Piece NumberOfPoints=\""<< npoints << "\" NumberOfCells=\"0\">" << std::endl;
+
+	outputFile << "\t\t\t<PointData Vectors=\"uk\">" << std::endl;
+	outputFile << "\t\t\t\t<DataArray type=\"Float32\" Name=\"uk\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl;
+
+	const PointDataContainer *data = this->m_Input->GetPointData();
+	if (data) {
+		PointDataIterator pointIterator = data->Begin();
+		PointDataIterator pointEnd = data->End();
+
+		while (pointIterator != pointEnd) {
+			PixelType point = pointIterator.Value();
+
+			outputFile << "\t\t\t\t\t" << point[0] << " " << point[1];
+
+			if (Dimension > 2) {
+				outputFile << " " << point[2];
+			} else {
+				outputFile << " " << "0.0";
+			}
+
+			outputFile << std::endl;
+			pointIterator++;
+		}
+	}
+	outputFile << "\t\t\t\t</DataArray>" << std::endl;
+	outputFile << "\t\t\t</PointData>" << std::endl;
+	outputFile << "\t\t\t<CellData />" << std::endl;
+
+	outputFile << "\t\t\t<Points>" << std::endl;
+	outputFile << "\t\t\t\t<DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl;
+
+	// POINTS go first
+	const PointsContainer *points = this->m_Input->GetPoints();
+	if (points) {
+		PointIterator pointIterator = points->Begin();
+		PointIterator pointEnd = points->End();
+
+		while (pointIterator != pointEnd) {
+			PointType point = pointIterator.Value();
+
+			outputFile << "\t\t\t\t\t" << point[0] << " " << point[1];
+
+			if (Dimension > 2) {
+				outputFile << " " << point[2];
+			} else {
+				outputFile << " " << "0.0";
+			}
+
+			outputFile << std::endl;
+			pointIterator++;
+		}
+	}
+	outputFile << "\t\t\t\t</DataArray>" << std::endl;
+	outputFile << "\t\t\t</Points>" << std::endl;
+
+
+	std::stringstream celltypes;
+	std::stringstream cellconn;
+	std::stringstream celloffsets;
+
+	for(size_t i = 0; i < npoints; i++) {
+		celltypes << "1 ";
+		cellconn << i << " ";
+		celloffsets << (i+1) << " ";
+	}
+
+	outputFile << "\t\t\t<Cells>" << std::endl;
+	outputFile << "\t\t\t\t<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">" << std::endl;
+	outputFile << "\t\t\t\t\t" << celltypes.str() << std::endl;
+	outputFile << "\t\t\t\t</DataArray>" << std::endl;
+
+	outputFile << "\t\t\t\t<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">" << std::endl;
+	outputFile << "\t\t\t\t\t" << cellconn.str() << std::endl;
+	outputFile << "\t\t\t\t</DataArray>" << std::endl;
+
+	outputFile << "\t\t\t\t<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">" << std::endl;
+	outputFile << "\t\t\t\t\t" << celloffsets.str() << std::endl;
+	outputFile << "\t\t\t\t</DataArray>" << std::endl;
+	outputFile << "\t\t\t</Cells>" << std::endl;
+
+	outputFile << "\t\t</Piece>" << std::endl;
+	outputFile << "\t</UnstructuredGrid>" << std::endl;
+	outputFile << "</VTKFile>" << std::endl;
 
 	outputFile.close();
 }
