@@ -175,7 +175,7 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 	this->m_CurrentNorm = this->m_MeanSpeed;
 
 	if (this->m_UseLightWeightConvergenceChecking) {
-		this->m_CurrentEnergy = this->m_MeanSpeed;
+		this->m_CurrentEnergy = this->m_MaximumGradient;
 	} else {
 		this->m_CurrentEnergy = this->GetCurrentEnergy();
 	}

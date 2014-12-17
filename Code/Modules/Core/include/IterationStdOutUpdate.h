@@ -87,13 +87,13 @@ public:
 
 		if( typeid( event ) == typeid( itk::IterationEvent ) ) {
 			std::cout << "[" << std::setw(3) << it << "] " << std::setw(8) << this->m_Optimizer->GetCurrentValue();
+			std::cout << " " << this->m_Optimizer->GetMaximumGradient();
+			std::cout << " " << this->m_Optimizer->GetConvergenceValue();
+			std::cout << " ||";
 			if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
     			std::cout << " " << this->m_Optimizer->GetCurrentEnergy();
 				std::cout << " " << this->m_Optimizer->GetFunctional()->GetValue();
 				std::cout << " " << this->m_Optimizer->GetCurrentRegularizationEnergy();
-				std::cout << " ||";
-				std::cout << " " << this->m_Optimizer->GetMaximumGradient();
-				std::cout << " " << this->m_Optimizer->GetConvergenceValue();
 				std::cout << " ||";
 
 				typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
