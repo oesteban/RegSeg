@@ -172,7 +172,7 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 	/* Update the deformation field */
 	this->ComputeIterationSpeed();
 
-	this->m_CurrentNorm = this->m_MeanSpeed;
+	this->m_CurrentNorm = this->m_MaxSpeed;
 
 	if (this->m_UseLightWeightConvergenceChecking) {
 		this->m_CurrentEnergy = this->m_MaximumGradient;
