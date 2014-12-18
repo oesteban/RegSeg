@@ -110,10 +110,9 @@ CachedMatrixTransform<TScalar,NDimensions>
 
 	for (size_t i = 0; i<Dimension; i++) {
 		if( m_DomainExtent[1][i] < m_DomainExtent[0][i] ) {
-			itkExceptionMacro(<< "domain is not well defined.");
-			// double tmp = m_DomainExtent[0][i];
-			// m_DomainExtent[0][i] = m_DomainExtent[1][i];
-			// m_DomainExtent[1][i] = tmp;
+			double tmp = m_DomainExtent[0][i];
+			m_DomainExtent[0][i] = m_DomainExtent[1][i];
+			m_DomainExtent[1][i] = tmp;
 		}
 	}
 }
@@ -131,6 +130,8 @@ CachedMatrixTransform<TScalar,NDimensions>
 
 	this->m_UseImageOutput = true;
 	VectorType zerov; zerov.Fill( 0.0 );
+
+	//this->SetDomainExtent(image);
 
 	this->m_ReferenceSize = image->GetLargestPossibleRegion().GetSize();
 	this->m_ReferenceSpacing = image->GetSpacing();

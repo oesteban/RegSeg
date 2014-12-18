@@ -98,9 +98,10 @@ int main(int argc, char *argv[]) {
 		}
 
 		transform->SetControlGridSize( size );
-		transform->SetDomainExtent( ref );
+		transform->SetDomainExtent(ref);
 		transform->SetOutputReference( ref );
-		transform->UpdateField();
+		transform->Initialize();
+
 		coeffs = transform->GetCoefficientsImages();
 		spacing = coeffs[0]->GetSpacing();
 		size_t numPix = coeffs[0]->GetLargestPossibleRegion().GetNumberOfPixels();
@@ -191,7 +192,6 @@ int main(int argc, char *argv[]) {
 	f->SetFileName( ss.str().c_str() );
 	f->SetInput( transform->GetField() );
 	f->Update();
-
 
 	transform->Interpolate();
 
