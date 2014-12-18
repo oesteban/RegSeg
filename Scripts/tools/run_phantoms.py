@@ -42,6 +42,8 @@ def phantoms_wf(options):
     if len(grid_size) == 1:
         grid_size = grid_size * 3
 
+    print grid_size
+
     bs.inputs.inputnode.grid_size = grid_size
     bs.inputs.inputnode.subject_id = subject_id
     bs.inputs.inputnode.lo_matrix = options.lo_matrix
