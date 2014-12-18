@@ -182,7 +182,6 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 
 	this->m_CurrentValue = this->m_CurrentEnergy;
 	this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
-	// this->m_Transform->UpdateField();
 	this->m_Transform->Interpolate();
 	this->SetUpdate();
 

@@ -451,16 +451,16 @@ SparseMatrixTransform<TScalar,NDimensions>
 		ScalarType val;
 		VectorType v; v.Fill(0.0);
 
-		FieldPointer newfield = FieldType::New();
-		newfield->SetRegions( this->m_DisplacementField->GetLargestPossibleRegion().GetSize() );
-		newfield->SetOrigin( this->m_DisplacementField->GetOrigin() );
-		newfield->SetSpacing( this->m_DisplacementField->GetSpacing() );
-		newfield->SetDirection( this->m_DisplacementField->GetDirection() );
-		newfield->Allocate();
-		newfield->FillBuffer( v );
+		//this->m_InverseDisplacementField = FieldType::New();
+		//this->m_InverseDisplacementField->SetRegions( this->m_DisplacementField->GetLargestPossibleRegion().GetSize() );
+		//this->m_InverseDisplacementField->SetOrigin( this->m_DisplacementField->GetOrigin() );
+		//this->m_InverseDisplacementField->SetSpacing( this->m_DisplacementField->GetSpacing() );
+		//this->m_InverseDisplacementField->SetDirection( this->m_DisplacementField->GetDirection() );
+		//this->m_InverseDisplacementField->Allocate();
+		//this->m_InverseDisplacementField->FillBuffer( v );
 
 		VectorType* obuf = this->m_DisplacementField->GetBufferPointer();
-		VectorType* ibuf = newfield->GetBufferPointer();
+		//VectorType* ibuf = this->m_InverseDisplacementField->GetBufferPointer();
 
 		for( size_t row = 0; row<this->m_NumberOfPoints; row++ ) {
 			v.Fill( 0.0 );
@@ -475,11 +475,10 @@ SparseMatrixTransform<TScalar,NDimensions>
 			}
 			if (setVector) {
 				*( obuf + row ) = v;
-				*( ibuf + row ) = -v;
+				// *( ibuf + row ) = -v;
 			}
 		}
-		this->SetInverseDisplacementField( newfield );
-
+		//this->SetInverseDisplacementField( newfield );
 	}
 }
 
