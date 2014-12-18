@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-04 15:55:13
+# @Last Modified time: 2014-12-18 11:48:51
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -90,7 +90,7 @@ if __name__ == '__main__':
         help='hi-resolution matrix size')
 
     g_input.add_argument(
-        '-g', '--grid_size', action='store', default=[6, 6, 6], nargs='+',
+        '-g', '--grid_size', action='store', default=[4, 4, 4], nargs='+',
         type=int, help='number of control points')
     g_input.add_argument(
         '-w', '--work_dir', action='store', default=os.getcwd(),

@@ -146,12 +146,14 @@ int main(int argc, char *argv[]) {
 
 			std::sort( sample.begin(), sample.end() );
 
+			// Remove median
 			SubtractPointer sub = SubtractFilter::New();
 			sub->SetInput1( coeffs[i] );
 			sub->SetConstant( sample[ static_cast<size_t>( floor( 0.5 * numPix + 0.5f ) ) ] );
 			sub->Update();
 			coeffs[i] = sub->GetOutput();
 
+			// Compute maximum displacement (check both endpoints)
 			MaxCalcPointer max = MaxCalc::New();
 			max->SetImage( coeffs[i] );
 			max->Compute();
@@ -161,11 +163,12 @@ int main(int argc, char *argv[]) {
 				immax = fabs( max->GetMinimum() );
 			}
 
-			float scale = (spacing[i] * 0.35) / immax;
+			// Scale to maximum diffeomorphic displacement
+			float max_disp = (spacing[i] * 0.39);
 
 			MultiplyPointer m = MultiplyFilter::New();
 			m->SetInput1( coeffs[i] );
-			m->SetConstant( scale );
+			m->SetConstant( max_disp / immax );
 			m->Update();
 			coeffs[i] = m->GetOutput();
 
@@ -191,7 +194,6 @@ int main(int argc, char *argv[]) {
 
 
 	transform->Interpolate();
-
 
 	typename FieldType::Pointer field = transform->GetDisplacementField();
 	typename FieldWriter::Pointer ff = FieldWriter::New();
