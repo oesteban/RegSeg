@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-11-04 16:18:11
+# @Last Modified time: 2014-12-18 12:27:13
 
 import os
 import os.path as op
@@ -75,6 +75,7 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
     phantom = generate_phantom()
     wf.connect([
         (inputnode,  phantom, [('shape', 'inputnode.shape'),
+                               ('grid_size', 'inputnode.grid_size'),
                                ('lo_matrix', 'inputnode.lo_matrix'),
                                ('hi_matrix', 'inputnode.hi_matrix'),
                                ('snr', 'inputnode.snr'),

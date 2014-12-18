@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-10-23 14:43:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-18 12:22:37
+# @Last Modified time: 2014-12-18 12:26:39
 
 import os
 import os.path as op
@@ -73,10 +73,6 @@ def generate_phantom(name='PhantomGeneration'):
 
     signal = pe.Node(pip.SimulateSMRI(), name='Simulate1')
 
-    def _print(inlist):
-        print 'Gridsize=' + str(inlist)
-        return inlist
-
     wf = pe.Workflow(name=name)
     wf.connect([
         (inputnode,   model,       [('shape', 'shape'),
@@ -92,10 +88,8 @@ def generate_phantom(name='PhantomGeneration'):
         (model,       surf1,       [('out_mask', 'inputnode.aseg')]),
         (surf0,       msurf,       [('outputnode.out_surf', 'in1')]),
         (surf1,       msurf,       [('outputnode.out_surf', 'in2')]),
-
         (split,       sels0,       [('out_files', 'inlist')]),
-        (inputnode,   dist,        [
-         (('grid_size', _print), 'inputnode.grid_size')]),
+        (inputnode,   dist,        [('grid_size', 'inputnode.grid_size')]),
         (msurf,       dist,        [('out', 'inputnode.in_surfs')]),
         (model,       dist,        [('out_mask', 'inputnode.in_mask')]),
         (sels0,       dist,        [('out2', 'inputnode.in_file')]),
