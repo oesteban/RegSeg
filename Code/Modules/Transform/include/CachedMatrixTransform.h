@@ -53,7 +53,6 @@
 #include <itkDefaultStaticMeshTraits.h>
 #include <itkKernelFunctionBase.h>
 #include <VNLSparseLUSolverTraits.h>
-#include <itkDisplacementFieldTransform.h>
 #include <itkImageHelper.h>
 #include <itkImageTransformHelper.h>
 #include <itkInvertDisplacementFieldImageFilter.h>
@@ -63,21 +62,22 @@
 #include <vnl/vnl_matrix.h>
 #include <vnl/algo/vnl_sparse_lu.h>
 
+#include "RBFFieldTransform.h"
 #include "rstkMacro.h"
 
 namespace rstk {
 
 template< class TScalar, unsigned int NDimensions = 3u >
-class CachedMatrixTransform: public itk::DisplacementFieldTransform< TScalar, NDimensions >
+class CachedMatrixTransform: public RBFFieldTransform< TScalar, NDimensions >
 {
 public:
     /* Standard class typedefs. */
-    typedef CachedMatrixTransform             Self;
-    typedef itk::DisplacementFieldTransform< TScalar, NDimensions > Superclass;
-    typedef itk::SmartPointer< Self >         Pointer;
-    typedef itk::SmartPointer< const Self >   ConstPointer;
+    typedef CachedMatrixTransform                     Self;
+    typedef RBFFieldTransform< TScalar, NDimensions > Superclass;
+    typedef itk::SmartPointer< Self >                 Pointer;
+    typedef itk::SmartPointer< const Self >           ConstPointer;
     
-    itkTypeMacro( CachedMatrixTransform, DisplacementFieldTransform );
+    itkTypeMacro( CachedMatrixTransform, RBFFieldTransform );
     itkStaticConstMacro( Dimension, unsigned int, NDimensions );
     
     typedef enum {
@@ -103,9 +103,6 @@ public:
     typedef typename SolverTypeTraits::MatrixType                               SolverMatrix;
     typedef typename SolverTypeTraits::VectorType                               SolverVector;
     typedef typename SolverMatrix::pair_t                                       SolverPair;
-
-    typedef itk::DisplacementFieldTransform< ScalarType, Dimension >            DisplacementFieldTransformType;
-    typedef typename DisplacementFieldTransformType::Pointer                    DisplacementFieldTransformPointer;
 
     typedef itk::FixedArray< DimensionVector, NDimensions >                     DimensionParameters;
     typedef itk::FixedArray< DimensionVector*, NDimensions >                    DimensionParametersContainer;
@@ -171,6 +168,7 @@ public:
     /** Type of the input parameters. */
     typedef typename Superclass::ParametersType                                 ParametersType;
     typedef typename Superclass::ParametersValueType                            ParametersValueType;
+    typedef typename Superclass::LightObject                                    LightObject;
 
     /** Define the internal parameter helper used to access the field */
     typedef itk::ImageVectorOptimizerParametersHelper
@@ -208,8 +206,6 @@ protected:
 	CachedMatrixTransform();
 	~CachedMatrixTransform(){};
 
-
-	// virtual itk::LightObject::Pointer InternalClone() const;
 	DimensionVector Vectorize( const CoefficientsImageType* image );
 	DimensionParameters VectorizeField( const FieldType* image );
 

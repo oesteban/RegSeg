@@ -76,9 +76,6 @@ public:
     typedef typename Superclass::VectorType                          VectorType;
     typedef typename Superclass::MatrixType                          MatrixType;
 
-    typedef typename Superclass::DisplacementFieldTransformType      DisplacementFieldTransformType;
-    typedef typename Superclass::DisplacementFieldTransformPointer   DisplacementFieldTransformPointer;
-
     /** Standard coordinate point type for this class. */
     typedef typename Superclass::InputPointType                      InputPointType;
     typedef typename Superclass::OutputPointType                     OutputPointType;

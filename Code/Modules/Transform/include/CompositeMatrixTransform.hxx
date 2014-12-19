@@ -59,8 +59,6 @@ CompositeMatrixTransform<TScalar,NDimensions>
 	for( size_t c = 0; c < this->m_NumberOfTransforms; c++) {
 		if( this->m_Components[c]->GetInterpolationMode() != this->m_InterpolationMode) {
 			TransformComponentPointer tf = this->m_Components[c]->Clone();
-			tf->SetDomainExtent(this->m_Components[c]->GetDomainExtent());
-			tf->SetCoefficientsImages(this->m_Components[c]->GetCoefficientsImages());
 			this->m_Components[c] = tf;
 		}
 	}

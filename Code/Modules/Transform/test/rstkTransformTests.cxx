@@ -46,7 +46,7 @@ typedef itk::BSplineInterpolateImageFunction< ComponentType, double, double > BS
 typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> Writer;
 
 typedef BSplineSparseMatrixTransform<ScalarType, 3, 3> Transform;
-typedef Transform::Pointer                             TPointer;
+typedef typename Transform::Pointer                             TPointer;
 typedef typename Transform::CoefficientsImageType      CoefficientsType;
 
 typedef itk::ImageFileWriter< CoefficientsType >  CoefficientsWriterType;
