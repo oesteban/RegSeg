@@ -72,6 +72,8 @@
 #include <itkMaskImageFilter.h>
 #include <itkWarpImageFilter.h>
 #include <itkOrientImageFilter.h>
+
+
 #include "BSplineSparseMatrixTransform.h"
 #include "DisplacementFieldComponentsFileWriter.h"
 #include "DisplacementFieldFileWriter.h"
@@ -175,6 +177,7 @@ typedef typename MeshWriterType::Pointer                       MeshWriterPointer
 
 typedef itk::OrientImageFilter< ChannelType, ChannelType > OrientFilter;
 typedef itk::OrientImageFilter< MaskType, MaskType > OrientMaskFilter;
+
 
 int main(int argc, char *argv[]);
 

@@ -135,6 +135,7 @@ public:
     void PushBackCoefficients(const FieldType* field);
 
     void Interpolate();
+    void ComputeInverse(){};
 protected:
     CompositeMatrixTransform();
 	~CompositeMatrixTransform(){};

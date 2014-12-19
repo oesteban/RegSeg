@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Approximate coefficients
-	tf->InvertField();
+	tf->ComputeInverse();
 
 
 	typename FieldType::ConstPointer field_inv = tf->GetField();

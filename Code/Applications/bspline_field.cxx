@@ -14,7 +14,6 @@
 #include <vnl/vnl_diag_matrix.h>
 #include <sstream>
 
-
 int main(int argc, char *argv[]) {
 	std::string outPrefix = "";
 	std::string maskfile;
@@ -184,7 +183,7 @@ int main(int argc, char *argv[]) {
 
 	// Set coefficients
 	transform->SetCoefficientsImages( coeffs );
-	transform->UpdateField();
+	transform->Interpolate();
 
 	typename ComponentsWriter::Pointer f = ComponentsWriter::New();
 	std::stringstream ss;
@@ -192,8 +191,6 @@ int main(int argc, char *argv[]) {
 	f->SetFileName( ss.str().c_str() );
 	f->SetInput( transform->GetField() );
 	f->Update();
-
-	transform->Interpolate();
 
 	typename FieldType::Pointer field = transform->GetDisplacementField();
 	typename FieldWriter::Pointer ff = FieldWriter::New();
@@ -282,10 +279,11 @@ int main(int argc, char *argv[]) {
 		w->Update();
 	}
 
+	transform->ComputeInverse();
 
 	// Warp surfaces --------------------------------------------------
 	DisplacementFieldTransformPointer tf_inv = DisplacementFieldTransformType::New();
-	tf_inv->SetDisplacementField( transform->GetInverseDisplacementField() );
+	tf_inv->SetDisplacementField(transform->GetInverseDisplacementField());
 
 	for( size_t i = 0; i<movingSurfaceNames.size(); i++){
 		MeshReaderPointer r = MeshReaderType::New();
