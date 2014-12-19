@@ -59,6 +59,7 @@
 #include <itkImageHelper.h>
 #include <itkImageTransformHelper.h>
 
+
 #include <vnl/vnl_sparse_matrix.h>
 #include <vnl/vnl_vector.h>
 #include <vnl/vnl_matrix.h>
@@ -151,6 +152,8 @@ public:
     typedef typename Superclass::FieldType                         FieldType;
     typedef typename Superclass::FieldPointer                      FieldPointer;
     typedef typename Superclass::FieldConstPointer                 FieldConstPointer;
+    typedef typename Superclass::InvertFieldFilter                 InvertFieldFilter;
+    typedef typename Superclass::InvertFieldPointer                InvertFieldPointer;
     //typedef typename std::vector< FieldPointer >                     DerivativesType;
 
     /** Type of the input parameters. */
@@ -228,7 +231,7 @@ public:
 
     void InterpolateGradient() { this->Interpolate( this->VectorizeDerivatives() ); };
     void UpdateField() { this->UpdateField( this->VectorizeCoefficients() ); }
-    void InvertField();
+    void ComputeInverse();
 
     //void ComputeCoeffDerivatives( void );
     void ComputeGradientField();

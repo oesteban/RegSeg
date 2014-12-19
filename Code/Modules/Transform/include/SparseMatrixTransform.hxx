@@ -211,16 +211,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->m_NumberOfParameters = this->m_NumberOfDimParameters * Dimension;
 	this->m_Parameters.SetSize( this->m_NumberOfParameters );
 
-	for(size_t i = 0; i<Dimension; i++) {
-		this->m_FixedParameters[i] = this->m_ControlGridSize[i];
-		this->m_FixedParameters[i + Dimension] = this->m_ControlGridOrigin[i];
-		this->m_FixedParameters[i + Dimension * 2] = this->m_ControlGridSpacing[i];
-		this->m_FixedParameters[i + Dimension * 3] = this->m_ControlGridDirection[0][i];
-		this->m_FixedParameters[i + Dimension * 4] = this->m_ControlGridDirection[1][i];
-		this->m_FixedParameters[i + Dimension * 5] = this->m_ControlGridDirection[2][i];
-	}
-	this->SetFixedParameters(this->m_FixedParameters);
-
 	PointType p;
 	CoeffImageConstPointer ref =  itkDynamicCastInDebugMode< const CoefficientsImageType* >(this->m_CoefficientsImages[0].GetPointer() );
 	for( size_t i = 0; i < this->m_NumberOfDimParameters; i++ ) {
@@ -301,9 +291,9 @@ void
 SparseMatrixTransform<TScalar,NDimensions>
 ::AfterComputeMatrix(WeightsMatrixType type) {
 	size_t numvalid = this->m_ValidLocations.size();
+	this->m_Phi.normalize_rows();
 	if(numvalid > 0 &&  numvalid < this->m_NumberOfPoints ) {
 		if (type == Self::PHI)  {
-			this->m_Phi.normalize_rows();
 			this->m_Phi_valid = WeightsMatrix( numvalid , this->m_NumberOfDimParameters );
 
 			size_t rid = 0;
@@ -451,16 +441,15 @@ SparseMatrixTransform<TScalar,NDimensions>
 		ScalarType val;
 		VectorType v; v.Fill(0.0);
 
-		//this->m_InverseDisplacementField = FieldType::New();
-		//this->m_InverseDisplacementField->SetRegions( this->m_DisplacementField->GetLargestPossibleRegion().GetSize() );
-		//this->m_InverseDisplacementField->SetOrigin( this->m_DisplacementField->GetOrigin() );
-		//this->m_InverseDisplacementField->SetSpacing( this->m_DisplacementField->GetSpacing() );
-		//this->m_InverseDisplacementField->SetDirection( this->m_DisplacementField->GetDirection() );
-		//this->m_InverseDisplacementField->Allocate();
-		//this->m_InverseDisplacementField->FillBuffer( v );
+		FieldPointer field = FieldType::New();
+		field->SetRegions( this->m_DisplacementField->GetLargestPossibleRegion().GetSize() );
+		field->SetOrigin( this->m_DisplacementField->GetOrigin() );
+		field->SetSpacing( this->m_DisplacementField->GetSpacing() );
+		field->SetDirection( this->m_DisplacementField->GetDirection() );
+		field->Allocate();
+		field->FillBuffer( v );
 
-		VectorType* obuf = this->m_DisplacementField->GetBufferPointer();
-		//VectorType* ibuf = this->m_InverseDisplacementField->GetBufferPointer();
+		VectorType* obuf = field->GetBufferPointer();
 
 		for( size_t row = 0; row<this->m_NumberOfPoints; row++ ) {
 			v.Fill( 0.0 );
@@ -478,30 +467,36 @@ SparseMatrixTransform<TScalar,NDimensions>
 				// *( ibuf + row ) = -v;
 			}
 		}
-		//this->SetInverseDisplacementField( newfield );
+		this->SetDisplacementField( field );
 	}
 }
 
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::InvertField() {
-	// Check m_Phi_inverse and initializations
-	if( this->m_Phi_inverse.rows() == 0 || this->m_Phi_inverse.cols() == 0 ) {
-		this->InvertPhi();
-	}
+::ComputeInverse() {
+	InvertFieldPointer invfield = InvertFieldFilter::New();
+	invfield->SetDisplacementField(this->GetDisplacementField());
+	invfield->Update();
 
-	DimensionParameters coeff;
-	// Compute coefficients
-	for( size_t i = 0; i<Dimension; i++ ) {
-		coeff[i] = DimensionVector( this->m_NumberOfPoints );
-		this->m_Phi_inverse.mult( this->m_PointValues[i], coeff[i] );
-	}
+	this->SetInverseDisplacementField(invfield->GetOutput());
 
-	// TODO set coeff here or inside Interpolate( coeff )
-
-	// Interpolation with new coefficients
-	this->UpdateField( coeff );
+	//// Check m_Phi_inverse and initializations
+	//if( this->m_Phi_inverse.rows() == 0 || this->m_Phi_inverse.cols() == 0 ) {
+	//	this->InvertPhi();
+	//}
+    //
+	//DimensionParameters coeff;
+	//// Compute coefficients
+	//for( size_t i = 0; i<Dimension; i++ ) {
+	//	coeff[i] = DimensionVector( this->m_NumberOfPoints );
+	//	this->m_Phi_inverse.mult( this->m_PointValues[i], coeff[i] );
+	//}
+    //
+	//// TODO set coeff here or inside Interpolate( coeff )
+    //
+	//// Interpolation with new coefficients
+	//this->UpdateField( coeff );
 }
 
 template< class TScalar, unsigned int NDimensions >

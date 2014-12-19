@@ -56,6 +56,7 @@
 #include <itkDisplacementFieldTransform.h>
 #include <itkImageHelper.h>
 #include <itkImageTransformHelper.h>
+#include <itkInvertDisplacementFieldImageFilter.h>
 
 #include <vnl/vnl_sparse_matrix.h>
 #include <vnl/vnl_vector.h>
@@ -163,6 +164,10 @@ public:
     typedef typename FieldType::ConstPointer                                    FieldConstPointer;
     //typedef typename std::vector< FieldPointer >                                DerivativesType;
 
+
+    typedef itk::InvertDisplacementFieldImageFilter<FieldType, FieldType>       InvertFieldFilter;
+    typedef typename InvertFieldFilter::Pointer                                 InvertFieldPointer;
+
     /** Type of the input parameters. */
     typedef typename Superclass::ParametersType                                 ParametersType;
     typedef typename Superclass::ParametersValueType                            ParametersValueType;
@@ -196,6 +201,9 @@ public:
 	void SetOutputPoints( const PointsList points, const PointIdContainer valid);
 
     virtual void Interpolate() = 0;
+    virtual void ComputeInverse() = 0;
+
+    virtual void SetFixedParametersFromImage(const DomainBase* image);
 protected:
 	CachedMatrixTransform();
 	~CachedMatrixTransform(){};

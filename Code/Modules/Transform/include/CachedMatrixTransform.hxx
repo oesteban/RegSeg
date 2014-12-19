@@ -131,20 +131,11 @@ CachedMatrixTransform<TScalar,NDimensions>
 	this->m_UseImageOutput = true;
 	VectorType zerov; zerov.Fill( 0.0 );
 
-	//this->SetDomainExtent(image);
-
 	this->m_ReferenceSize = image->GetLargestPossibleRegion().GetSize();
 	this->m_ReferenceSpacing = image->GetSpacing();
 	this->m_ReferenceOrigin = image->GetOrigin();
 	this->m_ReferenceDirection = image->GetDirection();
-
-	this->m_DisplacementField = FieldType::New();
-	this->m_DisplacementField->SetRegions(   this->m_ReferenceSize      );
-	this->m_DisplacementField->SetSpacing(   this->m_ReferenceSpacing   );
-	this->m_DisplacementField->SetOrigin(    this->m_ReferenceOrigin    );
-	this->m_DisplacementField->SetDirection( this->m_ReferenceDirection );
-	this->m_DisplacementField->Allocate();
-	this->m_DisplacementField->FillBuffer( zerov );
+	SetFixedParametersFromImage(image);
 
 	this->m_NumberOfPoints = image->GetLargestPossibleRegion().GetNumberOfPixels();
 	// Initialize off-grid positions
@@ -153,6 +144,25 @@ CachedMatrixTransform<TScalar,NDimensions>
 		image->TransformIndexToPhysicalPoint( image->ComputeIndex( i ), p );
 		this->m_PointLocations.push_back( p );
 	}
+}
+
+template< class TScalar, unsigned int NDimensions >
+void CachedMatrixTransform<TScalar,NDimensions>
+::SetFixedParametersFromImage(const DomainBase* image) {
+	SizeType s = image->GetLargestPossibleRegion().GetSize();
+	PointType o = image->GetOrigin();
+	SpacingType sp = image->GetSpacing();
+	DirectionType d = image->GetDirection();
+
+	for(size_t i = 0; i<Dimension; i++) {
+		this->m_FixedParameters[i] = s[i];
+		this->m_FixedParameters[i + Dimension] = o[i];
+		this->m_FixedParameters[i + Dimension * 2] = sp[i];
+		this->m_FixedParameters[i + Dimension * 3] = d[0][i];
+		this->m_FixedParameters[i + Dimension * 4] = d[1][i];
+		this->m_FixedParameters[i + Dimension * 5] = d[2][i];
+	}
+	this->SetFixedParameters(this->m_FixedParameters);
 }
 
 template< class TScalar, unsigned int NDimensions >
