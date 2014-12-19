@@ -101,8 +101,6 @@ public:
     typedef typename Superclass::SolverVector                      SolverVector;
     typedef typename Superclass::SolverPair                        SolverPair;
     
-    typedef typename Superclass::DisplacementFieldTransformType    DisplacementFieldTransformType;
-    typedef typename Superclass::DisplacementFieldTransformPointer DisplacementFieldTransformPointer;
     typedef typename Superclass::DimensionParameters               DimensionParameters;
     typedef typename Superclass::DimensionParametersContainer      DimensionParametersContainer;
     typedef typename Superclass::PointsList                        PointsList;
@@ -349,7 +347,7 @@ protected:
 	KernelFunctionPointer m_DerivativeKernel;
 	//KernelFunctionPointer m_SecondDerivativeKernel;
 	FieldPointer          m_Field;
-	FieldPointer          m_CoefficientsField;
+	//FieldPointer          m_CoefficientsField;
 	FieldPointer          m_GradientField;
 
 	virtual void ComputeMatrix( WeightsMatrixType type, size_t dim = 0 );
