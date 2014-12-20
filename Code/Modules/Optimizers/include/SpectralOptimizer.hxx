@@ -182,7 +182,7 @@ void SpectralOptimizer<TFunctional>::PostIteration() {
 
 	this->m_CurrentValue = this->m_CurrentEnergy;
 	this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
-	this->m_Transform->Interpolate();
+	this->m_Transform->InterpolatePoints();
 	this->SetUpdate();
 
 	this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetPointValues() );
@@ -429,8 +429,8 @@ template< typename TFunctional >
 void
 SpectralOptimizer<TFunctional>::UpdateField() {
 	itk::ImageAlgorithm::Copy<FieldType, FieldType>(
-		this->m_Transform->GetField(), this->m_CurrentCoefficients,
-		this->m_Transform->GetField()->GetLargestPossibleRegion(),
+		this->m_Transform->GetCoefficientsField(), this->m_CurrentCoefficients,
+		this->m_Transform->GetCoefficientsField()->GetLargestPossibleRegion(),
 		this->m_CurrentCoefficients->GetLargestPossibleRegion()
 	);
 

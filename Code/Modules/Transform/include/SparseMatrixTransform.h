@@ -259,7 +259,10 @@ public:
     void SetControlGridInformation( const DomainBase* image );
 
 	void Initialize();
-	void Interpolate() { this->Interpolate( this->VectorizeCoefficients() ); }
+
+	void Interpolate() { this->InterpolatePoints(); this->InterpolateField(); }
+	void InterpolatePoints();
+	void InterpolateField();
 	AltCoeffPointer GetFlatParameters();
 
     /** Return the multithreader used by this class. */
@@ -270,7 +273,7 @@ protected:
 	SparseMatrixTransform();
 	~SparseMatrixTransform(){};
 
-	enum WeightsMatrixType { PHI, S, SPRIME, PHI_INV };
+	enum WeightsMatrixType { PHI, PHI_FIELD, S, SPRIME, PHI_INV };
 
 	struct MatrixSectionType {
 		WeightsMatrix *matrix;
@@ -334,6 +337,7 @@ protected:
 	WeightsMatrix   m_Phi;
 	WeightsMatrix   m_Phi_inverse;
 	WeightsMatrix   m_Phi_valid;
+	WeightsMatrix   m_FieldPhi;
 	WeightsMatrix   m_S;
 	WeightsMatrix   m_SPrime[Dimension];
 

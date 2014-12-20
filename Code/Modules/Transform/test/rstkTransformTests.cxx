@@ -171,7 +171,7 @@ TEST_F( TransformTests, MatricesTest ) {
 	m_transform->ComputeCoefficients();
 	m_transform->UpdateField();
 	m_transform->SetOutputReference( m_field );
-	m_transform->Interpolate();
+	m_transform->InterpolateField();
 	ASSERT_TRUE( m_transform->GetPhi() == m_transform->GetS() );
 }
 
@@ -231,7 +231,7 @@ TEST_F( TransformTests, InterpolateOneSample1 ) {
 	// FIXME: replace addoffgridpos
 	// m_transform->AddOffGridPos( p );
 
-	m_transform->Interpolate();
+	m_transform->InterpolatePoints();
 
 	const Transform::WeightsMatrix* m = m_transform->GetPhi();
 	VectorType v2 = m_transform->GetPointValue( 0 );
@@ -255,7 +255,7 @@ TEST_F( TransformTests, InterpolateOneSample2 ) {
 	m_hr_field->TransformIndexToPhysicalPoint( idx, p );
 	// FIXME: replace addoffgridpos
 	// m_transform->AddOffGridPos( p );
-	m_transform->Interpolate();
+	m_transform->InterpolatePoints();
 
 	const Transform::WeightsMatrix* m = m_transform->GetPhi();
 
@@ -280,7 +280,7 @@ TEST_F( TransformTests, InterpolateOneSample3 ) {
 	m_hr_field->TransformIndexToPhysicalPoint( idx, p );
 	// FIXME: replace addoffgridpos
 	//m_transform->AddOffGridPos( p );
-	m_transform->Interpolate();
+	m_transform->InterpolatePoints();
 
 	VectorType v1 = m_hr_field->GetPixel( idx );
 	VectorType v2 = m_transform->GetPointValue( 0 );
@@ -305,7 +305,7 @@ TEST_F( TransformTests, InterpolateAllSamples1 ) {
 		// m_transform->AddOffGridPos( p );
 	}
 
-	m_transform->Interpolate();
+	m_transform->InterpolatePoints();
 
 	Transform::WeightsMatrix m = Transform::WeightsMatrix(*(m_transform->GetPhi()));
 
@@ -358,7 +358,7 @@ TEST_F( TransformTests, InterpolateAllSamples2 ) {
 		// m_transform->AddOffGridPos( p );
 	}
 
-	m_transform->Interpolate();
+	m_transform->InterpolatePoints();
 
 
 	VectorType v1, v2;
@@ -379,7 +379,7 @@ TEST_F( TransformTests, CompareBSplineInterpolation ) {
 	this->InitHRField( 2.0 );
 	m_transform->ComputeCoefficients();
 	m_transform->SetOutputReference( m_hr_field );
-	m_transform->Interpolate();
+	m_transform->InterpolateField();
 
 	Writer::Pointer w = Writer::New();
 	w->SetInput( m_transform->GetDisplacementField() );
@@ -409,7 +409,7 @@ TEST_F( TransformTests, RandomSampleTest ) {
 	m_transform->UpdateField();
 
 	m_transform->SetOutputReference( m_hr_field );
-	m_transform->Interpolate();
+	m_transform->InterpolateField();
 
 	Writer::Pointer w = Writer::New();
 	w->SetInput( m_transform->GetDisplacementField() );
@@ -432,7 +432,7 @@ TEST_F( TransformTests, RandomSampleTest ) {
 		//tfm->AddOffGridPos( p );
 	}
 
-	tfm->Interpolate();
+	tfm->InterpolateField();
 
 	FieldType::ConstPointer field = m_transform->GetDisplacementField();
 
