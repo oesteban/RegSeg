@@ -423,6 +423,7 @@ protected:
 	SizeValueType                                m_NumberOfDimParameters;
 	SizeValueType                                m_NumberOfParameters;
 	PointsList                                   m_ParamLocations;
+	PointsList                                   m_FieldLocations;
 
 	/** The interpolator. */
 	typename InterpolatorType::Pointer          m_Interpolator;

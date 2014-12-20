@@ -36,8 +36,6 @@ CompositeMatrixTransform<TScalar,NDimensions>
 		itkExceptionMacro(<< "number of transforms is zero or it does not match the number of stored coefficients sets.");
 	}
 
-	ConsistencyCheck();
-
 	switch(this->m_InterpolationMode) {
 	case Superclass::GRID_MODE:
 		this->ComputeGrid();
@@ -74,8 +72,7 @@ CompositeMatrixTransform<TScalar,NDimensions>
 
 	DisplacementType vc;
 	for( size_t c = 0; c < this->m_NumberOfTransforms; c++) {
-		this->m_Components[c]->SetOutputReference(this->GetDisplacementField());
-		this->m_Components[c]->Interpolate();
+		this->m_Components[c]->InterpolateField();
 		FieldConstPointer f = this->m_Components[c]->GetDisplacementField();
 
 		const DisplacementType* cbuffer = f->GetBufferPointer();
@@ -102,7 +99,7 @@ CompositeMatrixTransform<TScalar,NDimensions>
 	VectorType vc;
 	for( size_t c = 0; c < this->m_NumberOfTransforms; c++) {
 		this->m_Components[c]->SetOutputPoints( this->GetPointLocations() );
-		this->m_Components[c]->Interpolate();
+		this->m_Components[c]->InterpolatePoints();
 
 		DimensionParameters disp = this->m_Components[c]->GetPointValues();
 

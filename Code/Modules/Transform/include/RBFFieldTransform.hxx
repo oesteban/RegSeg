@@ -339,6 +339,14 @@ void RBFFieldTransform<TScalar, NDimensions>::SetDisplacementField(
 		if (!this->m_Interpolator.IsNull()) {
 			this->m_Interpolator->SetInputImage(this->m_DisplacementField);
 		}
+
+		InputPointType p;
+		this->m_FieldLocations.clear();
+		size_t npix = this->m_DisplacementField->GetLargestPossibleRegion().GetNumberOfPixels();
+		for( size_t i = 0; i < npix; i++ ) {
+			this->m_DisplacementField->TransformIndexToPhysicalPoint( this->m_DisplacementField->ComputeIndex( i ), p );
+			this->m_FieldLocations.push_back( p );
+		}
 	}
 	this->SetFixedParametersFromDisplacementField();
 }
@@ -361,7 +369,6 @@ void RBFFieldTransform<TScalar, NDimensions>::SetCoefficientsField(
 		this->m_Parameters.SetParametersObject(this->m_CoefficientsField);
 		this->m_NumberOfDimParameters = this->m_CoefficientsField->GetLargestPossibleRegion().GetNumberOfPixels();
 		this->m_NumberOfParameters = this->m_NumberOfDimParameters * Dimension;
-
 
 		InputPointType p;
 		this->m_ParamLocations.clear();

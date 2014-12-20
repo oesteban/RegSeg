@@ -352,14 +352,10 @@ template < typename TFixedImage, typename TTransform, typename TComputationalVal
 void
 ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::GenerateFinalDisplacementField() {
-	// this->ConcatenateFields(this->m_NumberOfLevels);
-
 	this->m_OutputTransform->Interpolate();
 	this->m_DisplacementField = this->m_OutputTransform->GetDisplacementField();
-
-	// this->m_OutputTransform->SetDisplacementField( this->m_DisplacementField );
-	// this->m_OutputInverseTransform->SetDisplacementField( this->m_InverseDisplacementField );
 }
+
 /*
  *  Get output transform
  */

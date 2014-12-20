@@ -242,6 +242,14 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->m_Phi = WeightsMatrix( this->m_NumberOfPoints , nCols );
 		str.matrix = &this->m_Phi;
 		break;
+
+	case Self::PHI_FIELD:
+		str.vrows = &this->m_FieldLocations;
+		str.vcols = &this->m_ParamLocations;
+		this->m_FieldPhi = WeightsMatrix( this->m_FieldLocations.size() , nCols );
+		str.matrix = &this->m_FieldPhi;
+		break;
+
 	case Self::S:
 		this->m_S = WeightsMatrix( nCols, nCols );
 
@@ -402,7 +410,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::Interpolate( const DimensionParameters& coeff ) {
+::InterpolatePoints() {
+	const DimensionParameters coeff = this->VectorizeCoefficients();
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
 		this->ComputeMatrix( Self::PHI );
@@ -411,40 +420,57 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->m_PointValues[i].set_size( this->m_NumberOfPoints );
 		this->m_Phi.mult( coeff[i], this->m_PointValues[i] );
 	}
+}
 
-	if( this->m_InterpolationMode == Superclass::GRID_MODE ) {
-		bool setVector;
-		ScalarType val;
-		VectorType v; v.Fill(0.0);
+template< class TScalar, unsigned int NDimensions >
+void
+SparseMatrixTransform<TScalar,NDimensions>
+::InterpolateField() {
+	const DimensionParameters coeff = this->VectorizeCoefficients();
+	// Check m_Phi and initializations
+	if( this->m_FieldPhi.rows() == 0 || this->m_FieldPhi.cols() == 0 ) {
+		this->ComputeMatrix( Self::PHI_FIELD );
+	}
 
-		FieldPointer field = FieldType::New();
-		field->SetRegions( this->m_DisplacementField->GetLargestPossibleRegion().GetSize() );
-		field->SetOrigin( this->m_DisplacementField->GetOrigin() );
-		field->SetSpacing( this->m_DisplacementField->GetSpacing() );
-		field->SetDirection( this->m_DisplacementField->GetDirection() );
-		field->Allocate();
-		field->FillBuffer( v );
+	size_t npix = this->m_DisplacementField->GetLargestPossibleRegion().GetNumberOfPixels();
 
-		VectorType* obuf = field->GetBufferPointer();
+	DimensionVector interpField[Dimension];
+	for( size_t i = 0; i<Dimension; i++ ) {
+		interpField[i] = DimensionVector();
+		interpField[i].set_size(npix);
+		this->m_FieldPhi.mult( coeff[i], interpField[i] );
+	}
 
-		for( size_t row = 0; row<this->m_NumberOfPoints; row++ ) {
-			v.Fill( 0.0 );
-			setVector = false;
-			for( size_t i = 0; i<Dimension; i++) {
-				val = this->m_PointValues[i][row];
+	bool setVector;
+	ScalarType val;
+	VectorType v; v.Fill(0.0);
 
-				if( fabs(val) > 1.0e-5 ){
-					v[i] = val;
-					setVector = true;
-				}
-			}
-			if (setVector) {
-				*( obuf + row ) = v;
-				// *( ibuf + row ) = -v;
+	FieldPointer field = FieldType::New();
+	field->SetRegions( this->m_DisplacementField->GetLargestPossibleRegion().GetSize() );
+	field->SetOrigin( this->m_DisplacementField->GetOrigin() );
+	field->SetSpacing( this->m_DisplacementField->GetSpacing() );
+	field->SetDirection( this->m_DisplacementField->GetDirection() );
+	field->Allocate();
+	field->FillBuffer( v );
+
+	VectorType* obuf = field->GetBufferPointer();
+
+	for( size_t row = 0; row<npix; row++ ) {
+		v.Fill( 0.0 );
+		setVector = false;
+		for( size_t i = 0; i<Dimension; i++) {
+			val = interpField[i][row];
+
+			if( fabs(val) > 1.0e-5 ){
+				v[i] = val;
+				setVector = true;
 			}
 		}
-		this->SetDisplacementField( field );
+		if (setVector) {
+			*( obuf + row ) = v;
+		}
 	}
+	this->SetDisplacementField( field );
 }
 
 template< class TScalar, unsigned int NDimensions >
@@ -485,9 +511,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 		this->ComputeMatrix( Self::S );
 	}
 
-	DimensionParameters fieldValues;
-
 	// Interpolate
+	DimensionParameters fieldValues;
 	for( size_t i = 0; i<Dimension; i++)
 		this->m_S.mult( coeff[i], fieldValues[i] );
 }
@@ -673,9 +698,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 template< class TScalar, unsigned int NDimensions >
 const typename SparseMatrixTransform<TScalar,NDimensions>::WeightsMatrix*
 SparseMatrixTransform<TScalar,NDimensions>
-::GetPhi( const bool onlyvalid) {
+::GetPhi(const bool onlyvalid) {
 	// Check m_Phi and initializations
-	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
+	if( this->m_Phi.rows()==0 || this->m_Phi.cols()==0 ) {
 		this->ComputeMatrix( Self::PHI );
 	}
 
