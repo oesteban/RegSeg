@@ -326,9 +326,6 @@ protected:
 	MatrixType                   m_ControlGridPhysicalPointToIndex;
 	SpacingType                  m_MaximumDisplacement;
 
-	size_t                       m_NumberOfDimParameters;  // This is K parameters (=coefficients, control points)
-	size_t                       m_NumberOfParameters;
-	PointsList                   m_ParamLocations;
 	AltCoeffPointer              m_FlatCoeffs;
 
 	CoefficientsImageArray       m_CoefficientsImages;

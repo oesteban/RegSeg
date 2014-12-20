@@ -107,8 +107,6 @@ public:
     typedef itk::FixedArray< DimensionVector, NDimensions >                     DimensionParameters;
     typedef itk::FixedArray< DimensionVector*, NDimensions >                    DimensionParametersContainer;
 
-    typedef std::vector< PointType >                                            PointsList;
-
     typedef itk::Matrix< ScalarType, Dimension, Dimension >                     JacobianType;
     
     // typedef itk::DefaultStaticMeshTraits
@@ -116,6 +114,7 @@ public:
     // typedef itk::PointSet<PointType, NDimensions, PointSetTraitsType>           PointSetType;
     // typedef typename PointSetType::Pointer                                      PointSetPointer;
 
+    typedef typename Superclass::PointsList                                     PointsList;
 
     /** Standard coordinate point type for this class. */
     typedef typename Superclass::InputPointType                                 InputPointType;
@@ -201,7 +200,8 @@ public:
     virtual void Interpolate() = 0;
     virtual void ComputeInverse() = 0;
 
-    virtual void SetFixedParametersFromImage(const DomainBase* image);
+    virtual void SetFieldParametersFromImage(const DomainBase* image);
+    virtual void SetCoefficientsParametersFromImage(const DomainBase* image);
 protected:
 	CachedMatrixTransform();
 	~CachedMatrixTransform(){};
@@ -232,7 +232,6 @@ protected:
 	SpacingType                  m_ReferenceSpacing;
 	SizeType                     m_ReferenceSize;
 	PointType                    m_ReferenceOrigin;
-
 
 	PointsList                   m_PointLocations;     // m_N points in the mesh
 	PointIdContainer             m_ValidLocations;

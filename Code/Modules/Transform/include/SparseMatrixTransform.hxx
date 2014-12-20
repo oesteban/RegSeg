@@ -63,9 +63,7 @@ namespace rstk {
 template< class TScalar, unsigned int NDimensions >
 SparseMatrixTransform<TScalar,NDimensions>
 ::SparseMatrixTransform():
-Superclass(),
-m_NumberOfDimParameters(0),
-m_NumberOfParameters(0){
+Superclass() {
 	this->m_ControlGridSize.Fill(10);
 	this->m_ControlGridOrigin.Fill(0.0);
 	this->m_ControlGridSpacing.Fill(0.0);
@@ -165,7 +163,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 ::InitializeCoefficientsImages() {
 	// Compute pixel conversion matrices
 	MatrixType scale;
-
+	ParametersType param;
 
 	for ( size_t i = 0; i < Dimension; i++ ) {
 		if( this->m_ControlGridSize[i] == 0 ) {
@@ -189,34 +187,23 @@ SparseMatrixTransform<TScalar,NDimensions>
 	  itkExceptionMacro(<< "Bad direction, determinant is 0. Direction is " << this->m_ControlGridDirection);
 	}
 
+	param.SetSize(Dimension * (Dimension + 3));
+	for(size_t i = 0; i<Dimension; i++) {
+		param[i] = this->m_ControlGridSize[i];
+		param[i + Dimension] = this->m_ControlGridOrigin[i];
+		param[i + Dimension * 2] = this->m_ControlGridSpacing[i];
+		param[i + Dimension * 3] = this->m_ControlGridDirection[0][i];
+		param[i + Dimension * 4] = this->m_ControlGridDirection[1][i];
+		param[i + Dimension * 5] = this->m_ControlGridDirection[2][i];
+	}
+	this->SetCoefficientsFixedParameters(param);
+
 	typedef vnl_matrix< ScalarType > InternalComputationMatrix;
 	InternalComputationMatrix dir( Dimension, Dimension );
 	typedef vnl_matrix< typename DirectionType::ValueType > DirectionVNLMatrix;
 	vnl_copy< DirectionVNLMatrix, InternalComputationMatrix >( this->m_ControlGridDirection.GetVnlMatrix(), dir );
 	this->m_ControlGridIndexToPhysicalPoint = MatrixType(dir) * scale;
 	this->m_ControlGridPhysicalPointToIndex = this->m_ControlGridIndexToPhysicalPoint.GetInverse();
-
-
-	for( size_t dim = 0; dim < Dimension; dim++ ) {
-		this->m_CoefficientsImages[dim] = CoefficientsImageType::New();
-		this->m_CoefficientsImages[dim]->SetRegions(   this->m_ControlGridSize );
-		this->m_CoefficientsImages[dim]->SetOrigin(    this->m_ControlGridOrigin );
-		this->m_CoefficientsImages[dim]->SetSpacing(   this->m_ControlGridSpacing );
-		this->m_CoefficientsImages[dim]->SetDirection( this->m_ControlGridDirection );
-		this->m_CoefficientsImages[dim]->Allocate();
-		this->m_CoefficientsImages[dim]->FillBuffer( 0.0 );
-	}
-
-	this->m_NumberOfDimParameters = this->m_CoefficientsImages[0]->GetLargestPossibleRegion().GetNumberOfPixels();
-	this->m_NumberOfParameters = this->m_NumberOfDimParameters * Dimension;
-	this->m_Parameters.SetSize( this->m_NumberOfParameters );
-
-	PointType p;
-	CoeffImageConstPointer ref =  itkDynamicCastInDebugMode< const CoefficientsImageType* >(this->m_CoefficientsImages[0].GetPointer() );
-	for( size_t i = 0; i < this->m_NumberOfDimParameters; i++ ) {
-		ref->TransformIndexToPhysicalPoint( ref->ComputeIndex( i ), p );
-		this->m_ParamLocations.push_back( p );
-	}
 
 	VectorType zerov; zerov.Fill( 0.0 );
 	this->m_Field = FieldType::New();
@@ -394,9 +381,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	cols.resize(0);
 	vals.resize(0);
 
-	CoeffImagePointer ref = this->m_CoefficientsImages[0];
-
-
+	FieldPointer ref = this->m_CoefficientsField;
 	// Walk the grid region
 	for ( row = section.first_row; row < last; row++ ) {
 		cols.clear();
@@ -591,10 +576,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 	}
 
 	for( size_t col = 0; col < Dimension; col++ ) {
-		ScalarType* cbuffer = this->m_CoefficientsImages[col]->GetBufferPointer();
 		size_t offset = col * this->m_NumberOfDimParameters;
 		for( size_t k = 0; k<this->m_NumberOfDimParameters; k++) {
-			*( cbuffer + k ) = static_cast<ScalarType>(X[col][k]);
 			this->m_Parameters[k + offset] = X[col][k];
 		}
 	}
@@ -802,11 +785,7 @@ template< class TScalar, unsigned int NDimensions >
 inline typename SparseMatrixTransform<TScalar,NDimensions>::VectorType
 SparseMatrixTransform<TScalar,NDimensions>
 ::GetCoefficient( const size_t id ) {
-	VectorType gi;
-	for( size_t dim = 0; dim < Dimension; dim++){
-		gi[dim] = this->m_CoefficientsImages[dim]->GetPixel( this->m_CoefficientsImages[dim]->ComputeIndex( id ) );
-	}
-	return gi;
+	return this->m_CoefficientsField->GetPixel( this->m_CoefficientsField->ComputeIndex( id ) );
 }
 
 //template< class TScalar, unsigned int NDimensions >
@@ -860,31 +839,7 @@ template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
 ::SetCoefficientsVectorImage( const FieldType* images ) {
-	ScalarType* buff[Dimension];
-
-	if (this->m_NumberOfDimParameters == 0) {
-		this->m_ControlGridDirection = images->GetDirection();
-		this->m_ControlGridOrigin = images->GetOrigin();
-		this->m_ControlGridSize = images->GetLargestPossibleRegion().GetSize();
-		this->m_ControlGridSpacing = images->GetSpacing();
-		this->InitializeCoefficientsImages();
-	}
-
-	for( size_t dim = 0; dim < Dimension; dim++ ) {
-		buff[dim] = this->m_CoefficientsImages[dim]->GetBufferPointer();
-	}
-
-	const VectorType* fbuf = images->GetBufferPointer();
-	VectorType v;
-	size_t offset;
-	for( size_t row = 0; row < this->m_NumberOfDimParameters; row++ ) {
-		v = *( fbuf + row );
-		for( size_t dim = 0; dim < Dimension; dim++ ) {
-			offset = dim * this->m_NumberOfDimParameters;
-			*( buff[dim] + row ) = v[dim];
-			this->m_Parameters[row + offset] = v[dim];
-		}
-	}
+	this->SetCoefficientsField(images);
 }
 
 template< class TScalar, unsigned int NDimensions >
@@ -894,21 +849,16 @@ SparseMatrixTransform<TScalar,NDimensions>
 	ScalarType* buff[Dimension];
 
 	if (this->m_NumberOfDimParameters == 0) {
-		this->SetCoefficientsVectorImage(images);
+		this->SetCoefficientsField(images);
 	} else {
 		this->ComputeCoefficients();
 
-		for( size_t dim = 0; dim < Dimension; dim++ ) {
-			buff[dim] = this->m_CoefficientsImages[dim]->GetBufferPointer();
-		}
+		buff = this->m_CoefficientsField->GetBufferPointer();
 
 		const VectorType* fbuf = images->GetBufferPointer();
 		VectorType v;
 		for( size_t row = 0; row < this->m_NumberOfDimParameters; row++ ) {
-			v = *( fbuf + row );
-			for( size_t dim = 0; dim < Dimension; dim++ ) {
-				*( buff[dim] + row ) += v[dim];
-			}
+			*( buff + row )+= *( fbuf + row );
 		}
 	}
 }
@@ -917,29 +867,7 @@ template< class TScalar, unsigned int NDimensions >
 const typename SparseMatrixTransform<TScalar,NDimensions>::FieldType*
 SparseMatrixTransform<TScalar,NDimensions>
 ::GetCoefficientsVectorImage(){
-	if (this->m_CoefficientsField.IsNull()){
-		this->m_CoefficientsField = FieldType::New();
-		this->m_CoefficientsField->SetRegions(this->m_ControlGridSize);
-		this->m_CoefficientsField->SetSpacing(this->m_ControlGridSpacing);
-		this->m_CoefficientsField->SetDirection(this->m_ControlGridDirection);
-		this->m_CoefficientsField->SetOrigin(this->m_ControlGridOrigin);
-		this->m_CoefficientsField->Allocate();
-	}
-
-	const ScalarType* buff[Dimension];
-	for( size_t dim = 0; dim < Dimension; dim++ ) {
-		buff[dim] = this->m_CoefficientsImages[dim]->GetBufferPointer();
-	}
-
-	VectorType* fbuf = this->m_CoefficientsField->GetBufferPointer();
-	VectorType v;
-	for( size_t row = 0; row < this->m_NumberOfDimParameters; row++ ) {
-		for( size_t dim = 0; dim < Dimension; dim++ ) {
-			v[dim] = *( buff[dim] + row );
-		}
-		*(fbuf + row) = v;
-	}
-	return this->m_CoefficientsField;
+	return this->GetCoefficientsField();
 }
 
 
@@ -950,45 +878,12 @@ SparseMatrixTransform<TScalar,NDimensions>
 	if ( dim >= Dimension || dim < 0 ) {
 		itkExceptionMacro(<< "trying to set coefficients for undefined dimension");
 	}
-	// itk::ImageAlgorithm::Copy<CoefficientsImageType,CoefficientsImageType>(
-	// 		c, this->m_CoefficientsImages[dim],
-	// 		c->GetLargestPossibleRegion(),
-	// 		this->m_CoefficientsImages[dim]->GetLargestPossibleRegion()
-	// );
-
 	size_t offset = dim * this->m_NumberOfDimParameters;
-	ScalarType* buff = this->m_CoefficientsImages[dim]->GetBufferPointer();
 	const ScalarType* fbuf = c->GetBufferPointer();
-
 	for( size_t row = 0; row < this->m_NumberOfDimParameters; row++ ) {
-		*( buff + row ) = *(fbuf + row);
 		this->m_Parameters[row + offset] = *(fbuf + row);
 	}
 }
-
-//template< class TScalar, unsigned int NDimensions >
-//typename SparseMatrixTransform<TScalar,NDimensions>::WeightsMatrix
-//SparseMatrixTransform<TScalar,NDimensions>
-//::VectorizeCoefficients() {
-//	WeightsMatrix m ( this->m_NumberOfDimParameters, Dimension );
-//
-//	std::vector< const ScalarType *> cbuffer;
-//
-//	for( size_t col = 0; col<Dimension; col++)
-//		cbuffer.push_back( this->m_CoefficientsImages[col]->GetBufferPointer() );
-//
-//	ScalarType value;
-//	for( size_t row = 0; row<this->m_NumberOfDimParameters; row++ ) {
-//		for( size_t col = 0; col<Dimension; col++ ) {
-//			value = *( cbuffer[col] + row );
-//			if (value!=0) {
-//				m.put( row, col, value );
-//			}
-//		}
-//
-//	}
-//	return m;
-//}
 
 
 template< class TScalar, unsigned int NDimensions >
@@ -999,10 +894,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	const ScalarType* cbuffer;
 	for( size_t i = 0; i<Dimension; i++) {
 		m[i] = DimensionVector( this->m_NumberOfDimParameters );
-		cbuffer = this->m_CoefficientsImages[i]->GetBufferPointer();
 
 		for( size_t j = 0; j < this->m_NumberOfDimParameters; j++ ){
-			m[i][j] = *( cbuffer + j );
+			m[i][j] = this->m_Parameters[i * this->m_NumberOfDimParameters + j];
 		}
 	}
 	return m;

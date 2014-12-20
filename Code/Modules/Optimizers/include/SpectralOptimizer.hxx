@@ -492,7 +492,7 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	}
 
 	this->m_Transform->SetDomainExtent( this->m_Functional->GetReferenceImage() );
-	this->m_Transform->SetFixedParametersFromImage( this->m_Functional->GetReferenceImage() );
+	this->m_Transform->SetFieldParametersFromImage( this->m_Functional->GetReferenceImage() );
 	this->m_Transform->SetOutputPoints( this->m_Functional->GetVertices(), this->m_Functional->GetValidVertices() );
 	this->m_Transform->SetControlGridSize( this->m_GridSize );
 	this->m_Transform->SetControlGridSpacing( this->m_GridSpacing );
