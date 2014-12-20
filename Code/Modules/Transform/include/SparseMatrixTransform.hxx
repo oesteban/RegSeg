@@ -205,15 +205,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->m_ControlGridIndexToPhysicalPoint = MatrixType(dir) * scale;
 	this->m_ControlGridPhysicalPointToIndex = this->m_ControlGridIndexToPhysicalPoint.GetInverse();
 
-	VectorType zerov; zerov.Fill( 0.0 );
-	this->m_Field = FieldType::New();
-	this->m_Field->SetRegions(   this->m_ControlGridSize );
-	this->m_Field->SetOrigin(    this->m_ControlGridOrigin );
-	this->m_Field->SetSpacing(   this->m_ControlGridSpacing );
-	this->m_Field->SetDirection( this->m_ControlGridDirection );
-	this->m_Field->Allocate();
-	this->m_Field->FillBuffer( zerov );
-
 	for( size_t i = 0; i<Dimension; i++ ) {
 		this->m_Derivatives[i] = CoefficientsImageType::New();
 		this->m_Derivatives[i]->SetRegions(   this->m_ControlGridSize );
@@ -488,6 +479,8 @@ template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
 ::UpdateField( const DimensionParameters& coeff ) {
+
+	// TODO: this needs a re-implementation
 	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
 		this->ComputeMatrix( Self::S );
 	}
@@ -497,27 +490,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 	// Interpolate
 	for( size_t i = 0; i<Dimension; i++)
 		this->m_S.mult( coeff[i], fieldValues[i] );
-
-	VectorType v;
-	ScalarType val;
-	this->m_Field->FillBuffer( v );
-	VectorType* fbuf = this->m_Field->GetBufferPointer();
-
-	bool setVector;
-
-	for ( size_t row = 0; row<this->m_NumberOfDimParameters; row++ ) {
-		v.Fill( 0.0 );
-		setVector = false;
-		for ( size_t col = 0; col < Dimension; col++ ) {
-			val = fieldValues[col][row];
-			if ( fabs(val) > 1.0e-5 ){
-				v[col] = val;
-				setVector = true;
-			}
-		}
-		if (setVector)
-			*( fbuf + row ) = v;
-	}
 }
 
 template< class TScalar, unsigned int NDimensions >
@@ -534,7 +506,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 	SolverVector X[Dimension], Y[Dimension];
 
-	DimensionParameters fieldValues = this->VectorizeField( this->m_Field );
+	DimensionParameters fieldValues = this->VectorizeField( this->m_DisplacementField );
 	DimensionParameters coeffs;
 
 	for ( size_t i = 0; i<Dimension; i++) {
@@ -714,91 +686,12 @@ SparseMatrixTransform<TScalar,NDimensions>
 	}
 }
 
-
-//template< class TScalar, unsigned int NDimensions >
-//void
-//SparseMatrixTransform<TScalar,NDimensions>
-//::SetParameters( const ParametersType & parameters ) {
-//	// Save parameters. Needed for proper operation of TransformUpdateParameters.
-//	//if (&parameters != &(this->m_Parameters)) {
-//	//	this->m_Parameters = parameters;
-//	//}
-//    //
-//	//if( this->m_PointLocations.size() == 0 ) {
-//	//	itkExceptionMacro( << "Control Points should be set first." );
-//	//}
-//    //
-//	//if( this->m_NumberOfPoints != this->m_PointLocations.size() ) {
-//	//	if (! this->m_NumberOfPoints == 0 ){
-//	//		itkExceptionMacro( << "N and number of control points should match." );
-//	//	} else {
-//	//		this->m_NumberOfPoints = this->m_PointLocations.size();
-//	//	}
-//	//}
-//    //
-//	//if ( this->m_NumberOfPoints != (parameters.Size() * Dimension) ) {
-//	//	itkExceptionMacro( << "N and number of parameters should match." );
-//	//}
-//    //
-//	//for ( size_t dim = 0; dim<Dimension; dim++) {
-//	//	if ( this->m_PointValue[dim].size() == 0 ) {
-//	//		this->m_PointValue[dim]( this->m_NumberOfPoints );
-//	//	}
-//	//	else if ( this->m_PointValue[dim].size()!=this->m_NumberOfPoints ) {
-//	//		itkExceptionMacro( << "N and number of slots for parameter data should match." );
-//	//	}
-//	//}
-//    //
-//	//size_t didx = 0;
-//    //
-//	//while( didx < this->m_NumberOfPoints ) {
-//	//	for ( size_t dim = 0; dim< Dimension; dim++ ) {
-//	//		this->m_PointValue[dim][didx] = parameters[didx+dim];
-//	//	}
-//	//	didx++;
-//	//}
-//
-//	// Modified is always called since we just have a pointer to the
-//	// parameters and cannot know if the parameters have changed.
-//	this->Modified();
-//}
-
-
-
-//template< class TScalar, unsigned int NDimensions >
-//inline typename SparseMatrixTransform<TScalar,NDimensions>::JacobianType
-//SparseMatrixTransform<TScalar,NDimensions>
-//::GetJacobian( const size_t id ) {
-//	JacobianType gi;
-//	gi.Fill( 0.0 );
-//
-//	for( size_t i = 0; i < Dimension; i++){
-//		for( size_t j = 0; j < Dimension; j++){
-//			gi(i,j) = this->m_Jacobian[j][i][id]; // Attention to transposition
-//			if( std::isnan( gi(i,j) )) gi(i,j) = 0;
-//		}
-//	}
-//	return gi;
-//}
-
 template< class TScalar, unsigned int NDimensions >
 inline typename SparseMatrixTransform<TScalar,NDimensions>::VectorType
 SparseMatrixTransform<TScalar,NDimensions>
 ::GetCoefficient( const size_t id ) {
 	return this->m_CoefficientsField->GetPixel( this->m_CoefficientsField->ComputeIndex( id ) );
 }
-
-//template< class TScalar, unsigned int NDimensions >
-//inline typename SparseMatrixTransform<TScalar,NDimensions>::VectorType
-//SparseMatrixTransform<TScalar,NDimensions>
-//::GetCoeffDerivative( const size_t id ) {
-//	VectorType gi;
-//	for( size_t dim = 0; dim < Dimension; dim++){
-//		gi[dim] = this->m_CoeffDerivative[dim][id];
-//		if( std::isnan( gi[dim] )) gi[dim] = 0;
-//	}
-//	return gi;
-//}
 
 template< class TScalar, unsigned int NDimensions >
 inline bool
@@ -1040,22 +933,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	}
 
 	this->InitializeCoefficientsImages();
-}
-
-//template< class TScalar, unsigned int NDimensions >
-//void
-//SparseMatrixTransform<TScalar,NDimensions>
-//::ComputeCoeffDerivatives() {
-//	// Check m_Phi and initializations
-//	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
-//		this->ComputePhi();
-//	}
-//
-//    for ( size_t i = 0; i < Dimension; i++ ) {
-//    	this->m_CoeffDerivative[i].fill(0.0);
-//    	this->m_Phi.pre_mult(this->m_PointValue[i], this->m_CoeffDerivative[i] );
-//    }
-//}
+};
 
 }
 

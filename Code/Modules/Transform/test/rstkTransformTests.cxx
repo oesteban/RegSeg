@@ -91,7 +91,7 @@ public:
 
 		m_transform = Transform::New();
 		m_transform->SetControlGridInformation( m_field );
-		m_transform->SetField( m_field );
+		m_transform->SetDisplacementField( m_field );
 	}
 
 	TPointer m_transform;

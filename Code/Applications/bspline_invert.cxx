@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
 	tf->ComputeInverse();
 
 
-	typename FieldType::ConstPointer field_inv = tf->GetField();
+	typename FieldType::ConstPointer field_inv = tf->GetDisplacementField();
 
 	typename FieldWriter::Pointer ff = FieldWriter::New();
 	ff->SetInput( field_inv );
