@@ -32,6 +32,8 @@ namespace rstk {
  */
 template<typename TScalar, unsigned int NDimensions>
 RBFFieldTransform<TScalar, NDimensions>::RBFFieldTransform() :
+		m_NumberOfDimParameters(0),
+		m_NumberOfParameters(0),
 		Superclass(0) {
 	this->m_DisplacementField = ITK_NULLPTR;
 	this->m_CoefficientsField = ITK_NULLPTR;
@@ -357,6 +359,16 @@ void RBFFieldTransform<TScalar, NDimensions>::SetCoefficientsField(
 		}
 		// Assign to parameters object
 		this->m_Parameters.SetParametersObject(this->m_CoefficientsField);
+		this->m_NumberOfDimParameters = this->m_CoefficientsField->GetLargestPossibleRegion().GetNumberOfPixels();
+		this->m_NumberOfParameters = this->m_NumberOfDimParameters * Dimension;
+
+
+		InputPointType p;
+		this->m_ParamLocations.clear();
+		for( size_t i = 0; i < this->m_NumberOfDimParameters; i++ ) {
+			this->m_CoefficientsField->TransformIndexToPhysicalPoint( this->m_CoefficientsField->ComputeIndex( i ), p );
+			this->m_ParamLocations.push_back( p );
+		}
 	}
 	this->SetFixedParametersFromCoefficientsField();
 }
@@ -558,6 +570,115 @@ void RBFFieldTransform<TScalar, NDimensions>::SetFixedParameters(
 		for (unsigned int dj = 0; dj < NDimensions; dj++) {
 			direction[di][dj] = fixedParameters[3 * NDimensions
 					+ (di * NDimensions + dj) + elems];
+		}
+	}
+
+	typename DisplacementFieldType::Pointer coeffField =
+			DisplacementFieldType::New();
+	coeffField->SetSpacing(spacing);
+	coeffField->SetOrigin(origin);
+	coeffField->SetDirection(direction);
+	coeffField->SetRegions(size);
+	coeffField->Allocate();
+	coeffField->FillBuffer(zeroDisplacement);
+
+	this->SetCoefficientsField(coeffField);
+}
+
+template<typename TScalar, unsigned int NDimensions>
+void RBFFieldTransform<TScalar, NDimensions>::SetFieldFixedParameters(
+		const ParametersType & fixedParameters) {
+	SizeValueType elems = NDimensions * (NDimensions + 3);
+
+	if (fixedParameters.Size() != elems) {
+		itkExceptionMacro("The fixed parameters are not the right size.");
+	}
+
+	SizeType size;
+	for (unsigned int d = 0; d < NDimensions; d++) {
+		size[d] = static_cast<SizeValueType>(fixedParameters[d]);
+	}
+
+	PointType origin;
+	for (unsigned int d = 0; d < NDimensions; d++) {
+		origin[d] = fixedParameters[d + NDimensions];
+	}
+
+	SpacingType spacing;
+	for (unsigned int d = 0; d < NDimensions; d++) {
+		spacing[d] = fixedParameters[d + 2 * NDimensions];
+	}
+
+	DirectionType direction;
+	for (unsigned int di = 0; di < NDimensions; di++) {
+		for (unsigned int dj = 0; dj < NDimensions; dj++) {
+			direction[di][dj] = fixedParameters[3 * NDimensions
+					+ (di * NDimensions + dj)];
+		}
+	}
+
+	PixelType zeroDisplacement;
+	zeroDisplacement.Fill(0.0);
+
+	typename DisplacementFieldType::Pointer displacementField =
+			DisplacementFieldType::New();
+	displacementField->SetSpacing(spacing);
+	displacementField->SetOrigin(origin);
+	displacementField->SetDirection(direction);
+	displacementField->SetRegions(size);
+	displacementField->Allocate();
+	displacementField->FillBuffer(zeroDisplacement);
+
+	this->SetDisplacementField(displacementField);
+
+	if (!this->m_InverseDisplacementField.IsNull()) {
+		typename DisplacementFieldType::Pointer inverseDisplacementField =
+				DisplacementFieldType::New();
+		inverseDisplacementField->SetSpacing(spacing);
+		inverseDisplacementField->SetOrigin(origin);
+		inverseDisplacementField->SetDirection(direction);
+		inverseDisplacementField->SetRegions(size);
+		inverseDisplacementField->Allocate();
+		inverseDisplacementField->FillBuffer(zeroDisplacement);
+
+		this->SetInverseDisplacementField(inverseDisplacementField);
+	}
+}
+
+template<typename TScalar, unsigned int NDimensions>
+void RBFFieldTransform<TScalar, NDimensions>::SetCoefficientsFixedParameters(
+		const ParametersType & fixedParameters) {
+	SizeValueType elems = NDimensions * (NDimensions + 3);
+
+	if (fixedParameters.Size() != elems) {
+		itkExceptionMacro("The fixed parameters are not the right size.");
+	}
+
+	SizeType size;
+	PointType origin;
+	SpacingType spacing;
+	DirectionType direction;
+
+	PixelType zeroDisplacement;
+	zeroDisplacement.Fill(0.0);
+
+	// Set coefficients field
+	for (unsigned int d = 0; d < NDimensions; d++) {
+		size[d] = static_cast<SizeValueType>(fixedParameters[d]);
+	}
+
+	for (unsigned int d = 0; d < NDimensions; d++) {
+		origin[d] = fixedParameters[d + NDimensions];
+	}
+
+	for (unsigned int d = 0; d < NDimensions; d++) {
+		spacing[d] = fixedParameters[d + 2 * NDimensions];
+	}
+
+	for (unsigned int di = 0; di < NDimensions; di++) {
+		for (unsigned int dj = 0; dj < NDimensions; dj++) {
+			direction[di][dj] = fixedParameters[3 * NDimensions
+					+ (di * NDimensions + dj)];
 		}
 	}
 

@@ -135,7 +135,7 @@ CachedMatrixTransform<TScalar,NDimensions>
 	this->m_ReferenceSpacing = image->GetSpacing();
 	this->m_ReferenceOrigin = image->GetOrigin();
 	this->m_ReferenceDirection = image->GetDirection();
-	SetFixedParametersFromImage(image);
+	SetFieldParametersFromImage(image);
 
 	this->m_NumberOfPoints = image->GetLargestPossibleRegion().GetNumberOfPixels();
 	// Initialize off-grid positions
@@ -148,21 +148,46 @@ CachedMatrixTransform<TScalar,NDimensions>
 
 template< class TScalar, unsigned int NDimensions >
 void CachedMatrixTransform<TScalar,NDimensions>
-::SetFixedParametersFromImage(const DomainBase* image) {
+::SetFieldParametersFromImage(const DomainBase* image) {
 	SizeType s = image->GetLargestPossibleRegion().GetSize();
 	PointType o = image->GetOrigin();
 	SpacingType sp = image->GetSpacing();
 	DirectionType d = image->GetDirection();
 
+	ParametersType param;
+	param.SetSize(Dimension * (Dimension + 3));
+
 	for(size_t i = 0; i<Dimension; i++) {
-		this->m_FixedParameters[i] = s[i];
-		this->m_FixedParameters[i + Dimension] = o[i];
-		this->m_FixedParameters[i + Dimension * 2] = sp[i];
-		this->m_FixedParameters[i + Dimension * 3] = d[0][i];
-		this->m_FixedParameters[i + Dimension * 4] = d[1][i];
-		this->m_FixedParameters[i + Dimension * 5] = d[2][i];
+		param[i] = s[i];
+		param[i + Dimension] = o[i];
+		param[i + Dimension * 2] = sp[i];
+		param[i + Dimension * 3] = d[0][i];
+		param[i + Dimension * 4] = d[1][i];
+		param[i + Dimension * 5] = d[2][i];
 	}
-	this->SetFixedParameters(this->m_FixedParameters);
+	this->SetFieldFixedParameters(param);
+}
+
+template< class TScalar, unsigned int NDimensions >
+void CachedMatrixTransform<TScalar,NDimensions>
+::SetCoefficientsParametersFromImage(const DomainBase* image) {
+	SizeType s = image->GetLargestPossibleRegion().GetSize();
+	PointType o = image->GetOrigin();
+	SpacingType sp = image->GetSpacing();
+	DirectionType d = image->GetDirection();
+
+	ParametersType param;
+	param.SetSize(Dimension * (Dimension + 3));
+
+	for(size_t i = 0; i<Dimension; i++) {
+		param[i] = s[i];
+		param[i + Dimension] = o[i];
+		param[i + Dimension * 2] = sp[i];
+		param[i + Dimension * 3] = d[0][i];
+		param[i + Dimension * 4] = d[1][i];
+		param[i + Dimension * 5] = d[2][i];
+	}
+	this->SetCoefficientsFixedParameters(param);
 }
 
 template< class TScalar, unsigned int NDimensions >
