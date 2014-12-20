@@ -346,7 +346,7 @@ int main(int argc, char *argv[]) {
 				BSplineTransformPointer tfm = BSplineTransform::New();
 				tfm->SetControlGridSize(size);
 				tfm->SetDomainExtent( field );
-				tfm->SetField( field );
+				tfm->SetDisplacementField( field );
 				tfm->ComputeCoefficients();
 				tf_mesh = itkDynamicCastInDebugMode< BaseTransform* >(tfm.GetPointer());
 			} else {

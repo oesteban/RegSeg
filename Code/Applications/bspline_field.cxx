@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
 	std::stringstream ss;
 	ss << outPrefix << "_field";
 	f->SetFileName( ss.str().c_str() );
-	f->SetInput( transform->GetField() );
+	f->SetInput( transform->GetDisplacementField() );
 	f->Update();
 
 	typename FieldType::Pointer field = transform->GetDisplacementField();

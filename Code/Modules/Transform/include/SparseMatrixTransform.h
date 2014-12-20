@@ -246,9 +246,6 @@ public:
 		return &this->m_S;
 	}
 
-    itkSetObjectMacro( Field, FieldType );
-    itkGetConstObjectMacro( Field, FieldType );
-
     /** Get the array of coefficient images. */
     itkGetConstMacro( CoefficientsImages, CoefficientsImageArray );
 
@@ -343,8 +340,7 @@ protected:
 	KernelFunctionPointer m_KernelFunction;
 	KernelFunctionPointer m_DerivativeKernel;
 	//KernelFunctionPointer m_SecondDerivativeKernel;
-	FieldPointer          m_Field;
-	//FieldPointer          m_CoefficientsField;
+
 	FieldPointer          m_GradientField;
 
 	virtual void ComputeMatrix( WeightsMatrixType type, size_t dim = 0 );
