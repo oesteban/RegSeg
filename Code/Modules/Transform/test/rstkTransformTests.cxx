@@ -44,13 +44,12 @@ typedef itk::ComposeImageFilter< ComponentType, FieldType > ComposeFilter;
 typedef itk::ResampleImageFilter< ComponentType, ComponentType > ExpandFilter;
 typedef itk::BSplineInterpolateImageFunction< ComponentType, double, double > BSplineInterpolator;
 typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> Writer;
+typedef typename Writer::Pointer                               WriterPointer;
 
 typedef BSplineSparseMatrixTransform<ScalarType, 3, 3> Transform;
 typedef typename Transform::Pointer                             TPointer;
-typedef typename Transform::CoefficientsImageType      CoefficientsType;
+typedef typename Transform::FieldType      CoefficientsType;
 
-typedef itk::ImageFileWriter< CoefficientsType >  CoefficientsWriterType;
-typedef CoefficientsWriterType::Pointer           CoefficientsWriterPointer;
 
 namespace rstk {
 
@@ -186,8 +185,8 @@ TEST_F( TransformTests, SparseMatrixComputeCoeffsTest ) {
 	for (size_t i = 0; i<3; i++ ) {
 		std::stringstream ss;
 		ss << "coefficients_" << i << ".nii.gz";
-		CoefficientsWriterPointer ww = CoefficientsWriterType::New();
-		ww->SetInput( m_transform->GetCoefficientsImages()[i] );
+		WriterPointer ww = Writer::New();
+		ww->SetInput( m_transform->GetCoefficientsField() );
 		ww->SetFileName( ss.str().c_str() );
 		ww->Update();
 	}
@@ -311,12 +310,13 @@ TEST_F( TransformTests, InterpolateAllSamples1 ) {
 
 	Transform::SparseMatrixRowType row;
 
-	Transform::CoefficientsImageArray coeff = m_transform->GetCoefficientsImages();
+	Transform::FieldPointer coeff = m_transform->GetCoefficientsField();
 	size_t c;
 
 	VectorType v1;
 	VectorType v2;
-	double wi, coeffk;
+	VectorType coeffk;
+	double wi;
 	double error = 0.0;
 	for( size_t r = 0; r<m.rows(); r++ ) {
 		row = m.get_row( r );
@@ -327,9 +327,9 @@ TEST_F( TransformTests, InterpolateAllSamples1 ) {
 			c = row[i].first;
 			wi = row[i].second;
 
+			coeffk = coeff->GetPixel( coeff->ComputeIndex(c) );
 			for( size_t j = 0; j<3; j++ ) {
-				coeffk = coeff[j]->GetPixel( coeff[j]->ComputeIndex(c) );
-				v1[j]+= coeffk * wi;
+				v1[j]+= coeffk[j] * wi;
 			}
 		}
 		error+= (v1-v2).GetNorm();
@@ -418,8 +418,8 @@ TEST_F( TransformTests, RandomSampleTest ) {
 
 
 	TPointer tfm = Transform::New();
-	tfm->SetControlGridInformation( m_transform->GetCoefficientsImages()[0] );
-	tfm->SetCoefficientsImages( m_transform->GetCoefficientsImages() );
+	tfm->SetControlGridInformation( m_transform->GetCoefficientsField() );
+	tfm->SetCoefficientsField( m_transform->GetCoefficientsField() );
 
 	int rindex = 0;
 	std::vector< int > subsample;

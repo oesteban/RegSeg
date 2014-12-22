@@ -404,9 +404,16 @@ public:
 		return Self::DisplacementField;
 	}
 
-	virtual NumberOfParametersType GetNumberOfLocalParameters(void) const
-	{
+	virtual NumberOfParametersType GetNumberOfLocalParameters(void) const {
 		return Dimension;
+	}
+
+	virtual NumberOfParametersType GetNumberOfFieldParameters() const {
+		return NDimensions * (NDimensions + 3);
+	}
+
+	OutputVectorType GetCoefficient( const size_t id ) {
+		return this->m_CoefficientsField->GetPixel( this->m_CoefficientsField->ComputeIndex( id ) );
 	}
 
 protected:

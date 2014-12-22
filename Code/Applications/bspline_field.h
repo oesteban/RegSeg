@@ -56,6 +56,7 @@
 #include <itkImage.h>
 #include <itkImageFileReader.h>
 #include <itkImageFileWriter.h>
+#include <itkRandomImageSource.h>
 #include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkBSplineInterpolateImageFunction.h>
 #include <itkBinaryThresholdImageFilter.h>
@@ -106,32 +107,28 @@ typedef float                                                ScalarType;
 typedef rstk::BSplineSparseMatrixTransform
 		                          < ScalarType, DIMENSION>   Transform;
 typedef Transform::Pointer                                   TPointer;
-typedef typename Transform::CoefficientsImageType            CoefficientsType;
-typedef typename Transform::CoefficientsImageArray           CoefficientsImageArray;
 typedef typename Transform::FieldType                        FieldType;
+typedef typename FieldType::Pointer                          FieldPointer;
 typedef typename Transform::VectorType                       VectorType;
 
+typedef itk::RandomImageSource< ChannelType >                RandomCoeffSource;
+typedef typename RandomCoeffSource::Pointer                  RandomCoeffSourcePointer;
+
 typedef itk::ImageRandomNonRepeatingIteratorWithIndex
-		                             <CoefficientsType>      RandomIterator;
-typedef itk::ImageFileWriter< CoefficientsType >             CoefficientsWriterType;
+		                             <FieldType>             RandomIterator;
+typedef itk::ImageFileWriter< FieldType >                    CoefficientsWriterType;
 typedef CoefficientsWriterType::Pointer                      CoefficientsWriterPointer;
 
 
-typedef itk::SmoothingRecursiveGaussianImageFilter< CoefficientsType >
+typedef itk::SmoothingRecursiveGaussianImageFilter< FieldType >
 	 	 	 	 	 	 	 	 	 	 	 	 	 	 SmoothingFilterType;
 typedef typename SmoothingFilterType::Pointer			 SmoothingFilterPointer;
 typedef typename SmoothingFilterType::SigmaArrayType     SigmaArrayType;
 
-typedef itk::MinimumMaximumImageCalculator< CoefficientsType > MaxCalc;
-typedef typename MaxCalc::Pointer                              MaxCalcPointer;
-
-typedef itk::StatisticsImageFilter< CoefficientsType >         MedianCalc;
-typedef typename MedianCalc::Pointer                           MedianCalcPointer;
-
-typedef itk::MultiplyImageFilter< CoefficientsType >           MultiplyFilter;
+typedef itk::MultiplyImageFilter< FieldType >           MultiplyFilter;
 typedef typename MultiplyFilter::Pointer                       MultiplyPointer;
 
-typedef itk::SubtractImageFilter< CoefficientsType >           SubtractFilter;
+typedef itk::SubtractImageFilter< FieldType >           SubtractFilter;
 typedef typename SubtractFilter::Pointer                       SubtractPointer;
 
 typedef itk::ThresholdImageFilter< ChannelType >               ThresholdFilter;

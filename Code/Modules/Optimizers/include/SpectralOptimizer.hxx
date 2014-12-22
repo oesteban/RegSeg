@@ -498,11 +498,10 @@ void SpectralOptimizer<TFunctional>::InitializeParameters() {
 	this->m_Transform->SetControlGridSpacing( this->m_GridSpacing );
 	this->m_Transform->Initialize();
 	this->m_MaxDisplacement = this->m_Transform->GetMaximumDisplacement();
-	CoefficientsImageArray coeff = this->m_Transform->GetCoefficientsImages();
 
 	VectorType zerov; zerov.Fill( 0.0 );
 	/* Initialize next uk */
-	for ( size_t i=0; i<coeff.Size(); i++ ) {
+	for ( size_t i=0; i<Dimension; i++ ) {
 		this->m_Coefficients[i] = CoefficientsImageType::New();
 		this->m_Coefficients[i]->SetRegions(   this->m_Transform->GetControlGridSize() );
 		this->m_Coefficients[i]->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
