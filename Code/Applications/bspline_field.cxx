@@ -66,11 +66,11 @@ int main(int argc, char *argv[]) {
 	ref->SetDirection( int_dir );
 	ref->SetOrigin( int_orig );
 
-	typename CoefficientsType::SizeType size;
-	typename CoefficientsType::SpacingType spacing;
+	typename FieldType::SizeType size;
+	typename FieldType::SpacingType spacing;
 
 	size.Fill(10);
-	CoefficientsImageArray coeffs;
+	FieldPointer coeffs;
 
 	TPointer transform = Transform::New();
 
@@ -100,89 +100,43 @@ int main(int argc, char *argv[]) {
 		transform->SetDomainExtent(ref);
 		transform->SetOutputReference( ref );
 		transform->Initialize();
+		coeffs = transform->GetCoefficientsField();
+		spacing = coeffs->GetSpacing();
 
-		coeffs = transform->GetCoefficientsImages();
-		spacing = coeffs[0]->GetSpacing();
-		size_t numPix = coeffs[0]->GetLargestPossibleRegion().GetNumberOfPixels();
-
-		typename CoefficientsType::RegionType region;
-		typename CoefficientsType::IndexType start;
-		typename CoefficientsType::SizeType regionSize;
-
-		for( size_t i = 0; i<DIMENSION; i++ ) {
-			start[i] = static_cast<size_t>( floor( size[i] * 0.35 + 0.5f ) ) -1;
-			regionSize[i] = size[i] - 2.0 * start[i];
+		RandomCoeffSourcePointer rnd[DIMENSION];
+		ScalarType* rndbuff[DIMENSION];
+		for (size_t i = 0; i<DIMENSION; i++) {
+			double maxcoeff = 0.39 * spacing[i];
+			double mincoeff = - maxcoeff;
+			rnd[i] = RandomCoeffSource::New();
+			rnd[i]->SetSize(size);
+			rnd[i]->SetOrigin(coeffs->GetOrigin());
+			rnd[i]->SetSpacing(spacing);
+			rnd[i]->SetMax(maxcoeff);
+			rnd[i]->SetMin(mincoeff);
+			rnd[i]->Update();
+			rndbuff[i] = rnd[i]->GetOutput()->GetBufferPointer();
 		}
-		region.SetIndex( start );
-		region.SetSize( regionSize );
 
-		for( size_t i = 0; i< DIMENSION; i++) {
-			RandomIterator rndit( coeffs[i], region );
-#ifdef NDEBUG
-			rndit.ReinitializeSeed();
-#endif
-			rndit.SetNumberOfSamples( static_cast<size_t>( floor( numPix * 0.08 + 0.5f ) ) );
-
-			for(rndit.GoToBegin(); !rndit.IsAtEnd(); ++rndit){
-				float r = -1.0 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/2.0));
-				rndit.Set( r );
-			}
-
-			SigmaArrayType sigma;
-			sigma.Fill(12.0);
-
-			SmoothingFilterPointer s = SmoothingFilterType::New();
-			s->SetInput( coeffs[i] );
-			s->SetSigmaArray( sigma );
-			s->Update();
-			coeffs[i] = s->GetOutput();
-
-			ScalarType *buff = coeffs[i]->GetBufferPointer();
-			std::vector< ScalarType > sample;
-
-			for( size_t j = 0; j < numPix; j++ ) {
-				sample.push_back( *(buff + j) );
-			}
-
-			std::sort( sample.begin(), sample.end() );
-
-			// Remove median
-			SubtractPointer sub = SubtractFilter::New();
-			sub->SetInput1( coeffs[i] );
-			sub->SetConstant( sample[ static_cast<size_t>( floor( 0.5 * numPix + 0.5f ) ) ] );
-			sub->Update();
-			coeffs[i] = sub->GetOutput();
-
-			// Compute maximum displacement (check both endpoints)
-			MaxCalcPointer max = MaxCalc::New();
-			max->SetImage( coeffs[i] );
-			max->Compute();
-
-			float immax = max->GetMaximum();
-			if ( fabs( max->GetMinimum() ) > fabs(immax) ) {
-				immax = fabs( max->GetMinimum() );
-			}
-
-			// Scale to maximum diffeomorphic displacement
-			float max_disp = (spacing[i] * 0.39);
-
-			MultiplyPointer m = MultiplyFilter::New();
-			m->SetInput1( coeffs[i] );
-			m->SetConstant( max_disp / immax );
-			m->Update();
-			coeffs[i] = m->GetOutput();
-
-			CoefficientsWriterPointer w = CoefficientsWriterType::New();
-			std::stringstream ss;
-			ss << outPrefix << "_coeffs_" << i << ".nii.gz";
-			w->SetFileName( ss.str().c_str() );
-			w->SetInput( coeffs[i] );
-			w->Update();
+		size_t npix = coeffs->GetLargestPossibleRegion().GetNumberOfPixels();
+		VectorType* cbuff = coeffs->GetBufferPointer();
+		VectorType v;
+		for( size_t i = 0; i < npix; i++ ) {
+			for( size_t j = 0; j < DIMENSION; j++ )
+				v[j] = *(rndbuff[j] + i);
+			*(cbuff + i) = v;
 		}
+
+		typename FieldWriter::Pointer w = FieldWriter::New();
+		std::stringstream ss;
+		ss << outPrefix << "_coeffs.nii.gz";
+		w->SetFileName( ss.str().c_str() );
+		w->SetInput( coeffs );
+		w->Update();
 	}
 
 	// Set coefficients
-	transform->SetCoefficientsImages( coeffs );
+	transform->SetCoefficientsField( coeffs );
 	transform->Interpolate();
 
 	typename ComponentsWriter::Pointer f = ComponentsWriter::New();

@@ -712,13 +712,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 }
 
 template< class TScalar, unsigned int NDimensions >
-inline typename SparseMatrixTransform<TScalar,NDimensions>::VectorType
-SparseMatrixTransform<TScalar,NDimensions>
-::GetCoefficient( const size_t id ) {
-	return this->m_CoefficientsField->GetPixel( this->m_CoefficientsField->ComputeIndex( id ) );
-}
-
-template< class TScalar, unsigned int NDimensions >
 inline bool
 SparseMatrixTransform<TScalar,NDimensions>
 ::SetPointValue( const size_t id, typename SparseMatrixTransform<TScalar,NDimensions>::VectorType pi ) {
@@ -779,13 +772,6 @@ SparseMatrixTransform<TScalar,NDimensions>
 			*( buff + row )+= *( fbuf + row );
 		}
 	}
-}
-
-template< class TScalar, unsigned int NDimensions >
-const typename SparseMatrixTransform<TScalar,NDimensions>::FieldType*
-SparseMatrixTransform<TScalar,NDimensions>
-::GetCoefficientsVectorImage(){
-	return this->GetCoefficientsField();
 }
 
 

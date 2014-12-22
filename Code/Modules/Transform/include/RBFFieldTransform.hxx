@@ -39,7 +39,7 @@ RBFFieldTransform<TScalar, NDimensions>::RBFFieldTransform() :
 	this->m_CoefficientsField = ITK_NULLPTR;
 	this->m_InverseDisplacementField = ITK_NULLPTR;
 
-	SizeValueType elems = NDimensions * (NDimensions + 3);
+	SizeValueType elems = this->GetNumberOfFieldParameters();
 	this->m_FixedParameters.SetSize(elems * 2);
 	this->m_FixedParameters.Fill(0.0);
 
@@ -504,7 +504,7 @@ void RBFFieldTransform<TScalar, NDimensions>::SetInverseInterpolator(
 template<typename TScalar, unsigned int NDimensions>
 void RBFFieldTransform<TScalar, NDimensions>::SetFixedParameters(
 		const ParametersType & fixedParameters) {
-	SizeValueType elems = NDimensions * (NDimensions + 3);
+	SizeValueType elems = this->GetNumberOfFieldParameters();
 
 	if (fixedParameters.Size() != elems * 2) {
 		itkExceptionMacro("The fixed parameters are not the right size.");
@@ -595,7 +595,7 @@ void RBFFieldTransform<TScalar, NDimensions>::SetFixedParameters(
 template<typename TScalar, unsigned int NDimensions>
 void RBFFieldTransform<TScalar, NDimensions>::SetFieldFixedParameters(
 		const ParametersType & fixedParameters) {
-	SizeValueType elems = NDimensions * (NDimensions + 3);
+	SizeValueType elems = this->GetNumberOfFieldParameters();
 
 	if (fixedParameters.Size() != elems) {
 		itkExceptionMacro("The fixed parameters are not the right size.");
@@ -655,7 +655,7 @@ void RBFFieldTransform<TScalar, NDimensions>::SetFieldFixedParameters(
 template<typename TScalar, unsigned int NDimensions>
 void RBFFieldTransform<TScalar, NDimensions>::SetCoefficientsFixedParameters(
 		const ParametersType & fixedParameters) {
-	SizeValueType elems = NDimensions * (NDimensions + 3);
+	SizeValueType elems = this->GetNumberOfFieldParameters();
 
 	if (fixedParameters.Size() != elems) {
 		itkExceptionMacro("The fixed parameters are not the right size.");
@@ -738,7 +738,7 @@ void RBFFieldTransform<TScalar, NDimensions>::SetFixedParametersFromDisplacement
 
 template<typename TScalar, unsigned int NDimensions>
 void RBFFieldTransform<TScalar, NDimensions>::SetFixedParametersFromCoefficientsField() const {
-	SizeValueType elems = NDimensions * (NDimensions + 3);
+	SizeValueType elems = this->GetNumberOfFieldParameters();
 
 	const typename DisplacementFieldType::RegionType & coeffRegion =
 			this->m_CoefficientsField->GetLargestPossibleRegion();

@@ -210,7 +210,7 @@ public:
 	itkGetConstObjectMacro(CurrentCoefficients, FieldType);
 
 	const FieldType * GetCurrentCoefficientsField () const {
-		return this->m_Transform->GetCoefficientsVectorImage();
+		return this->m_Transform->GetCoefficientsField();
 	}
 
 	static void AddOptions( SettingsDesc& opts );

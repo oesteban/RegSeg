@@ -238,24 +238,15 @@ public:
 	// Values off-grid (displacement vector of a node)
 	inline bool       SetPointValue( const size_t id, VectorType pi );
 
-	// Coefficients of the interpolating kernels
-	inline VectorType GetCoefficient ( const size_t id );
-
 	virtual const WeightsMatrix*  GetPhi (const bool onlyvalid = true);
 	virtual const WeightsMatrix*  GetS (){
 		return &this->m_S;
 	}
 
-    /** Get the array of coefficient images. */
-    itkGetConstMacro( CoefficientsImages, CoefficientsImageArray );
-
     void SetCoefficientsImages( const CoefficientsImageArray & images );
     void SetCoefficientsImage( size_t dim, const CoefficientsImageType* c );
     void SetCoefficientsVectorImage( const FieldType* f );
     void AddCoefficientsVectorImage( const FieldType* f );
-    const FieldType* GetCoefficientsVectorImage();
-
-
     void SetControlGridInformation( const DomainBase* image );
 
 	void Initialize();
@@ -328,7 +319,6 @@ protected:
 
 	AltCoeffPointer              m_FlatCoeffs;
 
-	CoefficientsImageArray       m_CoefficientsImages;
 	CoefficientsImageArray       m_Derivatives;
 
 	//DimensionParameters m_CoeffDerivative;  // Serialized k values in a grid
