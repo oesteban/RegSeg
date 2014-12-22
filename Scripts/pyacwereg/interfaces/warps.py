@@ -4,8 +4,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
-# @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-23 11:54:09
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2014-12-22 13:32:41
 
 import os
 import os.path as op
@@ -49,7 +49,7 @@ class RandomBSplineDeformationInputSpec(ANTSCommandInputSpec):
 
 class RandomBSplineDeformationOutputSpec(TraitedSpec):
     out_file = OutputMultiPath(File(exists=True, desc='warped input files'))
-    out_coeff = OutputMultiPath(File(exists=True, desc='output coefficients'))
+    out_coeff = File(exists=True, desc='output coefficients')
     out_field = File(exists=True, desc='output warping field')
     out_field_base = OutputMultiPath(
         File(exists=True, desc='output warping bspline field'))
@@ -94,9 +94,7 @@ class RandomBSplineDeformation(ANTSCommand):
         outputs['out_file'] = [op.abspath('%s_warped_%d.nii.gz' % (
             out_prefix, i)) for i in range(len(self.inputs.in_file))]
         outputs['out_field'] = op.abspath('%s_field.nii.gz' % out_prefix)
-        outputs['out_coeff'] = [
-            op.abspath('%s_coeffs_%d.nii.gz' % (out_prefix, i))
-            for i in range(3)]
+        outputs['out_coeff'] = op.abspath('%s_coeffs.nii.gz' % out_prefix)
         outputs['out_field_base'] = [
             op.abspath('%s_field_cmp%d.nii.gz' % (out_prefix, i))
             for i in range(3)]
