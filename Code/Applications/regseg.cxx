@@ -275,14 +275,14 @@ int main(int argc, char *argv[]) {
     	polyDataWriter->Update();
     }
 
-    for ( size_t contid = 0; contid <= nCont; contid++) {
-		typename ProbabilityMapWriter::Pointer w = ProbabilityMapWriter::New();
-		w->SetInput( acwereg->GetFunctionalOfLevel(-1)->GetCurrentMap(contid) );
-		std::stringstream ss;
-		ss << outPrefix << "_final_tpm_" << contid << ".nii.gz";
-		w->SetFileName( ss.str().c_str() );
-		w->Update();
-    }
+    //for ( size_t contid = 0; contid <= nCont; contid++) {
+	//	typename ProbabilityMapWriter::Pointer w = ProbabilityMapWriter::New();
+	//	w->SetInput( acwereg->GetFunctionalOfLevel(-1)->GetCurrentMap(contid) );
+	//	std::stringstream ss;
+	//	ss << outPrefix << "_final_tpm_" << contid << ".nii.gz";
+	//	w->SetFileName( ss.str().c_str() );
+	//	w->Update();
+    //}
 
 	// Read and transform images if present
 	for( size_t i = 0; i<fixedImageNames.size(); i++) {

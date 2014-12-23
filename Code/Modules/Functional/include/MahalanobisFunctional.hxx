@@ -137,7 +137,7 @@ typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersTyp
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::UpdateParametersOfRegionGeneral( const size_t idx ) {
 	ParametersType newParameters;
-	ProbabilityMapConstPointer roipm = this->GetCurrentMap( idx );
+	ProbabilityMapPointer roipm = this->m_CurrentMaps[idx];
 
 	// Apply weighted mean/covariance estimators from ITK
 	typename CovarianceFilter::WeightArrayType weights;
@@ -193,7 +193,7 @@ typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersTyp
 MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 ::UpdateParametersOfRegionRobust( const size_t idx ) {
 	ParametersType newParameters;
-	ProbabilityMapConstPointer roipm = this->GetCurrentMap( idx );
+	ProbabilityMapPointer roipm = this->m_CurrentMaps[idx];
 
 	size_t nComp = MeanType::GetNumberOfComponents();
 	std::vector< ReferenceValueType > values[nComp];

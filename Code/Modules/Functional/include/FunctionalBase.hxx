@@ -70,8 +70,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_ApplySmoothing(false),
  m_UseBackground(false),
  m_Value(0.0),
- m_MaxEnergy(0.0),
- m_LastROI(0)
+ m_MaxEnergy(0.0)
  {
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_Sigma.Fill(0.0);
@@ -117,10 +116,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	// Compute and set regions in m_ROIs
 	this->ComputeCurrentRegions();
-	for( size_t id = 0; id < m_ROIs.size(); id++) {
-		this->m_ROIs[id] = this->m_CurrentROIs[id];
-	}
-	this->m_LastROI = m_ROIs.size() - 1;
+
 
 	// Compute the outer region in each vertex
 	this->InitializeContours();
@@ -158,8 +154,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	this->m_NumberOfContours++;
 	this->m_NumberOfRegions++;
-    this->m_ROIs.resize( this->m_NumberOfContours+1 );
-    this->m_CurrentROIs.resize( this->m_NumberOfContours+1 );
+    // this->m_ROIs.resize( this->m_NumberOfContours+1 );
+    // this->m_CurrentROIs.resize( this->m_NumberOfContours+1 );
     this->m_CurrentMaps.resize( this->m_NumberOfContours+1 );
 	return this->m_NumberOfContours-1;
 }
@@ -326,21 +322,19 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		double vxvol = 1.0;
 		for(size_t i = 0; i<Dimension; i++)
-			vxvol *= this->GetCurrentMap(0)->GetSpacing()[i];
+			vxvol *= this->m_PriorsMap->GetSpacing()[i];
 
-		size_t nPix = this->GetCurrentMap(0)->GetLargestPossibleRegion().GetNumberOfPixels();
-		size_t nrois = m_ROIs.size();
+		size_t nPix = this->m_PriorsMap->GetLargestPossibleRegion().GetNumberOfPixels();
+		size_t nrois = this->m_NumberOfRegions;
 		size_t lastroi = nrois;
 
 		const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
 		const typename ProbabilityMapType::PixelType* bgBuffer = this->m_BackgroundMask->GetBufferPointer();
-		const typename ProbabilityMapType::PixelType* roiBuffer[nrois];
 
+		PriorsValueType* tpmBuffer = this->m_PriorsMap->GetBufferPointer();
 
 		double regionVol[nrois];
-
 		for( size_t roi = 0; roi < lastroi; roi++ ) {
-			roiBuffer[roi] = this->GetCurrentMap(roi)->GetBufferPointer();
 			regionVol[roi] = 0.0;
 		}
 
@@ -360,7 +354,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			//}
 
 			for( size_t roi = 0; roi < lastroi; roi++ ) {
-				w = *( roiBuffer[roi] + i );
+				w = *( tpmBuffer + i * this->m_NumberOfRegions + roi );
 				if ( w < 1.0e-8 ) {
 					continue;
 				}
@@ -386,6 +380,22 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		}
 
 		this->m_EnergyUpdated = true;
+
+		EnergyModelPointer model = EnergyModelType::New();
+		model->SetInput(this->m_ReferenceImage);
+		model->SetPriorsMap(this->m_PriorsMap);
+		model->SetMask(this->m_BackgroundMask);
+		model->Update();
+
+		EnergyFilterPointer efilter = EnergyFilter::New();
+		efilter->SetInput(this->m_ReferenceImage);
+		efilter->SetPriorsMap(this->m_PriorsMap);
+		efilter->SetMask(this->m_BackgroundMask);
+		efilter->SetModel(model);
+		efilter->Update();
+
+
+		//std::cout << efilter->GetEnergy() << std::endl;
 	}
 	return this->m_Value;
 }
@@ -412,53 +422,25 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	return isInside;
 }
 
-template< typename TReferenceImageType, typename TCoordRepType >
-typename FunctionalBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
-FunctionalBase<TReferenceImageType, TCoordRepType>
-::GetCurrentRegion( size_t idx ) {
-	if(!this->m_RegionsUpdated )
-		this->ComputeCurrentRegions();
+//template< typename TReferenceImageType, typename TCoordRepType >
+//typename FunctionalBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
+//FunctionalBase<TReferenceImageType, TCoordRepType>
+//::GetCurrentRegion( size_t idx ) {
+//	if(!this->m_RegionsUpdated )
+//		this->ComputeCurrentRegions();
+//
+//	return this->m_CurrentROIs[idx];
+//}
 
-	return this->m_CurrentROIs[idx];
-}
-
-template< typename TReferenceImageType, typename TCoordRepType >
-const typename FunctionalBase<TReferenceImageType, TCoordRepType>::ProbabilityMapType*
-FunctionalBase<TReferenceImageType, TCoordRepType>
-::GetCurrentMap( size_t idx ) {
-	if(!this->m_RegionsUpdated ) {
-		this->ComputeCurrentRegions();
-	}
-
-	if( this->m_CurrentMaps[idx].IsNull() ) {
-		this->m_CurrentMaps[idx] = ProbabilityMapType::New();
-		this->m_CurrentMaps[idx]->SetRegions(   this->m_ReferenceSize );
-		this->m_CurrentMaps[idx]->SetOrigin(    this->m_FirstPixelCenter );
-		this->m_CurrentMaps[idx]->SetDirection( this->m_Direction );
-		this->m_CurrentMaps[idx]->SetSpacing(   this->m_ReferenceSpacing );
-		this->m_CurrentMaps[idx]->Allocate();
-		this->m_CurrentMaps[idx]->FillBuffer( 0.0 );
-	}
-
-	// Resample to reference image resolution
-	ResampleROIFilterPointer resampleFilter = ResampleROIFilterType::New();
-	resampleFilter->SetInput( this->m_CurrentROIs[idx] );
-	resampleFilter->SetSize( this->m_ReferenceSize );
-	resampleFilter->SetOutputOrigin(    this->m_FirstPixelCenter );
-	resampleFilter->SetOutputSpacing(   this->m_ReferenceSpacing );
-	resampleFilter->SetOutputDirection( this->m_Direction );
-	resampleFilter->SetDefaultPixelValue( 0.0 );
-	resampleFilter->Update();
-	ProbabilityMapPointer tpm = resampleFilter->GetOutput();
-
-	itk::ImageAlgorithm::Copy<ProbabilityMapType,ProbabilityMapType>(
-			tpm, this->m_CurrentMaps[idx],
-			tpm->GetLargestPossibleRegion(),
-			this->m_CurrentMaps[idx]->GetLargestPossibleRegion()
-	);
-
-	return this->m_CurrentMaps[idx].GetPointer();
-}
+//template< typename TReferenceImageType, typename TCoordRepType >
+//const typename FunctionalBase<TReferenceImageType, TCoordRepType>::ProbabilityMapType*
+//FunctionalBase<TReferenceImageType, TCoordRepType>
+//::GetCurrentMap( size_t idx ) {
+//	if(!this->m_RegionsUpdated ) {
+//		this->ComputeCurrentRegions();
+//	}
+//	return this->m_CurrentMaps[idx].GetPointer();
+//}
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
@@ -504,10 +486,20 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	size_t nPix = this->m_CurrentRegions->GetLargestPossibleRegion().GetNumberOfPixels();
 	ROIPixelType* regionsBuffer = this->m_CurrentRegions->GetBufferPointer();
 
-	for (ROIPixelType idx = 0; idx < this->m_CurrentROIs.size(); idx++ ) {
+	if( this->m_PriorsMap.IsNull() ) {
+		this->m_PriorsMap = PriorsImageType::New();
+		this->m_PriorsMap->SetRegions(   this->m_ReferenceSize );
+		this->m_PriorsMap->SetOrigin(    this->m_FirstPixelCenter );
+		this->m_PriorsMap->SetDirection( this->m_Direction );
+		this->m_PriorsMap->SetSpacing(   this->m_ReferenceSpacing );
+		this->m_PriorsMap->SetVectorLength(this->m_NumberOfRegions);
+		this->m_PriorsMap->Allocate();
+	}
+
+	for (ROIPixelType idx = 0; idx < this->m_CurrentMaps.size(); idx++ ) {
 		ROIPointer tempROI;
 
-		if ( idx < this->m_CurrentROIs.size() - 1 ) {
+		if ( idx < this->m_CurrentMaps.size() - 1 ) {
 			BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
 			meshFilter->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
 			meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
@@ -542,8 +534,45 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			itkWarningMacro(<< " ROI " << idx << " is empty.")
 		}
 
-		this->m_CurrentROIs[idx] = tempROI;
+
+		if( this->m_CurrentMaps[idx].IsNull() ) {
+			this->m_CurrentMaps[idx] = ProbabilityMapType::New();
+			this->m_CurrentMaps[idx]->SetRegions(   this->m_ReferenceSize );
+			this->m_CurrentMaps[idx]->SetOrigin(    this->m_FirstPixelCenter );
+			this->m_CurrentMaps[idx]->SetDirection( this->m_Direction );
+			this->m_CurrentMaps[idx]->SetSpacing(   this->m_ReferenceSpacing );
+			this->m_CurrentMaps[idx]->Allocate();
+			this->m_CurrentMaps[idx]->FillBuffer( 0.0 );
+		}
+
+		// Resample to reference image resolution
+		ResampleROIFilterPointer resampleFilter = ResampleROIFilterType::New();
+		resampleFilter->SetInput( tempROI );
+		resampleFilter->SetSize( this->m_ReferenceSize );
+		resampleFilter->SetOutputOrigin(    this->m_FirstPixelCenter );
+		resampleFilter->SetOutputSpacing(   this->m_ReferenceSpacing );
+		resampleFilter->SetOutputDirection( this->m_Direction );
+		resampleFilter->SetDefaultPixelValue( 0.0 );
+		resampleFilter->Update();
+		ProbabilityMapPointer tpm = resampleFilter->GetOutput();
+		typename ProbabilityMapType::PixelType* tpmbuff = tpm->GetBufferPointer();
+
+		itk::ImageAlgorithm::Copy<ProbabilityMapType,ProbabilityMapType>(
+				tpm, this->m_CurrentMaps[idx],
+				tpm->GetLargestPossibleRegion(),
+				this->m_CurrentMaps[idx]->GetLargestPossibleRegion()
+		);
+
+
+		PriorsValueType* priorBuffer = this->m_PriorsMap->GetBufferPointer();
+		size_t refpix = this->m_PriorsMap->GetLargestPossibleRegion().GetNumberOfPixels();
+
+		for(size_t i = 0; i < refpix; i++) {
+			*(priorBuffer + i * this->m_NumberOfRegions + idx) = *(tpmbuff+i);
+		}
+
 	}
+
 	this->m_RegionsUpdated = true;
 }
 

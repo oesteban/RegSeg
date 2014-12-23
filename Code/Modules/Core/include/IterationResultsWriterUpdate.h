@@ -111,14 +111,14 @@ public:
        		}
 
     		if ( this->m_Verbosity > 2 ) {
-				for( size_t r = 0; r <= nContours; r++){
-					ss.str("");
-					ss << this->m_Prefix << "region_" << r  << "lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
-					typename MapWriter::Pointer wr = MapWriter::New();
-					wr->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentMap(r));
-					wr->SetFileName(ss.str().c_str() );
-					wr->Update();
-				}
+				//for( size_t r = 0; r <= nContours; r++){
+				//	ss.str("");
+				//	ss << this->m_Prefix << "region_" << r  << "lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
+				//	typename MapWriter::Pointer wr = MapWriter::New();
+				//	wr->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentMap(r));
+				//	wr->SetFileName(ss.str().c_str() );
+				//	wr->Update();
+				//}
     		}
 
     	}

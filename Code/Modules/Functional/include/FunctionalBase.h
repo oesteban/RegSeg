@@ -62,6 +62,8 @@
 #include <itkSmoothingRecursiveGaussianImageFilter.h>
 #include <vnl/vnl_sparse_matrix.h>
 
+#include <itkMahalanobisDistanceMembershipFunction.h>
+
 #include <itkSimplexMesh.h>
 #include <itkSimplexMeshToTriangleMeshFilter.h>
 #include <itkTriangleMeshToSimplexMeshFilter.h>
@@ -74,6 +76,9 @@
 #include "WarpQEMeshFilter.h"
 #include "SparseMatrixTransform.h"
 #include "DownsampleAveragingFilter.h"
+
+#include "EnergyCalculatorFilter.h"
+#include "MahalanobisDistanceModel.h"
 
 namespace rstk {
 /** \class FunctionalBase
@@ -134,6 +139,9 @@ public:
 	typedef typename ReferenceImageType::DirectionType       DirectionType;
 	typedef typename ReferenceImageType::SizeType            ReferenceSizeType;
 	typedef typename ReferenceImageType::SpacingType         ReferenceSpacingType;
+
+	//typedef itk::MahalanobisDistanceMembershipFunction< ReferencePixelType >
+
 
 	typedef itk::Array< MeasureType >                        MeasureArray;
 
@@ -267,6 +275,18 @@ public:
 
 	typedef itk::FixedArray< PointValueType, 7u >            GradientStatsArray;
 
+
+	typedef MahalanobisDistanceModel< ReferenceImageType >              EnergyModelType;
+	typedef typename EnergyModelType::Pointer                           EnergyModelPointer;
+
+	typedef EnergyCalculatorFilter<ReferenceImageType, EnergyModelType> EnergyFilter;
+	typedef typename EnergyFilter::Pointer                              EnergyFilterPointer;
+	typedef typename EnergyFilter::PriorsImageType                      PriorsImageType;
+	typedef typename PriorsImageType::Pointer                           PriorsImagePointer;
+	typedef typename PriorsImageType::PixelType                         PriorsPixelType;
+	typedef typename PriorsImageType::InternalPixelType                 PriorsValueType;
+
+
 	struct GradientSample {
 		PointValueType grad;
 		PointValueType w;
@@ -357,15 +377,12 @@ public:
 	virtual void UpdateDescriptors() = 0;
 	virtual std::string PrintFormattedDescriptors() = 0;
 
-	ROIConstPointer GetCurrentRegion( size_t idx );
 	itkGetConstObjectMacro( CurrentRegions, ROIType );
 
 	itkGetConstObjectMacro( BackgroundMask, ProbabilityMapType);
 	virtual void SetBackgroundMask (const ProbabilityMapType * _arg);
 
 	itkGetConstMacro( OffMaskVertices, std::vector<size_t>);
-
-	const ProbabilityMapType* GetCurrentMap( size_t idx );
 
 	size_t AddShapePrior( const VectorContourType* prior );
 
@@ -416,9 +433,10 @@ protected:
 	//WarpContourPointer m_ContourUpdater;
 	//TransformPointer m_Transform;
 	DisplacementResamplerPointer m_EnergyResampler;
-	ROIList m_ROIs;
+	// ROIList m_ROIs;
 	ROIList m_CurrentROIs;
 	ProbabilityMapList m_CurrentMaps;
+	PriorsImagePointer m_PriorsMap;
 	ProbabilityMapConstPointer m_BackgroundMask;
 	ROIPointer m_CurrentRegions;
 	ReferenceImageConstPointer m_ReferenceImage;
@@ -440,7 +458,7 @@ protected:
 	PointIdContainer m_OuterRegion;
 	PointIdContainer m_InnerRegion;
 	PointIdContainer m_Offsets;
-	size_t m_LastROI;
+
 	std::vector<size_t> m_OffMaskVertices;
 
 	GradientStatsArray m_GradientStatistics;
