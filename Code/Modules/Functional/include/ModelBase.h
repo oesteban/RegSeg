@@ -76,8 +76,9 @@ public:
 	typedef typename PixelType::ValueType                                     PixelValueType;
 
 	/** MeasurementVector typedef support */
+	typedef double MeasureType;
 	typedef PixelType                                                         MeasurementVectorType;
-	//typedef itk::Array< PixelValueType >                                      MeasurementVectorType;
+	typedef typename itk::Array<MeasureType>                                  MeasureTypeContainer;
 
 	/** Typedef for the length of each measurement vector */
 	typedef unsigned int MeasurementVectorSizeType;
@@ -104,7 +105,6 @@ public:
 	typedef typename Superclass::DataObjectPointer                            DataObjectPointer;
 	typedef std::vector< DataObjectPointer >                                  DataObjectPointerArray;
 
-	typedef double MeasureType;
 
 	/** Method to get membership score (discriminant score) of an entity
 	 * or measurement. Evaluate() maps from a vector measurement type
@@ -137,6 +137,8 @@ public:
 
 	/** Get the length of the measurement vector */
 	itkGetConstMacro(MeasurementVectorSize, MeasurementVectorSizeType);
+
+	virtual MeasureTypeContainer GetRegionOffsetContainer() const = 0;
 
 protected:
 	ModelBase();

@@ -279,7 +279,7 @@ public:
 	typedef MahalanobisDistanceModel< ReferenceImageType >              EnergyModelType;
 	typedef typename EnergyModelType::Pointer                           EnergyModelPointer;
 
-	typedef EnergyCalculatorFilter<ReferenceImageType, EnergyModelType> EnergyFilter;
+	typedef EnergyCalculatorFilter<ReferenceImageType>                  EnergyFilter;
 	typedef typename EnergyFilter::Pointer                              EnergyFilterPointer;
 	typedef typename EnergyFilter::PriorsImageType                      PriorsImageType;
 	typedef typename PriorsImageType::Pointer                           PriorsImagePointer;

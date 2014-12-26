@@ -48,26 +48,26 @@
 
 namespace rstk {
 
-template < typename TInputVectorImage, typename TModel, typename TMeasureType, typename TPriorsPrecisionType >
-EnergyCalculatorFilter< TInputVectorImage, TModel, TMeasureType, TPriorsPrecisionType >
+template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
+EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 ::EnergyCalculatorFilter():
  Superclass(),
  m_PixelVolume(1.0) {
-	this->SetNumberOfRequiredInputs(4);
+	this->SetNumberOfRequiredInputs(3);
 	this->SetNumberOfRequiredOutputs(1);
 	this->ProcessObject::SetNthOutput( 0, this->MakeOutput(0) );
 };
 
-template < typename TInputVectorImage, typename TModel, typename TMeasureType, typename TPriorsPrecisionType >
-typename EnergyCalculatorFilter< TInputVectorImage, TModel, TMeasureType, TPriorsPrecisionType >::DataObjectPointer
-EnergyCalculatorFilter< TInputVectorImage, TModel, TMeasureType, TPriorsPrecisionType >
+template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
+typename EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >::DataObjectPointer
+EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 ::MakeOutput( DataObjectPointerArraySizeType itkNotUsed(idx) ) {
   return MeasureArrayObjectType::New().GetPointer();
 }
 
-template < typename TInputVectorImage, typename TModel, typename TMeasureType, typename TPriorsPrecisionType >
+template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
 void
-EnergyCalculatorFilter< TInputVectorImage, TModel, TMeasureType, TPriorsPrecisionType >
+EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 ::BeforeThreadedGenerateData() {
 	// find the actual number of threads
 	long nbOfThreads = this->GetNumberOfThreads();
@@ -91,28 +91,24 @@ EnergyCalculatorFilter< TInputVectorImage, TModel, TMeasureType, TPriorsPrecisio
 	for(size_t i = 0; i<Dimension; i++) this->m_PixelVolume*= s[i];
 }
 
-template < typename TInputVectorImage, typename TModel, typename TMeasureType, typename TPriorsPrecisionType >
+template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
 void
-EnergyCalculatorFilter< TInputVectorImage, TModel, TMeasureType, TPriorsPrecisionType >
+EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 ::ThreadedGenerateData(const RegionType & inputRegionForThread, ThreadIdType threadId) {
 	long nbOfPixels = inputRegionForThread.GetNumberOfPixels();
 	ProgressReporter progress( this, threadId, nbOfPixels );
-
-	// MembershipArrayType mbm = this->GetMemberships();
 
 	ImageRegionConstIterator< TInputVectorImage > inputIt( this->GetInput(), inputRegionForThread );
 	ImageRegionConstIterator< PriorsImageType >   priorIt( this->GetPriorsMap(), inputRegionForThread );
 	ImageRegionConstIterator< MaskType >          maskIt ( this->GetMask(), inputRegionForThread );
  	inputIt.GoToBegin();
 
- 	//EnergyModelConstPointer model = this->GetModel().GetPointer();
+ 	EnergyModelConstPointer model = this->GetModel();
 
  	PriorsPixelType w;
  	PriorsPrecisionType m, vol;
  	PixelType v;
- 	MeasureType e;
 	while ( !inputIt.IsAtEnd() ) {
-		e = 0.0;
 		m = maskIt.Get();
 
 		if (m > 1.0e-5) {
@@ -120,8 +116,9 @@ EnergyCalculatorFilter< TInputVectorImage, TModel, TMeasureType, TPriorsPrecisio
 			w = priorIt.Get();
 
 			for(size_t roi = 0; roi < m_NumberOfRegions; roi++ ) {
-				this->m_Volumes[roi]+= w[roi] * this->m_PixelVolume;
-				//e+= w[roi] * model->Evaluate(v, roi);
+				vol = w[roi] * this->m_PixelVolume;
+				this->m_Volumes[roi]+= vol;
+				this->m_Energies[roi]+= vol * model->Evaluate(v, roi);
 			}
 		}
 
@@ -131,25 +128,34 @@ EnergyCalculatorFilter< TInputVectorImage, TModel, TMeasureType, TPriorsPrecisio
 	}
 }
 
-template < typename TInputVectorImage, typename TModel, typename TMeasureType, typename TPriorsPrecisionType >
+template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
 void
-EnergyCalculatorFilter< TInputVectorImage, TModel, TMeasureType, TPriorsPrecisionType >
+EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 ::AfterThreadedGenerateData() {
-	std::cout << this->m_Volumes << std::endl;
+	EnergyModelConstPointer model = this->GetModel();
+
+
+	std::cout << this->m_Energies;
+	for(size_t roi = 0; roi < m_NumberOfRegions; roi++ ) {
+		this->m_Energies[roi]+= this->m_Volumes[roi] * model->GetRegionOffsetContainer()[roi];
+	}
+
+	std::cout << " w/offsets=" << this->m_Energies << std::endl;
+
 }
 
-template < typename TInputVectorImage, typename TModel, typename TMeasureType, typename TPriorsPrecisionType >
+template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
 void
-EnergyCalculatorFilter< TInputVectorImage, TModel, TMeasureType, TPriorsPrecisionType >
+EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 ::GenerateInputRequestedRegion()
  {
 	this->m_Energies.SetSize( itk::NumericTraits<PixelType>::GetLength( PixelType() ) );
  }
 
 
-template < typename TInputVectorImage, typename TModel, typename TMeasureType, typename TPriorsPrecisionType >
+template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
 void
-EnergyCalculatorFilter< TInputVectorImage, TModel, TMeasureType, TPriorsPrecisionType >
+EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 ::PrintSelf(std::ostream & os, itk::Indent indent) const {
 	Superclass::PrintSelf(os, indent);
 }

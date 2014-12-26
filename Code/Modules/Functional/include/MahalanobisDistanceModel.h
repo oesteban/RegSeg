@@ -81,7 +81,7 @@ public:
 	typedef typename Superclass::MeasurementVectorType                         MeasurementVectorType;
 	typedef typename Superclass::MeasurementVectorSizeType                     MeasurementVectorSizeType;
 	typedef typename Superclass::RegionIdentifier                              RegionIdentifier;
-	typedef typename itk::Array<MeasureType>                                   MeasureTypeContainer;
+	typedef typename Superclass::MeasureTypeContainer                          MeasureTypeContainer;
 
 	typedef typename Superclass::PriorsPrecisionType                           PriorsPrecisionType;
 	typedef typename Superclass::PriorsImageType                               PriorsImageType;
@@ -113,6 +113,9 @@ public:
 
 	typedef std::vector< MeasurementVectorType >                               MeansContainer;
 	typedef std::vector< CovarianceMatrixType >                                CovariancesContainer;
+
+	itkGetConstMacro(RegionOffsetContainer, MeasureTypeContainer);
+
 protected:
 	MahalanobisDistanceModel();
 	virtual ~MahalanobisDistanceModel() {}

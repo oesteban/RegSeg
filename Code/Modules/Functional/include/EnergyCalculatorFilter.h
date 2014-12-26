@@ -49,7 +49,7 @@
 namespace rstk {
 
 
-template < typename TInputVectorImage, typename TModel, typename TMeasureType = double, typename TPriorsPrecisionType = float>
+template < typename TInputVectorImage, typename TMeasureType = double, typename TPriorsPrecisionType = float>
 class EnergyCalculatorFilter: public itk::ImageTransformer< TInputVectorImage > {
 
 public:
@@ -86,10 +86,8 @@ public:
 	typedef itk::SimpleDataObjectDecorator< MeasureArrayType >                MeasureArrayObjectType;
 
 	typedef typename Superclass::DataObjectPointer                            DataObjectPointer;
-	//typedef TModel                                               MembershipType;
-	//typedef itk::Array< const MembershipType* >                               MembershipsArrayType;
 
-	typedef TModel                                                            EnergyModelType;
+	typedef ModelBase< InputImageType >                                       EnergyModelType;
 	typedef typename EnergyModelType::Pointer                                 EnergyModelPointer;
 	typedef typename EnergyModelType::ConstPointer                            EnergyModelConstPointer;
 
@@ -131,17 +129,8 @@ public:
     	return static_cast<const MaskType*>(this->ProcessObject::GetInput(2));
     }
 
-
-    void SetModel(const EnergyModelType *model) {
-    	this->SetNthInput(3, const_cast<EnergyModelType *>(model));
-    }
-
-    const EnergyModelType * GetModel() {
-    	return static_cast<const EnergyModelType*>(this->ProcessObject::GetInput(3));
-    }
-
-
-	// itkSetGetDecoratedInputMacro( Memberships, MembershipsArrayType );
+    itkSetConstObjectMacro(Model, EnergyModelType);
+    itkGetConstObjectMacro(Model, EnergyModelType);
 
 	const MeasureType GetOutput() const;
 	MeasureType GetOutput();
@@ -169,6 +158,7 @@ private:
 	MeasureArrayType m_Energies;
 	TotalVolumeContainer m_Volumes;
 	PriorsPrecisionType m_PixelVolume;
+	EnergyModelConstPointer m_Model;
 }; // class EnergyCalculatorFilter
 
 
