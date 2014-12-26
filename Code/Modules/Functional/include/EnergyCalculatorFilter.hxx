@@ -133,15 +133,11 @@ void
 EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 ::AfterThreadedGenerateData() {
 	EnergyModelConstPointer model = this->GetModel();
-
-
-	std::cout << this->m_Energies;
 	for(size_t roi = 0; roi < m_NumberOfRegions; roi++ ) {
 		this->m_Energies[roi]+= this->m_Volumes[roi] * model->GetRegionOffsetContainer()[roi];
 	}
 
-	std::cout << " w/offsets=" << this->m_Energies << std::endl;
-
+	this->GetEnergiesOutput()->Set(this->m_Energies);
 }
 
 template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
@@ -149,7 +145,7 @@ void
 EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 ::GenerateInputRequestedRegion()
  {
-	this->m_Energies.SetSize( itk::NumericTraits<PixelType>::GetLength( PixelType() ) );
+
  }
 
 
@@ -160,6 +156,31 @@ EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 	Superclass::PrintSelf(os, indent);
 }
 
+template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
+typename EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >::MeasureArrayObjectType *
+EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
+::GetEnergiesOutput()
+{
+	return static_cast<MeasureArrayObjectType *>(this->ProcessObject::GetOutput(0));
 }
 
+template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
+const typename EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >::MeasureArrayObjectType *
+EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
+::GetEnergiesOutput() const
+{
+	return static_cast<const MeasureArrayObjectType *>(this->ProcessObject::GetOutput(0));
+}
+
+//template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
+//typename EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >::MeasureArrayType
+//EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
+//::GetOutput()
+//{
+//  const MeasureArrayType *output =
+//    static_cast< const MeasureArrayType * >( this->ProcessObject::GetOutput(0));
+//  return output;
+//}
+
+} // namespace rstk
 #endif /* _ENERGYCALCULATORFILTER_HXX_ */

@@ -432,6 +432,7 @@ protected:
 	NormalFilterList m_NormalsFilter;
 	//WarpContourPointer m_ContourUpdater;
 	//TransformPointer m_Transform;
+	EnergyModelPointer m_Model;
 	DisplacementResamplerPointer m_EnergyResampler;
 	// ROIList m_ROIs;
 	ROIList m_CurrentROIs;
