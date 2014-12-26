@@ -94,10 +94,6 @@ public:
 	typedef itk::ProcessObject ProcessObject;
 	typedef itk::ThreadIdType ThreadIdType;
 
-	const MeasureArrayType& GetEnergiesOfRegions() const { return this->GetEnergiesOutput()->Get(); }
-	MeasureArrayType& GetEnergiesOutput();
-    const MeasureArrayType& GetEnergiesOutput() const;
-
     void SetInput(const InputImageType *input) {
     	this->SetNthInput(0, const_cast<InputImageType *>(input));
     }
@@ -132,8 +128,9 @@ public:
     itkSetConstObjectMacro(Model, EnergyModelType);
     itkGetConstObjectMacro(Model, EnergyModelType);
 
-	const MeasureType GetOutput() const;
-	MeasureType GetOutput();
+	const MeasureArrayType GetEnergies() const { return this->GetEnergiesOutput()->Get();}
+	MeasureArrayObjectType * GetEnergiesOutput();
+	const MeasureArrayObjectType * GetEnergiesOutput() const;
 
 protected:
 	EnergyCalculatorFilter();

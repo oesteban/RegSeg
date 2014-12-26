@@ -124,6 +124,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_RegionValue.SetSize(this->m_NumberOfRegions);
 	this->m_RegionValue.Fill(itk::NumericTraits<MeasureType>::infinity());
 
+	this->m_Model = EnergyModelType::New();
+	this->m_Model->SetInput(this->m_ReferenceImage);
+	this->m_Model->SetMask(this->m_BackgroundMask);
+	this->m_Model->SetPriorsMap(this->m_PriorsMap);
+	this->m_Model->Update();
+
 	//this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
 }
 
@@ -381,21 +387,15 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		this->m_EnergyUpdated = true;
 
-		EnergyModelPointer model = EnergyModelType::New();
-		model->SetInput(this->m_ReferenceImage);
-		model->SetPriorsMap(this->m_PriorsMap);
-		model->SetMask(this->m_BackgroundMask);
-		model->Update();
-
 		EnergyFilterPointer efilter = EnergyFilter::New();
 		efilter->SetInput(this->m_ReferenceImage);
 		efilter->SetPriorsMap(this->m_PriorsMap);
 		efilter->SetMask(this->m_BackgroundMask);
-		efilter->SetModel(model);
+		efilter->SetModel(this->m_Model);
 		efilter->Update();
+		typename EnergyFilter::MeasureArrayType energies = efilter->GetEnergies();
 
-
-		//std::cout << efilter->GetEnergy() << std::endl;
+		std::cout << energies << " || " << this->m_RegionValue << std::endl;
 	}
 	return this->m_Value;
 }
