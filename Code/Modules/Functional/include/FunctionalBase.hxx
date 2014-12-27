@@ -323,70 +323,6 @@ typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetValue() {
 	if ( !this->m_EnergyUpdated ) {
-		this->m_Value = 0.0;
-		this->m_RegionValue.Fill(0.0);
-
-		double vxvol = 1.0;
-		for(size_t i = 0; i<Dimension; i++)
-			vxvol *= this->m_PriorsMap->GetSpacing()[i];
-
-		size_t nPix = this->m_PriorsMap->GetLargestPossibleRegion().GetNumberOfPixels();
-		size_t nrois = this->m_NumberOfRegions;
-		size_t lastroi = nrois;
-
-		const ReferencePixelType* refBuffer = this->m_ReferenceImage->GetBufferPointer();
-		const typename ProbabilityMapType::PixelType* bgBuffer = this->m_BackgroundMask->GetBufferPointer();
-
-		PriorsValueType* tpmBuffer = this->m_PriorsMap->GetBufferPointer();
-
-		double regionVol[nrois];
-		for( size_t roi = 0; roi < lastroi; roi++ ) {
-			regionVol[roi] = 0.0;
-		}
-
-		ReferencePointType pos;
-		ReferencePixelType val;
-		typename ProbabilityMapType::PixelType w;
-		typename ProbabilityMapType::PixelType bgw;
-		regionVol[lastroi] = 0.0;
-
-		MeasureType e;
-		for( size_t i = 0; i < nPix; i++) {
-			bgw = *(bgBuffer + i);
-			val = *(refBuffer+i);
-
-			//if (val.GetNorm() < 1.0e-8) {
-			//	continue;
-			//}
-
-			for( size_t roi = 0; roi < lastroi; roi++ ) {
-				w = *( tpmBuffer + i * this->m_NumberOfRegions + roi );
-				if ( w < 1.0e-8 ) {
-					continue;
-				}
-
-				if(bgw > 1.0e-3 && roi == (nrois - 1)) {
-					continue;
-				}
-
-				if (bgw > 0.0) {
-					e = this->m_MaxEnergy;
-				} else {
-					e = this->GetEnergyOfSample( val, roi );
-				}
-				this->m_RegionValue[roi]+= w * vxvol * e;
-				regionVol[roi]+= w * vxvol;
-			}
-		}
-
-		this->m_Value = 0.0;
-		for( size_t roi = 0; roi < nrois; roi++ ) {
-			this->m_RegionValue[roi]+= regionVol[roi] * this->GetEnergyOffset(roi);
-			this->m_Value+= this->m_RegionValue[roi];
-		}
-
-		this->m_EnergyUpdated = true;
-
 		EnergyFilterPointer efilter = EnergyFilter::New();
 		efilter->SetInput(this->m_ReferenceImage);
 		efilter->SetPriorsMap(this->m_PriorsMap);
@@ -395,7 +331,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		efilter->Update();
 		typename EnergyFilter::MeasureArrayType energies = efilter->GetEnergies();
 
-		std::cout << energies << " || " << this->m_RegionValue << std::endl;
+		this->m_Value = 0.0;
+		for( size_t roi = 0; roi < energies.Size(); roi++ ) {
+			this->m_RegionValue[roi] = energies[roi];
+			this->m_Value+= this->m_RegionValue[roi];
+		}
+		this->m_EnergyUpdated = true;
 	}
 	return this->m_Value;
 }
@@ -911,8 +852,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		return 0.0;
 	}
 	ReferencePixelType value = this->m_Interp->Evaluate( point );
-	MeasureType gin  = this->GetEnergyOfSample( value, inner_roi );
-	MeasureType gout = this->GetEnergyOfSample( value, outer_roi );
+	MeasureType gin  = this->m_Model->Evaluate( value, inner_roi );
+	MeasureType gout = this->m_Model->Evaluate( value, outer_roi );
+
+	//MeasureType gin  = this->GetEnergyOfSample( value, inner_roi );
+	//MeasureType gout = this->GetEnergyOfSample( value, outer_roi );
 
 	float isOutside = this->m_MaskInterp->Evaluate( point );
 	if (isOutside > 1.0e-3) {

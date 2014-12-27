@@ -374,8 +374,15 @@ public:
 	void ComputeDerivative(PointValueType* gradVector, ScalesType scales);
 
 	virtual void Initialize();
-	virtual void UpdateDescriptors() = 0;
-	virtual std::string PrintFormattedDescriptors() = 0;
+	virtual void UpdateDescriptors() {
+		this->m_Model->SetPriorsMap(this->m_PriorsMap);
+		this->m_Model->Update();
+		this->m_MaxEnergy = this->m_Model->GetMaxEnergyGap();
+	}
+
+	virtual std::string PrintFormattedDescriptors() {
+		return this->m_Model->PrintFormattedDescriptors();
+	}
 
 	itkGetConstObjectMacro( CurrentRegions, ROIType );
 

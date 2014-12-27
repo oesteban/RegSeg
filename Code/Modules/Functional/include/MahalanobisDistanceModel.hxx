@@ -212,101 +212,38 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	return log( det );
 }
 
-//template< typename TInputVectorImage, typename TPriorsPrecisionType >
-//void
-//MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
-//::BeforeThreadedGenerateData() {
-//	// find the actual number of threads
-//	long nbOfThreads = this->GetNumberOfThreads();
-//	if ( itk::MultiThreader::GetGlobalMaximumNumberOfThreads() != 0 ) {
-//		nbOfThreads = vnl_math_min( this->GetNumberOfThreads(), itk::MultiThreader::GetGlobalMaximumNumberOfThreads() );
-//	}
-//	// number of threads can be constrained by the region size, so call the
-//	// SplitRequestedRegion
-//	// to get the real number of threads which will be used
-//	RegionType splitRegion;  // dummy region - just to call the following method
-//	nbOfThreads = this->SplitRequestedRegion(0, nbOfThreads, splitRegion);
-//
-//	this->m_NumberOfRegions = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
-//	this->InitializeMemberships();
-//
-//	this->m_ThreadMean.empty();
-//	this->m_ThreadWeights.empty();
-//	PixelType v;
-//	v.Fill(0.0);
-//
-//	for( size_t t = 0; t < nbOfThreads; t++) {
-//		MeanContainer mc;
-//		WeightsContainer wc;
-//		for( size_t i = 0; i < this->m_NumberOfRegions; i++ ) {
-//			mc.push_back(v);
-//			wc.push_back(0.0);
-//		}
-//		this->m_ThreadMean.push_back(mc);
-//		this->m_ThreadWeights.push_back(wc);
-//	}
-//}
-//
-//template< typename TInputVectorImage, typename TPriorsPrecisionType >
-//void
-//MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
-//::ThreadedGenerateData(const RegionType & inputRegionForThread, ThreadIdType threadId) {
-//	long nbOfPixels = inputRegionForThread.GetNumberOfPixels();
-//	ProgressReporter progress( this, threadId, nbOfPixels );
-//
-//	MeanContainer mc = this->m_ThreadMean[threadId];
-//	WeightsContainer wc = this->m_ThreadWeights[threadId];
-//
-//	ImageRegionConstIterator< TInputVectorImage > inputIt( this->GetInput(), inputRegionForThread );
-//	ImageRegionConstIterator< PriorsImageType >   priorIt( this->GetPriorsMap(), inputRegionForThread );
-//	ImageRegionConstIterator< MaskType >          maskIt ( this->GetMask(), inputRegionForThread );
-// 	inputIt.GoToBegin();
-//
-// 	PriorsPixelType w;
-// 	PriorsPrecisionType m;
-// 	PixelType v;
-// 	MeasureType e;
-// 	v.Fill(0.0);
-//
-// 	while ( !inputIt.IsAtEnd() ) {
-//		e = 0.0;
-//		m = maskIt.Get();
-//
-//		if (m > 1.0e-5) {
-//			v = inputIt.Get();
-//			w = priorIt.Get();
-//
-//			for(size_t roi = 0; roi < this->m_NumberOfRegions; roi++ ) {
-//				mc[roi]+= w[roi] * v;
-//				wc[roi]+= w[roi];
-//			}
-//		}
-//
-//	    ++inputIt;
-//	    ++priorIt;
-//	    progress.CompletedPixel();
-//	}
-//}
-//
-//template< typename TInputVectorImage, typename TPriorsPrecisionType >
-//void
-//MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
-//::AfterThreadedGenerateData() {
-//
-//	for(size_t roi = 0; roi < this->m_NumberOfRegions; roi++ ) {
-//		PixelType m;
-//		m.Fill(0.0);
-//		PriorsPrecisionType w = 0.0;
-//		for( size_t t = 0; t < this->m_ThreadMean.size(); t++) {
-//			m+= this->m_ThreadMean[t][roi];
-//			w+= this->m_ThreadWeights[t][roi];
-//		}
-//
-//		InternalFunctionPointer mf = static_cast< InternalFunctionType* >(this->m_Memberships[roi]);
-//		mf->SetMean(m/w);
-//	}
-//}
+template< typename TInputVectorImage, typename TPriorsPrecisionType >
+std::string
+MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
+::PrintFormattedDescriptors() {
+	std::stringstream ss;
 
+	ss << "{ \"descriptors\" : { \"number\": " << this->m_NumberOfRegions << ", \"values\": [";
+
+	for ( size_t i = 0; i<this->m_NumberOfRegions; i++ ){
+		if (i>0) ss<<",";
+
+		ss << "{ \"id\": " << i << ", \"mu\": [";
+
+		for ( size_t l = 0; l<this->m_Means[i].Size(); l++ ) {
+			if( l>0 ) ss << ",";
+			ss << this->m_Means[i][l];
+		}
+		ss << "], \"determinant\": " << this->ComputeCovarianceDeterminant(this->m_Covariances[i]);
+		ss << ", \"cov\": [ ";
+
+		for( size_t j = 0; j<this->m_Covariances[i].GetVnlMatrix().rows(); j++ ) {
+			for( size_t k = 0; k<this->m_Covariances[i].GetVnlMatrix().cols(); k++ ) {
+				if( j>0 || k>0 ) ss << ",";
+				ss << this->m_Covariances[i](j,k);
+			}
+		}
+		ss << "] }";
+	}
+	ss << "] } }";
+
+	return ss.str();
+}
 
 }
 

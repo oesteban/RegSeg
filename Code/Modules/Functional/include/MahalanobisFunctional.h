@@ -145,9 +145,9 @@ public:
 	size_t AddShapePrior( const VectorContourType* prior ) { return Superclass::AddShapePrior( prior ); }
 
 	void Initialize();
-	void UpdateDescriptors();
+	//void UpdateDescriptors();
 
-	std::string PrintFormattedDescriptors();
+	//std::string PrintFormattedDescriptors();
 protected:
 	MahalanobisFunctional():m_UseRobustEstimators(false), Superclass(){}
 	~MahalanobisFunctional(){}
