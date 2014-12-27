@@ -115,7 +115,9 @@ public:
 	typedef std::vector< CovarianceMatrixType >                                CovariancesContainer;
 
 	itkGetConstMacro(RegionOffsetContainer, MeasureTypeContainer);
+	itkGetConstMacro(MaxEnergyGap, MeasureType);
 
+	std::string PrintFormattedDescriptors();
 protected:
 	MahalanobisDistanceModel();
 	virtual ~MahalanobisDistanceModel() {}

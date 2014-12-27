@@ -100,27 +100,27 @@ MahalanobisFunctional<TReferenceImageType,TCoordRepType>
 }
 
 
-template <typename TReferenceImageType, typename TCoordRepType>
-void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
-::UpdateDescriptors() {
-	// Update regions
-	for( size_t roi = 0; roi < this->m_NumberOfRegions; roi++ ) {
-		ParametersType param = this->UpdateParametersOfRegion(roi);
-		this->SetParameters(roi, param);
-	}
-
-	MeasureType m;
-	MeasureType v = itk::NumericTraits<MeasureType>::min();
-	for( size_t roi1 = 0; roi1 < this->m_NumberOfRegions; roi1++) {
-		for( size_t roi2 = 0; roi2 < this->m_NumberOfRegions; roi2++) {
-			m = this->GetEnergyOfSample(this->m_Parameters[roi1].mean, roi2, false);
-			if (m > v)	v = m;
-		}
-	}
-	this->m_MaxEnergy = fabs(v) * 1e6;
-
-	//std::cout << "MaxEnergy = " << this->m_MaxEnergy << std::endl;
-}
+//template <typename TReferenceImageType, typename TCoordRepType>
+//void MahalanobisFunctional<TReferenceImageType,TCoordRepType>
+//::UpdateDescriptors() {
+//	// Update regions
+//	for( size_t roi = 0; roi < this->m_NumberOfRegions; roi++ ) {
+//		ParametersType param = this->UpdateParametersOfRegion(roi);
+//		this->SetParameters(roi, param);
+//	}
+//
+//	MeasureType m;
+//	MeasureType v = itk::NumericTraits<MeasureType>::min();
+//	for( size_t roi1 = 0; roi1 < this->m_NumberOfRegions; roi1++) {
+//		for( size_t roi2 = 0; roi2 < this->m_NumberOfRegions; roi2++) {
+//			m = this->GetEnergyOfSample(this->m_Parameters[roi1].mean, roi2, false);
+//			if (m > v)	v = m;
+//		}
+//	}
+//	this->m_MaxEnergy = fabs(v) * 1e6;
+//
+//	//std::cout << "MaxEnergy = " << this->m_MaxEnergy << std::endl;
+//}
 
 template <typename TReferenceImageType, typename TCoordRepType>
 typename MahalanobisFunctional<TReferenceImageType,TCoordRepType>::ParametersType
@@ -374,38 +374,38 @@ MahalanobisFunctional<TReferenceImageType, TCoordRepType>
 	return true;
 }
 
-template <typename TReferenceImageType, typename TCoordRepType>
-std::string
-MahalanobisFunctional<TReferenceImageType,TCoordRepType>
-::PrintFormattedDescriptors() {
-	std::stringstream ss;
-
-	ss << "{ \"descriptors\" : { \"number\": " << this->m_NumberOfRegions << ", \"values\": [";
-
-	for ( size_t i = 0; i<this->m_NumberOfRegions; i++ ){
-		if (i>0) ss<<",";
-
-		ss << "{ \"id\": " << i << ", \"mu\": [";
-
-		for ( size_t l = 0; l<this->m_Parameters[i].mean.Size(); l++ ) {
-			if( l>0 ) ss << ",";
-			ss << this->m_Parameters[i].mean[l];
-		}
-		ss << "], \"determinant\": " << this->m_Parameters[i].bias;
-		ss << ", \"cov\": [ ";
-
-		for( size_t j = 0; j<this->m_Parameters[i].cov.GetVnlMatrix().rows(); j++ ) {
-			for( size_t k = 0; k<this->m_Parameters[i].cov.GetVnlMatrix().cols(); k++ ) {
-				if( j>0 || k>0 ) ss << ",";
-				ss << this->m_Parameters[i].cov(j,k);
-			}
-		}
-		ss << "] }";
-	}
-	ss << "] } }";
-
-	return ss.str();
-}
+//template <typename TReferenceImageType, typename TCoordRepType>
+//std::string
+//MahalanobisFunctional<TReferenceImageType,TCoordRepType>
+//::PrintFormattedDescriptors() {
+//	std::stringstream ss;
+//
+//	ss << "{ \"descriptors\" : { \"number\": " << this->m_NumberOfRegions << ", \"values\": [";
+//
+//	for ( size_t i = 0; i<this->m_NumberOfRegions; i++ ){
+//		if (i>0) ss<<",";
+//
+//		ss << "{ \"id\": " << i << ", \"mu\": [";
+//
+//		for ( size_t l = 0; l<this->m_Parameters[i].mean.Size(); l++ ) {
+//			if( l>0 ) ss << ",";
+//			ss << this->m_Parameters[i].mean[l];
+//		}
+//		ss << "], \"determinant\": " << this->m_Parameters[i].bias;
+//		ss << ", \"cov\": [ ";
+//
+//		for( size_t j = 0; j<this->m_Parameters[i].cov.GetVnlMatrix().rows(); j++ ) {
+//			for( size_t k = 0; k<this->m_Parameters[i].cov.GetVnlMatrix().cols(); k++ ) {
+//				if( j>0 || k>0 ) ss << ",";
+//				ss << this->m_Parameters[i].cov(j,k);
+//			}
+//		}
+//		ss << "] }";
+//	}
+//	ss << "] } }";
+//
+//	return ss.str();
+//}
 
 }
 

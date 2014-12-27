@@ -104,25 +104,33 @@ EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
  	inputIt.GoToBegin();
 
  	EnergyModelConstPointer model = this->GetModel();
+ 	MeasureType maxenergy = model->GetMaxEnergyGap();
 
+ 	size_t lastroi = this->m_NumberOfRegions - 1;
  	PriorsPixelType w;
- 	PriorsPrecisionType m, vol;
- 	PixelType v;
+ 	PriorsPrecisionType bgw, vol;
+ 	PixelType val;
+ 	MeasureType e;
 	while ( !inputIt.IsAtEnd() ) {
-		m = maskIt.Get();
+		bgw = maskIt.Get();
+		val = inputIt.Get();
+		w = priorIt.Get();
 
-		if (m > 1.0e-5) {
-			v = inputIt.Get();
-			w = priorIt.Get();
+		for(size_t roi = 0; roi < m_NumberOfRegions; roi++ ) {
+			if( w[roi] < 1.0e-8 )
+				continue;
 
-			for(size_t roi = 0; roi < m_NumberOfRegions; roi++ ) {
-				vol = w[roi] * this->m_PixelVolume;
-				this->m_Volumes[roi]+= vol;
-				this->m_Energies[roi]+= vol * model->Evaluate(v, roi);
-			}
+			if( bgw > 0.0 && roi == lastroi)
+				continue;
+
+			vol = w[roi] * this->m_PixelVolume;
+			this->m_Volumes[roi]+= vol;
+			e = ( bgw > 0.0 )?maxenergy:model->Evaluate(val, roi);
+			this->m_Energies[roi]+= vol * e;
+
 		}
 
-	    ++inputIt;
+		++inputIt;
 	    ++priorIt;
 	    progress.CompletedPixel();
 	}
