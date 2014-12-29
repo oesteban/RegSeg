@@ -118,6 +118,7 @@ public:
 
 	/** Run-time type information (and related methods). */
 	itkTypeMacro(FunctionalBase, itk::Object);
+	itkNewMacro(FunctionalBase);
 
 	itkStaticConstMacro( Dimension, unsigned int, TReferenceImageType::ImageDimension );
 
@@ -346,6 +347,8 @@ public:
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
 	virtual void SetReferenceImage (const ReferenceImageType * _arg);
 
+	itkGetConstObjectMacro( CurrentMaps, PriorsImageType);
+
 	itkGetMacro( ApplySmoothing, bool );
 	itkGetMacro( Sigma, SigmaArrayType );
 	itkSetMacro( Sigma, SigmaArrayType );
@@ -375,7 +378,7 @@ public:
 
 	virtual void Initialize();
 	virtual void UpdateDescriptors() {
-		this->m_Model->SetPriorsMap(this->m_PriorsMap);
+		this->m_Model->SetPriorsMap(this->m_CurrentMaps);
 		this->m_Model->Update();
 		this->m_MaxEnergy = this->m_Model->GetMaxEnergyGap();
 	}
@@ -407,7 +410,7 @@ protected:
 
 	void InitializeSamplingGrid( void );
 
-	virtual MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roim, bool bias = false ) const = 0;
+	//virtual MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roim, bool bias = false ) const = 0;
 	MeasureType GetEnergyAtPoint( const PointType& point, size_t roi ) const;
 	MeasureType GetEnergyAtPoint( const PointType& point, size_t roi, ReferencePixelType& value ) const;
 	MeasureType EvaluateGradient( const PointType& point, size_t outer_roi, size_t inner_roi ) const;
@@ -415,7 +418,7 @@ protected:
 	inline bool CheckExtent( ContourPointType& p, ContinuousIndex& idx ) const;
 	virtual void ParseSettings();
 
-	virtual MeasureType GetEnergyOffset(size_t roi) const = 0;
+	//virtual MeasureType GetEnergyOffset(size_t roi) const = 0;
 
 	size_t m_NumberOfContours;
 	size_t m_NumberOfRegions;
@@ -440,11 +443,10 @@ protected:
 	//WarpContourPointer m_ContourUpdater;
 	//TransformPointer m_Transform;
 	EnergyModelPointer m_Model;
-	DisplacementResamplerPointer m_EnergyResampler;
+	EnergyFilterPointer m_EnergyCalculator;
 	// ROIList m_ROIs;
 	ROIList m_CurrentROIs;
-	ProbabilityMapList m_CurrentMaps;
-	PriorsImagePointer m_PriorsMap;
+	PriorsImagePointer m_CurrentMaps;
 	ProbabilityMapConstPointer m_BackgroundMask;
 	ROIPointer m_CurrentRegions;
 	ReferenceImageConstPointer m_ReferenceImage;

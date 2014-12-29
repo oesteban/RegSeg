@@ -110,7 +110,10 @@ public:
 	 * or measurement. Evaluate() maps from a vector measurement type
 	 * to a real number. */
 	inline double Evaluate(const MeasurementVectorType & x, const RegionIdentifier roi) const {
-		return this->m_Memberships[roi]->Evaluate(x);
+		if (roi < this->m_NumberOfRegions - 1)
+			return this->m_Memberships[roi]->Evaluate(x);
+		else
+			return this->m_MaxEnergy;
 	}
 
     /** Set/Get priors
@@ -174,6 +177,7 @@ protected:
 	MeasurementVectorSizeType m_MeasurementVectorSize;
 	RegionIdentifier m_NumberOfRegions;
 	MembershipFunctionsArray m_Memberships;
+	MeasureType m_MaxEnergy;
 
 private:
 	ModelBase(const Self &);   //purposely not implemented

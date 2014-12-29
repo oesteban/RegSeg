@@ -41,6 +41,7 @@
 // Include headers
 #include <itkObject.h>
 #include <itkImageFileWriter.h>
+#include <itkVectorIndexSelectionCastImageFilter.h>
 
 #include <iostream>
 // Namespace declaration
@@ -54,7 +55,7 @@ namespace rstk {
  *  \ingroup
  */
 
-template< typename TImage >
+template< typename TVectorImageType >
 class ComponentsFileWriter: public itk::Object {
 public:
 	typedef ComponentsFileWriter   Self;
@@ -66,56 +67,39 @@ public:
 	itkTypeMacro( ComponentsFileWriter, itk::Object );
 	itkNewMacro( Self );
 
-	itkStaticConstMacro( Dimension, unsigned int, TImage::ImageDimension);
+	typedef TVectorImageType                              VectorImageType;
+	typedef typename VectorImageType::Pointer             VectorImagePointer;
+	typedef typename VectorImageType::ConstPointer        VectorImageConstPointer;
+	typedef typename VectorImageType::PixelType           VectorType;
+	typedef typename VectorType::ValueType                ValueType;
 
-	typedef TImage                            ImageType;
-	typedef typename ImageType::ConstPointer  ImagePointer;
-	typedef typename ImageType::PixelType     VectorType;
-	typedef typename VectorType::ValueType    ValueType;
-	typedef typename itk::Image<ValueType, Dimension>
-	                                          ComponentType;
-	typedef typename ComponentType::Pointer   ComponentPointer;
-	//typedef float ValueType;
+	itkStaticConstMacro( Dimension, unsigned int, itkGetStaticConstMacro(VectorImageType::ImageDimension) );
 
-	itkStaticConstMacro( Components, unsigned int, itkGetStaticConstMacro(VectorType::Dimension) );
+	typedef typename itk::Image< ValueType, Dimension >     ComponentImageType;
+	typedef itk::ImageFileWriter<ComponentImageType >       ComponentWriterType;
+	typedef typename ComponentWriterType::Pointer           ComponentWriterPointer;
 
-	itkSetConstObjectMacro(Input, ImageType);
+	typedef itk::VectorIndexSelectionCastImageFilter< VectorImageType, ComponentImageType >
+	                                                        SelectComponentFilter;
+	typedef typename SelectComponentFilter::Pointer         SelectComponentPointer;
+
+	itkSetConstObjectMacro(Input, VectorImageType);
 	itkSetStringMacro(FileName);
 
 	void Update() const {
-		ComponentPointer out[Components];
-		typename ComponentType::SizeType outSize = m_Input->GetLargestPossibleRegion().GetSize();
-		typename ComponentType::SpacingType outSpacing = m_Input->GetSpacing();
-		typename ComponentType::DirectionType outDirection = m_Input->GetDirection();
-		typename ComponentType::PointType outOrigin = m_Input->GetOrigin();
+		size_t ncomps = this->m_Input->GetNumberOfComponentsPerPixel();
 
-		ValueType* buffer[Components];
-		for( size_t comp = 0; comp<Components; comp++ ){
-			out[comp] = ComponentType::New();
-			out[comp]->SetRegions( outSize );
-			out[comp]->SetSpacing( outSpacing );
-			out[comp]->SetDirection( outDirection );
-			out[comp]->SetOrigin( outOrigin );
-			out[comp]->Allocate();
-			out[comp]->FillBuffer(0.0);
-			buffer[comp] = out[comp]->GetBufferPointer();
-		}
+		SelectComponentPointer adaptor = SelectComponentFilter::New();
+		adaptor->SetInput(this->m_Input);
 
-		const VectorType* vectBuffer = m_Input->GetBufferPointer();
-		size_t nVect = m_Input->GetLargestPossibleRegion().GetNumberOfPixels();
-		VectorType val;
-		for(size_t pix = 0; pix< nVect; pix++) {
-			val = *(vectBuffer+pix);
-			for( size_t comp=0; comp<Components; comp++) {
-				*(buffer[comp]+pix) = static_cast<ValueType> (val[comp]);
-			}
-		}
+		for( size_t comp=0; comp<ncomps; comp++) {
+			adaptor->SetIndex(comp);
+			adaptor->Update();
 
-		typename itk::ImageFileWriter<ComponentType>::Pointer w = itk::ImageFileWriter<ComponentType>::New();
-		for( size_t comp=0; comp<Components; comp++) {
 			std::stringstream ss;
 			ss << m_FileName << "_cmp" << comp << ".nii.gz";
-			w->SetInput( out[comp] );
+			ComponentWriterPointer w = ComponentWriterType::New();
+			w->SetInput( adaptor->GetOutput() );
 			w->SetFileName( ss.str().c_str() );
 			w->Update();
 		}
@@ -134,9 +118,8 @@ private:
 	void operator=(const Self &); // purposely not implemented
 
 	std::string m_FileName;
-	ImagePointer m_Input;
+	VectorImageConstPointer m_Input;
 }; // End of class ComponentsFileWriter
 } // End of namespace
-
 
 #endif /* ComponentsFileWriter_H_ */

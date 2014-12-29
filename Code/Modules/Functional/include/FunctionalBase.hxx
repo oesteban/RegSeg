@@ -60,7 +60,7 @@ template< typename TReferenceImageType, typename TCoordRepType >
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::FunctionalBase():
  m_NumberOfContours(0),
- m_NumberOfRegions(1),
+ m_NumberOfRegions(2),
  m_NumberOfVertices(0),
  m_SamplingFactor(2),
  m_DecileThreshold(0.05),
@@ -127,9 +127,16 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Model = EnergyModelType::New();
 	this->m_Model->SetInput(this->m_ReferenceImage);
 	this->m_Model->SetMask(this->m_BackgroundMask);
-	this->m_Model->SetPriorsMap(this->m_PriorsMap);
+	this->m_Model->SetPriorsMap(this->m_CurrentMaps);
 	this->m_Model->Update();
 
+	this->m_EnergyCalculator = EnergyFilter::New();
+	this->m_EnergyCalculator->SetInput(this->m_ReferenceImage);
+	this->m_EnergyCalculator->SetPriorsMap(this->m_CurrentMaps);
+	this->m_EnergyCalculator->SetMask(this->m_BackgroundMask);
+	this->m_EnergyCalculator->SetModel(this->m_Model);
+	this->m_EnergyCalculator->SetNumberOfThreads(1);
+	this->m_EnergyCalculator->Update();
 	//this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
 }
 
@@ -160,9 +167,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	this->m_NumberOfContours++;
 	this->m_NumberOfRegions++;
-    // this->m_ROIs.resize( this->m_NumberOfContours+1 );
-    // this->m_CurrentROIs.resize( this->m_NumberOfContours+1 );
-    this->m_CurrentMaps.resize( this->m_NumberOfContours+1 );
+
 	return this->m_NumberOfContours-1;
 }
 
@@ -301,11 +306,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		itkWarningMacro(<< "a total of " << invalid.size() << " mesh nodes were to be moved off the image domain." );
 	}
 
-	UpdateNormals();
-
+	this->UpdateNormals();
 	this->m_DisplacementsUpdated = true;
 	this->m_RegionsUpdated = (changed==0);
 	this->m_EnergyUpdated = (changed==0);
+
+	this->ComputeCurrentRegions();
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -323,17 +329,12 @@ typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetValue() {
 	if ( !this->m_EnergyUpdated ) {
-		EnergyFilterPointer efilter = EnergyFilter::New();
-		efilter->SetInput(this->m_ReferenceImage);
-		efilter->SetPriorsMap(this->m_PriorsMap);
-		efilter->SetMask(this->m_BackgroundMask);
-		efilter->SetModel(this->m_Model);
-		efilter->Update();
-		typename EnergyFilter::MeasureArrayType energies = efilter->GetEnergies();
+		this->m_EnergyCalculator->SetPriorsMap(this->m_CurrentMaps);
+		this->m_EnergyCalculator->Update();
+		this->m_RegionValue = this->m_EnergyCalculator->GetEnergies();
 
 		this->m_Value = 0.0;
-		for( size_t roi = 0; roi < energies.Size(); roi++ ) {
-			this->m_RegionValue[roi] = energies[roi];
+		for( size_t roi = 0; roi < this->m_RegionValue.Size(); roi++ ) {
 			this->m_Value+= this->m_RegionValue[roi];
 		}
 		this->m_EnergyUpdated = true;
@@ -362,26 +363,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	return isInside;
 }
-
-//template< typename TReferenceImageType, typename TCoordRepType >
-//typename FunctionalBase<TReferenceImageType, TCoordRepType>::ROIConstPointer
-//FunctionalBase<TReferenceImageType, TCoordRepType>
-//::GetCurrentRegion( size_t idx ) {
-//	if(!this->m_RegionsUpdated )
-//		this->ComputeCurrentRegions();
-//
-//	return this->m_CurrentROIs[idx];
-//}
-
-//template< typename TReferenceImageType, typename TCoordRepType >
-//const typename FunctionalBase<TReferenceImageType, TCoordRepType>::ProbabilityMapType*
-//FunctionalBase<TReferenceImageType, TCoordRepType>
-//::GetCurrentMap( size_t idx ) {
-//	if(!this->m_RegionsUpdated ) {
-//		this->ComputeCurrentRegions();
-//	}
-//	return this->m_CurrentMaps[idx].GetPointer();
-//}
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
@@ -427,20 +408,26 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	size_t nPix = this->m_CurrentRegions->GetLargestPossibleRegion().GetNumberOfPixels();
 	ROIPixelType* regionsBuffer = this->m_CurrentRegions->GetBufferPointer();
 
-	if( this->m_PriorsMap.IsNull() ) {
-		this->m_PriorsMap = PriorsImageType::New();
-		this->m_PriorsMap->SetRegions(   this->m_ReferenceSize );
-		this->m_PriorsMap->SetOrigin(    this->m_FirstPixelCenter );
-		this->m_PriorsMap->SetDirection( this->m_Direction );
-		this->m_PriorsMap->SetSpacing(   this->m_ReferenceSpacing );
-		this->m_PriorsMap->SetVectorLength(this->m_NumberOfRegions);
-		this->m_PriorsMap->Allocate();
-	}
+	this->m_CurrentMaps = PriorsImageType::New();
+	this->m_CurrentMaps->SetRegions(   this->m_ReferenceSize );
+	this->m_CurrentMaps->SetOrigin(    this->m_FirstPixelCenter );
+	this->m_CurrentMaps->SetDirection( this->m_Direction );
+	this->m_CurrentMaps->SetSpacing(   this->m_ReferenceSpacing );
+	this->m_CurrentMaps->SetVectorLength(this->m_NumberOfRegions);
+	PriorsPixelType zero;
+	zero.SetSize(this->m_NumberOfRegions);
+	zero.Fill(0.0);
+	this->m_CurrentMaps->Allocate();
+	this->m_CurrentMaps->FillBuffer(zero);
 
-	for (ROIPixelType idx = 0; idx < this->m_CurrentMaps.size(); idx++ ) {
+	PriorsValueType* priorBuffer = this->m_CurrentMaps->GetBufferPointer();
+	const float* bgBuffer = m_BackgroundMask->GetBufferPointer();
+	float bg;
+
+	for (ROIPixelType idx = 0; idx < this->m_NumberOfRegions - 1; idx++ ) {
 		ROIPointer tempROI;
 
-		if ( idx < this->m_CurrentMaps.size() - 1 ) {
+		if ( idx < this->m_NumberOfRegions - 2 ) {
 			BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
 			meshFilter->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
 			meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
@@ -460,7 +447,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		}
 
 		ROIPixelType* roiBuffer = tempROI->GetBufferPointer();
-
 		double total = 0.0;
 		for( size_t pix = 0; pix < nPix; pix++ ) {
 			if( *(regionsBuffer+pix) == unassigned && *( roiBuffer + pix )==1 ) {
@@ -469,21 +455,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			} else {
 				*( roiBuffer + pix ) = 0;
 			}
-		}
-
-		if (total == 0.0) {
-			itkWarningMacro(<< " ROI " << idx << " is empty.")
-		}
-
-
-		if( this->m_CurrentMaps[idx].IsNull() ) {
-			this->m_CurrentMaps[idx] = ProbabilityMapType::New();
-			this->m_CurrentMaps[idx]->SetRegions(   this->m_ReferenceSize );
-			this->m_CurrentMaps[idx]->SetOrigin(    this->m_FirstPixelCenter );
-			this->m_CurrentMaps[idx]->SetDirection( this->m_Direction );
-			this->m_CurrentMaps[idx]->SetSpacing(   this->m_ReferenceSpacing );
-			this->m_CurrentMaps[idx]->Allocate();
-			this->m_CurrentMaps[idx]->FillBuffer( 0.0 );
 		}
 
 		// Resample to reference image resolution
@@ -498,22 +469,21 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		ProbabilityMapPointer tpm = resampleFilter->GetOutput();
 		typename ProbabilityMapType::PixelType* tpmbuff = tpm->GetBufferPointer();
 
-		itk::ImageAlgorithm::Copy<ProbabilityMapType,ProbabilityMapType>(
-				tpm, this->m_CurrentMaps[idx],
-				tpm->GetLargestPossibleRegion(),
-				this->m_CurrentMaps[idx]->GetLargestPossibleRegion()
-		);
-
-
-		PriorsValueType* priorBuffer = this->m_PriorsMap->GetBufferPointer();
-		size_t refpix = this->m_PriorsMap->GetLargestPossibleRegion().GetNumberOfPixels();
-
+		size_t refpix = this->m_CurrentMaps->GetLargestPossibleRegion().GetNumberOfPixels();
+		typename ProbabilityMapType::PixelType f;
 		for(size_t i = 0; i < refpix; i++) {
-			*(priorBuffer + i * this->m_NumberOfRegions + idx) = *(tpmbuff+i);
+			f = *(tpmbuff+i);
+			if ( f <= 0.0 )
+				continue;
+
+			bg = *( bgBuffer + i );
+			if ( bg >= 1.0 && (idx < this->m_NumberOfRegions - 2) ) {
+				*(priorBuffer + i * this->m_NumberOfRegions + this->m_NumberOfRegions - 1 ) = 1.0;
+			} else {
+				*(priorBuffer + i * this->m_NumberOfRegions + idx) = f;
+			}
 		}
-
 	}
-
 	this->m_RegionsUpdated = true;
 }
 
@@ -528,7 +498,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_CurrentDisplacements = PointDataContainer::New();
 	this->m_CurrentDisplacements->Reserve( this->m_NumberOfVertices );
 
-	if( this->m_NumberOfRegions > 2 ) {
+	if( this->m_NumberOfRegions > 3 ) {
 		// Set up ROI interpolator
 		typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
 		interp->SetInputImage( this->m_CurrentRegions );

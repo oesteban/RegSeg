@@ -85,23 +85,34 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	ReferenceSamplePointer sample = ReferenceSampleType::New();
 	sample->SetImage( this->GetInput() );
 	size_t npix = sample->Size();
-	size_t nregions = this->m_NumberOfRegions;
+	size_t nregions = this->m_NumberOfRegions - 1;
 
 	std::vector<WeightArrayType> weights;
 	const PriorsPrecisionType* priors = this->GetPriorsMap()->GetBufferPointer();
 
-	for( size_t roi = 0; roi < nregions; roi++ ) {
-		WeightArrayType w;
-		w.SetSize(npix);
+	WeightArrayType totals;
+	totals.SetSize(nregions);
+	totals.Fill(0.0);
 
-		for( size_t i = 0; i < npix; i++ ) {
-			w[i] = *(priors + nregions * i + roi);
-		}
-		weights.push_back(w);
+	for( size_t roi = 0; roi < nregions; roi++ ) {
+		WeightArrayType warr;
+		warr.SetSize(npix);
+		warr.Fill(0.0);
+		weights.push_back(warr);
 	}
 
-	this->m_Means.empty();
-	this->m_Covariances.empty();
+
+	PriorsPrecisionType w;
+	for( size_t i = 0; i < npix; i++ ) {
+		for( size_t roi = 0; roi < nregions; roi++ ) {
+			w = *(priors + nregions * i + roi);
+			weights[roi][i] = w;
+			totals[roi]+= w;
+		}
+	}
+
+	this->m_Means.resize(nregions);
+	this->m_Covariances.resize(nregions);
 	this->m_RegionOffsetContainer.SetSize(nregions);
 	this->m_RegionOffsetContainer.Fill(0.0);
 
@@ -119,8 +130,8 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 
 		this->m_Memberships[roi] = mf;
 		this->m_RegionOffsetContainer[roi] = log(2.0 * vnl_math::pi) * cov.Rows() + this->ComputeCovarianceDeterminant(cov);
-		this->m_Means.push_back(covFilter->GetMean());
-		this->m_Covariances.push_back(cov);
+		this->m_Means[roi] = covFilter->GetMean();
+		this->m_Covariances[roi] = cov;
 	}
 
 	this->ComputeMaxEnergyGap();
@@ -134,14 +145,16 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	MeasureType m;
 	MeasureType v = itk::NumericTraits<MeasureType>::min();
 
-	for( size_t roi1 = 0; roi1 < this->m_NumberOfRegions; roi1++) {
-		for( size_t roi2 = 0; roi2 < this->m_NumberOfRegions; roi2++) {
+	size_t nrois = this->m_NumberOfRegions - 1;
+
+	for( size_t roi1 = 0; roi1 < nrois; roi1++) {
+		for( size_t roi2 = 0; roi2 < nrois; roi2++) {
 			MeasurementVectorType mu = this->m_Means[roi1];
 			m = this->Evaluate(mu, roi2);
 			if (m > v)	v = m;
 		}
 	}
-	this->m_MaxEnergyGap = fabs(v) * 1e6;
+	this->m_MaxEnergyGap = fabs(v);
 }
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
@@ -217,10 +230,10 @@ std::string
 MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 ::PrintFormattedDescriptors() {
 	std::stringstream ss;
-
 	ss << "{ \"descriptors\" : { \"number\": " << this->m_NumberOfRegions << ", \"values\": [";
+	size_t nrois = this->m_NumberOfRegions - 1;
 
-	for ( size_t i = 0; i<this->m_NumberOfRegions; i++ ){
+	for ( size_t i = 0; i<nrois; i++ ){
 		if (i>0) ss<<",";
 
 		ss << "{ \"id\": " << i << ", \"mu\": [";

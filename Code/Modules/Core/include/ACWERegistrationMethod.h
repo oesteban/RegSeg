@@ -55,8 +55,6 @@
 #include "rstkMacro.h"
 #include "ConfigurableObject.h"
 #include "FunctionalBase.h"
-#include "MeanFunctional.h"
-#include "MahalanobisFunctional.h"
 #include "OptimizerBase.h"
 #include "SpectralGradientDescentOptimizer.h"
 #include "SegmentationOptimizer.h"
@@ -146,9 +144,6 @@ public:
 	typedef typename FieldType::ConstPointer                  FieldConstPointer;
 	typedef std::vector< FieldConstPointer >                  FieldList;
 
-	//typedef MeanFunctional< ReferenceImageType >       DefaultFunctionalType;
-	//typedef SegmentationOptimizer< FunctionalType >    DefaultOptimizerType;
-	typedef MahalanobisFunctional< ReferenceImageType >       DefaultFunctionalType;
 	typedef SpectralGradientDescentOptimizer
 			                            < FunctionalType >    DefaultOptimizerType;
 
