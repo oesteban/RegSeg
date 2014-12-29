@@ -37,7 +37,7 @@ public:
 	typedef typename OptimizerType::FunctionalType      		FunctionalType;
 	typedef typename FunctionalType::ReferenceImageType         ReferenceImageType;
 	typedef typename FunctionalType::ROIType                    ROIType;
-	typedef typename FunctionalType::ProbabilityMapType 		ProbabilityMapType;
+	typedef typename FunctionalType::PriorsImageType            ProbabilityMapType;
 	typedef typename FunctionalType::ShapeGradientType          ShapeGradientType;
 	typedef typename OptimizerType::TransformType               TransformType;
 	typedef typename TransformType::AltCoeffType                AltCoeffType;
@@ -46,9 +46,9 @@ public:
 
 	typedef rstk::DisplacementFieldFileWriter<FieldType> FieldWriter;
 	typedef rstk::DisplacementFieldComponentsFileWriter<FieldType> ComponentsWriter;
-	typedef itk::ImageFileWriter< ProbabilityMapType >  MapWriter;
 	typedef typename itk::ImageFileWriter< CoefficientsImageType > CoefficientsWriter;
 	typedef rstk::ComponentsFileWriter<ReferenceImageType>       ReferenceWriter;
+	typedef rstk::ComponentsFileWriter<ProbabilityMapType>       MapWriter;
 
 	itkTypeMacro( IterationResultWriterUpdate, IterationUpdate ); // Run-time type information (and related methods)
 	itkNewMacro( Self );
@@ -111,14 +111,13 @@ public:
        		}
 
     		if ( this->m_Verbosity > 2 ) {
-				//for( size_t r = 0; r <= nContours; r++){
-				//	ss.str("");
-				//	ss << this->m_Prefix << "region_" << r  << "lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
-				//	typename MapWriter::Pointer wr = MapWriter::New();
-				//	wr->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentMap(r));
-				//	wr->SetFileName(ss.str().c_str() );
-				//	wr->Update();
-				//}
+				ss.str("");
+				ss << this->m_Prefix << "regions_lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
+				typename MapWriter::Pointer wr = MapWriter::New();
+				wr->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentMaps());
+				wr->SetFileName(ss.str().c_str() );
+				wr->Update();
+
     		}
 
     	}

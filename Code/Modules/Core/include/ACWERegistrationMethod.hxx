@@ -227,7 +227,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	ReferenceImageConstPointer im = this->GetFixedImage();
 
 	// Initialize LevelSet function
-	this->m_Functionals[level] = DefaultFunctionalType::New();
+	this->m_Functionals[level] = FunctionalType::New();
 	this->m_Functionals[level]->SetSettings( this->m_Config[level] );
 	this->m_Functionals[level]->SetReferenceImage( im );
 

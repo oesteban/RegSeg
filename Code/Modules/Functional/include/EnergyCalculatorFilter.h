@@ -93,6 +93,8 @@ public:
 
 	typedef itk::ProcessObject ProcessObject;
 	typedef itk::ThreadIdType ThreadIdType;
+	typedef std::vector< MeasureArrayType >      ThreadMeasureArrayType;
+	typedef std::vector< TotalVolumeContainer >  ThreadVolumeArrayType;
 
     void SetInput(const InputImageType *input) {
     	this->SetNthInput(0, const_cast<InputImageType *>(input));
@@ -152,8 +154,8 @@ private:
 	void operator=(const Self &);         //purposely not implemented
 
 	size_t m_NumberOfRegions;
-	MeasureArrayType m_Energies;
-	TotalVolumeContainer m_Volumes;
+	ThreadMeasureArrayType m_Energies;
+	ThreadVolumeArrayType m_Volumes;
 	PriorsPrecisionType m_PixelVolume;
 	EnergyModelConstPointer m_Model;
 }; // class EnergyCalculatorFilter

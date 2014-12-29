@@ -81,10 +81,8 @@ EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 	nbOfThreads = this->SplitRequestedRegion(0, nbOfThreads, splitRegion);
 
 	this->m_NumberOfRegions = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
-	this->m_Energies.SetSize(this->m_NumberOfRegions);
-	this->m_Energies.Fill(0.0);
-	this->m_Volumes.SetSize(this->m_NumberOfRegions);
-	this->m_Volumes.Fill(0.0);
+	this->m_Energies.resize(nbOfThreads);
+	this->m_Volumes.resize(nbOfThreads);
 
 	this->m_PixelVolume = 1.0;
 	SpacingType s = this->GetInput()->GetSpacing();
@@ -106,9 +104,18 @@ EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
  	EnergyModelConstPointer model = this->GetModel();
  	MeasureType maxenergy = model->GetMaxEnergyGap();
 
+ 	MeasureArrayType energies;
+ 	energies.SetSize(this->m_NumberOfRegions);
+ 	energies.Fill(0.0);
+
+ 	TotalVolumeContainer volumes;
+ 	volumes.SetSize(this->m_NumberOfRegions);
+ 	volumes.Fill(0.0);
+
  	size_t lastroi = this->m_NumberOfRegions - 1;
  	PriorsPixelType w;
- 	PriorsPrecisionType bgw, vol;
+ 	double bgw;
+ 	PriorsPrecisionType vol;
  	PixelType val;
  	MeasureType e;
 	while ( !inputIt.IsAtEnd() ) {
@@ -120,32 +127,45 @@ EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 			if( w[roi] < 1.0e-8 )
 				continue;
 
-			if( bgw > 0.0 && roi == lastroi)
-				continue;
-
+			e = model->Evaluate(val, roi);
 			vol = w[roi] * this->m_PixelVolume;
-			this->m_Volumes[roi]+= vol;
-			e = ( bgw > 0.0 )?maxenergy:model->Evaluate(val, roi);
-			this->m_Energies[roi]+= vol * e;
-
+			volumes[roi]+= vol;
+			energies[roi]+= vol * e;
 		}
 
 		++inputIt;
 	    ++priorIt;
 	    progress.CompletedPixel();
 	}
+
+	this->m_Energies[threadId] = energies;
+	this->m_Volumes[threadId] = volumes;
 }
 
 template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
 void
 EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 ::AfterThreadedGenerateData() {
+ 	MeasureArrayType energies;
+ 	energies.SetSize(this->m_NumberOfRegions);
+ 	energies.Fill(0.0);
+
+ 	TotalVolumeContainer volumes;
+ 	volumes.SetSize(this->m_NumberOfRegions);
+ 	volumes.Fill(0.0);
+
 	EnergyModelConstPointer model = this->GetModel();
 	for(size_t roi = 0; roi < m_NumberOfRegions; roi++ ) {
-		this->m_Energies[roi]+= this->m_Volumes[roi] * model->GetRegionOffsetContainer()[roi];
+
+		for(size_t th = 0; th < this->m_Volumes.size(); th++) {
+			volumes[roi]+= this->m_Volumes[th][roi];
+			energies[roi]+= this->m_Energies[th][roi];
+		}
+
+		energies[roi]+= volumes[roi] * model->GetRegionOffsetContainer()[roi];
 	}
 
-	this->GetEnergiesOutput()->Set(this->m_Energies);
+	this->GetEnergiesOutput()->Set(energies);
 }
 
 template < typename TInputVectorImage, typename TMeasureType, typename TPriorsPrecisionType >
