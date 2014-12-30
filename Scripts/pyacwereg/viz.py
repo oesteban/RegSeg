@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-30 12:09:37
+# @Last Modified time: 2014-12-30 18:36:38
 
 
 def plot_report(df, levels_df=None, out_file=None):
@@ -138,9 +138,9 @@ def plot_report(df, levels_df=None, out_file=None):
         plt.show()
 
 
-def joint_plot_data(im1data, im2data, in_seg, labels=None, out_file=None,
-                    f1lims=None, f2lims=None,
-                    f1name='Image A', f2name='Image B'):
+def jointplot_data(im1data, im2data, in_seg, labels=None, out_file=None,
+                   f1lims=None, f2lims=None,
+                   f1name='Image A', f2name='Image B'):
     import os.path as op
     import nibabel as nb
     import numpy as np
@@ -170,6 +170,87 @@ def joint_plot_data(im1data, im2data, in_seg, labels=None, out_file=None,
     g.plot_marginals(sn.distplot)
 
     nlabels = len(g.ax_joint.yaxis.get_ticklabels())
+
+    if out_file is None:
+        out_file = op.abspath('jointplot.pdf')
+
+    plt.savefig(out_file, dpi=300, bbox_inches='tight')
+    return out_file
+
+
+def jointplot_gmm(loc, cov, labels=None, out_file=None,
+                  xlims=None, ylims=None,
+                  f1name='Image A', f2name='Image B',
+                  size=6, ratio=5, space=.2,):
+    import os.path as op
+    import nibabel as nb
+    import numpy as np
+    import os
+    import seaborn as sn
+    from seaborn.palettes import color_palette, light_palette
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import matplotlib.mlab as mlab
+
+    if len(loc) != len(cov):
+        raise RuntimeError('Mixture model does not contain elements')
+
+    f = plt.figure(figsize=(size, size))
+    gs = plt.GridSpec(ratio + 1, ratio + 1)
+    sn.set_context("talk", font_scale=1.8)
+
+    ax_joint = f.add_subplot(gs[1:, :-1])
+    ax_marg_x = f.add_subplot(gs[0, :-1], sharex=ax_joint)
+    ax_marg_y = f.add_subplot(gs[1:, -1], sharey=ax_joint)
+
+    # Turn off tick visibility for the measure axis on the marginal plots
+    plt.setp(ax_marg_x.get_xticklabels(), visible=False)
+    plt.setp(ax_marg_y.get_yticklabels(), visible=False)
+    # Turn off the ticks on the density axis for the marginal plots
+    plt.setp(ax_marg_x.yaxis.get_majorticklines(), visible=False)
+    plt.setp(ax_marg_x.yaxis.get_minorticklines(), visible=False)
+    plt.setp(ax_marg_y.xaxis.get_majorticklines(), visible=False)
+    plt.setp(ax_marg_y.xaxis.get_minorticklines(), visible=False)
+    plt.setp(ax_marg_x.get_yticklabels(), visible=False)
+    plt.setp(ax_marg_y.get_xticklabels(), visible=False)
+    ax_marg_x.yaxis.grid(False)
+    ax_marg_y.xaxis.grid(False)
+    palette = color_palette("husl", n_colors=len(loc))
+
+    # Make the grid look nice
+    sn.utils.despine(f)
+    sn.utils.despine(ax=ax_marg_x, left=True)
+    sn.utils.despine(ax=ax_marg_y, bottom=True)
+    f.tight_layout()
+    f.subplots_adjust(hspace=space, wspace=space)
+
+    if xlims is None:
+        xlims = (0.0, 1.0)
+
+    if ylims is None:
+        ylims = (0.0, 1.0)
+
+    xstep = (xlims[1] - xlims[0]) / 100
+    ystep = (ylims[1] - ylims[0]) / 100
+
+    x = np.arange(xlims[0], xlims[1] + xstep, xstep)
+    y = np.arange(ylims[0], ylims[1] + ystep, ystep)
+    X, Y = np.meshgrid(x, y)
+
+    JPs = []
+    MPx = []
+    MPy = []
+    for mu, cov, color in zip(loc, cov, palette):
+        Z = mlab.bivariate_normal(
+            X, Y, cov[0], cov[3], mu[0], mu[1], cov[1])
+        JPs.append(ax_joint.contour(X, Y, Z, cmap=light_palette(
+            color, as_cmap=True)))
+        Zx = mlab.normpdf(x, mu[0], cov[0])
+        MPx.append(ax_marg_x.plot(x, Zx, color=color))
+
+        plt.sca(ax_marg_y)
+        Zy = mlab.normpdf(x, mu[1], cov[3])
+        MPy.append(ax_marg_y.plot(Zy, y, color=color))
 
     if out_file is None:
         out_file = op.abspath('jointplot.pdf')
