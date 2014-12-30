@@ -89,6 +89,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 
 	std::vector<WeightArrayType> weights;
 	const PriorsPrecisionType* priors = this->GetPriorsMap()->GetBufferPointer();
+	size_t offset = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
 
 	WeightArrayType totals;
 	totals.SetSize(nregions);
@@ -105,7 +106,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	PriorsPrecisionType w;
 	for( size_t i = 0; i < npix; i++ ) {
 		for( size_t roi = 0; roi < nregions; roi++ ) {
-			w = *(priors + nregions * i + roi);
+			w = *(priors + offset * i + roi);
 			weights[roi][i] = w;
 			totals[roi]+= w;
 		}
