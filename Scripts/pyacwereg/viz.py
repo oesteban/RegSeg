@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-30 18:36:38
+# @Last Modified time: 2014-12-30 20:07:51
 
 
 def plot_report(df, levels_df=None, out_file=None):
@@ -171,6 +171,9 @@ def jointplot_data(im1data, im2data, in_seg, labels=None, out_file=None,
 
     nlabels = len(g.ax_joint.yaxis.get_ticklabels())
 
+    plt.setp(g.ax_joint.get_yticklabels(), visible=False)
+    plt.setp(g.ax_joint.get_xticklabels(), visible=False)
+
     if out_file is None:
         out_file = op.abspath('jointplot.pdf')
 
@@ -180,8 +183,8 @@ def jointplot_data(im1data, im2data, in_seg, labels=None, out_file=None,
 
 def jointplot_gmm(loc, cov, labels=None, out_file=None,
                   xlims=None, ylims=None,
-                  f1name='Image A', f2name='Image B',
-                  size=6, ratio=5, space=.2,):
+                  xname='Image A', yname='Image B',
+                  size=20, ratio=5, space=.2,):
     import os.path as op
     import nibabel as nb
     import numpy as np
@@ -191,6 +194,7 @@ def jointplot_gmm(loc, cov, labels=None, out_file=None,
     import pandas as pd
     import matplotlib.pyplot as plt
     import matplotlib.mlab as mlab
+    from matplotlib import patches as mpatches
 
     if len(loc) != len(cov):
         raise RuntimeError('Mixture model does not contain elements')
@@ -213,6 +217,12 @@ def jointplot_gmm(loc, cov, labels=None, out_file=None,
     plt.setp(ax_marg_y.xaxis.get_minorticklines(), visible=False)
     plt.setp(ax_marg_x.get_yticklabels(), visible=False)
     plt.setp(ax_marg_y.get_xticklabels(), visible=False)
+    plt.setp(ax_joint.get_yticklabels(), visible=False)
+    plt.setp(ax_joint.get_xticklabels(), visible=False)
+
+    ax_joint.set_xlabel(xname)
+    ax_joint.set_ylabel(yname)
+
     ax_marg_x.yaxis.grid(False)
     ax_marg_y.xaxis.grid(False)
     palette = color_palette("husl", n_colors=len(loc))
@@ -237,20 +247,26 @@ def jointplot_gmm(loc, cov, labels=None, out_file=None,
     y = np.arange(ylims[0], ylims[1] + ystep, ystep)
     X, Y = np.meshgrid(x, y)
 
-    JPs = []
-    MPx = []
-    MPy = []
-    for mu, cov, color in zip(loc, cov, palette):
-        Z = mlab.bivariate_normal(
-            X, Y, cov[0], cov[3], mu[0], mu[1], cov[1])
-        JPs.append(ax_joint.contour(X, Y, Z, cmap=light_palette(
-            color, as_cmap=True)))
-        Zx = mlab.normpdf(x, mu[0], cov[0])
-        MPx.append(ax_marg_x.plot(x, Zx, color=color))
+    if labels is None:
+        labels = [None] * len(loc)
 
-        plt.sca(ax_marg_y)
-        Zy = mlab.normpdf(x, mu[1], cov[3])
-        MPy.append(ax_marg_y.plot(Zy, y, color=color))
+    patches = []
+    for mu, sigma, color, l in zip(loc, cov, palette, labels):
+        Z = mlab.bivariate_normal(
+            X, Y, sigma[0], sigma[-1], mu[0], mu[1], sigma[1])
+        ax_joint.contour(X, Y, Z, cmap=light_palette(
+            color, as_cmap=True))
+        Zx = mlab.normpdf(x, mu[0], sigma[0])
+        ax_marg_x.plot(x, Zx, color=color, label=l)
+
+        Zy = mlab.normpdf(y, mu[1], sigma[-1])
+        ax_marg_y.plot(Zy, y, color=color)
+
+        if l is not None:
+            patches.append(mpatches.Patch(color=color, label=l))
+
+    if len(patches) > 0:
+        ax_joint.legend(handles=patches)
 
     if out_file is None:
         out_file = op.abspath('jointplot.pdf')
