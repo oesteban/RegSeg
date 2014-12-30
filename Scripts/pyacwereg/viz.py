@@ -3,10 +3,10 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-17 13:06:32
+# @Last Modified time: 2014-12-30 12:09:37
 
 
-def plot_report(df, out_file=None):
+def plot_report(df, levels_df=None, out_file=None):
     import nibabel as nb
     import numpy as np
     import pandas as pd
@@ -30,6 +30,7 @@ def plot_report(df, out_file=None):
         2, len(levels), subplot_spec=outergs[0], hspace=0.3, wspace=0.08)
     allax1 = []
     allax2 = []
+
     for i, l in enumerate(levels):
         ax1 = plt.Subplot(fig, innergs0[i])
         allax1.append(ax1)
@@ -37,6 +38,12 @@ def plot_report(df, out_file=None):
         allax2.append(ax2)
         ldf = df[df.level == i]
         ldf.plot(ax=ax1, x='iteration', y='E_t')
+
+        if levels_df is not None:
+            if not levels_df.empty:
+                th_e = levels_df['total'][i]
+                ax1.plot([th_e] * (len(ldf['E_t'])))
+
         fig.add_subplot(ax1)
         ldf.plot(ax=ax2, x='iteration', y='step')
         fig.add_subplot(ax2)
@@ -129,3 +136,43 @@ def plot_report(df, out_file=None):
         plt.savefig(out_file, format='pdf', dpi=300, bbox_inches='tight')
     else:
         plt.show()
+
+
+def joint_plot_data(im1data, im2data, in_seg, labels=None, out_file=None,
+                    f1lims=None, f2lims=None,
+                    f1name='Image A', f2name='Image B'):
+    import os.path as op
+    import nibabel as nb
+    import numpy as np
+    import os
+    import seaborn as sn
+    import pandas as pd
+    import matplotlib.pyplot as plt
+
+    if f1lims is None:
+        f1lims = (im1data.min(), im1data.max())
+
+    if f2lims is None:
+        f2lims = (im2data.min(), im2data.max())
+
+    df_pieces = []
+    for i, l in enumerate(np.unique(in_seg)):
+        filt = im1data[in_seg == l]
+        d = {'tissue': [labels[i]] * len(filt)}
+        d[f1name] = filt
+        d[f2name] = im2data[in_seg == l]
+        df_pieces.append(pd.DataFrame(d))
+    df = pd.concat(df_pieces)
+    sn.set_context("talk", font_scale=1.8)
+    g = sn.JointGrid(f1name, f2name, df, hue='tissue',
+                     xlim=f1lims, ylim=f2lims, size=20)
+    g.plot_joint(sn.kdeplot, linewidths=3.0)
+    g.plot_marginals(sn.distplot)
+
+    nlabels = len(g.ax_joint.yaxis.get_ticklabels())
+
+    if out_file is None:
+        out_file = op.abspath('jointplot.pdf')
+
+    plt.savefig(out_file, dpi=300, bbox_inches='tight')
+    return out_file

@@ -4,8 +4,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
-# @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-17 13:06:10
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2014-12-29 18:17:09
 
 import os
 import os.path as op
@@ -300,9 +300,10 @@ class ACWEReport(BaseInterface):
 
     def _run_interface(self, runtime):
         from pyacwereg import viz
-        data, _ = parse_log(self.inputs.in_log)
+        data, _ = parse_iterations(self.inputs.in_log)
+        levels = parse_levels(self.inputs.in_log)
         out_file = op.abspath(self.inputs.out_file)
-        viz.plot_report(data, out_file)
+        viz.plot_report(data, levels, out_file)
         return runtime
 
     def _list_outputs(self):
@@ -311,7 +312,7 @@ class ACWEReport(BaseInterface):
         return outputs
 
 
-def parse_log(in_file):
+def parse_iterations(in_file):
     import pandas as pd
     import json as pj
 
@@ -350,3 +351,34 @@ def parse_log(in_file):
         ldf.append(df)
 
     return pd.concat(ldf), data
+
+
+def parse_levels(in_file):
+    import pandas as pd
+    import json as pj
+
+    with open(in_file, 'r') as f:
+        data = pj.load(f)
+
+    levels = data['levels']
+    ldf = []
+
+    d = {}
+
+    initenergy = []
+    roi_initenergy = []
+    for ln, l in enumerate(levels):
+        try:
+            initenergy.append(l[0]['target_surfaces'][0]['total_energy'])
+            roi_initenergy.append(l[0]['target_surfaces'][0]['roi_energy'])
+        except:
+            pass
+
+    roi_initenergy = np.array(roi_initenergy).transpose().tolist()
+
+    if len(initenergy) > 0:
+        d['total'] = pd.Series(initenergy)
+
+        for r, roi in enumerate(roi_initenergy):
+            d['roi_%02d' % r] = pd.Series(roi)
+    return pd.DataFrame(d)

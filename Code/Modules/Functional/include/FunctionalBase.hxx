@@ -76,6 +76,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Sigma.Fill(0.0);
 	this->m_Interp = InterpolatorType::New();
 	this->m_MaskInterp = MaskInterpolatorType::New();
+
+	m_InfoBuffer << "{ \"info\": {";
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -135,9 +137,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_EnergyCalculator->SetPriorsMap(this->m_CurrentMaps);
 	this->m_EnergyCalculator->SetMask(this->m_BackgroundMask);
 	this->m_EnergyCalculator->SetModel(this->m_Model);
-	this->m_EnergyCalculator->SetNumberOfThreads(1);
+	// this->m_EnergyCalculator->SetNumberOfThreads(1);
 	this->m_EnergyCalculator->Update();
 	//this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
+
+	if( this->m_Priors.size() == this->m_Target.size() ) {
+		const MeasureArray finales = this->GetFinalEnergy();
+		MeasureType total = 0.0;
+		for (size_t i = 0; i < finales.Size(); i++)
+			total+=finales[i];
+
+		std::cout << "Energy_total= " << total << " || regions=" << finales << "." << std::endl;
+	}
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -485,6 +496,138 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		}
 	}
 	this->m_RegionsUpdated = true;
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+const typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureArray
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::GetFinalEnergy() const {
+	ROIPixelType unassigned = itk::NumericTraits< ROIPixelType >::max();
+
+	ROIPointer finalrois = ROIType::New();
+	finalrois->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+	finalrois->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+	finalrois->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
+	finalrois->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+	finalrois->Allocate();
+	finalrois->FillBuffer(unassigned);
+	size_t nPix = finalrois->GetLargestPossibleRegion().GetNumberOfPixels();
+	ROIPixelType* regionsBuffer = finalrois->GetBufferPointer();
+
+	PriorsImagePointer tpms = PriorsImageType::New();
+	tpms->SetRegions(   this->m_ReferenceSize );
+	tpms->SetOrigin(    this->m_FirstPixelCenter );
+	tpms->SetDirection( this->m_Direction );
+	tpms->SetSpacing(   this->m_ReferenceSpacing );
+	tpms->SetVectorLength(this->m_NumberOfRegions);
+	PriorsPixelType zero;
+	zero.SetSize(this->m_NumberOfRegions);
+	zero.Fill(0.0);
+	tpms->Allocate();
+	tpms->FillBuffer(zero);
+
+	PriorsValueType* priorBuffer = tpms->GetBufferPointer();
+	const float* bgBuffer = m_BackgroundMask->GetBufferPointer();
+	float bg;
+
+	for (ROIPixelType idx = 0; idx < this->m_NumberOfRegions - 1; idx++ ) {
+		ROIPointer tempROI;
+
+		if ( idx < this->m_NumberOfRegions - 2 ) {
+			ContourCopyPointer copy = ContourCopyType::New();
+			copy->SetInput( this->m_Target[idx] );
+			copy->Update();
+
+			BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
+			meshFilter->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+			meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+			meshFilter->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
+			meshFilter->SetSize(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+			meshFilter->SetInput(     copy->GetOutput() );
+			meshFilter->Update();
+			tempROI = meshFilter->GetOutput();
+		} else {
+			tempROI = ROIType::New();
+			tempROI->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
+			tempROI->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
+			tempROI->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
+			tempROI->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
+			tempROI->Allocate();
+			tempROI->FillBuffer( 1 );
+		}
+
+		ROIPixelType* roiBuffer = tempROI->GetBufferPointer();
+		double total = 0.0;
+		for( size_t pix = 0; pix < nPix; pix++ ) {
+			if( *(regionsBuffer+pix) == unassigned && *( roiBuffer + pix )==1 ) {
+				*(regionsBuffer+pix) = idx;
+				total += 1;
+			} else {
+				*( roiBuffer + pix ) = 0;
+			}
+		}
+
+		// Resample to reference image resolution
+		ResampleROIFilterPointer resampleFilter = ResampleROIFilterType::New();
+		resampleFilter->SetInput( tempROI );
+		resampleFilter->SetSize( this->m_ReferenceSize );
+		resampleFilter->SetOutputOrigin(    this->m_FirstPixelCenter );
+		resampleFilter->SetOutputSpacing(   this->m_ReferenceSpacing );
+		resampleFilter->SetOutputDirection( this->m_Direction );
+		resampleFilter->SetDefaultPixelValue( 0.0 );
+		resampleFilter->Update();
+		ProbabilityMapPointer tpm = resampleFilter->GetOutput();
+		typename ProbabilityMapType::PixelType* tpmbuff = tpm->GetBufferPointer();
+
+		size_t refpix = tpms->GetLargestPossibleRegion().GetNumberOfPixels();
+		typename ProbabilityMapType::PixelType f;
+		for(size_t i = 0; i < refpix; i++) {
+			f = *(tpmbuff+i);
+			if ( f <= 0.0 )
+				continue;
+
+			bg = *( bgBuffer + i );
+			if ( bg >= 1.0 && (idx < this->m_NumberOfRegions - 2) ) {
+				*(priorBuffer + i * this->m_NumberOfRegions + this->m_NumberOfRegions - 1 ) = 1.0;
+			} else {
+				*(priorBuffer + i * this->m_NumberOfRegions + idx) = f;
+			}
+		}
+	}
+
+	typename ROIResampleType::Pointer res = ROIResampleType::New();
+	res->SetInterpolator(ROIInterpolatorType::New());
+	res->SetInput(finalrois);
+	res->SetOutputParametersFromImage( this->m_ReferenceImage );
+	res->Update();
+
+	typedef itk::ImageFileWriter<ROIType> Writer;
+	typename Writer::Pointer w = Writer::New();
+	w->SetFileName("gold_seg.nii.gz");
+	w->SetInput( res->GetOutput() );
+	w->Update();
+
+	EnergyModelPointer m = EnergyModelType::New();
+	m->SetInput(this->m_ReferenceImage);
+	m->SetMask(this->m_BackgroundMask);
+	m->SetPriorsMap(tpms);
+	m->Update();
+
+	EnergyFilterPointer calc = EnergyFilter::New();
+	calc->SetInput(this->m_ReferenceImage);
+	calc->SetPriorsMap(tpms);
+	calc->SetMask(this->m_BackgroundMask);
+	calc->SetModel(m);
+	calc->Update();
+
+	const MeasureArray finales = calc->GetEnergies();
+	MeasureType total = 0.0;
+	for (size_t i = 0; i < finales.Size(); i++)
+		total+=finales[i];
+
+	this->m_InfoBuffer << " \"total_energy\": " << total << ", \"roi_energy\": " << finales << ", ";
+	this->m_InfoBuffer << " \"model\" : " << m->PrintFormattedDescriptors();
+	return finales;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
