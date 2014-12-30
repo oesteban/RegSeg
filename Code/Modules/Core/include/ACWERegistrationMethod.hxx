@@ -245,6 +245,11 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		}
 	}
 
+	// Add targets (if requested, testing purposes)
+	for ( size_t i = 0; i<this->m_Target.size(); i++ ) {
+		this->m_Functionals[level]->AddShapeTarget( this->m_Target[i] );
+	}
+
 	// Connect Optimizer
 	this->m_Optimizers[level] = DefaultOptimizerType::New();
 	this->m_Optimizers[level]->SetFunctional( this->m_Functionals[level] );

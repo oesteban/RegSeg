@@ -233,6 +233,7 @@ public:
 	rstkGetObjectListWithLast( Functional, FunctionalType );
 
 	void AddShapePrior( const VectorContourType *prior ) { this->m_Priors.push_back( prior ); }
+	void AddShapeTarget( const VectorContourType *surf ) { this->m_Target.push_back( surf ); }
 
 	// Methods inherited from the Configurable interface
 	virtual void AddOptions( SettingsDesc& opts ) const {};
@@ -305,6 +306,7 @@ private:
 	FunctionalList m_Functionals;
 	OptimizerList m_Optimizers;
 	PriorsList m_Priors;
+	PriorsList m_Target;
 	SettingsList m_Config;
 	OutputTransformPointer m_OutputTransform;
 	OutputTransformPointer m_OutputInverseTransform;

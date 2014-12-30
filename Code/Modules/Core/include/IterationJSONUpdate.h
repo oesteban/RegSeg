@@ -61,6 +61,8 @@ public:
 				}
 				itnode["energy"]["region"] = enode;
     		}
+
+    		itnode["target_surfaces"] = this->ParseTree( this->m_Optimizer->GetFunctional()->GetInfoString());
     		itnode["descriptors"] = this->ParseTree( this->m_Optimizer->GetFunctional()->PrintFormattedDescriptors() );
     		itnode["step_size"] = this->m_Optimizer->GetStepSize();
 

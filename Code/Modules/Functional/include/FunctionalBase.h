@@ -227,6 +227,8 @@ public:
 	typedef typename ROIType::ConstPointer                   ROIConstPointer;
 	typedef typename itk::NearestNeighborInterpolateImageFunction
 			< ROIType, TCoordRepType >                       ROIInterpolatorType;
+	typedef itk::ResampleImageFilter
+			< ROIType, ROIType, TCoordRepType >              ROIResampleType;
 	typedef std::vector< ROIConstPointer >                   ROIList;
 	typedef itk::TriangleMeshToBinaryImageFilter
 			          <VectorContourType, ROIType>	             BinarizeMeshFilterType;
@@ -396,7 +398,20 @@ public:
 
 	size_t AddShapePrior( const VectorContourType* prior );
 
+	size_t AddShapeTarget( const VectorContourType* surf ) {
+		this->m_Target.push_back( surf );
+	}
+
 	static void AddOptions( SettingsDesc& opts );
+
+	const MeasureArray GetFinalEnergy() const;
+	std::string GetInfoString() {
+		this->m_InfoBuffer << " } }";
+		std::string result = this->m_InfoBuffer.str();
+		this->m_InfoBuffer.str("");
+		this->m_InfoBuffer << "{ \"info\": { ";
+		return result;
+	}
 
 protected:
 	FunctionalBase();
@@ -439,6 +454,7 @@ protected:
 	ContourList m_CurrentContours;
 	ShapeGradientList m_Gradients;
 	ConstContourList m_Priors;
+	ConstContourList m_Target;
 	NormalFilterList m_NormalsFilter;
 	//WarpContourPointer m_ContourUpdater;
 	//TransformPointer m_Transform;
@@ -472,6 +488,8 @@ protected:
 	std::vector<size_t> m_OffMaskVertices;
 
 	GradientStatsArray m_GradientStatistics;
+
+	mutable std::stringstream m_InfoBuffer;
 
 private:
 	FunctionalBase(const Self &);  //purposely not implemented

@@ -35,7 +35,7 @@
 
 int main(int argc, char *argv[]) {
 	std::string outPrefix;
-	std::vector< std::string > fixedImageNames, movingSurfaceNames;
+	std::vector< std::string > fixedImageNames, movingSurfaceNames, targetSurfaceNames;
 	std::string logFileName = "";
 	bool outImages = false;
 
@@ -45,6 +45,7 @@ int main(int argc, char *argv[]) {
 			("help,h", "show help message")
 			("fixed-images,F", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
 			("surface-priors,P", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken()->required(),	"shape priors")
+			("surface-target,T", bpo::value < std::vector<std::string>	> (&targetSurfaceNames)->multitoken(),	"final shapes to evaluate metric (only testing purposes)")
 			("fixed-mask,M", bpo::value< std::string >(), "fixed image mask")
 			("transform-levels,L", bpo::value< size_t > (), "number of multi-resolution levels for the transform")
 			("output-prefix,o", bpo::value < std::string > (&outPrefix)->default_value("regseg"), "prefix for output files")
@@ -195,6 +196,13 @@ int main(int argc, char *argv[]) {
 		movingjson.append( movingSurfaceNames[i] );
 	}
 	root["inputs"]["moving"]["components"] = movingjson;
+
+	for (size_t i = 0; i < targetSurfaceNames.size(); i++) {
+		ReaderType::Pointer polyDataReader = ReaderType::New();
+		polyDataReader->SetFileName( targetSurfaceNames[i] );
+		polyDataReader->Update();
+		acwereg->AddShapeTarget( polyDataReader->GetOutput() );
+	}
 
 	// Set up registration ------------------------------------------------------------
 	if ( vm_general.count("transform-levels") && cli_nlevels == 0 ) {
