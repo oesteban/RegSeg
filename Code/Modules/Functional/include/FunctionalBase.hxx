@@ -488,10 +488,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				continue;
 
 			bg = *( bgBuffer + i );
+
+			if ( bg < 1.0 && (idx < this->m_NumberOfRegions - 1) ) {
+				*(priorBuffer + i * this->m_NumberOfRegions + idx) = f;
+			}
+
 			if ( bg >= 1.0 && (idx < this->m_NumberOfRegions - 2) ) {
 				*(priorBuffer + i * this->m_NumberOfRegions + this->m_NumberOfRegions - 1 ) = 1.0;
-			} else {
-				*(priorBuffer + i * this->m_NumberOfRegions + idx) = f;
 			}
 		}
 	}
@@ -587,10 +590,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				continue;
 
 			bg = *( bgBuffer + i );
+
+			if ( bg < 1.0 && (idx < this->m_NumberOfRegions - 1) ) {
+				*(priorBuffer + i * this->m_NumberOfRegions + idx) = f;
+			}
+
 			if ( bg >= 1.0 && (idx < this->m_NumberOfRegions - 2) ) {
 				*(priorBuffer + i * this->m_NumberOfRegions + this->m_NumberOfRegions - 1 ) = 1.0;
-			} else {
-				*(priorBuffer + i * this->m_NumberOfRegions + idx) = f;
 			}
 		}
 	}
