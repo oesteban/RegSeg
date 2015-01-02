@@ -44,7 +44,7 @@
 #include <itkContinuousIndex.h>
 #include <itkImage.h>
 #include <itkVectorImage.h>
-#include <itkVectorLinearInterpolateImageFunction.h>
+#include "VectorLinearInterpolateImageFunction.h"
 #include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkQuadEdgeMeshTraits.h>
 #include <itkQuadEdgeMesh.h>
@@ -151,7 +151,7 @@ public:
 	typedef typename SmoothingFilterType::Pointer			 SmoothingFilterPointer;
 	typedef typename SmoothingFilterType::SigmaArrayType     SigmaArrayType;
 
-	typedef itk::VectorLinearInterpolateImageFunction
+	typedef rstk::VectorLinearInterpolateImageFunction
 			< ReferenceImageType >                           InterpolatorType;
 	typedef typename InterpolatorType::Pointer               InterpolatorPointer;
 

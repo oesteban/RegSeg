@@ -220,7 +220,6 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 					invcov(i,j) = R.inverse()[i][j];
 		}
 	} else {
-		invcov(0,0)=1.0 / cov(0,0);
 		det = fabs( cov(0,0) );
 	}
 	return log( det );
