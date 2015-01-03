@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-30 20:07:51
+# @Last Modified time: 2015-01-03 13:25:32
 
 
 def plot_report(df, levels_df=None, out_file=None):
@@ -28,58 +28,84 @@ def plot_report(df, levels_df=None, out_file=None):
 
     innergs0 = mgs.GridSpecFromSubplotSpec(
         2, len(levels), subplot_spec=outergs[0], hspace=0.3, wspace=0.08)
-    allax1 = []
-    allax2 = []
 
     for i, l in enumerate(levels):
         ax1 = plt.Subplot(fig, innergs0[i])
-        allax1.append(ax1)
         ax2 = plt.Subplot(fig, innergs0[i + len(levels)])
-        allax2.append(ax2)
+        fig.add_subplot(ax1)
+        fig.add_subplot(ax2)
+
         ldf = df[df.level == i]
-        ldf.plot(ax=ax1, x='iteration', y='E_t')
+        plt.sca(ax1)
+        ldf.E_t.plot(label=r'$E_T(t)$')
+
+        its = ldf.iteration[ldf['desc_update'] != 0]
+        if not its.empty:
+            bottom = ax1.get_ylim()[0]
+            dupdt = ldf.desc_update[its].astype(np.float32) * ldf.E_t[its]
+            for it, v in zip(its, dupdt):
+                plt.plot((it, it), (bottom, v), color=c, linewidth=0.7,
+                         alpha=0.9)
+
+        ldf.step.plot(secondary_y=True, style='k--', linewidth=0.7,
+                      label=r'$\delta(t)$')
+        ax1.set_xlabel('iteration')
 
         if levels_df is not None:
             if not levels_df.empty:
                 th_e = levels_df['total'][i]
                 ax1.plot([th_e] * (len(ldf['E_t'])))
 
-        fig.add_subplot(ax1)
-        ldf.plot(ax=ax2, x='iteration', y='step')
-        fig.add_subplot(ax2)
+        plt.sca(ax2)
+        ldf.max_uk.plot(label=r'$\max_{k}\{\Vert \mathbf{u}_k(t) \Vert\}$')
+
+        if not its.empty:
+            bottom = ax2.get_ylim()[0]
+            dupdt = ldf.desc_update[its].astype(np.float32) * ldf.max_uk[its]
+            for it, v in zip(its, dupdt):
+                plt.plot((it, it), (bottom, v), color=c, linewidth=0.7,
+                         alpha=0.9)
+        ldf.max_gk.plot(secondary_y=True,
+                        label=r'$\max_{k}\{\Vert \mathbf{g}_k(t) \Vert\}$')
+
+        ax2.set_xlabel('iteration')
+
         ax1.text(lposx, lposy, 'Level %d' %
                  (i + 1), ha=lha, transform=ax1.transAxes, fontdict=fd)
         ax2.text(lposx, lposy, 'Level %d' %
                  (i + 1), ha=lha, transform=ax2.transAxes, fontdict=fd)
 
     innergs3 = mgs.GridSpecFromSubplotSpec(
-        2, len(levels), subplot_spec=outergs[2], hspace=0.3, wspace=0.05)
-    allax1 = []
-    allax2 = []
-    for i, l in enumerate(levels):
-        ldf = df[df.level == i]
-        ax1 = plt.Subplot(fig, innergs3[i])
-        allax1.append(ax1)
-        ax2 = plt.Subplot(fig, innergs3[i + len(levels)])
-        allax2.append(ax2)
+        1, len(levels), subplot_spec=outergs[2], hspace=0.3, wspace=0.05)
 
-        ldf.plot(ax=ax1, x='iteration', y=['max_uk', 'max_gk'],
-                 secondary_y=['norm'])
-        # ldf.plot(ax=ax1, x='iteration', y='max_gk', secondary_y=True)
+    for i, l in enumerate(levels):
+        ax1 = plt.Subplot(fig, innergs3[i])
         fig.add_subplot(ax1)
 
-        ldf.plot(ax=ax2, x='iteration', y='g_50')
-        ldf.plot(ax=ax2, x='iteration', y='g_05', color=c, style='--', lw=.7)
-        ldf.plot(ax=ax2, x='iteration', y='g_95', color=c, style='--', lw=.7)
-        ax2.fill_between(
+        ldf = df[df.level == i]
+        plt.sca(ax1)
+        ldf.plot(x='iteration', y='g_50')
+        ldf.plot(x='iteration', y='g_05', color=c, style='--', lw=.7)
+        ldf.plot(x='iteration', y='g_95', color=c, style='--', lw=.7)
+        ax1.fill_between(
             ldf.iteration, ldf['g_25'], ldf['g_75'], alpha=0.2, color=c)
-        ax2.fill_between(
+        ax1.fill_between(
             ldf.iteration, ldf['g_05'], ldf['g_95'], alpha=0.05, color=c)
-        fig.add_subplot(ax2)
+        ax1.set_xlabel('iteration')
         ax1.text(lposx, lposy, 'Level %d' %
                  (i + 1), ha=lha, transform=ax1.transAxes, fontdict=fd)
-        ax2.text(lposx, lposy, 'Level %d' %
-                 (i + 1), ha=lha, transform=ax2.transAxes, fontdict=fd)
+
+        # ax2 = plt.Subplot(fig, innergs3[i + len(levels)])
+        # fig.add_subplot(ax2)
+        # ldf.plot(ax=ax2, x='iteration', y='g_50')
+        # ldf.plot(ax=ax2, x='iteration', y='g_05', color=c, style='--', lw=.7)
+        # ldf.plot(ax=ax2, x='iteration', y='g_95', color=c, style='--', lw=.7)
+        # ax2.fill_between(
+        #     ldf.iteration, ldf['g_25'], ldf['g_75'], alpha=0.2, color=c)
+        # ax2.fill_between(
+        #     ldf.iteration, ldf['g_05'], ldf['g_95'], alpha=0.05, color=c)
+        # ax2.text(lposx, lposy, 'Level %d' %
+        #          (i + 1), ha=lha, transform=ax2.transAxes, fontdict=fd)
 
     innergs1 = mgs.GridSpecFromSubplotSpec(
         1, len(levels), subplot_spec=outergs[1], hspace=0.0, wspace=0.05)
@@ -123,13 +149,12 @@ def plot_report(df, levels_df=None, out_file=None):
     fig.text(gps[3][0] - 0.38, gps[3][1] + 0.02,
              'Total energy evolution', size=20)
     fig.text(gps[3][0] - 0.38, gps[3][1] - 0.185,
-             r'Step size ($\delta$) evolution', size=20)
+             'Update evolution', size=20)
     fig.text(gps[0][0], gps[3][1] + 0.02,
              'Region-wise evolution of energy', size=20)
     fig.text(gps[3][0] - 0.38, gps[1][1] + 0.02,
-             r'Update: $\max_{k}\{\Vert \mathbf{u}_k \Vert\}$', size=20)
-    fig.text(gps[3][0] - 0.38, gps[1][1] - 0.185,
              r'Gradient at vertices ($\mathbf{g}_i$) distribution', size=20)
+
     fig.text(gps[0][0], gps[1][1] + 0.02, 'Energy decomposition', size=20)
 
     if out_file is not None:

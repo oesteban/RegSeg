@@ -4,8 +4,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2014-12-29 18:17:09
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-01-03 12:40:43
 
 import os
 import os.path as op
@@ -337,6 +337,8 @@ def parse_iterations(in_file):
         d['E_t'] = pd.Series([e['energy']['total'] for e in its])
         d['E_d'] = pd.Series([e['energy']['data'] for e in its])
         d['E_r'] = pd.Series([e['energy']['regularization'] for e in its])
+
+        d['desc_update'] = pd.Series([int('descriptors' in e) for e in its])
 
         for i in xrange(len(its[0]['energy']['region'])):
             d['E_%02d' % i] = pd.Series(
