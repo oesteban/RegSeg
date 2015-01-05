@@ -138,6 +138,9 @@ private:
 	MeasureType ComputeCovarianceDeterminant(CovarianceMatrixType& cov) const;
 	void ComputeMaxEnergyGap();
 
+	void Estimate();
+	void EstimateRobust();
+
 	MahalanobisDistanceModel(const Self &);   //purposely not implemented
 	void operator=(const Self &);             //purposely not implemented
 
