@@ -143,13 +143,15 @@ template< typename TInputVectorImage, typename TPriorsPrecisionType >
 void
 MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 ::EstimateRobust() {
-	ReferenceSamplePointer sample = ReferenceSampleType::New();
-	sample->SetImage( this->GetInput() );
-	size_t npix = sample->Size();
+
+	size_t npix = this->GetInput()->GetLargestPossibleRegion().GetNumberOfPixels();
+	size_t ncomps = this->GetInput()->GetNumberOfComponentsPerPixel();
+
+	size_t offset = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
 	size_t nregions = this->m_NumberOfRegions - 1;
 
 	const PriorsPrecisionType* priors = this->GetPriorsMap()->GetBufferPointer();
-	size_t offset = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
+	const PixelValueType * input = this->GetInput()->GetBufferPointer();
 
 
 	std::vector<WeightArrayType> weights;
@@ -161,31 +163,33 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	}
 
 	PriorsPrecisionType w;
-	std::vector<PixelValueType> s[nregions][offset];
+	std::vector<PixelValueType> s[nregions][ncomps];
 	for( size_t i = 0; i < npix; i++ ) {
 		for( size_t roi = 0; roi < nregions; roi++ ) {
 			w = *(priors + offset * i + roi);
 			weights[roi][i] = w;
 
 			if (w >= 1.0) {
-				for( size_t comp = 0; comp < offset; comp++ ) {
-					s[roi][comp].push_back( sample->GetMeasurementVector(i)[comp] );
+				for( size_t comp = 0; comp < ncomps; comp++ ) {
+					s[roi][comp].push_back( *(input + i * ncomps + comp) );
 				}
 			}
 		}
 	}
 
 	MeasurementVectorType m;
-	m.SetSize(sample->GetMeasurementVectorSize());
+	m.SetSize(ncomps);
 	for( size_t roi = 0; roi < nregions; roi++ ) {
 		m.Fill(0.0);
-		for( size_t comp = 0; comp < offset; comp++ ) {
+		for( size_t comp = 0; comp < ncomps; comp++ ) {
 			std::sort(s[roi][comp].begin(), s[roi][comp].end());
 			m[comp] = s[roi][comp][int(0.5*(s[roi][comp].size()-1))];
 		}
 		this->m_Means[roi] = m;
 	}
 
+	ReferenceSamplePointer sample = ReferenceSampleType::New();
+	sample->SetImage( this->GetInput() );
 	for( size_t roi = 0; roi < nregions; roi++ ) {
 		InternalFunctionPointer mf = InternalFunctionType::New();
 		mf->SetMean( this->m_Means[roi] );
