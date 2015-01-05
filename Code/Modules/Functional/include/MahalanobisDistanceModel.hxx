@@ -74,6 +74,12 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 ::InitializeMemberships() {
 	this->m_NumberOfRegions = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
 	this->m_Memberships.resize(this->m_NumberOfRegions);
+
+	size_t nregions = this->m_NumberOfRegions - 1;
+	this->m_Means.resize(nregions);
+	this->m_Covariances.resize(nregions);
+	this->m_RegionOffsetContainer.SetSize(nregions);
+	this->m_RegionOffsetContainer.Fill(0.0);
 }
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
@@ -81,20 +87,24 @@ void
 MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 ::GenerateData() {
 	this->InitializeMemberships();
+	this->EstimateRobust();
 
+	this->ComputeMaxEnergyGap();
+}
+
+template< typename TInputVectorImage, typename TPriorsPrecisionType >
+void
+MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
+::Estimate() {
 	ReferenceSamplePointer sample = ReferenceSampleType::New();
 	sample->SetImage( this->GetInput() );
 	size_t npix = sample->Size();
 	size_t nregions = this->m_NumberOfRegions - 1;
 
-	std::vector<WeightArrayType> weights;
 	const PriorsPrecisionType* priors = this->GetPriorsMap()->GetBufferPointer();
 	size_t offset = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
 
-	WeightArrayType totals;
-	totals.SetSize(nregions);
-	totals.Fill(0.0);
-
+	std::vector<WeightArrayType> weights;
 	for( size_t roi = 0; roi < nregions; roi++ ) {
 		WeightArrayType warr;
 		warr.SetSize(npix);
@@ -102,20 +112,13 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 		weights.push_back(warr);
 	}
 
-
 	PriorsPrecisionType w;
 	for( size_t i = 0; i < npix; i++ ) {
 		for( size_t roi = 0; roi < nregions; roi++ ) {
 			w = *(priors + offset * i + roi);
 			weights[roi][i] = w;
-			totals[roi]+= w;
 		}
 	}
-
-	this->m_Means.resize(nregions);
-	this->m_Covariances.resize(nregions);
-	this->m_RegionOffsetContainer.SetSize(nregions);
-	this->m_RegionOffsetContainer.Fill(0.0);
 
 	for( size_t roi = 0; roi < nregions; roi++ ) {
 		CovarianceFilterPointer covFilter = CovarianceFilter::New();
@@ -134,8 +137,70 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 		this->m_Means[roi] = covFilter->GetMean();
 		this->m_Covariances[roi] = cov;
 	}
+}
 
-	this->ComputeMaxEnergyGap();
+template< typename TInputVectorImage, typename TPriorsPrecisionType >
+void
+MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
+::EstimateRobust() {
+	ReferenceSamplePointer sample = ReferenceSampleType::New();
+	sample->SetImage( this->GetInput() );
+	size_t npix = sample->Size();
+	size_t nregions = this->m_NumberOfRegions - 1;
+
+	const PriorsPrecisionType* priors = this->GetPriorsMap()->GetBufferPointer();
+	size_t offset = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
+
+
+	std::vector<WeightArrayType> weights;
+	for( size_t roi = 0; roi < nregions; roi++ ) {
+		WeightArrayType warr;
+		warr.SetSize(npix);
+		warr.Fill(0.0);
+		weights.push_back(warr);
+	}
+
+	PriorsPrecisionType w;
+	std::vector<PixelValueType> s[nregions][offset];
+	for( size_t i = 0; i < npix; i++ ) {
+		for( size_t roi = 0; roi < nregions; roi++ ) {
+			w = *(priors + offset * i + roi);
+			weights[roi][i] = w;
+
+			if (w >= 1.0) {
+				for( size_t comp = 0; comp < offset; comp++ ) {
+					s[roi][comp].push_back( sample->GetMeasurementVector(i)[comp] );
+				}
+			}
+		}
+	}
+
+	MeasurementVectorType m;
+	m.SetSize(sample->GetMeasurementVectorSize());
+	for( size_t roi = 0; roi < nregions; roi++ ) {
+		m.Fill(0.0);
+		for( size_t comp = 0; comp < offset; comp++ ) {
+			std::sort(s[roi][comp].begin(), s[roi][comp].end());
+			m[comp] = s[roi][comp][int(0.5*(s[roi][comp].size()-1))];
+		}
+		this->m_Means[roi] = m;
+	}
+
+	for( size_t roi = 0; roi < nregions; roi++ ) {
+		InternalFunctionPointer mf = InternalFunctionType::New();
+		mf->SetMean( this->m_Means[roi] );
+
+		CovarianceFilterPointer covFilter = CovarianceFilter::New();
+		covFilter->SetInput( sample );
+		covFilter->SetWeights( weights[roi] );
+		covFilter->Update();
+		CovarianceMatrixType cov = covFilter->GetCovarianceMatrix();
+		mf->SetCovariance( cov );
+
+		this->m_Memberships[roi] = mf;
+		this->m_RegionOffsetContainer[roi] = log(2.0 * vnl_math::pi) * cov.Rows() + this->ComputeCovarianceDeterminant(cov);
+		this->m_Covariances[roi] = cov;
+	}
 }
 
 

@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-03 13:25:32
+# @Last Modified time: 2015-01-05 11:23:36
 
 
 def plot_report(df, levels_df=None, out_file=None):
@@ -23,17 +23,20 @@ def plot_report(df, levels_df=None, out_file=None):
     lposy = .9
     lha = 'left'
 
-    fig = plt.figure(figsize=(18, 19))
-    outergs = mgs.GridSpec(2, 2, wspace=0.2, hspace=0.2)
+    fig = plt.figure(figsize=(20, 15))
+    outergs = mgs.GridSpec(1, 2, wspace=0.2, hspace=0.2)
 
     innergs0 = mgs.GridSpecFromSubplotSpec(
-        2, len(levels), subplot_spec=outergs[0], hspace=0.3, wspace=0.08)
+        3, len(levels), subplot_spec=outergs[0], hspace=0.3, wspace=0.08)
 
     for i, l in enumerate(levels):
-        ax1 = plt.Subplot(fig, innergs0[i])
-        ax2 = plt.Subplot(fig, innergs0[i + len(levels)])
+        ax1 = plt.Subplot(fig, innergs0[0, i])
+        ax2 = plt.Subplot(fig, innergs0[1, i])
+        ax3 = plt.Subplot(fig, innergs0[2, i])
+
         fig.add_subplot(ax1)
         fig.add_subplot(ax2)
+        fig.add_subplot(ax3)
 
         ldf = df[df.level == i]
         plt.sca(ax1)
@@ -49,12 +52,15 @@ def plot_report(df, levels_df=None, out_file=None):
 
         ldf.step.plot(secondary_y=True, style='k--', linewidth=0.7,
                       label=r'$\delta(t)$')
-        ax1.set_xlabel('iteration')
-
         if levels_df is not None:
             if not levels_df.empty:
                 th_e = levels_df['total'][i]
                 ax1.plot([th_e] * (len(ldf['E_t'])))
+
+        ax1.text(lposx, lposy, 'Level %d' %
+                 (i + 1), ha=lha, transform=ax1.transAxes, fontdict=fd)
+        ax1.set_xticklabels([])
+        ax1.set_xlabel('')
 
         plt.sca(ax2)
         ldf.max_uk.plot(label=r'$\max_{k}\{\Vert \mathbf{u}_k(t) \Vert\}$')
@@ -68,50 +74,31 @@ def plot_report(df, levels_df=None, out_file=None):
         ldf.max_gk.plot(secondary_y=True,
                         label=r'$\max_{k}\{\Vert \mathbf{g}_k(t) \Vert\}$')
 
-        ax2.set_xlabel('iteration')
-
-        ax1.text(lposx, lposy, 'Level %d' %
-                 (i + 1), ha=lha, transform=ax1.transAxes, fontdict=fd)
         ax2.text(lposx, lposy, 'Level %d' %
                  (i + 1), ha=lha, transform=ax2.transAxes, fontdict=fd)
+        ax2.set_xticklabels([])
+        ax2.set_xlabel('')
 
-    innergs3 = mgs.GridSpecFromSubplotSpec(
-        1, len(levels), subplot_spec=outergs[2], hspace=0.3, wspace=0.05)
-
-    for i, l in enumerate(levels):
-        ax1 = plt.Subplot(fig, innergs3[i])
-        fig.add_subplot(ax1)
-
-        ldf = df[df.level == i]
-        plt.sca(ax1)
+        plt.sca(ax3)
         ldf.plot(x='iteration', y='g_50')
         ldf.plot(x='iteration', y='g_05', color=c, style='--', lw=.7)
         ldf.plot(x='iteration', y='g_95', color=c, style='--', lw=.7)
-        ax1.fill_between(
+        ax3.fill_between(
             ldf.iteration, ldf['g_25'], ldf['g_75'], alpha=0.2, color=c)
-        ax1.fill_between(
+        ax3.fill_between(
             ldf.iteration, ldf['g_05'], ldf['g_95'], alpha=0.05, color=c)
-        ax1.set_xlabel('iteration')
-        ax1.text(lposx, lposy, 'Level %d' %
-                 (i + 1), ha=lha, transform=ax1.transAxes, fontdict=fd)
-
-        # ax2 = plt.Subplot(fig, innergs3[i + len(levels)])
-        # fig.add_subplot(ax2)
-        # ldf.plot(ax=ax2, x='iteration', y='g_50')
-        # ldf.plot(ax=ax2, x='iteration', y='g_05', color=c, style='--', lw=.7)
-        # ldf.plot(ax=ax2, x='iteration', y='g_95', color=c, style='--', lw=.7)
-        # ax2.fill_between(
-        #     ldf.iteration, ldf['g_25'], ldf['g_75'], alpha=0.2, color=c)
-        # ax2.fill_between(
-        #     ldf.iteration, ldf['g_05'], ldf['g_95'], alpha=0.05, color=c)
-        # ax2.text(lposx, lposy, 'Level %d' %
-        #          (i + 1), ha=lha, transform=ax2.transAxes, fontdict=fd)
+        ax3.set_xlabel('iteration')
+        ax3.text(lposx, lposy, 'Level %d' %
+                 (i + 1), ha=lha, transform=ax3.transAxes, fontdict=fd)
 
     innergs1 = mgs.GridSpecFromSubplotSpec(
-        1, len(levels), subplot_spec=outergs[1], hspace=0.0, wspace=0.05)
+        2, len(levels), subplot_spec=outergs[1], hspace=0.3, wspace=0.05)
     for i, l in enumerate(levels):
         ldf = df[df.level == i]
-        ax1 = plt.Subplot(fig, innergs1[i])
+        ax1 = plt.Subplot(fig, innergs1[0, i])
+        ax2 = plt.Subplot(fig, innergs1[1, i])
+        fig.add_subplot(ax1)
+        fig.add_subplot(ax2)
 
         eid = 0
         erois = []
@@ -120,42 +107,38 @@ def plot_report(df, levels_df=None, out_file=None):
             eid += 1
 
         ldf.plot(ax=ax1, x='iteration', y=erois, kind='area', stacked=True)
-        fig.add_subplot(ax1)
         ax1.text(.9, .05, 'Level %d' %
                  (i + 1), ha='right', transform=ax1.transAxes, fontdict=fd)
+
+        plt.sca(ax2)
+        ldf.plot(ax=ax2, x='iteration', y=['E_d', 'E_r'],
+                 kind='area', stacked=True)
+        plt.plot(ldf['E_t'])
+        ax2.text(.9, .05, 'Level %d' %
+                 (i + 1), ha='right', transform=ax2.transAxes, fontdict=fd)
 
     legend = ax1.legend(loc='center right')
     frame = legend.get_frame()
     frame.set_facecolor('w')
 
-    innergs2 = mgs.GridSpecFromSubplotSpec(
-        1, len(levels), subplot_spec=outergs[3], hspace=0.0, wspace=0.05)
-    for i, l in enumerate(levels):
-        ax = plt.Subplot(fig, innergs2[i])
-        ldf.plot(ax=ax, x='iteration', y=['E_d', 'E_r'],
-                 kind='area', stacked=True)
-        plt.plot(ldf['E_t'])
-        fig.add_subplot(ax)
-        ax.text(.9, .05, 'Level %d' %
-                (i + 1), ha='right', transform=ax.transAxes, fontdict=fd)
-
-    legend = ax.legend(loc='upper right', bbox_to_anchor=(0.0, -0.05), ncol=3)
+    legend = ax2.legend(loc='upper right', bbox_to_anchor=(0.0, -0.05), ncol=3)
     frame = legend.get_frame()
     frame.set_facecolor('w')
 
     fig.suptitle('Convergence report', fontsize=40)
 
     gps = outergs.get_grid_positions(fig)
-    fig.text(gps[3][0] - 0.38, gps[3][1] + 0.02,
+    fig.text(gps[2][0], gps[1][0] + 0.02,
              'Total energy evolution', size=20)
-    fig.text(gps[3][0] - 0.38, gps[3][1] - 0.185,
+    fig.text(gps[2][0], gps[1][0] - 0.26,
              'Update evolution', size=20)
-    fig.text(gps[0][0], gps[3][1] + 0.02,
-             'Region-wise evolution of energy', size=20)
-    fig.text(gps[3][0] - 0.38, gps[1][1] + 0.02,
+    fig.text(gps[2][0], gps[0][0] + 0.24,
              r'Gradient at vertices ($\mathbf{g}_i$) distribution', size=20)
 
-    fig.text(gps[0][0], gps[1][1] + 0.02, 'Energy decomposition', size=20)
+    fig.text(gps[3][0] + 0.072, gps[1][0] + 0.02,
+             'Region-wise evolution of energy', size=20)
+    fig.text(gps[3][0] + 0.072, gps[1][0] - 0.41,
+             'Energy decomposition', size=20)
 
     if out_file is not None:
         plt.savefig(out_file, format='pdf', dpi=300, bbox_inches='tight')
@@ -203,7 +186,7 @@ def jointplot_data(im1data, im2data, in_seg, labels=None, out_file=None,
         out_file = op.abspath('jointplot.pdf')
 
     plt.savefig(out_file, dpi=300, bbox_inches='tight')
-    return out_file
+    return g, out_file
 
 
 def jointplot_gmm(loc, cov, labels=None, out_file=None,
