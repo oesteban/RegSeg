@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-05 11:23:36
+# @Last Modified time: 2015-01-07 18:54:49
 
 
 def plot_report(df, levels_df=None, out_file=None):
@@ -262,19 +262,27 @@ def jointplot_gmm(loc, cov, labels=None, out_file=None,
     for mu, sigma, color, l in zip(loc, cov, palette, labels):
         Z = mlab.bivariate_normal(
             X, Y, sigma[0], sigma[-1], mu[0], mu[1], sigma[1])
-        ax_joint.contour(X, Y, Z, cmap=light_palette(
-            color, as_cmap=True))
+        ZC = ax_joint.contour(X, Y, Z,
+                              cmap=light_palette(color, as_cmap=True))
+
+        if l is not None:
+            ax_joint.annotate(
+                l, xy=(mu[0], mu[1]), xytext=(30, 20),
+                textcoords='offset points', size=30, va='center',
+                color='w',
+                bbox=dict(boxstyle="round", fc=color, ec='none', alpha=0.9,
+                          color='w'),
+                arrowprops=dict(arrowstyle="wedge,tail_width=0.7",
+                                fc=color, ec="none", alpha=0.6,
+                                relpos=(0.2, 0.5),
+                                )
+            )
+
         Zx = mlab.normpdf(x, mu[0], sigma[0])
         ax_marg_x.plot(x, Zx, color=color, label=l)
 
         Zy = mlab.normpdf(y, mu[1], sigma[-1])
         ax_marg_y.plot(Zy, y, color=color)
-
-        if l is not None:
-            patches.append(mpatches.Patch(color=color, label=l))
-
-    if len(patches) > 0:
-        ax_joint.legend(handles=patches)
 
     if out_file is None:
         out_file = op.abspath('jointplot.pdf')
