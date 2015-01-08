@@ -51,7 +51,7 @@ ModelBase< TInputVectorImage, TPriorsPrecisionType >
 ::ModelBase():
   Superclass(),
   m_NumberOfRegions(0),
-  m_MaxEnergy(1.0e3) {
+  m_MaxEnergy(0.0) {
 	m_MeasurementVectorSize = itk::NumericTraits<MeasurementVectorType>::GetLength(MeasurementVectorType());
 	this->SetNumberOfRequiredInputs(3);
 	this->SetNumberOfRequiredOutputs(1);

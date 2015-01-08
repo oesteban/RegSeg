@@ -142,8 +142,9 @@ public:
 	itkGetConstMacro(MeasurementVectorSize, MeasurementVectorSizeType);
 
 	virtual MeasureTypeContainer GetRegionOffsetContainer() const = 0;
-	virtual MeasureType GetMaxEnergyGap() const = 0;
 	virtual std::string PrintFormattedDescriptors() = 0;
+
+	itkGetConstMacro(MaxEnergy, MeasureType);
 
 protected:
 	ModelBase();

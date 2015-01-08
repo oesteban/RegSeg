@@ -382,7 +382,7 @@ public:
 	virtual void UpdateDescriptors() {
 		this->m_Model->SetPriorsMap(this->m_CurrentMaps);
 		this->m_Model->Update();
-		this->m_MaxEnergy = this->m_Model->GetMaxEnergyGap();
+		this->m_MaxEnergy = this->m_Model->GetMaxEnergy();
 	}
 
 	virtual std::string PrintFormattedDescriptors() {

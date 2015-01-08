@@ -43,9 +43,10 @@
 #ifndef _MAHALANOBISDISTANCEMODEL_H_
 #define _MAHALANOBISDISTANCEMODEL_H_
 
-#include "ModelBase.h"
-#include <itkMahalanobisDistanceMembershipFunction.h>
+
 #include <itkImageToListSampleAdaptor.h>
+#include "ModelBase.h"
+#include "MahalanobisDistanceMembershipFunction.h"
 #include "WeightedCovarianceSampleFilter.h"
 
 namespace rstk {
@@ -98,8 +99,7 @@ public:
 	typedef typename Superclass::MembershipFunctionPointer                     MembershipFunctionPointer;
 	typedef typename Superclass::MembershipFunctionsArray                      MembershipFunctionsArray;
 
-	typedef itk::Statistics::MahalanobisDistanceMembershipFunction<MeasurementVectorType>
-	                                                                           InternalFunctionType;
+	typedef MahalanobisDistanceMembershipFunction<MeasurementVectorType>       InternalFunctionType;
 	typedef typename InternalFunctionType::Pointer                             InternalFunctionPointer;
 	typedef typename InternalFunctionType::CovarianceMatrixType                CovarianceMatrixType;
 
@@ -114,7 +114,6 @@ public:
 	typedef std::vector< CovarianceMatrixType >                                CovariancesContainer;
 
 	itkGetConstMacro(RegionOffsetContainer, MeasureTypeContainer);
-	itkGetConstMacro(MaxEnergyGap, MeasureType);
 
 	std::string PrintFormattedDescriptors();
 protected:
@@ -135,7 +134,6 @@ protected:
 
 private:
 	MeasureType ComputeCovarianceDeterminant(CovarianceMatrixType& cov) const;
-	void ComputeMaxEnergyGap();
 
 	void Estimate();
 	void EstimateRobust();
@@ -143,7 +141,6 @@ private:
 	MahalanobisDistanceModel(const Self &);   //purposely not implemented
 	void operator=(const Self &);             //purposely not implemented
 
-	MeasureType m_MaxEnergyGap;
 	MeansContainer m_Means;
 	CovariancesContainer m_Covariances;
 	MeasureTypeContainer m_RegionOffsetContainer;
