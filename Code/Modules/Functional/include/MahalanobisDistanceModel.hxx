@@ -163,46 +163,32 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	}
 
 	PriorsPrecisionType w;
-	std::vector<PixelValueType> s[nregions][ncomps];
 	for( size_t i = 0; i < npix; i++ ) {
 		for( size_t roi = 0; roi < nregions; roi++ ) {
 			w = *(priors + offset * i + roi);
 			weights[roi][i] = w;
-
-			if (w >= 1.0) {
-				for( size_t comp = 0; comp < ncomps; comp++ ) {
-					s[roi][comp].push_back( *(input + i * ncomps + comp) );
-				}
-			}
 		}
-	}
-
-	MeasurementVectorType m;
-	m.SetSize(ncomps);
-	for( size_t roi = 0; roi < nregions; roi++ ) {
-		m.Fill(0.0);
-		for( size_t comp = 0; comp < ncomps; comp++ ) {
-			std::sort(s[roi][comp].begin(), s[roi][comp].end());
-			m[comp] = s[roi][comp][int(0.5*(s[roi][comp].size()-1))];
-		}
-		this->m_Means[roi] = m;
 	}
 
 	ReferenceSamplePointer sample = ReferenceSampleType::New();
 	sample->SetImage( this->GetInput() );
 	for( size_t roi = 0; roi < nregions; roi++ ) {
 		InternalFunctionPointer mf = InternalFunctionType::New();
-		mf->SetMean( this->m_Means[roi] );
 
 		CovarianceFilterPointer covFilter = CovarianceFilter::New();
 		covFilter->SetInput( sample );
 		covFilter->SetWeights( weights[roi] );
 		covFilter->Update();
+
+		MeasurementVectorType mean = covFilter->GetMean();
+		mf->SetMean(mean);
+
 		CovarianceMatrixType cov = covFilter->GetCovarianceMatrix();
 		mf->SetCovariance( cov );
 
 		this->m_Memberships[roi] = mf;
 		this->m_RegionOffsetContainer[roi] = log(2.0 * vnl_math::pi) * cov.Rows() + this->ComputeCovarianceDeterminant(cov);
+		this->m_Means[roi] = mean;
 		this->m_Covariances[roi] = cov;
 	}
 }
