@@ -46,7 +46,7 @@
 #include "ModelBase.h"
 #include <itkMahalanobisDistanceMembershipFunction.h>
 #include <itkImageToListSampleAdaptor.h>
-#include <itkWeightedCovarianceSampleFilter.h>
+#include "WeightedCovarianceSampleFilter.h"
 
 namespace rstk {
 
@@ -106,8 +106,7 @@ public:
 	typedef itk::Statistics::ImageToListSampleAdaptor< InputImageType >        ReferenceSampleType;
 	typedef typename ReferenceSampleType::Pointer                              ReferenceSamplePointer;
 
-	typedef itk::Statistics::WeightedCovarianceSampleFilter< ReferenceSampleType >
-	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	   CovarianceFilter;
+	typedef rstk::WeightedCovarianceSampleFilter< ReferenceSampleType >        CovarianceFilter;
 	typedef typename CovarianceFilter::Pointer                                 CovarianceFilterPointer;
 	typedef typename CovarianceFilter::WeightArrayType                         WeightArrayType;
 

@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-07 18:54:49
+# @Last Modified time: 2015-01-08 14:59:33
 
 
 def plot_report(df, levels_df=None, out_file=None):
@@ -189,10 +189,10 @@ def jointplot_data(im1data, im2data, in_seg, labels=None, out_file=None,
     return g, out_file
 
 
-def jointplot_gmm(loc, cov, labels=None, out_file=None,
+def jointplot_gmm(locs, covs, labels=None, out_file=None,
                   xlims=None, ylims=None,
                   xname='Image A', yname='Image B',
-                  size=20, ratio=5, space=.2,):
+                  size=20, ratio=5, space=.2):
     import os.path as op
     import nibabel as nb
     import numpy as np
@@ -203,9 +203,12 @@ def jointplot_gmm(loc, cov, labels=None, out_file=None,
     import matplotlib.pyplot as plt
     import matplotlib.mlab as mlab
     from matplotlib import patches as mpatches
+    from scipy.stats import multivariate_normal
 
-    if len(loc) != len(cov):
+    if len(locs) != len(covs):
         raise RuntimeError('Mixture model does not contain elements')
+
+    ncomp = np.shape(locs)[1]
 
     f = plt.figure(figsize=(size, size))
     gs = plt.GridSpec(ratio + 1, ratio + 1)
@@ -233,7 +236,7 @@ def jointplot_gmm(loc, cov, labels=None, out_file=None,
 
     ax_marg_x.yaxis.grid(False)
     ax_marg_y.xaxis.grid(False)
-    palette = color_palette("husl", n_colors=len(loc))
+    palette = color_palette("husl", n_colors=len(locs))
 
     # Make the grid look nice
     sn.utils.despine(f)
@@ -251,18 +254,23 @@ def jointplot_gmm(loc, cov, labels=None, out_file=None,
     xstep = (xlims[1] - xlims[0]) / 100
     ystep = (ylims[1] - ylims[0]) / 100
 
-    x = np.arange(xlims[0], xlims[1] + xstep, xstep)
-    y = np.arange(ylims[0], ylims[1] + ystep, ystep)
-    X, Y = np.meshgrid(x, y)
+    X, Y = np.mgrid[
+        xlims[0]:xlims[1] + xstep:xstep, ylims[0]:ylims[1] + ystep:ystep]
+
+    pos = np.empty(X.shape + (2,))
+    pos[:, :, 0] = X
+    pos[:, :, 1] = Y
+    y = Y[0]
+    x = pos.T[0][0]
 
     if labels is None:
-        labels = [None] * len(loc)
+        labels = [None] * len(locs)
 
     patches = []
-    for mu, sigma, color, l in zip(loc, cov, palette, labels):
-        Z = mlab.bivariate_normal(
-            X, Y, sigma[0], sigma[-1], mu[0], mu[1], sigma[1])
-        ZC = ax_joint.contour(X, Y, Z,
+    for mu, cov, color, l in zip(locs, covs, palette, labels):
+        cov = np.array(cov).reshape(ncomp, ncomp)
+        mv = multivariate_normal(mu, cov)
+        ZC = ax_joint.contour(X, Y, mv.pdf(pos),
                               cmap=light_palette(color, as_cmap=True))
 
         if l is not None:
@@ -278,10 +286,10 @@ def jointplot_gmm(loc, cov, labels=None, out_file=None,
                                 )
             )
 
-        Zx = mlab.normpdf(x, mu[0], sigma[0])
+        Zx = mlab.normpdf(x, mu[0], np.sqrt(cov[0][0]))
         ax_marg_x.plot(x, Zx, color=color, label=l)
 
-        Zy = mlab.normpdf(y, mu[1], sigma[-1])
+        Zy = mlab.normpdf(y, mu[1], np.sqrt(cov[1][1]))
         ax_marg_y.plot(Zy, y, color=color)
 
     if out_file is None:
