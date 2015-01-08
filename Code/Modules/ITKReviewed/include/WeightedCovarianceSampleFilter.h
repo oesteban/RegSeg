@@ -18,9 +18,9 @@
 #ifndef __WeightedCovarianceSampleFilter_h
 #define __WeightedCovarianceSampleFilter_h
 
-#include "itkFunctionBase.h"
-#include "itkCovarianceSampleFilter.h"
-#include "itkDataObjectDecorator.h"
+#include <itkFunctionBase.h>
+#include <itkCovarianceSampleFilter.h>
+#include <itkDataObjectDecorator.h>
 
 namespace rstk
 {
@@ -87,15 +87,6 @@ public:
   /** Method to set/get the weighting function */
   itkSetGetDecoratedObjectInputMacro(WeightingFunction, WeightingFunctionType);
 
-  virtual void SetMean(const MeasurementVectorRealType m) {
-	  MeasurementVectorDecoratedType *decoratedMeanOutput =
-	    itkDynamicCastInDebugMode< MeasurementVectorDecoratedType * >( this->ProcessObject::GetOutput(1) );
-	  decoratedMeanOutput->Set( m );
-	  this->m_MeanSet = true;
-	  this->Modified();
-  }
-
-
   /** Types derived from the base class */
   typedef typename Superclass::MatrixType          MatrixType;
   typedef typename Superclass::MatrixDecoratedType MatrixDecoratedType;
@@ -104,10 +95,31 @@ public:
   typedef typename Superclass::MeasurementVectorDecoratedType MeasurementVectorDecoratedType;
   typedef typename Superclass::OutputType                     OutputType;
 
+
+  virtual void SetMean(const MeasurementVectorRealType m) {
+  	  MeasurementVectorDecoratedType *decoratedMeanOutput =
+  	    itkDynamicCastInDebugMode< MeasurementVectorDecoratedType * >( this->ProcessObject::GetOutput(1) );
+  	  decoratedMeanOutput->Set( m );
+  	  this->m_MeanSet = true;
+  	  this->Modified();
+    }
+
+  const MeasurementVectorRealType GetRangeMax() const;
+  const MeasurementVectorDecoratedType * GetRangeMaxOutput() const;
+  const MeasurementVectorRealType GetRangeMin() const;
+  const MeasurementVectorDecoratedType * GetRangeMinOutput() const;
+
 protected:
   WeightedCovarianceSampleFilter();
   virtual ~WeightedCovarianceSampleFilter();
   void PrintSelf(std::ostream & os, itk::Indent indent) const;
+
+  /** DataObject pointer */
+  typedef itk::DataObject::Pointer DataObjectPointer;
+
+  typedef itk::ProcessObject::DataObjectPointerArraySizeType DataObjectPointerArraySizeType;
+  using Superclass::MakeOutput;
+  virtual DataObjectPointer MakeOutput(DataObjectPointerArraySizeType idx) ITK_OVERRIDE;
 
   void GenerateData();
 
@@ -127,7 +139,7 @@ private:
 } // end of namespace itk
 
 #ifndef ITK_MANUAL_INSTANTIATION
-#include <WeightedCovarianceSampleFilter.hxx>
+#include "WeightedCovarianceSampleFilter.hxx"
 #endif
 
 #endif

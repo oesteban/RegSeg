@@ -102,7 +102,6 @@ EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
  	inputIt.GoToBegin();
 
  	EnergyModelConstPointer model = this->GetModel();
- 	MeasureType maxenergy = model->GetMaxEnergyGap();
 
  	MeasureArrayType energies;
  	energies.SetSize(this->m_NumberOfRegions);

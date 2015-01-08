@@ -58,7 +58,7 @@ namespace rstk {
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
 MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 ::MahalanobisDistanceModel():
-  Superclass(), m_MaxEnergyGap(0.0) {
+  Superclass() {
 }
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
@@ -88,8 +88,6 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 ::GenerateData() {
 	this->InitializeMemberships();
 	this->EstimateRobust();
-
-	this->ComputeMaxEnergyGap();
 }
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
@@ -185,32 +183,19 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 
 		CovarianceMatrixType cov = covFilter->GetCovarianceMatrix();
 		mf->SetCovariance( cov );
+		mf->SetRange(covFilter->GetRangeMin(), covFilter->GetRangeMax() );
+		mf->Initialize();
 
 		this->m_Memberships[roi] = mf;
-		this->m_RegionOffsetContainer[roi] = log(2.0 * vnl_math::pi) * cov.Rows() + this->ComputeCovarianceDeterminant(cov);
+		this->m_RegionOffsetContainer[roi] = mf->GetOffsetTerm();
+
+		double maxv = mf->GetMaximumValue() * 1.0e3;
+		if( maxv > this->m_MaxEnergy ) {
+			this->m_MaxEnergy = maxv;
+		}
 		this->m_Means[roi] = mean;
 		this->m_Covariances[roi] = cov;
 	}
-}
-
-
-template< typename TInputVectorImage, typename TPriorsPrecisionType >
-void
-MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
-::ComputeMaxEnergyGap() {
-	MeasureType m;
-	MeasureType v = itk::NumericTraits<MeasureType>::min();
-
-	size_t nrois = this->m_NumberOfRegions - 1;
-
-	for( size_t roi1 = 0; roi1 < nrois; roi1++) {
-		for( size_t roi2 = 0; roi2 < nrois; roi2++) {
-			MeasurementVectorType mu = this->m_Means[roi1];
-			m = this->Evaluate(mu, roi2);
-			if (m > v)	v = m;
-		}
-	}
-	this->m_MaxEnergyGap = fabs(v);
 }
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType >

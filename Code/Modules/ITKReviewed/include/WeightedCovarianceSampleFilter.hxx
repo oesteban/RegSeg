@@ -18,16 +18,21 @@
 #ifndef __WeightedCovarianceSampleFilter_hxx
 #define __WeightedCovarianceSampleFilter_hxx
 
-#include <WeightedCovarianceSampleFilter.h>
+#include "WeightedCovarianceSampleFilter.h"
 
 namespace rstk
 {
 template< typename TSample >
 WeightedCovarianceSampleFilter< TSample >
 ::WeightedCovarianceSampleFilter():
- m_MeanSet(false)
+ m_MeanSet(false),
+ Superclass()
 {
   this->ProcessObject::SetNthInput(1, ITK_NULLPTR);
+
+  this->ProcessObject::SetNumberOfRequiredOutputs(4);
+  this->ProcessObject::SetNthOutput( 2, this->MakeOutput(2) );
+  this->ProcessObject::SetNthOutput( 3, this->MakeOutput(3) );
 }
 
 template< typename TSample >
@@ -63,6 +68,36 @@ WeightedCovarianceSampleFilter< TSample >
   // Otherwise compute the regular covariance matrix ( without weight
   // coefficients)
   Superclass::GenerateData();
+}
+
+
+template< typename TSample >
+typename WeightedCovarianceSampleFilter< TSample >::DataObjectPointer
+WeightedCovarianceSampleFilter< TSample >
+::MakeOutput(DataObjectPointerArraySizeType index)
+{
+  MeasurementVectorSizeType measurementVectorSize = this->GetMeasurementVectorSize();
+
+  if ( index == 0 )
+    {
+    MatrixType covarianceMatrix(measurementVectorSize, measurementVectorSize);
+    covarianceMatrix.SetIdentity();
+    typename MatrixDecoratedType::Pointer decoratedCovarianceMatrix = MatrixDecoratedType::New();
+    decoratedCovarianceMatrix->Set(covarianceMatrix);
+    return decoratedCovarianceMatrix.GetPointer();
+    }
+
+  if ( index >= 1 )
+    {
+    MeasurementVectorRealType mean;
+    (void)mean; // for complainty pants : valgrind
+    NumericTraits<MeasurementVectorRealType>::SetLength(mean, this->GetMeasurementVectorSize());
+    // NumericTraits::SetLength also initializes array to zero
+    typename MeasurementVectorDecoratedType::Pointer decoratedMean = MeasurementVectorDecoratedType::New();
+    decoratedMean->Set( mean );
+    return decoratedMean.GetPointer();
+    }
+  itkExceptionMacro("Trying to create output of index " << index << " larger than the number of output");
 }
 
 template< typename TSample >
@@ -124,6 +159,14 @@ WeightedCovarianceSampleFilter< TSample >
 	  }
 	  decoratedMeanOutput->Set( mean );
   }
+
+  MeasurementVectorDecoratedType *decoratedRangeMaxOutput =
+	    itkDynamicCastInDebugMode< MeasurementVectorDecoratedType * >( this->ProcessObject::GetOutput(2) );
+  decoratedRangeMaxOutput->Set( ptop );
+
+  MeasurementVectorDecoratedType *decoratedRangeMinOutput =
+	    itkDynamicCastInDebugMode< MeasurementVectorDecoratedType * >( this->ProcessObject::GetOutput(3) );
+  decoratedRangeMinOutput->Set( pbottom );
 
   // covariance algorithm
   MeasurementVectorRealType diff;
@@ -207,6 +250,39 @@ WeightedCovarianceSampleFilter< TSample >
 
   decoratedOutput->Set( output );
 }
+
+template< typename TSample >
+const typename WeightedCovarianceSampleFilter< TSample >::MeasurementVectorDecoratedType *
+WeightedCovarianceSampleFilter< TSample >
+::GetRangeMaxOutput() const
+{
+  return static_cast< const MeasurementVectorDecoratedType * >( this->ProcessObject::GetOutput(2) );
+}
+
+template< typename TSample >
+const typename WeightedCovarianceSampleFilter< TSample >::MeasurementVectorRealType
+WeightedCovarianceSampleFilter< TSample >
+::GetRangeMax() const
+{
+  return this->GetRangeMaxOutput()->Get();
+}
+
+template< typename TSample >
+const typename WeightedCovarianceSampleFilter< TSample >::MeasurementVectorDecoratedType *
+WeightedCovarianceSampleFilter< TSample >
+::GetRangeMinOutput() const
+{
+  return static_cast< const MeasurementVectorDecoratedType * >( this->ProcessObject::GetOutput(3) );
+}
+
+template< typename TSample >
+const typename WeightedCovarianceSampleFilter< TSample >::MeasurementVectorRealType
+WeightedCovarianceSampleFilter< TSample >
+::GetRangeMin() const
+{
+  return this->GetRangeMinOutput()->Get();
+}
+
 } // end of namespace itk
 
 #endif

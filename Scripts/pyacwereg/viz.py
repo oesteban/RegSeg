@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-08 14:59:33
+# @Last Modified time: 2015-01-08 17:40:24
 
 
 def plot_report(df, levels_df=None, out_file=None):
@@ -170,10 +170,12 @@ def jointplot_data(im1data, im2data, in_seg, labels=None, out_file=None,
         d[f1name] = filt
         d[f2name] = im2data[in_seg == l]
         df_pieces.append(pd.DataFrame(d))
+
     df = pd.concat(df_pieces)
     sn.set_context("talk", font_scale=1.8)
     g = sn.JointGrid(f1name, f2name, df, hue='tissue',
-                     xlim=f1lims, ylim=f2lims, size=20)
+                     xlim=f1lims, ylim=f2lims, size=20,
+                     inline_labels=True)
     g.plot_joint(sn.kdeplot, linewidths=3.0)
     g.plot_marginals(sn.distplot)
 
