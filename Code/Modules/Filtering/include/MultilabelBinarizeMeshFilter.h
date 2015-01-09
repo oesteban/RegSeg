@@ -76,6 +76,7 @@ public:
 	  typedef typename OutputImageType::PointType                 PointType;
 	  typedef typename OutputImageType::IndexType                 IndexType;
 	  typedef typename OutputImageType::SizeType                  SizeType;
+	  typedef typename OutputImageType::RegionType                RegionType;
 	  typedef typename OutputImageType::ValueType                 ValueType;
 	  typedef typename OutputImageType::SpacingType               SpacingType;
 	  typedef typename OutputImageType::DirectionType             DirectionType;
@@ -91,7 +92,7 @@ public:
 	  typedef typename InputMeshType::CellType                    CellType;
 	  typedef typename InputMeshType::CellsContainerPointer       CellsContainerPointer;
 	  typedef typename InputMeshType::CellsContainerIterator      CellsContainerIterator;
-	  typedef typename std::vector<InputMeshPointer>         InputMeshContainer;
+	  typedef typename std::vector<InputMeshPointer>              InputMeshContainer;
 
 	  typedef typename InputMeshType::PointsContainer             InputPointsContainer;
 	  typedef typename InputPointsContainer::Pointer              InputPointsContainerPointer;
@@ -135,8 +136,11 @@ public:
 		  }
 	  }
 
+	  itkGetObjectMacro(OutputSegmentation, OutputComponentType)
+	  itkGetConstObjectMacro(OutputSegmentation, OutputComponentType)
 protected:
-	  void GenerateData();
+	  void BeforeThreadedGenerateData();
+	  void ThreadedGenerateData(const RegionType & inputRegionForThread, itk::ThreadIdType threadId);
 	  virtual void GenerateOutputInformation();
 
 	  MultilabelBinarizeMeshFilter();
@@ -154,6 +158,9 @@ private:
 	  DirectionType m_Direction;
 
 	  size_t m_NumberOfMeshes;
+	  size_t m_NumberOfRegions;
+	  std::vector< OutputComponentPointer > m_Components;
+	  OutputComponentPointer m_OutputSegmentation;
 }; // class
 
 } // namespace rstk

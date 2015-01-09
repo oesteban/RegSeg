@@ -416,8 +416,12 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeCurrentRegions() {
-	ROIPixelType unassigned = itk::NumericTraits< ROIPixelType >::max();
-	this->m_CurrentRegions->FillBuffer(unassigned);
+	NewBinarizeMeshFilterPointer newp = NewBinarizeMeshFilterType::New();
+	newp->SetInputs( this->m_CurrentContours );
+	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
+	newp->Update();
+	this->m_CurrentRegions = newp->GetOutputSegmentation();
+
 	size_t nPix = this->m_CurrentRegions->GetLargestPossibleRegion().GetNumberOfPixels();
 	ROIPixelType* regionsBuffer = this->m_CurrentRegions->GetBufferPointer();
 
@@ -437,86 +441,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	const float* bgBuffer = m_BackgroundMask->GetBufferPointer();
 	float bg;
 
-	NewBinarizeMeshFilterPointer newp = NewBinarizeMeshFilterType::New();
-	newp->SetInputs( this->m_CurrentContours );
-	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
-	newp->Update();
 
-	typedef typename NewBinarizeMeshFilterType::OutputImageType SegmentationImageType;
-	typedef typename SegmentationImageType::Pointer             SegmentationImagePointer;
-
-	SegmentationImagePointer seg = newp->GetOutput();
-
-	typedef rstk::ComponentsFileWriter<SegmentationImageType>       MapWriter;
-	typename MapWriter::Pointer ww = MapWriter::New();
-	ww->SetFileName("test.nii.gz");
-	ww->SetInput(seg);
-	ww->Update();
-
-
-	for (ROIPixelType idx = 0; idx < this->m_NumberOfRegions - 1; idx++ ) {
-		ROIPointer tempROI;
-
-		if ( idx < this->m_NumberOfRegions - 2 ) {
-			BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
-			meshFilter->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-			meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-			meshFilter->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-			meshFilter->SetSize(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-			meshFilter->SetInput(     this->m_CurrentContours[idx]);
-			meshFilter->Update();
-			tempROI = meshFilter->GetOutput();
-		} else {
-			tempROI = ROIType::New();
-			tempROI->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-			tempROI->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-			tempROI->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-			tempROI->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-			tempROI->Allocate();
-			tempROI->FillBuffer( 1 );
-		}
-
-		ROIPixelType* roiBuffer = tempROI->GetBufferPointer();
-		double total = 0.0;
-		for( size_t pix = 0; pix < nPix; pix++ ) {
-			if( *(regionsBuffer+pix) == unassigned && *( roiBuffer + pix )==1 ) {
-				*(regionsBuffer+pix) = idx;
-				total += 1;
-			} else {
-				*( roiBuffer + pix ) = 0;
-			}
-		}
-
-		// Resample to reference image resolution
-		ResampleROIFilterPointer resampleFilter = ResampleROIFilterType::New();
-		resampleFilter->SetInput( tempROI );
-		resampleFilter->SetSize( this->m_ReferenceSize );
-		resampleFilter->SetOutputOrigin(    this->m_FirstPixelCenter );
-		resampleFilter->SetOutputSpacing(   this->m_ReferenceSpacing );
-		resampleFilter->SetOutputDirection( this->m_Direction );
-		resampleFilter->SetDefaultPixelValue( 0.0 );
-		resampleFilter->Update();
-		ProbabilityMapPointer tpm = resampleFilter->GetOutput();
-		typename ProbabilityMapType::PixelType* tpmbuff = tpm->GetBufferPointer();
-
-		size_t refpix = this->m_CurrentMaps->GetLargestPossibleRegion().GetNumberOfPixels();
-		typename ProbabilityMapType::PixelType f;
-		for(size_t i = 0; i < refpix; i++) {
-			f = *(tpmbuff+i);
-			if ( f <= 0.0 )
-				continue;
-
-			bg = *( bgBuffer + i );
-
-			if ( bg < 1.0 && (idx < this->m_NumberOfRegions - 1) ) {
-				*(priorBuffer + i * this->m_NumberOfRegions + idx) = f;
-			}
-
-			if ( bg >= 1.0 && (idx < this->m_NumberOfRegions - 2) ) {
-				*(priorBuffer + i * this->m_NumberOfRegions + this->m_NumberOfRegions - 1 ) = 1.0;
-			}
-		}
-	}
 	this->m_RegionsUpdated = true;
 }
 

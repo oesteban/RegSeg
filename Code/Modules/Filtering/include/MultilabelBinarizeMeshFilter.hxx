@@ -76,6 +76,7 @@ MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 ::GenerateOutputInformation() {
 	// Get the output pointer
 	OutputImagePointer output = this->GetOutput();
+	m_NumberOfRegions = m_NumberOfMeshes + 1;
 
 	typename OutputImageType::RegionType region;
 	region.SetSize(m_Size);
@@ -87,25 +88,34 @@ MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 	output->SetSpacing(m_Spacing);            // set spacing
 	output->SetOrigin(m_Origin);              //   and origin
 	output->SetDirection(m_Direction);        // direction cosines
-	output->SetNumberOfComponentsPerPixel(m_NumberOfMeshes + 1);
+	output->SetNumberOfComponentsPerPixel(m_NumberOfRegions);
 	output->Allocate();
 
+
 	OutputPixelType zero;
-	zero.SetSize(m_NumberOfMeshes + 1);
+	zero.SetSize(m_NumberOfRegions);
 	zero.Fill(0);
 	zero[m_NumberOfMeshes] = 1;
 	output->FillBuffer(zero);
+
+	m_OutputSegmentation = OutputComponentType::New();
+	m_OutputSegmentation->SetLargestPossibleRegion(region); //
+	m_OutputSegmentation->SetBufferedRegion(region);        // set the region
+	m_OutputSegmentation->SetRequestedRegion(region);       //
+	m_OutputSegmentation->SetSpacing(m_Spacing);            // set spacing
+	m_OutputSegmentation->SetOrigin(m_Origin);              //   and origin
+	m_OutputSegmentation->SetDirection(m_Direction);        // direction cosines
+	m_OutputSegmentation->Allocate();
+	m_OutputSegmentation->FillBuffer(m_NumberOfMeshes);
 }
 
 template< typename TInputMesh, typename TOutputPixelType, unsigned int VDimension >
 void
 MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
-::GenerateData() {
+::BeforeThreadedGenerateData() {
 	// Get the input and output pointers
 	OutputImagePointer output = this->GetOutput();
-
-	std::vector< OutputComponentPointer > components;
-    const OutputPixelValueType* compBuffer[m_NumberOfMeshes];
+	m_Components.clear();
 
 	for (size_t idx = 0; idx < m_NumberOfMeshes; idx++ ) {
 		BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
@@ -115,27 +125,57 @@ MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 		meshFilter->SetSize( m_Size );
 		meshFilter->SetInput( GetInput(idx) );
 		meshFilter->Update();
-		components.push_back(meshFilter->GetOutput());
-		compBuffer[idx] = meshFilter->GetOutput()->GetBufferPointer();
+		m_Components.push_back(meshFilter->GetOutput());
 	}
 
-	size_t nPix = output->GetLargestPossibleRegion().GetNumberOfPixels();
-	size_t nRegions = output->GetNumberOfComponentsPerPixel();
+	// find the actual number of threads
+	long nbOfThreads = this->GetNumberOfThreads();
+	if ( itk::MultiThreader::GetGlobalMaximumNumberOfThreads() != 0 ) {
+		nbOfThreads = vnl_math_min( this->GetNumberOfThreads(), itk::MultiThreader::GetGlobalMaximumNumberOfThreads() );
+	}
+	// number of threads can be constrained by the region size, so call the
+	// SplitRequestedRegion
+	// to get the real number of threads which will be used
+	RegionType splitRegion;  // dummy region - just to call the following method
+	nbOfThreads = this->SplitRequestedRegion(0, nbOfThreads, splitRegion);
+}
 
-	OutputPixelValueType* outBuffer = output->GetBufferPointer();
+template< typename TInputMesh, typename TOutputPixelType, unsigned int VDimension >
+void
+MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
+::ThreadedGenerateData(const RegionType & inputRegionForThread, itk::ThreadIdType threadId) {
+	size_t nPix = inputRegionForThread.GetNumberOfPixels();
+	ProgressReporter progress( this, threadId, nPix );
 
-	OutputPixelValueType v;
-	for( size_t pix = 0; pix < nPix; pix++ ) {
+	const OutputPixelValueType* compBuffer[m_NumberOfMeshes];
+	for( size_t comp = 0; comp < m_NumberOfMeshes; comp++ ) {
+		compBuffer[comp] = m_Components[comp]->GetBufferPointer();
+	}
+	OutputComponentPointer ref = m_OutputSegmentation;
+	OutputPixelValueType* segBuffer = ref->GetBufferPointer();
+
+	ImageRegionIterator< OutputImageType > outIt( this->GetOutput(), inputRegionForThread );
+ 	outIt.GoToBegin();
+
+ 	size_t pix;
+ 	OutputPixelValueType* outBuffer = this->GetOutput()->GetBufferPointer();
+ 	OutputPixelValueType v;
+ 	while ( !outIt.IsAtEnd() ) {
+ 		pix = ref->ComputeOffset(outIt.GetIndex());
+
 		for( size_t comp = 0; comp < m_NumberOfMeshes; comp++ ) {
 			v = *( compBuffer[comp] + pix );
 
 			if( v > 0 ) {
-				*( outBuffer + pix * nRegions + comp ) = 1;
-				*( outBuffer + pix * nRegions + m_NumberOfMeshes ) = 0;
+				*( outBuffer + pix * m_NumberOfRegions + comp ) = 1;
+				*( outBuffer + pix * m_NumberOfRegions + m_NumberOfMeshes ) = 0;
+				*( segBuffer + pix ) = comp;
 				break;
 			}
 		}
-	}
+		++outIt;
+ 	}
+
 }
 
 template< typename TInputMesh, typename TOutputPixelType, unsigned int VDimension >
