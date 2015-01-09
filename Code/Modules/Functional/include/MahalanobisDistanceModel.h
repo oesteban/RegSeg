@@ -49,6 +49,8 @@
 #include "MahalanobisDistanceMembershipFunction.h"
 #include "WeightedCovarianceSampleFilter.h"
 
+#include <itkWeightedCovarianceSampleFilter.h>
+
 namespace rstk {
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType = float>

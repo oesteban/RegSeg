@@ -19,6 +19,7 @@
 #define __WeightedCovarianceSampleFilter_hxx
 
 #include "WeightedCovarianceSampleFilter.h"
+#include <itkWeightedMeanSampleFilter.h>
 
 namespace rstk
 {
@@ -120,7 +121,7 @@ WeightedCovarianceSampleFilter< TSample >
   MeasurementVectorDecoratedType *decoratedMeanOutput =
     itkDynamicCastInDebugMode< MeasurementVectorDecoratedType * >( this->ProcessObject::GetOutput(1) );
 
-  const WeightArrayType & weightsArray = this->GetWeights();
+  WeightArrayType weightsArray(this->GetWeights());
   std::vector<MeasurementType> sampleComponents[measurementVectorSize];
 
   typename SampleType::ConstIterator iter =      input->Begin();
@@ -160,6 +161,7 @@ WeightedCovarianceSampleFilter< TSample >
 	  decoratedMeanOutput->Set( mean );
   }
 
+
   MeasurementVectorDecoratedType *decoratedRangeMaxOutput =
 	    itkDynamicCastInDebugMode< MeasurementVectorDecoratedType * >( this->ProcessObject::GetOutput(2) );
   decoratedRangeMaxOutput->Set( ptop );
@@ -167,6 +169,36 @@ WeightedCovarianceSampleFilter< TSample >
   MeasurementVectorDecoratedType *decoratedRangeMinOutput =
 	    itkDynamicCastInDebugMode< MeasurementVectorDecoratedType * >( this->ProcessObject::GetOutput(3) );
   decoratedRangeMinOutput->Set( pbottom );
+
+  // reset sample iterator
+  iter = input->Begin();
+  // fills the lower triangle and the diagonal cells in the covariance matrix
+  for ( unsigned int sampleVectorIndex = 0;
+        iter != end;
+        ++iter, ++sampleVectorIndex ) {
+	  const MeasurementVectorType & measurement = iter.GetMeasurementVector();
+	  WeightValueType rawWeight = weightsArray[sampleVectorIndex];
+
+	  if (rawWeight > 0.0) {
+		    for(size_t c = 0; c < measurementVectorSize; c++) {
+		    	if (measurement[c] > ptop[c] || measurement[c] < pbottom[c] ) {
+		    		weightsArray[sampleVectorIndex] = 0.0;
+		    		continue;
+		    	}
+		    }
+	  }
+  }
+
+  // calculate mean
+  typedef itk::Statistics::WeightedMeanSampleFilter< SampleType > WeightedMeanFilterType;
+  typename WeightedMeanFilterType::Pointer meanFilter = WeightedMeanFilterType::New();
+
+  meanFilter->SetInput( input );
+  meanFilter->SetWeights( weightsArray );
+  meanFilter->Update();
+
+  mean = meanFilter->GetMean();
+  decoratedMeanOutput->Set( mean );
 
   // covariance algorithm
   MeasurementVectorRealType diff;
@@ -178,32 +210,19 @@ WeightedCovarianceSampleFilter< TSample >
   // reset sample iterator
   iter = input->Begin();
 
-  bool isOutlier;
   // fills the lower triangle and the diagonal cells in the covariance matrix
   for ( unsigned int sampleVectorIndex = 0;
         iter != end;
         ++iter, ++sampleVectorIndex )
     {
     const MeasurementVectorType & measurement = iter.GetMeasurementVector();
-    isOutlier = false;
-
     const typename SampleType::AbsoluteFrequencyType frequency = iter.GetFrequency();
-
-    if (frequency != 1.0) {
-    	std::cout << frequency << std::endl;
-    }
-
-
     const WeightValueType rawWeight = weightsArray[sampleVectorIndex];
 
-    WeightValueType weight = ( rawWeight * static_cast< WeightValueType >( frequency ) );
+    if ( rawWeight < 1.0e-8 )
+    	continue;
 
-    for(size_t c = 0; c < measurementVectorSize; c++) {
-    	if (measurement[c] > ptop[c] || measurement[c] < pbottom[c] ) {
-    		weight = 0.0;
-    		continue;
-    	}
-    }
+    WeightValueType weight = ( rawWeight * static_cast< WeightValueType >( frequency ) );
 
     totalWeight += weight;
     totalSquaredWeight += ( weight * weight );
