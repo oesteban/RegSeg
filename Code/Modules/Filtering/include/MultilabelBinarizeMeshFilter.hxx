@@ -173,6 +173,7 @@ MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 				break;
 			}
 		}
+		progress.CompletedPixel();
 		++outIt;
  	}
 
