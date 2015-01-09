@@ -139,9 +139,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_EnergyCalculator->SetPriorsMap(this->m_CurrentMaps);
 	this->m_EnergyCalculator->SetMask(this->m_BackgroundMask);
 	this->m_EnergyCalculator->SetModel(this->m_Model);
-	// this->m_EnergyCalculator->SetNumberOfThreads(1);
 	this->m_EnergyCalculator->Update();
-	//this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
 
 	if( this->m_Priors.size() == this->m_Target.size() ) {
 		const MeasureArray finals = this->GetFinalEnergy();
@@ -455,6 +453,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	p->SetOutputParametersFromImage( this->m_ReferenceImage );
 	p->SetMaskImage(m_BackgroundMask);
 	p->Update();
+
+	typedef rstk::ComponentsFileWriter<PriorsImageType> PriorWriter;
+	typename PriorWriter::Pointer ww = PriorWriter::New();
+	ww->SetInput(p->GetOutput());
+	ww->SetFileName("ground-truth-regions");
+	ww->Update();
 
 	EnergyModelPointer m = EnergyModelType::New();
 	m->SetInput(this->m_ReferenceImage);
