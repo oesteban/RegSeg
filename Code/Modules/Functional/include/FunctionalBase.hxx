@@ -144,12 +144,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	//this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
 
 	if( this->m_Priors.size() == this->m_Target.size() ) {
-		const MeasureArray finales = this->GetFinalEnergy();
+		const MeasureArray finals = this->GetFinalEnergy();
 		MeasureType total = 0.0;
-		for (size_t i = 0; i < finales.Size(); i++)
-			total+=finales[i];
+		for (size_t i = 0; i < finals.Size(); i++)
+			total+=finals[i];
 
-		std::cout << "Energy_total= " << total << " || regions=" << finales << "." << std::endl;
+		std::cout << "Energy_total= " << total << " || regions=" << finals << "." << std::endl;
 	}
 }
 
@@ -422,26 +422,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	newp->Update();
 	this->m_CurrentRegions = newp->GetOutputSegmentation();
 
-	size_t nPix = this->m_CurrentRegions->GetLargestPossibleRegion().GetNumberOfPixels();
-	ROIPixelType* regionsBuffer = this->m_CurrentRegions->GetBufferPointer();
+	DownsamplePointer p = DownsampleNewType::New();
+	p->SetInput(newp->GetOutput());
+	p->SetOutputParametersFromImage( this->m_ReferenceImage );
+	p->SetMaskImage(m_BackgroundMask);
+	p->Update();
 
-	this->m_CurrentMaps = PriorsImageType::New();
-	this->m_CurrentMaps->SetRegions(   this->m_ReferenceSize );
-	this->m_CurrentMaps->SetOrigin(    this->m_FirstPixelCenter );
-	this->m_CurrentMaps->SetDirection( this->m_Direction );
-	this->m_CurrentMaps->SetSpacing(   this->m_ReferenceSpacing );
-	this->m_CurrentMaps->SetVectorLength(this->m_NumberOfRegions);
-	PriorsPixelType zero;
-	zero.SetSize(this->m_NumberOfRegions);
-	zero.Fill(0.0);
-	this->m_CurrentMaps->Allocate();
-	this->m_CurrentMaps->FillBuffer(zero);
-
-	PriorsValueType* priorBuffer = this->m_CurrentMaps->GetBufferPointer();
-	const float* bgBuffer = m_BackgroundMask->GetBufferPointer();
-	float bg;
-
-
+	this->m_CurrentMaps = p->GetOutput();
 	this->m_RegionsUpdated = true;
 }
 
@@ -449,135 +436,47 @@ template< typename TReferenceImageType, typename TCoordRepType >
 const typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureArray
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetFinalEnergy() const {
-	ROIPixelType unassigned = itk::NumericTraits< ROIPixelType >::max();
+	ContourList groundtruth;
 
-	ROIPointer finalrois = ROIType::New();
-	finalrois->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-	finalrois->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-	finalrois->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-	finalrois->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-	finalrois->Allocate();
-	finalrois->FillBuffer(unassigned);
-	size_t nPix = finalrois->GetLargestPossibleRegion().GetNumberOfPixels();
-	ROIPixelType* regionsBuffer = finalrois->GetBufferPointer();
-
-	PriorsImagePointer tpms = PriorsImageType::New();
-	tpms->SetRegions(   this->m_ReferenceSize );
-	tpms->SetOrigin(    this->m_FirstPixelCenter );
-	tpms->SetDirection( this->m_Direction );
-	tpms->SetSpacing(   this->m_ReferenceSpacing );
-	tpms->SetVectorLength(this->m_NumberOfRegions);
-	PriorsPixelType zero;
-	zero.SetSize(this->m_NumberOfRegions);
-	zero.Fill(0.0);
-	tpms->Allocate();
-	tpms->FillBuffer(zero);
-
-	PriorsValueType* priorBuffer = tpms->GetBufferPointer();
-	const float* bgBuffer = m_BackgroundMask->GetBufferPointer();
-	float bg;
-
-	for (ROIPixelType idx = 0; idx < this->m_NumberOfRegions - 1; idx++ ) {
-		ROIPointer tempROI;
-
-		if ( idx < this->m_NumberOfRegions - 2 ) {
-			ContourCopyPointer copy = ContourCopyType::New();
-			copy->SetInput( this->m_Target[idx] );
-			copy->Update();
-
-			BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
-			meshFilter->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-			meshFilter->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-			meshFilter->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-			meshFilter->SetSize(      this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-			meshFilter->SetInput(     copy->GetOutput() );
-			meshFilter->Update();
-			tempROI = meshFilter->GetOutput();
-		} else {
-			tempROI = ROIType::New();
-			tempROI->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-			tempROI->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-			tempROI->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-			tempROI->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-			tempROI->Allocate();
-			tempROI->FillBuffer( 1 );
-		}
-
-		ROIPixelType* roiBuffer = tempROI->GetBufferPointer();
-		double total = 0.0;
-		for( size_t pix = 0; pix < nPix; pix++ ) {
-			if( *(regionsBuffer+pix) == unassigned && *( roiBuffer + pix )==1 ) {
-				*(regionsBuffer+pix) = idx;
-				total += 1;
-			} else {
-				*( roiBuffer + pix ) = 0;
-			}
-		}
-
-		// Resample to reference image resolution
-		ResampleROIFilterPointer resampleFilter = ResampleROIFilterType::New();
-		resampleFilter->SetInput( tempROI );
-		resampleFilter->SetSize( this->m_ReferenceSize );
-		resampleFilter->SetOutputOrigin(    this->m_FirstPixelCenter );
-		resampleFilter->SetOutputSpacing(   this->m_ReferenceSpacing );
-		resampleFilter->SetOutputDirection( this->m_Direction );
-		resampleFilter->SetDefaultPixelValue( 0.0 );
-		resampleFilter->Update();
-		ProbabilityMapPointer tpm = resampleFilter->GetOutput();
-		typename ProbabilityMapType::PixelType* tpmbuff = tpm->GetBufferPointer();
-
-		size_t refpix = tpms->GetLargestPossibleRegion().GetNumberOfPixels();
-		typename ProbabilityMapType::PixelType f;
-		for(size_t i = 0; i < refpix; i++) {
-			f = *(tpmbuff+i);
-			if ( f <= 0.0 )
-				continue;
-
-			bg = *( bgBuffer + i );
-
-			if ( bg < 1.0 && (idx < this->m_NumberOfRegions - 1) ) {
-				*(priorBuffer + i * this->m_NumberOfRegions + idx) = f;
-			}
-
-			if ( bg >= 1.0 && (idx < this->m_NumberOfRegions - 2) ) {
-				*(priorBuffer + i * this->m_NumberOfRegions + this->m_NumberOfRegions - 1 ) = 1.0;
-			}
-		}
+	for(size_t idx = 0; idx < this->m_Target.size(); idx++) {
+		ContourCopyPointer copy = ContourCopyType::New();
+		copy->SetInput( this->m_Target[idx] );
+		copy->Update();
+		groundtruth.push_back(copy->GetOutput());
 	}
 
-	typename ROIResampleType::Pointer res = ROIResampleType::New();
-	res->SetInterpolator(ROIInterpolatorType::New());
-	res->SetInput(finalrois);
-	res->SetOutputParametersFromImage( this->m_ReferenceImage );
-	res->Update();
+	NewBinarizeMeshFilterPointer newp = NewBinarizeMeshFilterType::New();
+	newp->SetInputs( groundtruth );
+	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
+	newp->Update();
 
-	typedef itk::ImageFileWriter<ROIType> Writer;
-	typename Writer::Pointer w = Writer::New();
-	w->SetFileName("gold_seg.nii.gz");
-	w->SetInput( res->GetOutput() );
-	w->Update();
+	DownsamplePointer p = DownsampleNewType::New();
+	p->SetInput(newp->GetOutput());
+	p->SetOutputParametersFromImage( this->m_ReferenceImage );
+	p->SetMaskImage(m_BackgroundMask);
+	p->Update();
 
 	EnergyModelPointer m = EnergyModelType::New();
 	m->SetInput(this->m_ReferenceImage);
 	m->SetMask(this->m_BackgroundMask);
-	m->SetPriorsMap(tpms);
+	m->SetPriorsMap(p->GetOutput());
 	m->Update();
 
 	EnergyFilterPointer calc = EnergyFilter::New();
 	calc->SetInput(this->m_ReferenceImage);
-	calc->SetPriorsMap(tpms);
+	calc->SetPriorsMap(p->GetOutput());
 	calc->SetMask(this->m_BackgroundMask);
 	calc->SetModel(m);
 	calc->Update();
 
-	const MeasureArray finales = calc->GetEnergies();
+	const MeasureArray finals = calc->GetEnergies();
 	MeasureType total = 0.0;
-	for (size_t i = 0; i < finales.Size(); i++)
-		total+=finales[i];
+	for (size_t i = 0; i < finals.Size(); i++)
+		total+=finals[i];
 
-	this->m_InfoBuffer << " \"total_energy\": " << total << ", \"roi_energy\": " << finales << ", ";
+	this->m_InfoBuffer << " \"total_energy\": " << total << ", \"roi_energy\": " << finals << ", ";
 	this->m_InfoBuffer << " \"model\" : " << m->PrintFormattedDescriptors();
-	return finales;
+	return finals;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >

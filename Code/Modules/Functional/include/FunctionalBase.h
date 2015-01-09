@@ -232,8 +232,25 @@ public:
 			< ROIType, ROIType, TCoordRepType >              ROIResampleType;
 	typedef std::vector< ROIConstPointer >                   ROIList;
 
+	typedef MahalanobisDistanceModel< ReferenceImageType >              EnergyModelType;
+	typedef typename EnergyModelType::Pointer                           EnergyModelPointer;
+
+	typedef EnergyCalculatorFilter<ReferenceImageType>                  EnergyFilter;
+	typedef typename EnergyFilter::Pointer                              EnergyFilterPointer;
+	typedef typename EnergyFilter::PriorsImageType                      PriorsImageType;
+	typedef typename PriorsImageType::Pointer                           PriorsImagePointer;
+	typedef typename PriorsImageType::PixelType                         PriorsPixelType;
+	typedef typename PriorsImageType::InternalPixelType                 PriorsValueType;
+
 	typedef MultilabelBinarizeMeshFilter< VectorContourType > NewBinarizeMeshFilterType;
 	typedef typename NewBinarizeMeshFilterType::Pointer       NewBinarizeMeshFilterPointer;
+	typedef typename NewBinarizeMeshFilterType::OutputImageType BinarizationImageType;
+
+	typedef DownsampleAveragingFilter< BinarizationImageType, PriorsImageType >
+	                                                         DownsampleNewType;
+	typedef typename DownsampleNewType::Pointer              DownsamplePointer;
+
+
 
 	typedef itk::TriangleMeshToBinaryImageFilter
 			          <VectorContourType, ROIType>	             BinarizeMeshFilterType;
@@ -260,6 +277,8 @@ public:
 			       < ContourSpatialObject, ROIType >         SpatialObjectToImageFilterType;
 	typedef typename SpatialObjectToImageFilterType::Pointer SpatialObjectToImageFilterPointer;
 
+
+
 	typedef DownsampleAveragingFilter
 			                 <ROIType, ProbabilityMapType >  ResampleROIFilterType;
 	typedef typename ResampleROIFilterType::Pointer          ResampleROIFilterPointer;
@@ -284,15 +303,7 @@ public:
 	typedef itk::FixedArray< PointValueType, 7u >            GradientStatsArray;
 
 
-	typedef MahalanobisDistanceModel< ReferenceImageType >              EnergyModelType;
-	typedef typename EnergyModelType::Pointer                           EnergyModelPointer;
 
-	typedef EnergyCalculatorFilter<ReferenceImageType>                  EnergyFilter;
-	typedef typename EnergyFilter::Pointer                              EnergyFilterPointer;
-	typedef typename EnergyFilter::PriorsImageType                      PriorsImageType;
-	typedef typename PriorsImageType::Pointer                           PriorsImagePointer;
-	typedef typename PriorsImageType::PixelType                         PriorsPixelType;
-	typedef typename PriorsImageType::InternalPixelType                 PriorsValueType;
 
 
 	struct GradientSample {
