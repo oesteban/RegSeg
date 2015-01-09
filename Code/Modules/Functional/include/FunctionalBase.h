@@ -76,6 +76,7 @@
 #include "WarpQEMeshFilter.h"
 #include "SparseMatrixTransform.h"
 #include "DownsampleAveragingFilter.h"
+#include "MultilabelBinarizeMeshFilter.h"
 
 #include "EnergyCalculatorFilter.h"
 #include "MahalanobisDistanceModel.h"
@@ -230,6 +231,10 @@ public:
 	typedef itk::ResampleImageFilter
 			< ROIType, ROIType, TCoordRepType >              ROIResampleType;
 	typedef std::vector< ROIConstPointer >                   ROIList;
+
+	typedef MultilabelBinarizeMeshFilter< VectorContourType > NewBinarizeMeshFilterType;
+	typedef typename NewBinarizeMeshFilterType::Pointer       NewBinarizeMeshFilterPointer;
+
 	typedef itk::TriangleMeshToBinaryImageFilter
 			          <VectorContourType, ROIType>	             BinarizeMeshFilterType;
 	typedef typename BinarizeMeshFilterType::Pointer         BinarizeMeshFilterPointer;

@@ -51,6 +51,8 @@
 
 #include <itkMeshFileWriter.h>
 
+#include "ComponentsFileWriter.h"
+
 #define MAX_GRADIENT 20.0
 #define MIN_GRADIENT 1.0e-8
 
@@ -434,6 +436,23 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	PriorsValueType* priorBuffer = this->m_CurrentMaps->GetBufferPointer();
 	const float* bgBuffer = m_BackgroundMask->GetBufferPointer();
 	float bg;
+
+	NewBinarizeMeshFilterPointer newp = NewBinarizeMeshFilterType::New();
+	newp->SetInputs( this->m_CurrentContours );
+	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
+	newp->Update();
+
+	typedef typename NewBinarizeMeshFilterType::OutputImageType SegmentationImageType;
+	typedef typename SegmentationImageType::Pointer             SegmentationImagePointer;
+
+	SegmentationImagePointer seg = newp->GetOutput();
+
+	typedef rstk::ComponentsFileWriter<SegmentationImageType>       MapWriter;
+	typename MapWriter::Pointer ww = MapWriter::New();
+	ww->SetFileName("test.nii.gz");
+	ww->SetInput(seg);
+	ww->Update();
+
 
 	for (ROIPixelType idx = 0; idx < this->m_NumberOfRegions - 1; idx++ ) {
 		ROIPointer tempROI;
