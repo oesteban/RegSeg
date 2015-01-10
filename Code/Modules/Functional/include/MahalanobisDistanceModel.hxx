@@ -75,7 +75,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	this->m_NumberOfRegions = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
 	this->m_Memberships.resize(this->m_NumberOfRegions);
 
-	size_t nregions = this->m_NumberOfRegions - 1;
+	size_t nregions = this->m_NumberOfRegions - 2;
 	this->m_Means.resize(nregions);
 	this->m_Covariances.resize(nregions);
 	this->m_RegionOffsetContainer.SetSize(nregions);
@@ -88,6 +88,15 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 ::GenerateData() {
 	this->InitializeMemberships();
 	this->EstimateRobust();
+
+	// Append special memberships
+	UniformFunctionPointer bg_mf = UniformFunctionType::New();
+	bg_mf->SetValue(5.0);
+	this->m_Memberships[this->m_NumberOfRegions - 2] = bg_mf;
+
+	UniformFunctionPointer offmask_mf = UniformFunctionType::New();
+	offmask_mf->SetValue(this->m_MaxEnergy);
+	this->m_Memberships[this->m_NumberOfRegions - 1] = offmask_mf;
 }
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
@@ -97,7 +106,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	ReferenceSamplePointer sample = ReferenceSampleType::New();
 	sample->SetImage( this->GetInput() );
 	size_t npix = sample->Size();
-	size_t nregions = this->m_NumberOfRegions - 1;
+	size_t nregions = this->m_NumberOfRegions - 2;
 
 	const PriorsPrecisionType* priors = this->GetPriorsMap()->GetBufferPointer();
 	size_t offset = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
@@ -146,7 +155,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	size_t ncomps = this->GetInput()->GetNumberOfComponentsPerPixel();
 
 	size_t offset = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
-	size_t nregions = this->m_NumberOfRegions - 1;
+	size_t nregions = this->m_NumberOfRegions - 2;
 
 	const PriorsPrecisionType* priors = this->GetPriorsMap()->GetBufferPointer();
 	const PixelValueType * input = this->GetInput()->GetBufferPointer();
@@ -271,7 +280,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 ::PrintFormattedDescriptors() {
 	std::stringstream ss;
 	ss << "{ \"descriptors\" : { \"number\": " << this->m_NumberOfRegions << ", \"values\": [";
-	size_t nrois = this->m_NumberOfRegions - 1;
+	size_t nrois = this->m_NumberOfRegions - 2;
 
 	for ( size_t i = 0; i<nrois; i++ ){
 		if (i>0) ss<<",";

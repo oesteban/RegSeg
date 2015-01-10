@@ -47,6 +47,7 @@
 #include <itkImageToListSampleAdaptor.h>
 #include "ModelBase.h"
 #include "MahalanobisDistanceMembershipFunction.h"
+#include "UniformMembershipFunction.h"
 #include "WeightedCovarianceSampleFilter.h"
 
 #include <itkWeightedCovarianceSampleFilter.h>
@@ -104,6 +105,9 @@ public:
 	typedef MahalanobisDistanceMembershipFunction<MeasurementVectorType>       InternalFunctionType;
 	typedef typename InternalFunctionType::Pointer                             InternalFunctionPointer;
 	typedef typename InternalFunctionType::CovarianceMatrixType                CovarianceMatrixType;
+
+	typedef UniformMembershipFunction<MeasurementVectorType>                   UniformFunctionType;
+	typedef typename UniformFunctionType::Pointer                              UniformFunctionPointer;
 
 	typedef itk::Statistics::ImageToListSampleAdaptor< InputImageType >        ReferenceSampleType;
 	typedef typename ReferenceSampleType::Pointer                              ReferenceSamplePointer;

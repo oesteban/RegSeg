@@ -160,9 +160,7 @@ EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 			volumes[roi]+= this->m_Volumes[th][roi];
 			energies[roi]+= this->m_Energies[th][roi];
 		}
-
-		if (energies[roi] > 0)
-			energies[roi]+= volumes[roi] * model->GetRegionOffsetContainer()[roi];
+		energies[roi]+= volumes[roi] * model->GetRegionOffsetContainer()[roi];
 	}
 
 	this->GetEnergiesOutput()->Set(energies);
