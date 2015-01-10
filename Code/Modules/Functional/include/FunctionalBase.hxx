@@ -49,6 +49,8 @@
 #include <itkOrientImageFilter.h>
 #include <itkContinuousIndex.h>
 
+#include <itkIntensityWindowingImageFilter.h>
+#include <itkInvertIntensityImageFilter.h>
 #include <itkMeshFileWriter.h>
 
 #include "ComponentsFileWriter.h"
@@ -401,13 +403,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_ReferenceSamplingGrid->SetRegions( exp_size );
 	this->m_ReferenceSamplingGrid->SetSpacing( spacing );
 	this->m_ReferenceSamplingGrid->Allocate();
-
-	this->m_CurrentRegions = ROIType::New();
-	this->m_CurrentRegions->SetSpacing(   this->m_ReferenceSamplingGrid->GetSpacing() );
-	this->m_CurrentRegions->SetDirection( this->m_ReferenceSamplingGrid->GetDirection() );
-	this->m_CurrentRegions->SetOrigin(    this->m_ReferenceSamplingGrid->GetOrigin() );
-	this->m_CurrentRegions->SetRegions(   this->m_ReferenceSamplingGrid->GetLargestPossibleRegion().GetSize() );
-	this->m_CurrentRegions->Allocate();
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -689,29 +684,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		ReferenceImagePointer ref = orient->GetOutput();
 		ReferenceSizeType size = ref->GetLargestPossibleRegion().GetSize();
 
-		// ReferenceImagePointer newref = ReferenceImageType::New();
-		// newref->CopyInformation(ref);
-		// newref->SetRegions(size);
-		// newref->Allocate();
-
-		// ReferenceIndexType i_old;
-		// ReferenceIndexType i_new;
-		// //size_t off_old, off_new;
-		// for(size_t i = 0; i< size[0]; i++) {
-		// 	i_old[0] = i;
-		// 	i_new[0] = size[0] - i - 1;
-		// 	for(size_t j = 0; j < size[1]; j++) {
-		// 		i_old[1] = j;
-		// 		i_new[1] = size[1] - j - 1;
-		// 		for(size_t k = 0; k < size[2]; k++) {
-		// 			i_old[2] = k;
-		// 			i_new[2] = k;
-		// 			newref->SetPixel(i_new, ref->GetPixel(i_old));
-		// 		}
-		// 	}
-		// }
-
-
 		DirectionType idmat; idmat.SetIdentity();
 		DirectionType itk; itk.SetIdentity();
 		itk(0,0) = -1.0; itk(1,1) = -1.0;
@@ -720,9 +692,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		ref->SetDirection(idmat);
 		ref->SetOrigin(neworig);
 		this->m_ReferenceImage = ref;
-
-
-
 
 		// Cache image properties
 		this->m_FirstPixelCenter  = this->m_ReferenceImage->GetOrigin();
@@ -756,42 +725,44 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		::itk::OutputWindowDisplayDebugText( itkmsg.str().c_str() );
 	}
 	if ( this->m_BackgroundMask != _arg ) {
-		DirectionType olddir = _arg->GetDirection();
-		PointType oldorig = _arg->GetOrigin();
-		ProbabilityMapPointer msk = ProbabilityMapType::New();
-		msk->CopyInformation( _arg );
-		msk->SetRegions( _arg->GetLargestPossibleRegion() );
-		msk->Allocate();
-		msk->FillBuffer(0.0);
+		typedef itk::OrientImageFilter< ProbabilityMapType, ProbabilityMapType >  Orienter;
+		typename Orienter::Pointer orient = Orienter::New();
+		orient->UseImageDirectionOn();
+		orient->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
+		orient->SetInput(_arg);
+		orient->Update();
+		ProbabilityMapPointer msk = orient->GetOutput();
+		ReferenceSizeType size = msk->GetLargestPossibleRegion().GetSize();
 
-		size_t nPix = msk->GetLargestPossibleRegion().GetNumberOfPixels();
-		float* mbuffer = msk->GetBufferPointer();
-		const float* sbuffer = _arg->GetBufferPointer();
-		float w;
+		DirectionType idmat; idmat.SetIdentity();
+		DirectionType itk; itk.SetIdentity();
+		itk(0,0) = -1.0; itk(1,1) = -1.0;
 
-		for (size_t i = 0; i<nPix; i++) {
-			w = *(sbuffer + i);
+		PointType neworig = itk * msk->GetOrigin();
+		msk->SetDirection(idmat);
+		msk->SetOrigin(neworig);
 
-			if (w < 1.0) {
-				w = 1.0 - w;
-				if ( w > 1.0e-3 )
-					if (w > 1.0)
-						w = 1.0;
+		typedef itk::IntensityWindowingImageFilter< ProbabilityMapType, ProbabilityMapType > WindowFilter;
+		typename WindowFilter::Pointer mskwindow = WindowFilter::New();
+		mskwindow->SetInput(msk);
+		mskwindow->SetOutputMinimum(0.0);
+		mskwindow->SetOutputMaximum(1.0);
+		mskwindow->SetWindowMinimum(0.0);
+		mskwindow->SetWindowMaximum(1.0);
+		mskwindow->Update();
 
-					*(mbuffer + i) = w;
-			}
-		}
+		typedef itk::InvertIntensityImageFilter<ProbabilityMapType> InvertMaskFilterType;
+		typename InvertMaskFilterType::Pointer msk_inv = InvertMaskFilterType::New();
+		msk_inv->SetInput(mskwindow->GetOutput());
+		msk_inv->SetMaximum(1.0);
+		msk_inv->Update();
 
-		DirectionType ident; ident.SetIdentity();
-		msk->SetDirection(ident);
+		this->m_BackgroundMask = msk_inv->GetOutput();
 
-		itk::Vector<double, Dimension> ovect = oldorig.GetVectorFromOrigin();
-		msk->SetOrigin(olddir * ovect);
-
-		if ( (msk->GetLargestPossibleRegion() != this->m_ReferenceImage->GetLargestPossibleRegion()) ||
-				(msk->GetOrigin() != this->m_ReferenceImage->GetOrigin())) {
+		if ( (m_BackgroundMask->GetLargestPossibleRegion() != this->m_ReferenceImage->GetLargestPossibleRegion()) ||
+				(m_BackgroundMask->GetOrigin() != this->m_ReferenceImage->GetOrigin())) {
 			ProbmapResamplePointer res = ProbmapResampleType::New();
-			res->SetInput(msk);
+			res->SetInput(msk_inv->GetOutput());
 			res->SetSize(this->m_ReferenceSize);
 			res->SetOutputSpacing(this->m_ReferenceSpacing);
 			res->SetOutputOrigin(this->m_FirstPixelCenter);
@@ -801,9 +772,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 			this->m_BackgroundMask = res->GetOutput();
 		}
-		else {
-			this->m_BackgroundMask = msk;
-		}
+
 		this->Modified();
 	}
 }
