@@ -821,16 +821,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	MeasureType gin  = this->m_Model->Evaluate( value, inner_roi );
 	MeasureType gout = this->m_Model->Evaluate( value, outer_roi );
 
-	//MeasureType gin  = this->GetEnergyOfSample( value, inner_roi );
-	//MeasureType gout = this->GetEnergyOfSample( value, outer_roi );
-
-	float isOutside = this->m_MaskInterp->Evaluate( point );
-	if (isOutside > 1.0e-3) {
-		if(isOutside > 1.0) isOutside = 1.0;
-		gout = 0.0;
-		gin = this->m_MaxEnergy;
-	}
-
 	MeasureType grad = gin - gout;
 	grad = (fabs(grad)>MIN_GRADIENT)?grad:0.0;
 	return grad;
