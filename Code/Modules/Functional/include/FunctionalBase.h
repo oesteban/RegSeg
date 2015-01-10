@@ -472,8 +472,6 @@ protected:
 	ConstContourList m_Priors;
 	ConstContourList m_Target;
 	NormalFilterList m_NormalsFilter;
-	//WarpContourPointer m_ContourUpdater;
-	//TransformPointer m_Transform;
 	EnergyModelPointer m_Model;
 	EnergyFilterPointer m_EnergyCalculator;
 	// ROIList m_ROIs;
