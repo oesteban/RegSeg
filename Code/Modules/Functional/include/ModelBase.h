@@ -110,9 +110,6 @@ public:
 	 * or measurement. Evaluate() maps from a vector measurement type
 	 * to a real number. */
 	inline double Evaluate(const MeasurementVectorType & x, const RegionIdentifier roi) const {
-		if (roi == this->m_NumberOfRegions - 1 ) return this->m_MaxEnergy;
-		if (roi == this->m_NumberOfRegions - 2 ) return 0;
-
 		return this->m_Memberships[roi]->Evaluate(x);
 	}
 
