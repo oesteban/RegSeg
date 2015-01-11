@@ -138,8 +138,6 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	}
 
 	size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
-
-	VectorType vi;
 	InternalComputationValueType val;
 	size_t dim;
 	VectorType maxSpeed, vs;
@@ -149,14 +147,15 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	std::vector< double > speednorms;
 
 	for( size_t r = 0; r<nPix; r++ ){
-		vi.Fill(0.0);
+		vs.Fill(0.0);
 		for( size_t c=0; c<Dimension; c++) {
-			vs[c] = 0.0;
-			if (this->m_Scales[c] > 1.0e-8)
+			if (this->m_Scales[c] > 1.0e-8) {
 				val = derivative[c][r];
+				vs[c] = val;
 
 				if ( fabs(val) > 1.0e-8 )
 					*( buff[c] + r ) = val;
+			}
 		}
 		speednorms.push_back(vs.GetNorm());
 	}

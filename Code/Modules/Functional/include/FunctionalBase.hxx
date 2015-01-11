@@ -248,8 +248,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		if ( g > this->m_GradientStatistics[5] ) g = this->m_GradientStatistics[5];
 		if ( g < this->m_GradientStatistics[1] ) g = this->m_GradientStatistics[1];
 
+		v.Fill(0.0);
 		for( size_t i = 0; i < Dimension; i++ ) {
-			v[i] = scales[i] * g * ni[i];
+			if( scales[i] > 1.0e-8 )
+				v[i] = scales[i] * g * ni[i];
 			grad[vvid + i * nvertices] = static_cast<float>(v[i]);
 		}
 
