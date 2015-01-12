@@ -104,6 +104,8 @@ public:
 				          <InputMeshType, OutputComponentType>	  BinarizeMeshFilterType;
 	  typedef typename BinarizeMeshFilterType::Pointer            BinarizeMeshFilterPointer;
 
+	  typedef itk::ProcessObject                                  ProcessObject;
+
 
 	  // Set/Get spacing
 	  itkSetMacro(Spacing, SpacingType);
