@@ -57,9 +57,7 @@
 namespace rstk {
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
 MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
-::MahalanobisDistanceModel():
-  Superclass() {
-}
+::MahalanobisDistanceModel(): Superclass() {}
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
 void
@@ -75,7 +73,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	this->m_NumberOfRegions = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
 	this->m_Memberships.resize(this->m_NumberOfRegions);
 
-	size_t nregions = this->m_NumberOfRegions - 2;
+	size_t nregions = this->m_NumberOfRegions - this->m_NumberOfSpecialRegions;
 	this->m_Means.resize(nregions);
 	this->m_Covariances.resize(nregions);
 	this->m_RegionOffsetContainer.SetSize(nregions);
@@ -90,13 +88,18 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	this->EstimateRobust();
 
 	// Append special memberships
-	UniformFunctionPointer bg_mf = UniformFunctionType::New();
-	bg_mf->SetValue(5.0);
-	this->m_Memberships[this->m_NumberOfRegions - 2] = bg_mf;
+	if (this->m_NumberOfSpecialRegions >= 2) {
+		MeasureType lastMax = this->m_RegionOffsetContainer[this->m_NumberOfRegions - this->m_NumberOfSpecialRegions - 1];
+		UniformFunctionPointer bg_mf = UniformFunctionType::New();
+		bg_mf->SetValue(lastMax * 0.25);
+		this->m_Memberships[this->m_NumberOfRegions - 2] = bg_mf;
+	}
 
-	UniformFunctionPointer offmask_mf = UniformFunctionType::New();
-	offmask_mf->SetValue(this->m_MaxEnergy);
-	this->m_Memberships[this->m_NumberOfRegions - 1] = offmask_mf;
+	if (this->m_NumberOfSpecialRegions >= 1) {
+		UniformFunctionPointer offmask_mf = UniformFunctionType::New();
+		offmask_mf->SetValue(this->m_MaxEnergy);
+		this->m_Memberships[this->m_NumberOfRegions - 1] = offmask_mf;
+	}
 }
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
@@ -106,7 +109,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	ReferenceSamplePointer sample = ReferenceSampleType::New();
 	sample->SetImage( this->GetInput() );
 	size_t npix = sample->Size();
-	size_t nregions = this->m_NumberOfRegions - 2;
+	size_t nregions = this->m_NumberOfRegions - this->m_NumberOfSpecialRegions;
 
 	const PriorsPrecisionType* priors = this->GetPriorsMap()->GetBufferPointer();
 	size_t offset = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
@@ -155,7 +158,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	size_t ncomps = this->GetInput()->GetNumberOfComponentsPerPixel();
 
 	size_t offset = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
-	size_t nregions = this->m_NumberOfRegions - 2;
+	size_t nregions = this->m_NumberOfRegions - this->m_NumberOfSpecialRegions;
 
 	const PriorsPrecisionType* priors = this->GetPriorsMap()->GetBufferPointer();
 	const PixelValueType * input = this->GetInput()->GetBufferPointer();
@@ -171,6 +174,10 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 
 	PriorsPrecisionType w;
 	for( size_t i = 0; i < npix; i++ ) {
+		if( *(input + i * ncomps) == 0 && *(input + i * ncomps + 1) == 0) {
+			continue;
+		}
+
 		for( size_t roi = 0; roi < nregions; roi++ ) {
 			w = *(priors + offset * i + roi);
 			weights[roi][i] = w;
@@ -280,7 +287,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 ::PrintFormattedDescriptors() {
 	std::stringstream ss;
 	ss << "{ \"descriptors\" : { \"number\": " << this->m_NumberOfRegions << ", \"values\": [";
-	size_t nrois = this->m_NumberOfRegions - 2;
+	size_t nrois = this->m_NumberOfRegions - this->m_NumberOfSpecialRegions;
 
 	for ( size_t i = 0; i<nrois; i++ ){
 		if (i>0) ss<<",";

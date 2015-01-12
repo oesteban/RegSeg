@@ -368,6 +368,9 @@ public:
 	itkGetConstObjectMacro( CurrentMaps, PriorsImageType);
 
 	itkGetMacro( ApplySmoothing, bool );
+	itkGetMacro( UseBackground, bool );
+	itkSetMacro( UseBackground, bool );
+
 	itkGetMacro( Sigma, SigmaArrayType );
 	itkSetMacro( Sigma, SigmaArrayType );
 

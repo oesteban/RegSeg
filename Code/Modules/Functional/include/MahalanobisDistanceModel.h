@@ -147,7 +147,7 @@ private:
 	MahalanobisDistanceModel(const Self &);   //purposely not implemented
 	void operator=(const Self &);             //purposely not implemented
 
-	MeansContainer m_Means;
+	MeansContainer       m_Means;
 	CovariancesContainer m_Covariances;
 	MeasureTypeContainer m_RegionOffsetContainer;
 };
