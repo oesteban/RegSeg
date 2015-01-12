@@ -413,13 +413,13 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeCurrentRegions() {
-	NewBinarizeMeshFilterPointer newp = NewBinarizeMeshFilterType::New();
+	BinarizeMeshFilterPointer newp = BinarizeMeshFilterType::New();
 	newp->SetInputs( this->m_CurrentContours );
 	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
 	newp->Update();
 	this->m_CurrentRegions = newp->GetOutputSegmentation();
 
-	DownsamplePointer p = DownsampleNewType::New();
+	DownsamplePointer p = DownsampleFilter::New();
 	p->SetInput(newp->GetOutput());
 	p->SetOutputParametersFromImage( this->m_ReferenceImage );
 	p->SetMaskImage(m_BackgroundMask);
@@ -442,12 +442,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		groundtruth.push_back(copy->GetOutput());
 	}
 
-	NewBinarizeMeshFilterPointer newp = NewBinarizeMeshFilterType::New();
+	BinarizeMeshFilterPointer newp = BinarizeMeshFilterType::New();
 	newp->SetInputs( groundtruth );
 	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
 	newp->Update();
 
-	DownsamplePointer p = DownsampleNewType::New();
+	DownsamplePointer p = DownsampleFilter::New();
 	p->SetInput(newp->GetOutput());
 	p->SetOutputParametersFromImage( this->m_ReferenceImage );
 	p->SetMaskImage(m_BackgroundMask);

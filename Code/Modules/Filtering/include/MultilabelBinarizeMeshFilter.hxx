@@ -44,6 +44,8 @@
 #define SOURCE_DIRECTORY__MODULES_FILTERING_INCLUDE_MULTILABELBINARIZEMESHFILTER_HXX_
 
 #include "MultilabelBinarizeMeshFilter.h"
+#include <itkProcessObject.h>
+#include <itkImageRegionIterator.h>
 
 namespace rstk
 {
@@ -145,7 +147,7 @@ void
 MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 ::ThreadedGenerateData(const RegionType & inputRegionForThread, itk::ThreadIdType threadId) {
 	size_t nPix = inputRegionForThread.GetNumberOfPixels();
-	ProgressReporter progress( this, threadId, nPix );
+	itk::ProgressReporter progress( this, threadId, nPix );
 
 	const OutputPixelValueType* compBuffer[m_NumberOfMeshes];
 	for( size_t comp = 0; comp < m_NumberOfMeshes; comp++ ) {
@@ -154,7 +156,7 @@ MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 	OutputComponentPointer ref = m_OutputSegmentation;
 	OutputPixelValueType* segBuffer = ref->GetBufferPointer();
 
-	ImageRegionIterator< OutputImageType > outIt( this->GetOutput(), inputRegionForThread );
+	itk::ImageRegionIterator< OutputImageType > outIt( this->GetOutput(), inputRegionForThread );
  	outIt.GoToBegin();
 
  	size_t pix;

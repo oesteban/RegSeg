@@ -15,6 +15,9 @@ TARGET_LINK_LIBRARIES(bspline_invert ${ITK_LIBRARIES} ${Boost_LIBRARIES} ${JsonC
 ADD_EXECUTABLE(warp_image warp_image.cxx )
 TARGET_LINK_LIBRARIES(warp_image ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 
+ADD_EXECUTABLE(binarize_surfaces binarize_surfaces.cxx )
+TARGET_LINK_LIBRARIES(binarize_surfaces ${ITK_LIBRARIES} ${Boost_LIBRARIES})
+
 ADD_EXECUTABLE(regridavg regridavg.cxx ) 
 TARGET_LINK_LIBRARIES(regridavg ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 
@@ -27,6 +30,6 @@ TARGET_LINK_LIBRARIES(slice_contours ${ITK_LIBRARIES} ${Boost_LIBRARIES} ${VTK_L
 set_property(TARGET slice_contours APPEND
   PROPERTY INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
 
-INSTALL(TARGETS bspline_field bspline_invert regseg warp_image regridavg slice_contours
+INSTALL(TARGETS bspline_field bspline_invert regseg warp_image binarize_surfaces regridavg slice_contours
   RUNTIME DESTINATION bin
 )
