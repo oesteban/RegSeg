@@ -80,6 +80,8 @@ typedef itk::VectorImage< PointValueType, Dimension >             PriorsImageTyp
 typedef rstk::MultilabelBinarizeMeshFilter< VectorContourType >   BinarizeMeshFilterType;
 typedef typename BinarizeMeshFilterType::Pointer                  BinarizeMeshFilterPointer;
 typedef typename BinarizeMeshFilterType::OutputImageType          BinarizationImageType;
+typedef typename BinarizeMeshFilterType::InputMeshContainer       InputMeshContainer;
+typedef typename BinarizeMeshFilterType::OutputComponentType      SegmentationType;
 
 typedef rstk::DownsampleAveragingFilter
 		< BinarizationImageType, PriorsImageType >                DownsampleFilter;
@@ -88,6 +90,7 @@ typedef typename DownsampleFilter::Pointer                        DownsamplePoin
 typedef itk::VTKPolyDataReader< VectorContourType >               ReaderType;
 typedef rstk::VTKPolyDataWriter< VectorContourType >              WriterType;
 typedef itk::ImageFileReader<ReferenceImageType>                  ImageReader;
+typedef itk::ImageFileWriter<SegmentationType>                    SegmentationWriter;
 typedef rstk::ComponentsFileWriter<PriorsImageType>               ImageWriter;
 
 int main(int argc, char *argv[]);

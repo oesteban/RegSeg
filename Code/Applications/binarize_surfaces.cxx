@@ -37,5 +37,44 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
+	InputMeshContainer priors;
 
+	for( size_t i = 0; i<surfnames.size(); i++) {
+		typename ReaderType::Pointer r = ReaderType::New();
+		r->SetFileName(surfnames[i]);
+		r->Update();
+		priors.push_back(r->GetOutput());
+	}
+
+	typename ImageReader::Pointer rr = ImageReader::New();
+	rr->SetFileName(refname);
+	rr->Update();
+
+	// TODO: fix input orientation here.
+
+
+	BinarizeMeshFilterPointer newp = BinarizeMeshFilterType::New();
+	newp->SetInputs( priors );
+	newp->SetOutputReference( rr->GetOutput() );
+	newp->Update();
+
+	std::stringstream ss;
+	ss << outPrefix << "_segs";
+	typename SegmentationWriter::Pointer sw = SegmentationWriter::New();
+	sw->SetFileName(ss.str().c_str());
+	sw->SetInput(newp->GetOutputSegmentation());
+	sw->Update();
+
+	DownsamplePointer p = DownsampleFilter::New();
+	p->SetInput(newp->GetOutput());
+	p->SetOutputParametersFromImage( rr->GetOutput() );
+	p->Update();
+
+	typename ImageWriter::Pointer w = ImageWriter::New();
+	w->SetInput(p->GetOutput());
+
+	ss.str("");
+	ss << outPrefix << "_tpms";
+	w->SetFileName(ss.str().c_str());
+	w->Update();
 }
