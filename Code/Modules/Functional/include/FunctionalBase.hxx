@@ -453,12 +453,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	p->SetMaskImage(m_BackgroundMask);
 	p->Update();
 
-	typedef rstk::ComponentsFileWriter<PriorsImageType> PriorWriter;
-	typename PriorWriter::Pointer ww = PriorWriter::New();
-	ww->SetInput(p->GetOutput());
-	ww->SetFileName("ground-truth-regions");
-	ww->Update();
-
 	EnergyModelPointer m = EnergyModelType::New();
 	m->SetInput(this->m_ReferenceImage);
 	m->SetMask(this->m_BackgroundMask);
