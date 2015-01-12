@@ -134,6 +134,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_Model->SetInput(this->m_ReferenceImage);
 	this->m_Model->SetMask(this->m_BackgroundMask);
 	this->m_Model->SetPriorsMap(this->m_CurrentMaps);
+	if(this->m_UseBackground)
+		this->m_Model->SetNumberOfSpecialRegions(2);
 	this->m_Model->Update();
 
 	this->m_EnergyCalculator = EnergyFilter::New();
@@ -461,6 +463,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	m->SetInput(this->m_ReferenceImage);
 	m->SetMask(this->m_BackgroundMask);
 	m->SetPriorsMap(p->GetOutput());
+	if(this->m_UseBackground)
+		m->SetNumberOfSpecialRegions(2);
 	m->Update();
 
 	EnergyFilterPointer calc = EnergyFilter::New();
@@ -597,7 +601,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	opts.add_options()
 			("smoothing", bpo::value< float > (), "apply isotropic smoothing filter on target image, with kernel sigma=S mm.")
 			("smooth-auto", bpo::bool_switch(), "apply isotropic smoothing filter on target image, with automatic computation of kernel sigma.")
-			//("use-background", bpo::bool_switch(), "consider last ROI as background and do not compute descriptors.")
+			("uniform-bg-membership", bpo::bool_switch(), "consider last ROI as background and do not compute descriptors.")
 			("decile-threshold,d", bpo::value< float > (), "set (decile) threshold to consider a computed gradient as outlier (ranges 0.0-0.5)");
 }
 
@@ -619,12 +623,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		}
 	}
 
-	//if( this->m_Settings.count( "use-background" ) ) {
-	//	bpo::variable_value v = this->m_Settings["use-background"];
-	//	if ( v.as<bool>() ) {
-	//		this->SetUseBackground(true);
-	//	}
-	//}
+	if( this->m_Settings.count( "uniform-bg-membership" ) ) {
+		bpo::variable_value v = this->m_Settings["uniform-bg-membership"];
+		if ( v.as<bool>() ) {
+			this->SetUseBackground(true);
+		}
+	}
 
 	if( this->m_Settings.count( "decile-threshold") ) {
 		bpo::variable_value v = this->m_Settings["decile-threshold"];

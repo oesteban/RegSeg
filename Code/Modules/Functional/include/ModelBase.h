@@ -143,6 +143,9 @@ public:
 
 	itkGetConstMacro(MaxEnergy, MeasureType);
 
+	itkSetMacro(NumberOfSpecialRegions, size_t);
+	itkGetMacro(NumberOfSpecialRegions, size_t);
+
 protected:
 	ModelBase();
 	virtual ~ModelBase() {}
@@ -172,10 +175,11 @@ protected:
 	using Superclass::MakeOutput;
 	DataObjectPointer MakeOutput(DataObjectPointerArraySizeType);
 
-	MeasurementVectorSizeType m_MeasurementVectorSize;
-	RegionIdentifier m_NumberOfRegions;
-	MembershipFunctionsArray m_Memberships;
-	MeasureType m_MaxEnergy;
+	MeasurementVectorSizeType   m_MeasurementVectorSize;
+	RegionIdentifier            m_NumberOfRegions;
+	MembershipFunctionsArray    m_Memberships;
+	MeasureType                 m_MaxEnergy;
+	size_t                      m_NumberOfSpecialRegions;
 
 private:
 	ModelBase(const Self &);   //purposely not implemented
