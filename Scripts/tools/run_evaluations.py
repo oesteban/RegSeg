@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-14 00:31:29
+# @Last Modified time: 2015-01-14 00:34:44
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -339,7 +339,7 @@ if __name__ == '__main__':
 
     subjects = [
         op.basename(sub) for sub in glob(op.join(opts.subjects_dir, 'subjects',
-                                                 opts.subject))]
+                                                 s)) for s in opts.subject]
     settings['subject_id'] = subjects
 
     if len(subjects) == 0:
