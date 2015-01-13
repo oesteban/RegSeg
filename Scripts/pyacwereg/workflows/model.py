@@ -189,4 +189,4 @@ def _bin_n_msk(in_files):
 def _half_voxsize(in_file):
     import nibabel as nb
     import numpy as np
-    return (nb.load(in_file).get_zooms()[:3] * 0.5).tolist()
+    return tuple(np.array(nb.load(in_file).get_header().get_zooms()[:3]) * 2.0)
