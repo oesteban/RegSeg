@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-13 12:21:46
+# @Last Modified time: 2015-01-13 23:51:42
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -36,19 +36,20 @@ def phantoms_wf(options):
     subject_id = '%s_snr%03d' % (options.shape, options.snr)
     subject_dir = op.join(options.data_dir, subject_id)
 
-    bs = ev.bspline(name=options.name)
-
     grid_size = options.grid_size
     if len(grid_size) == 1:
         grid_size = grid_size * 3
 
+    bs = ev.bspline(name=options.name)
     bs.inputs.inputnode.grid_size = grid_size
     bs.inputs.inputnode.subject_id = subject_id
     bs.inputs.inputnode.lo_matrix = options.lo_matrix
     bs.inputs.inputnode.hi_matrix = options.hi_matrix
-    bs.inputs.inputnode.shape = options.shape
-    bs.inputs.inputnode.snr = options.snr
     bs.inputs.inputnode.cortex = options.no_cortex
+
+    bs.iterables = [('inputnode.shape', options.shape),
+                    ('inputnode.snr', options.snr),
+                    ('inputnode.seed', options.seeds)]
 
     if options.out_csv is None:
         bs.inputs.inputnode.out_csv = op.join(
