@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-01 13:42:56
+# @Last Modified time: 2015-01-13 12:35:51
 import os
 import os.path as op
 import nibabel as nb
@@ -55,4 +55,40 @@ class ExportSlices(CommandLine):
         out_path = os.getcwd()
         out_pattern = op.join(out_path, '*.png')
         outputs['out_files'] = sorted(glob(out_pattern))
+        return outputs
+
+
+class Surf2VolInputSpec(CommandLineInputSpec):
+    reference = File(exists=True, argstr='-R %s', mandatory=True,
+                     desc=('reference image grid'))
+    surfaces = InputMultiPath(
+        File(exists=True), argstr='-S %s', mandatory=True,
+        desc=('vtk contours that will be mapped to volume'))
+    out_prefix = traits.Str('surf2vol', argstr='-o %s', usedefault=True,
+                            desc='output files prefix')
+
+
+class Surf2VolOutputSpec(TraitedSpec):
+    out_tpm = OutputMultiPath(File(exists=True),
+                              desc='output tissue probability maps')
+    out_seg = File(exists=True, desc='output segmentation')
+
+
+class Surf2Vol(CommandLine):
+
+    """
+    Converts surface contours defining regions in space to volumes
+    """
+    input_spec = Surf2VolInputSpec
+    output_spec = Surf2VolOutputSpec
+    _cmd = 'binarize_surfaces'
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        out_path = op.abspath(self.inputs.out_prefix)
+
+        outputs['out_tpm'] = [
+            out_path + ('_tpm_cmp%d.nii.gz' % i)
+            for i in range(len(self.inputs.surfaces))]
+        outputs['out_seg'] = out_path + '_seg.nii.gz'
         return outputs

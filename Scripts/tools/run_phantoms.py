@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-18 11:48:51
+# @Last Modified time: 2015-01-13 12:21:46
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -41,8 +41,6 @@ def phantoms_wf(options):
     grid_size = options.grid_size
     if len(grid_size) == 1:
         grid_size = grid_size * 3
-
-    print grid_size
 
     bs.inputs.inputnode.grid_size = grid_size
     bs.inputs.inputnode.subject_id = subject_id

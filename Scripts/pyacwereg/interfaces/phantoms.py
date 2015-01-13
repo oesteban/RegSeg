@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-10-23 14:45:06
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-10-24 10:03:12
+# @Last Modified time: 2015-01-13 13:01:17
 import os
 import os.path as op
 import nibabel as nb
@@ -40,6 +40,7 @@ class PhantomOutputSpec(TraitedSpec):
 
 
 class Phantom(BaseInterface):
+
     """
     Returns a phantom model
     """
@@ -49,7 +50,7 @@ class Phantom(BaseInterface):
     def _run_interface(self, runtime):
         size = np.atleast_1d(self.inputs.matrix_size).tolist()
         if len(size) == 1:
-            size = [size[0]]*3
+            size = [size[0]] * 3
 
         data = pm.genShape(self.inputs.shape, datashape=size,
                            cortex=self.inputs.cortex)
@@ -81,7 +82,7 @@ class Phantom(BaseInterface):
 
 
 class SimulateSMRIInputSpec(CommandLineInputSpec):
-    frac_csv = File(exists=True, argstr='--csf_vf %s',
+    frac_csf = File(exists=True, argstr='--csf_vf %s',
                     desc='CSF volume fraction')
     frac_wm = File(exists=True, mandatory=True, argstr='--wm_vf %s',
                    desc='WM volume fraction')
@@ -98,6 +99,7 @@ class SimulateSMRIOutputSpec(TraitedSpec):
 
 
 class SimulateSMRI(CommandLine):
+
     """
     Returns a phantom model
     """
@@ -145,7 +147,7 @@ class DownsampleAveraging(CommandLine):
         if name == 'matrix_size':
             size = np.atleast_1d(value).tolist()
             if len(size) == 1:
-                size = [size[0]]*3
+                size = [size[0]] * 3
             return spec.argstr % " ".join(['%d' % s for s in size])
         if name == 'out_file':
             return spec.argstr % op.abspath(value)

@@ -11,7 +11,7 @@
 #include "binarize_surfaces.h"
 
 int main(int argc, char *argv[]) {
-	std::string outPrefix = "binarized";
+	std::string outPrefix = "surf2vol";
 	std::string refname;
 	std::vector< std::string > surfnames;
 
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
 
 
 	std::stringstream ss;
-	ss << outPrefix << "_segs.nii.gz";
+	ss << outPrefix << "_seg.nii.gz";
 	typename SegmentationWriter::Pointer sw = SegmentationWriter::New();
 	sw->SetFileName(ss.str().c_str());
 	sw->SetInput(seg_oriented);
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
 	w->SetInput(tpm_oriented);
 
 	ss.str("");
-	ss << outPrefix << "_tpms";
+	ss << outPrefix << "_tpm";
 	w->SetFileName(ss.str().c_str());
 	w->Update();
 

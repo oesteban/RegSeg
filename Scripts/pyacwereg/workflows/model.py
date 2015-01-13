@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-10-23 14:43:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-18 12:26:39
+# @Last Modified time: 2015-01-13 13:04:18
 
 import os
 import os.path as op
@@ -58,20 +58,18 @@ def generate_phantom(name='PhantomGeneration'):
     msurf = pe.Node(niu.Merge(2), name='MergeSurfs')
 
     dist = bspline_deform(n_tissues=0)
-    binn = pe.MapNode(fs.Binarize(min=0.5), iterfield=['in_file'],
-                      name='Binarize')
+
     norm = pe.Node(Normalize(), name='NormalizeTPMs')
 
-    pve = pe.MapNode(pip.DownsampleAveraging(),
-                     iterfield=['in_file'], name='CreatePVE')
+    tpmmsk = pe.Node(niu.Split(splits=[2]), name='TPMsSplit')
     msk = pe.Node(niu.Function(function=_bin_n_msk, input_names=['in_files'],
                                output_names=['out_file']), name='binNmsk')
     sels = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
                    name='SeparateTissue')
-    signal0 = pe.Node(pip.SimulateSMRI(), name='Simulate0')
-    merge = pe.Node(niu.Merge(2), name='SimMerge')
 
-    signal = pe.Node(pip.SimulateSMRI(), name='Simulate1')
+    merge1 = pe.Node(niu.Merge(2), name='SimMerge')
+
+    signal1 = pe.Node(pip.SimulateSMRI(), name='Simulate1')
 
     wf = pe.Workflow(name=name)
     wf.connect([
@@ -93,31 +91,35 @@ def generate_phantom(name='PhantomGeneration'):
         (msurf,       dist,        [('out', 'inputnode.in_surfs')]),
         (model,       dist,        [('out_mask', 'inputnode.in_mask')]),
         (sels0,       dist,        [('out2', 'inputnode.in_file')]),
-        (dist,        binn,        [('outputnode.out_file', 'in_file')]),
-        (binn,        norm,        [('binary_file', 'in_files')]),
-        (dist,        norm,        [('outputnode.out_mask', 'in_mask')]),
-        (norm,        pve,         [('out_files', 'in_file')]),
-        (inputnode,   pve,         [('lo_matrix', 'matrix_size')]),
-        (pve,         msk,         [('out_file', 'in_files')]),
-        (pve,         sels,        [('out_file', 'inlist')]),
-        (sels,        signal,      [('out1', 'frac_wm'),
+
+        (signal0,     surf2vol,    [('out_t1w', 'reference')]),
+        (dist,        surf2vol,    [('outputnode.out_surfs', 'surfaces')]),
+        (surf2vol,    norm,        [('out_tpm', 'in_files')]),
+        (norm,        sels,        [('out_files', 'inlist')]),
+        (sels,        signal1,     [('out1', 'frac_wm'),
                                     ('out2', 'frac_gm')]),
-        (inputnode,   signal,      [('snr', 'snr')]),
-        (signal,      merge,       [('out_t1w', 'in1'),
+        (inputnode,   signal1,     [('snr', 'snr')]),
+        (signal1,     merge1,      [('out_t1w', 'in1'),
                                     ('out_t2w', 'in2')]),
-        (merge,       outputnode,  [('out', 'out_signal')]),
-        (msk,         outputnode,  [('out_file', 'out_mask')]),
-        (pve,         outputnode,  [('out_file', 'out_tpms')]),
-        (dist,        outputnode,  [('outputnode.out_field', 'out_field'),
-                                    ('outputnode.out_coeff', 'out_coeff'),
-                                    ('outputnode.out_surfs', 'out_surfs')]),
+        (norm,        tmpmsk,      [('out_tpm', 'inlist')]),
+        (tpmmsk,      msk,         [('out1', 'in_files')]),
+
+        # reference outputs
         (inputnode,   outputnode,  [('grid_size', 'grid_size')]),
         (signal0,     merge0,      [('out_t1w', 'in1'),
                                     ('out_t2w', 'in2')]),
         (msurf,       refnode,     [('out', 'out_surfs')]),
         (sels0,       refnode,     [('out2', 'out_tpms')]),
         (model,       refnode,     [('out_mask', 'out_mask')]),
-        (merge0,      refnode,     [('out', 'out_signal')])
+        (merge0,      refnode,     [('out', 'out_signal')]),
+
+        # distorted outputs
+        (merge1,      outputnode,  [('out', 'out_signal')]),
+        (msk,         outputnode,  [('out_file', 'out_mask')]),
+        (tpmmsk,      outputnode,  [('out_file', 'out_tpms')]),
+        (dist,        outputnode,  [('outputnode.out_field', 'out_field'),
+                                    ('outputnode.out_coeff', 'out_coeff'),
+                                    ('outputnode.out_surfs', 'out_surfs')])
     ])
     return wf
 
