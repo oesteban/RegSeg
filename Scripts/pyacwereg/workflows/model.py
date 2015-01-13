@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-10-23 14:43:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-13 13:04:18
+# @Last Modified time: 2015-01-13 13:09:56
 
 import os
 import os.path as op
@@ -20,6 +20,7 @@ from pysdcev.workflows.distortion import bspline_deform
 
 from pyacwereg.interfaces import phantoms as pip
 from pyacwereg.interfaces.warps import FieldBasedWarp, InverseField
+from pyacwereg.interfaces.utility import Surf2Vol
 
 
 def generate_phantom(name='PhantomGeneration'):
@@ -60,6 +61,8 @@ def generate_phantom(name='PhantomGeneration'):
     dist = bspline_deform(n_tissues=0)
 
     norm = pe.Node(Normalize(), name='NormalizeTPMs')
+
+    surf2vol = pe.Node(Surf2Vol(), name='Surf2Volume')
 
     tpmmsk = pe.Node(niu.Split(splits=[2]), name='TPMsSplit')
     msk = pe.Node(niu.Function(function=_bin_n_msk, input_names=['in_files'],
