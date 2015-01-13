@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-13 15:43:28
+# @Last Modified time: 2015-01-13 17:30:46
 
 import os
 import os.path as op
@@ -82,48 +82,85 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
                                ('cortex', 'inputnode.cortex')])
     ])
 
-    evwfs = []
-    norm_tpms = []
-    for i, reg in enumerate(methods):
-        evwfs.append(registration_ev(name=('Ev_%s' % reg.name)))
-        evwfs[i].inputs.infonode.method = reg.name
-        norm_tpms.append(pe.Node(Normalize(), name='Normalize%02d' % i))
+    regseg_low = default_regseg('REGSEG_low')
+    ev_regseg_low = registration_ev(name=('Ev_low_%s' % reg.name))
+    ev_regseg_low.inputs.infonode.method = '%s_low' % reg.name
+    norm_low.append(pe.Node(Normalize(), name='NormalizeFinal_low'))
 
+    wf.connect([
+        (inputnode, ev_regseg_low, [
+            ('subject_id', 'infonode.subject_id')]),
+        (phantom, ev_regseg_low, [
+            ('refnode.out_signal',    'refnode.in_imag'),
+            ('refnode.out_tpms',    'refnode.in_tpms'),
+            ('out_lowres.out_surfs',   'refnode.in_surf'),
+            ('refnode.out_mask',    'refnode.in_mask'),
+            ('out_lowres.out_field', 'refnode.in_field')]),
+        (phantom, regseg_low, [
+            ('refnode.out_surfs', 'inputnode.in_surf'),
+            ('out_lowres.out_signal', 'inputnode.in_fixed'),
+            ('out_lowres.out_tpms', 'inputnode.in_tpms'),
+            ('out_lowres.out_mask', 'inputnode.in_mask')]),
+        (regseg_low, norm_low, [
+            ('outputnode.out_tpms', 'in_files')]),
+        (regseg_low, ev_regseg_low, [
+            ('outputnode.out_corr', 'tstnode.in_imag'),
+            ('outputnode.out_surf', 'tstnode.in_surf'),
+            ('outputnode.out_field', 'tstnode.in_field')]),
+        (norm_low, ev_regseg_low, [
+            ('out_files', 'tstnode.in_tpms')])
+    ])
+
+    # Connect results output file
+    if results is not None:
+        ev_regseg_low.inputs.infonode.out_csv = results
+    else:
         wf.connect([
-            (inputnode,    evwfs[i], [('subject_id', 'infonode.subject_id')]),
-            (phantom,      evwfs[i], [
-                ('refnode.out_signal',    'refnode.in_imag'),
-                ('refnode.out_tpms',    'refnode.in_tpms'),
-                ('out_lowres.out_surfs',   'refnode.in_surf'),
-                ('refnode.out_mask',    'refnode.in_mask'),
-                ('out_lowres.out_field', 'refnode.in_field')]),
-            (phantom,         reg, [
-                ('refnode.out_surfs', 'inputnode.in_surf'),
-                # ('refnode.out_signal', 'inputnode.in_orig'),
-                # ('out_lowres.grid_size', 'inputnode.grid_size'),
-                ('out_lowres.out_signal', 'inputnode.in_fixed'),
-                ('out_lowres.out_tpms', 'inputnode.in_tpms'),
-                ('out_lowres.out_mask', 'inputnode.in_mask')]),
-            (reg,      norm_tpms[i], [('outputnode.out_tpms', 'in_files')]),
-            (reg,          evwfs[i], [
-                ('outputnode.out_corr', 'tstnode.in_imag'),
-                ('outputnode.out_surf', 'tstnode.in_surf'),
-                ('outputnode.out_field', 'tstnode.in_field')]),
-            (norm_tpms[i], evwfs[i], [('out_files', 'tstnode.in_tpms')])
+            (inputnode, ev_regseg_low, [('out_csv', 'infonode.out_csv')])
         ])
 
-        # Connect in_field in case it is an identity workflow
-        if 'in_field' in [item[0] for item in reg.inputs.inputnode.items()]:
-            wf.connect(phantom, 'out_lowres.out_field',
-                       reg, 'inputnode.in_field')
+    regseg_hi = default_regseg('REGSEG_hi')
+    ev_regseg_hi = registration_ev(name=('Ev_hi_%s' % reg.name))
+    ev_regseg_hi.inputs.infonode.method = '%s_hi' % reg.name
+    norm_hi.append(pe.Node(Normalize(), name='NormalizeFinal_hi'))
 
-        # Connect results output file
-        if results is not None:
-            evwfs[i].inputs.infonode.out_csv = results
-        else:
-            wf.connect([
-                (inputnode, evwfs[i], [('out_csv', 'infonode.out_csv')])
-            ])
+    wf.connect([
+        (inputnode, ev_regseg_hi, [
+            ('subject_id', 'infonode.subject_id')]),
+        (phantom, ev_regseg_hi, [
+            ('refnode.out_signal',    'refnode.in_imag'),
+            ('refnode.out_tpms',    'refnode.in_tpms'),
+            ('out_hires.out_surfs',   'refnode.in_surf'),
+            ('refnode.out_mask',    'refnode.in_mask'),
+            ('out_hires.out_field', 'refnode.in_field')]),
+        (phantom, regseg_hi, [
+            ('refnode.out_surfs', 'inputnode.in_surf'),
+            ('out_hires.out_signal', 'inputnode.in_fixed'),
+            ('out_hires.out_tpms', 'inputnode.in_tpms'),
+            ('out_hires.out_mask', 'inputnode.in_mask')]),
+        (regseg_hi, norm_hi, [
+            ('outputnode.out_tpms', 'in_files')]),
+        (regseg_hi, ev_regseg_hi, [
+            ('outputnode.out_corr', 'tstnode.in_imag'),
+            ('outputnode.out_surf', 'tstnode.in_surf'),
+            ('outputnode.out_field', 'tstnode.in_field')]),
+        (norm_hi, ev_regseg_hi, [
+            ('out_files', 'tstnode.in_tpms')])
+    ])
+
+    # Connect results output file
+    if results is not None:
+        ev_regseg_hi.inputs.infonode.out_csv = results
+    else:
+        wf.connect([
+            (inputnode, ev_regseg_hi, [('out_csv', 'infonode.out_csv')])
+        ])
+
+    # Connect in_field in case it is an identity workflow
+    # if 'in_field' in [item[0] for item in reg.inputs.inputnode.items()]:
+    #     wf.connect(phantom, 'out_lowres.out_field',
+    #                reg, 'inputnode.in_field')
+
     return wf
 
 
