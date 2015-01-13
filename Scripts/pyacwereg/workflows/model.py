@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-10-23 14:43:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-13 15:38:23
+# @Last Modified time: 2015-01-13 15:47:38
 
 import os
 import os.path as op
@@ -48,9 +48,9 @@ def generate_phantom(name='PhantomGeneration'):
 
     model = pe.Node(pip.Phantom(), name='GenerateModel')
     split = pe.Node(fsl.Split(dimension='t'), name='Split')
-    sels0 = pe.Node(niu.Split(splits=[1, 2], squeeze=True),
+    selm0 = pe.Node(niu.Split(splits=[1, 2], squeeze=True),
                     name='SepModel0')
-    sels1 = pe.Node(niu.Split(splits=[1, 1, 1], squeeze=True),
+    selm1 = pe.Node(niu.Split(splits=[1, 1, 1], squeeze=True),
                     name='SepModel1')
     signal0 = pe.Node(pip.SimulateSMRI(), name='Simulate0')
     merge0 = pe.Node(niu.Merge(2), name='SimMerge0')
@@ -80,9 +80,9 @@ def generate_phantom(name='PhantomGeneration'):
     msk1 = pe.Node(niu.Function(function=_bin_n_msk, input_names=['in_files'],
                                 output_names=['out_file']), name='binNmsk_LR')
 
-    sels0 = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
+    selt0 = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
                     name='SeparateTissue_HR')
-    sels1 = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
+    selt1 = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
                     name='SeparateTissue_LR')
 
     merge1 = pe.Node(niu.Merge(2), name='SimMerge_HR')
@@ -97,26 +97,26 @@ def generate_phantom(name='PhantomGeneration'):
                                     ('hi_matrix', 'matrix_size'),
                                     ('cortex', 'cortex')]),
         (model,       split,       [('out_file', 'in_file')]),
-        (split,       sels1,       [('out_files', 'inlist')]),
-        (sels1,       signal0,     [('out2', 'frac_wm'),
+        (split,       selm1,       [('out_files', 'inlist')]),
+        (selm1,       signal0,     [('out2', 'frac_wm'),
                                     ('out3', 'frac_gm')]),
         (signal0,     surf0,       [('out_t1w', 'inputnode.norm')]),
-        (sels1,       surf0,       [('out2', 'inputnode.aseg')]),
+        (selm1,       surf0,       [('out2', 'inputnode.aseg')]),
         (signal0,     surf1,       [('out_t1w', 'inputnode.norm')]),
         (model,       surf1,       [('out_mask', 'inputnode.aseg')]),
         (surf0,       msurf,       [('outputnode.out_surf', 'in1')]),
         (surf1,       msurf,       [('outputnode.out_surf', 'in2')]),
-        (split,       sels0,       [('out_files', 'inlist')]),
+        (split,       selm0,       [('out_files', 'inlist')]),
         (inputnode,   dist,        [('grid_size', 'inputnode.grid_size')]),
         (msurf,       dist,        [('out', 'inputnode.in_surfs')]),
         (model,       dist,        [('out_mask', 'inputnode.in_mask')]),
-        (sels0,       dist,        [('out2', 'inputnode.in_file')]),
+        (selm0,       dist,        [('out2', 'inputnode.in_file')]),
 
         (signal0,     surf2vol0,   [('out_t1w', 'reference')]),
         (dist,        surf2vol0,   [('outputnode.out_surfs', 'surfaces')]),
         (surf2vol0,   norm0,       [('out_tpm', 'in_files')]),
-        (norm0,       sels0,       [('out_files', 'inlist')]),
-        (sels0,       signal1,     [('out1', 'frac_wm'),
+        (norm0,       selt0,       [('out_files', 'inlist')]),
+        (selt0,       signal1,     [('out1', 'frac_wm'),
                                     ('out2', 'frac_gm')]),
         (inputnode,   signal1,     [('snr', 'snr')]),
         (signal1,     merge1,      [('out_t1w', 'in1'),
@@ -129,8 +129,8 @@ def generate_phantom(name='PhantomGeneration'):
         (down,        surf2vol1,   [('out_file', 'reference')]),
         (dist,        surf2vol1,   [('outputnode.out_surfs', 'surfaces')]),
         (surf2vol1,   norm1,       [('out_tpm', 'in_files')]),
-        (norm1,       sels1,        [('out_files', 'inlist')]),
-        (sels1,       signal2,     [('out1', 'frac_wm'),
+        (norm1,       selt1,       [('out_files', 'inlist')]),
+        (selt1,       signal2,     [('out1', 'frac_wm'),
                                     ('out2', 'frac_gm')]),
         (inputnode,   signal2,     [('snr', 'snr')]),
         (signal2,     merge2,      [('out_t1w', 'in1'),
@@ -143,7 +143,7 @@ def generate_phantom(name='PhantomGeneration'):
         (signal0,     merge0,      [('out_t1w', 'in1'),
                                     ('out_t2w', 'in2')]),
         (msurf,       refnode,     [('out', 'out_surfs')]),
-        (sels0,       refnode,     [('out2', 'out_tpms')]),
+        (selt0,       refnode,     [('out2', 'out_tpms')]),
         (model,       refnode,     [('out_mask', 'out_mask')]),
         (merge0,      refnode,     [('out', 'out_signal')]),
 
@@ -153,7 +153,7 @@ def generate_phantom(name='PhantomGeneration'):
         (tpmmsk0,     out_hires,   [('out1', 'out_tpms')]),
         (dist,        out_hires,   [('outputnode.out_field', 'out_field'),
                                     ('outputnode.out_coeff', 'out_coeff'),
-                                    ('outputnode.out_surfs', 'out_surfs')])
+                                    ('outputnode.out_surfs', 'out_surfs')]),
 
         # distorted outputs
         (inputnode,   out_lowres,  [('grid_size', 'grid_size')]),
