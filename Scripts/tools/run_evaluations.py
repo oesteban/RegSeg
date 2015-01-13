@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-16 12:00:41
+# @Last Modified time: 2015-01-13 22:54:04
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -193,19 +193,20 @@ def hcp_workflow(name='HCP_TMI2015', settings={}):
     mdti = pe.Node(niu.Merge(2), name='MergeDTI')
 
     regseg = regseg_wf()
-    regseg.inputs.inputnode.iterations = [150, 100, 100]
-    regseg.inputs.inputnode.descript_update = [30, 30, 30]
-    regseg.inputs.inputnode.step_size = [0.1, 0.2, 0.3]
+    regseg.inputs.inputnode.images_verbosity = 3
     regseg.inputs.inputnode.alpha = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.beta = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.convergence_energy = [True, True, True]
-    regseg.inputs.inputnode.convergence_window = [8, 10, 15]
-    regseg.inputs.inputnode.convergence_value = [1.0e-7, 1.0e-8, 1.0e-9]
+    regseg.inputs.inputnode.convergence_value = [1.e-7, 1.e-8, 1.e-9]
+    regseg.inputs.inputnode.convergence_window = [10, 10, 15]
+    regseg.inputs.inputnode.descript_update = [5, 30, None]
     regseg.inputs.inputnode.f_smooth = [2.0, 0.5, None]
-    regseg.inputs.inputnode.images_verbosity = 3
-    regseg.inputs.inputnode.scales = [(0.0, 1.0, 0.0)] * 3
     regseg.inputs.inputnode.grid_spacing = [
-        (30., 60., 30.), (30., 30., 30.), (20., 30., 10.)]
+        (40., 100., 40.), (30., 30., 30.), (20., 30., 10.)]
+
+    regseg.inputs.inputnode.iterations = [150, 100, 100]
+    regseg.inputs.inputnode.scales = [(0.0, 1.0, 0.0)] * 3
+    regseg.inputs.inputnode.step_size = [2.e-4, 1.e-4, 1.e-4]
 
     wf.connect([
         (st1,    dti,    [('out_dis_set.dwi', 'inputnode.in_dwi'),
