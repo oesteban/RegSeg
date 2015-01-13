@@ -60,6 +60,7 @@
 #include <itkQuadEdgeMesh.h>
 #include <itkVTKPolyDataReader.h>
 #include <itkImageFileReader.h>
+#include <itkOrientImageFilter.h>
 
 #include "DownsampleAveragingFilter.h"
 #include "MultilabelBinarizeMeshFilter.h"
@@ -75,7 +76,15 @@ typedef float                                                     PointValueType
 typedef itk::Vector< PointValueType, Dimension >                  VectorType;
 typedef itk::QuadEdgeMesh< VectorType, Dimension >                VectorContourType;
 typedef itk::Image< PointValueType, Dimension>                    ReferenceImageType;
-typedef itk::VectorImage< PointValueType, Dimension >             PriorsImageType;
+typedef itk::VectorImage< PointValueType, Dimension >             ProbmapType;
+
+typedef typename ReferenceImageType::Pointer                      ReferencePointer;
+typedef typename ReferenceImageType::DirectionType                DirectionType;
+typedef typename ReferenceImageType::SizeType                     SizeType;
+typedef typename ReferenceImageType::PointType                    PointType;
+typedef typename ReferenceImageType::SpacingType                  SpacingType;
+typedef itk::ContinuousIndex<PointValueType, Dimension>           ContinuousIndex;
+
 
 typedef rstk::MultilabelBinarizeMeshFilter< VectorContourType >   BinarizeMeshFilterType;
 typedef typename BinarizeMeshFilterType::Pointer                  BinarizeMeshFilterPointer;
@@ -84,14 +93,18 @@ typedef typename BinarizeMeshFilterType::InputMeshContainer       InputMeshConta
 typedef typename BinarizeMeshFilterType::OutputComponentType      SegmentationType;
 
 typedef rstk::DownsampleAveragingFilter
-		< BinarizationImageType, PriorsImageType >                DownsampleFilter;
+		< BinarizationImageType, ProbmapType >                    DownsampleFilter;
 typedef typename DownsampleFilter::Pointer                        DownsamplePointer;
 
 typedef itk::VTKPolyDataReader< VectorContourType >               ReaderType;
 typedef rstk::VTKPolyDataWriter< VectorContourType >              WriterType;
 typedef itk::ImageFileReader<ReferenceImageType>                  ImageReader;
 typedef itk::ImageFileWriter<SegmentationType>                    SegmentationWriter;
-typedef rstk::ComponentsFileWriter<PriorsImageType>               ImageWriter;
+typedef rstk::ComponentsFileWriter<ProbmapType>                   ImageWriter;
+
+typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >  Orienter;
+typedef itk::OrientImageFilter< SegmentationType, SegmentationType >      SegmentationOrienter;
+typedef itk::OrientImageFilter< ProbmapType, ProbmapType >                ProbmapsOrienter;
 
 int main(int argc, char *argv[]);
 
