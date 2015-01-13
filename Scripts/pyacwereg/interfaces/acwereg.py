@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-03 12:40:43
+# @Last Modified time: 2015-01-13 16:50:03
 
 import os
 import os.path as op
@@ -113,9 +113,9 @@ class ACWERegOutputSpec(TraitedSpec):
                                       desc='source images unwarped'))
     out_surfs = OutputMultiPath(File(exists=True,
                                      desc='priors in target space'))
-    out_tpms = OutputMultiPath(File(exists=True,
-                                    desc=('tissue probability maps (TPM) in '
-                                          'target space')))
+    # out_tpms = OutputMultiPath(File(exists=True,
+    #                                 desc=('tissue probability maps (TPM) in '
+    #                                       'target space')))
     out_field = File(exists=True, desc='output field')
     out_log = File(exists=True, desc='log JSON file')
     out_coeff = OutputMultiPath(File(desc='output coefficients'))
@@ -269,13 +269,13 @@ pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
         outputs = self.output_spec().get()
         outputs['out_warped'] = [op.abspath('%s_warped_%d.nii.gz' % (
             out_prefix, i)) for i in range(len(self.inputs.in_fixed))]
-        outputs['out_tpms'] = [op.abspath('%s_final_tpm_%d.nii.gz' % (
-            out_prefix, i)) for i in range(len(self.inputs.in_prior) + 1)]
+        # outputs['out_tpms'] = [op.abspath('%s_final_tpm_%d.nii.gz' % (
+        #     out_prefix, i)) for i in range(len(self.inputs.in_prior) + 1)]
         outputs['out_surfs'] = [op.abspath('%s_swarped_%d.vtk' % (
             out_prefix, i)) for i in range(len(self.inputs.in_prior))]
         outputs['out_field'] = op.abspath('%s_field.nii.gz' % out_prefix)
-        outputs['out_coeff'] = [op.abspath('%s_coeff_%d.nii.gz' % (
-            out_prefix, i)) for i in range(self._num_levels)]
+        outputs['out_coeff'] = [op.abspath('%s_coeff_%d.vtu' % (out_prefix, i))
+                                for i in range(self._num_levels)]
 
         logname = ''
         if isdefined(self.inputs.log_filename):

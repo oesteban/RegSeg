@@ -102,9 +102,9 @@ public:
 	typedef itk::FixedArray< InternalValuesType, Dimension >  ValueArrayType;
 	typedef itk::Vector< InternalValuesType, Dimension >      ValueVectorType;
 
-	typedef TTransform                                        LevelTransformType;
-	typedef typename LevelTransformType::Pointer              LevelTransformPointer;
-	typedef std::vector< LevelTransformPointer >              LevelTransformList;
+	typedef TTransform                                        TransformType;
+	typedef typename TransformType::Pointer                   TransformPointer;
+	typedef std::vector< TransformPointer >                   TransformList;
 
 	typedef rstk::CompositeMatrixTransform
 			            < InternalValuesType, Dimension >     OutputTransformType;
@@ -120,7 +120,7 @@ public:
 	typedef FunctionalBase< ReferenceImageType >              FunctionalType;
 	typedef typename FunctionalType::Pointer                  FunctionalPointer;
 	typedef std::vector< FunctionalPointer >                  FunctionalList;
-	typedef typename FunctionalType::VectorContourType              VectorContourType;
+	typedef typename FunctionalType::VectorContourType        VectorContourType;
 	typedef typename FunctionalType::ROIType                  ROIType;
 	typedef typename FunctionalType::ContourPointer           ContourPointer;
 	typedef typename FunctionalType::ContourConstPointer      ContourConstPointer;
@@ -216,7 +216,7 @@ public:
 	itkGetConstObjectMacro(DisplacementField, FieldType );
 	itkGetConstObjectMacro(InverseDisplacementField, FieldType );
 
-	itkGetConstMacro(Transforms, LevelTransformList);
+	// itkGetConstMacro(Transforms, TransformList);
 	itkGetMacro( JSONRoot, JSONRoot);
 
 	rstkSetVectorElement( GridSchedule, GridSizeType );
@@ -229,6 +229,7 @@ public:
 	rstkVectorMethods( Beta, OptCompValueType );
 	rstkVectorMethods( DescriptorRecomputationFreq, NumberValueType );
 
+	// rstkGetObjectListWithLast( Transform, TransformType );
 	rstkGetObjectListWithLast( Optimizer, OptimizerType );
 	rstkGetObjectListWithLast( Functional, FunctionalType );
 
@@ -302,7 +303,7 @@ private:
 	GridSizeType m_MinGridSize;
 	NumberValueList m_NumberOfIterations;
 
-	LevelTransformList m_Transforms;
+	// TransformList m_Transforms;
 	FunctionalList m_Functionals;
 	OptimizerList m_Optimizers;
 	PriorsList m_Priors;

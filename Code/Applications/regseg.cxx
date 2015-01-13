@@ -245,22 +245,14 @@ int main(int argc, char *argv[]) {
 	// Write out final results ---------------------------------------------------------
 	//
 
-	typename RegistrationType::LevelTransformList tfs = acwereg->GetTransforms();
+	size_t nlevels = acwereg->GetNumberOfLevels();
 
-	for (size_t i = 0; i < tfs.size(); i++) {
-		// typename FieldWriter::Pointer cwrite = FieldWriter::New();
-		// std::stringstream ss;
-		// ss << outPrefix << "_coeff_" << i << ".vti";
-		// cwrite->SetFileName( ss.str().c_str() );
-		// cwrite->SetInput( tfs[i]->GetCoefficientsField() );
-		// cwrite->Update();
-
+	for (size_t i = 0; i < nlevels; i++) {
 		std::stringstream sb;
-		sb << outPrefix << "_coeff_" << i << ".vtk";
-		typedef rstk::CoefficientsWriter< AltCoeffType > W;
-		typename W::Pointer w = W::New();
+		sb << outPrefix << "_coeff_" << i << ".vtu";
+		typename CoeffWriter::Pointer w = CoeffWriter::New();
 		w->SetFileName(sb.str().c_str());
-		w->SetInput(tfs[i]->GetFlatParameters());
+		w->SetInput(acwereg->GetOptimizerOfLevel(i)->GetTransform()->GetFlatParameters());
 		w->Update();
 	}
 

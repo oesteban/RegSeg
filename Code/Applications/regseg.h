@@ -91,6 +91,7 @@ typedef BSplineSparseMatrixTransform<ScalarType,
 		                                     DIMENSION, 3u>  TransformType;
 typedef TransformType::Pointer                               TransformPointer;
 typedef typename TransformType::CoefficientsImageType        CoefficientsType;
+typedef typename TransformType::AltCoeffType                 AltCoeffType;
 
 typedef SparseMatrixTransform<ScalarType, DIMENSION >        BaseTransformType;
 typedef BaseTransformType::Pointer                           BaseTransformPointer;
@@ -108,15 +109,15 @@ typedef itk::BSplineInterpolateImageFunction
 
 typedef ACWERegistrationMethod< ImageType, TransformType, ScalarType >   RegistrationType;
 typedef typename RegistrationType::Pointer                   RegistrationPointer;
-typedef typename RegistrationType::VectorContourType               VectorContourType;
-typedef typename VectorContourType::Pointer                        ContourPointer;
+typedef typename RegistrationType::VectorContourType         VectorContourType;
+typedef typename VectorContourType::Pointer                  ContourPointer;
 typedef typename RegistrationType::PriorsList                ContourList;
 typedef typename RegistrationType::OptimizerType             OptimizerType;
 typedef typename RegistrationType::FunctionalType            FunctionalType;
 typedef typename FunctionalType::ProbabilityMapType          ProbabilityMapType;
 typedef typename OptimizerType::FieldType                    FieldType;
-typedef itk::VTKPolyDataReader< VectorContourType >                ReaderType;
-typedef rstk::VTKPolyDataWriter< VectorContourType >               WriterType;
+typedef itk::VTKPolyDataReader< VectorContourType >          ReaderType;
+typedef rstk::VTKPolyDataWriter< VectorContourType >         WriterType;
 typedef itk::ImageFileReader<ChannelType>                    ImageReader;
 typedef itk::ImageFileWriter<ChannelType>                    ImageWriter;
 typedef rstk::DisplacementFieldComponentsFileWriter
@@ -124,6 +125,7 @@ typedef rstk::DisplacementFieldComponentsFileWriter
 typedef itk::ImageFileWriter< ProbabilityMapType >           ProbabilityMapWriter;
 typedef itk::ImageFileWriter< CoefficientsType >             CoefficientsWriter;
 typedef rstk::DisplacementFieldFileWriter< FieldType >       FieldWriter;
+typedef rstk::CoefficientsWriter< AltCoeffType >             CoeffWriter;
 
 typedef itk::WarpImageFilter
 		         < ChannelType, ChannelType, FieldType >     WarpFilter;
