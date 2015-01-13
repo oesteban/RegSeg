@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-13 22:54:04
+# @Last Modified time: 2015-01-14 00:31:29
 
 __author__ = "Oscar Esteban"
 __copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
@@ -303,7 +303,7 @@ if __name__ == '__main__':
                          default=os.getenv('NEURO_DATA_HOME', '..'),
                          help='directory where subjects should be found')
     g_input.add_argument('-s', '--subject', action='store', default='*',
-                         help='subject id or pattern')
+                         nargs='+', help='subject id or pattern')
     g_input.add_argument('-w', '--work_dir', action='store',
                          default=os.getcwd(),
                          help='directory to store intermediate results')
@@ -341,6 +341,9 @@ if __name__ == '__main__':
         op.basename(sub) for sub in glob(op.join(opts.subjects_dir, 'subjects',
                                                  opts.subject))]
     settings['subject_id'] = subjects
+
+    if len(subjects) == 0:
+        raise RuntimeError('No subjects found in list')
 
     if opts.out_csv is None:
         settings['out_csv'] = op.join(opts.work_dir, opts.name, 'results.csv')
