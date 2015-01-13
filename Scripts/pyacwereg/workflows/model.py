@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-10-23 14:43:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-13 13:09:56
+# @Last Modified time: 2015-01-13 15:38:23
 
 import os
 import os.path as op
@@ -32,10 +32,15 @@ def generate_phantom(name='PhantomGeneration'):
                 'grid_size']),
         name='inputnode')
 
-    outputnode = pe.Node(niu.IdentityInterface(
+    out_lowres = pe.Node(niu.IdentityInterface(
         fields=['out_signal', 'out_mask', 'out_tpms', 'out_surfs',
                 'out_field', 'out_coeff', 'grid_size']),
-        name='outputnode')
+        name='out_lowres')
+
+    out_hires = pe.Node(niu.IdentityInterface(
+        fields=['out_signal', 'out_mask', 'out_tpms', 'out_surfs',
+                'out_field', 'out_coeff', 'grid_size']),
+        name='out_hires')
 
     refnode = pe.Node(niu.IdentityInterface(
         fields=['out_signal', 'out_mask', 'out_tpms', 'out_surfs']),
@@ -58,21 +63,33 @@ def generate_phantom(name='PhantomGeneration'):
     surf1.inputs.inputnode.name = '01.pial'
     msurf = pe.Node(niu.Merge(2), name='MergeSurfs')
 
+    down = pe.Node(fs.MRIConvert(), name='Downsample')
+
     dist = bspline_deform(n_tissues=0)
 
-    norm = pe.Node(Normalize(), name='NormalizeTPMs')
+    surf2vol0 = pe.Node(Surf2Vol(), name='Surf2Volume_HR')
+    surf2vol1 = pe.Node(Surf2Vol(), name='Surf2Volume_LR')
+    norm0 = pe.Node(Normalize(), name='NormalizeTPMs_HR')
+    norm1 = pe.Node(Normalize(), name='NormalizeTPMs_LR')
 
-    surf2vol = pe.Node(Surf2Vol(), name='Surf2Volume')
+    tpmmsk0 = pe.Node(niu.Split(splits=[2]), name='TPMsSplit_HR')
+    tpmmsk1 = pe.Node(niu.Split(splits=[2]), name='TPMsSplit_LR')
 
-    tpmmsk = pe.Node(niu.Split(splits=[2]), name='TPMsSplit')
-    msk = pe.Node(niu.Function(function=_bin_n_msk, input_names=['in_files'],
-                               output_names=['out_file']), name='binNmsk')
-    sels = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
-                   name='SeparateTissue')
+    msk0 = pe.Node(niu.Function(function=_bin_n_msk, input_names=['in_files'],
+                                output_names=['out_file']), name='binNmsk_HR')
+    msk1 = pe.Node(niu.Function(function=_bin_n_msk, input_names=['in_files'],
+                                output_names=['out_file']), name='binNmsk_LR')
 
-    merge1 = pe.Node(niu.Merge(2), name='SimMerge')
+    sels0 = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
+                    name='SeparateTissue_HR')
+    sels1 = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
+                    name='SeparateTissue_LR')
 
-    signal1 = pe.Node(pip.SimulateSMRI(), name='Simulate1')
+    merge1 = pe.Node(niu.Merge(2), name='SimMerge_HR')
+    merge2 = pe.Node(niu.Merge(2), name='SimMerge_LR')
+
+    signal1 = pe.Node(pip.SimulateSMRI(), name='SimulateHR')
+    signal2 = pe.Node(pip.SimulateSMRI(), name='SimulateLR')
 
     wf = pe.Workflow(name=name)
     wf.connect([
@@ -95,20 +112,34 @@ def generate_phantom(name='PhantomGeneration'):
         (model,       dist,        [('out_mask', 'inputnode.in_mask')]),
         (sels0,       dist,        [('out2', 'inputnode.in_file')]),
 
-        (signal0,     surf2vol,    [('out_t1w', 'reference')]),
-        (dist,        surf2vol,    [('outputnode.out_surfs', 'surfaces')]),
-        (surf2vol,    norm,        [('out_tpm', 'in_files')]),
-        (norm,        sels,        [('out_files', 'inlist')]),
-        (sels,        signal1,     [('out1', 'frac_wm'),
+        (signal0,     surf2vol0,   [('out_t1w', 'reference')]),
+        (dist,        surf2vol0,   [('outputnode.out_surfs', 'surfaces')]),
+        (surf2vol0,   norm0,       [('out_tpm', 'in_files')]),
+        (norm0,       sels0,       [('out_files', 'inlist')]),
+        (sels0,       signal1,     [('out1', 'frac_wm'),
                                     ('out2', 'frac_gm')]),
         (inputnode,   signal1,     [('snr', 'snr')]),
         (signal1,     merge1,      [('out_t1w', 'in1'),
                                     ('out_t2w', 'in2')]),
-        (norm,        tpmmsk,      [('out_files', 'inlist')]),
-        (tpmmsk,      msk,         [('out1', 'in_files')]),
+        (norm0,       tpmmsk0,     [('out_files', 'inlist')]),
+        (tpmmsk0,     msk0,        [('out1', 'in_files')]),
+
+        (signal0,     down,        [('out_t1w', 'in_file'),
+                                    (('out_t1w', _half_voxsize), 'vox_size')]),
+        (down,        surf2vol1,   [('out_file', 'reference')]),
+        (dist,        surf2vol1,   [('outputnode.out_surfs', 'surfaces')]),
+        (surf2vol1,   norm1,       [('out_tpm', 'in_files')]),
+        (norm1,       sels1,        [('out_files', 'inlist')]),
+        (sels1,       signal2,     [('out1', 'frac_wm'),
+                                    ('out2', 'frac_gm')]),
+        (inputnode,   signal2,     [('snr', 'snr')]),
+        (signal2,     merge2,      [('out_t1w', 'in1'),
+                                    ('out_t2w', 'in2')]),
+        (norm1,       tpmmsk1,     [('out_files', 'inlist')]),
+        (tpmmsk1,     msk1,        [('out1', 'in_files')]),
 
         # reference outputs
-        (inputnode,   outputnode,  [('grid_size', 'grid_size')]),
+        (inputnode,   out_hires,   [('grid_size', 'grid_size')]),
         (signal0,     merge0,      [('out_t1w', 'in1'),
                                     ('out_t2w', 'in2')]),
         (msurf,       refnode,     [('out', 'out_surfs')]),
@@ -117,10 +148,19 @@ def generate_phantom(name='PhantomGeneration'):
         (merge0,      refnode,     [('out', 'out_signal')]),
 
         # distorted outputs
-        (merge1,      outputnode,  [('out', 'out_signal')]),
-        (msk,         outputnode,  [('out_file', 'out_mask')]),
-        (tpmmsk,      outputnode,  [('out1', 'out_tpms')]),
-        (dist,        outputnode,  [('outputnode.out_field', 'out_field'),
+        (merge1,      out_hires,   [('out', 'out_signal')]),
+        (msk0,        out_hires,   [('out_file', 'out_mask')]),
+        (tpmmsk0,     out_hires,   [('out1', 'out_tpms')]),
+        (dist,        out_hires,   [('outputnode.out_field', 'out_field'),
+                                    ('outputnode.out_coeff', 'out_coeff'),
+                                    ('outputnode.out_surfs', 'out_surfs')])
+
+        # distorted outputs
+        (inputnode,   out_lowres,  [('grid_size', 'grid_size')]),
+        (merge2,      out_lowres,  [('out', 'out_signal')]),
+        (msk1,        out_lowres,  [('out_file', 'out_mask')]),
+        (tpmmsk1,     out_lowres,  [('out1', 'out_tpms')]),
+        (dist,        out_lowres,  [('outputnode.out_field', 'out_field'),
                                     ('outputnode.out_coeff', 'out_coeff'),
                                     ('outputnode.out_surfs', 'out_surfs')])
     ])
@@ -144,3 +184,9 @@ def _bin_n_msk(in_files):
     out_file = op.abspath('binarized.nii.gz')
     nb.Nifti1Image(msk, nii[0].get_affine(), hdr).to_filename(out_file)
     return out_file
+
+
+def _half_voxsize(in_file):
+    import nibabel as nb
+    import numpy as np
+    return (nb.load(in_file).get_zooms()[:3] * 0.5).tolist()

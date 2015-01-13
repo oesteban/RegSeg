@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-01 13:18:49
+# @Last Modified time: 2015-01-13 15:41:46
 
 import os
 import os.path as op
@@ -81,19 +81,17 @@ def default_regseg(name='REGSEGDefault'):
     wf = regseg_wf(name=name, enhance_inputs=False)
 
     # Registration
-    # Good config for box phantom (2014/04/21): [ -a 0.0 -b 0.0 -u 20 -g 6 -i
-    # 500 -s 1.0]
-    wf.inputs.inputnode.iterations = [150, 150, 200]
-    wf.inputs.inputnode.descript_update = [None] * 3
-    wf.inputs.inputnode.step_size = [0.1, .1, .02]
-    wf.inputs.inputnode.alpha = [0.0, 0.0, 0.1]
-    wf.inputs.inputnode.beta = [0.0, 0.0, 0.1]
-    wf.inputs.inputnode.grid_spacing = [30., 20., 10.]
-    wf.inputs.inputnode.convergence_energy = [True] * 3
-    wf.inputs.inputnode.convergence_window = [10, 15, 20]
-    wf.inputs.inputnode.f_smooth = [1.5, 1.0, None]
-    wf.inputs.inputnode.images_verbosity = 3
-    wf.inputs.inputnode.convergence_value = [1.0e-5, 1.0e-8, 1.0e-9]
+    wf.inputs.inputnode.iterations = [500, 200]
+    wf.inputs.inputnode.descript_update = [None, 10]
+    wf.inputs.inputnode.step_size = [1.e-3, 2.e-4]
+    wf.inputs.inputnode.alpha = [0.0, 0.0]
+    wf.inputs.inputnode.beta = [0.0, 0.0]
+    wf.inputs.inputnode.grid_spacing = [12., 6.]
+    wf.inputs.inputnode.convergence_energy = [True] * 2
+    wf.inputs.inputnode.convergence_window = [15, 10]
+    wf.inputs.inputnode.f_smooth = [None, None]
+    wf.inputs.inputnode.images_verbosity = 5
+    wf.inputs.inputnode.convergence_value = [1.0e-7, 1.0e-8]
     return wf
 
 

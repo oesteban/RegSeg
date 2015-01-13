@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2014-12-18 12:27:13
+# @Last Modified time: 2015-01-13 15:43:28
 
 import os
 import os.path as op
@@ -94,16 +94,16 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
             (phantom,      evwfs[i], [
                 ('refnode.out_signal',    'refnode.in_imag'),
                 ('refnode.out_tpms',    'refnode.in_tpms'),
-                ('outputnode.out_surfs',   'refnode.in_surf'),
+                ('out_lowres.out_surfs',   'refnode.in_surf'),
                 ('refnode.out_mask',    'refnode.in_mask'),
-                ('outputnode.out_field', 'refnode.in_field')]),
+                ('out_lowres.out_field', 'refnode.in_field')]),
             (phantom,         reg, [
                 ('refnode.out_surfs', 'inputnode.in_surf'),
                 # ('refnode.out_signal', 'inputnode.in_orig'),
-                # ('outputnode.grid_size', 'inputnode.grid_size'),
-                ('outputnode.out_signal', 'inputnode.in_fixed'),
-                ('outputnode.out_tpms', 'inputnode.in_tpms'),
-                ('outputnode.out_mask', 'inputnode.in_mask')]),
+                # ('out_lowres.grid_size', 'inputnode.grid_size'),
+                ('out_lowres.out_signal', 'inputnode.in_fixed'),
+                ('out_lowres.out_tpms', 'inputnode.in_tpms'),
+                ('out_lowres.out_mask', 'inputnode.in_mask')]),
             (reg,      norm_tpms[i], [('outputnode.out_tpms', 'in_files')]),
             (reg,          evwfs[i], [
                 ('outputnode.out_corr', 'tstnode.in_imag'),
@@ -114,7 +114,7 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
 
         # Connect in_field in case it is an identity workflow
         if 'in_field' in [item[0] for item in reg.inputs.inputnode.items()]:
-            wf.connect(phantom, 'outputnode.out_field',
+            wf.connect(phantom, 'out_lowres.out_field',
                        reg, 'inputnode.in_field')
 
         # Connect results output file
