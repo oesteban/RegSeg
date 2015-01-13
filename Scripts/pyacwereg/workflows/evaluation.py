@@ -199,7 +199,7 @@ def registration_ev(name='EvaluateMapping'):
     diff_im = pe.Node(namev.Similarity(metric='cc'), name='ContrastDiff')
     inv_fld = pe.Node(InverseField(), name='InvertField')
     diff_fld = pe.Node(namev.ErrorMap(), name='FieldDiff')
-    mesh = pe.MapNode(namesh.P2PDistance(weighting='surface'),
+    mesh = pe.MapNode(namesh.P2PDistance(weighting='area'),
                       iterfield=['surface1', 'surface2'],
                       name='SurfDistance')
     csv = pe.Node(namisc.AddCSVRow(), name="AddRow")
