@@ -104,7 +104,7 @@ def generate_phantom(name='PhantomGeneration'):
         (inputnode,   signal1,     [('snr', 'snr')]),
         (signal1,     merge1,      [('out_t1w', 'in1'),
                                     ('out_t2w', 'in2')]),
-        (norm,        tmpmsk,      [('out_tpm', 'inlist')]),
+        (norm,        tpmmsk,      [('out_files', 'inlist')]),
         (tpmmsk,      msk,         [('out1', 'in_files')]),
 
         # reference outputs
@@ -119,7 +119,7 @@ def generate_phantom(name='PhantomGeneration'):
         # distorted outputs
         (merge1,      outputnode,  [('out', 'out_signal')]),
         (msk,         outputnode,  [('out_file', 'out_mask')]),
-        (tpmmsk,      outputnode,  [('out_file', 'out_tpms')]),
+        (tpmmsk,      outputnode,  [('out1', 'out_tpms')]),
         (dist,        outputnode,  [('outputnode.out_field', 'out_field'),
                                     ('outputnode.out_coeff', 'out_coeff'),
                                     ('outputnode.out_surfs', 'out_surfs')])
