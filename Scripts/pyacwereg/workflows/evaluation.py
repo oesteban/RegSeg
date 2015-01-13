@@ -83,9 +83,9 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
     ])
 
     regseg_low = default_regseg('REGSEG_low')
-    ev_regseg_low = registration_ev(name=('Ev_low_%s' % reg.name))
-    ev_regseg_low.inputs.infonode.method = '%s_low' % reg.name
-    norm_low.append(pe.Node(Normalize(), name='NormalizeFinal_low'))
+    ev_regseg_low = registration_ev(name=('Ev_low_%s' % regseg_low.name))
+    ev_regseg_low.inputs.infonode.method = '%s_low' % regseg_low.name
+    norm_low = pe.Node(Normalize(), name='NormalizeFinal_low')
 
     wf.connect([
         (inputnode, ev_regseg_low, [
@@ -120,9 +120,9 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
         ])
 
     regseg_hi = default_regseg('REGSEG_hi')
-    ev_regseg_hi = registration_ev(name=('Ev_hi_%s' % reg.name))
-    ev_regseg_hi.inputs.infonode.method = '%s_hi' % reg.name
-    norm_hi.append(pe.Node(Normalize(), name='NormalizeFinal_hi'))
+    ev_regseg_hi = registration_ev(name=('Ev_hi_%s' % regseg_hi.name))
+    ev_regseg_hi.inputs.infonode.method = '%s_hi' % regseg_hi.name
+    norm_hi = pe.Node(Normalize(), name='NormalizeFinal_hi')
 
     wf.connect([
         (inputnode, ev_regseg_hi, [
