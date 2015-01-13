@@ -294,6 +294,7 @@ if __name__ == '__main__':
     from argparse import RawTextHelpFormatter
     import os.path as op
     from glob import glob
+    import numpy as np
 
     parser = ArgumentParser(description='TMI2015 - Experiment on HCP data',
                             formatter_class=RawTextHelpFormatter)
@@ -330,19 +331,29 @@ if __name__ == '__main__':
     if not op.exists(opts.work_dir):
         os.makedirs(opts.work_dir)
 
+    data_dir = op.abspath(opts.subjects_dir)
+
     settings = {}
     settings['work_dir'] = opts.work_dir
-    settings['data_dir'] = op.abspath(opts.subjects_dir)
+    settings['data_dir'] = data_dir
     settings['bmap_id'] = [
-        op.basename(f) for f in glob(op.join(opts.subjects_dir, 'fieldmaps',
+        op.basename(f) for f in glob(op.join(data_dir, 'fieldmaps',
                                              opts.fieldmap_id))]
 
-    subjects = [
-        op.basename(sub) for sub in glob(op.join(opts.subjects_dir, 'subjects',
-                                                 s)) for s in opts.subject]
-    settings['subject_id'] = subjects
+    subj_list = []
 
-    if len(subjects) == 0:
+    for subj in np.atleast_1d(opts.subject).tolist():
+        subj = op.basename(subj)
+
+        if '*' in subj:
+            for subxpanded in glob(subj):
+                subj_list.append(op.basename(subxpanded))
+        else:
+            subj_list.append(subj)
+
+    settings['subject_id'] = subj_list
+
+    if len(subj_list) == 0:
         raise RuntimeError('No subjects found in list')
 
     if opts.out_csv is None:
