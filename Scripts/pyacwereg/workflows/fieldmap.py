@@ -136,7 +136,6 @@ def bmap_registration(name="Bmap_Registration"):
         # Transforms
         (inputnode,       warpPhase, [('t1w_brain', 'reference_image')]),
         (pha2RAS,          pha2rads, [('out_file', 'in_file')]),
-        (bet,                dilate, [('mask_file', 'in_file')]),
         (bet,                smooth, [('mask_file', 'in_mask')]),
         (pha2rads,           smooth, [('out_file', 'in_file')]),
         (smooth,            prelude, [('out_file', 'phase_file')]),
@@ -177,3 +176,265 @@ def bmap_registration(name="Bmap_Registration"):
         (mwrapped,       outputnode, [('out', 'wrapped')]),
     ])
     return workflow
+
+
+def denoise(in_file, in_mask, out_file=None):
+    import nibabel as nb
+    import os.path as op
+    import numpy as np
+    from scipy import ndimage as nd
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_smoothed.nii.gz' % fname)
+
+    im = nb.load(in_file)
+    noisy = im.get_data().astype(np.float32)
+    msk = nb.load(in_mask).get_data()
+    data = nd.median_filter(noisy, 5)
+    data[msk > 0.] = noisy[msk > 0.]
+    nb.Nifti1Image(data, im.get_affine(), im.get_header()).to_filename(
+        out_file)
+    return out_file
+
+
+def to_rads(in_file, out_file=None):
+    import nibabel as nb
+    import os.path as op
+    import numpy as np
+    import math
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_rads.nii.gz' % fname)
+
+    im = nb.load(in_file)
+    hdr = im.get_header().copy()
+    data = im.get_data().astype(np.float32)
+    imin = data.min()
+    imax = data.max()
+
+    data = (2.0 * math.pi * (data - imin) / (imax - imin)) - math.pi
+    hdr.set_data_dtype(np.float32)
+    hdr['datatype'] = 16
+    nb.Nifti1Image(data, im.get_affine(), hdr).to_filename(out_file)
+    return out_file
+
+
+def to_rad_sec(in_file, mask_file=None, demean=False, delta_te=2.46e-3,
+               out_file=None):
+    import nibabel as nb
+    import os.path as op
+    import numpy as np
+    import math
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_radsec.nii.gz' % fname)
+
+    im = nb.load(in_file)
+    data = im.get_data().astype(np.float32) * (1.0 / delta_te)
+
+    if demean:
+        if mask_file is None:
+            raise RuntimeError('A mask should be supplied to demean')
+
+        msk = nb.load(mask_file).get_data()
+        msk[msk <= 0] = 0
+        msk[msk > 0] = 1
+
+        data = np.ma.array(data, mask=1 - msk)
+        mval = np.ma.median(data)
+        data = data - mval
+
+    nb.Nifti1Image(data, im.get_affine(),
+                   im.get_header()).to_filename(out_file)
+    return out_file
+
+
+def rads_ph_wrap(in_file, out_file=None, orange=None):
+    import nibabel as nb
+    import os.path as op
+    import numpy as np
+    import math
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_wrapped.nii.gz' % fname)
+
+    im = nb.load(in_file)
+    imdata = im.get_data().astype(np.float32) + math.pi
+    periods = 2.0 * math.pi * (imdata // (2.0 * math.pi))
+    imdata = imdata - periods
+    hdr = im.get_header().copy()
+
+    if orange is not None:
+        imdata = (orange * (imdata / (2.0 * math.pi)) -
+                  (0.5 * orange - 1)).astype(np.int16)
+        hdr.set_data_dtype(np.int16)
+        hdr['datatype'] = 4
+    else:
+        imdata = imdata - math.pi
+
+    nb.Nifti1Image(imdata, im.get_affine(),
+                   hdr).to_filename(out_file)
+    return out_file
+
+
+def siemens_ph_wrap(in_file, out_file=None, irange=8192, orange=4096.00):
+    import nibabel as nb
+    import os.path as op
+    import numpy as np
+    import math
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_wrapped.nii.gz' % fname)
+
+    im = nb.load(in_file)
+    imdata = im.get_data().astype(np.float32)
+    imdata = (imdata - np.median(imdata)).astype(np.int16)
+
+    imax = int(irange * 0.5)
+    imin = int(irange * -0.5) + 1
+
+    imdata[imdata > imax] = imdata[imdata > imax] - irange
+    imdata[imdata < imin] = imdata[imdata < imin] + irange
+
+    imdata = imdata.astype(np.float32) / (1.0 * irange)
+    imdata = imdata * orange
+
+    hdr = im.get_header().copy()
+    hdr.set_data_dtype(np.int16)
+    hdr['datatype'] = 4
+
+    nii = nb.Nifti1Image(imdata.astype(np.int16), im.get_affine(), hdr)
+    nb.save(nii, out_file)
+    return out_file
+
+
+def _b0_field(b0_axis, b0_strength):
+    import numpy as np
+    b0_dir = np.array([0.0, 0.0, 1.0]) * float(b0_strength)
+    if b0_axis != 'z':
+        b0_dir = np.roll(b0_dir, 1)
+        if b0_axis == 'y':
+            b0_dir = np.roll(b0_dir, 1)
+
+    return tuple(b0_dir.tolist())
+
+
+def bmap2vsm(in_file, echospacing, acc_factor, enc_dir='y', in_mask=None,
+             out_file=None):
+    import numpy as np
+    import nibabel as nb
+    import os.path as op
+    import math
+
+    im = nb.load(in_file)
+
+    if im.get_data().ndim == 4:
+        im = nb.funcs.four_to_three(im)[0]
+
+    sizes = im.get_shape()
+
+    N = sizes[1]
+
+    if enc_dir[0] == 'x':
+        N = sizes[0]
+    elif enc_dir[0] == 'z':
+        N = sizes[2]
+
+    direction = -1.0
+
+    if len(enc_dir) == 2 and enc_dir[1] == '-':
+        direction = 1.0
+
+    data = im.get_data()
+
+    if in_mask is not None:
+        msk = nb.load(in_mask).get_data()
+        mskdata = np.ma.array(data, mask=1 - msk)
+        mval = np.ma.median(mskdata)
+        data = data - mval
+
+    eff = float(echospacing / (1.0 * acc_factor))
+    data = direction * 42.57748e6 * eff * N * data
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_vsm.nii.gz' % fname)
+
+    nb.Nifti1Image(data.astype(np.float32), im.get_affine(),
+                   im.get_header()).to_filename(out_file)
+
+    return out_file
+
+
+def bmap2phasediff(in_file, delta_te, in_mask=None, out_file=None):
+    import numpy as np
+    import nibabel as nb
+    import os.path as op
+    import math
+
+    im = nb.load(in_file)
+    data = im.get_data()
+
+    if in_mask is not None:
+        msk = nb.load(in_mask).get_data()
+        mskdata = np.ma.array(data, mask=1 - msk)
+        mval = np.ma.median(mskdata)
+        data = data - mval
+
+    data = (2.0 * math.pi) * data * 42.57748e6 * float(delta_te)
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_phasemap.nii.gz' % fname)
+
+    nb.Nifti1Image(data.astype(np.float32), im.get_affine(),
+                   im.get_header()).to_filename(out_file)
+
+    return out_file
+
+
+def phasediff2siemens(in_file, out_file=None):
+    import numpy as np
+    import nibabel as nb
+    import math
+    import os.path as op
+
+    im = nb.load(in_file)
+
+    data = (2048 / (2.0 * math.pi) * im.get_data()).astype(np.int16)
+    data[data > 2048] = data[data > 2048] - 4096
+    data[data < -2047] = data[data < -2047] + 4096
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_siemens.nii.gz' % fname)
+
+    hdr = im.get_header().copy()
+    hdr.set_data_dtype(np.int16)
+    im1 = nb.Nifti1Image(data.astype(np.int16), im.get_affine(), hdr)
+    im2 = nb.Nifti1Image(np.zeros_like(data), im.get_affine(), hdr)
+    nb.funcs.concat_images([im1, im2]).to_filename(out_file)
+
+    return out_file
+
