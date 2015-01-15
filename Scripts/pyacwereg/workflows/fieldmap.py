@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-15 15:40:22
+# @Last Modified time: 2015-01-15 16:06:11
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -68,15 +68,15 @@ def bmap_registration(name="Bmap_Registration"):
                       name="FMm_to_T1w")
     fmm2t1w.inputs.transforms = ['Rigid'] * 2
     fmm2t1w.inputs.transform_parameters = [(1.0,)] * 2
-    fmm2t1w.inputs.number_of_iterations = [[50], [20]]
+    fmm2t1w.inputs.number_of_iterations = [[250], [100]]
     fmm2t1w.inputs.dimension = 3
     fmm2t1w.inputs.metric = ['Mattes', 'Mattes']
     fmm2t1w.inputs.metric_weight = [1.0] * 2
     fmm2t1w.inputs.radius_or_number_of_bins = [64, 64]
     fmm2t1w.inputs.sampling_strategy = ['Regular', 'Random']
-    fmm2t1w.inputs.sampling_percentage = [None, 0.2]
-    fmm2t1w.inputs.convergence_threshold = [1.e-5, 1.e-8]
-    fmm2t1w.inputs.convergence_window_size = [20, 10]
+    fmm2t1w.inputs.sampling_percentage = [None, 0.1]
+    fmm2t1w.inputs.convergence_threshold = [1.e-5, 1.e-7]
+    fmm2t1w.inputs.convergence_window_size = [10, 5]
     fmm2t1w.inputs.smoothing_sigmas = [[6.0], [2.0]]
     fmm2t1w.inputs.sigma_units = ['vox'] * 2
     fmm2t1w.inputs.shrink_factors = [[6], [1]]  # ,[1] ]
@@ -84,7 +84,6 @@ def bmap_registration(name="Bmap_Registration"):
     fmm2t1w.inputs.use_histogram_matching = [True] * 2
     fmm2t1w.inputs.initial_moving_transform_com = 0
     fmm2t1w.inputs.collapse_output_transforms = True
-    fmm2t1w.inputs.winsorize_upper_quantile = 0.995
 
     binarize = pe.Node(fs.Binarize(min=0.1), name='BinT1')
 
