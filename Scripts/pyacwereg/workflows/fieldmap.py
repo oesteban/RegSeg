@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-15 16:06:11
+# @Last Modified time: 2015-01-15 16:25:27
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -139,11 +139,6 @@ def bmap_registration(name="Bmap_Registration"):
         (pha2rads,           smooth, [('out_file', 'in_file')]),
         (smooth,            prelude, [('out_file', 'phase_file')]),
         (n4,                prelude, [('output_image', 'magnitude_file')]),
-        (prelude,         warpPhase, [
-         ('unwrapped_phase_file', 'input_image')]),
-        (fmm2t1w,    warpPhase, [
-            ('forward_transforms', 'transforms'),
-            ('forward_invert_flags', 'invert_transform_flags')]),
         (inputnode,         warpMag, [('t1w_brain', 'reference_image')]),
         (n4,                warpMag, [('output_image', 'input_image')]),
         (fmm2t1w,           warpMag, [
@@ -153,13 +148,18 @@ def bmap_registration(name="Bmap_Registration"):
         (inputnode,      regrid_mag, [('dwi_mask', 'reslice_like')]),
         (fmm2t1w,        regrid_bmg, [('warped_image', 'in_file')]),
         (inputnode,      regrid_bmg, [('dwi_mask', 'reslice_like')]),
-        (warpPhase,      regrid_pha, [('output_image', 'in_file')]),
-        (inputnode,      regrid_pha, [('dwi_mask', 'reslice_like')]),
-        (regrid_pha,        polyfit, [('out_file', 'in_file')]),
+
+        (prelude,           polyfit, [('unwrapped_phase_file', 'in_file')]),
         (inputnode,         polyfit, [('poly_mask', 'in_mask')]),
         (polyfit,             scale, [('out_file', 'in_file')]),
         (inputnode,           scale, [('factor', 'operand_value')]),
-        (scale,              median, [('out_file', 'in_file')]),
+        (scale,           warpPhase, [('out_file', 'input_image')]),
+        (fmm2t1w,         warpPhase, [
+            ('forward_transforms', 'transforms'),
+            ('forward_invert_flags', 'invert_transform_flags')]),
+        (warpPhase,      regrid_pha, [('output_image', 'in_file')]),
+        (inputnode,      regrid_pha, [('dwi_mask', 'reslice_like')]),
+        (regrid_pha,         median, [('out_file', 'in_file')]),
         (median,             demean, [('out_file', 'in_file')]),
         (inputnode,          demean, [('dwi_mask', 'in_mask')]),
         (demean,           addnoise, [('out_file', 'in_file')]),
@@ -436,4 +436,3 @@ def phasediff2siemens(in_file, out_file=None):
     nb.funcs.concat_images([im1, im2]).to_filename(out_file)
 
     return out_file
-
