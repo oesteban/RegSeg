@@ -6,13 +6,9 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-15 15:14:07
+# @Last Modified time: 2015-01-15 15:34:39
 
-try:
-    from enthought.etsconfig.api import ETSConfig
-    ETSConfig.toolkit = 'null'
-except:
-    pass
+
 import os
 
 if __name__ == '__main__':
@@ -21,6 +17,13 @@ if __name__ == '__main__':
     import os.path as op
     from glob import glob
     import numpy as np
+
+    try:
+        from enthought.etsconfig.api import ETSConfig
+        ETSConfig.toolkit = 'null'
+    except:
+        pass
+
     from pyacwereg.workflows.realdata import hcp_workflow
 
     parser = ArgumentParser(description='PyACWEReg - Experiment on HCP data',

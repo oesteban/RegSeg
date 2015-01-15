@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-15 15:28:21
+# @Last Modified time: 2015-01-15 15:36:42
 
 
 def hcp_workflow(name='Evaluation_HCP', settings={}):
@@ -29,12 +29,6 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
     from pysdcev.workflows.tractography import mrtrix_dti
     from pysdcev.stages.stage1 import stage1
 
-    inputnode = pe.Node(niu.IdentityInterface(
-        fields=['subject_id', 'data_dir']), name='inputnode')
-    inputnode.inputs.data_dir = settings['data_dir']
-    inputnode.iterables = [('subject_id', settings['subject_id']),
-                           ('bmap_id', settings['bmap_id'])]
-
     fnames = dict(t1w='T1w_acpc_dc_restore.nii.gz',
                   t1w_brain='T1w_acpc_dc_restore_brain.nii.gz',
                   t2w='T2w_acpc_dc_restore.nii.gz',
@@ -49,8 +43,12 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
                   fmap_pha='FM_pha.nii.gz',
                   mr_param='parameters.txt')
 
-    ds_tpl_args = {k: [['subject_id', [v]]] for k, v in fnames.iteritems()}
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=['subject_id', 'data_dir']), name='inputnode')
+    inputnode.inputs.data_dir = settings['data_dir']
+    inputnode.iterables = [('subject_id', settings['subject_id'])]
 
+    ds_tpl_args = {k: [['subject_id', [v]]] for k, v in fnames.iteritems()}
     ds = pe.Node(nio.DataGrabber(
         infields=['subject_id'], outfields=ds_tpl_args.keys(),
         sort_filelist=False, template='*'), name='sMRISource')
@@ -58,11 +56,6 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
                                 for k in ds_tpl_args.keys()}
     ds.inputs.template_args = ds_tpl_args
 
-    rfield = [k for k, f in fnames.iteritems() if '.nii' in f]
-    rparam = {k: dict(resample_type='nearest') for k in rfield
-              if (('brain' in k) or ('aseg' in k))}
-
-    # reorient = all2RAS(input_fields=rfield, input_param=rparam)
     bmap_prep = bmap_registration()
     bmap_prep.inputs.inputnode.factor = 6.0
 
