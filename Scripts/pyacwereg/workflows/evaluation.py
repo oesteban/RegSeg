@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-13 17:30:46
+# @Last Modified time: 2015-01-15 10:31:46
 
 import os
 import os.path as op
@@ -24,7 +24,6 @@ from nipype.interfaces import freesurfer as fs
 
 from pyacwereg.interfaces.warps import InverseField
 from pyacwereg.workflows.model import generate_phantom
-# from pysdcev.workflows.distortion import bspline_deform
 from registration import identity_wf, default_regseg
 
 

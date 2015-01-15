@@ -6,17 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-13 23:51:42
-
-__author__ = "Oscar Esteban"
-__copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
-                 Universidad Politécnica de Madrid"
-__credits__ = "Oscar Esteban"
-__license__ = "FreeBSD"
-__version__ = "0.1"
-__maintainer__ = "Oscar Esteban"
-__email__ = "code@oscaresteban.es"
-__status__ = "Prototype"
+# @Last Modified time: 2015-01-15 10:39:17
 
 try:
     from enthought.etsconfig.api import ETSConfig
@@ -48,8 +38,7 @@ def phantoms_wf(options):
     bs.inputs.inputnode.cortex = options.no_cortex
 
     bs.iterables = [('inputnode.shape', options.shape),
-                    ('inputnode.snr', options.snr),
-                    ('inputnode.seed', options.seeds)]
+                    ('inputnode.snr', options.snr)]
 
     if options.out_csv is None:
         bs.inputs.inputnode.out_csv = op.join(
@@ -74,7 +63,7 @@ if __name__ == '__main__':
         default=op.join(os.getenv('NEURO_DATA_HOME', os.getcwd()), 'phantoms'),
         help='directory where subjects are found')
     g_input.add_argument(
-        '-s', '--shape', action='store', default='gyrus',
+        '-s', '--shape', action='store', default='gyrus', nargs='+',
         help='selects phantom\'s shape model')
     g_input.add_argument(
         '-n', '--snr', action='store', default=400, type=int,
@@ -93,6 +82,7 @@ if __name__ == '__main__':
     g_input.add_argument(
         '-g', '--grid_size', action='store', default=[4, 4, 4], nargs='+',
         type=int, help='number of control points')
+
     g_input.add_argument(
         '-w', '--work_dir', action='store', default=os.getcwd(),
         help='directory where subjects are found')

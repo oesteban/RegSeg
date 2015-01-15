@@ -12,18 +12,6 @@ All rights reserved.
 This file is part of ACWEReg.
 
 """
-
-__author__ = "Oscar Esteban"
-__copyright__ = "Copyright 2013, Biomedical Image Technologies (BIT), \
-                 Universidad Politécnica de Madrid"
-__credits__ = ["Oscar Esteban"]
-__license__ = "FreeBSD"
-__version__ = "0.1"
-__maintainer__ = "Oscar Esteban"
-__email__ = "code@oscaresteban.es"
-__status__ = "Prototype"
-
-
 import os.path as op
 import numpy as np
 import nibabel as nb
@@ -201,7 +189,8 @@ def genL(datashape=(101, 101, 101), cortex=True):
 
     ball1 = ball(11, 4.5)
     wm = ndimage.binary_opening(ndimage.binary_erosion(
-        modelbase, structure=ball1).astype(np.uint8), structure=ball1).astype(np.uint8)
+        modelbase, structure=ball1).astype(np.uint8),
+        structure=ball1).astype(np.uint8)
 
     if cortex:
         ball2 = ball(11, 4.4)
@@ -274,4 +263,33 @@ def nii2vtk(in_file, out_file=None):
 
     out_file = op.abspath(out_file)
     imageToVTK(out_file, pointData={'scalar': data})
+    return out_file
+
+
+def compute_mask(aparc, labels=[0, 5000]):
+    import nibabel as nb
+    import numpy as np
+    import os.path as op
+    import scipy.ndimage as nd
+
+    segnii = nb.load(aparc)
+    seg = segnii.get_data()
+    mask = np.ones_like(seg, dtype=np.uint8)
+    for l in labels:
+        mask[seg == l] = 0
+
+    struct = nd.iterate_structure(
+        nd.generate_binary_structure(3, 1), 4)
+    mask = nd.binary_dilation(mask, structure=struct).astype(np.uint8)
+    mask = nd.binary_closing(mask, structure=struct)
+    mask = nd.binary_fill_holes(mask, structure=struct).astype(np.uint8)
+    mask[mask > 0] = 1
+    mask[mask <= 0] = 0
+
+    hdr = segnii.get_header().copy()
+    hdr.set_data_dtype(np.uint8)
+    hdr.set_xyzt_units('mm', 'sec')
+    out_file = op.abspath('nobstem_mask.nii.gz')
+    nii = nb.Nifti1Image(mask, segnii.get_affine(), hdr).to_filename(
+        out_file)
     return out_file
