@@ -109,9 +109,7 @@ public:
 	/** Method to get membership score (discriminant score) of an entity
 	 * or measurement. Evaluate() maps from a vector measurement type
 	 * to a real number. */
-	inline double Evaluate(const MeasurementVectorType & x, const RegionIdentifier roi) const {
-		return this->m_Memberships[roi]->Evaluate(x);
-	}
+	virtual double Evaluate(const MeasurementVectorType & x, const RegionIdentifier roi) const = 0;
 
     /** Set/Get priors
      *

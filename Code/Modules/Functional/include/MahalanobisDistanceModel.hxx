@@ -100,6 +100,12 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 		offmask_mf->SetValue(this->m_MaxEnergy);
 		this->m_Memberships[this->m_NumberOfRegions - 1] = offmask_mf;
 	}
+
+	size_t ncomps = itk::NumericTraits<MeasurementVectorType>::GetLength(this->m_Means[0]);
+	itk::NumericTraits<MeasurementVectorType>::SetLength(m_InvalidValue, ncomps);
+	for( size_t i = 0; i < ncomps; i++ ) {
+		m_InvalidValue = 0.0;
+	}
 }
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
@@ -153,7 +159,6 @@ template< typename TInputVectorImage, typename TPriorsPrecisionType >
 void
 MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 ::EstimateRobust() {
-
 	size_t npix = this->GetInput()->GetLargestPossibleRegion().GetNumberOfPixels();
 	size_t ncomps = this->GetInput()->GetNumberOfComponentsPerPixel();
 
