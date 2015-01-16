@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-15 10:31:46
+# @Last Modified time: 2015-01-16 19:42:12
 
 import os
 import os.path as op
@@ -27,7 +27,8 @@ from pyacwereg.workflows.model import generate_phantom
 from registration import identity_wf, default_regseg
 
 
-def bspline(name='BSplineEvaluation', methods=None, results=None):
+def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
+            methods=None, results=None):
     """ A workflow to evaluate registration methods generating a gold standard
     with random bspline deformations.
 
@@ -64,9 +65,14 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
         methods = np.atleast_1d(methods).tolist()
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['subject_id', 'grid_size', 'out_csv', 'lo_matrix',
+        fields=['grid_size', 'out_csv', 'lo_matrix',
                 'hi_matrix', 'snr', 'cortex', 'shape']),
         name='inputnode')
+
+    shapes = np.atleast_1d(shapes).tolist()
+    inputnode.iterables = [('shape', shapes),
+                           ('snr', snr_list)]
+
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['out_file', 'out_tpms', 'out_surfs', 'out_field', 'out_coeff',
                 'out_overlap']), name='outputnode')
@@ -88,7 +94,8 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
 
     wf.connect([
         (inputnode, ev_regseg_low, [
-            ('subject_id', 'infonode.subject_id')]),
+            ('shape', 'infonode.shape'),
+            ('snr', 'infonode.snr')]),
         (phantom, ev_regseg_low, [
             ('refnode.out_signal',    'refnode.in_imag'),
             ('refnode.out_tpms',    'refnode.in_tpms'),
@@ -125,7 +132,8 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
 
     wf.connect([
         (inputnode, ev_regseg_hi, [
-            ('subject_id', 'infonode.subject_id')]),
+            ('shape', 'infonode.shape'),
+            ('snr', 'infonode.snr')]),
         (phantom, ev_regseg_hi, [
             ('refnode.out_signal',    'refnode.in_imag'),
             ('refnode.out_tpms',    'refnode.in_tpms'),
@@ -188,7 +196,7 @@ def registration_ev(name='EvaluateMapping'):
         fields=['in_imag', 'in_tpms', 'in_surf', 'in_field']),
         name='tstnode')
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['subject_id', 'method', 'out_csv']), name='infonode')
+        fields=['snr', 'shape', 'method', 'out_csv']), name='infonode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['out_file', 'out_tpm_diff', 'out_field_err']),
         name='outputnode')
@@ -204,7 +212,8 @@ def registration_ev(name='EvaluateMapping'):
     csv = pe.Node(namisc.AddCSVRow(), name="AddRow")
     wf = pe.Workflow(name=name)
     wf.connect([
-        (inputnode,        csv, [('subject_id', 'subject_id'),
+        (inputnode,        csv, [('shape', 'shape'),
+                                 ('snr', 'snr'),
                                  ('method', 'method'),
                                  ('out_csv', 'in_file')]),
         # (input_ref,  merge_ref, [('in_imag', 'in_files')]),

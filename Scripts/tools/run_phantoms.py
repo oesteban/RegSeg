@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-15 10:39:17
+# @Last Modified time: 2015-01-16 19:41:51
 
 try:
     from enthought.etsconfig.api import ETSConfig
@@ -23,22 +23,16 @@ def phantoms_wf(options):
     from nipype.interfaces import utility as niu
     from pyacwereg.workflows import evaluation as ev
 
-    subject_id = '%s_snr%03d' % (options.shape, options.snr)
-    subject_dir = op.join(options.data_dir, subject_id)
-
     grid_size = options.grid_size
     if len(grid_size) == 1:
         grid_size = grid_size * 3
 
-    bs = ev.bspline(name=options.name)
+    bs = ev.bspline(
+        name=options.name, shapes=options.shape, snr_list=options.snr)
     bs.inputs.inputnode.grid_size = grid_size
-    bs.inputs.inputnode.subject_id = subject_id
     bs.inputs.inputnode.lo_matrix = options.lo_matrix
     bs.inputs.inputnode.hi_matrix = options.hi_matrix
     bs.inputs.inputnode.cortex = options.no_cortex
-
-    bs.iterables = [('inputnode.shape', options.shape),
-                    ('inputnode.snr', options.snr)]
 
     if options.out_csv is None:
         bs.inputs.inputnode.out_csv = op.join(
@@ -66,7 +60,7 @@ if __name__ == '__main__':
         '-s', '--shape', action='store', default='gyrus', nargs='+',
         help='selects phantom\'s shape model')
     g_input.add_argument(
-        '-n', '--snr', action='store', default=400, type=int,
+        '-n', '--snr', action='store', default=400, nargs='+', type=int,
         help='generate signal with certain SNR')
     g_input.add_argument(
         '--no_cortex', action='store_false',
