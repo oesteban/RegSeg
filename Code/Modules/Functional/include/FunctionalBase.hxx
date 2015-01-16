@@ -205,10 +205,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	double wi = 0.0;
 
 	std::vector< NormalFilterAreasContainer > areas;
-	std::vector< ContourPointer > normals;
+	std::vector< PointDataContainerPointer > normals;
+	std::vector< PointsContainerPointer > points;
 	for (size_t i = 0; i < this->m_NumberOfContours; i++ ) {
 		areas.push_back(this->m_NormalsFilter[i]->GetVertexAreaContainer());
-		normals.push_back (this->m_NormalsFilter[i]->GetOutput() );
+		normals.push_back(this->m_NormalsFilter[i]->GetOutput()->GetPointData() );
+		points.push_back(this->m_CurrentContours[i]->GetPoints());
 	}
 
 	for(size_t vvid = 0; vvid < nvertices; vvid++ ) {
@@ -216,7 +218,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		ocid = this->m_OuterRegion[vvid];
 		pid = this->m_ValidVertices[vvid];
 		cpid = pid - this->m_Offsets[icid];
-		this->m_CurrentContours[icid]->GetPoint(cpid, &ci_prime); // Get c'_i
+		ci_prime = points[icid]->ElementAt(cpid); // Get c'_i
 		wi = areas[icid][cpid];
 		gi[vvid] = this->EvaluateGradient( ci_prime, ocid, icid )  * wi;
 		sample.push_back(gi[vvid]);
@@ -234,17 +236,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_GradientStatistics[6] = sample.back();
 
 	VectorType ni, v;
-	icid = 0;
 	PointValueType g;
 	for(size_t vvid = 0; vvid < nvertices; vvid++ ) {
 		pid = this->m_ValidVertices[vvid];
-		if( pid == this->m_Offsets[icid + 1] ) {
-			icid++;
-		}
-
+		icid = this->m_InnerRegion[vvid];
 		cpid = pid - this->m_Offsets[icid];
-		ni.Fill(0.0);
-		normals[icid]->GetPointData(cpid, &ni);
+		ni = normals[icid]->ElementAt(cpid);
 
 		g = gi[vvid];
 		if ( g > this->m_GradientStatistics[5] ) g = this->m_GradientStatistics[5];
@@ -252,9 +249,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		v.Fill(0.0);
 		for( size_t i = 0; i < Dimension; i++ ) {
-			if( scales[i] > 1.0e-8 )
+			if( scales[i] > 1.0e-8 ) {
 				v[i] = scales[i] * g * ni[i];
-			grad[vvid + i * nvertices] = static_cast<float>(v[i]);
+				grad[vvid + i * nvertices] = static_cast<float>(v[i]);
+			} else {
+				grad[vvid + i * nvertices] = 0.0;
+			}
 		}
 
 		this->m_Gradients[icid]->GetPointData()->SetElement( cpid, v );
@@ -275,8 +275,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	size_t changed = 0;
 	size_t gpid = 0;
 	std::vector< size_t > invalid;
-	VectorType zerov; zerov.Fill(0.0);
-
 
 	std::fill(this->m_OffMaskVertices.begin(), this->m_OffMaskVertices.end(), 0);
 
@@ -284,8 +282,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename VectorContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
 		typename VectorContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
 		PointsContainerPointer curPoints = this->m_CurrentContours[contid]->GetPoints();
-		PointsContainerPointer curGradPoints = this->m_Gradients[contid]->GetPoints();
-		PointDataContainerPointer gradData = this->m_Gradients[contid]->GetPointData();
 
 		ContourPointType ci, ci_prime;
 		VectorType disp;
@@ -305,7 +301,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					this->InvokeEvent( WarningEvent() );
 				}
 				curPoints->SetElement( pid, ci_prime );
-				curGradPoints->SetElement( pid, ci_prime );
 				changed++;
 			}
 
@@ -313,10 +308,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				this->m_OffMaskVertices[contid]++;
 			}
 
-			this->m_Gradients[contid]->GetPointData()->SetElement( pid, zerov );
 			++p_it;
 			gpid++;
 		}
+
+		// Reset gradients
+		this->m_Gradients[contid]->SetPoints(this->m_CurrentContours[contid]->GetPoints());
+
 	}
 
 	if ( invalid.size() > 0 ) {
@@ -522,7 +520,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				if ( (1.0 - this->m_MaskInterp->Evaluate(ci)) < 1.0e-5 ) {
 					this->m_OffMaskVertices[contid]++;
 				}
-
 
 				this->m_Gradients[contid]->GetPointData()->SetElement( pid, zerov );
 				normals->GetPointData( pid, &ni );
