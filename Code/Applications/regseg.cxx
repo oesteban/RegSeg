@@ -244,7 +244,6 @@ int main(int argc, char *argv[]) {
 	//
 	// Write out final results ---------------------------------------------------------
 	//
-
 	size_t nlevels = acwereg->GetNumberOfLevels();
 
 	for (size_t i = 0; i < nlevels; i++) {
