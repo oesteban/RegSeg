@@ -205,10 +205,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	double wi = 0.0;
 
 	std::vector< NormalFilterAreasContainer > areas;
-	std::vector< ContourPointer > normals;
+	std::vector< PointDataContainerPointer > normals;
 	for (size_t i = 0; i < this->m_NumberOfContours; i++ ) {
 		areas.push_back(this->m_NormalsFilter[i]->GetVertexAreaContainer());
-		normals.push_back (this->m_NormalsFilter[i]->GetOutput() );
+		normals.push_back (this->m_NormalsFilter[i]->GetOutput()->GetPointData() );
 	}
 
 	for(size_t vvid = 0; vvid < nvertices; vvid++ ) {
@@ -234,17 +234,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_GradientStatistics[6] = sample.back();
 
 	VectorType ni, v;
-	icid = 0;
 	PointValueType g;
 	for(size_t vvid = 0; vvid < nvertices; vvid++ ) {
 		pid = this->m_ValidVertices[vvid];
-		if( pid == this->m_Offsets[icid + 1] ) {
-			icid++;
+		icid = this->m_InnerRegion[vvid];
+		cpid = pid - this->m_Offsets[icid];
+
+		size_t gradSize = normals[icid]->Size();
+		if ( cpid >= gradSize ) {
+			itkExceptionMacro(<< "identifier " << cpid << " overflows normals capacity (" << gradSize << ").");
 		}
 
-		cpid = pid - this->m_Offsets[icid];
-		ni.Fill(0.0);
-		normals[icid]->GetPointData(cpid, &ni);
+		ni = normals[icid]->ElementAt(cpid);
 
 		g = gi[vvid];
 		if ( g > this->m_GradientStatistics[5] ) g = this->m_GradientStatistics[5];
@@ -257,7 +258,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			grad[vvid + i * nvertices] = static_cast<float>(v[i]);
 		}
 
-		size_t gradSize = this->m_Gradients[icid]->GetPointData()->Size();
+		gradSize = this->m_Gradients[icid]->GetPointData()->Size();
 		if ( cpid >= gradSize ) {
 			itkExceptionMacro(<< "identifier " << cpid << " overflows capacity (" << gradSize << ").");
 		}
@@ -279,8 +280,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	size_t changed = 0;
 	size_t gpid = 0;
 	std::vector< size_t > invalid;
-	VectorType zerov; zerov.Fill(0.0);
-
 
 	std::fill(this->m_OffMaskVertices.begin(), this->m_OffMaskVertices.end(), 0);
 
@@ -288,8 +287,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename VectorContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
 		typename VectorContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
 		PointsContainerPointer curPoints = this->m_CurrentContours[contid]->GetPoints();
-		PointsContainerPointer curGradPoints = this->m_Gradients[contid]->GetPoints();
-		PointDataContainerPointer gradData = this->m_Gradients[contid]->GetPointData();
 
 		ContourPointType ci, ci_prime;
 		VectorType disp;
@@ -309,7 +306,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					this->InvokeEvent( WarningEvent() );
 				}
 				curPoints->SetElement( pid, ci_prime );
-				curGradPoints->SetElement( pid, ci_prime );
 				changed++;
 			}
 
@@ -322,10 +318,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				itkExceptionMacro(<< "identifier " << pid << " overflows capacity (" << gradSize << ").");
 			}
 
-			this->m_Gradients[contid]->GetPointData()->SetElement( pid, zerov );
 			++p_it;
 			gpid++;
 		}
+
+		// Reset gradients
+		this->m_Gradients[contid]->SetPoints(this->m_CurrentContours[contid]->GetPoints());
+
 	}
 
 	if ( invalid.size() > 0 ) {
@@ -530,11 +529,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 				if ( (1.0 - this->m_MaskInterp->Evaluate(ci)) < 1.0e-5 ) {
 					this->m_OffMaskVertices[contid]++;
-				}
-
-				size_t gradSize = this->m_Gradients[contid]->GetPointData()->Size();
-				if ( pid >= gradSize ) {
-					itkExceptionMacro(<< "identifier " << pid << " overflows capacity (" << gradSize << ").");
 				}
 
 				this->m_Gradients[contid]->GetPointData()->SetElement( pid, zerov );
