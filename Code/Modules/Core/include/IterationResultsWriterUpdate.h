@@ -107,8 +107,6 @@ public:
 					wc->SetFileTypeAsASCII();
 					wc->SetInput( grads[r] );
 					wc->Update();
-
-					std::cout << "Surface [" << r << "] - Points=" << grads[r]->GetNumberOfPoints() << "Data=" << grads[r]->GetPointData()->Size() << std::endl;
 				}
        		}
 
