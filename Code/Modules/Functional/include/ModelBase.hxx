@@ -57,6 +57,7 @@ ModelBase< TInputVectorImage, TPriorsPrecisionType >
 	this->SetNumberOfRequiredInputs(3);
 	this->SetNumberOfRequiredOutputs(1);
 	this->ProcessObject::SetNthOutput( 0, this->MakeOutput(0) );
+
 }
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType >

@@ -122,6 +122,13 @@ public:
 	itkGetConstMacro(RegionOffsetContainer, MeasureTypeContainer);
 
 	std::string PrintFormattedDescriptors();
+
+	inline double Evaluate(const MeasurementVectorType & x, const RegionIdentifier roi) const {
+		if( x == m_InvalidValue )
+			return 0.0;
+		return this->m_Memberships[roi]->Evaluate(x);
+	}
+
 protected:
 	MahalanobisDistanceModel();
 	virtual ~MahalanobisDistanceModel() {}
@@ -147,9 +154,10 @@ private:
 	MahalanobisDistanceModel(const Self &);   //purposely not implemented
 	void operator=(const Self &);             //purposely not implemented
 
-	MeansContainer       m_Means;
-	CovariancesContainer m_Covariances;
-	MeasureTypeContainer m_RegionOffsetContainer;
+	MeansContainer        m_Means;
+	CovariancesContainer  m_Covariances;
+	MeasureTypeContainer  m_RegionOffsetContainer;
+	MeasurementVectorType m_InvalidValue;
 };
 }
 

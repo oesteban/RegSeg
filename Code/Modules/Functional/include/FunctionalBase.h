@@ -422,7 +422,7 @@ protected:
 	//virtual MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roim, bool bias = false ) const = 0;
 	MeasureType GetEnergyAtPoint( const PointType& point, size_t roi ) const;
 	MeasureType GetEnergyAtPoint( const PointType& point, size_t roi, ReferencePixelType& value ) const;
-	MeasureType EvaluateGradient( const PointType& point, size_t outer_roi, size_t inner_roi ) const;
+	inline MeasureType EvaluateGradient( const PointType& point, size_t outer_roi, size_t inner_roi ) const;
 
 	inline bool CheckExtent( ContourPointType& p, ContinuousIndex& idx ) const;
 	virtual void ParseSettings();
