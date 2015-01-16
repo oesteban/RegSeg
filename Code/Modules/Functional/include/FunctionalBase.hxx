@@ -257,6 +257,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			grad[vvid + i * nvertices] = static_cast<float>(v[i]);
 		}
 
+		size_t gradSize = this->m_Gradients[icid]->GetPointData()->Size();
+		if ( cpid >= gradSize ) {
+			itkExceptionMacro(<< "identifier " << cpid << " overflows capacity (" << gradSize << ").");
+		}
 		this->m_Gradients[icid]->GetPointData()->SetElement( cpid, v );
 	}
 
@@ -311,6 +315,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 			if ( (1.0 - this->m_MaskInterp->Evaluate(ci_prime)) < 1.0e-5 ) {
 				this->m_OffMaskVertices[contid]++;
+			}
+
+			size_t gradSize = this->m_Gradients[contid]->GetPointData()->Size();
+			if ( pid >= gradSize ) {
+				itkExceptionMacro(<< "identifier " << pid << " overflows capacity (" << gradSize << ").");
 			}
 
 			this->m_Gradients[contid]->GetPointData()->SetElement( pid, zerov );
@@ -523,6 +532,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					this->m_OffMaskVertices[contid]++;
 				}
 
+				size_t gradSize = this->m_Gradients[contid]->GetPointData()->Size();
+				if ( pid >= gradSize ) {
+					itkExceptionMacro(<< "identifier " << pid << " overflows capacity (" << gradSize << ").");
+				}
 
 				this->m_Gradients[contid]->GetPointData()->SetElement( pid, zerov );
 				normals->GetPointData( pid, &ni );
