@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-15 15:36:42
+# @Last Modified time: 2015-01-15 18:03:28
 
 
 def hcp_workflow(name='Evaluation_HCP', settings={}):
@@ -158,7 +158,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
     dfm = process_vsm()
     dfm.inputs.inputnode.scaling = 1.0
     dfm.inputs.inputnode.enc_dir = 'y-'
-    sunwarp = pe.MapNode(WarpPoints(), iterfield=['points'],
+    wrpsurf = pe.MapNode(WarpPoints(), iterfield=['points'],
                          name='UnwarpSurfs')
 
     wf.connect([
@@ -171,8 +171,8 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
         (cmethod0,       dfm, [('outputnode.out_vsm', 'inputnode.vsm')]),
         (st1,            dfm, [
             ('out_dis_set.dwi_mask', 'inputnode.reference')]),
-        (dfm,        sunwarp, [('outputnode.inv_dfm', 'warp')]),
-        (st1,        sunwarp, [('out_dis_set.surf', 'points')])
+        (dfm,        wrpsurf, [('outputnode.dfm', 'warp')]),
+        (st1,        wrpsurf, [('out_ref_set.surf', 'points')])
     ])
 
     export0 = pe.Node(ExportSlices(all_axis=True), name='ExportREGSEG')
@@ -182,37 +182,37 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
         (regseg,   export0, [('outputnode.out_surf', 'surfaces0')]),
         (st1,      export0, [('out_dis_set.surf', 'surfaces1')]),
         (dti,      export0, [('outputnode.fa', 'reference')]),
-        (sunwarp,  export1, [('out_points', 'surfaces0')]),
-        (st1,      export1, [('out_ref_set.surf', 'surfaces1')]),
-        (rdti,     export1, [('outputnode.fa', 'reference')])
+        (wrpsurf,  export1, [('out_points', 'surfaces0')]),
+        (st1,      export1, [('out_dis_set.surf', 'surfaces1')]),
+        (dti,      export1, [('outputnode.fa', 'reference')])
     ])
 
-#    mesh0 = pe.MapNode(P2PDistance(weighting='surface'),
-#                       iterfield=['surface1', 'surface2'],
-#                       name='REGSEGSurfDistance')
-#    csv0 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
-#                   name="REGSEGAddRow")
-#    csv0.inputs.method = 'REGSEG'
-#
-#    wf.connect([
-#        (st1,       mesh0, [('out_dis_set.surf', 'surface1')]),
-#        (regseg,    mesh0, [('outputnode.out_surf', 'surface2')]),
-#        (inputnode,  csv0, [('subject_id', 'subject_id')]),
-#        (mesh0,      csv0, [('distance', 'surf_dist')])
-#    ])
-#
-#    mesh1 = pe.MapNode(P2PDistance(weighting='surface'),
-#                       iterfield=['surface1', 'surface2'],
-#                       name='FMBSurfDistance')
-#    csv1 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
-#                   name="FMBAddRow")
-#    csv1.inputs.method = 'FMB'
-#
-#    wf.connect([
-#        (st1,       mesh1, [('out_ref_set.surf', 'surface1')]),
-#        (sunwarp,   mesh1, [('out_points', 'surface2')]),
-#        (inputnode,  csv1, [('subject_id', 'subject_id')]),
-#        (mesh1,      csv1, [('distance', 'surf_dist')])
-#    ])
+    mesh0 = pe.MapNode(P2PDistance(weighting='surface'),
+                       iterfield=['surface1', 'surface2'],
+                       name='REGSEGSurfDistance')
+    csv0 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
+                   name="REGSEGAddRow")
+    csv0.inputs.method = 'REGSEG'
+
+    wf.connect([
+        (st1,       mesh0, [('out_dis_set.surf', 'surface1')]),
+        (regseg,    mesh0, [('outputnode.out_surf', 'surface2')]),
+        (inputnode,  csv0, [('subject_id', 'subject_id')]),
+        (mesh0,      csv0, [('distance', 'surf_dist')])
+    ])
+
+    mesh1 = pe.MapNode(P2PDistance(weighting='surface'),
+                       iterfield=['surface1', 'surface2'],
+                       name='FMBSurfDistance')
+    csv1 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
+                   name="FMBAddRow")
+    csv1.inputs.method = 'FMB'
+
+    wf.connect([
+        (st1,       mesh1, [('out_dis_set.surf', 'surface1')]),
+        (wrpsurf,   mesh1, [('out_points', 'surface2')]),
+        (inputnode,  csv1, [('subject_id', 'subject_id')]),
+        (mesh1,      csv1, [('distance', 'surf_dist')])
+    ])
 
     return wf
