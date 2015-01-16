@@ -278,7 +278,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 ::AfterComputeMatrix(WeightsMatrixType type) {
 	size_t numvalid = this->m_ValidLocations.size();
 	this->m_Phi.normalize_rows();
-	if(numvalid > 0 &&  numvalid < this->m_NumberOfPoints ) {
+	if(numvalid > 0 &&  numvalid <= this->m_NumberOfPoints ) {
 		if (type == Self::PHI)  {
 			this->m_Phi_valid = WeightsMatrix( numvalid , this->m_NumberOfDimParameters );
 
