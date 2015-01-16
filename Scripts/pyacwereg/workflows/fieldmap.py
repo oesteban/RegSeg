@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-15 16:06:11
+# @Last Modified time: 2015-01-16 10:38:49
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -436,4 +436,3 @@ def phasediff2siemens(in_file, out_file=None):
     nb.funcs.concat_images([im1, im2]).to_filename(out_file)
 
     return out_file
-

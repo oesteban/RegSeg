@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-13 16:50:03
+# @Last Modified time: 2015-01-16 11:06:07
 
 import os
 import os.path as op
@@ -243,25 +243,6 @@ pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
         if value is None or value.__class__.__name__ == 'NoneType':
             return ''
 
-        return super(ACWEReg, self)._format_arg(name, spec, value)
-
-    def _format_arg(self, name, spec, value):
-        if name == 'in_prior':
-            idxs = []
-            for i, v in enumerate(value):
-                if 'white' in op.basename(v) or 'wm' in op.basename(v):
-                    idxs.append(i)
-
-            for i in reversed(idxs):
-                value.append(value.pop(i))
-
-            idxs = []
-            for i, v in enumerate(value):
-                if 'pial' in op.basename(v):
-                    idxs.append(i)
-
-            for i in reversed(idxs):
-                value.append(value.pop(i))
         return super(ACWEReg, self)._format_arg(name, spec, value)
 
     def _list_outputs(self):
