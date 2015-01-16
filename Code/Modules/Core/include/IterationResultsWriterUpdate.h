@@ -86,7 +86,7 @@ public:
 				typename W::Pointer f = W::New();
 				ss << this->m_Prefix << "uk_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".vtu";
 				f->SetFileName( ss.str().c_str() );
-				f->SetInput(this->m_Optimizer->GetTransform()->GetFlatParameters());
+				f->SetCoefficientsImageArrayInput(this->m_Optimizer->GetCoefficients());
 				f->Update();
 
 				ss.str("");

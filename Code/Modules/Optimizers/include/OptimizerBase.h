@@ -230,9 +230,6 @@ public:
 	itkSetMacro(Coefficients, CoefficientsImageArray);
 	itkGetConstMacro(Coefficients, CoefficientsImageArray);
 
-	//itkSetMacro(Scales, ScalesType);
-	//itkGetConstMacro(Scales, ScalesType);
-
 	itkSetMacro(DerivativeCoefficients, CoefficientsImageArray);
 	itkGetConstMacro(DerivativeCoefficients, CoefficientsImageArray);
 
