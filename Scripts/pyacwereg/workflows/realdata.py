@@ -187,7 +187,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
         (dti,      export1, [('outputnode.fa', 'reference')])
     ])
 
-    mesh0 = pe.MapNode(P2PDistance(weighting='surface'),
+    mesh0 = pe.MapNode(P2PDistance(),
                        iterfield=['surface1', 'surface2'],
                        name='REGSEGSurfDistance')
     csv0 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
@@ -201,7 +201,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
         (mesh0,      csv0, [('distance', 'surf_dist')])
     ])
 
-    mesh1 = pe.MapNode(P2PDistance(weighting='surface'),
+    mesh1 = pe.MapNode(P2PDistance(),
                        iterfield=['surface1', 'surface2'],
                        name='FMBSurfDistance')
     csv1 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
