@@ -93,6 +93,7 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
     ev_regseg_low.inputs.infonode.method = '%s_low' % regseg_low.name
     norm_low = pe.Node(Normalize(), name='NormalizeFinal_low')
     export0 = pe.Node(ExportSlices(all_axis=True), name='Export_lo')
+    sel0 = pe.Node(niu.Select(index=[0]), name='SelectT1w_lo')
 
     wf.connect([
         (inputnode, ev_regseg_low, [
@@ -117,9 +118,12 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
             ('outputnode.out_field', 'tstnode.in_field')]),
         (norm_low, ev_regseg_low, [
             ('out_files', 'tstnode.in_tpms')]),
-        (phantom,   export0, [
-            ('out_lowres.out_surfs', 'surfaces0'),
-            ('out_lowres.out_signal', 'reference')]),
+        (phantom, sel0, [
+            ('out_lowres.out_signal', 'inlist')]),
+        (sel0, export0, [
+            ('out', 'reference')]),
+        (phantom, export0, [
+            ('out_lowres.out_surfs', 'surfaces0')]),
         (regseg_low, export0, [
             ('outputnode.out_surf', 'surfaces1')])
     ])
@@ -137,6 +141,7 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
     ev_regseg_hi.inputs.infonode.method = '%s_hi' % regseg_hi.name
     norm_hi = pe.Node(Normalize(), name='NormalizeFinal_hi')
     export1 = pe.Node(ExportSlices(all_axis=True), name='Export_hi')
+    sel1 = pe.Node(niu.Select(index=[0]), name='SelectT1w_hi')
 
     wf.connect([
         (inputnode, ev_regseg_hi, [
@@ -161,9 +166,12 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
             ('outputnode.out_field', 'tstnode.in_field')]),
         (norm_hi, ev_regseg_hi, [
             ('out_files', 'tstnode.in_tpms')]),
-        (phantom,   export1, [
-            ('out_hires.out_surfs', 'surfaces0'),
-            ('out_hires.out_signal', 'reference')]),
+        (phantom, sel1, [
+            ('out_hires.out_signal', 'inlist')]),
+        (sel0, export1, [
+            ('out', 'reference')]),
+        (phantom, export1, [
+            ('out_hires.out_surfs', 'surfaces0')]),
         (regseg_hi, export1, [
             ('outputnode.out_surf', 'surfaces1')])
     ])
