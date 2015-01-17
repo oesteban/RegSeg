@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-16 19:42:12
+# @Last Modified time: 2015-01-17 12:20:32
 
 import os
 import os.path as op
@@ -23,6 +23,7 @@ from nipype.interfaces import fsl as fsl
 from nipype.interfaces import freesurfer as fs
 
 from pyacwereg.interfaces.warps import InverseField
+from pyacwereg.interfaces.utility import ExportSlices
 from pyacwereg.workflows.model import generate_phantom
 from registration import identity_wf, default_regseg
 
@@ -91,6 +92,7 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
     ev_regseg_low = registration_ev(name=('Ev_low_%s' % regseg_low.name))
     ev_regseg_low.inputs.infonode.method = '%s_low' % regseg_low.name
     norm_low = pe.Node(Normalize(), name='NormalizeFinal_low')
+    export0 = pe.Node(ExportSlices(all_axis=True), name='Export_lo')
 
     wf.connect([
         (inputnode, ev_regseg_low, [
@@ -114,7 +116,12 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
             ('outputnode.out_surf', 'tstnode.in_surf'),
             ('outputnode.out_field', 'tstnode.in_field')]),
         (norm_low, ev_regseg_low, [
-            ('out_files', 'tstnode.in_tpms')])
+            ('out_files', 'tstnode.in_tpms')]),
+        (phantom,   export0, [
+            ('out_lowres.out_surfs', 'surfaces0'),
+            ('out_lowres.out_signal', 'reference')]),
+        (regseg_hi, export0, [
+            ('outputnode.out_surf', 'surfaces1')])
     ])
 
     # Connect results output file
@@ -129,6 +136,7 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
     ev_regseg_hi = registration_ev(name=('Ev_hi_%s' % regseg_hi.name))
     ev_regseg_hi.inputs.infonode.method = '%s_hi' % regseg_hi.name
     norm_hi = pe.Node(Normalize(), name='NormalizeFinal_hi')
+    export1 = pe.Node(ExportSlices(all_axis=True), name='Export_hi')
 
     wf.connect([
         (inputnode, ev_regseg_hi, [
@@ -152,7 +160,12 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
             ('outputnode.out_surf', 'tstnode.in_surf'),
             ('outputnode.out_field', 'tstnode.in_field')]),
         (norm_hi, ev_regseg_hi, [
-            ('out_files', 'tstnode.in_tpms')])
+            ('out_files', 'tstnode.in_tpms')]),
+        (phantom,   export1, [
+            ('out_hires.out_surfs', 'surfaces0'),
+            ('out_hires.out_signal', 'reference')]),
+        (regseg_hi, export1, [
+            ('outputnode.out_surf', 'surfaces1')])
     ])
 
     # Connect results output file
