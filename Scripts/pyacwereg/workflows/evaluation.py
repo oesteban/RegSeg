@@ -120,7 +120,7 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
         (phantom,   export0, [
             ('out_lowres.out_surfs', 'surfaces0'),
             ('out_lowres.out_signal', 'reference')]),
-        (regseg_hi, export0, [
+        (regseg_low, export0, [
             ('outputnode.out_surf', 'surfaces1')])
     ])
 
