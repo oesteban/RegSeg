@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-16 19:41:51
+# @Last Modified time: 2015-01-19 21:07:14
 
 try:
     from enthought.etsconfig.api import ETSConfig
@@ -27,8 +27,9 @@ def phantoms_wf(options):
     if len(grid_size) == 1:
         grid_size = grid_size * 3
 
-    bs = ev.bspline(
-        name=options.name, shapes=options.shape, snr_list=options.snr)
+    bs = ev.bspline(name=options.name, shapes=options.shape,
+                    snr_list=options.snr,
+                    N=options.repetitions)
     bs.inputs.inputnode.grid_size = grid_size
     bs.inputs.inputnode.lo_matrix = options.lo_matrix
     bs.inputs.inputnode.hi_matrix = options.hi_matrix
@@ -83,6 +84,9 @@ if __name__ == '__main__':
     g_input.add_argument(
         '-N', '--name', action='store', default='PhantomTests',
         help='default workflow name, it will create a new folder')
+
+    g_input.add_argument('-R', '--repetitions', action='store', default=1,
+                         type=int, help='number of repetitions')
 
     g_output = parser.add_argument_group('Outputs')
     g_output.add_argument(
