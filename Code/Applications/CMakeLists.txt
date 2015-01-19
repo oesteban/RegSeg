@@ -21,7 +21,7 @@ TARGET_LINK_LIBRARIES(binarize_surfaces ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 ADD_EXECUTABLE(regridavg regridavg.cxx ) 
 TARGET_LINK_LIBRARIES(regridavg ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 
-find_package(VTK COMPONENTS vtkRenderingOpenGL vtkRenderingFreeType vtkRenderingImage vtkIOLegacy NO_MODULE)
+find_package(VTK COMPONENTS vtkCommonCore vtkRenderingOpenGL vtkRenderingFreeType vtkRenderingImage vtkIOLegacy vtkIOLegacy vtkFiltersSources NO_MODULE)
 
 ADD_EXECUTABLE(slice_contours slice_contours.cxx )
 set_property(TARGET slice_contours APPEND
@@ -29,6 +29,13 @@ set_property(TARGET slice_contours APPEND
 TARGET_LINK_LIBRARIES(slice_contours ${ITK_LIBRARIES} ${Boost_LIBRARIES} ${VTK_LIBRARIES})
 set_property(TARGET slice_contours APPEND
   PROPERTY INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
+
+ADD_EXECUTABLE( hdistance hdistance.cxx)
+set_property(TARGET hdistance APPEND PROPERTY COMPILE_DEFINITIONS "${VTK_DEFINITIONS}")
+   
+TARGET_LINK_LIBRARIES( hdistance ${VTKHAUSDORFF_LIB} ${VTK_LIBRARIES} ${Boost_LIBRARIES} )
+set_property(TARGET hdistance APPEND PROPERTY INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
+
 
 INSTALL(TARGETS bspline_field bspline_invert regseg warp_image binarize_surfaces regridavg slice_contours
   RUNTIME DESTINATION bin
