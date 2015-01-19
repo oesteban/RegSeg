@@ -37,6 +37,6 @@ TARGET_LINK_LIBRARIES( hdistance ${VTKHAUSDORFF_LIB} ${VTK_LIBRARIES} ${Boost_LI
 set_property(TARGET hdistance APPEND PROPERTY INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
 
 
-INSTALL(TARGETS bspline_field bspline_invert regseg warp_image binarize_surfaces regridavg slice_contours
+INSTALL(TARGETS bspline_field bspline_invert regseg warp_image binarize_surfaces regridavg slice_contours hdistance
   RUNTIME DESTINATION bin
 )

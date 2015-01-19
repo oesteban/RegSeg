@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-19 13:13:26
+# @Last Modified time: 2015-01-19 14:14:54
 import os
 import os.path as op
 import nibabel as nb
@@ -122,7 +122,7 @@ class HausdorffDistance(CommandLine):
     """
     input_spec = HausdorffDistanceInputSpec
     output_spec = HausdorffDistanceOutputSpec
-    _cmd = 'hdist'
+    _cmd = 'hdistance'
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
