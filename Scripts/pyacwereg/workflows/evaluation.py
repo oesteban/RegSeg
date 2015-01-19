@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-17 12:20:32
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-01-19 13:13:06
 
 import os
 import os.path as op
@@ -23,7 +23,7 @@ from nipype.interfaces import fsl as fsl
 from nipype.interfaces import freesurfer as fs
 
 from pyacwereg.interfaces.warps import InverseField
-from pyacwereg.interfaces.utility import ExportSlices
+from pyacwereg.interfaces.utility import ExportSlices, HausdorffDistance
 from pyacwereg.workflows.model import generate_phantom
 from registration import identity_wf, default_regseg
 
@@ -227,7 +227,7 @@ def registration_ev(name='EvaluateMapping'):
     diff_im = pe.Node(namev.Similarity(metric='cc'), name='ContrastDiff')
     inv_fld = pe.Node(InverseField(), name='InvertField')
     diff_fld = pe.Node(namev.ErrorMap(), name='FieldDiff')
-    mesh = pe.MapNode(namesh.P2PDistance(weighting='area'),
+    mesh = pe.MapNode(HausdorffDistance(cells_mode=True),
                       iterfield=['surface1', 'surface2'],
                       name='SurfDistance')
     csv = pe.Node(namisc.AddCSVRow(), name="AddRow")
