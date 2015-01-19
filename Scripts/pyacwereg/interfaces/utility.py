@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-19 14:18:25
+# @Last Modified time: 2015-01-19 14:32:05
 import os
 import os.path as op
 import nibabel as nb
@@ -128,7 +128,7 @@ class HausdorffDistance(CommandLine):
         outputs = self.output_spec().get()
 
         outputs['out_ref'] = op.abspath(self.inputs.out_ref)
-        outputs['out_seg'] = op.abspath(self.inputs.out_tst)
+        outputs['out_tst'] = op.abspath(self.inputs.out_tst)
         outputs['distance'] = 0.0
 
         try:
