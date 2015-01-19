@@ -54,6 +54,8 @@ SET( TRANSFORM_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Transform )
 SET( FILTERING_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Filtering )
 SET( FILTERING_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Filtering )
 
+SET( VTKHAUSSDORF_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/Hausdorff )
+SET( VTKHAUSSDORF_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/ThirdParty/Hausdorff )
 
 INCLUDE_DIRECTORIES( ${OPTIMIZERS_SOURCE_DIR}/include
                      ${FUNCTIONAL_SOURCE_DIR}/include
@@ -62,12 +64,16 @@ INCLUDE_DIRECTORIES( ${OPTIMIZERS_SOURCE_DIR}/include
                      ${IO_SOURCE_DIR}/include
                      ${CORE_SOURCE_DIR}/include
                      ${ITKRV_SOURCE_DIR}/include
+                     ${VTKHAUSSDORF_SOURCE_DIR}
 )
 
 ENABLE_TESTING()
 
 #find_package(GTest REQUIRED)
 ADD_SUBDIRECTORY( GTest/ )
+
+ADD_SUBDIRECTORY( ThirdParty/Hausdorff )
+SET( VTKHAUSDORFF_LIB "vtkHausdorffDistance" )
 
 ADD_SUBDIRECTORY( Modules/Core )
 

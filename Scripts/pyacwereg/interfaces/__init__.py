@@ -5,9 +5,9 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 15:50:50
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-13 12:23:51
+# @Last Modified time: 2015-01-19 13:12:29
 
 from warps import RandomBSplineDeformation, FieldBasedWarp, InverseField
 from acwereg import ACWEReg, ACWEReport
 from phantoms import Phantom, SimulateSMRI, DownsampleAveraging
-from utility import ExportSlices, Surf2Vol
+from utility import ExportSlices, Surf2Vol, HausdorffDistance
