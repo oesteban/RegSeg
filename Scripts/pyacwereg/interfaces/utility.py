@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-19 14:32:05
+# @Last Modified time: 2015-01-19 14:44:39
 import os
 import os.path as op
 import nibabel as nb
@@ -112,7 +112,10 @@ class HausdorffDistanceOutputSpec(TraitedSpec):
                    desc='Output reference file name')
     out_tst = File(exists=True,
                    desc='Output test file name')
-    distance = traits.Float(desc='maximum of distances')
+    max_hd = traits.Float(desc='maximum of distances (Hausdorff distance)')
+    avg_hd = traits.Float(desc='average distance')
+    std_hd = traits.Float(desc='standard deviation of distance')
+    stats_hd = traits.List(traits.Float(), desc='distance statistics')
 
 
 class HausdorffDistance(CommandLine):
@@ -129,7 +132,10 @@ class HausdorffDistance(CommandLine):
 
         outputs['out_ref'] = op.abspath(self.inputs.out_ref)
         outputs['out_tst'] = op.abspath(self.inputs.out_tst)
-        outputs['distance'] = 0.0
+        outputs['max_hd'] = 0.0
+        outputs['avg_hd'] = 0.0
+        outputs['std_hd'] = 0.0
+        outputs['stats_hd'] = [0.0] * 7
 
         try:
             from tvtk.api import tvtk
@@ -148,7 +154,16 @@ class HausdorffDistance(CommandLine):
             v = r.output
             r.update()
             points = np.array(v.point_data.get_array('Distance'))
-            outputs['distance'] = points.max()
+            outputs['max_hd'] = points.max()
+            outputs['avg_hd'] = points.mean()
+            outputs['std_hd'] = points.std()
+            outputs['stats_hd'] = [points.min(),
+                                   np.percentile(points, 5.0),
+                                   np.percentile(points, 25.0),
+                                   np.median(points),
+                                   np.percentile(points, 75.0),
+                                   np.percentile(points, 95.0),
+                                   points.max()]
         except:
             iflogger.warn('Hausdorff distance could not be computed')
             pass
