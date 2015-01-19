@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-19 14:14:54
+# @Last Modified time: 2015-01-19 14:18:25
 import os
 import os.path as op
 import nibabel as nb
@@ -111,7 +111,7 @@ class HausdorffDistanceOutputSpec(TraitedSpec):
     out_ref = File(exists=True,
                    desc='Output reference file name')
     out_tst = File(exists=True,
-                   desc='Output reference file name')
+                   desc='Output test file name')
     distance = traits.Float(desc='maximum of distances')
 
 
