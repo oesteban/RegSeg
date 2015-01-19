@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-13 12:35:51
+# @Last Modified time: 2015-01-19 13:13:26
 import os
 import os.path as op
 import nibabel as nb
@@ -91,4 +91,66 @@ class Surf2Vol(CommandLine):
             out_path + ('_tpm_cmp%d.nii.gz' % i)
             for i in range(len(self.inputs.surfaces))]
         outputs['out_seg'] = out_path + '_seg.nii.gz'
+        return outputs
+
+
+class HausdorffDistanceInputSpec(CommandLineInputSpec):
+    surface1 = File(exists=True, argstr='-r %s', mandatory=True,
+                    desc=('reference surface'))
+    surface2 = File(exists=True, argstr='-t %s', mandatory=True,
+                    desc=('reference surface'))
+    cells_mode = traits.Bool(False, argstr='-C',
+                             desc='Use point-to-cells mode')
+    out_ref = File('hdist_ref.vtk', usedefault=True,
+                   desc='Output reference file name')
+    out_tst = File('hdist_ref.vtk', usedefault=True,
+                   desc='Output reference file name')
+
+
+class HausdorffDistanceOutputSpec(TraitedSpec):
+    out_ref = File(exists=True,
+                   desc='Output reference file name')
+    out_tst = File(exists=True,
+                   desc='Output reference file name')
+    distance = traits.Float(desc='maximum of distances')
+
+
+class HausdorffDistance(CommandLine):
+
+    """
+    Converts surface contours defining regions in space to volumes
+    """
+    input_spec = HausdorffDistanceInputSpec
+    output_spec = HausdorffDistanceOutputSpec
+    _cmd = 'hdist'
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+
+        outputs['out_ref'] = op.abspath(self.inputs.out_ref)
+        outputs['out_seg'] = op.abspath(self.inputs.out_tst)
+        outputs['distance'] = 0.0
+
+        try:
+            from tvtk.api import tvtk
+        except ImportError:
+            raise ImportError('Interface P2PDistance requires tvtk')
+
+        try:
+            from enthought.etsconfig.api import ETSConfig
+            ETSConfig.toolkit = 'null'
+        except ImportError:
+            iflogger.warn(('ETS toolkit could not be imported'))
+            pass
+
+        try:
+            r = tvtk.PolyDataReader(file_name=op.abspath(self.inputs.out_ref))
+            v = r.output
+            r.update()
+            points = np.array(v.point_data.get_array('Distance'))
+            outputs['distance'] = points.max()
+        except:
+            iflogger.warn('Hausdorff distance could not be computed')
+            pass
+
         return outputs

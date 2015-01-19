@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-15 10:31:46
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-01-19 13:13:06
 
 import os
 import os.path as op
@@ -23,11 +23,13 @@ from nipype.interfaces import fsl as fsl
 from nipype.interfaces import freesurfer as fs
 
 from pyacwereg.interfaces.warps import InverseField
+from pyacwereg.interfaces.utility import ExportSlices, HausdorffDistance
 from pyacwereg.workflows.model import generate_phantom
 from registration import identity_wf, default_regseg
 
 
-def bspline(name='BSplineEvaluation', methods=None, results=None):
+def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
+            methods=None, results=None):
     """ A workflow to evaluate registration methods generating a gold standard
     with random bspline deformations.
 
@@ -64,9 +66,14 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
         methods = np.atleast_1d(methods).tolist()
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['subject_id', 'grid_size', 'out_csv', 'lo_matrix',
+        fields=['grid_size', 'out_csv', 'lo_matrix',
                 'hi_matrix', 'snr', 'cortex', 'shape']),
         name='inputnode')
+
+    shapes = np.atleast_1d(shapes).tolist()
+    inputnode.iterables = [('shape', shapes),
+                           ('snr', snr_list)]
+
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['out_file', 'out_tpms', 'out_surfs', 'out_field', 'out_coeff',
                 'out_overlap']), name='outputnode')
@@ -85,10 +92,13 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
     ev_regseg_low = registration_ev(name=('Ev_low_%s' % regseg_low.name))
     ev_regseg_low.inputs.infonode.method = '%s_low' % regseg_low.name
     norm_low = pe.Node(Normalize(), name='NormalizeFinal_low')
+    export0 = pe.Node(ExportSlices(all_axis=True), name='Export_lo')
+    sel0 = pe.Node(niu.Select(index=[0]), name='SelectT1w_lo')
 
     wf.connect([
         (inputnode, ev_regseg_low, [
-            ('subject_id', 'infonode.subject_id')]),
+            ('shape', 'infonode.shape'),
+            ('snr', 'infonode.snr')]),
         (phantom, ev_regseg_low, [
             ('refnode.out_signal',    'refnode.in_imag'),
             ('refnode.out_tpms',    'refnode.in_tpms'),
@@ -107,7 +117,15 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
             ('outputnode.out_surf', 'tstnode.in_surf'),
             ('outputnode.out_field', 'tstnode.in_field')]),
         (norm_low, ev_regseg_low, [
-            ('out_files', 'tstnode.in_tpms')])
+            ('out_files', 'tstnode.in_tpms')]),
+        (phantom, sel0, [
+            ('out_lowres.out_signal', 'inlist')]),
+        (sel0, export0, [
+            ('out', 'reference')]),
+        (phantom, export0, [
+            ('out_lowres.out_surfs', 'surfaces0')]),
+        (regseg_low, export0, [
+            ('outputnode.out_surf', 'surfaces1')])
     ])
 
     # Connect results output file
@@ -122,10 +140,13 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
     ev_regseg_hi = registration_ev(name=('Ev_hi_%s' % regseg_hi.name))
     ev_regseg_hi.inputs.infonode.method = '%s_hi' % regseg_hi.name
     norm_hi = pe.Node(Normalize(), name='NormalizeFinal_hi')
+    export1 = pe.Node(ExportSlices(all_axis=True), name='Export_hi')
+    sel1 = pe.Node(niu.Select(index=[0]), name='SelectT1w_hi')
 
     wf.connect([
         (inputnode, ev_regseg_hi, [
-            ('subject_id', 'infonode.subject_id')]),
+            ('shape', 'infonode.shape'),
+            ('snr', 'infonode.snr')]),
         (phantom, ev_regseg_hi, [
             ('refnode.out_signal',    'refnode.in_imag'),
             ('refnode.out_tpms',    'refnode.in_tpms'),
@@ -144,7 +165,15 @@ def bspline(name='BSplineEvaluation', methods=None, results=None):
             ('outputnode.out_surf', 'tstnode.in_surf'),
             ('outputnode.out_field', 'tstnode.in_field')]),
         (norm_hi, ev_regseg_hi, [
-            ('out_files', 'tstnode.in_tpms')])
+            ('out_files', 'tstnode.in_tpms')]),
+        (phantom, sel1, [
+            ('out_hires.out_signal', 'inlist')]),
+        (sel0, export1, [
+            ('out', 'reference')]),
+        (phantom, export1, [
+            ('out_hires.out_surfs', 'surfaces0')]),
+        (regseg_hi, export1, [
+            ('outputnode.out_surf', 'surfaces1')])
     ])
 
     # Connect results output file
@@ -188,7 +217,7 @@ def registration_ev(name='EvaluateMapping'):
         fields=['in_imag', 'in_tpms', 'in_surf', 'in_field']),
         name='tstnode')
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['subject_id', 'method', 'out_csv']), name='infonode')
+        fields=['snr', 'shape', 'method', 'out_csv']), name='infonode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['out_file', 'out_tpm_diff', 'out_field_err']),
         name='outputnode')
@@ -198,13 +227,14 @@ def registration_ev(name='EvaluateMapping'):
     diff_im = pe.Node(namev.Similarity(metric='cc'), name='ContrastDiff')
     inv_fld = pe.Node(InverseField(), name='InvertField')
     diff_fld = pe.Node(namev.ErrorMap(), name='FieldDiff')
-    mesh = pe.MapNode(namesh.P2PDistance(weighting='area'),
+    mesh = pe.MapNode(HausdorffDistance(cells_mode=True),
                       iterfield=['surface1', 'surface2'],
                       name='SurfDistance')
     csv = pe.Node(namisc.AddCSVRow(), name="AddRow")
     wf = pe.Workflow(name=name)
     wf.connect([
-        (inputnode,        csv, [('subject_id', 'subject_id'),
+        (inputnode,        csv, [('shape', 'shape'),
+                                 ('snr', 'snr'),
                                  ('method', 'method'),
                                  ('out_csv', 'in_file')]),
         # (input_ref,  merge_ref, [('in_imag', 'in_files')]),
