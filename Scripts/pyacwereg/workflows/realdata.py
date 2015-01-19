@@ -57,7 +57,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
     ds.inputs.template_args = ds_tpl_args
 
     bmap_prep = bmap_registration()
-    bmap_prep.inputs.inputnode.factor = 2.0
+    bmap_prep.inputs.inputnode.factor = 4.0
 
     poly_msk = pe.Node(fs.Binarize(), name='GenPolyMask')
     poly_msk.inputs.match = [4, 5, 43, 44, 14, 72, 24, 2, 28, 31,
