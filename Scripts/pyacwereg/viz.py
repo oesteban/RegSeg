@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-20 14:06:00
+# @Last Modified time: 2015-01-20 15:07:28
 
 
 def add_annotations(values, ax, level, nlevels, color, lastidx, units=''):
@@ -135,7 +135,8 @@ def plot_report(df, levels_df=None, out_file=None):
         ldf.max_gk.plot(label=r'$\max_{k}\{\Vert \mathbf{g}_k(t) \Vert\}$')
         its = ldf.iteration[ldf['desc_update'] != 0]
 
-        ldf.max_uk.plot(label=r'$\max_{k}\{\Vert \mathbf{u}_k(t) \Vert\}$')
+        ldf.max_uk.plot(
+            label=r'$\max_{k}\{\Vert \mathbf{u}_k(t) \Vert\}$', style='--')
         if not its.empty:
             dupdt = ldf.desc_update[its] * ldf.max_uk[its]
             ax2.plot(its, dupdt, marker='^', linestyle='',
