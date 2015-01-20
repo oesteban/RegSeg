@@ -3,7 +3,55 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-09 02:35:28
+# @Last Modified time: 2015-01-20 14:06:00
+
+
+def add_annotations(values, ax, level, nlevels, color, lastidx, units=''):
+    labels = ('%.3g%s' % (values[0], units), '%.2g%s' % (values[1], units))
+    xy_start = [0, values[0]]
+    xy_end = [0, values[1]]
+
+    xlength = -len(labels[0]) * 9.0
+    if units != '':
+        xlength -= 15
+    xyt_start = (xlength, 0)
+    xyt_end = xyt_start
+    apos_start = (1.0, 0.5)
+    apos_end = apos_start
+
+    if (level == nlevels - 1):
+        xy_start = [lastidx, values[0]]
+        xy_end = [lastidx, values[1]]
+        xyt_start = (15, 0)
+        xyt_end = xyt_start
+        apos_start = (0.0, 0.5)
+        apos_end = apos_start
+
+    if (level != nlevels - 1) and (level != 0):
+        xy_start = [0, values[0]]
+        xy_end = [lastidx, values[1]]
+        xyt_start = (10, -25)
+        xyt_end = (-len(labels[1]) * 9.5, 25)
+        apos_start = (0.0, 1.0)
+        apos_end = (1.0, 0.0)
+
+    ax.annotate(
+        labels[0], xy=tuple(xy_start), xytext=xyt_start,
+        textcoords='offset points', va='center',
+        color='w', fontsize='xx-small',
+        bbox=dict(boxstyle='round', fc=color, ec='none', color='w'),
+        arrowprops=dict(arrowstyle='wedge,tail_width=0.6',
+                        fc=color, ec='none', relpos=apos_start,
+                        ))
+
+    ax.annotate(
+        labels[1], xy=tuple(xy_end), xytext=xyt_end,
+        textcoords='offset points', va='center',
+        color='w', fontsize='xx-small',
+        bbox=dict(boxstyle='round', fc=color, ec='none', color='w'),
+        arrowprops=dict(arrowstyle='wedge,tail_width=0.6',
+                        fc=color, ec='none', relpos=apos_end,
+                        ))
 
 
 def plot_report(df, levels_df=None, out_file=None):
@@ -30,12 +78,12 @@ def plot_report(df, levels_df=None, out_file=None):
     fig = plt.figure(figsize=(20, 15))
     outergs = mgs.GridSpec(1, 2, wspace=0.2, hspace=0.2)
 
+    innersp = 0.08
     innergs0 = mgs.GridSpecFromSubplotSpec(
-        3, len(levels), subplot_spec=outergs[0], hspace=0.3, wspace=0.08)
+        3, len(levels), subplot_spec=outergs[0], hspace=0.6, wspace=innersp)
 
+    ax3lims = (0, 0)
     for i, l in enumerate(levels):
-        isRight = ((i % 2) != 0)
-
         ax1 = plt.Subplot(fig, innergs0[0, i])
         ax2 = plt.Subplot(fig, innergs0[1, i])
         ax3 = plt.Subplot(fig, innergs0[2, i])
@@ -46,37 +94,12 @@ def plot_report(df, levels_df=None, out_file=None):
 
         ldf = df[df.level == i]
         plt.sca(ax1)
-        ldf.E_t.plot(label=r'$E_T(t)$')
 
-        th_e = np.squeeze(ldf.tail(1)['E_t'].values)
-        xy = [0, th_e]
-        xytext = (-80, 0)
-        apos = (1.0, 0.5)
-
-        if isRight:
-            xy = [ldf.index[-1], th_e]
-            xytext = (15, 0)
-            apos = (0.0, 0.5)
-
-        ax1.annotate(
-            '%.3g' % th_e, xy=tuple(xy), xytext=xytext,
-            textcoords='offset points', va='center',
-            color='w', fontsize='xx-small',
-            bbox=dict(boxstyle='round', fc=palette[0], ec='none', color='w'),
-            arrowprops=dict(arrowstyle='wedge,tail_width=0.6',
-                            fc=palette[0], ec='none', relpos=apos,
-                            ))
-
-        th_e = np.squeeze(ldf.head(1)['E_t'].values)
-        xy[1] = th_e
-        ax1.annotate(
-            '%.3g' % th_e, xy=tuple(xy), xytext=xytext,
-            textcoords='offset points', va='center',
-            color='w', fontsize='xx-small',
-            bbox=dict(boxstyle='round', fc=palette[0], ec='none', color='w'),
-            arrowprops=dict(arrowstyle='wedge,tail_width=0.6',
-                            fc=palette[0], ec='none', relpos=apos,
-                            ))
+        axplots = []
+        axplots.append(ldf.E_t.plot(label=r'$E_T(t)$'))
+        axplots.append(ldf.step.plot(
+            secondary_y=True, style='k--', linewidth=0.7,
+            label=r'$\delta(t)$', yticks=[]))
 
         its = ldf.iteration[ldf['desc_update'] != 0]
         if not its.empty:
@@ -84,25 +107,23 @@ def plot_report(df, levels_df=None, out_file=None):
             ax1.plot(its, dupdt, marker='^', linestyle='',
                      fillstyle='full', color=palette[0])
 
+        vals = (ldf.E_t[ldf.index[0]], ldf.E_t[ldf.index[-1]])
+        add_annotations(vals, ax1, l, len(levels), palette[0], ldf.index[-1])
+
         if levels_df is not None:
             if not levels_df.empty:
                 th_e = levels_df['total'][i]
                 line, = ax1.plot([th_e] * (len(ldf['E_t'])))
                 c = plt.getp(line, 'color')
-
-                xy[1] = th_e
-
+                xy_start[1] = th_e
                 ax1.annotate(
-                    '%.3g' % th_e, xy=xy, xytext=xytext,
+                    '%.3g' % th_e, xy=xy_end, xytext=xyt_end,
                     textcoords='offset points', va='center',
                     color='w', fontsize='xx-small',
                     bbox=dict(boxstyle='round', fc=c, ec='none', color='w'),
                     arrowprops=dict(arrowstyle='wedge,tail_width=0.6',
-                                    fc=c, ec='none', relpos=apos,
+                                    fc=c, ec='none', relpos=apos_end,
                                     ))
-
-        ldf.step.plot(secondary_y=True, style='k--', linewidth=0.7,
-                      label=r'$\delta(t)$', yticks=[])
 
         ax1.text(lposx, lposy, 'Level %d' %
                  (i + 1), ha=lha, transform=ax1.transAxes, fontdict=fd)
@@ -112,15 +133,20 @@ def plot_report(df, levels_df=None, out_file=None):
 
         plt.sca(ax2)
         ldf.max_gk.plot(label=r'$\max_{k}\{\Vert \mathbf{g}_k(t) \Vert\}$')
-
         its = ldf.iteration[ldf['desc_update'] != 0]
-        if not its.empty:
-            dupdt = ldf.desc_update[its] * ldf.max_gk[its]
-            ax2.plot(its, dupdt, marker='^', linestyle='',
-                     fillstyle='full', color=palette[0])
 
-        ldf.max_uk.plot(secondary_y=True, yticks=[],
-                        label=r'$\max_{k}\{\Vert \mathbf{u}_k(t) \Vert\}$')
+        ldf.max_uk.plot(label=r'$\max_{k}\{\Vert \mathbf{u}_k(t) \Vert\}$')
+        if not its.empty:
+            dupdt = ldf.desc_update[its] * ldf.max_uk[its]
+            ax2.plot(its, dupdt, marker='^', linestyle='',
+                     fillstyle='full', color=palette[1])
+
+        # vals = (ldf.max_gk[ldf.index[0]], ldf.max_gk[ldf.index[-1]])
+        # add_annotations(vals, ax2, l, len(levels), palette[0], ldf.index[-1])
+
+        vals = (ldf.max_uk[ldf.index[0]], ldf.max_uk[ldf.index[-1]])
+        add_annotations(
+            vals, ax2, l, len(levels), palette[1], ldf.index[-1], units='mm')
 
         ax2.text(lposx, lposy, 'Level %d' %
                  (i + 1), ha=lha, transform=ax2.transAxes, fontdict=fd)
@@ -128,26 +154,60 @@ def plot_report(df, levels_df=None, out_file=None):
         ax2.set_yticklabels([])
         ax2.set_xlabel('')
 
+        if i == 0:
+            hs = []
+            ls = []
+            for a in axplots:
+                hlist, llist = a.get_legend_handles_labels()
+                for h, l in zip(hlist, llist):
+                    hs.append(h)
+                    ls.append(l)
+            bbox = (
+                0.45, -.25, 0.75 * len(levels),
+                1.0)
+            lgd1 = ax1.legend(hs, ls, loc=3, ncol=len(ls), mode='expand',
+                              bbox_to_anchor=bbox)
+            lgd1.get_frame().set_facecolor('w')
+
+            h, _ = ax2.get_legend_handles_labels()
+            lgd2 = ax2.legend(loc=3, bbox_to_anchor=bbox, ncol=len(h),
+                              mode='expand')
+            lgd2.get_frame().set_facecolor('w')
+
         plt.sca(ax3)
+        c = palette[0]
+        c1 = palette[1]
         ldf.plot(x='iteration', y='g_50')
-        ldf.plot(x='iteration', y='g_05', color=c, style='--', lw=.7)
-        ldf.plot(x='iteration', y='g_95', color=c, style='--', lw=.7)
+        ldf.plot(x='iteration', y='g_05', color=c1, style='--', lw=.7)
+        ldf.plot(x='iteration', y='g_95', color=c1, style='--', lw=.7)
         ax3.fill_between(
             ldf.iteration, ldf['g_25'], ldf['g_75'], alpha=0.2, color=c)
         ax3.fill_between(
-            ldf.iteration, ldf['g_05'], ldf['g_95'], alpha=0.05, color=c)
+            ldf.iteration, ldf['g_05'], ldf['g_95'], alpha=0.05, color=c1)
         ax3.set_xlabel('iteration')
 
-        if (i % 2) != 0:
-            ax3.yaxis.tick_right()
+        if i == 0:
+            ax3lims = ax3.get_ylim()
         else:
+            ax3.set_ylim(ax3lims)
+
+        if l == levels[-1]:
+            ax3.yaxis.tick_right()
+        if i == 0:
             ax3.set_ylabel(r'$g_i$ (mm)')
+
+        if i > 0 and l != levels[-1]:
+            ax3.set_yticklabels([])
+            ax3.set_ylabel('')
 
         ax3.text(lposx, lposy, 'Level %d' %
                  (i + 1), ha=lha, transform=ax3.transAxes, fontdict=fd)
 
     innergs1 = mgs.GridSpecFromSubplotSpec(
         2, len(levels), subplot_spec=outergs[1], hspace=0.3, wspace=0.05)
+
+    ax1lims = (0, 0)
+    ax2lims = (0, 0)
     for i, l in enumerate(levels):
         ldf = df[df.level == i]
         ax1 = plt.Subplot(fig, innergs1[0, i])
@@ -180,6 +240,13 @@ def plot_report(df, levels_df=None, out_file=None):
         ax2.text(.9, .05, 'Level %d' %
                  (i + 1), ha='right', transform=ax2.transAxes, fontdict=fd)
 
+        if l == levels[0]:
+            ax1lims = ax1.get_ylim()
+            ax2lims = ax2.get_ylim()
+        else:
+            ax1.set_ylim(ax1lims)
+            ax2.set_ylim(ax2lims)
+
     legend = ax1.legend(loc='center right', handles=patches1)
     frame = legend.get_frame()
     frame.set_facecolor('w')
@@ -197,9 +264,9 @@ def plot_report(df, levels_df=None, out_file=None):
     gps = outergs.get_grid_positions(fig)
     fig.text(gps[2][0], gps[1][0] + 0.02,
              'Total energy evolution', size='medium')
-    fig.text(gps[2][0], gps[1][0] - 0.26,
+    fig.text(gps[2][0], gps[1][0] - 0.28,
              'Update evolution', size='medium')
-    fig.text(gps[2][0], gps[0][0] + 0.24,
+    fig.text(gps[2][0], gps[0][0] + 0.2,
              r'Gradient at vertices ($g_i$) distribution', size='medium')
 
     fig.text(gps[3][0] + 0.072, gps[1][0] + 0.02,
