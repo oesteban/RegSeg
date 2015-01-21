@@ -91,8 +91,8 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
 
     regseg_low = default_regseg('REGSEG_low')
     ev_regseg_low = registration_ev(name=('Ev_%s' % regseg_low.name))
-    ev_regseg_hi.inputs.infonode.method = 'REGSEG'
-    ev_regseg_hi.inputs.infonode.resolution = 'lo'
+    ev_regseg_low.inputs.infonode.method = 'REGSEG'
+    ev_regseg_low.inputs.infonode.resolution = 'lo'
     norm_low = pe.Node(Normalize(), name='NormalizeFinal_low')
     export0 = pe.Node(ExportSlices(all_axis=True), name='Export_lo')
     sel0 = pe.Node(niu.Select(index=[0]), name='SelectT1w_lo')
