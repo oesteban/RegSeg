@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-20 15:07:28
+# @Last Modified time: 2015-01-22 16:08:03
 
 
 def add_annotations(values, ax, level, nlevels, color, lastidx, units=''):
@@ -434,3 +434,29 @@ def jointplot_gmm(locs, covs, labels=None, out_file=None,
 
     plt.savefig(out_file, dpi=300, bbox_inches='tight')
     return out_file
+
+
+def phantom_errors(in_csv, resolution='lo',
+                   mtypes=['ball', 'box', 'L', 'gyrus']):
+    import pandas as pd
+    import seaborn as sn
+    import matplotlib
+
+    df = pd.read_csv(in_csv)
+    df.surf_id[df.surf_id == 0] = 'internal'
+    df.surf_id[df.surf_id == 1] = 'external'
+
+    filtdf = df[df.resolution == resolution]
+
+    sn.set(style="whitegrid")
+    sn.set_context("poster", font_scale=1.5)
+    g = sn.factorplot('model_type', 'surfdist_avg', 'surf_id', filtdf,
+                      size=15, kind='box', x_order=mtypes, legend=False)
+    g.set_axis_labels('Type of model', 'Averaged error of surfaces (mm)')
+    lg = g.add_legend(title='Surface')
+
+    mytitle = (r'Registration error @ $%.1f \times %.1f \times %.1fmm^3$' %
+               tuple([1.0 if resolution == 'hi' else 2.0] * 3))
+    g.fig.suptitle(mytitle, y=1.05, fontsize=30)
+
+    return g

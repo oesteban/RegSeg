@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-22 13:03:48
+# @Last Modified time: 2015-01-22 16:17:25
 
 import os
 import os.path as op
@@ -66,14 +66,14 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
         methods = np.atleast_1d(methods).tolist()
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['grid_size', 'out_csv', 'lo_matrix', 'N',
+        fields=['grid_size', 'out_csv', 'lo_matrix', 'rep',
                 'hi_matrix', 'snr', 'cortex', 'shape']),
         name='inputnode')
 
     shapes = np.atleast_1d(shapes).tolist()
     inputnode.iterables = [('shape', shapes),
                            ('snr', snr_list),
-                           ('N', range(N))]
+                           ('rep', range(N))]
 
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['out_file', 'out_tpms', 'out_surfs', 'out_field', 'out_coeff',
@@ -101,7 +101,7 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
         (inputnode, ev_regseg_low, [
             ('shape', 'infonode.shape'),
             ('snr', 'infonode.snr'),
-            ('N', 'infonode.repetition')]),
+            ('rep', 'infonode.repetition')]),
         (phantom, ev_regseg_low, [
             ('refnode.out_signal',    'refnode.in_imag'),
             ('refnode.out_tpms',    'refnode.in_tpms'),
@@ -151,7 +151,7 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
         (inputnode, ev_regseg_hi, [
             ('shape', 'infonode.shape'),
             ('snr', 'infonode.snr'),
-            ('N', 'infonode.repetition')]),
+            ('rep', 'infonode.repetition')]),
         (phantom, ev_regseg_hi, [
             ('refnode.out_signal',    'refnode.in_imag'),
             ('refnode.out_tpms',    'refnode.in_tpms'),
