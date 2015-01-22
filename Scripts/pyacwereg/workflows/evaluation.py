@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-19 21:12:20
+# @Last Modified time: 2015-01-22 12:20:23
 
 import os
 import os.path as op
@@ -215,6 +215,9 @@ def registration_ev(name='EvaluateMapping'):
                            np.ma.extras.median(data)])
         return result.tolist()
 
+    def _get_id(inlist):
+        return range(len(inlist))
+
     input_ref = pe.Node(niu.IdentityInterface(
         fields=['in_imag', 'in_tpms', 'in_surf', 'in_field', 'in_mask']),
         name='refnode')
@@ -237,10 +240,11 @@ def registration_ev(name='EvaluateMapping'):
     mesh = pe.MapNode(HausdorffDistance(cells_mode=True),
                       iterfield=['surface1', 'surface2'],
                       name='SurfDistance')
-    csv = pe.Node(namisc.AddCSVRow(), name="AddRow")
+    csv = pe.MapNode(namisc.AddCSVRow(), name="AddRow",
+                     iterfield=['surf_id', 'surfdist_avg'])
     wf = pe.Workflow(name=name)
     wf.connect([
-        (inputnode,        csv, [('shape', 'shape'),
+        (inputnode,        csv, [('shape', 'model_type'),
                                  ('snr', 'snr'),
                                  ('method', 'method'),
                                  ('resolution', 'resolution'),
@@ -269,9 +273,10 @@ def registration_ev(name='EvaluateMapping'):
         # (diff_fld,  outputnode, [('out_map', 'out_field_err')]),
         (input_ref,       mesh, [('in_surf', 'surface1')]),
         (input_tst,       mesh, [('in_surf', 'surface2')]),
-        (mesh,             csv, [('max_hd', 'surfdist_hausdorff'),
-                                 ('avg_hd', 'surfdist_avg'),
-                                 ('std_hd', 'surfdist_std'),
-                                 ('stats_hd', 'surfdist_stats')])
+        (mesh,             csv, [('avg_hd', 'surfdist_avg')])
+        # (mesh,             csv, [('max_hd', 'surfdist_hausdorff'),
+        #                          ('avg_hd', 'surfdist_avg'),
+        #                          ('std_hd', 'surfdist_std'),
+        #                          ('stats_hd', 'surfdist_stats')])
     ])
     return wf
