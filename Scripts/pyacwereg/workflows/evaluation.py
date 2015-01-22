@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-22 12:20:23
+# @Last Modified time: 2015-01-22 13:03:48
 
 import os
 import os.path as op
@@ -273,7 +273,8 @@ def registration_ev(name='EvaluateMapping'):
         # (diff_fld,  outputnode, [('out_map', 'out_field_err')]),
         (input_ref,       mesh, [('in_surf', 'surface1')]),
         (input_tst,       mesh, [('in_surf', 'surface2')]),
-        (mesh,             csv, [('avg_hd', 'surfdist_avg')])
+        (mesh,             csv, [('avg_hd', 'surfdist_avg'),
+                                 (('avg_hd', _get_id), 'surf_id')])
         # (mesh,             csv, [('max_hd', 'surfdist_hausdorff'),
         #                          ('avg_hd', 'surfdist_avg'),
         #                          ('std_hd', 'surfdist_std'),
