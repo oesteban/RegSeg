@@ -47,7 +47,21 @@ class ExportSlices(CommandLine):
     """
     input_spec = ExportSlicesInputSpec
     output_spec = ExportSlicesOutputSpec
-    _cmd = 'slice_contours'
+    _cmd = 'xvfb-run -a -s "-screen 0 640x480x24" slice_contours'
+    _redirect_x = False
+
+    # def _run_interface(self, runtime):
+    #     displaynum = None
+    #     try:
+    #         displaynum = runtime.environ['DISPLAY']
+    #     except KeyError:
+    #         pass
+    #     
+    #     if displaynum is not None and len(displaynum) > 0:
+    #         self._redirect_x = False
+    #         iflogger.info('ExportSlices: overriding X redirection')
+    #     
+    #     return super(ExportSlices, self)._run_interface(runtime)
 
     def _list_outputs(self):
         from glob import glob

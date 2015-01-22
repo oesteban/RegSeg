@@ -240,8 +240,8 @@ def registration_ev(name='EvaluateMapping'):
     mesh = pe.MapNode(HausdorffDistance(cells_mode=True),
                       iterfield=['surface1', 'surface2'],
                       name='SurfDistance')
-    csv = pe.MapNode(namisc.AddCSVRow(), name="AddRow",
-                     iterfield=['surf_id', 'surfdist_avg'])
+    csv = pe.MapNode(namisc.AddCSVRow(infields=['surf_id', 'surfdist_avg']),
+                     name="AddRow", iterfield=['surf_id', 'surfdist_avg'])
     wf = pe.Workflow(name=name)
     wf.connect([
         (inputnode,        csv, [('shape', 'model_type'),
