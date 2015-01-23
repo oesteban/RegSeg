@@ -4,11 +4,11 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-15 15:33:01
+# @Last Modified time: 2015-01-23 16:07:15
 
 import interfaces
 import workflows
-import viz
+from viz import *
 
 __author__ = 'Oscar Esteban'
 __copyright__ = ('Copyright 2013, Biomedical Image Technologies (BIT),'

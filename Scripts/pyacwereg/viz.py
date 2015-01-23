@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-22 16:08:03
+# @Last Modified time: 2015-01-23 16:39:24
 
 
 def add_annotations(values, ax, level, nlevels, color, lastidx, units=''):
@@ -431,6 +431,41 @@ def jointplot_gmm(locs, covs, labels=None, out_file=None,
 
     if out_file is None:
         out_file = op.abspath('jointplot.pdf')
+
+    plt.savefig(out_file, dpi=300, bbox_inches='tight')
+    return out_file
+
+
+def slices_gridplot(in_files, view=['axial'], size=(3, 3), discard=3,
+                    out_file=None):
+    from matplotlib import pyplot as plt
+    import numpy as np
+
+    view = np.atleast_1d(view).tolist()
+    rows = len(view)
+    cols = 0
+
+    fileslist = []
+    for v in view:
+        filtlist = [f for f in in_files if v in f]
+        if cols == 0:
+            viewlist = filtlist[discard:-discard]
+            cols = len(viewlist)
+        else:
+            viewlist = filtlist[discard:cols + discard]
+        fileslist.append(viewlist)
+
+    fig, axes = plt.subplots(rows, cols,
+                             figsize=(size[0] * cols, size[1] * rows),
+                             subplot_kw={'xticks': [], 'yticks': []})
+    fig.subplots_adjust(hspace=0.1, wspace=0.05)
+
+    for r in range(rows):
+        for c in range(cols):
+            axes[r, c].imshow(plt.imread(fileslist[r][c]))
+
+    if out_file is None:
+        out_file = op.abspath('slices_gridplot.pdf')
 
     plt.savefig(out_file, dpi=300, bbox_inches='tight')
     return out_file

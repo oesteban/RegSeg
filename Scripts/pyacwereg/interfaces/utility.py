@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-23 15:05:15
+# @Last Modified time: 2015-01-23 16:40:39
 import os
 import os.path as op
 import nibabel as nb
@@ -61,6 +61,39 @@ class ExportSlices(CommandLine):
         out_pattern = op.join(out_path, '*.png')
         outputs['out_files'] = sorted(glob(out_pattern))
         return outputs
+
+
+class SlicesGridplotInputSpec(BaseInterfaceInputSpec):
+    slices = File(exists=True, mandatory=True, desc='input slices list')
+    view = traits.Enum('axial', 'coronal', 'sagittal', 'all', usedefault=True,
+                       desc='view plane to export')
+    out_file = File('slices_gridplot.pdf',
+                    usedefault=True, desc='output report')
+
+
+class SlicesGridplotOutputSpec(BaseInterfaceInputSpec):
+    out_file = File(desc='output report')
+
+
+class SlicesGridplot(BaseInterface):
+    input_spec = SlicesGridplotInputSpec
+    output_spec = SlicesGridplotOutputSpec
+
+    def _run_interface(self, runtime):
+        from pyacwereg import viz
+
+        view = [self.inputs.view]
+        if self.inputs.view == 'all':
+            view = ['axial', 'coronal', 'sagittal']
+
+        viz.slices_gridplot(self.inputs.slices, view=view,
+                            out_file=op.abspath(self.inputs.out_file))
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs['out_file'] = op.abspath(self.inputs.out_file)
+        return outputsOutputSpec
 
 
 class Surf2VolInputSpec(CommandLineInputSpec):
