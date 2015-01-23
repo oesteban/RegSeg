@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 #endif
 
 	std::string image;
-	std::vector<std::string> surfaces, rsurfaces;
+	std::vector<std::string> surfaces, rsurfaces, osurfaces;
 	int slice_num, nimages;
 	std::string axisname = "axial";
 	std::vector<int> axislist;
@@ -45,6 +45,7 @@ int main(int argc, char *argv[]) {
 		("input-image,i", bpo::value<std::string>(&image)->required(), "reference image file")
 		("surfaces,S", bpo::value<std::vector<std::string>	>(&surfaces)->multitoken(), "surfaces (vtk files)")
 		("ref-surfaces,R", bpo::value<std::vector<std::string>	>(&rsurfaces)->multitoken(), "reference surfaces (vtk files)")
+		("orig-surfaces,O", bpo::value<std::vector<std::string>	>(&osurfaces)->multitoken(), "original surfaces (vtk files)")
 		("num-slices,n", bpo::value < int >(&nimages)->default_value(14), "number of slices")
 		("slice,s", bpo::value < int >(&slice_num)->default_value(-1), "slice number")
 		("axis,a", bpo::value < std::vector<int> >(&axislist), "axes to be extracted")
@@ -118,6 +119,7 @@ int main(int argc, char *argv[]) {
 
 	size_t nsurf = surfaces.size();
 	size_t nrsurf = rsurfaces.size();
+	size_t nosurf = osurfaces.size();
 
 	std::vector< vtkSmartPointer<vtkPolyData> > vp;
 	for(size_t surf = 0; surf < surfaces.size(); surf++) {
@@ -128,11 +130,19 @@ int main(int argc, char *argv[]) {
 	}
 
 	std::vector< vtkSmartPointer<vtkPolyData> > vpr;
-	for(size_t surf = 0; surf < rsurfaces.size(); surf++) {
+	for(size_t surf = 0; surf < nrsurf; surf++) {
 		VTK_CREATE(vtkPolyDataReader, reader);
 		reader->SetFileName(rsurfaces[surf].c_str());
 		reader->Update();
 		vpr.push_back(reader->GetOutput());
+	}
+
+	std::vector< vtkSmartPointer<vtkPolyData> > vpo;
+	for(size_t surf = 0; surf < nosurf; surf++) {
+		VTK_CREATE(vtkPolyDataReader, reader);
+		reader->SetFileName(osurfaces[surf].c_str());
+		reader->Update();
+		vpo.push_back(reader->GetOutput());
 	}
 
 	double totalims = 1.0 * (nimages+1);
@@ -187,7 +197,7 @@ int main(int argc, char *argv[]) {
 		double normal[DIMENSION] = { 0.0, 0.0, 0.0 };
 		normal[axis] = 1.0;
 
-		std::cout << "Axis (" << axisname << ") Normal[" << axis<< "]=[" << normal[0] << ", " << normal[1] << ", " << normal[2] << "]";
+		// std::cout << "Axis (" << axisname << ") Normal[" << axis<< "]=[" << normal[0] << ", " << normal[1] << ", " << normal[2] << "]";
 
 		for (size_t sl = 0; sl < nimages; sl++) {
 			// Setup renderers
@@ -244,8 +254,30 @@ int main(int argc, char *argv[]) {
 				contourmapper->SetInputConnection(stripper->GetOutputPort());
 				VTK_CREATE(vtkActor, outlineActor);
 				outlineActor->SetMapper(contourmapper);
-				outlineActor->GetProperty()->SetColor(1.0,1.0,0.2);
+				outlineActor->GetProperty()->SetColor(0.0, 0.804, 0.0);
 				outlineActor->GetProperty()->SetLineWidth(4);
+				renderer->AddActor(outlineActor);
+			}
+
+			for(size_t surf = 0; surf < osurfaces.size(); surf++) {
+				VTK_CREATE(vtkCutter, cutter);
+				cutter->SetCutFunction(cutPlane);
+#if VTK_MAJOR_VERSION <= 5
+				cutter->SetInput(vpo[surf]);
+#else
+				cutter->SetInputData(vpo[surf]);
+#endif
+
+				VTK_CREATE(vtkStripper, stripper);
+				stripper->SetInputConnection(cutter->GetOutputPort()); // valid circle
+				stripper->Update();
+
+				VTK_CREATE(vtkPolyDataMapper, contourmapper);
+				contourmapper->SetInputConnection(stripper->GetOutputPort());
+				VTK_CREATE(vtkActor, outlineActor);
+				outlineActor->SetMapper(contourmapper);
+				outlineActor->GetProperty()->SetColor(0.118, 0.565, 1.0);
+				outlineActor->GetProperty()->SetLineWidth(1.5);
 				renderer->AddActor(outlineActor);
 			}
 
@@ -264,8 +296,8 @@ int main(int argc, char *argv[]) {
 				contourmapper->SetInputConnection(stripper->GetOutputPort());
 				VTK_CREATE(vtkActor, outlineActor);
 				outlineActor->SetMapper(contourmapper);
-				outlineActor->GetProperty()->SetColor(0.5,0.6,1.0);
-				outlineActor->GetProperty()->SetLineWidth(3);
+				outlineActor->GetProperty()->SetColor(1.0, 1.0, 0.0);
+				outlineActor->GetProperty()->SetLineWidth(4);
 				renderer->AddActor(outlineActor);
 			}
 

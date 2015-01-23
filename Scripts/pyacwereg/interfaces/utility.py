@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-19 14:44:39
+# @Last Modified time: 2015-01-23 15:05:15
 import os
 import os.path as op
 import nibabel as nb
@@ -29,6 +29,10 @@ class ExportSlicesInputSpec(CommandLineInputSpec):
     surfaces1 = InputMultiPath(
         File(exists=True), argstr='-R %s',
         desc=('vtk contours that will be overlaid on reference'))
+    surfaces3 = InputMultiPath(
+        File(exists=True), argstr='-O %s',
+        desc=('vtk contours that will be overlaid on reference'))
+
     num_slices = traits.Int(14, argstr='-n %d', desc='total num. of slices')
     axis = traits.Enum(2, 0, 1, argstr='-a %d', usedefault=True,
                        desc='axis to cut through')
@@ -49,19 +53,6 @@ class ExportSlices(CommandLine):
     output_spec = ExportSlicesOutputSpec
     _cmd = 'xvfb-run -a -s "-screen 0 640x480x24" slice_contours'
     _redirect_x = False
-
-    # def _run_interface(self, runtime):
-    #     displaynum = None
-    #     try:
-    #         displaynum = runtime.environ['DISPLAY']
-    #     except KeyError:
-    #         pass
-    #     
-    #     if displaynum is not None and len(displaynum) > 0:
-    #         self._redirect_x = False
-    #         iflogger.info('ExportSlices: overriding X redirection')
-    #     
-    #     return super(ExportSlices, self)._run_interface(runtime)
 
     def _list_outputs(self):
         from glob import glob
