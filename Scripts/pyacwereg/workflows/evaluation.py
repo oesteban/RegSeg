@@ -66,14 +66,14 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
         methods = np.atleast_1d(methods).tolist()
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['grid_size', 'out_csv', 'lo_matrix', 'rep',
+        fields=['grid_size', 'out_csv', 'lo_matrix', 'rep_id',
                 'hi_matrix', 'snr', 'cortex', 'shape']),
         name='inputnode')
 
     shapes = np.atleast_1d(shapes).tolist()
     inputnode.iterables = [('shape', shapes),
                            ('snr', snr_list),
-                           ('rep', range(N))]
+                           ('rep_id', range(N))]
 
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['out_file', 'out_tpms', 'out_surfs', 'out_field', 'out_coeff',
@@ -86,7 +86,8 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
                                ('lo_matrix', 'inputnode.lo_matrix'),
                                ('hi_matrix', 'inputnode.hi_matrix'),
                                ('snr', 'inputnode.snr'),
-                               ('cortex', 'inputnode.cortex')])
+                               ('cortex', 'inputnode.cortex'),
+                               ('rep_id', 'inputnode.repetition_id')])
     ])
 
     regseg_low = default_regseg('REGSEG_low')
@@ -101,7 +102,7 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
         (inputnode, ev_regseg_low, [
             ('shape', 'infonode.shape'),
             ('snr', 'infonode.snr'),
-            ('rep', 'infonode.repetition')]),
+            ('rep_id', 'infonode.repetition')]),
         (phantom, ev_regseg_low, [
             ('refnode.out_signal',    'refnode.in_imag'),
             ('refnode.out_tpms',    'refnode.in_tpms'),
@@ -151,7 +152,7 @@ def bspline(name='BSplineEvaluation', shapes=['gyrus'], snr_list=[300],
         (inputnode, ev_regseg_hi, [
             ('shape', 'infonode.shape'),
             ('snr', 'infonode.snr'),
-            ('rep', 'infonode.repetition')]),
+            ('rep_id', 'infonode.repetition')]),
         (phantom, ev_regseg_hi, [
             ('refnode.out_signal',    'refnode.in_imag'),
             ('refnode.out_tpms',    'refnode.in_tpms'),
