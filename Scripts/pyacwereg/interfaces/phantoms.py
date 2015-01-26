@@ -27,6 +27,8 @@ class PhantomInputSpec(BaseInterfaceInputSpec):
                          desc='Generate a crust mimicking cortical GM')
     out_file = File('phantom_model.nii.gz', usedefault=True,
                     desc='output file name')
+    seed = traits.Int(0, usedefault=True,
+                      desc='random seed')
     matrix_size_item_trait = traits.Int(101, usedefault=True)
     matrix_size = traits.Either(matrix_size_item_trait,
                                 traits.List(matrix_size_item_trait),

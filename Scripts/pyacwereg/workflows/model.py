@@ -29,7 +29,7 @@ def generate_phantom(name='PhantomGeneration'):
     """
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['shape', 'hi_matrix', 'lo_matrix', 'snr', 'cortex',
-                'grid_size']),
+                'grid_size', 'repetition_id']),
         name='inputnode')
 
     out_lowres = pe.Node(niu.IdentityInterface(
@@ -95,7 +95,8 @@ def generate_phantom(name='PhantomGeneration'):
     wf.connect([
         (inputnode,   model,       [('shape', 'shape'),
                                     ('hi_matrix', 'matrix_size'),
-                                    ('cortex', 'cortex')]),
+                                    ('cortex', 'cortex'),
+                                    ('repetition_id', 'seed')]),
         (model,       split,       [('out_file', 'in_file')]),
         (split,       selm1,       [('out_files', 'inlist')]),
         (selm1,       signal0,     [('out2', 'frac_wm'),
