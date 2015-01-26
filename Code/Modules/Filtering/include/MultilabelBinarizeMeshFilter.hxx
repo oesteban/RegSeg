@@ -60,6 +60,9 @@ MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 	m_Spacing.Fill(0.0);
 	m_Origin.Fill(0.0);
 	m_Direction.GetVnlMatrix().set_identity();
+
+	this->m_PreThreader = itk::MultiThreader::New();
+	this->m_NumberOfThreads = this->m_PreThreader->GetNumberOfThreads();
 }
 
 template< typename TInputMesh, typename TOutputPixelType, unsigned int VDimension >
@@ -112,12 +115,52 @@ MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 }
 
 template< typename TInputMesh, typename TOutputPixelType, unsigned int VDimension >
+void
+MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
+::BinarizeThreaded(size_t num) {
+	this->m_Components[num]->Update();
+}
+
+template< typename TInputMesh, typename TOutputPixelType, unsigned int VDimension >
+void
+MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
+::SplitRequestedFilters(itk::ThreadIdType id, itk::ThreadIdType num, std::vector<size_t>& res) {
+	size_t total = this->m_Components.size();
+
+	if (num > total)
+		itkExceptionMacro(<< "total number of threads overs number of filters")
+
+	res.push_back(id);
+
+	for(int rem = total; rem > num; ) {
+		size_t nextId = id + num;
+		if( nextId < total )
+			res.push_back(nextId);
+		else
+			return;
+
+		rem-=num;
+	}
+}
+
+template< typename TInputMesh, typename TOutputPixelType, unsigned int VDimension >
 ITK_THREAD_RETURN_TYPE
 MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 ::BinarizeThreaderCallback(void *arg) {
+	ThreadStruct *str;
 	itk::ThreadIdType total, threadId, threadCount;
+
 	threadId = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->ThreadID;
 	threadCount = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->NumberOfThreads;
+	str = (ThreadStruct *)(((itk::MultiThreader::ThreadInfoStruct *)(arg))->UserData);
+
+	std::vector<size_t> filters;
+	str->Filter->SplitRequestedFilters(threadId, threadCount, filters);
+
+	for (size_t id = 0; id < filters.size(); id++)
+		str->Filter->BinarizeThreaded(filters[id]);
+
+	return ITK_THREAD_RETURN_VALUE;
 }
 
 template< typename TInputMesh, typename TOutputPixelType, unsigned int VDimension >
@@ -128,6 +171,16 @@ MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 	OutputImagePointer output = this->GetOutput();
 	m_Components.clear();
 
+	// find the actual number of threads
+	m_NumberOfThreads = this->GetNumberOfThreads();
+	if ( itk::MultiThreader::GetGlobalMaximumNumberOfThreads() != 0 ) {
+		m_NumberOfThreads = vnl_math_min( this->GetNumberOfThreads(), itk::MultiThreader::GetGlobalMaximumNumberOfThreads() );
+	}
+
+	long nbOfThreads = (m_NumberOfMeshes > m_NumberOfThreads)?m_NumberOfThreads:m_NumberOfMeshes;
+	struct ThreadStruct str;
+	str.Filter = this;
+
 	for (size_t idx = 0; idx < m_NumberOfMeshes; idx++ ) {
 		BinarizeMeshFilterPointer meshFilter = BinarizeMeshFilterType::New();
 		meshFilter->SetSpacing( m_Spacing );
@@ -135,25 +188,18 @@ MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 		meshFilter->SetOrigin( m_Origin );
 		meshFilter->SetSize( m_Size );
 		meshFilter->SetInput( GetInput(idx) );
-		meshFilter->Update();
-		m_Components.push_back(meshFilter->GetOutput());
+		m_Components.push_back(meshFilter);
 	}
 
-	this->GetPreMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
+	this->GetPreMultiThreader()->SetNumberOfThreads( nbOfThreads );
 	this->GetPreMultiThreader()->SetSingleMethod( this->BinarizeThreaderCallback, &str );
 	this->GetPreMultiThreader()->SingleMethodExecute();
-	this->AfterComputeMatrix(type);
 
-	// find the actual number of threads
-	long nbOfThreads = this->GetNumberOfThreads();
-	if ( itk::MultiThreader::GetGlobalMaximumNumberOfThreads() != 0 ) {
-		nbOfThreads = vnl_math_min( this->GetNumberOfThreads(), itk::MultiThreader::GetGlobalMaximumNumberOfThreads() );
-	}
 	// number of threads can be constrained by the region size, so call the
 	// SplitRequestedRegion
 	// to get the real number of threads which will be used
 	RegionType splitRegion;  // dummy region - just to call the following method
-	nbOfThreads = this->SplitRequestedRegion(0, nbOfThreads, splitRegion);
+	nbOfThreads = this->SplitRequestedRegion(0, m_NumberOfThreads, splitRegion);
 }
 
 template< typename TInputMesh, typename TOutputPixelType, unsigned int VDimension >
@@ -165,7 +211,7 @@ MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 
 	const OutputPixelValueType* compBuffer[m_NumberOfMeshes];
 	for( size_t comp = 0; comp < m_NumberOfMeshes; comp++ ) {
-		compBuffer[comp] = m_Components[comp]->GetBufferPointer();
+		compBuffer[comp] = m_Components[comp]->GetOutput()->GetBufferPointer();
 	}
 	OutputComponentPointer ref = m_OutputSegmentation;
 	OutputPixelValueType* segBuffer = ref->GetBufferPointer();

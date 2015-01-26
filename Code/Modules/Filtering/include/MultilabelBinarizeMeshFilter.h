@@ -141,6 +141,7 @@ public:
 	  itkGetObjectMacro(OutputSegmentation, OutputComponentType)
 	  itkGetConstObjectMacro(OutputSegmentation, OutputComponentType)
 
+	  struct ThreadStruct { Pointer Filter; };
 	  itk::MultiThreader * GetPreMultiThreader() const { return m_PreThreader; }
 protected:
 	  void BeforeThreadedGenerateData();
@@ -148,6 +149,8 @@ protected:
 	  virtual void GenerateOutputInformation();
 
 	  static ITK_THREAD_RETURN_TYPE BinarizeThreaderCallback(void *arg);
+	  void BinarizeThreaded(size_t num);
+	  void SplitRequestedFilters(itk::ThreadIdType id, itk::ThreadIdType num, std::vector<size_t>& res);
 
 	  MultilabelBinarizeMeshFilter();
 	  ~MultilabelBinarizeMeshFilter() {}
@@ -168,7 +171,7 @@ private:
 
 	  size_t m_NumberOfMeshes;
 	  size_t m_NumberOfRegions;
-	  std::vector< OutputComponentPointer > m_Components;
+	  std::vector< BinarizeMeshFilterPointer > m_Components;
 	  OutputComponentPointer m_OutputSegmentation;
 }; // class
 
