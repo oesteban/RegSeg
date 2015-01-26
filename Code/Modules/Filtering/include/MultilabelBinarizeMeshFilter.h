@@ -140,15 +140,22 @@ public:
 
 	  itkGetObjectMacro(OutputSegmentation, OutputComponentType)
 	  itkGetConstObjectMacro(OutputSegmentation, OutputComponentType)
+
+	  itk::MultiThreader * GetPreMultiThreader() const { return m_PreThreader; }
 protected:
 	  void BeforeThreadedGenerateData();
 	  void ThreadedGenerateData(const RegionType & inputRegionForThread, itk::ThreadIdType threadId);
 	  virtual void GenerateOutputInformation();
 
+	  static ITK_THREAD_RETURN_TYPE BinarizeThreaderCallback(void *arg);
+
 	  MultilabelBinarizeMeshFilter();
 	  ~MultilabelBinarizeMeshFilter() {}
 	  virtual void PrintSelf(std::ostream & os, itk::Indent indent) const { Superclass::PrintSelf(os, indent); }
 
+		/** Support processing data in multiple threads. */
+		itk::MultiThreader::Pointer m_PreThreader;
+		itk::ThreadIdType           m_NumberOfThreads;
 private:
 	  MultilabelBinarizeMeshFilter(const Self &); //purposely not implemented
 	  void operator=(const Self &);                  //purposely not implemented

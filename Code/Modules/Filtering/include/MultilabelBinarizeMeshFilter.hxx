@@ -112,6 +112,15 @@ MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 }
 
 template< typename TInputMesh, typename TOutputPixelType, unsigned int VDimension >
+ITK_THREAD_RETURN_TYPE
+MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
+::BinarizeThreaderCallback(void *arg) {
+	itk::ThreadIdType total, threadId, threadCount;
+	threadId = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->ThreadID;
+	threadCount = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->NumberOfThreads;
+}
+
+template< typename TInputMesh, typename TOutputPixelType, unsigned int VDimension >
 void
 MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 ::BeforeThreadedGenerateData() {
@@ -129,6 +138,11 @@ MultilabelBinarizeMeshFilter< TInputMesh, TOutputPixelType, VDimension >
 		meshFilter->Update();
 		m_Components.push_back(meshFilter->GetOutput());
 	}
+
+	this->GetPreMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
+	this->GetPreMultiThreader()->SetSingleMethod( this->BinarizeThreaderCallback, &str );
+	this->GetPreMultiThreader()->SingleMethodExecute();
+	this->AfterComputeMatrix(type);
 
 	// find the actual number of threads
 	long nbOfThreads = this->GetNumberOfThreads();
