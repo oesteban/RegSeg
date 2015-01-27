@@ -259,7 +259,7 @@ void OptimizerBase<TFunctional>::Resume() {
 		}
 
 
-		if (this->m_CurrentIteration >= this->m_ConvergenceWindowSize){
+		if (this->m_CurrentIteration > 0){
 			float inc = 1.0;
 			if (this->m_ConvergenceValue != itk::NumericTraits<InternalComputationValueType>::infinity() ) {
 				inc+= this->m_ConvergenceValue;

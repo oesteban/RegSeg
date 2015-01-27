@@ -62,7 +62,7 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
         int_trait, traits.List(int_trait), argstr='-u %d',
         desc=('update descriptors every N iterations, per level'))
 
-    convergence_energy = traits.Either(
+    descript_adaptative = traits.Either(
         bool_trait, traits.List(bool_trait), default=False,
         argstr='--adaptative-descriptors',
         desc=('recompute descriptors progressively'))
