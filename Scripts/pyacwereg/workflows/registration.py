@@ -27,7 +27,7 @@ def regseg_wf(name='REGSEG', enhance_inputs=True):
                      'grid_spacing', 'convergence_energy',
                      'convergence_window', 'f_smooth',
                      'images_verbosity', 'scales', 'descript_update',
-                     'convergence_value']
+                     'convergence_value', 'descript_adaptative']
 
     wf_inputs = ['in_fixed', 'in_tpms', 'in_surf', 'in_mask']
     inputnode = pe.Node(niu.IdentityInterface(
