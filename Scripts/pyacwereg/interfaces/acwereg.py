@@ -61,6 +61,12 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
     descript_update = traits.Either(
         int_trait, traits.List(int_trait), argstr='-u %d',
         desc=('update descriptors every N iterations, per level'))
+
+    convergence_energy = traits.Either(
+        bool_trait, traits.List(bool_trait), default=False,
+        argstr='--adaptative-descriptors',
+        desc=('recompute descriptors progressively'))
+
     step_size = traits.Either(
         float_trait, traits.List(float_trait), default=1.0, argstr='-s %0.5f',
         desc=('update step size in gradient descent optimization'))

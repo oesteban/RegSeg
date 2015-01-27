@@ -192,20 +192,11 @@ public:
 	}
 
 	itkSetMacro( GridSize, ControlPointsGridSizeType );
-	// void SetGridSize( double val ) { this->m_GridSize.Fill(val); }
-
 	itkSetMacro( GridSpacing, ControlPointsGridSpacingType );
-	// void SetGridSpacing( double val ) { this->m_GridSize.Fill(val); }
 
 	void ComputeIterationSpeed();
 	MeasureType GetCurrentRegularizationEnergy();
 	MeasureType GetCurrentEnergy();
-
-	itkSetMacro( DescriptorRecomputationFreq, SizeValueType );
-	itkGetConstMacro( DescriptorRecomputationFreq, SizeValueType );
-
-	itkSetMacro( UseDescriptorRecomputation, bool );
-	itkGetConstMacro( UseDescriptorRecomputation, bool );
 
 	itkGetConstObjectMacro(CurrentCoefficients, FieldType);
 

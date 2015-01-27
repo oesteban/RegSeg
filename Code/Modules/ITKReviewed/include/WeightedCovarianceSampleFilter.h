@@ -95,15 +95,6 @@ public:
   typedef typename Superclass::MeasurementVectorDecoratedType MeasurementVectorDecoratedType;
   typedef typename Superclass::OutputType                     OutputType;
 
-
-  virtual void SetMean(const MeasurementVectorRealType m) {
-  	  MeasurementVectorDecoratedType *decoratedMeanOutput =
-  	    itkDynamicCastInDebugMode< MeasurementVectorDecoratedType * >( this->ProcessObject::GetOutput(1) );
-  	  decoratedMeanOutput->Set( m );
-  	  this->m_MeanSet = true;
-  	  this->Modified();
-    }
-
   const MeasurementVectorRealType GetRangeMax() const;
   const MeasurementVectorDecoratedType * GetRangeMaxOutput() const;
   const MeasurementVectorRealType GetRangeMin() const;
@@ -133,7 +124,7 @@ private:
   WeightedCovarianceSampleFilter(const Self &); //purposely not implemented
   void operator=(const Self &);                 //purposely not implemented
 
-  bool m_MeanSet;
+  bool m_RemoveOutliers;
 
 };  // end of class
 } // end of namespace itk
