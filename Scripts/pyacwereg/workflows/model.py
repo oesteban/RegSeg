@@ -43,8 +43,7 @@ def generate_phantom(name='PhantomGeneration'):
         name='out_hires')
 
     refnode = pe.Node(niu.IdentityInterface(
-        fields=['out_signal', 'out_mask', 'out_tpms', 'out_surfs',
-                'repetition_id']),
+        fields=['out_signal', 'out_mask', 'out_tpms', 'out_surfs']),
         name='refnode')
 
     model = pe.Node(pip.Phantom(), name='GenerateModel')
@@ -147,7 +146,6 @@ def generate_phantom(name='PhantomGeneration'):
         (selt0,       refnode,     [('out2', 'out_tpms')]),
         (model,       refnode,     [('out_mask', 'out_mask')]),
         (merge0,      refnode,     [('out', 'out_signal')]),
-        (inputnode,   refnode,     [('repetition_id', 'repetition_id')])
 
         # distorted outputs
         (inputnode,   out_hires,   [('grid_size', 'grid_size')]),
