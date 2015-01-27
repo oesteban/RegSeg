@@ -192,8 +192,8 @@ public:
 	itkGetConstMacro(CurrentValue, MeasureType);
 	itkGetConstMacro(CurrentNorm, MeasureType);
 
-	itkSetMacro( DescriptorRecomputationFreq, SizeValueType );
-	itkGetConstMacro( DescriptorRecomputationFreq, SizeValueType );
+	itkSetMacro( DescriptorRecompPeriod, SizeValueType );
+	itkGetConstMacro( DescriptorRecompPeriod, SizeValueType );
 
 	itkSetMacro( UseDescriptorRecomputation, bool );
 	itkGetConstMacro( UseDescriptorRecomputation, bool );
@@ -264,6 +264,8 @@ protected:
 	virtual void Iterate() = 0;
 	virtual void PostIteration() = 0;
 
+	virtual bool DoDescriptorsUpdate();
+
 	/** Manual learning rate to apply. It is overridden by
 	 * automatic learning rate estimation if enabled. See main documentation.
 	 */
@@ -297,7 +299,8 @@ protected:
 	bool                          m_Stop;
 	StopConditionType             m_StopCondition;
 	StopConditionDescriptionType  m_StopConditionDescription;
-	SizeValueType                 m_DescriptorRecomputationFreq;
+	SizeValueType                 m_DescriptorRecompPeriod;
+	SizeValueType                 m_NextRecompIteration;
 	SizeValueType                 m_ValueOscillations;
 	SizeValueType                 m_ValueOscillationsMax;
 	SizeValueType                 m_ValueOscillationsLast;
@@ -312,13 +315,13 @@ protected:
 	bool                          m_ForceDiffeomorphic;
 	bool                          m_DiffeomorphismForced;
 	bool                          m_UseLightWeightConvergenceChecking;
+	bool                          m_UseAdaptativeDescriptors;
 
 	/* Energy tracking */
 	MeasureType                  m_CurrentValue;
 	MeasureType                  m_CurrentEnergy;
 	MeasureType                  m_CurrentNorm;
 	MeasureType                  m_LastEnergy;
-	MeasureType                  m_InitialValue;
 	MeasureArray                 m_ValueWindow;
 
 	ControlPointsGridSizeType    m_GridSize;
@@ -333,7 +336,6 @@ protected:
 private:
 	OptimizerBase( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
-
 }; // End of Class
 
 

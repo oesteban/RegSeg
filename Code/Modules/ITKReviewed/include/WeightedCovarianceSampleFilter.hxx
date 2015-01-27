@@ -26,7 +26,7 @@ namespace rstk
 template< typename TSample >
 WeightedCovarianceSampleFilter< TSample >
 ::WeightedCovarianceSampleFilter():
- m_MeanSet(false),
+ m_RemoveOutliers(true),
  Superclass()
 {
   this->ProcessObject::SetNthInput(1, ITK_NULLPTR);
@@ -133,12 +133,9 @@ WeightedCovarianceSampleFilter< TSample >
   pbottom.Fill(itk::NumericTraits<MeasurementType>::min());
   ptop.Fill(itk::NumericTraits<MeasurementType>::max());
 
-
-  MeasurementVectorType mean;
-  if( this->m_MeanSet ) {
-	  mean = decoratedMeanOutput->Get();
-  } else {
-	  // calculate mean
+  if( this->m_RemoveOutliers ) {
+	  MeasurementVectorType median;
+	  // calculate percentiles
 	  for ( unsigned int sampleVectorIndex = 0; iter != end; ++iter, ++sampleVectorIndex ) {
 	    const MeasurementVectorType & measurement = iter.GetMeasurementVector();
 	    const WeightValueType rawWeight = weightsArray[sampleVectorIndex];
@@ -149,18 +146,16 @@ WeightedCovarianceSampleFilter< TSample >
 	    }
 	  }
 
-	  itk::NumericTraits<MeasurementVectorType>::SetLength( mean, measurementVectorSize );
+	  itk::NumericTraits<MeasurementVectorType>::SetLength( median, measurementVectorSize );
 
 	  size_t sampleSize = sampleComponents[0].size() - 1;
 	  for(size_t c = 0; c < measurementVectorSize; c++) {
 		  std::sort(sampleComponents[c].begin(), sampleComponents[c].end());
 	  	  pbottom[c] = sampleComponents[c][int(0.02 * sampleSize)];
 	  	  ptop[c] = sampleComponents[c][int(0.98 * sampleSize)];
-	  	  mean[c] = sampleComponents[c][int(0.50 * sampleSize)];
+	  	  median[c] = sampleComponents[c][int(0.50 * sampleSize)];
 	  }
-	  decoratedMeanOutput->Set( mean );
   }
-
 
   MeasurementVectorDecoratedType *decoratedRangeMaxOutput =
 	    itkDynamicCastInDebugMode< MeasurementVectorDecoratedType * >( this->ProcessObject::GetOutput(2) );
@@ -190,6 +185,7 @@ WeightedCovarianceSampleFilter< TSample >
   }
 
   // calculate mean
+  MeasurementVectorType mean;
   typedef itk::Statistics::WeightedMeanSampleFilter< SampleType > WeightedMeanFilterType;
   typename WeightedMeanFilterType::Pointer meanFilter = WeightedMeanFilterType::New();
 

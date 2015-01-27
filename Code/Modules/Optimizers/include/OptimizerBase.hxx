@@ -79,7 +79,8 @@ m_ConvergenceWindowSize( 10 ),
 m_ConvergenceValue( itk::NumericTraits<InternalComputationValueType>::infinity() ),
 m_Stop( false ),
 m_StopCondition(MAXIMUM_NUMBER_OF_ITERATIONS),
-m_DescriptorRecomputationFreq(0),
+m_DescriptorRecompPeriod(0),
+m_NextRecompIteration(1),
 m_ValueOscillations(0),
 m_ValueOscillationsMax(1),
 m_ValueOscillationsLast(0),
@@ -93,11 +94,11 @@ m_IsDiffeomorphic(true),
 m_DiffeomorphismForced(false),
 m_ForceDiffeomorphic(true),
 m_UseLightWeightConvergenceChecking(true),
+m_UseAdaptativeDescriptors(false),
 m_CurrentValue(itk::NumericTraits<MeasureType>::infinity()),
 m_CurrentEnergy(itk::NumericTraits<MeasureType>::infinity()),
 m_CurrentNorm(0.0),
-m_LastEnergy(itk::NumericTraits<MeasureType>::infinity()),
-m_InitialValue(0.0)
+m_LastEnergy(itk::NumericTraits<MeasureType>::infinity())
 {
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
 	this->m_GridSize.Fill( 0 );
@@ -133,14 +134,14 @@ void OptimizerBase<TFunctional>::Start() {
 	this->InitializeParameters();
 	this->InitializeAuxiliarParameters();
 
-	if( this->m_UseDescriptorRecomputation ) {
-		this->m_UseDescriptorRecomputation = (this->m_DescriptorRecomputationFreq > 0)
-				&& (this->m_DescriptorRecomputationFreq < this->m_NumberOfIterations);
+	if (this->m_UseAdaptativeDescriptors ) {
+		this->m_UseDescriptorRecomputation = true;
+		this->m_DescriptorRecompPeriod = 1;
 	}
 
-	if( this->m_UseDescriptorRecomputation && this->m_ConvergenceWindowSize > this->m_DescriptorRecomputationFreq ) {
-		itkWarningMacro( << "Convergence window size (" << this->m_ConvergenceWindowSize << ") is greater than descriptor recomputation frequency ("<<
-				this->m_DescriptorRecomputationFreq << ")." << std::endl );
+	if( this->m_UseDescriptorRecomputation ) {
+		this->m_UseDescriptorRecomputation = (this->m_DescriptorRecompPeriod > 0)
+				&& (this->m_DescriptorRecompPeriod < this->m_NumberOfIterations);
 	}
 
 	/* Initialize convergence checker */
@@ -184,7 +185,7 @@ void OptimizerBase<TFunctional>::Resume() {
 	this->m_Stop = false;
 
 	while( ! this->m_Stop )	{
-		if( this->m_CurrentIteration > this->m_DescriptorRecomputationFreq  && this->m_UseDescriptorRecomputation && ( (this->m_CurrentIteration -1) %this->m_DescriptorRecomputationFreq == 0 ) ) {
+		if( this->DoDescriptorsUpdate()) {
 			this->m_Functional->UpdateDescriptors();
 			this->InvokeEvent( FunctionalModifiedEvent() );
 		}
@@ -258,7 +259,7 @@ void OptimizerBase<TFunctional>::Resume() {
 		}
 
 
-		if (this->m_InitialValue > 0.0){
+		if (this->m_CurrentIteration >= this->m_ConvergenceWindowSize){
 			float inc = 1.0;
 			if (this->m_ConvergenceValue != itk::NumericTraits<InternalComputationValueType>::infinity() ) {
 				inc+= this->m_ConvergenceValue;
@@ -283,8 +284,6 @@ void OptimizerBase<TFunctional>::Resume() {
 				this->m_StepSize *= 0.5;
 				this->m_ValueOscillations = 0;
 			}
-		} else {
-			this->m_InitialValue = this->m_CurrentEnergy;
 		}
 
 		if( this->m_StepSize < 1e-8 ) {
@@ -299,6 +298,24 @@ void OptimizerBase<TFunctional>::Resume() {
 		this->InvokeEvent( itk::IterationEvent() );
 		this->m_CurrentIteration++;
 	} //while (!m_Stop)
+}
+
+template< typename TFunctional >
+bool OptimizerBase<TFunctional>
+::DoDescriptorsUpdate() {
+	if (!this->m_UseDescriptorRecomputation ) return false;
+
+	size_t lastIt = this->m_CurrentIteration -1;
+	if ( !this->m_UseAdaptativeDescriptors ) return lastIt > 0 && (lastIt % this->m_DescriptorRecompPeriod) == 0;
+
+	bool val = false;
+	if( this->m_CurrentIteration == m_NextRecompIteration ) {
+		this->m_NextRecompIteration+= int(ceil( 1.0/exp(-(this->m_CurrentIteration * 1.5 / this->m_ConvergenceWindowSize ))));
+		val = true;
+	}
+	this->m_UseDescriptorRecomputation = this->m_CurrentIteration < this->m_ConvergenceWindowSize;
+	return val;
+	// this->m_ConvergenceMonitoring->ClearEnergyValues();
 }
 
 
@@ -327,6 +344,7 @@ void OptimizerBase<TFunctional>
 			("grid-size", bpo::value< std::vector<size_t> >()->multitoken(), "size of control points grid")
 			("grid-spacing", bpo::value< std::vector<float> >()->multitoken(), "spacing between control points ")
 			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)")
+			("adaptative-descriptors", bpo::bool_switch(), "recomputes descriptors more often at the beginning of the process")
 			("convergence-energy", bpo::bool_switch(), "disables lazy convergence tracking: instead of fast computation of the mean norm of "
 					"the displacement field, it computes the full energy functional");
 }
@@ -382,11 +400,14 @@ void OptimizerBase<TFunctional>
 		bpo::variable_value v = this->m_Settings["update-descriptors"];
 		size_t updDesc =  v.as<size_t>();
 		this->SetUseDescriptorRecomputation(true);
-		this->SetDescriptorRecomputationFreq( updDesc );
+		this->SetDescriptorRecompPeriod( updDesc );
 	}
 
 	bpo::variable_value v = this->m_Settings["convergence-energy"];
 	this->m_UseLightWeightConvergenceChecking = ! v.as<bool>();
+
+	bpo::variable_value a = this->m_Settings["adaptative-descriptors"];
+	this->m_UseAdaptativeDescriptors = v.as<bool>();
 }
 
 } // end namespace rstk
