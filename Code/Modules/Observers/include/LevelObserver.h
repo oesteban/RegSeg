@@ -46,6 +46,7 @@
 #include <itkCommand.h>
 #include <itkWeakPointer.h>
 #include "ACWERegistrationMethod.h"
+#include "rstkVTKPolyDataWriter.h"
 
 
 namespace rstk {
@@ -60,6 +61,10 @@ public:
 	typedef itk::Command                                       Superclass;
 	typedef itk::SmartPointer<Self>                            Pointer;
 	typedef itk::SmartPointer< const Self >                    ConstPointer;
+
+	typedef typename RegistrationMethodType::PriorsList        ContourList;
+	typedef typename RegistrationMethodType::VectorContourType VectorContourType;
+	typedef rstk::VTKPolyDataWriter< VectorContourType >       WriterType;
 
 	itkTypeMacro( LevelObserver, itk::CommandIterationUpdate ); // Run-time type information (and related methods)
 	itkNewMacro( Self );
@@ -78,10 +83,17 @@ public:
     	}
 
     	if( typeid( event ) == typeid( itk::IterationEvent ) ) {
-    		ss.str("");
-    		ss << this->m_Prefix << "uk_" << std::setfill('0') << "lev" << this->m_RegistrationMethod->GetCurrentLevel();
-
-    		std::cout << "Here I'd write ->" << ss.str() << std::endl;
+    		// Contours and regions
+    		ContourList conts = m_RegistrationMethod->GetCurrentContours();
+    	    size_t nCont = conts.size();
+    	    for ( size_t contid = 0; contid < nCont; contid++) {
+    	    	typename WriterType::Pointer polyDataWriter = WriterType::New();
+    	    	ss.str("");
+    	    	ss << this->m_Prefix << "_swarped_lev" << m_RegistrationMethod->GetCurrentLevel() << "_cont" << contid << ".vtk";
+    	    	polyDataWriter->SetInput( conts[contid] );
+    	    	polyDataWriter->SetFileName( ss.str().c_str() );
+    	    	polyDataWriter->Update();
+    	    }
 
     	}
     }
