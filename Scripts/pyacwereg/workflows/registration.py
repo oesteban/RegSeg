@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-22 16:59:15
+# @Last Modified time: 2015-01-29 10:55:51
 
 import os
 import os.path as op
@@ -16,7 +16,7 @@ from nipype.interfaces import io as nio              # Data i/o
 from nipype.interfaces import utility as niu         # utility
 from nipype.interfaces import fsl
 
-from pyacwereg.interfaces.acwereg import ACWEReg
+from pyacwereg.interfaces.acwereg import ACWEReg, ACWEReport
 from pyacwereg.interfaces.warps import FieldBasedWarp, InverseField
 
 
@@ -42,6 +42,7 @@ def regseg_wf(name='REGSEG', enhance_inputs=True):
         nan2zeros=True, args='-kernel sphere 5 -dilM'), name='MskDilate')
     # Registration
     regseg = pe.Node(ACWEReg(), name="ACWERegistration")
+    report = pe.Node(ACWEReport(), name="ACWEReport")
 
     # Apply tfm to tpms
     applytfm = pe.MapNode(FieldBasedWarp(), name="ApplyWarp",
@@ -56,6 +57,7 @@ def regseg_wf(name='REGSEG', enhance_inputs=True):
         (inputnode, applytfm, [('in_tpms', 'in_file'),
                                ('in_mask', 'in_mask')]),
         (regseg,    applytfm, [('out_field', 'in_field')]),
+        (regseg,      report, [('out_log', 'in_log')]),
         (regseg,  outputnode, [('out_warped', 'out_corr'),
                                ('out_field', 'out_field'),
                                ('out_surfs', 'out_surf')]),
