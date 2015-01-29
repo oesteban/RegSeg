@@ -74,6 +74,8 @@ public:
     }
 
     void Execute(const itk::Object * object, const itk::EventObject & event) {
+    	if (m_RegistrationMethod->GetVerbosity()==0) return;
+
     	std::stringstream ss;
 
     	if ( this->m_Prefix.size() > 0 ) {

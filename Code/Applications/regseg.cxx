@@ -219,7 +219,6 @@ int main(int argc, char *argv[]) {
 		acwereg->SetSettingsOfLevel( i, vm );
 	}
 
-
 	LevelObserverPointer levelObserver = LevelObserverType::New();
 	levelObserver->SetRegistrationMethod(acwereg);
 	levelObserver->SetPrefix( outPrefix );
