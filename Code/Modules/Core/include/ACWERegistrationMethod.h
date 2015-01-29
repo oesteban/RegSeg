@@ -243,7 +243,7 @@ public:
 	virtual const DecoratedOutputTransformType * GetOutput() const;
 
 	const FieldType* GetCurrentDisplacementField() const {
-		return static_cast<const FieldType* >(this->m_Optimizers[this->m_CurrentLevel-1]->GetCurrentDisplacementField());
+		return static_cast<const FieldType* >(this->m_Optimizers[this->m_CurrentLevel]->GetCurrentDisplacementField());
 	}
 
 	FieldList GetCoefficientsField();
@@ -251,7 +251,7 @@ public:
 	PriorsList GetCurrentContours() const {
 		PriorsList contours;
 		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
-			contours.push_back( static_cast< const VectorContourType * >(this->m_Functionals[this->m_CurrentLevel-1]->GetCurrentContours()[i] ) );
+			contours.push_back( static_cast< const VectorContourType * >(this->m_Functionals[this->m_CurrentLevel]->GetCurrentContours()[i] ) );
 		}
 		return contours;
 	}

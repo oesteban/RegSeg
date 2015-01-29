@@ -128,13 +128,14 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		this->m_JSONRoot.append( this->m_CurrentLogger->GetJSONRoot() );
 		this->m_OutputTransform->PushBackTransform(this->m_Optimizers[this->m_CurrentLevel]->GetTransform());
 		this->InvokeEvent( itk::IterationEvent() );
-		this->m_CurrentLevel++;
 
-		if ( this->m_CurrentLevel == this->m_NumberOfLevels ) {
+		if ( this->m_CurrentLevel == this->m_NumberOfLevels - 1 ) {
 			this->Stop( ALL_LEVELS_DONE, "All levels are finished ("
 					+ boost::lexical_cast<std::string>(this->m_NumberOfLevels) + " levels)." );
 			break;
 		}
+
+		this->m_CurrentLevel++;
 	}
 
     this->GenerateFinalDisplacementField();
