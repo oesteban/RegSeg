@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-17 15:32:49
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-29 14:15:45
+# @Last Modified time: 2015-01-29 15:12:57
 
 filesmap = {}
 
@@ -113,9 +113,7 @@ if __name__ == '__main__':
                     dfiles.pop(idx)
 
                 if len(ofiles) > 0:
-                    flist = [op.join(caseid, f.format(tesla=tesla, caseid=caseid))
-                             for f in ofiles]
-
+                    flist = [op.join(caseid, f) for f in ofiles]
                     sp.check_output(['unzip', n] + flist)
                     for of, df in zip(flist, dfiles):
                         forig = op.abspath(of)
