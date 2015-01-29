@@ -70,6 +70,7 @@
 #include "SparseMatrixTransform.h"
 #include "DisplacementFieldFileWriter.h"
 #include "DisplacementFieldComponentsFileWriter.h"
+#include "LevelObserver.h"
 
 
 using namespace rstk;
@@ -130,6 +131,9 @@ typedef rstk::CoefficientsWriter< AltCoeffType >             CoeffWriter;
 typedef itk::WarpImageFilter
 		         < ChannelType, ChannelType, FieldType >     WarpFilter;
 typedef typename WarpFilter::Pointer                         WarpFilterPointer;
+
+typedef LevelObserver< RegistrationType >                    LevelObserverType;
+typedef typename LevelObserverType::Pointer                  LevelObserverPointer;
 
 #ifndef NDEBUG
 	const static size_t DEFAULT_VERBOSITY = 5;

@@ -64,7 +64,6 @@
 #include "IterationStdOutUpdate.h"
 #include "IterationResultsWriterUpdate.h"
 
-
 namespace bpo = boost::program_options;
 
 namespace rstk {
@@ -154,9 +153,8 @@ public:
 	typedef IterationStdOutUpdate< OptimizerType >            STDOutLoggerType;
 	typedef typename STDOutLoggerType::Pointer                STDOutLoggerPointer;
 
-
-	typedef IterationResultWriterUpdate< OptimizerType > IterationWriterUpdate;
-	typedef typename IterationWriterUpdate::Pointer      IterationWriterPointer;
+	typedef IterationResultWriterUpdate< OptimizerType >      IterationWriterUpdate;
+	typedef typename IterationWriterUpdate::Pointer           IterationWriterPointer;
 
 	/** Codes of stopping conditions. */
 	typedef enum {

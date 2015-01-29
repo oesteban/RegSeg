@@ -41,6 +41,8 @@ SET( CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Core )
 SET( ITKRV_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/ITKReviewed )
 SET( IO_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/IO )
 
+SET( OBSERVERS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Observers )
+SET( OBSERVERS_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Functional )
 
 SET( FUNCTIONAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Functional )
 SET( FUNCTIONAL_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Functional )
@@ -62,6 +64,7 @@ INCLUDE_DIRECTORIES( ${OPTIMIZERS_SOURCE_DIR}/include
                      ${FILTERING_SOURCE_DIR}/include
                      ${TRANSFORM_SOURCE_DIR}/include
                      ${IO_SOURCE_DIR}/include
+                     ${OBSERVERS_SOURCE_DIR}/include
                      ${CORE_SOURCE_DIR}/include
                      ${ITKRV_SOURCE_DIR}/include
                      ${VTKHAUSSDORF_SOURCE_DIR}
@@ -69,13 +72,18 @@ INCLUDE_DIRECTORIES( ${OPTIMIZERS_SOURCE_DIR}/include
 
 ENABLE_TESTING()
 
+
+ADD_SUBDIRECTORY( Modules/Core )
+
 #find_package(GTest REQUIRED)
 ADD_SUBDIRECTORY( GTest/ )
 
 ADD_SUBDIRECTORY( ThirdParty/Hausdorff )
 SET( VTKHAUSDORFF_LIB "vtkHausdorffDistance" )
 
-ADD_SUBDIRECTORY( Modules/Core )
+ADD_SUBDIRECTORY( Modules/Observers )
+SET( OBSERVERS_LIB "RSTKFunctional" )
+
 
 ADD_SUBDIRECTORY( Modules/Functional )
 SET( FUNCTIONAL_LIB "RSTKFunctional" )
