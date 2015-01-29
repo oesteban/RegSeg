@@ -407,7 +407,7 @@ void OptimizerBase<TFunctional>
 	this->m_UseLightWeightConvergenceChecking = ! v.as<bool>();
 
 	bpo::variable_value a = this->m_Settings["adaptative-descriptors"];
-	this->m_UseAdaptativeDescriptors = v.as<bool>();
+	this->m_UseAdaptativeDescriptors = a.as<bool>();
 }
 
 } // end namespace rstk
