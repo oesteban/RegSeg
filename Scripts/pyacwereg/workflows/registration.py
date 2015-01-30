@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-29 17:33:09
+# @Last Modified time: 2015-01-30 12:54:02
 
 import os
 import os.path as op
@@ -85,15 +85,15 @@ def default_regseg(name='REGSEGDefault'):
     wf = regseg_wf(name=name, enhance_inputs=False)
 
     # Registration
-    wf.inputs.inputnode.iterations = [250, 50]
+    wf.inputs.inputnode.iterations = [250, 250]
     wf.inputs.inputnode.descript_update = [None, None]
-    wf.inputs.inputnode.step_size = [2.e-4, 5.e-4]
+    wf.inputs.inputnode.step_size = [5.e-4, 0.1]
     wf.inputs.inputnode.alpha = [0.0, 0.0]
     wf.inputs.inputnode.beta = [0.0, 0.0]
-    wf.inputs.inputnode.grid_spacing = [12., 6.]
+    wf.inputs.inputnode.grid_spacing = [20., 8.]
     wf.inputs.inputnode.convergence_energy = [True] * 2
-    wf.inputs.inputnode.descript_adaptative = [True, True]
-    wf.inputs.inputnode.convergence_window = [20, 5]
+    wf.inputs.inputnode.descript_adaptative = [True, False]
+    wf.inputs.inputnode.convergence_window = [50, 5]
     wf.inputs.inputnode.f_smooth = [None, None]
     wf.inputs.inputnode.images_verbosity = 1
     wf.inputs.inputnode.convergence_value = [1.0e-6, 1.0e-8]
