@@ -3,9 +3,10 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-23 16:40:39
+# @Last Modified time: 2015-01-30 13:40:00
 import os
 import os.path as op
+from glob import glob
 import nibabel as nb
 import numpy as np
 
@@ -125,9 +126,8 @@ class Surf2Vol(CommandLine):
         outputs = self.output_spec().get()
         out_path = op.abspath(self.inputs.out_prefix)
 
-        outputs['out_tpm'] = [
-            out_path + ('_tpm_cmp%d.nii.gz' % i)
-            for i in range(len(self.inputs.surfaces))]
+        outputs['out_tpm'] = sorted([op.abspath(f) for f in glob(
+            out_path + '_tmp_cmp*.nii.gz')])
         outputs['out_seg'] = out_path + '_seg.nii.gz'
         return outputs
 

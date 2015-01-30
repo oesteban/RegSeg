@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-10-23 14:43:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-30 12:52:24
+# @Last Modified time: 2015-01-30 13:40:57
 
 import os
 import os.path as op
@@ -99,8 +99,7 @@ def generate_phantom(name='PhantomGeneration'):
                                     ('repetition_id', 'seed')]),
         (model,       split,       [('out_file', 'in_file')]),
         (split,       selm1,       [('out_files', 'inlist')]),
-        (selm1,       signal0,     [('out1', 'frac_csf'),
-                                    ('out2', 'frac_wm'),
+        (selm1,       signal0,     [('out2', 'frac_wm'),
                                     ('out3', 'frac_gm')]),
         (signal0,     surf0,       [('out_t1w', 'inputnode.norm')]),
         (selm1,       surf0,       [('out2', 'inputnode.aseg')]),
@@ -119,8 +118,7 @@ def generate_phantom(name='PhantomGeneration'):
         (surf2vol0,   norm0,       [('out_tpm', 'in_files')]),
         (norm0,       selt0,       [('out_files', 'inlist')]),
         (selt0,       signal1,     [('out1', 'frac_wm'),
-                                    ('out2', 'frac_gm'),
-                                    ('out3', 'frac_csf')]),
+                                    ('out2', 'frac_gm')]),
         (inputnode,   signal1,     [('snr', 'snr')]),
         (signal1,     merge1,      [('out_t1w', 'in1'),
                                     ('out_t2w', 'in2')]),
@@ -134,8 +132,7 @@ def generate_phantom(name='PhantomGeneration'):
         (surf2vol1,   norm1,       [('out_tpm', 'in_files')]),
         (norm1,       selt1,       [('out_files', 'inlist')]),
         (selt1,       signal2,     [('out1', 'frac_wm'),
-                                    ('out2', 'frac_gm'),
-                                    ('out3', 'frac_csf')]),
+                                    ('out2', 'frac_gm')]),
         (inputnode,   signal2,     [('snr', 'snr')]),
         (signal2,     merge2,      [('out_t1w', 'in1'),
                                     ('out_t2w', 'in2')]),
