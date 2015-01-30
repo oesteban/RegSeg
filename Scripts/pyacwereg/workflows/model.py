@@ -72,17 +72,17 @@ def generate_phantom(name='PhantomGeneration'):
     norm0 = pe.Node(Normalize(), name='NormalizeTPMs_HR')
     norm1 = pe.Node(Normalize(), name='NormalizeTPMs_LR')
 
-    tpmmsk0 = pe.Node(niu.Split(splits=[2]), name='TPMsSplit_HR')
-    tpmmsk1 = pe.Node(niu.Split(splits=[2]), name='TPMsSplit_LR')
+    tpmmsk0 = pe.Node(niu.Split(splits=[2, 1, 1]), name='TPMsSplit_HR')
+    tpmmsk1 = pe.Node(niu.Split(splits=[2, 1, 1]), name='TPMsSplit_LR')
 
     msk0 = pe.Node(niu.Function(function=_bin_n_msk, input_names=['in_files'],
                                 output_names=['out_file']), name='binNmsk_HR')
     msk1 = pe.Node(niu.Function(function=_bin_n_msk, input_names=['in_files'],
                                 output_names=['out_file']), name='binNmsk_LR')
 
-    selt0 = pe.Node(niu.Split(splits=[1, 1, 1], squeeze=True),
+    selt0 = pe.Node(niu.Split(splits=[1, 1, 1, 1], squeeze=True),
                     name='SeparateTissue_HR')
-    selt1 = pe.Node(niu.Split(splits=[1, 1, 1], squeeze=True),
+    selt1 = pe.Node(niu.Split(splits=[1, 1, 1, 1], squeeze=True),
                     name='SeparateTissue_LR')
 
     merge1 = pe.Node(niu.Merge(2), name='SimMerge_HR')

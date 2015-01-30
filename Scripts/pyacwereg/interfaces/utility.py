@@ -125,9 +125,8 @@ class Surf2Vol(CommandLine):
     def _list_outputs(self):
         outputs = self.output_spec().get()
         out_path = op.abspath(self.inputs.out_prefix)
-
-        outputs['out_tpm'] = sorted([op.abspath(f) for f in glob(
-            out_path + '_tmp_cmp*.nii.gz')])
+        outputs['out_tpm'] = [op.abspath(f) for f in sorted(glob(
+            op.basename(out_path + '_tpm_cmp*.nii.gz')))]
         outputs['out_seg'] = out_path + '_seg.nii.gz'
         return outputs
 
