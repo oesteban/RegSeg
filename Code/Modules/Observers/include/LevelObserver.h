@@ -91,7 +91,7 @@ public:
     	    for ( size_t contid = 0; contid < nCont; contid++) {
     	    	typename WriterType::Pointer polyDataWriter = WriterType::New();
     	    	ss.str("");
-    	    	ss << this->m_Prefix << "_swarped_lev" << m_RegistrationMethod->GetCurrentLevel() << "_cont" << contid << ".vtk";
+    	    	ss << this->m_Prefix << "swarped_lev" << m_RegistrationMethod->GetCurrentLevel() << "_cont" << contid << ".vtk";
     	    	polyDataWriter->SetInput( conts[contid] );
     	    	polyDataWriter->SetFileName( ss.str().c_str() );
     	    	polyDataWriter->Update();

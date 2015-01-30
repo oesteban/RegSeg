@@ -21,6 +21,10 @@
 #include "WeightedCovarianceSampleFilter.h"
 #include <itkWeightedMeanSampleFilter.h>
 
+#include <boost/math/special_functions/digamma.hpp>
+
+namespace bm = boost::math;
+
 namespace rstk
 {
 template< typename TSample >
@@ -127,6 +131,7 @@ WeightedCovarianceSampleFilter< TSample >
   typename SampleType::ConstIterator iter =      input->Begin();
   const typename SampleType::ConstIterator end = input->End();
 
+  MeasurementVectorType mean;
   MeasurementVectorType pbottom, ptop;
   itk::NumericTraits<MeasurementVectorType>::SetLength( pbottom, measurementVectorSize );
   itk::NumericTraits<MeasurementVectorType>::SetLength( ptop, measurementVectorSize );
@@ -155,6 +160,7 @@ WeightedCovarianceSampleFilter< TSample >
 	  	  ptop[c] = sampleComponents[c][int(0.98 * sampleSize)];
 	  	  median[c] = sampleComponents[c][int(0.50 * sampleSize)];
 	  }
+	  // mean = median;
   }
 
   MeasurementVectorDecoratedType *decoratedRangeMaxOutput =
@@ -185,7 +191,6 @@ WeightedCovarianceSampleFilter< TSample >
   }
 
   // calculate mean
-  MeasurementVectorType mean;
   typedef itk::Statistics::WeightedMeanSampleFilter< SampleType > WeightedMeanFilterType;
   typename WeightedMeanFilterType::Pointer meanFilter = WeightedMeanFilterType::New();
 
@@ -262,6 +267,17 @@ WeightedCovarianceSampleFilter< TSample >
     {
     itkExceptionMacro("Normalization factor was too close to zero. Value = " << normalizationFactor );
     }
+
+  // Bias estimation
+  // See http://en.wikipedia.org/wiki/Estimation_of_covariance_matrices#Bias_of_the_sample_covariance_matrix
+  float p = measurementVectorSize;
+  float n = totalWeight;
+  float beta = (1/p) * (p * log(n) + p - bm::digamma(n-p+1) + (n - p + 1) * bm::digamma(n - p + 2) + bm::digamma(n+1) - (n+1)* bm::digamma(n+2));
+
+  MatrixType ident;
+  ident.SetSize( measurementVectorSize, measurementVectorSize );
+  ident.SetIdentity();
+  output+= output * exp( -beta );
 
   decoratedOutput->Set( output );
 }
