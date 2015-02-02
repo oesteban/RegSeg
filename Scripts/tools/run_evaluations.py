@@ -62,8 +62,8 @@ if __name__ == '__main__':
     opts = parser.parse_args()
 
     # Setup work_dir
-    if not op.exists(options.work_dir):
-        os.makedirs(options.work_dir)
+    if not op.exists(opts.work_dir):
+        os.makedirs(opts.work_dir)
 
     data_dir = op.abspath(opts.subjects_dir)
 
@@ -93,7 +93,7 @@ if __name__ == '__main__':
         settings['out_csv'] = opts.out_csv
 
     # Setup multiprocessing
-    nthreads = options.nthreads
+    nthreads = opts.nthreads
     if nthreads == 0:
         from multiprocessing import cpu_count
         nthreads = cpu_count()
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         os.makedirs(log_dir)
 
     # Setup debug mode
-    if options.debug:
+    if opts.debug:
         cfg['logging']['workflow_level'] = 'DEBUG'
         cfg['logging']['interface_level'] = 'DEBUG'
 
