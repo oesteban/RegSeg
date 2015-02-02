@@ -125,14 +125,15 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
     regseg.inputs.inputnode.alpha = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.beta = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.convergence_energy = [True, True, True]
+    regseg.inputs.inputnode.descript_adaptative = [True, True, False]
     regseg.inputs.inputnode.convergence_value = [1.e-7, 1.e-8, 1.e-9]
-    regseg.inputs.inputnode.convergence_window = [10, 10, 15]
-    regseg.inputs.inputnode.descript_update = [5, 30, None]
+    regseg.inputs.inputnode.convergence_window = [50, 20, 5]
+    regseg.inputs.inputnode.descript_update = [None, None, None]
     regseg.inputs.inputnode.f_smooth = [2.0, 0.5, None]
     regseg.inputs.inputnode.grid_spacing = [
         (40., 100., 40.), (30., 30., 30.), (20., 30., 10.)]
 
-    regseg.inputs.inputnode.iterations = [150, 100, 100]
+    regseg.inputs.inputnode.iterations = [350, 250, 100]
     regseg.inputs.inputnode.scales = [(0.0, 1.0, 0.0)] * 3
     regseg.inputs.inputnode.step_size = [2.e-4, 1.e-4, 1.e-4]
 
