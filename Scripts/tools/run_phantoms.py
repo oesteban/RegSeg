@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-15 10:09:24
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-22 13:00:33
+# @Last Modified time: 2015-02-02 10:27:44
 
 try:
     from enthought.etsconfig.api import ETSConfig
@@ -60,6 +60,7 @@ if __name__ == '__main__':
     g_input = parser.add_argument_group('Experimental Settings')
     g_input.add_argument(
         '-s', '--shape', action='store', default='gyrus', nargs='+',
+        choices=['gyrus', 'ball', 'L', 'box'],
         help='selects phantom\'s shape model')
     g_input.add_argument(
         '-n', '--snr', action='store', default=400, nargs='+', type=int,

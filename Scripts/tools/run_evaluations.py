@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-15 15:34:39
+# @Last Modified time: 2015-02-02 10:35:00
 
 
 import os
@@ -30,32 +30,40 @@ if __name__ == '__main__':
                             formatter_class=RawTextHelpFormatter)
 
     g_input = parser.add_argument_group('Input')
-    g_input.add_argument('-S', '--subjects_dir', action='store',
-                         default=os.getenv('NEURO_DATA_HOME', '..'),
-                         help='directory where subjects should be found')
     g_input.add_argument('-s', '--subject', action='store', default='*',
                          nargs='+', help='subject id or pattern')
-    g_input.add_argument('-w', '--work_dir', action='store',
-                         default=os.getcwd(),
-                         help='directory to store intermediate results')
-    g_input.add_argument('-N', '--name', action='store',
-                         default='TMI2015_EXP2',
-                         help=('default workflow name, '
-                               'it will create a new folder'))
+    g_input.add_argument('-T', '--type', action='store',
+                         choices=['fmb', 'peb', 'fsl'], default='fmb',
+                         help='select SDC workflow type')
 
     g_output = parser.add_argument_group('Output')
     g_output.add_argument('--out_csv', action='store',
                           help=('default output csv file'))
 
     g_options = parser.add_argument_group('Settings')
-    g_options.add_argument('-T', '--type', action='store',
-                           choices=['fmb', 'peb', 'fsl'], default='fmb',
-                           help='select SDC workflow type')
+
+    # General Settings
+    ################################
+    g_settings = parser.add_argument_group('General settings')
+    g_settings.add_argument('-S', '--subjects_dir', action='store',
+                            default=os.getenv('NEURO_DATA_HOME', '..'),
+                            help='directory where subjects should be found')
+    g_settings.add_argument(
+        '-w', '--work_dir', action='store', default=os.getcwd(),
+        help='directory where subjects are found')
+    g_settings.add_argument(
+        '-N', '--name', action='store', default='EXP_Realdata',
+        help='default workflow name, it will create a new folder')
+    g_settings.add_argument('--nthreads', action='store', default=0,
+                            type=int, help='number of repetitions')
+    g_settings.add_argument('--debug', action='store_true', default=False,
+                            help='switch debug mode ON')
 
     opts = parser.parse_args()
 
-    if not op.exists(opts.work_dir):
-        os.makedirs(opts.work_dir)
+    # Setup work_dir
+    if not op.exists(options.work_dir):
+        os.makedirs(options.work_dir)
 
     data_dir = op.abspath(opts.subjects_dir)
 
@@ -84,7 +92,31 @@ if __name__ == '__main__':
     else:
         settings['out_csv'] = opts.out_csv
 
-    wf = hcp_workflow(name=opts.name, settings=settings)
+    # Setup multiprocessing
+    nthreads = options.nthreads
+    if nthreads == 0:
+        from multiprocessing import cpu_count
+        nthreads = cpu_count()
+
+    cfg = {}
+    cfg['plugin'] = 'Linear'
+    if nthreads > 1:
+        cfg['plugin'] = 'MultiProc'
+        cfg['plugin_args'] = {'n_proc': nthreads}
+
+    # Setup logging dir
+    log_dir = op.abspath('logs')
+    cfg['logging'] = {'log_directory': log_dir, 'log_to_file': True,
+                      'workflow_level': 'INFO', 'interface_level': 'INFO'}
+    if not op.exists(log_dir):
+        os.makedirs(log_dir)
+
+    # Setup debug mode
+    if options.debug:
+        cfg['logging']['workflow_level'] = 'DEBUG'
+        cfg['logging']['interface_level'] = 'DEBUG'
+
+    wf = hcp_workflow(name=opts.name, settings=settings, cfg=cfg)
     wf.base_dir = settings['work_dir']
     wf.write_graph(format='pdf')
     wf.run()

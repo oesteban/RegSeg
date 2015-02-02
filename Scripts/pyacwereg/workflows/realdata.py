@@ -3,13 +3,14 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-15 18:03:28
+# @Last Modified time: 2015-02-02 10:37:23
 
 
-def hcp_workflow(name='Evaluation_HCP', settings={}):
+def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
     """
     The pyacwereg evaluation workflow for the human connectome project (HCP)
     """
+    from nipype import config, logging
     from nipype.pipeline import engine as pe
     from nipype.interfaces import utility as niu
     from nipype.interfaces import io as nio
@@ -28,6 +29,9 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
     from pysdcev.workflows.smri import preprocess_t2, preprocess_dwi
     from pysdcev.workflows.tractography import mrtrix_dti
     from pysdcev.stages.stage1 import stage1
+
+    config.update_config(cfg)
+    logging.update_logging(config)
 
     fnames = dict(t1w='T1w_acpc_dc_restore.nii.gz',
                   t1w_brain='T1w_acpc_dc_restore_brain.nii.gz',
@@ -134,7 +138,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
 
     regseg.inputs.inputnode.iterations = [150, 100, 100]
     regseg.inputs.inputnode.scales = [(0.0, 1.0, 0.0)] * 3
-    regseg.inputs.inputnode.step_size = [2.e-4, 1.e-4, 1.e-4]
+    regseg.inputs.inputnode.step_size = [1.e-5, 5.e-5, 1.e-4]
 
     wf.connect([
         (st1,    dti,    [('out_dis_set.dwi', 'inputnode.in_dwi'),
