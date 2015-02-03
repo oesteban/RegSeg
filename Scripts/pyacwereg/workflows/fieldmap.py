@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-03 13:43:19
+# @Last Modified time: 2015-02-03 13:49:03
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -59,7 +59,7 @@ def bmap_registration(name="Bmap_Registration"):
     polyfit = pe.Node(PolyFit(degree=2), name='FitPoly')
     scale = pe.Node(niu.Function(
         function=scale_like, output_names=['out_file'],
-        input_names=['in_file', 'reference', 'mask']), name='ScaleBmap')
+        input_names=['in_file', 'reference', 'in_mask']), name='ScaleBmap')
 
     # Setup ANTS and registration
     def _aslist(tname):
@@ -441,7 +441,7 @@ def phasediff2siemens(in_file, out_file=None):
     return out_file
 
 
-def scale_like(in_file, reference, mask=None, out_file=None):
+def scale_like(in_file, reference, in_mask=None, out_file=None):
     import numpy as np
     import nibabel as nb
     import os.path as op
@@ -457,8 +457,8 @@ def scale_like(in_file, reference, mask=None, out_file=None):
     rdata = nb.load(reference).get_data()
 
     mask = np.ones_like(idata)
-    if mask is not None:
-        mask = np.load(mask).get_data()
+    if in_mask is not None:
+        mask = np.load(in_mask).get_data()
         mask[mask > 0.0] = 1
         mask[mask < 0.0] = 0
 
