@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-03 13:49:03
+# @Last Modified time: 2015-02-03 14:48:58
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -458,18 +458,18 @@ def scale_like(in_file, reference, in_mask=None, out_file=None):
 
     mask = np.ones_like(idata)
     if in_mask is not None:
-        mask = np.load(in_mask).get_data()
+        mask = nb.load(in_mask).get_data()
         mask[mask > 0.0] = 1
         mask[mask < 0.0] = 0
 
-    rp0 = np.percentile(rdata[mask > 0.0], 5.0)
-    rp1 = np.percentile(rdata[mask > 0.0], 95.0)
+    rp0 = np.percentile(rdata[mask > 0.0], 0.5)
+    rp1 = np.percentile(rdata[mask > 0.0], 99.5)
+    ip0 = np.percentile(idata[mask > 0.0], 0.5)
+    ip1 = np.percentile(idata[mask > 0.0], 99.5)
 
-    ip0 = np.percentile(idata[mask > 0.0], 5.0)
-    idata += rp1 - ip0
-
-    ip1 = np.percentile(idata[mask > 0.0], 95.0)
-    idata *= rp1 / ip1
+    factor = (rp1 - rp0) / (ip1 - ip0)
+    idata *= factor
+    idata -= (factor * ip0) + rp0
 
     nb.Nifti1Image(
         idata, im.get_affine(), im.get_header()).to_filename(out_file)
