@@ -102,7 +102,7 @@ def bmap_registration(name="Bmap_Registration"):
     scale = pe.Node(niu.Function(
         function=scale_range, output_names=['out_file'],
         input_names=['in_file', 'value', 'in_mask']), name='ScaleBmap')
-    scale.inputs.value = 1.8
+    scale.inputs.value = 2.8
     # scale = pe.Node(niu.Function(
     #     function=scale_like, output_names=['out_file'],
     #     input_names=['in_file', 'reference', 'in_mask']), name='ScaleBmap')
@@ -171,7 +171,7 @@ def bmap_registration(name="Bmap_Registration"):
         (inputnode,        addnoise, [('dwi_mask', 'in_mask')]),
         (addnoise,         wrap_pha, [('out_file', 'in_file')]),
         (regrid_bmg,     munwrapped, [('out_file', 'in1')]),
-        (demean,         munwrapped, [('out_file', 'in2')]),
+        (scale,          munwrapped, [('out_file', 'in2')]),
         (regrid_bmg,       mwrapped, [('out_file', 'in1')]),
         (wrap_pha,         mwrapped, [('out_file', 'in2')]),
         (regrid_mag,     outputnode, [('out_file', 'magnitude')]),
