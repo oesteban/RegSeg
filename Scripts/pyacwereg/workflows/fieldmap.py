@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-03 16:22:50
+# @Last Modified time: 2015-02-03 16:43:19
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -100,8 +100,12 @@ def bmap_registration(name="Bmap_Registration"):
 
     polyfit = pe.Node(PolyFit(degree=2, padding=5), name='FitPoly')
     scale = pe.Node(niu.Function(
-        function=scale_like, output_names=['out_file'],
-        input_names=['in_file', 'reference', 'in_mask']), name='ScaleBmap')
+        function=scale_range, output_names=['out_file'],
+        input_names=['in_file', 'value', 'in_mask']), name='ScaleBmap')
+    scale.inputs.value = 1.8
+    # scale = pe.Node(niu.Function(
+    #     function=scale_like, output_names=['out_file'],
+    #     input_names=['in_file', 'reference', 'in_mask']), name='ScaleBmap')
 
     median = pe.Node(niu.Function(
         input_names=['in_file'], output_names=['out_file'],
@@ -161,7 +165,7 @@ def bmap_registration(name="Bmap_Registration"):
         (regrid_pha,        polyfit, [('out_file', 'in_file')]),
         (inputnode,         polyfit, [('poly_mask', 'in_mask')]),
         (polyfit,             scale, [('out_file', 'in_file')]),
-        (regrid_pha,          scale, [('out_file', 'reference')]),
+        # (regrid_pha,          scale, [('out_file', 'reference')]),
         (inputnode,           scale, [('poly_mask', 'in_mask')]),
         (scale,              median, [('out_file', 'in_file')]),
         (median,             demean, [('out_file', 'in_file')]),
@@ -467,6 +471,41 @@ def scale_like(in_file, reference, in_mask=None, out_file=None):
     rp1 = np.percentile(rdata[mask > 0.0], 99.5)
     ip0 = np.percentile(idata[mask > 0.0], 0.5)
     ip1 = np.percentile(idata[mask > 0.0], 99.5)
+
+    factor = (rp1 - rp0) / (ip1 - ip0)
+    idata *= factor
+    idata -= (factor * ip0) + rp0
+
+    nb.Nifti1Image(
+        idata, im.get_affine(), im.get_header()).to_filename(out_file)
+
+    return out_file
+
+
+def scale_range(in_file, value=2.0, in_mask=None, out_file=None):
+    import numpy as np
+    import nibabel as nb
+    import os.path as op
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_range.nii.gz' % fname)
+
+    im = nb.load(in_file)
+    idata = im.get_data()
+
+    mask = np.ones_like(idata)
+    if in_mask is not None:
+        mask = nb.load(in_mask).get_data()
+        mask[mask > 0.0] = 1
+        mask[mask < 0.0] = 0
+
+    rp0 = -1.0 * value
+    rp1 = value
+    ip0 = np.percentile(idata[mask > 0.0], 1.5)
+    ip1 = np.percentile(idata[mask > 0.0], 98.5)
 
     factor = (rp1 - rp0) / (ip1 - ip0)
     idata *= factor
