@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-16 10:38:49
+# @Last Modified time: 2015-02-03 13:43:19
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -56,8 +56,10 @@ def bmap_registration(name="Bmap_Registration"):
         output_names=['out_file']), name='PhaseDenoise')
 
     prelude = pe.Node(fsl.PRELUDE(process3d=True), name='PhaseUnwrap')
-    polyfit = pe.Node(PolyFit(degree=4), name='FitPolyOrder4')
-    scale = pe.Node(fsl.maths.BinaryMaths(operation='mul'), name='PhaseScaled')
+    polyfit = pe.Node(PolyFit(degree=2), name='FitPoly')
+    scale = pe.Node(niu.Function(
+        function=scale_like, output_names=['out_file'],
+        input_names=['in_file', 'reference', 'mask']), name='ScaleBmap')
 
     # Setup ANTS and registration
     def _aslist(tname):
@@ -158,7 +160,8 @@ def bmap_registration(name="Bmap_Registration"):
         (regrid_pha,        polyfit, [('out_file', 'in_file')]),
         (inputnode,         polyfit, [('poly_mask', 'in_mask')]),
         (polyfit,             scale, [('out_file', 'in_file')]),
-        (inputnode,           scale, [('factor', 'operand_value')]),
+        (regrid_pha,          scale, [('out_file', 'reference')]),
+        (inputnode,           scale, [('poly_mask', 'in_mask')]),
         (scale,              median, [('out_file', 'in_file')]),
         (median,             demean, [('out_file', 'in_file')]),
         (inputnode,          demean, [('dwi_mask', 'in_mask')]),
@@ -434,5 +437,41 @@ def phasediff2siemens(in_file, out_file=None):
     im1 = nb.Nifti1Image(data.astype(np.int16), im.get_affine(), hdr)
     im2 = nb.Nifti1Image(np.zeros_like(data), im.get_affine(), hdr)
     nb.funcs.concat_images([im1, im2]).to_filename(out_file)
+
+    return out_file
+
+
+def scale_like(in_file, reference, mask=None, out_file=None):
+    import numpy as np
+    import nibabel as nb
+    import os.path as op
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_slike.nii.gz' % fname)
+
+    im = nb.load(in_file)
+    idata = im.get_data()
+    rdata = nb.load(reference).get_data()
+
+    mask = np.ones_like(idata)
+    if mask is not None:
+        mask = np.load(mask).get_data()
+        mask[mask > 0.0] = 1
+        mask[mask < 0.0] = 0
+
+    rp0 = np.percentile(rdata[mask > 0.0], 5.0)
+    rp1 = np.percentile(rdata[mask > 0.0], 95.0)
+
+    ip0 = np.percentile(idata[mask > 0.0], 5.0)
+    idata += rp1 - ip0
+
+    ip1 = np.percentile(idata[mask > 0.0], 95.0)
+    idata *= rp1 / ip1
+
+    nb.Nifti1Image(
+        idata, im.get_affine(), im.get_header()).to_filename(out_file)
 
     return out_file
