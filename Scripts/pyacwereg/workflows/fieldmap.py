@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-03 16:43:19
+# @Last Modified time: 2015-02-03 17:38:47
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -107,12 +107,12 @@ def bmap_registration(name="Bmap_Registration"):
     #     function=scale_like, output_names=['out_file'],
     #     input_names=['in_file', 'reference', 'in_mask']), name='ScaleBmap')
 
-    median = pe.Node(niu.Function(
-        input_names=['in_file'], output_names=['out_file'],
-        function=pu.median_filter), name='PhaseMedian')
-    demean = pe.Node(niu.Function(
-        input_names=['in_file', 'in_mask'], output_names=['out_file'],
-        function=pu.demean), name='PhaseDemean')
+    # median = pe.Node(niu.Function(
+    #     input_names=['in_file'], output_names=['out_file'],
+    #     function=pu.median_filter), name='PhaseMedian')
+    # demean = pe.Node(niu.Function(
+    #     input_names=['in_file', 'in_mask'], output_names=['out_file'],
+    #     function=pu.demean), name='PhaseDemean')
     addnoise = pe.Node(AddNoise(snr=30), name='PhaseAddNoise')
     wrap_pha = pe.Node(niu.Function(
         input_names=['in_file'], output_names=['out_file'],
@@ -167,10 +167,7 @@ def bmap_registration(name="Bmap_Registration"):
         (polyfit,             scale, [('out_file', 'in_file')]),
         # (regrid_pha,          scale, [('out_file', 'reference')]),
         (inputnode,           scale, [('poly_mask', 'in_mask')]),
-        (scale,              median, [('out_file', 'in_file')]),
-        (median,             demean, [('out_file', 'in_file')]),
-        (inputnode,          demean, [('dwi_mask', 'in_mask')]),
-        (demean,           addnoise, [('out_file', 'in_file')]),
+        (scale,            addnoise, [('out_file', 'in_file')]),
         (inputnode,        addnoise, [('dwi_mask', 'in_mask')]),
         (addnoise,         wrap_pha, [('out_file', 'in_file')]),
         (regrid_bmg,     munwrapped, [('out_file', 'in1')]),
@@ -482,7 +479,7 @@ def scale_like(in_file, reference, in_mask=None, out_file=None):
     return out_file
 
 
-def scale_range(in_file, value=2.0, in_mask=None, out_file=None):
+def scale_range(in_file, value=1.0, in_mask=None, out_file=None):
     import numpy as np
     import nibabel as nb
     import os.path as op
@@ -509,7 +506,7 @@ def scale_range(in_file, value=2.0, in_mask=None, out_file=None):
 
     factor = (rp1 - rp0) / (ip1 - ip0)
     idata *= factor
-    idata -= (factor * ip0) + rp0
+    idata -= np.median(idata[mask > 0.0])
 
     nb.Nifti1Image(
         idata, im.get_affine(), im.get_header()).to_filename(out_file)
