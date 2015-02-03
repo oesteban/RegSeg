@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-03 14:48:58
+# @Last Modified time: 2015-02-03 16:22:50
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -56,10 +56,6 @@ def bmap_registration(name="Bmap_Registration"):
         output_names=['out_file']), name='PhaseDenoise')
 
     prelude = pe.Node(fsl.PRELUDE(process3d=True), name='PhaseUnwrap')
-    polyfit = pe.Node(PolyFit(degree=2), name='FitPoly')
-    scale = pe.Node(niu.Function(
-        function=scale_like, output_names=['out_file'],
-        input_names=['in_file', 'reference', 'in_mask']), name='ScaleBmap')
 
     # Setup ANTS and registration
     def _aslist(tname):
@@ -101,6 +97,11 @@ def bmap_registration(name="Bmap_Registration"):
         resample_type='cubic', out_datatype='float'), name='Regrid_mag_brain')
     regrid_pha = pe.Node(fs.MRIConvert(
         resample_type='cubic', out_datatype='float'), name='Regrid_pha')
+
+    polyfit = pe.Node(PolyFit(degree=2, padding=5), name='FitPoly')
+    scale = pe.Node(niu.Function(
+        function=scale_like, output_names=['out_file'],
+        input_names=['in_file', 'reference', 'in_mask']), name='ScaleBmap')
 
     median = pe.Node(niu.Function(
         input_names=['in_file'], output_names=['out_file'],
