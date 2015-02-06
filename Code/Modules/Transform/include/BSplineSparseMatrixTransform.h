@@ -100,7 +100,15 @@ public:
 
     using Superclass::InterpolateModeType;
 protected:
-    BSplineSparseMatrixTransform();
+    BSplineSparseMatrixTransform(): Superclass() {
+    	this->m_KernelFunction = dynamic_cast< KernelFunctionType * >(
+                itk::BSplineKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
+    	this->m_DerivativeKernel = dynamic_cast< KernelFunctionType * >(
+                itk::BSplineDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
+    	//this->m_SecondDerivativeKernel = dynamic_cast< KernelFunctionType * >(
+        //        itk::BSplineSecondDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
+    };
+
     ~BSplineSparseMatrixTransform() {}
 
     inline size_t GetSupport() const {
@@ -113,9 +121,5 @@ private:
 };
 
 } // namespace rstk
-
-#ifndef ITK_MANUAL_INSTANTIATION
-#include "BSplineSparseMatrixTransform.hxx"
-#endif
 
 #endif /* BSPLINESPARSEMATRIXTRANSFORM_H_ */
