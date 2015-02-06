@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-06 14:45:23
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-02-06 14:59:10
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -51,9 +51,9 @@ def bmap_registration(name="Bmap_Registration"):
     pha2rads = pe.Node(niu.Function(input_names=['in_file'],
                                     output_names=['out_file'],
                                     function=to_rads), name='Phase2rads')
-    smooth = pe.Node(niu.Function(
-        function=denoise, input_names=['in_file', 'in_mask'],
-        output_names=['out_file']), name='PhaseDenoise')
+    # smooth = pe.Node(niu.Function(
+    #     function=median_f, input_names=['in_file', 'in_mask'],
+    #     output_names=['out_file']), name='PhaseDenoise')
 
     prelude = pe.Node(fsl.PRELUDE(process3d=True), name='PhaseUnwrap')
 
@@ -130,9 +130,7 @@ def bmap_registration(name="Bmap_Registration"):
         # Transforms
         (inputnode,       warpPhase, [('t1w_brain', 'reference_image')]),
         (pha2RAS,          pha2rads, [('out_file', 'in_file')]),
-        (bet,                smooth, [('mask_file', 'in_mask')]),
-        (pha2rads,           smooth, [('out_file', 'in_file')]),
-        (smooth,            prelude, [('out_file', 'phase_file')]),
+        (pha2rads,          prelude, [('out_file', 'phase_file')]),
         (n4,                prelude, [('output_image', 'magnitude_file')]),
         (prelude,         warpPhase, [
          ('unwrapped_phase_file', 'input_image')]),
@@ -167,7 +165,7 @@ def bmap_registration(name="Bmap_Registration"):
     return workflow
 
 
-def denoise(in_file, in_mask, out_file=None):
+def median_f(in_file, in_mask, out_file=None):
     import nibabel as nb
     import os.path as op
     import numpy as np
