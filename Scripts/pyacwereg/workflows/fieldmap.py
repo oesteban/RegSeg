@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-03 17:38:47
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-02-06 13:26:45
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -12,6 +12,8 @@ from nipype.interfaces import fsl
 from nipype.interfaces.io import JSONFileGrabber, JSONFileSink
 from nipype.interfaces import ants
 from nipype.algorithms.misc import AddNoise, PolyFit
+
+from pyacwereg.filters import *
 
 from pysdcev.interfaces.misc import SigmoidFilter
 import pysdcev.utils as pu
