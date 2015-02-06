@@ -1,31 +1,31 @@
 // --------------------------------------------------------------------------------------
-// File:          BSplineSparseMatrixTransform.h
-// Date:          Jan 15, 2014
+// File:          GaussianSparseMatrixTransform.h
+// Date:          Feb 5, 2015
 // Author:        code@oscaresteban.es (Oscar Esteban)
 // Version:       1.0 beta
 // License:       GPLv3 - 29 June 2007
 // Short Summary:
 // --------------------------------------------------------------------------------------
 //
-// Copyright (c) 2014, code@oscaresteban.es (Oscar Esteban)
+// Copyright (c) 2015, code@oscaresteban.es (Oscar Esteban)
 // with Signal Processing Lab 5, EPFL (LTS5-EPFL)
 // and Biomedical Image Technology, UPM (BIT-UPM)
 // All rights reserved.
 //
-// This file is part of ACWE-Reg
+// This file is part of ACWEReg
 //
-// ACWE-Reg is free software: you can redistribute it and/or modify
+// ACWEReg is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// ACWE-Reg is distributed in the hope that it will be useful,
+// ACWEReg is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with ACWE-Reg.  If not, see <http://www.gnu.org/licenses/>.
+// along with ACWEReg.  If not, see <http://www.gnu.org/licenses/>.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -40,33 +40,34 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef BSPLINESPARSEMATRIXTRANSFORM_H_
-#define BSPLINESPARSEMATRIXTRANSFORM_H_
+#ifndef SOURCE_DIRECTORY__MODULES_TRANSFORM_INCLUDE_GAUSSIANSPARSEMATRIXTRANSFORM_H_
+#define SOURCE_DIRECTORY__MODULES_TRANSFORM_INCLUDE_GAUSSIANSPARSEMATRIXTRANSFORM_H_
 
 #include "SparseMatrixTransform.h"
-#include <itkBSplineKernelFunction.h>
-#include <itkBSplineDerivativeKernelFunction.h>
-#include "BSplineSecondDerivativeKernelFunction.h"
+#include <itkGaussianKernelFunction.h>
+// #include <itkGaussianDerivativeKernelFunction.h>
+// #include "GaussianSecondDerivativeKernelFunction.h"
 
 namespace rstk {
 
-template< class TScalar, unsigned int NDimensions = 3u, unsigned int NComponents = 3u,  unsigned int VSplineOrder = 3u >
-class BSplineSparseMatrixTransform: public SparseMatrixTransform< TScalar, NDimensions, NComponents > {
+template< class TScalar, unsigned int NDimensions = 3u, unsigned int NComponents = 3u >
+class GaussianSparseMatrixTransform: public SparseMatrixTransform< TScalar, NDimensions, NComponents > {
 public:
-	typedef BSplineSparseMatrixTransform< TScalar, NDimensions, NComponents, VSplineOrder > Self;
+	typedef GaussianSparseMatrixTransform< TScalar, NDimensions, NComponents >          Self;
 	typedef SparseMatrixTransform< TScalar, NDimensions, NComponents >                  Superclass;
 	typedef itk::SmartPointer< Self >                                                   Pointer;
 	typedef itk::SmartPointer< const Self >                                             ConstPointer;
 
-	itkNewMacro( Self );
-	itkTypeMacro( BSplineSparseMatrixTransform, SparseMatrixTransform );
+	itkTypeMacro( GaussianSparseMatrixTransform, SparseMatrixTransform );
 	itkStaticConstMacro( Dimension, unsigned int, NDimensions );
 	itkStaticConstMacro( Components, unsigned int, NComponents );
-	itkStaticConstMacro( SplineOrder, unsigned int, VSplineOrder );
+
+	itkNewMacro( Self );
 
 	typedef typename Superclass::ScalarType                                             ScalarType;
 	typedef typename Superclass::PointType                                              PointType;
 	typedef typename Superclass::VectorType                                             VectorType;
+	typedef typename Superclass::ValueVectorType                                        ValueVectorType;
     typedef typename Superclass::KernelFunctionType                                     KernelFunctionType;
     typedef typename Superclass::KernelFunctionPointer                                  KernelFunctionPointer;
 	typedef typename Superclass::WeightsMatrix                                          WeightsMatrix;
@@ -99,27 +100,25 @@ public:
     typedef typename Superclass::AltCoeffPointer                     AltCoeffPointer;
 
     using Superclass::InterpolateModeType;
+
 protected:
-    BSplineSparseMatrixTransform(): Superclass() {
+    GaussianSparseMatrixTransform(): Superclass() {
     	this->m_KernelFunction = dynamic_cast< KernelFunctionType * >(
-                itk::BSplineKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
-    	this->m_DerivativeKernel = dynamic_cast< KernelFunctionType * >(
-                itk::BSplineDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
+                itk::GaussianKernelFunction<ScalarType>::New().GetPointer() );
+    	//this->m_DerivativeKernel = dynamic_cast< KernelFunctionType * >(
+        //       itk::GaussianDerivativeKernelFunction<ScalarType>::New().GetPointer() );
     	//this->m_SecondDerivativeKernel = dynamic_cast< KernelFunctionType * >(
-        //        itk::BSplineSecondDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
+        //        itk::GaussianSecondDerivativeKernelFunction<ScalarType>::New().GetPointer() );
     }
 
-    ~BSplineSparseMatrixTransform() {}
-
-    inline size_t GetSupport() const {
-    	return SplineOrder;
-    }
+    ~GaussianSparseMatrixTransform() {}
 
 private:
-    BSplineSparseMatrixTransform( const Self & );
+    GaussianSparseMatrixTransform( const Self & );
 	void operator=( const Self & );
 };
 
 } // namespace rstk
 
-#endif /* BSPLINESPARSEMATRIXTRANSFORM_H_ */
+
+#endif /* SOURCE_DIRECTORY__MODULES_TRANSFORM_INCLUDE_GAUSSIANSPARSEMATRIXTRANSFORM_H_ */

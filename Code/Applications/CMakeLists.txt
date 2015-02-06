@@ -21,6 +21,9 @@ TARGET_LINK_LIBRARIES(binarize_surfaces ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 ADD_EXECUTABLE(regridavg regridavg.cxx ) 
 TARGET_LINK_LIBRARIES(regridavg ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 
+ADD_EXECUTABLE(rbf_approx rbf_approx.cxx )
+TARGET_LINK_LIBRARIES(rbf_approx ${ITK_LIBRARIES} ${Boost_LIBRARIES})
+
 find_package(VTK COMPONENTS vtkCommonCore vtkRenderingOpenGL vtkRenderingFreeType vtkRenderingImage vtkIOLegacy vtkIOLegacy vtkFiltersSources NO_MODULE)
 
 ADD_EXECUTABLE(slice_contours slice_contours.cxx )

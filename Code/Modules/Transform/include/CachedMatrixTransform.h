@@ -67,7 +67,7 @@
 
 namespace rstk {
 
-template< class TScalar, unsigned int NDimensions = 3u >
+template< class TScalar, unsigned int NDimensions = 3u, unsigned int NComponents = 3u >
 class CachedMatrixTransform: public RBFFieldTransform< TScalar, NDimensions >
 {
 public:
@@ -79,6 +79,7 @@ public:
     
     itkTypeMacro( CachedMatrixTransform, RBFFieldTransform );
     itkStaticConstMacro( Dimension, unsigned int, NDimensions );
+    itkStaticConstMacro( Components, unsigned int, NComponents );
     
     typedef enum {
       UNKNOWN,
@@ -90,6 +91,7 @@ public:
     typedef typename Superclass::ScalarType                                     ScalarType;
     typedef itk::Point< ScalarType, Dimension >                                 PointType;
     typedef itk::Vector< ScalarType, Dimension >                                VectorType;
+    typedef itk::Vector< ScalarType, Components >                               ValueVectorType;
     typedef itk::Matrix
     	    < ScalarType, Dimension, Dimension >                                MatrixType;
 
@@ -189,7 +191,7 @@ public:
 
     itkGetConstMacro( PointLocations, PointsList );
 	itkGetConstMacro( PointValues, DimensionParameters );
-    inline VectorType GetPointValue( const size_t id ) const;
+    inline ValueVectorType GetPointValue( const size_t id ) const;
 
 
 	// Physical positions, will define interpolation mode

@@ -60,14 +60,14 @@
 
 namespace rstk {
 
-template< class TScalar, unsigned int NDimensions >
-CachedMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+CachedMatrixTransform<TScalar, NDimensions, NComponents>
 ::CachedMatrixTransform():
 Superclass(),
 m_NumberOfPoints(0),
 m_UseImageOutput(false),
 m_InterpolationMode(UNKNOWN) {
-	for( size_t i = 0; i<Dimension; i++ ) {
+	for( size_t i = 0; i<Components; i++ ) {
 		this->m_PointValues[i] = DimensionVector();
 	}
 	this->m_ReferenceSize.Fill(0);
@@ -78,14 +78,14 @@ m_InterpolationMode(UNKNOWN) {
 	this->m_DomainExtent.Fill(zero);
 }
 
-template< class TScalar, unsigned int NDimensions >
-inline typename CachedMatrixTransform<TScalar,NDimensions>::VectorType
-CachedMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+inline typename CachedMatrixTransform<TScalar, NDimensions, NComponents>::ValueVectorType
+CachedMatrixTransform<TScalar, NDimensions, NComponents>
 ::GetPointValue( const size_t id ) const {
-	VectorType ci;
+	ValueVectorType ci;
 	ci.Fill( 0.0 );
 
-	for( size_t d = 0; d < Dimension; d++) {
+	for( size_t d = 0; d < Components; d++) {
 		ci[d] = this->m_PointValues[d][id];
 	}
 
@@ -93,9 +93,9 @@ CachedMatrixTransform<TScalar,NDimensions>
 }
 
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-CachedMatrixTransform<TScalar,NDimensions>
+CachedMatrixTransform<TScalar, NDimensions, NComponents>
 ::SetDomainExtent( const DomainBase* image ) {
 	ContinuousIndexType o_idx;
 	o_idx.Fill( -0.5 );
@@ -118,9 +118,9 @@ CachedMatrixTransform<TScalar,NDimensions>
 }
 
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-CachedMatrixTransform<TScalar,NDimensions>
+CachedMatrixTransform<TScalar, NDimensions, NComponents>
 ::SetOutputReference( const DomainBase* image ) {
 	if( this->m_InterpolationMode == POINTS_MODE ) {
 		itkExceptionMacro(<< "trying to change iterpolation mode from scattered to regular.");
@@ -129,8 +129,6 @@ CachedMatrixTransform<TScalar,NDimensions>
 	}
 
 	this->m_UseImageOutput = true;
-	VectorType zerov; zerov.Fill( 0.0 );
-
 	this->m_ReferenceSize = image->GetLargestPossibleRegion().GetSize();
 	this->m_ReferenceSpacing = image->GetSpacing();
 	this->m_ReferenceOrigin = image->GetOrigin();
@@ -138,16 +136,24 @@ CachedMatrixTransform<TScalar,NDimensions>
 	SetFieldParametersFromImage(image);
 
 	this->m_NumberOfPoints = image->GetLargestPossibleRegion().GetNumberOfPixels();
+
 	// Initialize off-grid positions
 	PointType p;
+
 	for( size_t i = 0; i < this->m_NumberOfPoints; i++ ) {
 		image->TransformIndexToPhysicalPoint( image->ComputeIndex( i ), p );
 		this->m_PointLocations.push_back( p );
 	}
+
+	for( size_t i = 0; i<Components; i++ ) {
+		this->m_PointValues[i] = DimensionVector(this->m_NumberOfPoints, 0.0);
+	}
+
+
 }
 
-template< class TScalar, unsigned int NDimensions >
-void CachedMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+void CachedMatrixTransform<TScalar, NDimensions, NComponents>
 ::SetFieldParametersFromImage(const DomainBase* image) {
 	SizeType s = image->GetLargestPossibleRegion().GetSize();
 	PointType o = image->GetOrigin();
@@ -168,8 +174,8 @@ void CachedMatrixTransform<TScalar,NDimensions>
 	this->SetFieldFixedParameters(param);
 }
 
-template< class TScalar, unsigned int NDimensions >
-void CachedMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+void CachedMatrixTransform<TScalar, NDimensions, NComponents>
 ::SetCoefficientsParametersFromImage(const DomainBase* image) {
 	SizeType s = image->GetLargestPossibleRegion().GetSize();
 	PointType o = image->GetOrigin();
@@ -190,8 +196,8 @@ void CachedMatrixTransform<TScalar,NDimensions>
 	this->SetCoefficientsFixedParameters(param);
 }
 
-template< class TScalar, unsigned int NDimensions >
-void CachedMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+void CachedMatrixTransform<TScalar, NDimensions, NComponents>
 ::SetOutputPoints( const PointsList points ){
 	if( this->m_InterpolationMode ==  GRID_MODE) {
 		itkExceptionMacro(<< "trying to change iterpolation mode from regular to scattered.");
@@ -204,17 +210,17 @@ void CachedMatrixTransform<TScalar,NDimensions>
 	this->Modified();
 }
 
-template< class TScalar, unsigned int NDimensions >
-void CachedMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+void CachedMatrixTransform<TScalar, NDimensions, NComponents>
 ::SetOutputPoints( const PointsList points, const PointIdContainer valid ){
 	this->SetOutputPoints(points);
 	this->m_ValidLocations = valid;
 }
 
 
-template< class TScalar, unsigned int NDimensions >
-typename CachedMatrixTransform<TScalar,NDimensions>::DimensionVector
-CachedMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+typename CachedMatrixTransform<TScalar, NDimensions, NComponents>::DimensionVector
+CachedMatrixTransform<TScalar, NDimensions, NComponents>
 ::Vectorize( const CoefficientsImageType* image ) {
 	DimensionVector v( image->GetLargestPossibleRegion().GetNumberOfPixels() );
 	v.fill(0.0);
@@ -227,9 +233,9 @@ CachedMatrixTransform<TScalar,NDimensions>
 	return v;
 }
 
-template< class TScalar, unsigned int NDimensions >
-typename CachedMatrixTransform<TScalar,NDimensions>::DimensionParameters
-CachedMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+typename CachedMatrixTransform<TScalar, NDimensions, NComponents>::DimensionParameters
+CachedMatrixTransform<TScalar, NDimensions, NComponents>
 ::VectorizeField( const FieldType* image ) {
 	DimensionParameters vectorized;
 

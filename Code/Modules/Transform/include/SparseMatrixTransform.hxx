@@ -60,8 +60,8 @@
 
 namespace rstk {
 
-template< class TScalar, unsigned int NDimensions >
-SparseMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::SparseMatrixTransform():
 Superclass() {
 	this->m_ControlGridSize.Fill(10);
@@ -77,14 +77,14 @@ Superclass() {
 	this->m_ControlGridIndexToPhysicalPoint.SetIdentity();
 	this->m_ControlGridPhysicalPointToIndex.SetIdentity();
 
-	for( size_t i = 0; i<Dimension; i++ ) {
+	for( size_t i = 0; i<Components; i++ ) {
 		this->m_PointValues[i] = DimensionVector();
 	}
 }
 
-template< class TScalar, unsigned int NDimensions >
-inline typename SparseMatrixTransform<TScalar,NDimensions>::ScalarType
-SparseMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+inline typename SparseMatrixTransform<TScalar, NDimensions, NComponents>::ScalarType
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::EvaluateKernel( const VectorType r, const size_t dim ) {
 	ScalarType wi=1.0;
 	for (size_t i = 0; i<Dimension; i++) {
@@ -93,9 +93,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	return wi;
 }
 
-template< class TScalar, unsigned int NDimensions >
-inline typename SparseMatrixTransform<TScalar,NDimensions>::ScalarType
-SparseMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+inline typename SparseMatrixTransform<TScalar, NDimensions, NComponents>::ScalarType
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::EvaluateDerivative( const VectorType r, const size_t dim ) {
 	ScalarType wi=1.0;
 	for (size_t i = 0; i<Dimension; i++) {
@@ -107,9 +107,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	return wi;
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 inline size_t
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::ComputeRegionOfPoint(const PointType& point, VectorType& cvector, IndexType& start, IndexType& end, OffsetTableType offsetTable ) {
 	IndexType center;
 	VectorType cstart,cend;
@@ -147,9 +147,9 @@ SparseMatrixTransform<TScalar,NDimensions>
     return num;
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::SetControlGridInformation( const DomainBase* image ) {
 	this->m_ControlGridSize      = image->GetLargestPossibleRegion().GetSize();
 	this->m_ControlGridOrigin    = image->GetOrigin();
@@ -157,9 +157,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->InitializeCoefficientsImages();
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::InitializeCoefficientsImages() {
 	// Compute pixel conversion matrices
 	MatrixType scale;
@@ -205,7 +205,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->m_ControlGridIndexToPhysicalPoint = MatrixType(dir) * scale;
 	this->m_ControlGridPhysicalPointToIndex = this->m_ControlGridIndexToPhysicalPoint.GetInverse();
 
-	for( size_t i = 0; i<Dimension; i++ ) {
+	for( size_t i = 0; i<Components; i++ ) {
 		this->m_Derivatives[i] = CoefficientsImageType::New();
 		this->m_Derivatives[i]->SetRegions(   this->m_ControlGridSize );
 		this->m_Derivatives[i]->SetOrigin(    this->m_ControlGridOrigin );
@@ -222,9 +222,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->Modified();
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::ComputeMatrix( WeightsMatrixType type, size_t dim ) {
 	struct SMTStruct str;
 	str.Transform = this;
@@ -272,9 +272,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->AfterComputeMatrix(type);
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::AfterComputeMatrix(WeightsMatrixType type) {
 	size_t numvalid = this->m_ValidLocations.size();
 	this->m_Phi.normalize_rows();
@@ -309,9 +309,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 ITK_THREAD_RETURN_TYPE
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::ComputeThreaderCallback(void *arg) {
 	SMTStruct *str;
 
@@ -336,9 +336,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	return ITK_THREAD_RETURN_VALUE;
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 itk::ThreadIdType
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::SplitMatrixSection( itk::ThreadIdType i, itk::ThreadIdType num, MatrixSectionType& section ) {
 	size_t range = section.vrows->size();
 
@@ -359,9 +359,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 }
 
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::ThreadedComputeMatrix( MatrixSectionType& section, FunctionalCallback func, itk::ThreadIdType threadId ) {
 	size_t last = section.first_row + section.num_rows;
 	itk::SizeValueType nRows = section.num_rows;
@@ -407,24 +407,24 @@ SparseMatrixTransform<TScalar,NDimensions>
 	}
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::InterpolatePoints() {
 	const DimensionParameters coeff = this->VectorizeCoefficients();
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
 		this->ComputeMatrix( Self::PHI );
 	}
-	for( size_t i = 0; i<Dimension; i++ ) {
+	for( size_t i = 0; i<Components; i++ ) {
 		this->m_PointValues[i].set_size( this->m_NumberOfPoints );
 		this->m_Phi.mult( coeff[i], this->m_PointValues[i] );
 	}
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::InterpolateField() {
 	const DimensionParameters coeff = this->VectorizeCoefficients();
 	// Check m_Phi and initializations
@@ -434,8 +434,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 	size_t npix = this->m_DisplacementField->GetLargestPossibleRegion().GetNumberOfPixels();
 
-	DimensionVector interpField[Dimension];
-	for( size_t i = 0; i<Dimension; i++ ) {
+	DimensionVector interpField[Components];
+	for( size_t i = 0; i<Components; i++ ) {
 		interpField[i] = DimensionVector();
 		interpField[i].set_size(npix);
 		this->m_FieldPhi.mult( coeff[i], interpField[i] );
@@ -458,7 +458,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 	for( size_t row = 0; row<npix; row++ ) {
 		v.Fill( 0.0 );
 		setVector = false;
-		for( size_t i = 0; i<Dimension; i++) {
+		for( size_t i = 0; i<Components; i++) {
 			val = interpField[i][row];
 
 			if( fabs(val) > 1.0e-5 ){
@@ -473,9 +473,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->SetDisplacementField( field );
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::ComputeInverse() {
 	InvertFieldPointer invfield = InvertFieldFilter::New();
 	invfield->SetDisplacementField(this->GetDisplacementField());
@@ -501,9 +501,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	//this->UpdateField( coeff );
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::UpdateField( const DimensionParameters& coeff ) {
 
 	// TODO: this needs a re-implementation
@@ -513,28 +513,28 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 	// Interpolate
 	DimensionParameters fieldValues;
-	for( size_t i = 0; i<Dimension; i++)
+	for( size_t i = 0; i<Components; i++)
 		this->m_S.mult( coeff[i], fieldValues[i] );
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::ComputeCoefficients() {
 	if ( this->m_NumberOfDimParameters == 0 ) {
 		this->InitializeCoefficientsImages();
 	}
 
-	if( this->m_S.rows() == 0 || this->m_S.cols() == 0 ) {
-		this->ComputeMatrix( Self::S );
+	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
+		this->ComputeMatrix( Self::PHI );
 	}
 
-	SolverVector X[Dimension], Y[Dimension];
+	SolverVector X[Components], Y[Components];
 
 	DimensionParameters fieldValues = this->VectorizeField( this->m_DisplacementField );
 	DimensionParameters coeffs;
 
-	for ( size_t i = 0; i<Dimension; i++) {
+	for ( size_t i = 0; i<Components; i++) {
 		// TODO: check m_NumberOfPoints here
 		// Y[i] = SolverVector( this->m_NumberOfPoints );
 		Y[i] = SolverVector( fieldValues[i].size() );
@@ -542,8 +542,8 @@ SparseMatrixTransform<TScalar,NDimensions>
 		X[i] = SolverVector( this->m_NumberOfDimParameters );
 	}
 
-	size_t nRows = this->m_S.rows();
-	SolverMatrix S( nRows, this->m_S.cols() );
+	size_t nRows = this->m_Phi.rows();
+	SolverMatrix S( nRows, this->m_Phi.cols() );
 	SparseMatrixRowType row;
 	typedef typename SolverMatrix::row SolverRow;
 	SolverRow row_s;
@@ -552,7 +552,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 	for( size_t i = 0; i < nRows; i++ ){
 		row_s.clear();
-		row = this->m_S.get_row( i );
+		row = this->m_Phi.get_row( i );
 
 		for( size_t j = 0; j< row.size(); j++ ) {
 			cols.push_back( row[j].first );
@@ -562,17 +562,17 @@ SparseMatrixTransform<TScalar,NDimensions>
 		S.set_row( i, cols, vals );
 	}
 
-	if ( Dimension == 3 ) {
+	if ( Components == 3 ) {
 		SolverTypeTraits::Solve( S, Y[0], Y[1], Y[2], X[0], X[1], X[2] );
-	} else if (Dimension == 2 ) {
+	} else if (Components == 2 ) {
 		SolverTypeTraits::Solve( S, Y[0], Y[1], X[0], X[1] );
 	} else {
-		for( size_t col = 0; col < Dimension; col++ ) {
+		for( size_t col = 0; col < Components; col++ ) {
 			SolverTypeTraits::Solve( S, Y[col], X[col] );
 		}
 	}
 
-	for( size_t col = 0; col < Dimension; col++ ) {
+	for( size_t col = 0; col < Components; col++ ) {
 		size_t offset = col * this->m_NumberOfDimParameters;
 		for( size_t k = 0; k<this->m_NumberOfDimParameters; k++) {
 			this->m_Parameters[k + offset] = X[col][k];
@@ -582,23 +582,23 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->Modified();
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::ComputeGradientField( ) {
-	for( size_t i = 0; i<Dimension; i++ ) {
+	for( size_t i = 0; i<Components; i++ ) {
 		if( this->m_SPrime[i].rows() == 0 || this->m_SPrime[i].cols() == 0 ) {
 			this->ComputeMatrix( Self::SPRIME, i );
 		}
 	}
 
 	DimensionParameters coeff = this->VectorizeCoefficients();
-	DimensionParameters result[Dimension];
-	ScalarType* fbuf[Dimension];
+	DimensionParameters result[Components];
+	ScalarType* fbuf[Components];
 
 
-	for( size_t i = 0; i<Dimension; i++ ) {
-		for( size_t j=0; j<Dimension; j++ ) {
+	for( size_t i = 0; i<Components; i++ ) {
+		for( size_t j=0; j<Components; j++ ) {
 			// Interpolate
 			this->m_SPrime[j].mult( coeff[i], result[i][j] );
 		}
@@ -609,18 +609,18 @@ SparseMatrixTransform<TScalar,NDimensions>
 	}
 
 	if (this->m_GradientField.IsNull()) {
-		VectorType zero;
+		ValueVectorType zero;
 		zero.Fill(0.0);
 		this->m_GradientField = FieldType::New();
 		this->m_GradientField->SetRegions(this->m_Derivatives[0]->GetLargestPossibleRegion());
 		this->m_GradientField->Allocate();
 		this->m_GradientField->FillBuffer(zero);
 	}
-	VectorType* gbuf = this->m_GradientField->GetBufferPointer();
+	ValueVectorType* gbuf = this->m_GradientField->GetBufferPointer();
 
 
-	VectorType v;
-	VectorType g;
+	ValueVectorType v;
+	ValueVectorType g;
 	ScalarType norm;
 
 	for ( size_t row = 0; row<this->m_NumberOfDimParameters; row++ ) {
@@ -641,9 +641,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	}
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::InvertPhi() {
 	// Check m_Phi
 	if( this->m_Phi.rows() == 0 || this->m_Phi.cols() == 0 ) {
@@ -695,9 +695,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 }
 
-template< class TScalar, unsigned int NDimensions >
-const typename SparseMatrixTransform<TScalar,NDimensions>::WeightsMatrix*
-SparseMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+const typename SparseMatrixTransform<TScalar, NDimensions, NComponents>::WeightsMatrix*
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::GetPhi(const bool onlyvalid) {
 	// Check m_Phi and initializations
 	if( this->m_Phi.rows()==0 || this->m_Phi.cols()==0 ) {
@@ -711,12 +711,12 @@ SparseMatrixTransform<TScalar,NDimensions>
 	}
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 inline bool
-SparseMatrixTransform<TScalar,NDimensions>
-::SetPointValue( const size_t id, typename SparseMatrixTransform<TScalar,NDimensions>::VectorType pi ) {
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
+::SetPointValue( const size_t id, typename SparseMatrixTransform<TScalar, NDimensions, NComponents>::ValueVectorType pi ) {
 	bool changed = false;
-	for( size_t dim = 0; dim < Dimension; dim++) {
+	for( size_t dim = 0; dim < Components; dim++) {
 		if( std::isnan( pi[dim] )) pi[dim] = 0;
 		if( this->m_PointValues[dim][id] != pi[dim] ) {
 			this->m_PointValues[dim][id] = pi[dim];
@@ -726,9 +726,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	return changed;
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::SetCoefficientsImages( const CoefficientsImageArray & images ) {
 
 	if (this->m_NumberOfDimParameters == 0) {
@@ -740,24 +740,24 @@ SparseMatrixTransform<TScalar,NDimensions>
 	}
 
 
-	for( size_t dim = 0; dim < Dimension; dim++ ) {
+	for( size_t dim = 0; dim < Components; dim++ ) {
 		CoeffImageConstPointer c = itkDynamicCastInDebugMode< const CoefficientsImageType* >( images[dim].GetPointer() );
 		this->SetCoefficientsImage( dim, c );
 	}
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::SetCoefficientsVectorImage( const FieldType* images ) {
 	this->SetCoefficientsField(images);
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::AddCoefficientsVectorImage( const FieldType* images ) {
-	ScalarType* buff[Dimension];
+	ScalarType* buff[Components];
 
 	if (this->m_NumberOfDimParameters == 0) {
 		this->SetCoefficientsField(images);
@@ -775,11 +775,11 @@ SparseMatrixTransform<TScalar,NDimensions>
 }
 
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::SetCoefficientsImage( size_t dim, const CoefficientsImageType* c ) {
-	if ( dim >= Dimension || dim < 0 ) {
+	if ( dim >= Components || dim < 0 ) {
 		itkExceptionMacro(<< "trying to set coefficients for undefined dimension");
 	}
 	size_t offset = dim * this->m_NumberOfDimParameters;
@@ -790,13 +790,13 @@ SparseMatrixTransform<TScalar,NDimensions>
 }
 
 
-template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::DimensionParameters
-SparseMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+typename SparseMatrixTransform<TScalar, NDimensions, NComponents>::DimensionParameters
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::VectorizeCoefficients() const {
 	DimensionParameters m;
 	const ScalarType* cbuffer;
-	for( size_t i = 0; i<Dimension; i++) {
+	for( size_t i = 0; i<Components; i++) {
 		m[i] = DimensionVector( this->m_NumberOfDimParameters );
 
 		for( size_t j = 0; j < this->m_NumberOfDimParameters; j++ ){
@@ -806,13 +806,13 @@ SparseMatrixTransform<TScalar,NDimensions>
 	return m;
 }
 
-template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::DimensionParameters
-SparseMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+typename SparseMatrixTransform<TScalar, NDimensions, NComponents>::DimensionParameters
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::VectorizeDerivatives() const {
 	DimensionParameters m;
 	const ScalarType* cbuffer;
-	for( size_t i = 0; i<Dimension; i++) {
+	for( size_t i = 0; i<Components; i++) {
 		m[i] = DimensionVector( this->m_NumberOfDimParameters );
 		cbuffer = this->m_Derivatives[i]->GetBufferPointer();
 
@@ -823,9 +823,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	return m;
 }
 
-template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::DimensionVector
-SparseMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+typename SparseMatrixTransform<TScalar, NDimensions, NComponents>::DimensionVector
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::Vectorize( const CoefficientsImageType* image ) {
 	DimensionVector v( image->GetLargestPossibleRegion().GetNumberOfPixels() );
 	v.fill(0.0);
@@ -838,11 +838,11 @@ SparseMatrixTransform<TScalar,NDimensions>
 	return v;
 }
 
-template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::WeightsMatrix
-SparseMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+typename SparseMatrixTransform<TScalar, NDimensions, NComponents>::WeightsMatrix
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::MatrixField( const FieldType* image ) {
-	WeightsMatrix vectorized( image->GetLargestPossibleRegion().GetNumberOfPixels(), Dimension );
+	WeightsMatrix vectorized( image->GetLargestPossibleRegion().GetNumberOfPixels(), Components );
 
 	VectorType v;
 	std::vector< unsigned int > cols;
@@ -854,7 +854,7 @@ SparseMatrixTransform<TScalar,NDimensions>
 		cols.clear();
 		vals.clear();
 
-		for( size_t col = 0; col<Dimension; col++) {
+		for( size_t col = 0; col<Components; col++) {
 			if( v[col]!= 0.0 ){
 				cols.push_back( col );
 				vals.push_back( v[col] );
@@ -867,13 +867,13 @@ SparseMatrixTransform<TScalar,NDimensions>
 	return vectorized;
 }
 
-template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::DimensionParameters
-SparseMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+typename SparseMatrixTransform<TScalar, NDimensions, NComponents>::DimensionParameters
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::VectorizeField( const FieldType* image ) {
 	DimensionParameters vectorized;
 
-	for( size_t col = 0; col<Dimension; col++) {
+	for( size_t col = 0; col<Components; col++) {
 		vectorized[col] = DimensionVector( image->GetLargestPossibleRegion().GetNumberOfPixels() );
 		vectorized[col].fill(0.0);
 	}
@@ -883,16 +883,16 @@ SparseMatrixTransform<TScalar,NDimensions>
 
 	for( size_t row = 0; row<this->m_NumberOfDimParameters; row++ ) {
 		v = *( cbuffer + row );
-		for( size_t col = 0; col<Dimension; col++) {
+		for( size_t col = 0; col<Components; col++) {
 			vectorized[col][row] = v[col];
 		}
 	}
 	return vectorized;
 }
 
-template< class TScalar, unsigned int NDimensions >
-typename SparseMatrixTransform<TScalar,NDimensions>::AltCoeffPointer
-SparseMatrixTransform<TScalar,NDimensions>
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
+typename SparseMatrixTransform<TScalar, NDimensions, NComponents>::AltCoeffPointer
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::GetFlatParameters() {
 	this->m_FlatCoeffs = AltCoeffType::New();
 	AltCoeffContainerPointer points = this->m_FlatCoeffs->GetPoints();
@@ -905,9 +905,9 @@ SparseMatrixTransform<TScalar,NDimensions>
 	return this->m_FlatCoeffs;
 }
 
-template< class TScalar, unsigned int NDimensions >
+template< class TScalar, unsigned int NDimensions, unsigned int NComponents >
 void
-SparseMatrixTransform<TScalar,NDimensions>
+SparseMatrixTransform<TScalar, NDimensions, NComponents>
 ::Initialize() {
 	// Hypothesis 1: coefficients image reference has been set (origin, size, spacing)
 	// Nothing to do

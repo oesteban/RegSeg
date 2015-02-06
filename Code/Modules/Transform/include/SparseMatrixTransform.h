@@ -69,17 +69,19 @@
 
 namespace rstk {
 
-template< class TScalar, unsigned int NDimensions = 3u >
-class SparseMatrixTransform: public rstk::CachedMatrixTransform< TScalar, NDimensions >
+template< class TScalar, unsigned int NDimensions = 3u, unsigned int NComponents = 3u >
+class SparseMatrixTransform: public rstk::CachedMatrixTransform< TScalar, NDimensions, NComponents >
 {
 public:
     /* Standard class typedefs. */
     typedef SparseMatrixTransform                                  Self;
-    typedef rstk::CachedMatrixTransform< TScalar, NDimensions >    Superclass;
+    typedef rstk::CachedMatrixTransform
+    		              < TScalar, NDimensions, NComponents >    Superclass;
     typedef itk::SmartPointer< Self >                              Pointer;
     typedef itk::SmartPointer< const Self >                        ConstPointer;
     
     itkStaticConstMacro( Dimension, unsigned int, NDimensions );
+    itkStaticConstMacro( Components, unsigned int, NComponents );
     itkTypeMacro( SparseMatrixTransform, CachedMatrixTransform );
     itkNewMacro( Self );
     
@@ -88,7 +90,9 @@ public:
     typedef typename Superclass::ScalarType                        ScalarType;
     typedef typename Superclass::PointType                         PointType;
     typedef typename Superclass::VectorType                        VectorType;
+    typedef typename Superclass::ValueVectorType                   ValueVectorType;
     typedef typename Superclass::MatrixType                        MatrixType;
+
 
     typedef typename Superclass::WeightsMatrix                     WeightsMatrix;
     typedef typename Superclass::SparseMatrixRowType               SparseMatrixRowType;
@@ -236,7 +240,7 @@ public:
     void ComputeCoefficients();
 
 	// Values off-grid (displacement vector of a node)
-	inline bool       SetPointValue( const size_t id, VectorType pi );
+	inline bool       SetPointValue( const size_t id, ValueVectorType pi );
 
 	virtual const WeightsMatrix*  GetPhi (const bool onlyvalid = true);
 	virtual const WeightsMatrix*  GetS (){
