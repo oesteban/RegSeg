@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-06 13:26:45
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-02-06 14:45:23
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -11,9 +11,7 @@ from nipype.interfaces import freesurfer as fs
 from nipype.interfaces import fsl
 from nipype.interfaces.io import JSONFileGrabber, JSONFileSink
 from nipype.interfaces import ants
-from nipype.algorithms.misc import AddNoise, PolyFit
-
-from pyacwereg.filters import *
+from nipype.algorithms.misc import AddNoise
 
 from pysdcev.interfaces.misc import SigmoidFilter
 import pysdcev.utils as pu
@@ -100,21 +98,9 @@ def bmap_registration(name="Bmap_Registration"):
     regrid_pha = pe.Node(fs.MRIConvert(
         resample_type='cubic', out_datatype='float'), name='Regrid_pha')
 
-    polyfit = pe.Node(PolyFit(degree=2, padding=5), name='FitPoly')
-    scale = pe.Node(niu.Function(
-        function=scale_range, output_names=['out_file'],
-        input_names=['in_file', 'value', 'in_mask']), name='ScaleBmap')
-    scale.inputs.value = 2.8
-    # scale = pe.Node(niu.Function(
-    #     function=scale_like, output_names=['out_file'],
-    #     input_names=['in_file', 'reference', 'in_mask']), name='ScaleBmap')
-
-    # median = pe.Node(niu.Function(
-    #     input_names=['in_file'], output_names=['out_file'],
-    #     function=pu.median_filter), name='PhaseMedian')
-    # demean = pe.Node(niu.Function(
-    #     input_names=['in_file', 'in_mask'], output_names=['out_file'],
-    #     function=pu.demean), name='PhaseDemean')
+    denoise = pe.Node(niu.Function(
+        input_names=['in_file', 'in_mask'], output_names=['out_file'],
+        function=filter_fmap), name='SmoothBmap')
     addnoise = pe.Node(AddNoise(snr=30), name='PhaseAddNoise')
     wrap_pha = pe.Node(niu.Function(
         input_names=['in_file'], output_names=['out_file'],
@@ -164,16 +150,13 @@ def bmap_registration(name="Bmap_Registration"):
         (inputnode,      regrid_bmg, [('dwi_mask', 'reslice_like')]),
         (warpPhase,      regrid_pha, [('output_image', 'in_file')]),
         (inputnode,      regrid_pha, [('dwi_mask', 'reslice_like')]),
-        (regrid_pha,        polyfit, [('out_file', 'in_file')]),
-        (inputnode,         polyfit, [('poly_mask', 'in_mask')]),
-        (polyfit,             scale, [('out_file', 'in_file')]),
-        # (regrid_pha,          scale, [('out_file', 'reference')]),
-        (inputnode,           scale, [('poly_mask', 'in_mask')]),
-        (scale,            addnoise, [('out_file', 'in_file')]),
+        (regrid_pha,        denoise, [('out_file', 'in_file')]),
+        (inputnode,         denoise, [('dwi_mask', 'in_mask')]),
+        (denoise,          addnoise, [('out_file', 'in_file')]),
         (inputnode,        addnoise, [('dwi_mask', 'in_mask')]),
         (addnoise,         wrap_pha, [('out_file', 'in_file')]),
         (regrid_bmg,     munwrapped, [('out_file', 'in1')]),
-        (scale,          munwrapped, [('out_file', 'in2')]),
+        (denoise,        munwrapped, [('out_file', 'in2')]),
         (regrid_bmg,       mwrapped, [('out_file', 'in1')]),
         (wrap_pha,         mwrapped, [('out_file', 'in2')]),
         (regrid_mag,     outputnode, [('out_file', 'magnitude')]),
@@ -512,5 +495,32 @@ def scale_range(in_file, value=1.0, in_mask=None, out_file=None):
 
     nb.Nifti1Image(
         idata, im.get_affine(), im.get_header()).to_filename(out_file)
+
+    return out_file
+
+
+def filter_fmap(in_file, in_mask=None, out_file=None):
+    from pyacwereg.filters import wavelets_denoise, laplacian_filter
+    import numpy as np
+    import nibabel as nb
+    import os.path as op
+    from math import pi
+    from scipy.ndimage import median_filter
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_filtered.nii.gz' % fname)
+
+    filtered = wavelets_denoise(laplacian_filter(in_file, in_mask))
+
+    im = nb.load(filtered)
+    result = im.get_data()
+    result = median_filter(result, 10)
+    result -= np.median(result)
+    result *= (pi / np.percentile(result, 99.99))
+    nb.Nifti1Image(result, im.get_affine(),
+                   im.get_header()).to_filename(out_file)
 
     return out_file

@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-02-06 13:26:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-06 13:26:25
+# @Last Modified time: 2015-02-06 14:40:42
 
 
 def laplacian_filter(in_file, in_mask=None, out_file=None):
@@ -11,7 +11,7 @@ def laplacian_filter(in_file, in_mask=None, out_file=None):
     import nibabel as nb
     import os.path as op
     from math import pi
-    from numpy.fft import fftn, ifftn
+    from numpy.fft import fftn, ifftn, fftshift, ifftshift
 
     if out_file is None:
         fname, fext = op.splitext(op.basename(in_file))
@@ -28,13 +28,13 @@ def laplacian_filter(in_file, in_mask=None, out_file=None):
         mask[mask <= 0] = 0.0
         data *= mask
 
-    dataft = fftn(data)
+    dataft = fftshift(fftn(data))
     x = np.linspace(0, 2 * pi, dataft.shape[0])[:, None, None]
     y = np.linspace(0, 2 * pi, dataft.shape[1])[None, :, None]
     z = np.linspace(0, 2 * pi, dataft.shape[2])[None, None, :]
     lapfilt = 2.0 * np.squeeze((np.cos(x) + np.cos(y) + np.cos(z))) - 5.0
-    dataft *= lapfilt
-    imfilt = ifftn(dataft)
+    dataft *= fftshift(lapfilt)
+    imfilt = np.real(ifftn(ifftshift(dataft)))
 
     nb.Nifti1Image(imfilt.astype(np.float32), im.get_affine(),
                    im.get_header()).to_filename(out_file)
@@ -152,9 +152,6 @@ def wavelets_denoise(in_file, in_mask=None, out_file=None):
     import numpy as np
     import nibabel as nb
     import os.path as op
-    from math import pi
-    from scipy.interpolate import Rbf
-    from scipy.ndimage import median_filter
     import pywt as wt
 
     if out_file is None:
@@ -198,9 +195,6 @@ def wavelets_denoise(in_file, in_mask=None, out_file=None):
     result[offset[0]:, offset[1]:, :] = 2.0 * \
         (result[offset[0]:, offset[1]:, :] - m) / 255.
 
-    result = median_filter(result, 10)
-    result *= (pi / np.percentile(result, 99.99))
-    # result = (result / 255.) * (datamax - datamin) - datamin
     nb.Nifti1Image(result, im.get_affine(),
                    im.get_header()).to_filename(out_file)
 
