@@ -67,8 +67,8 @@ public:
 	typedef typename Superclass::ScalarType                                             ScalarType;
 	typedef typename Superclass::PointType                                              PointType;
 	typedef typename Superclass::VectorType                                             VectorType;
-    typedef typename Superclass::KernelFunctionType                                     KernelFunctionType;
-    typedef typename Superclass::KernelFunctionPointer                                  KernelFunctionPointer;
+	typedef typename Superclass::KernelFunctionType                                     KernelFunctionType;
+	typedef typename Superclass::KernelFunctionPointer                                  KernelFunctionPointer;
 	typedef typename Superclass::WeightsMatrix                                          WeightsMatrix;
 	typedef typename Superclass::DimensionVector                                        DimensionVector;
 	typedef typename Superclass::ParametersType                                         ParametersType;
@@ -77,46 +77,46 @@ public:
 	typedef typename Superclass::CoefficientsImageArray                                 CoefficientsImageArray;
 	typedef typename Superclass::CoefficientsImageType                                  CoefficientsImageType;
 
-    /** Standard coordinate point type for this class. */
-    typedef typename Superclass::InputPointType                                         InputPointType;
-    typedef typename Superclass::OutputPointType                                        OutputPointType;
+	/** Standard coordinate point type for this class. */
+	typedef typename Superclass::InputPointType                                         InputPointType;
+	typedef typename Superclass::OutputPointType                                        OutputPointType;
 
-    /** Standard vector type for this class. */
-    typedef typename Superclass::InputVectorType                                        InputVectorType;
-    typedef typename Superclass::OutputVectorType                                       OutputVectorType;
+	/** Standard vector type for this class. */
+	typedef typename Superclass::InputVectorType                                        InputVectorType;
+	typedef typename Superclass::OutputVectorType                                       OutputVectorType;
 
-    /** Standard covariant vector type for this class */
-    typedef typename Superclass::InputCovariantVectorType                               InputCovariantVectorType;
-    typedef typename Superclass::OutputCovariantVectorType                              OutputCovariantVectorType;
+	/** Standard covariant vector type for this class */
+	typedef typename Superclass::InputCovariantVectorType                               InputCovariantVectorType;
+	typedef typename Superclass::OutputCovariantVectorType                              OutputCovariantVectorType;
 
-    /** Standard vnl_vector type for this class. */
-    typedef typename Superclass::InputVnlVectorType                                     InputVnlVectorType;
-    typedef typename Superclass::OutputVnlVectorType                                    OutputVnlVectorType;
+	/** Standard vnl_vector type for this class. */
+	typedef typename Superclass::InputVnlVectorType                                     InputVnlVectorType;
+	typedef typename Superclass::OutputVnlVectorType                                    OutputVnlVectorType;
 
-    typedef typename Superclass::ArrayType                                              ArrayType;
+	typedef typename Superclass::ArrayType                                              ArrayType;
 
-    typedef typename Superclass::AltCoeffType                        AltCoeffType;
-    typedef typename Superclass::AltCoeffPointer                     AltCoeffPointer;
+	typedef typename Superclass::AltCoeffType                        AltCoeffType;
+	typedef typename Superclass::AltCoeffPointer                     AltCoeffPointer;
 
-    using Superclass::InterpolateModeType;
+	using Superclass::InterpolateModeType;
 protected:
-    BSplineSparseMatrixTransform(): Superclass() {
-    	this->m_KernelFunction = dynamic_cast< KernelFunctionType * >(
-                itk::BSplineKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
-    	this->m_DerivativeKernel = dynamic_cast< KernelFunctionType * >(
-                itk::BSplineDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
-    	//this->m_SecondDerivativeKernel = dynamic_cast< KernelFunctionType * >(
-        //        itk::BSplineSecondDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
-    };
+	BSplineSparseMatrixTransform(): Superclass() {
+		this->m_KernelFunction = dynamic_cast< KernelFunctionType * >(
+				itk::BSplineKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
+		this->m_DerivativeKernel = dynamic_cast< KernelFunctionType * >(
+				itk::BSplineDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
+		//this->m_SecondDerivativeKernel = dynamic_cast< KernelFunctionType * >(
+		//        itk::BSplineSecondDerivativeKernelFunction<SplineOrder, ScalarType>::New().GetPointer() );
+	}
 
-    ~BSplineSparseMatrixTransform() {}
+	~BSplineSparseMatrixTransform() {}
 
-    inline size_t GetSupport() const {
-    	return SplineOrder;
-    }
+	inline size_t GetSupport() const {
+		return SplineOrder;
+	}
 
 private:
-    BSplineSparseMatrixTransform( const Self & );
+	BSplineSparseMatrixTransform( const Self & );
 	void operator=( const Self & );
 };
 
