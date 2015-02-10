@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-17 15:32:49
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-29 15:12:57
+# @Last Modified time: 2015-02-10 12:13:50
 
 filesmap = {}
 
@@ -32,10 +32,10 @@ filesmap['struct_unproc'] = [
 
 defparms = {'enc_dir': 'y-',
             'echospacing': 7.800117313764398e-4,
-            'te_incr': 2.46e-3,
+            'delta_te': 2.46e-3,
             'epi_factor': 128,
             'epi_lines': 57,
-            'epi_acc': 1,
+            'epi_acc': 2,
             'field_strength': 3.0,
             'field_axis': 'z'
             }
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     import shutil as sh
 
     curdir = os.getcwd()
-    parser = ArgumentParser(description='Extract HCP data for TMI2015 paper',
+    parser = ArgumentParser(description='Extract HCP data for diffusion experiments',
                             formatter_class=RawTextHelpFormatter)
     g_input = parser.add_argument_group('Input')
     g_input.add_argument('-i', '--input', nargs='+', action='store')
