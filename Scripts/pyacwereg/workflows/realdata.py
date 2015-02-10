@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-02 10:37:23
+# @Last Modified time: 2015-02-10 12:09:05
 
 
 def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
@@ -153,10 +153,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
         (st1,    regseg, [('out_dis_set.dwi_mask', 'inputnode.in_mask')])
     ])
 
-    cmethod0 = sdc_fmb(bmap_params=dict(delta_te=2.46e-3),
-                       epi_params=dict(echospacing=0.77e-3,
-                                       acc_factor=3,
-                                       enc_dir='y-'))
+    cmethod0 = sdc_fmb()
     selbmap = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
                       name='SelectBmap')
     dfm = process_vsm()
@@ -168,7 +165,8 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
     wf.connect([
         (st1,       cmethod0, [('out_dis_set.dwi', 'inputnode.in_file'),
                                ('out_dis_set.dwi_mask', 'inputnode.in_mask')]),
-        (ds,        cmethod0, [('bval', 'inputnode.in_bval')]),
+        (ds,        cmethod0, [('bval', 'inputnode.in_bval'),
+                               ('mr_param', 'inputnode.settings')]),
         (bmap_prep,  selbmap, [('outputnode.wrapped', 'inlist')]),
         (selbmap,   cmethod0, [('out1', 'inputnode.bmap_mag'),
                                ('out2', 'inputnode.bmap_pha')]),
