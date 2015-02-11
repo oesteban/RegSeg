@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-30 13:40:00
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-02-11 18:44:51
 import os
 import os.path as op
 from glob import glob
@@ -177,7 +177,7 @@ class HausdorffDistance(CommandLine):
         try:
             from tvtk.api import tvtk
         except ImportError:
-            raise ImportError('Interface P2PDistance requires tvtk')
+            raise ImportError('Interface HausdorffDistance requires tvtk')
 
         try:
             from enthought.etsconfig.api import ETSConfig

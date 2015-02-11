@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-10 12:09:05
+# @Last Modified time: 2015-02-11 18:44:01
 
 
 def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
@@ -15,7 +15,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
     from nipype.interfaces import utility as niu
     from nipype.interfaces import io as nio
     from nipype.interfaces import freesurfer as fs
-    from nipype.algorithms.mesh import P2PDistance, WarpPoints
+    from nipype.algorithms.mesh import ComputeMeshWarp, WarpPoints
     from nipype.algorithms.misc import AddCSVRow
     from nipype.workflows.dmri.fsl.artifacts import sdc_fmb
 
@@ -189,7 +189,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
         (dti,      export1, [('outputnode.fa', 'reference')])
     ])
 
-    mesh0 = pe.MapNode(P2PDistance(),
+    mesh0 = pe.MapNode(ComputeMeshWarp(),
                        iterfield=['surface1', 'surface2'],
                        name='REGSEGSurfDistance')
     csv0 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
@@ -203,7 +203,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
         (mesh0,      csv0, [('distance', 'surf_dist')])
     ])
 
-    mesh1 = pe.MapNode(P2PDistance(),
+    mesh1 = pe.MapNode(ComputeMeshWarp(),
                        iterfield=['surface1', 'surface2'],
                        name='FMBSurfDistance')
     csv1 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
