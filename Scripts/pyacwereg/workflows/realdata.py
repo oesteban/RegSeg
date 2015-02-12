@@ -217,7 +217,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
         (mesh1,      csv1, [('distance', 'surf_dist')])
     ])
 
-    mapen = map_energy()
+    mapen = ev.map_energy()
     wf.connect([
         (mdti,      mapen, [('out', 'inputnode.reference')]),
         (st1,       mapen, [('out_dis_set.surf', 'inputnode.surfaces0'),

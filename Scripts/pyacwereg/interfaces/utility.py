@@ -216,7 +216,7 @@ class ComputeEnergyInputSpec(CommandLineInputSpec):
         File(exists=True), argstr='-S %s', mandatory=True,
         desc=('vtk contours that will be mapped to volume'))
 
-    descriptors = File(exists=True, argstr='-D %s'
+    descriptors = File(exists=True, argstr='-D %s',
                        desc='descriptors JSON file')
 
     out_file = File('energies.json', argstr='-o %s', usedefault=True,
