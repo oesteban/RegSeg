@@ -18,6 +18,9 @@ TARGET_LINK_LIBRARIES(warp_image ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 ADD_EXECUTABLE(binarize_surfaces binarize_surfaces.cxx )
 TARGET_LINK_LIBRARIES(binarize_surfaces ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 
+ADD_EXECUTABLE(regseg_energytest regseg_energytest.cxx )
+TARGET_LINK_LIBRARIES(regseg_energytest ${ITK_LIBRARIES} ${Boost_LIBRARIES})
+
 ADD_EXECUTABLE(regridavg regridavg.cxx ) 
 TARGET_LINK_LIBRARIES(regridavg ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 
@@ -37,6 +40,6 @@ TARGET_LINK_LIBRARIES( hdistance ${VTKHAUSDORFF_LIB} ${VTK_LIBRARIES} ${Boost_LI
 set_property(TARGET hdistance APPEND PROPERTY INCLUDE_DIRECTORIES ${VTK_INCLUDE_DIRS})
 
 
-INSTALL(TARGETS bspline_field bspline_invert regseg warp_image binarize_surfaces regridavg slice_contours hdistance
+INSTALL(TARGETS bspline_field bspline_invert regseg warp_image binarize_surfaces regseg_energytest regridavg slice_contours hdistance
   RUNTIME DESTINATION bin
 )
