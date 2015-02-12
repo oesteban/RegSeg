@@ -19,7 +19,7 @@ ADD_EXECUTABLE(binarize_surfaces binarize_surfaces.cxx )
 TARGET_LINK_LIBRARIES(binarize_surfaces ${ITK_LIBRARIES} ${Boost_LIBRARIES})
 
 ADD_EXECUTABLE(regseg_energytest regseg_energytest.cxx )
-TARGET_LINK_LIBRARIES(regseg_energytest ${ITK_LIBRARIES} ${Boost_LIBRARIES})
+TARGET_LINK_LIBRARIES(regseg_energytest ${ITK_LIBRARIES} ${Boost_LIBRARIES} ${JsonCpp_LIBRARY})
 
 ADD_EXECUTABLE(regridavg regridavg.cxx ) 
 TARGET_LINK_LIBRARIES(regridavg ${ITK_LIBRARIES} ${Boost_LIBRARIES})
