@@ -138,6 +138,7 @@ public:
 
 	virtual MeasureTypeContainer GetRegionOffsetContainer() const = 0;
 	virtual std::string PrintFormattedDescriptors() = 0;
+	virtual void ReadDescriptorsFromFile(std::string filename) = 0;
 
 	itkGetConstMacro(MaxEnergy, MeasureType);
 
