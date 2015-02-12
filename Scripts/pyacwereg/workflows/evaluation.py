@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-12 19:46:14
+# @Last Modified time: 2015-02-12 19:59:19
 
 import os
 import os.path as op
@@ -291,17 +291,20 @@ def map_energy(name='EnergyMapping'):
         fields=['reference', 'surfaces0', 'surfaces1']),
         name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['desc_zero']),
+        fields=['desc_zero', 'out_diff']),
         name='outputnode')
 
     ref_e = pe.Node(ComputeEnergy(), name='ComputeZeroEnergy')
-    diff = pe.Node(namesh.ComputeMeshWarp(), name='ComputeError')
+    diff = pe.MapNode(namesh.ComputeMeshWarp(), name='ComputeError',
+                      iterfields=['surface0', 'surface1'])
 
     wf = pe.Workflow(name=name)
     wf.connect([
         (inputnode,     ref_e,  [('reference', 'reference'),
                                  ('surfaces0', 'surfaces')]),
-        (ref_e,     outputnode, [('out_file', 'desc_zero')])
-
+        (ref_e,     outputnode, [('out_file', 'desc_zero')]),
+        (inputnode,       diff, [('surfaces0', 'surface1'),
+                                 ('surfaces1', 'surface2')]),
+        (diff,      outputnode, [('out_warp', 'out_diff')])
     ])
     return wf
