@@ -190,7 +190,7 @@ double MahalanobisDistanceMembershipFunction<TVector>::Evaluate(
 
 template<typename TVector>
 void MahalanobisDistanceMembershipFunction<TVector>::PrintSelf(
-		std::ostream & os, Indent indent) const {
+		std::ostream & os, itk::Indent indent) const {
 	Superclass::PrintSelf(os, indent);
 
 	os << indent << "Mean: " << m_Mean << std::endl;

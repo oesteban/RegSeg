@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------------
-// File:          resgseg_energytest.cxx
+// File:          regseg_energytest.cxx
 // Date:          Feb 12, 2015
 // Author:        code@oscaresteban.es (Oscar Esteban)
 // Version:       1.0 beta
@@ -8,7 +8,7 @@
 // --------------------------------------------------------------------------------------
 //
 
-#include "resgseg_energytest.hxx"
+#include "regseg_energytest.hxx"
 
 int main(int argc, char *argv[]) {
 	std::string outPrefix = "surf2vol";
