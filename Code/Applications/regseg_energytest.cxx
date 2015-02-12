@@ -172,6 +172,11 @@ int main(int argc, char *argv[]) {
 		model->SetPriorsMap(p->GetOutput());
 		model->SetMask(mask);
 		model->Update();
+
+		std::string jsonstr = model->PrintFormattedDescriptors();
+		std::ofstream outdescfile("descriptors.json");
+		outdescfile << jsonstr;
+		outdescfile.close();
 	}
 
 	// ss.str("");

@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-12 19:51:03
+# @Last Modified time: 2015-02-12 20:10:47
 import os
 import os.path as op
 from glob import glob
@@ -225,6 +225,7 @@ class ComputeEnergyInputSpec(CommandLineInputSpec):
 
 class ComputeEnergyOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc='output file name')
+    out_desc = File(desc='output descriptors')
 
 
 class ComputeEnergy(CommandLine):
@@ -239,4 +240,7 @@ class ComputeEnergy(CommandLine):
     def _list_outputs(self):
         outputs = self.output_spec().get()
         outputs['out_file'] = op.abspath(self.inputs.out_file)
+
+        if not isdefined(self.inputs.descriptors):
+            outputs['out_desc'] = op.abspath('descriptors.json')
         return outputs

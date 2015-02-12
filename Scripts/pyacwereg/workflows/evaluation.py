@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-12 19:59:19
+# @Last Modified time: 2015-02-12 20:12:07
 
 import os
 import os.path as op
@@ -298,6 +298,8 @@ def map_energy(name='EnergyMapping'):
     diff = pe.MapNode(namesh.ComputeMeshWarp(), name='ComputeError',
                       iterfield=['surface1', 'surface2'])
 
+    max_e = pe.Node(ComputeEnergy(), name='ComputeOneEnergy')
+
     wf = pe.Workflow(name=name)
     wf.connect([
         (inputnode,     ref_e,  [('reference', 'reference'),
@@ -305,6 +307,9 @@ def map_energy(name='EnergyMapping'):
         (ref_e,     outputnode, [('out_file', 'desc_zero')]),
         (inputnode,       diff, [('surfaces0', 'surface1'),
                                  ('surfaces1', 'surface2')]),
-        (diff,      outputnode, [('out_warp', 'out_diff')])
+        (diff,      outputnode, [('out_warp', 'out_diff')]),
+        (inputnode,     max_e,  [('reference', 'reference'),
+                                 ('surfaces1', 'surfaces')]),
+        (ref_e,         max_e,  [('out_desc', 'descriptors')])
     ])
     return wf
