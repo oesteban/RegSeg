@@ -55,6 +55,7 @@
 #include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
 
+#include <itkArray.h>
 #include <itkVector.h>
 #include <itkVectorImage.h>
 #include <itkQuadEdgeMesh.h>
@@ -75,6 +76,7 @@ namespace bfs = boost::filesystem;
 
 const static unsigned int Dimension = 3u;
 
+typedef double                                                    MeasureType;
 typedef float                                                     ChannelPixelType;
 typedef itk::Image<ChannelPixelType, Dimension>                   ChannelType;
 typedef itk::VectorImage<ChannelPixelType, Dimension>             ReferenceImageType;
@@ -120,9 +122,11 @@ typedef typename EnergyModelType::Pointer                         EnergyModelPoi
 typedef rstk::EnergyCalculatorFilter<ReferenceImageType>          EnergyFilter;
 typedef typename EnergyFilter::Pointer                            EnergyFilterPointer;
 typedef typename EnergyFilter::PriorsImageType                    PriorsImageType;
+typedef itk::Array< MeasureType >                                 MeasureArray;
 typedef typename PriorsImageType::Pointer                         PriorsImagePointer;
 typedef typename PriorsImageType::PixelType                       PriorsPixelType;
 typedef typename PriorsImageType::InternalPixelType               PriorsValueType;
+
 
 
 

@@ -12,15 +12,17 @@
 
 int main(int argc, char *argv[]) {
 	std::string outPrefix = "surf2vol";
-	std::string descfile;
+	std::string descfile, maskfile;
 	std::vector< std::string > surfnames, refnames;
+	std::stringstream ss;
 
 	bpo::options_description all_desc("Usage");
 	all_desc.add_options()
 			("help,h", "show help message")
 			("surfaces,S", bpo::value < std::vector< std::string > >(&surfnames)->multitoken()->required(), "input surfaces" )
-			("reference,R", bpo::value< std::vector< std::string > >(&refnames)->required(), "reference image" )
+			("reference,R", bpo::value< std::vector< std::string > >(&refnames)->multitoken()->required(), "reference image" )
 			("descriptors,D", bpo::value< std::string >(&descfile), "descriptors file, if not present they will be computed from current segmentation" )
+			("mask,M", bpo::value< std::string >(&maskfile), "inputmask" )
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files");
 
 	bpo::variables_map vm;
@@ -36,11 +38,6 @@ int main(int argc, char *argv[]) {
 		std::cerr << "Error: " << e.what() << std::endl << std::endl;
 		std::cerr << all_desc << std::endl;
 		return 1;
-	}
-
-	EnergyModelPointer model = EnergyModelType::New();
-	if (vm.count("descriptors")) {
-		model->ReadDescriptorsFromFile(descfile);
 	}
 
 	InputMeshContainer priors;
@@ -81,6 +78,26 @@ int main(int argc, char *argv[]) {
 	PointType neworig = itk * ref->GetOrigin();
 	ref->SetDirection(idmat);
 	ref->SetOrigin(neworig);
+
+	ss.str("");
+	ss << outPrefix << "_reference";
+	typename ImageWriter::Pointer wref = ImageWriter::New();
+	wref->SetInput(ref);
+	wref->SetFileName(ss.str().c_str());
+	wref->Update();
+
+	typename ChannelType::Pointer mask;
+	if( vm.count("mask") ) {
+
+	} else {
+		mask = ChannelType::New();
+		mask->SetOrigin( ref->GetOrigin() );
+		mask->SetDirection( ref->GetDirection() );
+		mask->SetRegions( ref->GetLargestPossibleRegion().GetSize() );
+		mask->SetSpacing( ref->GetSpacing() );
+		mask->Allocate();
+		mask->FillBuffer(0.0);
+	}
 
 	PointType ref_origin, ref_lastcenter, ref_end;
 
@@ -135,7 +152,7 @@ int main(int argc, char *argv[]) {
 	seg_oriented->SetDirection(comb->GetOutput()->GetDirection());
 	seg_oriented->SetOrigin(comb->GetOutput()->GetOrigin());
 
-	std::stringstream ss;
+	ss.str("");
 	ss << outPrefix << "_seg.nii.gz";
 	typename SegmentationWriter::Pointer sw = SegmentationWriter::New();
 	sw->SetFileName(ss.str().c_str());
@@ -146,6 +163,38 @@ int main(int argc, char *argv[]) {
 	p->SetInput(newp->GetOutput());
 	p->SetOutputParametersFromImage( ref );
 	p->Update();
+
+	EnergyModelPointer model = EnergyModelType::New();
+	if (vm.count("descriptors")) {
+		model->ReadDescriptorsFromFile(descfile);
+	} else {
+		model->SetInput(ref);
+		model->SetPriorsMap(p->GetOutput());
+		model->SetMask(mask);
+		model->Update();
+	}
+
+	ss.str("");
+	ss << outPrefix << "_descriptors.json";
+	std::string jsonstr = model->PrintFormattedDescriptors();
+	std::ofstream outfile(ss.str().c_str());
+	outfile << jsonstr;
+	outfile.close();
+
+	EnergyFilterPointer ecalc = EnergyFilter::New();
+	ecalc->SetInput(ref);
+	ecalc->SetPriorsMap(p->GetOutput());
+	ecalc->SetMask(mask);
+	ecalc->SetModel(model);
+	ecalc->Update();
+	MeasureArray values = ecalc->GetEnergies();
+	MeasureType total = 0.0;
+
+	for( size_t roi = 0; roi < values.Size(); roi++ ) {
+		total+= values[roi];
+	}
+
+	std::cout << "Total=" << total << ", Regions=" << values << "." << std::endl;
 
 	typename ProbmapType::Pointer rawtpms = p->GetOutput();
 	rawtpms->SetDirection(reor_dir);
