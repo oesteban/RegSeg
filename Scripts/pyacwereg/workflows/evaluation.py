@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-12 19:37:27
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-02-12 19:46:14
 
 import os
 import os.path as op
@@ -285,7 +285,7 @@ def registration_ev(name='EvaluateMapping'):
     return wf
 
 
-def map_energy(name='EnergyMap'):
+def map_energy(name='EnergyMapping'):
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['reference', 'surfaces0', 'surfaces1']),
@@ -295,6 +295,7 @@ def map_energy(name='EnergyMap'):
         name='outputnode')
 
     ref_e = pe.Node(ComputeEnergy(), name='ComputeZeroEnergy')
+    diff = pe.Node(namesh.ComputeMeshWarp(), name='ComputeError')
 
     wf = pe.Workflow(name=name)
     wf.connect([
