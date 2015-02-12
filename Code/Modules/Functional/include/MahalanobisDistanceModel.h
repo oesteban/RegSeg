@@ -133,7 +133,7 @@ public:
 protected:
 	MahalanobisDistanceModel();
 	virtual ~MahalanobisDistanceModel() {}
-	virtual void PrintSelf(std::ostream & os, Indent indent) const;
+	virtual void PrintSelf(std::ostream & os, itk::Indent indent) const;
 
 	void GenerateData();
 	void PostGenerateData();

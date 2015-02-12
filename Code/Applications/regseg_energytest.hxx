@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------------------
-// File:          resgseg_energytest.h
+// File:          regseg_energytest.h
 // Date:          Feb 12, 2015
 // Author:        code@oscaresteban.es (Oscar Esteban)
 // Version:       1.0 beta
@@ -40,8 +40,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef SOURCE_DIRECTORY__APPLICATIONS_RESGSEG_ENERGYTEST_HXX_
-#define SOURCE_DIRECTORY__APPLICATIONS_RESGSEG_ENERGYTEST_HXX_
+#ifndef SOURCE_DIRECTORY__APPLICATIONS_REGSEG_ENERGYTEST_HXX_
+#define SOURCE_DIRECTORY__APPLICATIONS_REGSEG_ENERGYTEST_HXX_
 
 #include <stdio.h>
 #include <string>
@@ -123,4 +123,4 @@ typedef typename PriorsImageType::InternalPixelType               PriorsValueTyp
 int main(int argc, char *argv[]);
 
 
-#endif /* SOURCE_DIRECTORY__APPLICATIONS_RESGSEG_ENERGYTEST_HXX_ */
+#endif /* SOURCE_DIRECTORY__APPLICATIONS_REGSEG_ENERGYTEST_HXX_ */
