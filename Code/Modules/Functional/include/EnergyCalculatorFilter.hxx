@@ -45,6 +45,7 @@
 
 #include "EnergyCalculatorFilter.h"
 #include <itkImageBase.h>
+#include <itkProgressReporter.h>
 
 namespace rstk {
 
@@ -94,11 +95,11 @@ void
 EnergyCalculatorFilter< TInputVectorImage, TMeasureType, TPriorsPrecisionType >
 ::ThreadedGenerateData(const RegionType & inputRegionForThread, ThreadIdType threadId) {
 	long nbOfPixels = inputRegionForThread.GetNumberOfPixels();
-	ProgressReporter progress( this, threadId, nbOfPixels );
+	itk::ProgressReporter progress( this, threadId, nbOfPixels );
 
-	ImageRegionConstIterator< TInputVectorImage > inputIt( this->GetInput(), inputRegionForThread );
-	ImageRegionConstIterator< PriorsImageType >   priorIt( this->GetPriorsMap(), inputRegionForThread );
-	ImageRegionConstIterator< MaskType >          maskIt ( this->GetMask(), inputRegionForThread );
+	itk::ImageRegionConstIterator< TInputVectorImage > inputIt( this->GetInput(), inputRegionForThread );
+	itk::ImageRegionConstIterator< PriorsImageType >   priorIt( this->GetPriorsMap(), inputRegionForThread );
+	itk::ImageRegionConstIterator< MaskType >          maskIt ( this->GetMask(), inputRegionForThread );
  	inputIt.GoToBegin();
 
  	EnergyModelConstPointer model = this->GetModel();

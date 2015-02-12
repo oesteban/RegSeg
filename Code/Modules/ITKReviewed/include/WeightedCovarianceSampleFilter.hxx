@@ -25,7 +25,7 @@
 
 namespace bm = boost::math;
 
-namespace rstk
+namespace itk
 {
 template< typename TSample >
 WeightedCovarianceSampleFilter< TSample >

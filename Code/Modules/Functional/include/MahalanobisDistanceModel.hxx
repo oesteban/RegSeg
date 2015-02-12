@@ -58,6 +58,7 @@
 #include <streambuf>
 #include <jsoncpp/json/json.h>
 
+#include <itkNumericTraitsVariableLengthVectorPixel.h>
 
 namespace rstk {
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
@@ -327,7 +328,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 		vnode["cov"] = Json::Value( Json::arrayValue );
 		vnode["range"]["lower"] = Json::Value( Json::arrayValue );
 		vnode["range"]["upper"] = Json::Value( Json::arrayValue );
-		size_t ncomps = this->m_Means[i].Size();
+		size_t ncomps = itk::NumericTraits<MeasurementVectorType>::GetLength(this->m_Means[i]);
 
 		for (size_t k = 0; k < ncomps; k++) {
 			vnode["mu"].append(Json::Value(this->m_Means[i][k]));
@@ -356,7 +357,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 			         std::istreambuf_iterator<char>());
 
 	Json::Value root;
-	bool parsed = reader.parse(t, root, false);
+	bool parsed = reader.parse(str, root, false);
 
 	if (!parsed) {
 		itkExceptionMacro(<< "Failed to read JSON file: " << reader.getFormattedErrorMessages());

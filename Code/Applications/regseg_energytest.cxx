@@ -12,14 +12,14 @@
 
 int main(int argc, char *argv[]) {
 	std::string outPrefix = "surf2vol";
-	std::string refname, descfile;
-	std::vector< std::string > surfnames;
+	std::string descfile;
+	std::vector< std::string > surfnames, refnames;
 
 	bpo::options_description all_desc("Usage");
 	all_desc.add_options()
 			("help,h", "show help message")
 			("surfaces,S", bpo::value < std::vector< std::string > >(&surfnames)->multitoken()->required(), "input surfaces" )
-			("reference,R", bpo::value< std::string >(&refname)->required(), "reference image" )
+			("reference,R", bpo::value< std::vector< std::string > >(&refnames)->required(), "reference image" )
 			("descriptors,D", bpo::value< std::string >(&descfile), "descriptors file, if not present they will be computed from current segmentation" )
 			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files");
 
@@ -38,6 +38,11 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
+	EnergyModelPointer model = EnergyModelType::New();
+	if (vm.count("descriptors")) {
+		model->ReadDescriptorsFromFile(descfile);
+	}
+
 	InputMeshContainer priors;
 
 	for( size_t i = 0; i<surfnames.size(); i++) {
@@ -47,15 +52,20 @@ int main(int argc, char *argv[]) {
 		priors.push_back(r->GetOutput());
 	}
 
-	typename ImageReader::Pointer rr = ImageReader::New();
-	rr->SetFileName(refname);
-	rr->Update();
-
+	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
+	for (size_t i = 0; i < refnames.size(); i++ ) {
+		ImageReader::Pointer r = ImageReader::New();
+		r->SetFileName( refnames[i] );
+		r->Update();
+		comb->SetInput(i,r->GetOutput());
+	}
+	comb->Update();
+	size_t ncomps = comb->GetOutput()->GetNumberOfComponentsPerPixel();
 
 	typename Orienter::Pointer orient = Orienter::New();
 	orient->UseImageDirectionOn();
 	orient->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
-	orient->SetInput(rr->GetOutput());
+	orient->SetInput(comb->GetOutput());
 	orient->Update();
 	ReferencePointer ref = orient->GetOutput();
 	SizeType ref_size = ref->GetLargestPossibleRegion().GetSize();
@@ -100,6 +110,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	ReferencePointer refSamplingGrid = ReferenceImageType::New();
+	refSamplingGrid->SetNumberOfComponentsPerPixel(ncomps);
 	refSamplingGrid->SetOrigin( firstcenter );
 	refSamplingGrid->SetDirection( idmat );
 	refSamplingGrid->SetRegions( exp_size );
@@ -121,13 +132,8 @@ int main(int argc, char *argv[]) {
 	orient_seg->SetInput(seg);
 	orient_seg->Update();
 	typename SegmentationType::Pointer seg_oriented = orient_seg->GetOutput();
-	seg_oriented->SetDirection(rr->GetOutput()->GetDirection());
-	seg_oriented->SetOrigin(rr->GetOutput()->GetOrigin());
-
-	EnergyModelPointer model = EnergyModelType::New();
-	if (vm.count("descriptors")) {
-		model->ReadDescriptorsFromFile(descfile);
-	}
+	seg_oriented->SetDirection(comb->GetOutput()->GetDirection());
+	seg_oriented->SetOrigin(comb->GetOutput()->GetOrigin());
 
 	std::stringstream ss;
 	ss << outPrefix << "_seg.nii.gz";
@@ -151,8 +157,8 @@ int main(int argc, char *argv[]) {
 	orient_tpm->SetInput(rawtpms);
 	orient_tpm->Update();
 	typename ProbmapType::Pointer tpm_oriented = orient_tpm->GetOutput();
-	tpm_oriented->SetDirection(rr->GetOutput()->GetDirection());
-	tpm_oriented->SetOrigin(rr->GetOutput()->GetOrigin());
+	tpm_oriented->SetDirection(comb->GetOutput()->GetDirection());
+	tpm_oriented->SetOrigin(comb->GetOutput()->GetOrigin());
 
 	typename ImageWriter::Pointer w = ImageWriter::New();
 	w->SetInput(tpm_oriented);

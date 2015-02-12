@@ -73,7 +73,7 @@ public:
 	typedef typename InputImageType::PixelType                                PixelType;
 	typedef typename InputImageType::PointType                                PointType;
 	typedef typename InputImageType::RegionType                               RegionType;
-	typedef typename PixelType::ValueType                                     PixelValueType;
+	typedef typename InputImageType::InternalPixelType                        PixelValueType;
 
 	/** MeasurementVector typedef support */
 	typedef double MeasureType;
@@ -105,7 +105,6 @@ public:
 	typedef typename Superclass::DataObjectPointer                            DataObjectPointer;
 	typedef std::vector< DataObjectPointer >                                  DataObjectPointerArray;
 
-
 	/** Method to get membership score (discriminant score) of an entity
 	 * or measurement. Evaluate() maps from a vector measurement type
 	 * to a real number. */
@@ -119,7 +118,7 @@ public:
     }
 
     virtual const PriorsImageType * GetPriorsMap() {
-    	return static_cast<const PriorsImageType*>(this->ProcessObject::GetInput(1));
+    	return static_cast<const PriorsImageType*>(this->Superclass::ProcessObject::GetInput(1));
     }
 
     /** Set/Get priors
@@ -130,7 +129,7 @@ public:
     }
 
     virtual const MaskType * GetMask() {
-    	return static_cast<const MaskType*>(this->ProcessObject::GetInput(2));
+    	return static_cast<const MaskType*>(this->Superclass::ProcessObject::GetInput(2));
     }
 
 	/** Get the length of the measurement vector */
@@ -170,7 +169,7 @@ protected:
 
 
 	/** Method that construct the outputs */
-	typedef ProcessObject::DataObjectPointerArraySizeType DataObjectPointerArraySizeType;
+	typedef itk::ProcessObject::DataObjectPointerArraySizeType DataObjectPointerArraySizeType;
 	using Superclass::MakeOutput;
 	DataObjectPointer MakeOutput(DataObjectPointerArraySizeType);
 

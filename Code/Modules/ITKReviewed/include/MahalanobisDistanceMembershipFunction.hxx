@@ -20,6 +20,7 @@
 
 #include "MahalanobisDistanceMembershipFunction.h"
 
+#include <itkLightObject.h>
 #include <math.h>
 #include <vnl/vnl_math.h>
 #include <vnl/vnl_vector.h>
@@ -204,7 +205,7 @@ void MahalanobisDistanceMembershipFunction<TVector>::PrintSelf(
 
 template<typename TVector>
 typename itk::LightObject::Pointer MahalanobisDistanceMembershipFunction<TVector>::InternalClone() const {
-	LightObject::Pointer loPtr = Superclass::InternalClone();
+	itk::LightObject::Pointer loPtr = Superclass::InternalClone();
 	typename Self::Pointer membershipFunction =
 			dynamic_cast<Self *>(loPtr.GetPointer());
 	if (membershipFunction.IsNull()) {

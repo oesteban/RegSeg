@@ -44,6 +44,7 @@
 #define _ENERGYCALCULATORFILTER_H_
 
 #include <itkImageTransformer.h>
+#include <itkImageRegionConstIterator.h>
 #include "ModelBase.h"
 
 namespace rstk {
@@ -75,7 +76,7 @@ public:
 	typedef itk::VectorImage< PriorsPrecisionType, Dimension >                PriorsImageType;
 	typedef typename PriorsImageType::PixelType                               PriorsPixelType;
 	typedef typename PriorsImageType::Pointer                                 PriorsImagePointer;
-	typedef ImageRegionConstIterator< PriorsImageType >                       PriorsImageIteratorType;
+	typedef itk::ImageRegionConstIterator< PriorsImageType >                  PriorsImageIteratorType;
 	typedef itk::Array<PriorsPrecisionType>                                   TotalVolumeContainer;
 
 	typedef itk::Image< PriorsPrecisionType, Dimension >                      MaskType;

@@ -56,7 +56,7 @@ ModelBase< TInputVectorImage, TPriorsPrecisionType >
 	m_MeasurementVectorSize = itk::NumericTraits<MeasurementVectorType>::GetLength(MeasurementVectorType());
 	this->SetNumberOfRequiredInputs(3);
 	this->SetNumberOfRequiredOutputs(1);
-	this->ProcessObject::SetNthOutput( 0, this->MakeOutput(0) );
+	this->SetNthOutput( 0, this->MakeOutput(0) );
 
 }
 

@@ -22,7 +22,7 @@
 #include <itkCovarianceSampleFilter.h>
 #include <itkDataObjectDecorator.h>
 
-namespace rstk
+namespace itk
 {
 /** \class WeightedCovarianceSampleFilter
  * \brief Calculates the covariance matrix of the target sample data.
