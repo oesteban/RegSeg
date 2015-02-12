@@ -53,6 +53,11 @@
 #include <vnl/algo/vnl_symmetric_eigensystem.h>
 #include <vnl/algo/vnl_ldl_cholesky.h>
 
+#include <string>
+#include <fstream>
+#include <streambuf>
+#include <jsoncpp/json/json.h>
+
 
 namespace rstk {
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
@@ -71,22 +76,22 @@ void
 MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 ::InitializeMemberships() {
 	this->m_NumberOfRegions = this->GetPriorsMap()->GetNumberOfComponentsPerPixel();
-	this->m_Memberships.resize(this->m_NumberOfRegions);
 
 	size_t nregions = this->m_NumberOfRegions - this->m_NumberOfSpecialRegions;
+	this->m_Memberships.resize(this->m_NumberOfRegions);
 	this->m_Means.resize(nregions);
+	this->m_RangeLower.resize(nregions);
+	this->m_RangeUpper.resize(nregions);
 	this->m_Covariances.resize(nregions);
 	this->m_RegionOffsetContainer.SetSize(nregions);
 	this->m_RegionOffsetContainer.Fill(0.0);
 }
 
+
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
 void
 MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
-::GenerateData() {
-	this->InitializeMemberships();
-	this->EstimateRobust();
-
+::PostGenerateData() {
 	// Append special memberships
 	if (this->m_NumberOfSpecialRegions >= 2) {
 		MeasureType lastMax = this->m_RegionOffsetContainer[this->m_NumberOfRegions - this->m_NumberOfSpecialRegions - 1];
@@ -106,6 +111,15 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	for( size_t i = 0; i < ncomps; i++ ) {
 		m_InvalidValue = 0.0;
 	}
+}
+
+template< typename TInputVectorImage, typename TPriorsPrecisionType >
+void
+MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
+::GenerateData() {
+	this->InitializeMemberships();
+	this->EstimateRobust();
+	this->PostGenerateData();
 }
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType >
@@ -204,7 +218,13 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 
 		CovarianceMatrixType cov = covFilter->GetCovarianceMatrix();
 		mf->SetCovariance( cov );
-		mf->SetRange(covFilter->GetRangeMin(), covFilter->GetRangeMax() );
+
+		MeasurementVectorType range[2];
+
+		this->m_RangeLower[roi] = covFilter->GetRangeMin();
+		this->m_RangeUpper[roi] = covFilter->GetRangeMax();
+		mf->SetRange(this->m_RangeLower[roi], this->m_RangeUpper[roi]);
+
 		mf->Initialize();
 
 		this->m_Memberships[roi] = mf;
@@ -290,33 +310,116 @@ template< typename TInputVectorImage, typename TPriorsPrecisionType >
 std::string
 MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 ::PrintFormattedDescriptors() {
-	std::stringstream ss;
-	ss << "{ \"descriptors\" : { \"number\": " << this->m_NumberOfRegions << ", \"values\": [";
+	Json::Value root = Json::Value( Json::objectValue );
+
 	size_t nrois = this->m_NumberOfRegions - this->m_NumberOfSpecialRegions;
+	root["descriptors"]["number"] = static_cast<Json::UInt>(nrois);
+	root["descriptors"]["special"] = static_cast<Json::UInt>(this->m_NumberOfSpecialRegions);
+	root["descriptors"]["values"] = Json::Value( Json::arrayValue );
+	root["descriptors"]["max_energy"] = Json::Value( this->m_MaxEnergy );
 
 	for ( size_t i = 0; i<nrois; i++ ){
-		if (i>0) ss<<",";
+		Json::Value vnode = Json::Value( Json::objectValue );
+		vnode["id"] = static_cast<Json::UInt>( i );
+		vnode["determinant"] = Json::Value(this->ComputeCovarianceDeterminant(this->m_Covariances[i]));
+		vnode["offset"] = Json::Value( this->m_RegionOffsetContainer[i] );
+		vnode["mu"] = Json::Value( Json::arrayValue );
+		vnode["cov"] = Json::Value( Json::arrayValue );
+		vnode["range"]["lower"] = Json::Value( Json::arrayValue );
+		vnode["range"]["upper"] = Json::Value( Json::arrayValue );
+		size_t ncomps = this->m_Means[i].Size();
 
-		ss << "{ \"id\": " << i << ", \"mu\": [";
+		for (size_t k = 0; k < ncomps; k++) {
+			vnode["mu"].append(Json::Value(this->m_Means[i][k]));
+			vnode["range"]["lower"].append(Json::Value(this->m_RangeLower[i][k]));
+			vnode["range"]["upper"].append(Json::Value(this->m_RangeUpper[i][k]));
 
-		for ( size_t l = 0; l<this->m_Means[i].Size(); l++ ) {
-			if( l>0 ) ss << ",";
-			ss << this->m_Means[i][l];
-		}
-		ss << "], \"determinant\": " << this->ComputeCovarianceDeterminant(this->m_Covariances[i]);
-		ss << ", \"cov\": [ ";
-
-		for( size_t j = 0; j<this->m_Covariances[i].GetVnlMatrix().rows(); j++ ) {
-			for( size_t k = 0; k<this->m_Covariances[i].GetVnlMatrix().cols(); k++ ) {
-				if( j>0 || k>0 ) ss << ",";
-				ss << this->m_Covariances[i](j,k);
+			for (size_t j = 0; j < ncomps; j++) {
+				vnode["cov"].append(Json::Value(this->m_Covariances[i][j][k]));
 			}
-		}
-		ss << "] }";
-	}
-	ss << "] } }";
 
-	return ss.str();
+		}
+
+		root["descriptors"]["values"].append(vnode);
+	}
+
+	return root.toStyledString();
+}
+
+template< typename TInputVectorImage, typename TPriorsPrecisionType >
+void
+MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
+::ReadDescriptorsFromFile(std::string filename) {
+	Json::Reader reader;
+	std::ifstream t(filename.c_str());
+	std::string str((std::istreambuf_iterator<char>(t)),
+			         std::istreambuf_iterator<char>());
+
+	Json::Value root;
+	bool parsed = reader.parse(t, root, false);
+
+	if (!parsed) {
+		itkExceptionMacro(<< "Failed to read JSON file: " << reader.getFormattedErrorMessages());
+	}
+
+	const size_t nregions = root["descriptors"]["number"].asUInt();
+	this->m_NumberOfSpecialRegions = root["descriptors"]["special"].asUInt();
+	this->m_NumberOfRegions = nregions + this->m_NumberOfSpecialRegions;
+
+	const Json::Value values = root["descriptors"]["values"];
+
+	if (nregions != values.size()) {
+		itkExceptionMacro(<< "Failed to read JSON file: number of regions does not match.");
+	}
+
+	this->m_Memberships.resize(this->m_NumberOfRegions);
+	this->m_Means.resize(nregions);
+	this->m_RangeLower.resize(nregions);
+	this->m_RangeUpper.resize(nregions);
+	this->m_Covariances.resize(nregions);
+	this->m_RegionOffsetContainer.SetSize(nregions);
+	this->m_RegionOffsetContainer.Fill(0.0);
+
+	for(unsigned int roi = 0; roi < nregions; roi++ ) {
+    	const Json::Value regnode = values[roi];
+    	size_t ncomps = regnode["mu"].size();
+
+    	MeasurementVectorType mean;
+    	MeasurementVectorType lower;
+    	MeasurementVectorType upper;
+    	CovarianceMatrixType cov(ncomps, ncomps);
+    	mean.SetSize(ncomps);
+    	lower.SetSize(ncomps);
+    	upper.SetSize(ncomps);
+    	for(unsigned int i = 0; i < ncomps; i++) {
+    		mean[i] = regnode["mu"][i].asFloat();
+
+    		lower[i] = regnode["range"]["lower"][i].asFloat();
+    		upper[i] = regnode["range"]["upper"][i].asFloat();
+
+    		for(size_t j = 0; j < ncomps; j++) {
+    			unsigned int cv = i * ncomps + j;
+    			cov(j, i) = regnode["cov"][cv].asFloat();
+    		}
+    	}
+
+    	this->m_RangeLower[roi] = lower;
+    	this->m_RangeUpper[roi] = upper;
+		this->m_Means[roi] = mean;
+		this->m_Covariances[roi] = cov;
+		this->m_RegionOffsetContainer[roi] = regnode["offset"].asFloat();
+
+		InternalFunctionPointer mf = InternalFunctionType::New();
+		mf->SetMean(mean);
+		mf->SetCovariance( cov );
+		mf->SetRange( lower, upper );
+		mf->Initialize();
+
+		this->m_Memberships[roi] = mf;
+	}
+	this->m_MaxEnergy = root["descriptors"]["max_energy"].asFloat();
+
+	this->PostGenerateData();
 }
 
 }

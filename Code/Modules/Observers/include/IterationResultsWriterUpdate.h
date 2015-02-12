@@ -8,6 +8,10 @@
 #ifndef ITERATIONRESULTSWRITERUPDATE_H_
 #define ITERATIONRESULTSWRITERUPDATE_H_
 
+#include <fstream>
+#include <string>
+#include <iostream>
+
 #include "IterationUpdate.h"
 
 #include <itkImageFileWriter.h>
@@ -17,6 +21,7 @@
 #include "rstkCoefficientsWriter.h"
 #include "ComponentsFileWriter.h"
 #include "DisplacementFieldComponentsFileWriter.h"
+
 
 namespace rstk {
 
@@ -64,6 +69,7 @@ public:
       m_Optimizer->AddObserver( itk::IterationEvent(), this );
       m_Optimizer->AddObserver( itk::StartEvent(), this );
       m_Optimizer->AddObserver( itk::EndEvent(), this );
+      m_Optimizer->AddObserver( FunctionalModifiedEvent(), this );
     }
 
     void Execute(const itk::Object * object, const itk::EventObject & event) {
@@ -75,6 +81,19 @@ public:
     		if( ch != '_' )
     			this->m_Prefix.append( "_" );
     	}
+
+		if( typeid( event ) == typeid( FunctionalModifiedEvent ) )  {
+			if (this->m_Verbosity > 3 ) {
+				ss.str("");
+				ss << this->m_Prefix << "descriptors_" << std::setfill('0') << "lev" << this->m_Level << "_it"  << std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".json";
+				std::string jsonstr = this->m_Optimizer->GetFunctional()->PrintFormattedDescriptors();
+
+				std::ofstream outfile(ss.str().c_str());
+				outfile << jsonstr;
+				outfile.close();
+			}
+		}
+
 
     	if( typeid( event ) == typeid( itk::IterationEvent ) ) {
 

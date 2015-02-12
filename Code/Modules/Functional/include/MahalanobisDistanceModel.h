@@ -122,6 +122,7 @@ public:
 	itkGetConstMacro(RegionOffsetContainer, MeasureTypeContainer);
 
 	std::string PrintFormattedDescriptors();
+	virtual void ReadDescriptorsFromFile(std::string filename);
 
 	inline double Evaluate(const MeasurementVectorType & x, const RegionIdentifier roi) const {
 		if( x == m_InvalidValue )
@@ -135,6 +136,7 @@ protected:
 	virtual void PrintSelf(std::ostream & os, Indent indent) const;
 
 	void GenerateData();
+	void PostGenerateData();
 	//void BeforeThreadedGenerateData();
 	//void ThreadedGenerateData(const RegionType & inputRegionForThread, ThreadIdType threadId);
 	//void AfterThreadedGenerateData();
@@ -155,6 +157,8 @@ private:
 	void operator=(const Self &);             //purposely not implemented
 
 	MeansContainer        m_Means;
+	MeansContainer        m_RangeLower;
+	MeansContainer        m_RangeUpper;
 	CovariancesContainer  m_Covariances;
 	MeasureTypeContainer  m_RegionOffsetContainer;
 	MeasurementVectorType m_InvalidValue;
