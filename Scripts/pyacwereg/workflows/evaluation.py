@@ -296,7 +296,7 @@ def map_energy(name='EnergyMapping'):
 
     ref_e = pe.Node(ComputeEnergy(), name='ComputeZeroEnergy')
     diff = pe.MapNode(namesh.ComputeMeshWarp(), name='ComputeError',
-                      iterfields=['surface0', 'surface1'])
+                      iterfield=['surface1', 'surface2'])
 
     wf = pe.Workflow(name=name)
     wf.connect([
