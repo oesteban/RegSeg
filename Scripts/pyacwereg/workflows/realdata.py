@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-11 18:44:01
+# @Last Modified time: 2015-02-12 19:42:31
 
 
 def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
@@ -149,8 +149,8 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
                           ('outputnode.md', 'in2')]),
         (mdti,   regseg, [('out', 'inputnode.in_fixed')]),
         (st1,    regseg, [('out_dis_set.tpms', 'inputnode.in_tpms'),
-                          ('out_ref_set.surf', 'inputnode.in_surf')]),
-        (st1,    regseg, [('out_dis_set.dwi_mask', 'inputnode.in_mask')])
+                          ('out_ref_set.surf', 'inputnode.in_surf'),
+                          ('out_dis_set.dwi_mask', 'inputnode.in_mask')])
     ])
 
     cmethod0 = sdc_fmb()
@@ -215,6 +215,13 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
         (wrpsurf,   mesh1, [('out_points', 'surface2')]),
         (inputnode,  csv1, [('subject_id', 'subject_id')]),
         (mesh1,      csv1, [('distance', 'surf_dist')])
+    ])
+
+    mapen = map_energy()
+    wf.connect([
+        (mdti,      mapen, [('out', 'inputnode.reference')]),
+        (st1,       mapen, [('out_dis_set.surf', 'inputnode.surfaces0'),
+                            ('out_ref_set.surf', 'inputnode.surfaces1')])
     ])
 
     return wf

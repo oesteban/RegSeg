@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-22 16:17:25
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-02-12 19:37:27
 
 import os
 import os.path as op
@@ -23,7 +23,8 @@ from nipype.interfaces import fsl as fsl
 from nipype.interfaces import freesurfer as fs
 
 from pyacwereg.interfaces.warps import InverseField
-from pyacwereg.interfaces.utility import ExportSlices, HausdorffDistance
+from pyacwereg.interfaces.utility import (ExportSlices, HausdorffDistance,
+                                          ComputeEnergy)
 from pyacwereg.workflows.model import generate_phantom
 from registration import identity_wf, default_regseg
 
@@ -280,5 +281,26 @@ def registration_ev(name='EvaluateMapping'):
         #                          ('avg_hd', 'surfdist_avg'),
         #                          ('std_hd', 'surfdist_std'),
         #                          ('stats_hd', 'surfdist_stats')])
+    ])
+    return wf
+
+
+def map_energy(name='EnergyMap'):
+
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=['reference', 'surfaces0', 'surfaces1']),
+        name='inputnode')
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields=['desc_zero']),
+        name='outputnode')
+
+    ref_e = pe.Node(ComputeEnergy(), name='ComputeZeroEnergy')
+
+    wf = pe.Workflow(name=name)
+    wf.connect([
+        (inputnode,     ref_e,  [('reference', 'reference'),
+                                 ('surfaces0', 'surfaces')]),
+        (ref_e,     outputnode, [('out_file', 'desc_zero')])
+
     ])
     return wf

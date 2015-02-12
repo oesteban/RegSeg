@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-11 18:44:51
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-02-12 19:21:21
 import os
 import os.path as op
 from glob import glob
@@ -205,4 +205,38 @@ class HausdorffDistance(CommandLine):
             iflogger.warn('Hausdorff distance could not be computed')
             pass
 
+        return outputs
+
+
+class ComputeEnergyInputSpec(CommandLineInputSpec):
+    reference = InputMultiPath(
+        File(exists=True), argstr='-R %s', mandatory=True,
+        desc=('reference image grid'))
+    surfaces = InputMultiPath(
+        File(exists=True), argstr='-S %s', mandatory=True,
+        desc=('vtk contours that will be mapped to volume'))
+
+    descriptors = File(exists=True, argstr='-D %s'
+                       desc='descriptors JSON file')
+
+    out_file = File('energies.json', argstr='-o %s', usedefault=True,
+                    mandatory=True, desc='output file name')
+
+
+class ComputeEnergyOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc='output file name')
+
+
+class ComputeEnergy(CommandLine):
+
+    """
+    Compute energy of reference image given a set of contours.
+    """
+    input_spec = ComputeEnergyInputSpec
+    output_spec = ComputeEnergyOutputSpec
+    _cmd = 'regseg_energytest'
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs['out_file'] = op.abspath(self.inputs.out_file)
         return outputs
