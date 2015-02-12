@@ -11,7 +11,7 @@
 #include "regseg_energytest.hxx"
 
 int main(int argc, char *argv[]) {
-	std::string outPrefix = "surf2vol";
+	std::string outfilename = "energies.json";
 	std::string descfile, maskfile;
 	std::vector< std::string > surfnames, refnames;
 	std::stringstream ss;
@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 			("reference,R", bpo::value< std::vector< std::string > >(&refnames)->multitoken()->required(), "reference image" )
 			("descriptors,D", bpo::value< std::string >(&descfile), "descriptors file, if not present they will be computed from current segmentation" )
 			("mask,M", bpo::value< std::string >(&maskfile), "inputmask" )
-			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files");
+			("output,o", bpo::value < std::string > (&outfilename), "prefix for output files");
 
 	bpo::variables_map vm;
 
@@ -79,12 +79,12 @@ int main(int argc, char *argv[]) {
 	ref->SetDirection(idmat);
 	ref->SetOrigin(neworig);
 
-	ss.str("");
-	ss << outPrefix << "_reference";
-	typename ImageWriter::Pointer wref = ImageWriter::New();
-	wref->SetInput(ref);
-	wref->SetFileName(ss.str().c_str());
-	wref->Update();
+	// ss.str("");
+	// ss << outPrefix << "_reference";
+	// typename ImageWriter::Pointer wref = ImageWriter::New();
+	// wref->SetInput(ref);
+	// wref->SetFileName(ss.str().c_str());
+	// wref->Update();
 
 	typename ChannelType::Pointer mask;
 	if( vm.count("mask") ) {
@@ -152,12 +152,12 @@ int main(int argc, char *argv[]) {
 	seg_oriented->SetDirection(comb->GetOutput()->GetDirection());
 	seg_oriented->SetOrigin(comb->GetOutput()->GetOrigin());
 
-	ss.str("");
-	ss << outPrefix << "_seg.nii.gz";
-	typename SegmentationWriter::Pointer sw = SegmentationWriter::New();
-	sw->SetFileName(ss.str().c_str());
-	sw->SetInput(seg_oriented);
-	sw->Update();
+	// ss.str("");
+	// ss << outPrefix << "_seg.nii.gz";
+	// typename SegmentationWriter::Pointer sw = SegmentationWriter::New();
+	// sw->SetFileName(ss.str().c_str());
+	// sw->SetInput(seg_oriented);
+	// sw->Update();
 
 	DownsamplePointer p = DownsampleFilter::New();
 	p->SetInput(newp->GetOutput());
@@ -174,12 +174,12 @@ int main(int argc, char *argv[]) {
 		model->Update();
 	}
 
-	ss.str("");
-	ss << outPrefix << "_descriptors.json";
-	std::string jsonstr = model->PrintFormattedDescriptors();
-	std::ofstream outfile(ss.str().c_str());
-	outfile << jsonstr;
-	outfile.close();
+	// ss.str("");
+	// ss << outPrefix << "_descriptors.json";
+	// std::string jsonstr = model->PrintFormattedDescriptors();
+	// std::ofstream outfile(ss.str().c_str());
+	// outfile << jsonstr;
+	// outfile.close();
 
 	EnergyFilterPointer ecalc = EnergyFilter::New();
 	ecalc->SetInput(ref);
@@ -190,32 +190,39 @@ int main(int argc, char *argv[]) {
 	MeasureArray values = ecalc->GetEnergies();
 	MeasureType total = 0.0;
 
+	Json::Value root = Json::Value( Json::objectValue );
+	root["regions"] = Json::Value( Json::arrayValue );
+
 	for( size_t roi = 0; roi < values.Size(); roi++ ) {
+		root["regions"].append(Json::Value(values[roi]));
 		total+= values[roi];
 	}
 
-	std::cout << "Total=" << total << ", Regions=" << values << "." << std::endl;
+	root["total"]= Json::Value(total);
+	std::ofstream outfile(outfilename.c_str());
+	outfile << root.toStyledString();
+	outfile.close();
 
-	typename ProbmapType::Pointer rawtpms = p->GetOutput();
-	rawtpms->SetDirection(reor_dir);
-	rawtpms->SetOrigin(reor_orig);
+	// typename ProbmapType::Pointer rawtpms = p->GetOutput();
+	// rawtpms->SetDirection(reor_dir);
+	// rawtpms->SetOrigin(reor_orig);
+    //
+	// typename ProbmapsOrienter::Pointer orient_tpm = ProbmapsOrienter::New();
+	// orient_tpm->UseImageDirectionOn();
+	// orient_tpm->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
+	// orient_tpm->SetInput(rawtpms);
+	// orient_tpm->Update();
+	// typename ProbmapType::Pointer tpm_oriented = orient_tpm->GetOutput();
+	// tpm_oriented->SetDirection(comb->GetOutput()->GetDirection());
+	// tpm_oriented->SetOrigin(comb->GetOutput()->GetOrigin());
 
-	typename ProbmapsOrienter::Pointer orient_tpm = ProbmapsOrienter::New();
-	orient_tpm->UseImageDirectionOn();
-	orient_tpm->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
-	orient_tpm->SetInput(rawtpms);
-	orient_tpm->Update();
-	typename ProbmapType::Pointer tpm_oriented = orient_tpm->GetOutput();
-	tpm_oriented->SetDirection(comb->GetOutput()->GetDirection());
-	tpm_oriented->SetOrigin(comb->GetOutput()->GetOrigin());
-
-	typename ImageWriter::Pointer w = ImageWriter::New();
-	w->SetInput(tpm_oriented);
-
-	ss.str("");
-	ss << outPrefix << "_tpm";
-	w->SetFileName(ss.str().c_str());
-	w->Update();
+	// typename ImageWriter::Pointer w = ImageWriter::New();
+	// w->SetInput(tpm_oriented);
+    //
+	// ss.str("");
+	// ss << outPrefix << "_tpm";
+	// w->SetFileName(ss.str().c_str());
+	// w->Update();
 
 	return EXIT_SUCCESS;
 }

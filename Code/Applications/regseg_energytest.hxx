@@ -71,6 +71,8 @@
 #include "EnergyCalculatorFilter.h"
 #include "MahalanobisDistanceModel.h"
 
+#include <jsoncpp/json/json.h>
+
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 
