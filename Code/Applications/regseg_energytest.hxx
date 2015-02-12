@@ -61,6 +61,7 @@
 #include <itkVTKPolyDataReader.h>
 #include <itkImageFileReader.h>
 #include <itkOrientImageFilter.h>
+#include <itkComposeImageFilter.h>
 
 #include "DownsampleAveragingFilter.h"
 #include "MultilabelBinarizeMeshFilter.h"
@@ -74,10 +75,15 @@ namespace bfs = boost::filesystem;
 
 const static unsigned int Dimension = 3u;
 
+typedef float                                                     ChannelPixelType;
+typedef itk::Image<ChannelPixelType, Dimension>                   ChannelType;
+typedef itk::VectorImage<ChannelPixelType, Dimension>             ReferenceImageType;
+typedef typename ReferenceImageType::PixelType                    VectorPixelType;
+typedef itk::ComposeImageFilter<ChannelType, ReferenceImageType>  InputToVectorFilterType;
+
 typedef float                                                     PointValueType;
 typedef itk::Vector< PointValueType, Dimension >                  VectorType;
 typedef itk::QuadEdgeMesh< VectorType, Dimension >                VectorContourType;
-typedef itk::Image< PointValueType, Dimension>                    ReferenceImageType;
 typedef itk::VectorImage< PointValueType, Dimension >             ProbmapType;
 
 typedef typename ReferenceImageType::Pointer                      ReferencePointer;
@@ -100,7 +106,7 @@ typedef typename DownsampleFilter::Pointer                        DownsamplePoin
 
 typedef itk::VTKPolyDataReader< VectorContourType >               ReaderType;
 typedef rstk::VTKPolyDataWriter< VectorContourType >              WriterType;
-typedef itk::ImageFileReader<ReferenceImageType>                  ImageReader;
+typedef itk::ImageFileReader<ChannelType>                         ImageReader;
 typedef itk::ImageFileWriter<SegmentationType>                    SegmentationWriter;
 typedef rstk::ComponentsFileWriter<ProbmapType>                   ImageWriter;
 

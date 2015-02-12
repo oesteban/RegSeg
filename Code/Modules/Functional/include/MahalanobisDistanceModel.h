@@ -50,8 +50,6 @@
 #include "UniformMembershipFunction.h"
 #include "WeightedCovarianceSampleFilter.h"
 
-#include <itkWeightedCovarianceSampleFilter.h>
-
 namespace rstk {
 
 template< typename TInputVectorImage, typename TPriorsPrecisionType = float>
@@ -112,7 +110,7 @@ public:
 	typedef itk::Statistics::ImageToListSampleAdaptor< InputImageType >        ReferenceSampleType;
 	typedef typename ReferenceSampleType::Pointer                              ReferenceSamplePointer;
 
-	typedef rstk::WeightedCovarianceSampleFilter< ReferenceSampleType >        CovarianceFilter;
+	typedef itk::WeightedCovarianceSampleFilter< ReferenceSampleType >         CovarianceFilter;
 	typedef typename CovarianceFilter::Pointer                                 CovarianceFilterPointer;
 	typedef typename CovarianceFilter::WeightArrayType                         WeightArrayType;
 
