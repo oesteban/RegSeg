@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-13 12:41:57
+# @Last Modified time: 2015-02-13 13:47:49
 
 import os
 import os.path as op
@@ -291,14 +291,14 @@ def map_energy(name='EnergyMapping'):
         fields=['reference', 'surfaces0', 'surfaces1', 'in_mask']),
         name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['desc_zero', 'out_diff']),
-        name='outputnode')
+        fields=['desc_zero', 'out_diff']), name='outputnode')
 
     ref_e = pe.Node(ComputeEnergy(), name='ComputeZeroEnergy')
     diff = pe.MapNode(namesh.ComputeMeshWarp(), name='ComputeError',
                       iterfield=['surface1', 'surface2'])
 
-    max_e = pe.Node(ComputeEnergy(), name='ComputeOneEnergy')
+    mapper = warp_n_map()
+    mapper.inputs.inputnode.errfactor = 0.05
 
     wf = pe.Workflow(name=name)
     wf.connect([
@@ -309,9 +309,35 @@ def map_energy(name='EnergyMapping'):
         (inputnode,       diff, [('surfaces0', 'surface1'),
                                  ('surfaces1', 'surface2')]),
         (diff,      outputnode, [('out_warp', 'out_diff')]),
-        (inputnode,     max_e,  [('reference', 'reference'),
-                                 ('surfaces1', 'surfaces'),
+
+        (inputnode,     mapper, [('reference', 'reference'),
                                  ('in_mask', 'in_mask')]),
-        (ref_e,         max_e,  [('out_desc', 'descriptors')])
+        (diff,          mapper, [('out_warp', 'surf_warp')]),
+        (ref_e,         mapper, [('out_desc', 'descriptors')])
+    ])
+    return wf
+
+
+def warp_n_map(name='EnergyWarpAndMap'):
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=['reference', 'surf_warp', 'in_mask', 'errfactor',
+                'descriptors']), name='inputnode')
+
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields=['out_energy']), name='outputnode')
+
+    applyef = pe.MapNode(
+        namesh.MeshWarpMaths(operation='mul'), name='MeshMaths')
+    mapeneg = pe.Node(ComputeEnergy(), name='ComputeEnergy')
+
+    wf = pe.Workflow(name=name)
+    wf.connect([
+        (inputnode,    applyef, [('surf_warp', 'in_surf'),
+                                 ('errfactor', 'operator')]),
+        (applyef,      mapeneg, [('out_file', 'surfaces')]),
+        (inputnode,    mapeneg, [('reference', 'reference'),
+                                 ('in_mask', 'in_mask'),
+                                 ('descriptors', 'descriptors')]),
+        (maeneg,    outputnode, [('out_file', 'out_energy')])
     ])
     return wf
