@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-13 13:47:49
+# @Last Modified time: 2015-02-13 13:49:27
 
 import os
 import os.path as op
@@ -327,7 +327,8 @@ def warp_n_map(name='EnergyWarpAndMap'):
         fields=['out_energy']), name='outputnode')
 
     applyef = pe.MapNode(
-        namesh.MeshWarpMaths(operation='mul'), name='MeshMaths')
+        namesh.MeshWarpMaths(operation='mul'), name='MeshMaths',
+        iterfield=['in_surf'])
     mapeneg = pe.Node(ComputeEnergy(), name='ComputeEnergy')
 
     wf = pe.Workflow(name=name)
