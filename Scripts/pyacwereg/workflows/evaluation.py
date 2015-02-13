@@ -331,8 +331,7 @@ def warp_n_map(name='EnergyWarpAndMap', out_csv='energies.csv'):
     mapeneg = pe.Node(ComputeEnergy(), name='ComputeEnergy')
     getval = pe.Node(nio.JSONFileGrabber(), name='GetEnergy')
 
-    csv = pe.MapNode(namisc.AddCSVRow(
-        infields=['error', 'energy'], in_file=out_csv),
+    csv = pe.Node(namisc.AddCSVRow(in_file=out_csv),
         name="AddRow")
 
     wf = pe.Workflow(name=name)
@@ -343,9 +342,9 @@ def warp_n_map(name='EnergyWarpAndMap', out_csv='energies.csv'):
         (inputnode,    mapeneg, [('reference', 'reference'),
                                  ('in_mask', 'in_mask'),
                                  ('descriptors', 'descriptors')]),
-        (maeneg,        getval, [('out_file', 'in_file')]),
+        (mapeneg,       getval, [('out_file', 'in_file')]),
         (getval,           csv, [('total', 'total')]),
-        (inputnode,        csv, [('efffactor', 'error')]),
-        (maeneg,    outputnode, [('out_file', 'out_energy')])
+        (inputnode,        csv, [('errfactor', 'error')]),
+        (mapeneg,   outputnode, [('out_file', 'out_energy')])
     ])
     return wf
