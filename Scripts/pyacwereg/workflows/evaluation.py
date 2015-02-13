@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-13 15:18:47
+# @Last Modified time: 2015-02-13 16:14:29
 
 import os
 import os.path as op
@@ -285,8 +285,9 @@ def registration_ev(name='EvaluateMapping'):
     return wf
 
 
-def map_energy(name='EnergyMapping'):
+def map_energy(name='EnergyMapping', out_csv='energiesmapping.csv'):
 
+    out_csv = op.abspath(out_csv)
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['reference', 'surfaces0', 'surfaces1', 'in_mask']),
         name='inputnode')
@@ -297,15 +298,23 @@ def map_energy(name='EnergyMapping'):
     diff = pe.MapNode(namesh.ComputeMeshWarp(), name='ComputeError',
                       iterfield=['surface1', 'surface2'])
 
-    mapper = warp_n_map()
+    getval = pe.Node(nio.JSONFileGrabber(), name='GetZeroEnergy')
+    csv = pe.Node(namisc.AddCSVRow(in_file=out_csv),
+                  name="AddReferenceRow")
+    csv.errfactor = 0.0
+
+    mapper = warp_n_map(out_csv=out_csv)
     wf = pe.Workflow(name=name)
     wf.connect([
         (inputnode,     ref_e,  [('reference', 'reference'),
                                  ('surfaces0', 'surfaces'),
                                  ('in_mask', 'in_mask')]),
         (ref_e,     outputnode, [('out_file', 'desc_zero')]),
+        (ref_e,         getval, [('out_file', 'in_file')]),
+        (getval,           csv, [('total', 'total')]),
         (inputnode,       diff, [('surfaces0', 'surface1'),
                                  ('surfaces1', 'surface2')]),
+
         (diff,      outputnode, [('out_warp', 'out_diff')]),
 
         (inputnode,     mapper, [('reference', 'inputnode.reference'),
@@ -344,7 +353,6 @@ def warp_n_map(name='EnergyWarpAndMap', out_csv='energies.csv'):
         (mapeneg,   outputnode, [('out_file', 'out_energy')])
     ])
 
-    out_csv = op.abspath(wf.base_dir, out_csv)
     csv = pe.Node(namisc.AddCSVRow(in_file=out_csv),
                   name="AddRow")
 
