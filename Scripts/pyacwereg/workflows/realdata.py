@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-13 12:44:20
+# @Last Modified time: 2015-02-13 16:18:03
 
 
 def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
@@ -219,6 +219,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
 
     mapen = ev.map_energy()
     wf.connect([
+        (inputnode, mapen, [('subject_id', 'inputnode.subject_id')]),
         (regseg,    mapen, [('outputnode.out_enh', 'inputnode.reference'),
                             ('outputnode.reg_msk', 'inputnode.in_mask')]),
         (st1,       mapen, [('out_dis_set.surf', 'inputnode.surfaces0'),

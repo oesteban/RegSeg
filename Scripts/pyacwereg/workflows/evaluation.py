@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-13 16:14:29
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-02-13 16:21:13
 
 import os
 import os.path as op
@@ -289,8 +289,8 @@ def map_energy(name='EnergyMapping', out_csv='energiesmapping.csv'):
 
     out_csv = op.abspath(out_csv)
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['reference', 'surfaces0', 'surfaces1', 'in_mask']),
-        name='inputnode')
+        fields=['reference', 'surfaces0', 'surfaces1', 'in_mask',
+                'subject_id']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['desc_zero', 'out_diff']), name='outputnode')
 
@@ -311,13 +311,15 @@ def map_energy(name='EnergyMapping', out_csv='energiesmapping.csv'):
                                  ('in_mask', 'in_mask')]),
         (ref_e,     outputnode, [('out_file', 'desc_zero')]),
         (ref_e,         getval, [('out_file', 'in_file')]),
+        (inputnode,        csv, [('subject_id', 'subject_id')]),
         (getval,           csv, [('total', 'total')]),
         (inputnode,       diff, [('surfaces0', 'surface1'),
                                  ('surfaces1', 'surface2')]),
 
         (diff,      outputnode, [('out_warp', 'out_diff')]),
 
-        (inputnode,     mapper, [('reference', 'inputnode.reference'),
+        (inputnode,     mapper, [('subject_id', 'inputnode.subject_id'),
+                                 ('reference', 'inputnode.reference'),
                                  ('in_mask', 'inputnode.in_mask')]),
         (diff,          mapper, [('out_warp', 'inputnode.surf_warp')]),
         (ref_e,         mapper, [('out_desc', 'inputnode.descriptors')])
@@ -328,7 +330,7 @@ def map_energy(name='EnergyMapping', out_csv='energiesmapping.csv'):
 def warp_n_map(name='EnergyWarpAndMap', out_csv='energies.csv'):
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['reference', 'surf_warp', 'in_mask', 'errfactor',
-                'descriptors']), name='inputnode')
+                'descriptors', 'subject_id']), name='inputnode')
     inputnode.iterables = ('errfactor', np.linspace(-1.2, 1.2, num=100,
                                                     endpoint=True).tolist())
 
@@ -358,7 +360,8 @@ def warp_n_map(name='EnergyWarpAndMap', out_csv='energies.csv'):
 
     wf.connect([
         (getval,           csv, [('total', 'total')]),
-        (inputnode,        csv, [('errfactor', 'error')])
+        (inputnode,        csv, [('errfactor', 'error'),
+                                 ('subject_id', 'subject_id')])
     ])
 
     return wf
