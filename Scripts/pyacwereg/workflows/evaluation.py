@@ -298,7 +298,6 @@ def map_energy(name='EnergyMapping'):
                       iterfield=['surface1', 'surface2'])
 
     mapper = warp_n_map()
-
     wf = pe.Workflow(name=name)
     wf.connect([
         (inputnode,     ref_e,  [('reference', 'reference'),
@@ -309,10 +308,10 @@ def map_energy(name='EnergyMapping'):
                                  ('surfaces1', 'surface2')]),
         (diff,      outputnode, [('out_warp', 'out_diff')]),
 
-        (inputnode,     mapper, [('reference', 'reference'),
-                                 ('in_mask', 'in_mask')]),
-        (diff,          mapper, [('out_warp', 'surf_warp')]),
-        (ref_e,         mapper, [('out_desc', 'descriptors')])
+        (inputnode,     mapper, [('reference', 'inputnode.reference'),
+                                 ('in_mask', 'inputnode.in_mask')]),
+        (diff,          mapper, [('out_warp', 'inputnode.surf_warp')]),
+        (ref_e,         mapper, [('out_desc', 'inputnode.descriptors')])
     ])
     return wf
 
