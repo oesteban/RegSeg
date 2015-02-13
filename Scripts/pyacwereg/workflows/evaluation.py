@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-13 13:49:27
+# @Last Modified time: 2015-02-13 15:02:55
 
 import os
 import os.path as op
@@ -298,7 +298,6 @@ def map_energy(name='EnergyMapping'):
                       iterfield=['surface1', 'surface2'])
 
     mapper = warp_n_map()
-    mapper.inputs.inputnode.errfactor = 0.05
 
     wf = pe.Workflow(name=name)
     wf.connect([
@@ -318,10 +317,11 @@ def map_energy(name='EnergyMapping'):
     return wf
 
 
-def warp_n_map(name='EnergyWarpAndMap'):
+def warp_n_map(name='EnergyWarpAndMap', out_csv='energies.csv'):
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['reference', 'surf_warp', 'in_mask', 'errfactor',
                 'descriptors']), name='inputnode')
+    inputnode.iterables = ('errfactor', [-0.05, 0.05])
 
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['out_energy']), name='outputnode')
@@ -330,6 +330,11 @@ def warp_n_map(name='EnergyWarpAndMap'):
         namesh.MeshWarpMaths(operation='mul'), name='MeshMaths',
         iterfield=['in_surf'])
     mapeneg = pe.Node(ComputeEnergy(), name='ComputeEnergy')
+    getval = pe.Node(nio.JSONFileGrabber(), name='GetEnergy')
+
+    csv = pe.MapNode(namisc.AddCSVRow(
+        infields=['error', 'energy'], in_file=out_csv),
+        name="AddRow")
 
     wf = pe.Workflow(name=name)
     wf.connect([
@@ -339,6 +344,9 @@ def warp_n_map(name='EnergyWarpAndMap'):
         (inputnode,    mapeneg, [('reference', 'reference'),
                                  ('in_mask', 'in_mask'),
                                  ('descriptors', 'descriptors')]),
+        (maeneg,        getval, [('out_file', 'in_file')]),
+        (getval,           csv, [('total', 'total')]),
+        (inputnode,        csv, [('efffactor', 'error')]),
         (maeneg,    outputnode, [('out_file', 'out_energy')])
     ])
     return wf
