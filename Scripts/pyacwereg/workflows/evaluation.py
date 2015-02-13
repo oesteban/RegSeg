@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-13 15:02:55
+# @Last Modified time: 2015-02-13 15:18:47
 
 import os
 import os.path as op
@@ -320,7 +320,8 @@ def warp_n_map(name='EnergyWarpAndMap', out_csv='energies.csv'):
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['reference', 'surf_warp', 'in_mask', 'errfactor',
                 'descriptors']), name='inputnode')
-    inputnode.iterables = ('errfactor', [-0.05, 0.05])
+    inputnode.iterables = ('errfactor', np.linspace(-1.2, 1.2, num=100,
+                                                    endpoint=True).tolist())
 
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['out_energy']), name='outputnode')
@@ -331,9 +332,6 @@ def warp_n_map(name='EnergyWarpAndMap', out_csv='energies.csv'):
     mapeneg = pe.Node(ComputeEnergy(), name='ComputeEnergy')
     getval = pe.Node(nio.JSONFileGrabber(), name='GetEnergy')
 
-    csv = pe.Node(namisc.AddCSVRow(in_file=out_csv),
-        name="AddRow")
-
     wf = pe.Workflow(name=name)
     wf.connect([
         (inputnode,    applyef, [('surf_warp', 'in_surf'),
@@ -343,8 +341,16 @@ def warp_n_map(name='EnergyWarpAndMap', out_csv='energies.csv'):
                                  ('in_mask', 'in_mask'),
                                  ('descriptors', 'descriptors')]),
         (mapeneg,       getval, [('out_file', 'in_file')]),
-        (getval,           csv, [('total', 'total')]),
-        (inputnode,        csv, [('errfactor', 'error')]),
         (mapeneg,   outputnode, [('out_file', 'out_energy')])
     ])
+
+    out_csv = op.abspath(wf.base_dir, out_csv)
+    csv = pe.Node(namisc.AddCSVRow(in_file=out_csv),
+                  name="AddRow")
+
+    wf.connect([
+        (getval,           csv, [('total', 'total')]),
+        (inputnode,        csv, [('errfactor', 'error')])
+    ])
+
     return wf
