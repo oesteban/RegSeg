@@ -117,6 +117,7 @@ typedef rstk::ComponentsFileWriter<ProbmapType>                   ImageWriter;
 typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >  Orienter;
 typedef itk::OrientImageFilter< SegmentationType, SegmentationType >      SegmentationOrienter;
 typedef itk::OrientImageFilter< ProbmapType, ProbmapType >                ProbmapsOrienter;
+typedef itk::OrientImageFilter< ChannelType, ChannelType >                ChannelOrienter;
 
 typedef rstk::MahalanobisDistanceModel< ReferenceImageType >      EnergyModelType;
 typedef typename EnergyModelType::Pointer                         EnergyModelPointer;

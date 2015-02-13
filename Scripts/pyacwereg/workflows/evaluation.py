@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-12 20:12:07
+# @Last Modified time: 2015-02-13 12:41:57
 
 import os
 import os.path as op
@@ -288,7 +288,7 @@ def registration_ev(name='EvaluateMapping'):
 def map_energy(name='EnergyMapping'):
 
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['reference', 'surfaces0', 'surfaces1']),
+        fields=['reference', 'surfaces0', 'surfaces1', 'in_mask']),
         name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['desc_zero', 'out_diff']),
@@ -303,13 +303,15 @@ def map_energy(name='EnergyMapping'):
     wf = pe.Workflow(name=name)
     wf.connect([
         (inputnode,     ref_e,  [('reference', 'reference'),
-                                 ('surfaces0', 'surfaces')]),
+                                 ('surfaces0', 'surfaces'),
+                                 ('in_mask', 'in_mask')]),
         (ref_e,     outputnode, [('out_file', 'desc_zero')]),
         (inputnode,       diff, [('surfaces0', 'surface1'),
                                  ('surfaces1', 'surface2')]),
         (diff,      outputnode, [('out_warp', 'out_diff')]),
         (inputnode,     max_e,  [('reference', 'reference'),
-                                 ('surfaces1', 'surfaces')]),
+                                 ('surfaces1', 'surfaces'),
+                                 ('in_mask', 'in_mask')]),
         (ref_e,         max_e,  [('out_desc', 'descriptors')])
     ])
     return wf

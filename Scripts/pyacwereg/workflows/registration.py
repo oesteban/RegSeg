@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-30 16:11:18
+# @Last Modified time: 2015-02-13 13:19:43
 
 import os
 import os.path as op
@@ -34,9 +34,9 @@ def regseg_wf(name='REGSEG', enhance_inputs=True, usemask=False):
                         fields=regseg_inputs + wf_inputs), name='inputnode')
 
     outputnode = pe.Node(niu.IdentityInterface(
-                         fields=['out_corr', 'out_tpms',
-                                 'out_surf', 'out_field', 'out_mask']),
-                         name='outputnode')
+        fields=['out_corr', 'out_tpms', 'out_enh', 'reg_msk', 'out_surf',
+                'out_field', 'out_mask']),
+        name='outputnode')
 
     # Registration
     regseg = pe.Node(ACWEReg(), name="ACWERegistration")
@@ -65,18 +65,29 @@ def regseg_wf(name='REGSEG', enhance_inputs=True, usemask=False):
         dilate = pe.Node(fsl.maths.MathsCommand(
             nan2zeros=True, args='-kernel sphere 5 -dilM'), name='MskDilate')
         wf.connect([(inputnode,   dilate, [('in_mask', 'in_file')]),
-                    (dilate,      regseg, [('out_file', 'in_mask')])])
+                    (dilate,      regseg, [('out_file', 'in_mask')]),
+                    (dilate,  outputnode, [('out_file', 'reg_msk')])])
+    else:
+        zeromsk = pe.Node(niu.Function(
+            input_names=['in_file'], output_names=['out_file'],
+            function=_gen_zmsk), name='ZeroMsk')
+        wf.connect([(inputnode,   zeromsk, [('in_mask', 'in_file')]),
+                    (zeromsk,  outputnode, [('out_file', 'reg_msk')])])
 
     if enhance_inputs:
         enh = pe.MapNode(niu.Function(
             function=enh_image, input_names=['in_file'],
             output_names=['out_file']), iterfield=['in_file'], name='Enhance')
         wf.connect([
-            (inputnode,      enh, [('in_fixed', 'in_file')]),
-            (enh,         regseg, [('out_file', 'in_fixed')]),
+            (inputnode,        enh, [('in_fixed', 'in_file')]),
+            (enh,           regseg, [('out_file', 'in_fixed')]),
+            (enh,       outputnode, [('out_file', 'out_enh')])
         ])
     else:
-        wf.connect(inputnode, 'in_fixed', regseg, 'in_fixed')
+        wf.connect([
+            (inputnode,     regseg, [('in_fixed', 'in_fixed')]),
+            (inputnode, outputnode, [('in_fixed', 'out_enh')])
+        ])
 
     return wf
 
@@ -167,5 +178,28 @@ def enh_image(in_file, irange=2000., out_file=None):
     data = (irange / imax) * data
 
     nb.Nifti1Image(data, nii.get_affine(), nii.get_header()).to_filename(
+        out_file)
+    return out_file
+
+
+def _gen_zmsk(in_file, out_file=None):
+    import numpy as np
+    import nibabel as nb
+    import os.path as op
+
+    if out_file is None:
+        fname, fext = op.splitext(op.basename(in_file))
+        if fext == '.gz':
+            fname, _ = op.splitext(fname)
+        out_file = op.abspath('./%s_zmsk.nii.gz' % fname)
+
+    nii = nb.load(in_file)
+    msk = np.ones(nii.get_shape()[:3])
+    hdr = nii.get_header().copy()
+    hdr.set_data_shape(msk.shape)
+    hdr.set_data_dtype(np.uint8)
+    hdr.set_xyzt_units('mm')
+
+    nb.Nifti1Image(msk.astype(np.uint8), nii.get_affine(), hdr).to_filename(
         out_file)
     return out_file

@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
 			("reference,R", bpo::value< std::vector< std::string > >(&refnames)->multitoken()->required(), "reference image" )
 			("descriptors,D", bpo::value< std::string >(&descfile), "descriptors file, if not present they will be computed from current segmentation" )
 			("mask,M", bpo::value< std::string >(&maskfile), "inputmask" )
+			("reorient", bpo::bool_switch(), "reorient images")
 			("output,o", bpo::value < std::string > (&outfilename), "prefix for output files");
 
 	bpo::variables_map vm;
@@ -40,8 +41,12 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	InputMeshContainer priors;
+	// Some initial declarations
+	bool reorient = vm.count("reorient") > 0;
+	DirectionType idmat; idmat.SetIdentity();
 
+	// Read surfaces
+	InputMeshContainer priors;
 	for( size_t i = 0; i<surfnames.size(); i++) {
 		typename ReaderType::Pointer r = ReaderType::New();
 		r->SetFileName(surfnames[i]);
@@ -49,6 +54,7 @@ int main(int argc, char *argv[]) {
 		priors.push_back(r->GetOutput());
 	}
 
+	// Read image channels and plug them into combine filter
 	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
 	for (size_t i = 0; i < refnames.size(); i++ ) {
 		ImageReader::Pointer r = ImageReader::New();
@@ -57,64 +63,82 @@ int main(int argc, char *argv[]) {
 		comb->SetInput(i,r->GetOutput());
 	}
 	comb->Update();
-	size_t ncomps = comb->GetOutput()->GetNumberOfComponentsPerPixel();
+	ReferencePointer ref = comb->GetOutput();
 
-	typename Orienter::Pointer orient = Orienter::New();
-	orient->UseImageDirectionOn();
-	orient->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
-	orient->SetInput(comb->GetOutput());
-	orient->Update();
-	ReferencePointer ref = orient->GetOutput();
-	SizeType ref_size = ref->GetLargestPossibleRegion().GetSize();
+	// Get some necessary features
+	size_t ncomps = ref->GetNumberOfComponentsPerPixel();
+	DirectionType native_dir = ref->GetDirection();
+	PointType native_orig = ref->GetOrigin();
 
-	DirectionType reor_dir = ref->GetDirection();
-	PointType reor_orig = ref->GetOrigin();
+	// Reorient is necessary depending on the cli switch
+	DirectionType reor_dir;
+	PointType reor_orig;
+	if (reorient) {
+		typename Orienter::Pointer orient = Orienter::New();
+		orient->UseImageDirectionOn();
+		orient->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
+		orient->SetInput(comb->GetOutput());
+		orient->Update();
+		ref = orient->GetOutput();
 
+		reor_dir = ref->GetDirection();
+		reor_orig = ref->GetOrigin();
+		DirectionType itk; itk.SetIdentity();
+		itk(0,0) = -1.0; itk(1,1) = -1.0;
 
-	DirectionType idmat; idmat.SetIdentity();
-	DirectionType itk; itk.SetIdentity();
-	itk(0,0) = -1.0; itk(1,1) = -1.0;
-
-	PointType neworig = itk * ref->GetOrigin();
-	ref->SetDirection(idmat);
-	ref->SetOrigin(neworig);
-
-	// ss.str("");
-	// ss << outPrefix << "_reference";
-	// typename ImageWriter::Pointer wref = ImageWriter::New();
-	// wref->SetInput(ref);
-	// wref->SetFileName(ss.str().c_str());
-	// wref->Update();
-
-	typename ChannelType::Pointer mask;
-	if( vm.count("mask") ) {
-
-	} else {
-		mask = ChannelType::New();
-		mask->SetOrigin( ref->GetOrigin() );
-		mask->SetDirection( ref->GetDirection() );
-		mask->SetRegions( ref->GetLargestPossibleRegion().GetSize() );
-		mask->SetSpacing( ref->GetSpacing() );
-		mask->Allocate();
-		mask->FillBuffer(0.0);
+		PointType neworig = itk * ref->GetOrigin();
+		ref->SetDirection(idmat);
+		ref->SetOrigin(neworig);
 	}
 
-	PointType ref_origin, ref_lastcenter, ref_end;
+	// Process mask (if available, generate empty otherwise)
+	typename ChannelType::Pointer mask = ChannelType::New();
+	mask->SetOrigin( ref->GetOrigin() );
+	mask->SetDirection( ref->GetDirection() );
+	mask->SetRegions( ref->GetLargestPossibleRegion().GetSize() );
+	mask->SetSpacing( ref->GetSpacing() );
+	mask->Allocate();
+	mask->FillBuffer(1.0);
 
+	if( vm.count("mask") ) {
+		ImageReader::Pointer r = ImageReader::New();
+		r->SetFileName(maskfile);
+		r->Update();
+		typename ChannelType::Pointer inputmask = r->GetOutput();
+
+		if (reorient) {
+			typename ChannelOrienter::Pointer orient = ChannelOrienter::New();
+			orient->UseImageDirectionOn();
+			orient->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
+			orient->SetInput(inputmask);
+			orient->Update();
+			inputmask = orient->GetOutput();
+			inputmask->SetDirection(ref->GetDirection());
+			inputmask->SetOrigin(ref->GetOrigin());
+		}
+
+		size_t npix = mask->GetLargestPossibleRegion().GetNumberOfPixels();
+		ChannelPixelType* mbuff = mask->GetBufferPointer();
+		const ChannelPixelType* msbuff = inputmask->GetBufferPointer();
+		for (size_t pix = 0; pix < npix; pix++) {
+			if ( *(msbuff+pix) > 1.0e-8 ) {
+				*(mbuff+pix) = 0.0;
+			}
+		}
+	}
+
+	// Calculate sampling grid properties and initialize
+	SizeType ref_size = ref->GetLargestPossibleRegion().GetSize();
+	PointType ref_origin, ref_lastcenter, ref_end;
 	ContinuousIndex tmp_idx;
 	tmp_idx.Fill( -0.5 );
 	ref->TransformContinuousIndexToPhysicalPoint( tmp_idx, ref_origin );
-
 	for ( size_t dim = 0; dim<Dimension; dim++)  tmp_idx[dim]= ref_size[dim]-1.0;
 	ref->TransformContinuousIndexToPhysicalPoint( tmp_idx, ref_lastcenter );
-
 	for ( size_t dim = 0; dim<Dimension; dim++)  tmp_idx[dim]= ref_size[dim]- 0.5;
 	ref->TransformContinuousIndexToPhysicalPoint( tmp_idx, ref_end );
-
 	SizeType exp_size;
-	for (size_t i = 0; i<Dimension; i++ ){
-		exp_size[i] = (unsigned int) (ref_size[i] * 2);
-	}
+	for (size_t i = 0; i<Dimension; i++ ) exp_size[i] = (unsigned int) (ref_size[i] * 2);
 
 	PointType firstcenter;
 	SpacingType spacing;
@@ -134,35 +158,38 @@ int main(int argc, char *argv[]) {
 	refSamplingGrid->SetSpacing( spacing );
 	refSamplingGrid->Allocate();
 
+	// Binarization & downsamplings
 	BinarizeMeshFilterPointer newp = BinarizeMeshFilterType::New();
 	newp->SetInputs( priors );
 	newp->SetOutputReference( refSamplingGrid );
 	newp->Update();
 
-	typename SegmentationType::Pointer seg = newp->GetOutputSegmentation();
-	seg->SetDirection(reor_dir);
-	seg->SetOrigin(reor_orig);
-
-	typename SegmentationOrienter::Pointer orient_seg = SegmentationOrienter::New();
-	orient_seg->UseImageDirectionOn();
-	orient_seg->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
-	orient_seg->SetInput(seg);
-	orient_seg->Update();
-	typename SegmentationType::Pointer seg_oriented = orient_seg->GetOutput();
-	seg_oriented->SetDirection(comb->GetOutput()->GetDirection());
-	seg_oriented->SetOrigin(comb->GetOutput()->GetOrigin());
-
-	// ss.str("");
-	// ss << outPrefix << "_seg.nii.gz";
-	// typename SegmentationWriter::Pointer sw = SegmentationWriter::New();
-	// sw->SetFileName(ss.str().c_str());
-	// sw->SetInput(seg_oriented);
-	// sw->Update();
-
 	DownsamplePointer p = DownsampleFilter::New();
 	p->SetInput(newp->GetOutput());
 	p->SetOutputParametersFromImage( ref );
 	p->Update();
+
+	typename ProbmapType::Pointer tpms = p->GetOutput();
+
+	if( reorient ) {
+		tpms->SetDirection(reor_dir);
+		tpms->SetOrigin(reor_orig);
+		typename ProbmapsOrienter::Pointer orient_tpm = ProbmapsOrienter::New();
+		orient_tpm->UseImageDirectionOn();
+		orient_tpm->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
+		orient_tpm->SetInput(tpms);
+		orient_tpm->Update();
+
+		tpms = orient_tpm->GetOutput();
+		tpms->SetDirection(native_dir);
+		tpms->SetOrigin(native_orig);
+	}
+
+
+	typename ImageWriter::Pointer w = ImageWriter::New();
+	w->SetInput(tpms);
+	w->SetFileName("tpms");
+	w->Update();
 
 	EnergyModelPointer model = EnergyModelType::New();
 	if (vm.count("descriptors")) {
@@ -178,13 +205,6 @@ int main(int argc, char *argv[]) {
 		outdescfile << jsonstr;
 		outdescfile.close();
 	}
-
-	// ss.str("");
-	// ss << outPrefix << "_descriptors.json";
-	// std::string jsonstr = model->PrintFormattedDescriptors();
-	// std::ofstream outfile(ss.str().c_str());
-	// outfile << jsonstr;
-	// outfile.close();
 
 	EnergyFilterPointer ecalc = EnergyFilter::New();
 	ecalc->SetInput(ref);
@@ -207,27 +227,5 @@ int main(int argc, char *argv[]) {
 	std::ofstream outfile(outfilename.c_str());
 	outfile << root.toStyledString();
 	outfile.close();
-
-	// typename ProbmapType::Pointer rawtpms = p->GetOutput();
-	// rawtpms->SetDirection(reor_dir);
-	// rawtpms->SetOrigin(reor_orig);
-    //
-	// typename ProbmapsOrienter::Pointer orient_tpm = ProbmapsOrienter::New();
-	// orient_tpm->UseImageDirectionOn();
-	// orient_tpm->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
-	// orient_tpm->SetInput(rawtpms);
-	// orient_tpm->Update();
-	// typename ProbmapType::Pointer tpm_oriented = orient_tpm->GetOutput();
-	// tpm_oriented->SetDirection(comb->GetOutput()->GetDirection());
-	// tpm_oriented->SetOrigin(comb->GetOutput()->GetOrigin());
-
-	// typename ImageWriter::Pointer w = ImageWriter::New();
-	// w->SetInput(tpm_oriented);
-    //
-	// ss.str("");
-	// ss << outPrefix << "_tpm";
-	// w->SetFileName(ss.str().c_str());
-	// w->Update();
-
 	return EXIT_SUCCESS;
 }

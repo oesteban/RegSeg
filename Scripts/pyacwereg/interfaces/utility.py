@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-12 20:10:47
+# @Last Modified time: 2015-02-13 12:41:04
 import os
 import os.path as op
 from glob import glob
@@ -216,8 +216,9 @@ class ComputeEnergyInputSpec(CommandLineInputSpec):
         File(exists=True), argstr='-S %s', mandatory=True,
         desc=('vtk contours that will be mapped to volume'))
 
-    descriptors = File(exists=True, argstr='-D %s',
-                       desc='descriptors JSON file')
+    in_mask = File(exists=True, argstr='-M %s', desc='mask file')
+    descriptors = File(
+        exists=True, argstr='-D %s', desc='descriptors JSON file')
 
     out_file = File('energies.json', argstr='-o %s', usedefault=True,
                     mandatory=True, desc='output file name')
