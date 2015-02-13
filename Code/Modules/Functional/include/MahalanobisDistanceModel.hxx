@@ -322,7 +322,7 @@ MahalanobisDistanceModel< TInputVectorImage, TPriorsPrecisionType >
 	for ( size_t i = 0; i<nrois; i++ ){
 		Json::Value vnode = Json::Value( Json::objectValue );
 		vnode["id"] = static_cast<Json::UInt>( i );
-		vnode["determinant"] = Json::Value(this->ComputeCovarianceDeterminant(this->m_Covariances[i]));
+		//vnode["determinant"] = Json::Value(this->ComputeCovarianceDeterminant(this->m_Covariances[i]));
 		vnode["offset"] = Json::Value( this->m_RegionOffsetContainer[i] );
 		vnode["mu"] = Json::Value( Json::arrayValue );
 		vnode["cov"] = Json::Value( Json::arrayValue );
