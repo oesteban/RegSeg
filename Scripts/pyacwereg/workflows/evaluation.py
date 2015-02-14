@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 16:59:14
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-13 16:21:13
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-02-14 11:36:05
 
 import os
 import os.path as op
@@ -301,7 +301,7 @@ def map_energy(name='EnergyMapping', out_csv='energiesmapping.csv'):
     getval = pe.Node(nio.JSONFileGrabber(), name='GetZeroEnergy')
     csv = pe.Node(namisc.AddCSVRow(in_file=out_csv),
                   name="AddReferenceRow")
-    csv.errfactor = 0.0
+    csv.inputs.errfactor = 0.0
 
     mapper = warp_n_map(out_csv=out_csv)
     wf = pe.Workflow(name=name)

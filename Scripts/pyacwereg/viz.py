@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-23 16:39:24
+# @Last Modified time: 2015-02-14 11:40:38
 
 
 def add_annotations(values, ax, level, nlevels, color, lastidx, units=''):
@@ -495,3 +495,23 @@ def phantom_errors(in_csv, resolution='lo',
     g.fig.suptitle(mytitle, y=1.05, fontsize=30)
 
     return g
+
+
+def metric_map_plot(in_file):
+    import pandas as pd
+    df = pd.read_csv(in_file)
+    df.error.fillna(0.0, inplace=True)
+    df = df.sort(columns=['subject_id', 'error'])
+    subjects = df.subject_id.unique()
+
+    series = []
+    for s in subjects:
+        ndf = df[df.subject_id == s]
+        ndf.total /= ndf.total.min()
+        ts = pd.Series(ndf.total, index=ndf.error)
+        series.append(ts)
+
+    final = pd.concat(series)
+    res = final.plot(columns=subjects)
+    return res
+
