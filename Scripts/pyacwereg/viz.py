@@ -499,6 +499,14 @@ def phantom_errors(in_csv, resolution='lo',
 
 def metric_map_plot(in_file):
     import pandas as pd
+    import numpy as np
+    import seaborn as sn
+    import matplotlib.pyplot as plt
+    plt.style.use('ggplot')
+    sn.set_context("talk", font_scale=1.25)
+    plt.rcParams['font.size'] = 24
+
+
     df = pd.read_csv(in_file)
     df.error.fillna(0.0, inplace=True)
     df = df.sort(columns=['subject_id', 'error'])
@@ -511,7 +519,7 @@ def metric_map_plot(in_file):
         ts = ndf.total
         series.append(ts)
 
-    final = pd.DataFrame(series, index=ndf.error, columns=subjects)
-    res = final.plot()
-    return res
+    final = pd.DataFrame(np.array(series).T, index=ndf.error, columns=subjects)
+    final.plot(legend=False)
+    return final
 
