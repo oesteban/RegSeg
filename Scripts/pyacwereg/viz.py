@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-14 11:40:38
+# @Last Modified time: 2015-02-14 11:43:52
 
 
 def add_annotations(values, ax, level, nlevels, color, lastidx, units=''):
@@ -508,10 +508,10 @@ def metric_map_plot(in_file):
     for s in subjects:
         ndf = df[df.subject_id == s]
         ndf.total /= ndf.total.min()
-        ts = pd.Series(ndf.total, index=ndf.error)
+        ts = ndf.total
         series.append(ts)
 
-    final = pd.concat(series)
-    res = final.plot(columns=subjects)
+    final = pd.DataFrame(series, index=ndf.error, columns=subjects)
+    res = final.plot()
     return res
 
