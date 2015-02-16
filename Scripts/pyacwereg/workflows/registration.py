@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-13 13:19:43
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-02-16 13:43:08
 
 import os
 import os.path as op
@@ -108,6 +108,191 @@ def default_regseg(name='REGSEGDefault'):
     wf.inputs.inputnode.f_smooth = [None, None]
     wf.inputs.inputnode.images_verbosity = 1
     wf.inputs.inputnode.convergence_value = [1.0e-6, 1.0e-8]
+    return wf
+
+
+def t2b_workflow(name='T2B', minimal=False, enc_dir=None,
+                 enhance_b0=True, icorr=True):
+    """
+    The T2w-registration based method (T2B) implements an SDC by nonlinear
+    registration of the anatomically correct *T2w* image to the *b0* image
+    of the *dMRI* dataset. The implementation here tries to reproduce the one
+    included in ExploreDTI `(Leemans et al., 2009)
+    <http://www.exploredti.com/ref/ExploreDTI_ISMRM_2009.pdf>`_, which is
+    also based on `(Irfanoglu et al., 2012)
+    <http://dx.doi.org/10.1016/j.neuroimage.2012.02.054>`_.
+
+    :param str name: a unique name for the workflow.
+
+    :inputs:
+
+        * in_t2w: the reference T2w image
+
+    :outputs:
+
+        * outputnode.corrected_image: the dMRI image after correction
+
+
+    Example::
+
+    >>> t2b = t2b_workflow()
+    >>> t2b.inputs.inputnode.in_dwi = 'dwi_brain.nii'
+    >>> t2b.inputs.inputnode.in_bval = 'dwi.bval'
+    >>> t2b.inputs.inputnode.in_mask = 'b0_mask.nii'
+    >>> t2b.inputs.inputnode.in_t2w = 't2w_brain.nii'
+    >>> t2b.run() # doctest: +SKIP
+
+    """
+
+    wf = SDCWorkflow(name=name)
+
+    def _default_params(enc_dir):
+        import pysdcev.data as data
+        if len(enc_dir) == 2:
+            enc_dir = enc_dir[0]
+        return data.get('t2b_params')[enc_dir]
+
+    def _get_last(inlist):
+        return inlist[-1]
+
+    selbmsk = pe.Node(niu.Select(index=2), name='SelectT2msk')
+    avg_b0 = pe.Node(pmisc.ComputeAveragedB0(), name='avg_b0')
+    cache_b0 = pe.Node(niu.IdentityInterface(fields=['b0', 'mask']),
+                       name='B0Cache')
+    t2_msk = pe.Node(fs.Binarize(min=200), name='T2mask')
+    enh_t2 = pe.Node(pmisc.SigmoidFilter(upper_perc=92.0, lower_perc=65.0),
+                     name='enh_T2')
+    reg_param = pe.Node(niu.Function(input_names=['enc_dir'],
+                                     output_names=['out_file'],
+                                     function=_default_params), name='T2BSettings')
+    reg = pe.Node(elastix.Registration(num_threads=1), name='Elastix')
+    tfx_b0 = pe.Node(elastix.EditTransform(), name='tfm_b0')
+    split_dwi = pe.Node(fsl.utils.Split(dimension='t'), name='split_dwi')
+    warp = pe.MapNode(elastix.ApplyWarp(), iterfield=['moving_image'],
+                      name='UnwarpDWIs')
+    warp_prop = pe.Node(elastix.AnalyzeWarp(), name='DisplFieldAnalysis')
+    warpbuff = pe.Node(niu.IdentityInterface(fields=['unwarped']),
+                       name='UnwarpedCache')
+    mskdwis = pe.MapNode(fs.ApplyMask(), iterfield='in_file', name='MaskDWIs')
+    thres = pe.MapNode(Threshold(thresh=0.0), iterfield=['in_file'],
+                       name='RemoveNegs')
+    merge_dwi = pe.Node(fsl.utils.Merge(dimension='t'), name='merge_dwis')
+    tfx_msk = pe.Node(elastix.EditTransform(interpolation='nearest',
+                                            output_type='unsigned char'), name='MSKInterpolator')
+    corr_msk = pe.Node(elastix.ApplyWarp(), name='UnwarpMsk')
+    closmsk = pe.Node(fsl.maths.MathsCommand(nan2zeros=True,
+                                             args='-kernel sphere 3 -dilM -kernel sphere 2 -ero'),
+                      name='MaskClosing')
+
+    wf.connect([
+        ('in',         avg_b0, [('in_dwi', 'in_dwi'),
+                                ('in_bval', 'in_bval')]),
+        ('in',        selbmsk, [('in_segs', 'inlist')]),
+        ('in',      split_dwi, [('in_dwi', 'in_file')]),
+        ('in',       corr_msk, [('in_mask', 'moving_image')]),
+        ('in',         enh_t2, [('in_t2w', 'in_file')]),
+        (selbmsk,      enh_t2, [('out', 'in_mask')]),
+        (reg_param,       reg, [('out_file', 'parameters')]),
+        (enh_t2,          reg, [('out_file', 'fixed_image')]),
+        (cache_b0,        reg, [('b0', 'moving_image'),
+                                ('mask', 'moving_mask')]),
+        (selbmsk,         reg, [('out', 'fixed_mask')]),
+        (reg,          tfx_b0, [(('transform', _get_last), 'transform_file')]),
+        (avg_b0,       tfx_b0, [('out_file', 'reference_image')]),
+        (tfx_b0,    warp_prop, [('output_file', 'transform_file')]),
+        (tfx_b0,         warp, [('output_file', 'transform_file')]),
+        (split_dwi,      warp, [('out_files', 'moving_image')]),
+        (warpbuff,    mskdwis, [('unwarped', 'in_file')]),
+        (closmsk,     mskdwis, [('out_file', 'mask_file')]),
+        (mskdwis,       thres, [('out_file', 'in_file')]),
+        (thres,     merge_dwi, [('out_file', 'in_files')]),
+        (reg,         tfx_msk, [(('transform', _get_last), 'transform_file')]),
+        (avg_b0,      tfx_msk, [('out_file', 'reference_image')]),
+        (tfx_msk,    corr_msk, [('output_file', 'transform_file')]),
+        (corr_msk,    closmsk, [('warped_file', 'in_file')]),
+        (merge_dwi,     'out', [('merged_file', 'dwi')]),
+        (closmsk,       'out', [('out_file', 'dwi_mask')]),
+        (warp_prop,     'out', [('jacdet_map', 'jacobian')])
+    ])
+
+    if icorr:
+        jac_mask = pe.Node(fs.ApplyMask(), name='mask_jac')
+        mult = pe.MapNode(MultiImageMaths(op_string='-mul %s'),
+                          iterfield=['in_file'], name='ModulateDWIs')
+        wf.connect([
+            (closmsk,      jac_mask, [('out_file', 'mask_file')]),
+            (warp_prop,    jac_mask, [('jacdet_map', 'in_file')]),
+            (warp,             mult, [('warped_file', 'in_file')]),
+            (jac_mask,         mult, [('out_file', 'operand_files')]),
+            (mult,         warpbuff, [('out_file', 'unwarped')])
+        ])
+    else:
+        wf.connect([
+            (warp,         warpbuff, [('warped_file', 'unwarped')])
+        ])
+
+    if enhance_b0:
+        enh_b0 = pe.Node(pmisc.EnhanceB0(), name='enh_b0')
+        wf.connect([
+            ('in',           enh_b0, [('in_mask', 'in_mask')]),
+            (avg_b0,         enh_b0, [('out_file', 'in_file')]),
+            (enh_b0,       cache_b0, [('out_file', 'b0'),
+                                      ('out_mask', 'mask')])
+        ])
+    else:
+        wf.connect([
+            ('in',         cache_b0, [('in_mask', 'mask')]),
+            (avg_b0,       cache_b0, [('out_file', 'b0')])
+        ])
+
+    if enc_dir is None:
+        get_mrp = pe.Node(niu.Select(index=[0]), name='GetMRparams')
+        params = pe.Node(nio.JSONFileGrabber(), name='MRIParams')
+        wf.connect([
+            ('in',          get_mrp, [('in_mr_param', 'inlist')]),
+            (get_mrp,        params, [('out', 'in_file')]),
+            (params,      reg_param, [('enc_dir', 'enc_dir')])
+        ])
+    else:
+        reg_param.inputs.enc_dir = enc_dir
+
+    if not minimal:
+        invwarp = pe.Node(fsl.InvWarp(relative=True), name='InvWarp')
+        warpsrf = pe.MapNode(WarpPoints(), iterfield=['points'],
+                             name='UnwarpSurfs')
+
+        tfx_tpms = pe.Node(elastix.EditTransform(interpolation='linear',
+                                                 output_type='float'),
+                           name='TPMInterpolator')
+        corr_tpm = pe.MapNode(elastix.ApplyWarp(), iterfield=['moving_image'],
+                              name='UnwarpTPMs')
+        normtpm = pe.Node(NormalizeTPM(), name='NormTPMs')
+        tfx_segs = pe.Node(elastix.EditTransform(interpolation='nearest',
+                                                 output_type='unsigned short'),
+                           name='NNInterpolator')
+        corr_segs = pe.MapNode(elastix.ApplyWarp(), iterfield=['moving_image'],
+                               name='UnwarpSegs')
+
+        wf.connect([
+            (reg,       tfx_segs, [(
+                ('transform', _get_last), 'transform_file')]),
+            (tfx_segs, corr_segs, [('output_file', 'transform_file')]),
+            ('in',     corr_segs, [('in_segs', 'moving_image')]),
+            ('in',       warpsrf, [('in_surf', 'points')]),
+            (warp_prop,  invwarp, [('disp_field', 'warp')]),
+            (avg_b0,     invwarp, [('out_file', 'reference')]),
+            (invwarp,    warpsrf, [('inverse_warp', 'warp')]),
+            (reg,       tfx_tpms, [
+                (('transform', _get_last), 'transform_file')]),
+            (tfx_tpms,  corr_tpm, [('output_file', 'transform_file')]),
+            ('in',      corr_tpm, [('in_tpms', 'moving_image')]),
+            (corr_segs,    'out', [('warped_file', 'segs')]),
+            (corr_tpm,   normtpm, [('warped_file', 'in_files')]),
+            (selbmsk,    normtpm, [('out', 'in_mask')]),
+            (normtpm,      'out', [('out_files', 'tpms')]),
+            (warpsrf,      'out', [('out_points', 'surf')])
+        ])
+
     return wf
 
 
