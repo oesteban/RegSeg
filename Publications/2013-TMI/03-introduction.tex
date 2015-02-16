@@ -4,27 +4,41 @@
 
 \IEEEPARstart{N}{onlinear} registration of images is a challenging task ubiquitous
   in an endless number of image analysis applications.
-The problem is solved finding a spatial mapping $U$ that aligns the
-  information given in two different coordinate systems (generally called
+The process aims to find a spatial mapping $U$ that aligns the information available
+  in two different coordinate systems (generally called
   \emph{reference}, $R$, and \emph{moving}, $M$):
   \begin{align}
   U\colon R \subset \mathbb{R}^n &\to M \subset \mathbb{R}^n \notag\\
   \vec{r} &\mapsto \vec{r}' =\vec{r}+u(\vec{r}),
   \label{eq:transform}
   \end{align}
-  where $\vec{r}$ denotes a position in the reference domain and $\vec{r}'$
-  its corresponding location in the target, and $n$ the dimension of domains
-  ($n=3$ for 3D images).
-Finally, $\vec{u} = u(\vec{r})$ is the function that models the displacement
-  of every point in the reference domain.
-
-The wide range of applications has derived in an intensive generation of diverse
-  registration methods.
-In a recent and comprehensive survey by \citeauthor{sotiras_deformable_2013}
-  \citep{sotiras_deformable_2013}, registration methods are classified by
-  matching criteria, deformation model, and optimization method.
+  where $\vec{r}$ denotes a position in the reference domain $R$, $\vec{r}'$ is
+  its corresponding location in $M$, and $n$ the dimensionality of images.
+Finally, $\vec{u} = u(\vec{r})$ is the displacement of every point with respect
+  to the reference domain.
+A comprehensive survey by \citeauthor{sotiras_deformable_2013} \citep{sotiras_deformable_2013}
+  illustrates the wide variety of existing registration methodologies.
+They classify the algorithms by the three principal building blocks that can be identified
+  among methods: the matching criteria or similarity function to evaluate the proximity of
+  the solution, the deformation model that may implement theoretical properties and constraints
+  of the mapping in the selected application, and the optimization method or search strategy.
 The most widespread matching criteria are probably the so-called \emph{iconic
-  methods} in \citep{sotiras_deformable_2013}.
+  methods} \citep{sotiras_deformable_2013}.
+These algorithms require the definition of an appropriate function on the voxel-wise information
+  content of both images.
+A second group, called \emph{geometric methods}, measure distances between features derived from
+  corresponding objects defined in both spaces, such as landmarks, shapes, surfaces, etc.
+Finally, \emph{hybrid methods} combine properties of the iconic and geometric methods.
+As reviewed in \citep{sotiras_deformable_2013}, an important research effort has been devoted to
+  study application-oriented matching criteria.
+
+
+Currently uprising applications, such as the extraction of connectivity networks from
+  diffusion \gls*{mri} \citep{craddock_imaging_2013}, demand for improved approaches
+  that outperform existing techniques.
+We propose the image registration -based solution to correct for the
+  susceptibility distortions in \gls*{dmri} of the brain ,
+  that is involved in the extraction of the structural connectivity map of the brain.
 However they are not appropriate for all the registration problems
   \citep{greve_accurate_2009}.
 They propose a \emph{hybrid method} \citep{sotiras_deformable_2013} for the
@@ -42,49 +56,11 @@ Our approach differs with \citep{greve_accurate_2009} in two fundamental
 And 2) our matching criteria does not necessarily need for clear intensity
   steps at the tissue interfaces where surfaces must be fitted.
 
-\subsection{Related work}
-\label{sec:methods_background}
-Registration-segmentation methods are typically built including a deformation
-  model to guide the evolution of a segmentation algorithm.
-Even though some Bayesian approaches have been proposed to solve the joint problem
-  \citep{wyatt_map_2003}, segmentation is usually performed using an evolving
-  active contour \citep{chan_active_2001} that normally includes a shape prior
-  term to the energy functional \citep{chen_using_2002,bresson_variational_2006,
-  chan_level_2005,cremers_kernel_2006,gastaud_combining_2004}.
-These methods generally have an explicit description of the expected relative boundary
-  locations of the object to be delineated, and some, even model the statistical deviations
-  from this average shape.
+The hypothesis underpinning this research is that, in those situations,
+  image registration can be reliably performed by searching for homogeneous
+  regions in one image corresponding to a prior knowledge of the shape of objects in
+  the moving coordinate system.
 
-
-An early ``morphing''-segmentation approach was proposed in \citep{bertalmio_morphing_2000},
-  and the first proper registration method was presented by \citeauthor{yezzi_variational_2001}
-  \citep{yezzi_variational_2001}, where the energy functional is defined simultaneously in the target
-  and reference images with an affine transformation supporting the coordinates mapping
-  (the so-called ``2 \glspl*{pde} approach'').
-\citeauthor{vemuri_joint_2003} proposed the first atlas-based registration \citep{vemuri_joint_2003}
-  based on the level-sets framework and using only one \gls*{pde}.
-The principal application of these techniques was the image registration between timesteps in
-  a time-series or between different images \citep{paragios_level_2003}.
-\citeauthor{unal_coupled_2005} \citep{unal_coupled_2005} extended the idea of
-  \citep{bertalmio_morphing_2000,yezzi_variational_2001} to nonlinear registration
-  using a free deformation field model.
-A summary of these second set of techniques is performed in \citep{droske_mumfordshah_2009},
-  proposing two different approaches to applying the Mumford-Shah \citep{mumford_optimal_1989}
-  functional in joint registration and segmentation, through the propagation of the deformation
-  field from the contours to the whole image definition.
-Finally, \citeauthor{gorthi_active_2011} presented a comprehensive generalization of the
-  existing methodologies \citep{gorthi_active_2011} based on the level-sets approximation.
-Even though the historical evolution of joint segmentation and registration procedures is strongly
-  linked to the level sets approximation, our work is based in derivations of the \acrlong{acwe}
-  framework \citep{chan_active_2001}, and related to \citep{guyader_combined_2011}.
-
-
-Finally, a derivation of the latter group is composed by atlas-based segmentation methods
-  \citep{gorthi_segmentation_2009,gorthi_active_2011,pohl_unifying_2005,pohl_bayesian_2006,
-  wang_joint_2006}, where the prior imposes consistent voxel-based classification of contiguous
-  regions.
-A comprehensive summary of the methodologies derived from the \gls{acwe} model, with special attention
-  to joint registration-segmentation methods is found in \citep{gorthi_active_2011}.
 
 %{\color{red} {The main diverging points with respect to
 %\citep{gorthi_active_2011} are: 1) there is no need for an explicit level set function
@@ -99,10 +75,7 @@ A comprehensive summary of the methodologies derived from the \gls{acwe} model, 
 %the distance function, and the spectral solution to the optimization updates,
 %as we shall cover in \autoref{sec:numerical_implementation}.}}
 
-\subsection{Susceptibility-derived distortions}
 
-\subsection{Our framework}
-\label{sec:our_framework}
 
 %In this paper we formulate the joint registration-segmentation
 %problem as follows.

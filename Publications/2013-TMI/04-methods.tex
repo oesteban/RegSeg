@@ -2,6 +2,49 @@
 \section{Methods}
 \label{sec:methods}
 %
+\subsection{Related work}
+\label{sec:methods_background}
+Registration-segmentation methods are typically built including a deformation
+  model to guide the evolution of a segmentation algorithm.
+Even though some Bayesian approaches have been proposed to solve the joint problem
+  \citep{wyatt_map_2003}, segmentation is usually performed using an evolving
+  active contour \citep{chan_active_2001} that normally includes a shape prior
+  term to the energy functional \citep{chen_using_2002,bresson_variational_2006,
+  chan_level_2005,cremers_kernel_2006,gastaud_combining_2004}.
+These methods generally have an explicit description of the expected relative boundary
+  locations of the object to be delineated, and some, even model the statistical deviations
+  from this average shape.
+
+
+An early ``morphing''-segmentation approach was proposed in \citep{bertalmio_morphing_2000},
+  and the first proper registration method was presented by \citeauthor{yezzi_variational_2001}
+  \citep{yezzi_variational_2001}, where the energy functional is defined simultaneously in the target
+  and reference images with an affine transformation supporting the coordinates mapping
+  (the so-called ``2 \glspl*{pde} approach'').
+\citeauthor{vemuri_joint_2003} proposed the first atlas-based registration \citep{vemuri_joint_2003}
+  based on the level-sets framework and using only one \gls*{pde}.
+The principal application of these techniques was the image registration between timesteps in
+  a time-series or between different images \citep{paragios_level_2003}.
+\citeauthor{unal_coupled_2005} \citep{unal_coupled_2005} extended the idea of
+  \citep{bertalmio_morphing_2000,yezzi_variational_2001} to nonlinear registration
+  using a free deformation field model.
+A summary of these second set of techniques is performed in \citep{droske_mumfordshah_2009},
+  proposing two different approaches to applying the Mumford-Shah \citep{mumford_optimal_1989}
+  functional in joint registration and segmentation, through the propagation of the deformation
+  field from the contours to the whole image definition.
+Finally, \citeauthor{gorthi_active_2011} presented a comprehensive generalization of the
+  existing methodologies \citep{gorthi_active_2011} based on the level-sets approximation.
+Even though the historical evolution of joint segmentation and registration procedures is strongly
+  linked to the level sets approximation, our work is based in derivations of the \acrlong{acwe}
+  framework \citep{chan_active_2001}, and related to \citep{guyader_combined_2011}.
+
+
+Finally, a derivation of the latter group is composed by atlas-based segmentation methods
+  \citep{gorthi_segmentation_2009,gorthi_active_2011,pohl_unifying_2005,pohl_bayesian_2006,
+  wang_joint_2006}, where the prior imposes consistent voxel-based classification of contiguous
+  regions.
+A comprehensive summary of the methodologies derived from the \acrlong{acwe} model, with special attention
+  to joint registration-segmentation methods is found in \citep{gorthi_active_2011}.
 
 \subsection{Cost-function derivation}
 \label{sec:methods_map}
