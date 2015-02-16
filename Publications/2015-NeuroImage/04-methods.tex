@@ -1,4 +1,109 @@
 % -*- root: 00-main.tex -*-
+
+
+
+%{\color{red} {The main diverging points with respect to
+%\citep{gorthi_active_2011} are: 1) there is no need for an explicit level set function
+%$\Phi_G$, as we replace the level set gradient computation $N_{\Phi_G}$ with shape
+%gradients \citep{besson_dream2s_2003,herbulot_segmentation_2006};
+%2) regularization is also based on linear diffusion smoothing \citep{thirion_image_1998},
+%but we replace the Gaussian filtering by other constraints
+%studied in \citep{nagel_investigation_1986} to better the problem;
+%3) optimization is applied in the spectral
+%domain, observing anisotropic and inhomogeneous mappings along each direction.
+%With respect \citep{guyader_combined_2011}, the main differences are
+%the distance function, and the spectral solution to the optimization updates,
+%as we shall cover in \autoref{sec:numerical_implementation}.}}
+
+
+
+%In this paper we formulate the joint registration-segmentation
+%problem as follows.
+%such that the known contours in anatomical space $T$ optimally segment
+%the diffusion space $D$.
+%
+%
+%Whereas related \glspl*{adf} introduced in \autoref{sec:methods_background}
+%make use of explicit level-set formulations to solve \eqref{eq:gradient_descent},
+%we alternatively use \emph{shape-gradients}
+%\cite{besson_dream2s_2003,herbulot_segmentation_2006}.
+
+%
+%Let us denote by $\vec{x}$ the voxel and $F(\vec{x}) = [ f_1, f_2, \ldots, f_N]^T$
+%  its associated feature vector in the following.
+%
+%In our application, these surfaces are precise tissue interfaces of interest extracted
+%  from a high-resolution, anatomically correct reference volume using
+%  the well-established
+%
+%In this paper we propose a novel registration framework to simultaneously
+%solving the segmentation, distortion and cortical parcellation challenges,
+%by exploiting as strong shape-prior the detailed morphology extracted
+%from high-resolution and anatomically correct \gls{mri}.
+%Indeed, hereafter
+%we assume this segmentation problem in anatomical images is reliably and
+%accurately solved with readily available tools (e.g.
+%\citep{fischl_freesurfer_2012}).
+%After global alignment with \gls{t1} using existing approaches, the remaining
+%spatial mismatch between anatomical and diffusion space is due to susceptibility
+%distortions.
+%Finally, we need to establish precise spatial correspondence between the
+%surfaces in both spaces, including the tangential direction for parcellation.
+%Therefore, we can reduce the problem to finding the differences of spatial
+%distortion in between anatomical and \gls{dwi} space.
+%We thus reformulate the segmentation problem as an inverse problem, where we
+%seek for an underlying deformation field (the distortion) mapping
+%from the structural space into the diffusion space, such that the structural
+%contours segment optimally the \gls{dwi} data.
+%In the process, the one-to-one
+%correspondence between the contours in both spaces is guaranteed, and projection
+%of parcellisation to \gls{dwi} space is implicit and consistent.
+%
+%We test our proposed joint segmentation-registration model on two different
+%synthetic examples.
+%The first example is a scalar sulcus model, where the
+%\gls{csf}-\gls{gm} boundary particularly suffers from \gls{pve} and can only be
+%segmented correctly thanks to the shape prior and its coupling with the inner,
+%\gls{gm}-\gls{wm} boundary through the imposed deformation field regularity.
+%The second case deals with more realistic \gls{dwi} data stemming from
+%phantom simulations of a simplistic brain data.
+%Again, we show that the
+%proposed model successfully segments the \gls{dwi} data based on two derived
+%scalar features, namely \gls{fa} and \gls{md}, while establishing an estimate
+%of the dense distortion field.
+%
+%The rest of this paper is organized as follows.
+%First, in \autoref{sec:methods}
+%we introduce our proposed model for joint multivariate segmentation-registration.
+%Then we provide a more detailed description of the data and experimental setup in
+%\autoref{sec:experiments}.
+%We present results in \autoref{sec:results} and conclude
+%in \autoref{sec:conclusion}.
+%
+%
+%The properties of the reconstructed tensors and derived scalar maps have
+%been studied by \cite{ennis_orthogonal_2006}. Based on their
+%findings, \gls{fa}~\eqref{eq:fa} and \gls{md}~\eqref{eq:md} are
+%considered complementary features, and therefore we selected them for the
+%energy model \eqref{eq:complete_energy} in driving the
+%registration-segmentation process.
+%Whereas \gls{fa} informs mainly about the \emph{shape} of diffusion,
+%the \gls{md} is more related to the \emph{magnitude} of the process:
+%
+%\begin{align}
+%\mathrm{FA} &= \sqrt{ \frac{1}{2}}\,\frac{\sqrt{ (\lambda_1 - \lambda_2)^2 + (\lambda_2 - \lambda_3)^2 + (\lambda_3 - \lambda_1)^2}}{\sqrt{ {\lambda_1}^2 + {\lambda_2}^2 + {\lambda_3}^2}} \label{eq:fa} \\
+%\mathrm{MD} &= ( \lambda_1 + \lambda_2 + \lambda_3 ) / 3 \label{eq:md}
+%\end{align}
+%where $\lambda_i$ are the eigenvalues of the diffusion tensor
+%associated with the diffusion signal $S(\vec{q})$. There exist
+%two main reasons to justify their choice.
+%First, they are well-understood and standardized in clinical routine.
+%Second, together they contain most of the information that is
+%usually extracted from the \gls{dwi}-derived scalar maps
+%\cite{ennis_orthogonal_2006}.
+%
+
+
 \section{Methods}
 \label{sec:methods}
 %
@@ -6,14 +111,14 @@
 \label{sec:methods_background}
 Registration-segmentation methods are typically built including a deformation
   model to guide the evolution of a segmentation algorithm.
-Even though some Bayesian approaches have been proposed to solve the joint problem
-  \citep{wyatt_map_2003}, segmentation is usually performed using an evolving
-  active contour \citep{chan_active_2001} that normally includes a shape prior
+Even though some Bayesian approaches have been proposed to jointly solve the problem
+  \citep{wyatt_map_2003,gass_simultaneous_2014}, segmentation is usually performed using
+  an evolving active contour \citep{chan_active_2001} that normally includes a shape prior
   term to the energy functional \citep{chen_using_2002,bresson_variational_2006,
   chan_level_2005,cremers_kernel_2006,gastaud_combining_2004}.
-These methods generally have an explicit description of the expected relative boundary
-  locations of the object to be delineated, and some, even model the statistical deviations
-  from this average shape.
+These methods generally have an inplicit description of the relative boundary locations of the objects
+  to be delineated using level sets, and some even model the statistical deviations from original
+  shape.
 
 
 An early ``morphing''-segmentation approach was proposed in \citep{bertalmio_morphing_2000},
@@ -29,15 +134,14 @@ The principal application of these techniques was the image registration between
   \citep{bertalmio_morphing_2000,yezzi_variational_2001} to nonlinear registration
   using a free deformation field model.
 A summary of these second set of techniques is performed in \citep{droske_mumfordshah_2009},
-  proposing two different approaches to applying the Mumford-Shah \citep{mumford_optimal_1989}
-  functional in joint registration and segmentation, through the propagation of the deformation
-  field from the contours to the whole image definition.
+  proposing two different approaches to applying the Mumford-Shah functiona
+  \citep{mumford_optimal_1989} in simultaneous registration-segmentation, through the propagation
+  of the deformation field from the contours to the whole image definition.
 Finally, \citeauthor{gorthi_active_2011} presented a comprehensive generalization of the
   existing methodologies \citep{gorthi_active_2011} based on the level-sets approximation.
 Even though the historical evolution of joint segmentation and registration procedures is strongly
-  linked to the level sets approximation, our work is based in derivations of the \acrlong{acwe}
-  framework \citep{chan_active_2001}, and related to \citep{guyader_combined_2011}.
-
+  linked to the level sets approach, our method conversely used the explicit representation of
+  the evolving surfaces.
 
 Finally, a derivation of the latter group is composed by atlas-based segmentation methods
   \citep{gorthi_segmentation_2009,gorthi_active_2011,pohl_unifying_2005,pohl_bayesian_2006,
@@ -45,6 +149,9 @@ Finally, a derivation of the latter group is composed by atlas-based segmentatio
   regions.
 A comprehensive summary of the methodologies derived from the \acrlong{acwe} model, with special attention
   to joint registration-segmentation methods is found in \citep{gorthi_active_2011}.
+is based in derivations of the \acrlong{acwe}
+  framework \citep{chan_active_2001}, and related to \citep{guyader_combined_2011}.
+
 
 \subsection{Cost-function derivation}
 \label{sec:methods_map}
