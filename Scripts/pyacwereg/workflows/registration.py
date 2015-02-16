@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-16 13:43:08
+# @Last Modified time: 2015-02-16 14:47:13
 
 import os
 import os.path as op
@@ -143,28 +143,17 @@ def t2b_workflow(name='T2B', minimal=False, enc_dir=None,
     >>> t2b.run() # doctest: +SKIP
 
     """
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=['in_dwi', 'in_bval', 'in_t2w', 'dwi_mask', 't2w_mask',
+                'in_param']), name='inputnode')
 
-    wf = SDCWorkflow(name=name)
-
-    def _default_params(enc_dir):
-        import pysdcev.data as data
-        if len(enc_dir) == 2:
-            enc_dir = enc_dir[0]
-        return data.get('t2b_params')[enc_dir]
-
-    def _get_last(inlist):
-        return inlist[-1]
-
-    selbmsk = pe.Node(niu.Select(index=2), name='SelectT2msk')
     avg_b0 = pe.Node(pmisc.ComputeAveragedB0(), name='avg_b0')
     cache_b0 = pe.Node(niu.IdentityInterface(fields=['b0', 'mask']),
                        name='B0Cache')
-    t2_msk = pe.Node(fs.Binarize(min=200), name='T2mask')
     enh_t2 = pe.Node(pmisc.SigmoidFilter(upper_perc=92.0, lower_perc=65.0),
                      name='enh_T2')
-    reg_param = pe.Node(niu.Function(input_names=['enc_dir'],
-                                     output_names=['out_file'],
-                                     function=_default_params), name='T2BSettings')
+    reg_param = pe.Node(nii.JSONFileGrabber(defaults={'enc_dir': 'y'}),
+                        name='T2BSettings')
     reg = pe.Node(elastix.Registration(num_threads=1), name='Elastix')
     tfx_b0 = pe.Node(elastix.EditTransform(), name='tfm_b0')
     split_dwi = pe.Node(fsl.utils.Split(dimension='t'), name='split_dwi')
@@ -177,20 +166,22 @@ def t2b_workflow(name='T2B', minimal=False, enc_dir=None,
     thres = pe.MapNode(Threshold(thresh=0.0), iterfield=['in_file'],
                        name='RemoveNegs')
     merge_dwi = pe.Node(fsl.utils.Merge(dimension='t'), name='merge_dwis')
-    tfx_msk = pe.Node(elastix.EditTransform(interpolation='nearest',
-                                            output_type='unsigned char'), name='MSKInterpolator')
+    tfx_msk = pe.Node(elastix.EditTransform(
+        interpolation='nearest', output_type='unsigned char'),
+        name='MSKInterpolator')
     corr_msk = pe.Node(elastix.ApplyWarp(), name='UnwarpMsk')
-    closmsk = pe.Node(fsl.maths.MathsCommand(nan2zeros=True,
-                                             args='-kernel sphere 3 -dilM -kernel sphere 2 -ero'),
-                      name='MaskClosing')
+    closmsk = pe.Node(fsl.maths.MathsCommand(
+        nan2zeros=True, args='-kernel sphere 3 -dilM -kernel sphere 2 -ero'),
+        name='MaskClosing')
 
+    wf = pe.Workflow(name=name)
     wf.connect([
-        ('in',         avg_b0, [('in_dwi', 'in_dwi'),
+        (inputnode,    avg_b0, [('in_dwi', 'in_dwi'),
                                 ('in_bval', 'in_bval')]),
-        ('in',        selbmsk, [('in_segs', 'inlist')]),
-        ('in',      split_dwi, [('in_dwi', 'in_file')]),
-        ('in',       corr_msk, [('in_mask', 'moving_image')]),
-        ('in',         enh_t2, [('in_t2w', 'in_file')]),
+        (inputnode,   selbmsk, [('in_segs', 'inlist')]),
+        (inputnode, split_dwi, [('in_dwi', 'in_file')]),
+        (inputnode,  corr_msk, [('in_mask', 'moving_image')]),
+        (inputnode,    enh_t2, [('in_t2w', 'in_file')]),
         (selbmsk,      enh_t2, [('out', 'in_mask')]),
         (reg_param,       reg, [('out_file', 'parameters')]),
         (enh_t2,          reg, [('out_file', 'fixed_image')]),
@@ -234,27 +225,16 @@ def t2b_workflow(name='T2B', minimal=False, enc_dir=None,
     if enhance_b0:
         enh_b0 = pe.Node(pmisc.EnhanceB0(), name='enh_b0')
         wf.connect([
-            ('in',           enh_b0, [('in_mask', 'in_mask')]),
+            (inputnode,      enh_b0, [('in_mask', 'in_mask')]),
             (avg_b0,         enh_b0, [('out_file', 'in_file')]),
             (enh_b0,       cache_b0, [('out_file', 'b0'),
                                       ('out_mask', 'mask')])
         ])
     else:
         wf.connect([
-            ('in',         cache_b0, [('in_mask', 'mask')]),
+            (inputnode,    cache_b0, [('in_mask', 'mask')]),
             (avg_b0,       cache_b0, [('out_file', 'b0')])
         ])
-
-    if enc_dir is None:
-        get_mrp = pe.Node(niu.Select(index=[0]), name='GetMRparams')
-        params = pe.Node(nio.JSONFileGrabber(), name='MRIParams')
-        wf.connect([
-            ('in',          get_mrp, [('in_mr_param', 'inlist')]),
-            (get_mrp,        params, [('out', 'in_file')]),
-            (params,      reg_param, [('enc_dir', 'enc_dir')])
-        ])
-    else:
-        reg_param.inputs.enc_dir = enc_dir
 
     if not minimal:
         invwarp = pe.Node(fsl.InvWarp(relative=True), name='InvWarp')
@@ -277,15 +257,15 @@ def t2b_workflow(name='T2B', minimal=False, enc_dir=None,
             (reg,       tfx_segs, [(
                 ('transform', _get_last), 'transform_file')]),
             (tfx_segs, corr_segs, [('output_file', 'transform_file')]),
-            ('in',     corr_segs, [('in_segs', 'moving_image')]),
-            ('in',       warpsrf, [('in_surf', 'points')]),
+            (inputnode, corr_segs, [('in_segs', 'moving_image')]),
+            (inputnode,  warpsrf, [('in_surf', 'points')]),
             (warp_prop,  invwarp, [('disp_field', 'warp')]),
             (avg_b0,     invwarp, [('out_file', 'reference')]),
             (invwarp,    warpsrf, [('inverse_warp', 'warp')]),
             (reg,       tfx_tpms, [
                 (('transform', _get_last), 'transform_file')]),
             (tfx_tpms,  corr_tpm, [('output_file', 'transform_file')]),
-            ('in',      corr_tpm, [('in_tpms', 'moving_image')]),
+            (inputnode, corr_tpm, [('in_tpms', 'moving_image')]),
             (corr_segs,    'out', [('warped_file', 'segs')]),
             (corr_tpm,   normtpm, [('warped_file', 'in_files')]),
             (selbmsk,    normtpm, [('out', 'in_mask')]),
