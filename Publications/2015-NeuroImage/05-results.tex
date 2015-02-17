@@ -35,21 +35,5 @@ Consequently, we used the non-parametric Wilcoxon signed-rank test along with Bo
 Averaged errors resulted significantly lower than voxel resolution with $p < (0.001 / 150)$
   for all the tests (4 phantom types $\times$ 2 resolutions).
 
-\subsection*{Distortion correction on real datasets}
+\subsection*{Correction of distortions on real datasets}
 \label{sec:results_hcp}
-
-As we propose the \gls*{fa} and the \gls*{md} as target features, we
-  implemented a simplified pipeline for processing \gls*{dmri} using
-  \emph{MRtrix} \citep{tournier_mrtrix_2012}.
-\todo[inline]{insert here the summary of parameters}
-
-Selecting the appropriate labels in the \emph{aparc} segmentation, we applied
-  the marching-cubes algorithm again to extract priors of the following
-  homogeneous regions in terms of \gls*{fa} and \gls*{md} joint distribution:
-\begin{itemize}
-	\item \gls*{csf} of the ventricular system,
-	\item deep \gls*{gm} structures,
-	\item \gls*{wm} surface as the ensemble of brain stem, and
-	  cerebellar and cerebral \gls*{wm},
-	\item cortical \gls*{gm} surface, including cerebellar \gls*{gm}.
-\end{itemize}

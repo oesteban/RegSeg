@@ -119,32 +119,37 @@ These methods either have an implicit description of the relative boundary locat
   objects to be delineated using level sets \citep{chen_using_2002,bresson_variational_2006,
   chan_level_2005}, or model the statistical deviations from original shape
   \citep{cremers_kernel_2006,gastaud_combining_2004}.
-Some Bayesian approaches have been proposed as well \citep{wyatt_map_2003,gass_simultaneous_2014}.
+Some Bayesian approaches have been proposed as well
+  \citep{wyatt_map_2003,pohl_bayesian_2006,gass_simultaneous_2014}.
 In \autoref{sec:methods_map} we start from a probabilistic framework to finally propose
 	a cost function defined on the location of explicit surfaces, showing the duality of the
 	existing approaches.
 
 An early ``morphing''-segmentation approach was proposed in \citep{bertalmio_morphing_2000}.
-Soonly, \cite{yezzi_variational_2001} presented the first method including a full solution to
+Shortly, \cite{yezzi_variational_2001} presented the first method including a full solution to
   the registration, where the energy functional is defined simultaneously in the target
-  and reference images with an affine transformation supporting the coordinates mapping
-  (the so-called ``2 \glspl*{pde} approach'').
-\cite{vemuri_joint_2003} proposed the first atlas-based registration based on the level sets
-  framework and using only one \gls*{pde}.
+  and reference images with an affine transformation supporting the coordinates mapping.
+\cite{vemuri_joint_2003} proposed an atlas-based registration using a level sets
+  framework and only one \gls*{pde} for first.
 The principal application of these techniques was the image registration between timesteps in
   a time-series or between different images \citep{paragios_level_2003}.
-\cite{unal_coupled_2005} extended the idea of \citep{yezzi_variational_2001} to nonlinear
-  registration using a free deformation field model.
+\cite{unal_coupled_2005} and later \cite{wang_joint_2006},
+  extended the ``two \glspl*{pde}'' method of \cite{yezzi_variational_2001}
+  to nonlinear registration with a free deformation field.
 \cite{droske_mumfordshah_2009} reviewed the latter set of techniques, and proposed two different
   approaches to apply the Mumford-Shah functional \citep{mumford_optimal_1989} in simultaneous
   registration-segmentation, through the propagation of the deformation field from
   the contours to the whole image definition.
 Finally, \cite{gorthi_active_2011} presented a comprehensive generalization of the
-  existing methodologies based on the level sets approximation.
-
-\todo[inline]{Revise these references and include if necessary:
-  \citep{pohl_unifying_2005,pohl_bayesian_2006,wang_joint_2006,guyader_combined_2011}}
-
+  existing methodologies based on the level sets approximation in the application of
+  atlas-based segmentation.
+A recent solution of the segmentation-registration problem close to the one proposed here was
+  presented by \cite{guyader_combined_2011}.
+Our method differs on two key features:
+  it allows multiple active contours for segmentation, and the regularization strategy.
+Whereas \cite{guyader_combined_2011} proposed a nonlinear elasticity smoother, we rely on
+  the smoothing effects of the deformation field and the anisotropic regularization
+  proposed by \cite{nagel_investigation_1986}.
 
 
 \subsection*{Cost-function derivation}
@@ -450,9 +455,29 @@ For the evaluation of the algorithm on real \gls*{dmri} data of human brains,
 	 database of the \gls*{hcp}.
 We refer the reader to \citep{essen_human_2012} for exact details about acquisition
   parameters, and \citep{glasser_minimal_2013} for the preprocessing issues.
-The datasets comprehend \gls*{t1}, \gls*{t2} and multi-shell \gls*{dmri} images
-  already corrected for artifacts, brain-extracted and spatially normalized,
-  along with the most prominent results of the standard processing with
-  \emph{FreeSurfer}: \emph{aparc} segmentations, and the surfaces corresponding to
-  the cortical \gls*{gm} exterior and the \gls*{wm} interface with
-  cortical \gls*{gm}.
+The datasets comprehend a large of images, containing \gls*{t1}, \gls*{t2} and
+  multi-shell \gls*{dmri} images.
+The original acquisitions are released within ``unprocessed'' packages, and
+  the ``minimally preprocessed'' are corrected for artifacts, brain-extracted
+  and spatially normalized, along with some results of the standard processing with
+  \emph{FreeSurfer}.
+
+Selecting the appropriate labels in the \emph{aparc} segmentation, we applied
+  the marching-cubes algorithm again to extract the surface of the following
+  six homogeneous regions $\Omega_l$:
+  1) the thalamus;
+  2) \gls*{csf} of the ventricular system and deep \gls*{gm} structures;
+  3) cerebral \gls*{wm};
+  4) brain stem and cerebellar \gls*{wm};
+	5) cerebellar \gls*{gm}; and
+	6) cortical \gls*{gm} surface.
+The choice of this particular model of homogeneous regions responds to the joint distribution
+  of \gls*{fa} and \gls*{adc} of the human brain, as shown in the {\color{red} Supplemental
+  Materials (Figure XX)}.
+
+In this case, we derived the deformation $U_{true}^{-1}$ from the field maps released with
+  the corresponding packages of each dataset from the \gls*{hcp},
+  mimicking the real distortions, using a derivation of our previous work
+  \citep{esteban_simulationbased_2014}.
+After warping the original \gls*{dmri} with $U_{true}^{-1}$, we computed the \gls*{dti} and
+  the derived scalars (\gls*{fa} and \gls*{adc}) using \emph{MRtrix} \citep{tournier_mrtrix_2012}.

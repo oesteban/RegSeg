@@ -26,11 +26,9 @@ The possibly most widespread matching criteria are those classified as \emph{ico
   methods} in \citep{sotiras_deformable_2013}.
 These algorithms require the definition of an appropriate function on the voxel-wise information
   content of both images.
-A second group, called \emph{geometric methods}, measures distances between features derived from
+A second group, called \emph{geometric methods}, align geometrical features derived from
   corresponding objects defined in both spaces, such as landmarks, shapes, surfaces, etc.
-Finally, \emph{hybrid methods} combine properties of the iconic and geometric methods.
-As reviewed in \citep{sotiras_deformable_2013}, an important research effort has been devoted to
-  study application-oriented matching criteria.
+Finally, \emph{hybrid methods} map geometrical features and voxel-wise information.
 
 In this work we propose a hybrid approach to nonlinear registration of anatomically correct
   and precise surfaces to warped and low-resolution \gls*{dmri} of the brain.
@@ -53,7 +51,7 @@ First, we use a nonlinear deformation model that enables the correction of the
   susceptibility-derived distortions \citep{jezzard_correction_1995}.
 Second, our matching criteria does not necessarily need for clear intensity
   steps at the tissue interfaces where surfaces must be fitted, thanks to the use of
-  active contours without edges \cite{chan_active_2001}.
+  active contours without edges \citep{chan_active_2001}.
 The hypothesis underpinning our research is that, in those situations,
   image registration can be reliably performed by searching for homogeneous
   regions in one image corresponding to a prior knowledge of the shape of objects in

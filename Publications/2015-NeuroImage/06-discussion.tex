@@ -1,19 +1,33 @@
 % -*- root: 00-main.tex -*-
 \section*{Discussion}
 \label{sec:discussion}
-We propose a registration-segmentation algorithm designed for biomedical
+We propose a joint registration and segmentation algorithm designed for biomedical
   image analyses that are affected by all or some of the following circumstances:
-  \begin{itemize}
-  	\item Reference and target images do not present appropriate contrasts to
+  i) reference and target images do not present appropriate contrasts to
   	perform volume-based registration reliably, or there is not available an apt image
- 		to be used as reference.
-  	\item The low resolution of the target volume produces strong partial volume effects
+ 		to be used as reference;
+  ii) the low resolution of the target volume produces strong partial volume effects
   	that exclude the use of voxel-wise segmentation algorithms and hinder volume-based
-  	registration.
-  	\item The unknown warping is smooth enough to be represented with a sufficient number
-  	of BSpline kernels, and its explicit need is justified (i.e. the distortion
-  	field in \gls*{dmri} images, object tracking applications, etc.).
-  \end{itemize}
+  	registration; and,
+  iii) the estimation of the unknown warping is explicitly needed and the
+    deformation field is smooth enough to be represented with a sufficient number
+  	of B-Spline kernels (i.e. the distortion in \gls*{dmri} images,
+  	object tracking in time series, etc.).
+The registration method performs the segmentation of the target image in homogeneous
+  and competing regions defined by explicit active contours.
+We chose active contours without edges as we were interested on segmenting homogeneous
+  regions of diffusion properties within the brain.
+Finally, a B-Spline deformation field supports and keeps track of the evolution of the
+  active contours.
+Iteratively, the active contours are updated following the instant shape gradients
+  \citep{herbulot_segmentation_2006} with a gradient descent strategy.
+In section \nameref{sec:methods_background}, we framed our method within the current
+  state-of-art and defined the novelty of our approach.
+
+To support our claim that images can be simultaneously segmented and registered to a
+  reference coordinate system, we conducted evaluation experiments on digital
+  simulated phantoms and real datasets.
+
 The algorithm is designed for the proposed application on correcting distortions of
   \gls*{dmri} data, a required preliminary step to extract the structural connectivity
   networks.
@@ -29,13 +43,15 @@ The first solves the linear registration of the \gls*{t1} and \gls*{dmri} data (
   derived from the inhomogenety of magnetic susceptibility across tissues
   \citep{jezzard_correction_1995}.
 
+
+\paragraph*{Availability and reproducibility statement}
 {\color{red} We also considered the reproducibility of results a design requirement.
 Therefore, real data are fetched from a publicly available repository
   (the Human Connectome Project \citep{essen_human_2012}) and all the software
   involved in this paper is also publicly released.
 \autoref{fig:evworkflows} describes the general structure of the workflow we implemented
   as evaluation instrument, using \emph{nipype} \citep{gorgolewski_nipype_2011} to ensure
-  reproducibility.}
+  reproducibility.
 
 We implemented the registration method upon the widely used Insight Registration and Segmentation
 	Toolkit (\url{http://www.itk.org}) with the aim to release a useful and free software bundle.
@@ -44,4 +60,4 @@ The instrumentation framework is also distributed with the registration method,
 The pipelines include the automatic generation of the ``cortex'' phantom.
 The real datasets are publicly available under the \gls*{hcp} project.
 Thus, all the experiments and results presented in this paper are intended to be
-  fully reproducible.
+  fully reproducible.}
