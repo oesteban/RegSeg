@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-13 16:18:03
+# @Last Modified time: 2015-02-17 12:13:07
 
 
 def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
@@ -21,7 +21,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
 
     from pyacwereg import misc as acwregmisc
     from pyacwereg.interfaces.utility import ExportSlices
-    from pyacwereg.workflows.registration import regseg_wf
+    from pyacwereg.workflows.registration import regseg_wf, sdc_t2b
     from pyacwereg.workflows import evaluation as ev
     from pyacwereg.workflows.fieldmap import bmap_registration
 
@@ -224,6 +224,34 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
                             ('outputnode.reg_msk', 'inputnode.in_mask')]),
         (st1,       mapen, [('out_dis_set.surf', 'inputnode.surfaces0'),
                             ('out_ref_set.surf', 'inputnode.surfaces1')])
+    ])
+
+    cmethod1 = sdc_t2b()
+    selmask = pe.Node(niu.Select(index=[2]), name='SelectMask')
+    export2 = pe.Node(ExportSlices(all_axis=True), name='ExportT2B')
+    mesh2 = pe.MapNode(ComputeMeshWarp(),
+                       iterfield=['surface1', 'surface2'],
+                       name='T2BSurfDistance')
+    csv2 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
+                   name="T2BAddRow")
+    csv2.inputs.method = 'T2B'
+
+    wf.connect([
+        (st1,        selmask, [('out_ref_set.segs', 'inlist')]),
+        (selmask,   cmethod1, [('out', 'inputnode.t2w_mask')]),
+        (st1,       cmethod1, [
+            ('out_dis_set.dwi', 'inputnode.in_dwi'),
+            ('out_dis_set.dwi_mask', 'inputnode.dwi_mask'),
+            ('out_ref_set.t2w_brain', 'inputnode.t2w')]),
+        (ds,        cmethod1, [('bval', 'inputnode.in_bval'),
+                               ('mr_param', 'inputnode.in_param')]),
+        (cmethod1,   export2, [('out_surf', 'surfaces0')]),
+        (st1,        export2, [('out_dis_set.surf', 'surfaces1')]),
+        (dti,        export2, [('outputnode.fa', 'reference')]),
+        (st1,          mesh2, [('out_dis_set.surf', 'surface1')]),
+        (cmethod1,     mesh2, [('out_surf', 'surface2')]),
+        (inputnode,     csv2, [('subject_id', 'subject_id')]),
+        (mesh2,         csv2, [('distance', 'surf_dist')])
     ])
 
     return wf

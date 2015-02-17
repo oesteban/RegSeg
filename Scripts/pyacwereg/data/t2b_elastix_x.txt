@@ -1,0 +1,103 @@
+// T2B registration config file.
+// With A. Leemans recommendations taken from his config file of the p-code of ExploreDTI
+//
+// Oscar Esteban - code@oscaresteban.es
+// 2014-06-01
+
+//ImageTypes
+(FixedInternalImagePixelType "float")
+(FixedImageDimension 3)
+(MovingInternalImagePixelType "float")
+(MovingImageDimension 3)
+(UseDirectionCosines "true")
+
+//Components
+(Registration "MultiResolutionRegistration")
+(Interpolator "BSplineInterpolator")
+(Metric "AdvancedMattesMutualInformation")
+//(Optimizer "StandardGradientDescent")
+(Optimizer "AdaptiveStochasticGradientDescent")
+(ResampleInterpolator "FinalBSplineInterpolator")
+(Resampler "DefaultResampler")
+(Transform "BSplineTransform")
+
+(NumberOfResolutions 3)
+(FinalGridSpacingInPhysicalUnits 15.0 20.0 15.0 )
+(GridSpacingSchedule 4.0 3.0 4.0 2.0 1.5 2.0 1.0 1.0 1.0)
+
+// Pyramid
+(FixedImagePyramid "FixedSmoothingImagePyramid")
+(MovingImagePyramid "MovingSmoothingImagePyramid")
+(FixedImagePyramidSchedule 4 4 4 2 2 2 1 1 1)
+(MovingImagePyramidSchedule 2 2 2 1 1 1 1 1 1)
+(WritePyramidImagesAfterEachResolution "true")
+
+//Number of grey level bins in each resolution level:
+(NumberOfHistogramBins 64)
+(NumberOfFixedHistogramBins 64)
+(NumberOfMovingHistogramBins 64)
+
+// Miscelaneous
+(UseCyclicTransform "false")
+(ErodeFixedMask "false")
+(ErodeMovingMask "false")
+(HowToCombineTransforms "Compose")
+(AutomaticTransformInitialization "false")
+
+(WriteTransformParametersEachIteration "false")
+(WriteTransformParametersEachResolution "false")
+(WriteResultImage "true")
+(ResultImageFormat "nii.gz")
+(ResultImagePixelType "float")
+(WriteResultImageAfterEachResolution "true") 
+(ShowExactMetricValue "false")
+
+(FixedLimitRangeRatio 0.0)
+(MovingLimitRangeRatio 0.0)
+(FixedKernelBSplineOrder 1)
+(MovingKernelBSplineOrder 3)
+(UseFastAndLowMemoryVersion "true")
+
+//Number of spatial samples used to compute the mutual information in each resolution level:
+(ImageSampler "RandomCoordinate" "RandomCoordinate" "RandomCoordinate")
+(FixedImageBSplineInterpolationOrder 1 )
+(UseRandomSampleRegion "false" "false" "false")
+(SampleRegionSize 30.0 70.0 30.0 30.0 70.0 30.0 10.0 25.0 10.0)
+(NumberOfSpatialSamples 20000 20000 202000)
+(NewSamplesEveryIteration "true")
+(CheckNumberOfSamples "true")
+(MaximumNumberOfSamplingAttempts 5)
+
+// This setting should be set depending on the axis!
+(AutomaticScalesEstimation "true")
+(MovingImageDerivativeScales 1.0 0.0 0.0)
+
+//Order of B-Spline interpolation used in each resolution level:
+(BSplineInterpolationOrder 1)
+
+//Order of B-Spline interpolation used for applying the final deformation:
+(FinalBSplineInterpolationOrder 3)
+
+//Default pixel value for pixels that come from outside the picture:
+(DefaultPixelValue 0)
+
+(AutomaticParameterEstimation "false")
+(UseAdaptiveStepSizes "false")
+(NoiseCompensation "false")
+//(MaximumStepLength 4.0 4.0 2.0)
+(SigmoidScale 0.00001)
+
+//Maximum number of iterations in each resolution level:
+(MaximumNumberOfIterations 500 1000 1500)
+
+//SP: Number of perturbations
+(NumberOfPerturbations 1 1 1)
+
+//SP: Param_a in each resolution level. a_k = a/(A+k+1)^alpha
+(SP_a 3500.0 8500.0 2000.0)
+
+//SP: Param_A in each resolution level. a_k = a/(A+k+1)^alpha
+(SP_A 20.0 20.0 150.0)
+
+//SP: Param_alpha in each resolution level. a_k = a/(A+k+1)^alpha
+(SP_alpha 0.602 ) 

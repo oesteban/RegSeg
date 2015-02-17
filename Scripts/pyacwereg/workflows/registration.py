@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-17 10:48:36
+# @Last Modified time: 2015-02-17 12:02:09
 
 import os
 import os.path as op
@@ -15,9 +15,13 @@ import nipype.pipeline.engine as pe             # pipeline engine
 from nipype.interfaces import io as nio              # Data i/o
 from nipype.interfaces import utility as niu         # utility
 from nipype.interfaces import fsl
+from nipype.interfaces.fsl.maths import MultiImageMaths, Threshold
+from nipype.interfaces import freesurfer as fs
+from nipype.interfaces import elastix as nex
 
 from pyacwereg.interfaces.acwereg import ACWEReg, ACWEReport
 from pyacwereg.interfaces.warps import FieldBasedWarp, InverseField
+import pysdcev.interfaces.misc as pmisc
 
 
 def regseg_wf(name='REGSEG', enhance_inputs=True, usemask=False):
@@ -76,7 +80,7 @@ def regseg_wf(name='REGSEG', enhance_inputs=True, usemask=False):
 
     if enhance_inputs:
         enh = pe.MapNode(niu.Function(
-            function=enh_image, input_names=['in_file'],
+            function=_enh_image, input_names=['in_file'],
             output_names=['out_file']), iterfield=['in_file'], name='Enhance')
         wf.connect([
             (inputnode,        enh, [('in_fixed', 'in_file')]),
@@ -111,15 +115,14 @@ def default_regseg(name='REGSEGDefault'):
     return wf
 
 
-def sdc_t2b(name='SDC_T2B', minimal=False, enc_dir=None,
-            enhance_b0=True, icorr=True):
+def sdc_t2b(name='SDC_T2B', enhance_b0=True, icorr=True):
     """
     The T2w-registration based method (T2B) implements an SDC by nonlinear
     registration of the anatomically correct *T2w* image to the *b0* image
     of the *dMRI* dataset. The implementation here tries to reproduce the one
     included in ExploreDTI `(Leemans et al., 2009)
     <http://www.exploredti.com/ref/ExploreDTI_ISMRM_2009.pdf>`_, which is
-    also based on `(Irfanoglu et al., 2012)
+    also used by `(Irfanoglu et al., 2012)
     <http://dx.doi.org/10.1016/j.neuroimage.2012.02.054>`_.
 
     :param str name: a unique name for the workflow.
@@ -135,57 +138,64 @@ def sdc_t2b(name='SDC_T2B', minimal=False, enc_dir=None,
 
     Example::
 
-    >>> t2b = t2b_workflow()
+    >>> t2b = sdc_t2b()
     >>> t2b.inputs.inputnode.in_dwi = 'dwi_brain.nii'
     >>> t2b.inputs.inputnode.in_bval = 'dwi.bval'
     >>> t2b.inputs.inputnode.in_mask = 'b0_mask.nii'
     >>> t2b.inputs.inputnode.in_t2w = 't2w_brain.nii'
+    >>> t2b.inputs.inputnode.in_param = 'parameters.txt'
     >>> t2b.run() # doctest: +SKIP
 
     """
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['in_dwi', 'in_bval', 'in_t2w', 'dwi_mask', 't2w_mask',
-                'in_param']), name='inputnode')
+                'in_param', 'in_surf']), name='inputnode')
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['dwi', 'dwi_mask', 'jacobian']), name='outputnode')
+        fields=['dwi', 'dwi_mask', 'out_surf']), name='outputnode')
 
     avg_b0 = pe.Node(pmisc.ComputeAveragedB0(), name='avg_b0')
     cache_b0 = pe.Node(niu.IdentityInterface(fields=['b0', 'mask']),
                        name='B0Cache')
     enh_t2 = pe.Node(pmisc.SigmoidFilter(upper_perc=92.0, lower_perc=65.0),
                      name='enh_T2')
-    reg_param = pe.Node(nii.JSONFileGrabber(defaults={'enc_dir': 'y'}),
-                        name='T2BSettings')
-    reg = pe.Node(elastix.Registration(num_threads=1), name='Elastix')
-    tfx_b0 = pe.Node(elastix.EditTransform(), name='tfm_b0')
+    getparam = pe.Node(nio.JSONFileGrabber(defaults={'enc_dir': 'y'}),
+                       name='GetEncDir')
+    reg = pe.Node(nex.Registration(num_threads=1), name='Elastix')
+    tfx_b0 = pe.Node(nex.EditTransform(), name='tfm_b0')
     split_dwi = pe.Node(fsl.utils.Split(dimension='t'), name='split_dwi')
-    warp = pe.MapNode(elastix.ApplyWarp(), iterfield=['moving_image'],
+    warp = pe.MapNode(nex.ApplyWarp(), iterfield=['moving_image'],
                       name='UnwarpDWIs')
-    warp_prop = pe.Node(elastix.AnalyzeWarp(), name='DisplFieldAnalysis')
+    warp_prop = pe.Node(nex.AnalyzeWarp(), name='DisplFieldAnalysis')
     warpbuff = pe.Node(niu.IdentityInterface(fields=['unwarped']),
                        name='UnwarpedCache')
     mskdwis = pe.MapNode(fs.ApplyMask(), iterfield='in_file', name='MaskDWIs')
     thres = pe.MapNode(Threshold(thresh=0.0), iterfield=['in_file'],
                        name='RemoveNegs')
     merge_dwi = pe.Node(fsl.utils.Merge(dimension='t'), name='merge_dwis')
-    tfx_msk = pe.Node(elastix.EditTransform(
+    tfx_msk = pe.Node(nex.EditTransform(
         interpolation='nearest', output_type='unsigned char'),
         name='MSKInterpolator')
-    corr_msk = pe.Node(elastix.ApplyWarp(), name='UnwarpMsk')
+    corr_msk = pe.Node(nex.ApplyWarp(), name='UnwarpMsk')
     closmsk = pe.Node(fsl.maths.MathsCommand(
         nan2zeros=True, args='-kernel sphere 3 -dilM -kernel sphere 2 -ero'),
         name='MaskClosing')
+
+    swarp = pe.MapNode(nex.PointsWarp(), iterfield=['points_file'],
+                       name='UnwarpSurfs')
 
     wf = pe.Workflow(name=name)
     wf.connect([
         (inputnode,     avg_b0, [('in_dwi', 'in_dwi'),
                                  ('in_bval', 'in_bval')]),
+        (inputnode,   getparam, [('in_param', 'in_file')]),
         (inputnode,  split_dwi, [('in_dwi', 'in_file')]),
         (inputnode,   corr_msk, [('dwi_mask', 'moving_image')]),
         (inputnode,     enh_t2, [('in_t2w', 'in_file'),
                                  ('t2w_mask', 'in_mask')]),
+        (inputnode,      swarp, [('in_surf', 'points_file')]),
         (inputnode,        reg, [('t2w_mask', 'fixed_mask')]),
-        (reg_param,        reg, [('enc_dir', 'parameters')]),
+        (getparam,         reg, [
+         (('enc_dir', _default_params), 'parameters')]),
         (enh_t2,           reg, [('out_file', 'fixed_image')]),
         (cache_b0,         reg, [('b0', 'moving_image'),
                                  ('mask', 'moving_mask')]),
@@ -201,12 +211,14 @@ def sdc_t2b(name='SDC_T2B', minimal=False, enc_dir=None,
         (thres,      merge_dwi, [('out_file', 'in_files')]),
         (reg,          tfx_msk, [
             (('transform', _get_last), 'transform_file')]),
+        (tfx_b0,         swarp, [('output_file', 'transform_file')]),
         (avg_b0,       tfx_msk, [('out_file', 'reference_image')]),
         (tfx_msk,     corr_msk, [('output_file', 'transform_file')]),
         (corr_msk,     closmsk, [('warped_file', 'in_file')]),
         (merge_dwi, outputnode, [('merged_file', 'dwi')]),
         (closmsk,   outputnode, [('out_file', 'dwi_mask')]),
-        (warp_prop, outputnode, [('jacdet_map', 'jacobian')])
+        (warp_prop, outputnode, [('jacdet_map', 'jacobian')]),
+        (swarp,     outputnode, [('warped_file', 'out_surf')])
     ])
 
     if icorr:
@@ -228,54 +240,16 @@ def sdc_t2b(name='SDC_T2B', minimal=False, enc_dir=None,
     if enhance_b0:
         enh_b0 = pe.Node(pmisc.EnhanceB0(), name='enh_b0')
         wf.connect([
-            (inputnode,      enh_b0, [('in_mask', 'in_mask')]),
+            (inputnode,      enh_b0, [('dwi_mask', 'in_mask')]),
             (avg_b0,         enh_b0, [('out_file', 'in_file')]),
             (enh_b0,       cache_b0, [('out_file', 'b0'),
                                       ('out_mask', 'mask')])
         ])
     else:
         wf.connect([
-            (inputnode,    cache_b0, [('in_mask', 'mask')]),
+            (inputnode,    cache_b0, [('dwi_mask', 'mask')]),
             (avg_b0,       cache_b0, [('out_file', 'b0')])
         ])
-
-    if not minimal:
-        invwarp = pe.Node(fsl.InvWarp(relative=True), name='InvWarp')
-        warpsrf = pe.MapNode(WarpPoints(), iterfield=['points'],
-                             name='UnwarpSurfs')
-
-        tfx_tpms = pe.Node(elastix.EditTransform(interpolation='linear',
-                                                 output_type='float'),
-                           name='TPMInterpolator')
-        corr_tpm = pe.MapNode(elastix.ApplyWarp(), iterfield=['moving_image'],
-                              name='UnwarpTPMs')
-        normtpm = pe.Node(NormalizeTPM(), name='NormTPMs')
-        tfx_segs = pe.Node(elastix.EditTransform(interpolation='nearest',
-                                                 output_type='unsigned short'),
-                           name='NNInterpolator')
-        corr_segs = pe.MapNode(elastix.ApplyWarp(), iterfield=['moving_image'],
-                               name='UnwarpSegs')
-
-        wf.connect([
-            (reg,         tfx_segs, [(
-                ('transform', _get_last), 'transform_file')]),
-            (tfx_segs,   corr_segs, [('output_file', 'transform_file')]),
-            (inputnode,  corr_segs, [('in_segs', 'moving_image')]),
-            (inputnode,    warpsrf, [('in_surf', 'points')]),
-            (warp_prop,    invwarp, [('disp_field', 'warp')]),
-            (avg_b0,       invwarp, [('out_file', 'reference')]),
-            (invwarp,      warpsrf, [('inverse_warp', 'warp')]),
-            (reg,         tfx_tpms, [
-                (('transform', _get_last), 'transform_file')]),
-            (tfx_tpms,    corr_tpm, [('output_file', 'transform_file')]),
-            (inputnode,   corr_tpm, [('in_tpms', 'moving_image')]),
-            (corr_segs, outputnode, [('warped_file', 'segs')]),
-            (corr_tpm,     normtpm, [('warped_file', 'in_files')]),
-            (selbmsk,      normtpm, [('out', 'in_mask')]),
-            (normtpm,   outputnode, [('out_files', 'tpms')]),
-            (warpsrf,   outputnode, [('out_points', 'surf')])
-        ])
-
     return wf
 
 
@@ -327,7 +301,7 @@ def identity_wf(name='Identity', n_tissues=3):
     return wf
 
 
-def enh_image(in_file, irange=2000., out_file=None):
+def _enh_image(in_file, irange=2000., out_file=None):
     import numpy as np
     import nibabel as nb
     import os.path as op
@@ -371,3 +345,14 @@ def _gen_zmsk(in_file, out_file=None):
     nb.Nifti1Image(msk.astype(np.uint8), nii.get_affine(), hdr).to_filename(
         out_file)
     return out_file
+
+
+def _get_last(inlist):
+    return inlist[-1]
+
+
+def _default_params(enc_dir):
+    from pyacwereg import data
+    if len(enc_dir) == 2:
+        enc_dir = enc_dir[0]
+    return data.get('t2b_params')[enc_dir]
