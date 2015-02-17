@@ -104,56 +104,50 @@
 %
 
 
-\section{Methods}
+\section*{Methods}
 \label{sec:methods}
 %
-\subsection{Related work}
+\subsection*{Related work}
 \label{sec:methods_background}
-Registration-segmentation methods are typically built including a deformation
-  model to guide the evolution of a segmentation algorithm.
-Even though some Bayesian approaches have been proposed to jointly solve the problem
-  \citep{wyatt_map_2003,gass_simultaneous_2014}, segmentation is usually performed using
-  an evolving active contour \citep{chan_active_2001} that normally includes a shape prior
-  term to the energy functional \citep{chen_using_2002,bresson_variational_2006,
-  chan_level_2005,cremers_kernel_2006,gastaud_combining_2004}.
-These methods generally have an inplicit description of the relative boundary locations of the objects
-  to be delineated using level sets, and some even model the statistical deviations from original
-  shape.
+Registration-segmentation methods are generally built including a deformation model to
+  support the evolution of a segmentation algorithm that drives the mapping process.
+Thus, solutions usually select first a segmentation strategy to derive the cost function and
+  regularization of the problem.
+Generally, evolving active contours is the most extended segmentation approach to be
+  integrated within the registration process.
+These methods either have an implicit description of the relative boundary locations of the
+  objects to be delineated using level sets \citep{chen_using_2002,bresson_variational_2006,
+  chan_level_2005}, or model the statistical deviations from original shape
+  \citep{cremers_kernel_2006,gastaud_combining_2004}.
+Some Bayesian approaches have been proposed as well \citep{wyatt_map_2003,gass_simultaneous_2014}.
+In \autoref{sec:methods_map} we start from a probabilistic framework to finally propose
+	a cost function defined on the location of explicit surfaces, showing the duality of the
+	existing approaches.
 
-
-An early ``morphing''-segmentation approach was proposed in \citep{bertalmio_morphing_2000},
-  and the first proper registration method was presented by \citeauthor{yezzi_variational_2001}
-  \citep{yezzi_variational_2001}, where the energy functional is defined simultaneously in the target
+An early ``morphing''-segmentation approach was proposed in \citep{bertalmio_morphing_2000}.
+Soonly, \cite{yezzi_variational_2001} presented the first method including a full solution to
+  the registration, where the energy functional is defined simultaneously in the target
   and reference images with an affine transformation supporting the coordinates mapping
   (the so-called ``2 \glspl*{pde} approach'').
-\citeauthor{vemuri_joint_2003} proposed the first atlas-based registration \citep{vemuri_joint_2003}
-  based on the level-sets framework and using only one \gls*{pde}.
+\cite{vemuri_joint_2003} proposed the first atlas-based registration based on the level sets
+  framework and using only one \gls*{pde}.
 The principal application of these techniques was the image registration between timesteps in
   a time-series or between different images \citep{paragios_level_2003}.
-\citeauthor{unal_coupled_2005} \citep{unal_coupled_2005} extended the idea of
-  \citep{bertalmio_morphing_2000,yezzi_variational_2001} to nonlinear registration
-  using a free deformation field model.
-A summary of these second set of techniques is performed in \citep{droske_mumfordshah_2009},
-  proposing two different approaches to applying the Mumford-Shah functiona
-  \citep{mumford_optimal_1989} in simultaneous registration-segmentation, through the propagation
-  of the deformation field from the contours to the whole image definition.
-Finally, \citeauthor{gorthi_active_2011} presented a comprehensive generalization of the
-  existing methodologies \citep{gorthi_active_2011} based on the level-sets approximation.
-Even though the historical evolution of joint segmentation and registration procedures is strongly
-  linked to the level sets approach, our method conversely used the explicit representation of
-  the evolving surfaces.
+\cite{unal_coupled_2005} extended the idea of \citep{yezzi_variational_2001} to nonlinear
+  registration using a free deformation field model.
+\cite{droske_mumfordshah_2009} reviewed the latter set of techniques, and proposed two different
+  approaches to apply the Mumford-Shah functional \citep{mumford_optimal_1989} in simultaneous
+  registration-segmentation, through the propagation of the deformation field from
+  the contours to the whole image definition.
+Finally, \cite{gorthi_active_2011} presented a comprehensive generalization of the
+  existing methodologies based on the level sets approximation.
 
-Finally, a derivation of the latter group is composed by atlas-based segmentation methods
-  \citep{gorthi_segmentation_2009,gorthi_active_2011,pohl_unifying_2005,pohl_bayesian_2006,
-  wang_joint_2006}, where the prior imposes consistent voxel-based classification of contiguous
-  regions.
-A comprehensive summary of the methodologies derived from the \acrlong{acwe} model, with special attention
-  to joint registration-segmentation methods is found in \citep{gorthi_active_2011}.
-is based in derivations of the \acrlong{acwe}
-  framework \citep{chan_active_2001}, and related to \citep{guyader_combined_2011}.
+\todo[inline]{Revise these references and include if necessary:
+  \citep{pohl_unifying_2005,pohl_bayesian_2006,wang_joint_2006,guyader_combined_2011}}
 
 
-\subsection{Cost-function derivation}
+
+\subsection*{Cost-function derivation}
 \label{sec:methods_map}
 
 In a Bayesian framework, the mappings $U$ in \autoref{eq:transform} are
@@ -169,8 +163,8 @@ Using the Bayes' rule, the posterior likelihood is computed as:
   between piecewise smooth regions $\Omega_i$, such that
   $\Gamma_{l,m} = \partial \Omega_l \cap \partial \Omega_m$ is the
   contour between tissues $l$ and $m$.
-Then, the \gls*{map} criterium \citep{leemput_automated_1999} is used
-  to find the mapping estimate $\hat{U}$ that aligns $\Gamma$ into $R$:
+Then, the \gls*{map} criterium is applied to find the mapping estimate $\hat{U}$
+  that aligns $\Gamma$ into $R$:
   \begin{align}
   \hat{U} &= \underset{U}{\argmax} \left\{ P(U \mid R,\Gamma_{l,m}) \right\} \notag\\
    &= \underset{U}{\argmax} \left\{ P(R \mid U,\Gamma_{l,m})\, P(U) \right\}.
@@ -187,8 +181,8 @@ First, we assume independence between pixels, and thus break down the
   where $\vec{f}' = R(\vec{r}')$ is the feature vector at the displaced
   position $\vec{r}'$ (\autoref{eq:transform}) of the multispectral target
   volume.
-For convenience, and because it has been shown to be appropriate approximations
-  \citep{cuadra_comparison_2005}, we introduce two assumptions for each
+For convenience, and because it has been shown to be an appropriate approximation
+  \citep{leemput_automated_1999,cuadra_comparison_2005}, we introduce two assumptions for each
   region $\Omega_l$:
   1) the features are i.i.d.; and 2) they can be modeled by multivariate normal
   distributions:
@@ -253,7 +247,7 @@ Finally, the \gls{map} problem is adapted into a variational one applying the
 We provide a proof of duality in {\color{red} [REF figshare?]}.
 
 
-\subsection{Numerical Implementation}
+\subsection*{Numerical Implementation}
 \label{sec:numerical_implementation}
 
 \begin{figure}
@@ -272,7 +266,7 @@ We provide a proof of duality in {\color{red} [REF figshare?]}.
 	}\label{fig:method}
 \end{figure}
 
-\subsubsection{Deformation model}
+\paragraph*{Deformation model}
 \label{sec:deformation_model}
 Let us denote $\{\vec{v}_i\}_{i=1 \ldots N_c}$ the vertices of one or several prior
   surface(s).
@@ -305,7 +299,7 @@ Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
   with $\hat{\mathbf{e}}_d$ being the unitary vector along axis $d$.
 
 
-\subsubsection{Optimization}
+\paragraph*{Optimization}
 \label{sec:gradient_descent}
 To find the minimum of the energy functional \eqref{eq:energy},
   we propose a gradient-descent approach with respect to the underlying
@@ -368,63 +362,55 @@ The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \autore
 
 
 
-\subsection{Experiments and evaluation}
+\subsection*{Experiments and evaluation}
 \label{sec:experiments_evaluation}
 %
-The experiments follow a five-steps design:
-\begin{enumerate}
-	\item The prior surfaces are extracted from an undistorted and high-resolution dataset
-	  (e.g. \autoref{fig:phantom}).
-	\item A plausible, synthetic distortion $U^{-1}_{true}$ is generated.
-	\item The low-resolution (target) images are warped using the synthetic distortion.
-	\item Our method is run, obtaining a $\hat{U}_{tst}$.
-	  A cross-comparison methodology is also applied, to obtain a competing $\hat{U}_{cc}$.
-	\item Results are visually and quantitatively evaluated.
-\end{enumerate}
-
-To quantitatively evaluate the registration results we computed the \gls*{swindex} as the one-to-one
-  distance between corresponding vertices of surfaces, weighted by their respective
-  Voronoi area $w_i$:
+In order to demonstrate the applicability of the registration method, we first
+  subjected it to a battery of random tests over synthetic data and then applied
+  it on real data.
+\autoref{fig:evworkflows} presents the workflow implementing the evaluation instruments.
+Besides a visual assessment of the results, we report quantitative evaluations using
+  two metrics.
+In the case of the phantoms, as we warped data along the three available dimensions,
+  we computed the Haussdorf distance, integrating the ``point-to-cell'' method
+	implemented by \cite{commandeur_vtk_2011}.
+Conversely, the susceptibility-derived distortions only happen along the phase
+  encoding axis of the image.
+Therefore, a \gls*{swindex} can be computed as the one-to-one distance between corresponding
+  vertices of surfaces, weighted by their respective Voronoi area $w_i$:
   \begin{equation}
   sWI = \frac{1}{P} \sum\limits_p^P \frac{1}{A_p} \sum\limits_i^{N_p} w_i\,\|
   \vec{v}_i - \hat{\vec{v}}_i \|
   \end{equation}
   where $\vec{v}_i$ are the locations of the $N_p$ vertices in each $p \in \{1, \dots P\}$
-    prior, $A_p$ the total area of surface $p$, and $\hat{\vec{v}}_i$ is the location
-    recovered corresponding to the vertex $\vec{v}_i$.
-
-In the application on real data, three experts blindly rated correction results obtained
-  with the proposed method and the cross-comparison reference.
-The full report of visual results is provided within the Supplemental Materials.
-
-  % \item \gls{wi}, L2-distance between the theoretical and the recovered
-  %   deformation field.
-  %   \begin{equation}
-  %   WI = \frac{1}{N} \sum\limits_i^N \| \mathbf{d}_i - \hat{\mathbf{d}}_i \|
-  %   \end{equation}
-  %   where $\mathbf{d}_i$ is the theoretical displacement vector at position $i$
-  %   and $\hat{\mathbf{d}}_i$ is the recovered one at the same index position.
-  % \item Parcellation agreement, the Dice overlap index of the \glspl*{roi}
-  %   contained by the parcellation.
-  % \end{itemize}
+  prior, $A_p$ the total area of surface $p$, and $\hat{\vec{v}}_i$ is the location
+  recovered corresponding to the vertex $\vec{v}_i$.
 
 
+\begin{figure}
+\caption{1) The prior surfaces are extracted from an undistorted and high-resolution dataset
+	  (e.g. \autoref{fig:phantom}). 2) A plausible, synthetic distortion $U^{-1}_{true}$ is generated.
+	3) The low-resolution (target) images are warped using the synthetic distortion.
+	4) Our method is run, obtaining a $\hat{U}_{tst}$.
+	  A cross-comparison methodology is also applied, to obtain a competing $\hat{U}_{cc}$.
+	5) Results are visually and quantitatively evaluated.}\label{fig:evworkflows}
+\end{figure}
 
-\subsection{Image Data and preprocessing}
+\subsection*{Image Data and preprocessing}
 \label{sec:datasets}
 
-\subsubsection{Simulated digital phantom} %
+\paragraph*{Simulated phantoms}%
 \label{sec:digital_phantoms}
-%
-We first present the proof of the concept on a simplistic digital phantom
-  (\autoref{fig:phantom}).
-Using \cite{caruyer_phantomas_2014}, we simulated 2.0mm isotropic \gls*{t1} and
-  \gls*{t2} images at several rician noise levels, with parameters TE/TR=10/1500ms
-  and TE/TR=90/5000ms respectively.
+We proved the concept on simplistic digital phantoms which we will name after their
+  appearance as ``box'', ``ball'', ``L-shape'', and ``gyrus'' (\autoref{fig:phantom}).
+Using \emph{phantomas} \citep{caruyer_phantomas_2014}, we simulated \gls*{t1} and
+  \gls*{t2} images (TE/TR=10/1500ms and TE/TR=90/5000ms
+  respectively) corresponding to each shape.
+Simulations were conducted with rician noise for a \gls*{snr} of 300.0, and
+  two image resolutions, $1.0mm$ and $2.0mm$, both isotropic.
 The reference surfaces were extracted using the marching-cubes algorithm
   shipped with \emph{FreeSurfer} \citep{fischl_freesurfer_2012}
-  on high-resolution (1.0mm isotropic) and binary images corresponding to
-  the tissue fraction maps used in simulations.
+  at the higher resolution (1.0mm isotropic)..
 
 \begin{figure}
 	\includegraphics[width=\linewidth]{figures/figure02}
@@ -444,14 +430,14 @@ The reference surfaces were extracted using the marching-cubes algorithm
 	}\label{fig:phantom}
 \end{figure}
 
-\subsubsection{Real \gls{mri} datasets} %
+\paragraph*{Real datasets} %
 \label{sec:human_connectome}
 %
-For the evaluation of the algorithm to real \gls*{dmri} data of human brains,
-  we downloaded 10 datasets from the ``minimally preprocessed''
+For the evaluation of the algorithm on real \gls*{dmri} data of human brains,
+  we collected 15 datasets from the ``minimally preprocessed''
 	 database of the \gls*{hcp}.
 We refer the reader to \citep{essen_human_2012} for exact details about acquisition
-  parameters, and \citep{glasser_minimal_2013} for preprocessing issues.
+  parameters, and \citep{glasser_minimal_2013} for the preprocessing issues.
 The datasets comprehend \gls*{t1}, \gls*{t2} and multi-shell \gls*{dmri} images
   already corrected for artifacts, brain-extracted and spatially normalized,
   along with the most prominent results of the standard processing with

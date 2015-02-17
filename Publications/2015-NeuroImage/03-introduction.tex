@@ -1,5 +1,5 @@
 % -*- root: 00-main.tex -*-
-\section{Introduction}
+\section*{Introduction}
 \label{sec:introduction}
 
 Nonlinear registration of images is a challenging task, ubiquitous
@@ -16,7 +16,7 @@ The process aims to find a spatial mapping $U$ that aligns the information avail
   its corresponding location in $M$, and $n$ the dimensionality of images.
 Finally, $\vec{u} = u(\vec{r})$ is the displacement of every point with respect
   to the reference domain.
-A comprehensive survey by \citeauthor{sotiras_deformable_2013} \citep{sotiras_deformable_2013}
+A comprehensive survey by \cite{sotiras_deformable_2013}
   illustrates the wide variety of existing registration methodologies.
 They classify the algorithms by the three principal building blocks that can be identified
   among methods: the matching criteria or similarity function to evaluate the proximity of
@@ -26,26 +26,28 @@ The possibly most widespread matching criteria are those classified as \emph{ico
   methods} in \citep{sotiras_deformable_2013}.
 These algorithms require the definition of an appropriate function on the voxel-wise information
   content of both images.
-A second group, called \emph{geometric methods}, measure distances between features derived from
+A second group, called \emph{geometric methods}, measures distances between features derived from
   corresponding objects defined in both spaces, such as landmarks, shapes, surfaces, etc.
 Finally, \emph{hybrid methods} combine properties of the iconic and geometric methods.
 As reviewed in \citep{sotiras_deformable_2013}, an important research effort has been devoted to
   study application-oriented matching criteria.
 
 In this work we propose a hybrid approach to nonlinear registration of anatomically correct
-  and geometrically precise surfaces to low-resolution and distorted \gls*{dmri} of the brain.
+  and precise surfaces to warped and low-resolution \gls*{dmri} of the brain.
 Currently, we are witnessing an uprising demand for such algorithms in the challenging context
   of extracting and characterizing the structural connectivity networks of the
   human brain \citep{craddock_imaging_2013}.
 Our registration method is demonstrated here as a solution to correct for the susceptibility
-  distortions that \gls*{dmri} of the head typically present \cite{jezzard_correction_1995}.
-A fundamental antecedent of this approach is found in \citep{greve_accurate_2009}.
+  distortions that \gls*{dmri} of the head typically present \citep{jezzard_correction_1995}.
+\todo[inline]{talk about the distortion and cite SDCs}
+
+A fundamental antecedent of the present approach is found in \citep{greve_accurate_2009}.
 They proposed a registration method to align \gls*{t1} and \gls*{dmri} images
   of the brain using a linear transformation model.
-As in \citep{greve_accurate_2009}, we exploit the precise structures that can be extracted with
-  widely-used software (i.e. \emph{FreeSurfer}~\citep{fischl_freesurfer_2012}) at high resolution,
-  and then map this prior information to low resolution data, in which the scale of the imaged
-  structures is in the range of the image resolution or above.
+Similarly, we exploit the precise structures that can be extracted with
+  widely-used software (i.e. \emph{FreeSurfer}~\citep{fischl_freesurfer_2012}),
+  and then map these surfaces into warped data, in which the scale of the
+  imaged structures is in the range of the image resolution or above.
 Our approach differs from \citep{greve_accurate_2009} in two fundamental choices.
 First, we use a nonlinear deformation model that enables the correction of the
   susceptibility-derived distortions \citep{jezzard_correction_1995}.
