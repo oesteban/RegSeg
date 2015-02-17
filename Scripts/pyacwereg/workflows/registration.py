@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-16 14:47:13
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-02-17 10:48:36
 
 import os
 import os.path as op
@@ -111,8 +111,8 @@ def default_regseg(name='REGSEGDefault'):
     return wf
 
 
-def t2b_workflow(name='T2B', minimal=False, enc_dir=None,
-                 enhance_b0=True, icorr=True):
+def sdc_t2b(name='SDC_T2B', minimal=False, enc_dir=None,
+            enhance_b0=True, icorr=True):
     """
     The T2w-registration based method (T2B) implements an SDC by nonlinear
     registration of the anatomically correct *T2w* image to the *b0* image
@@ -146,6 +146,8 @@ def t2b_workflow(name='T2B', minimal=False, enc_dir=None,
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['in_dwi', 'in_bval', 'in_t2w', 'dwi_mask', 't2w_mask',
                 'in_param']), name='inputnode')
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields=['dwi', 'dwi_mask', 'jacobian']), name='outputnode')
 
     avg_b0 = pe.Node(pmisc.ComputeAveragedB0(), name='avg_b0')
     cache_b0 = pe.Node(niu.IdentityInterface(fields=['b0', 'mask']),
@@ -176,34 +178,35 @@ def t2b_workflow(name='T2B', minimal=False, enc_dir=None,
 
     wf = pe.Workflow(name=name)
     wf.connect([
-        (inputnode,    avg_b0, [('in_dwi', 'in_dwi'),
-                                ('in_bval', 'in_bval')]),
-        (inputnode,   selbmsk, [('in_segs', 'inlist')]),
-        (inputnode, split_dwi, [('in_dwi', 'in_file')]),
-        (inputnode,  corr_msk, [('in_mask', 'moving_image')]),
-        (inputnode,    enh_t2, [('in_t2w', 'in_file')]),
-        (selbmsk,      enh_t2, [('out', 'in_mask')]),
-        (reg_param,       reg, [('out_file', 'parameters')]),
-        (enh_t2,          reg, [('out_file', 'fixed_image')]),
-        (cache_b0,        reg, [('b0', 'moving_image'),
-                                ('mask', 'moving_mask')]),
-        (selbmsk,         reg, [('out', 'fixed_mask')]),
-        (reg,          tfx_b0, [(('transform', _get_last), 'transform_file')]),
-        (avg_b0,       tfx_b0, [('out_file', 'reference_image')]),
-        (tfx_b0,    warp_prop, [('output_file', 'transform_file')]),
-        (tfx_b0,         warp, [('output_file', 'transform_file')]),
-        (split_dwi,      warp, [('out_files', 'moving_image')]),
-        (warpbuff,    mskdwis, [('unwarped', 'in_file')]),
-        (closmsk,     mskdwis, [('out_file', 'mask_file')]),
-        (mskdwis,       thres, [('out_file', 'in_file')]),
-        (thres,     merge_dwi, [('out_file', 'in_files')]),
-        (reg,         tfx_msk, [(('transform', _get_last), 'transform_file')]),
-        (avg_b0,      tfx_msk, [('out_file', 'reference_image')]),
-        (tfx_msk,    corr_msk, [('output_file', 'transform_file')]),
-        (corr_msk,    closmsk, [('warped_file', 'in_file')]),
-        (merge_dwi,     'out', [('merged_file', 'dwi')]),
-        (closmsk,       'out', [('out_file', 'dwi_mask')]),
-        (warp_prop,     'out', [('jacdet_map', 'jacobian')])
+        (inputnode,     avg_b0, [('in_dwi', 'in_dwi'),
+                                 ('in_bval', 'in_bval')]),
+        (inputnode,  split_dwi, [('in_dwi', 'in_file')]),
+        (inputnode,   corr_msk, [('dwi_mask', 'moving_image')]),
+        (inputnode,     enh_t2, [('in_t2w', 'in_file'),
+                                 ('t2w_mask', 'in_mask')]),
+        (inputnode,        reg, [('t2w_mask', 'fixed_mask')]),
+        (reg_param,        reg, [('enc_dir', 'parameters')]),
+        (enh_t2,           reg, [('out_file', 'fixed_image')]),
+        (cache_b0,         reg, [('b0', 'moving_image'),
+                                 ('mask', 'moving_mask')]),
+        (reg,           tfx_b0, [
+            (('transform', _get_last), 'transform_file')]),
+        (avg_b0,        tfx_b0, [('out_file', 'reference_image')]),
+        (tfx_b0,     warp_prop, [('output_file', 'transform_file')]),
+        (tfx_b0,          warp, [('output_file', 'transform_file')]),
+        (split_dwi,       warp, [('out_files', 'moving_image')]),
+        (warpbuff,     mskdwis, [('unwarped', 'in_file')]),
+        (closmsk,      mskdwis, [('out_file', 'mask_file')]),
+        (mskdwis,        thres, [('out_file', 'in_file')]),
+        (thres,      merge_dwi, [('out_file', 'in_files')]),
+        (reg,          tfx_msk, [
+            (('transform', _get_last), 'transform_file')]),
+        (avg_b0,       tfx_msk, [('out_file', 'reference_image')]),
+        (tfx_msk,     corr_msk, [('output_file', 'transform_file')]),
+        (corr_msk,     closmsk, [('warped_file', 'in_file')]),
+        (merge_dwi, outputnode, [('merged_file', 'dwi')]),
+        (closmsk,   outputnode, [('out_file', 'dwi_mask')]),
+        (warp_prop, outputnode, [('jacdet_map', 'jacobian')])
     ])
 
     if icorr:
@@ -254,23 +257,23 @@ def t2b_workflow(name='T2B', minimal=False, enc_dir=None,
                                name='UnwarpSegs')
 
         wf.connect([
-            (reg,       tfx_segs, [(
+            (reg,         tfx_segs, [(
                 ('transform', _get_last), 'transform_file')]),
-            (tfx_segs, corr_segs, [('output_file', 'transform_file')]),
-            (inputnode, corr_segs, [('in_segs', 'moving_image')]),
-            (inputnode,  warpsrf, [('in_surf', 'points')]),
-            (warp_prop,  invwarp, [('disp_field', 'warp')]),
-            (avg_b0,     invwarp, [('out_file', 'reference')]),
-            (invwarp,    warpsrf, [('inverse_warp', 'warp')]),
-            (reg,       tfx_tpms, [
+            (tfx_segs,   corr_segs, [('output_file', 'transform_file')]),
+            (inputnode,  corr_segs, [('in_segs', 'moving_image')]),
+            (inputnode,    warpsrf, [('in_surf', 'points')]),
+            (warp_prop,    invwarp, [('disp_field', 'warp')]),
+            (avg_b0,       invwarp, [('out_file', 'reference')]),
+            (invwarp,      warpsrf, [('inverse_warp', 'warp')]),
+            (reg,         tfx_tpms, [
                 (('transform', _get_last), 'transform_file')]),
-            (tfx_tpms,  corr_tpm, [('output_file', 'transform_file')]),
-            (inputnode, corr_tpm, [('in_tpms', 'moving_image')]),
-            (corr_segs,    'out', [('warped_file', 'segs')]),
-            (corr_tpm,   normtpm, [('warped_file', 'in_files')]),
-            (selbmsk,    normtpm, [('out', 'in_mask')]),
-            (normtpm,      'out', [('out_files', 'tpms')]),
-            (warpsrf,      'out', [('out_points', 'surf')])
+            (tfx_tpms,    corr_tpm, [('output_file', 'transform_file')]),
+            (inputnode,   corr_tpm, [('in_tpms', 'moving_image')]),
+            (corr_segs, outputnode, [('warped_file', 'segs')]),
+            (corr_tpm,     normtpm, [('warped_file', 'in_files')]),
+            (selbmsk,      normtpm, [('out', 'in_mask')]),
+            (normtpm,   outputnode, [('out_files', 'tpms')]),
+            (warpsrf,   outputnode, [('out_points', 'surf')])
         ])
 
     return wf
