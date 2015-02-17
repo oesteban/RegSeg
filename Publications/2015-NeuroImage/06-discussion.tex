@@ -1,0 +1,47 @@
+% -*- root: 00-main.tex -*-
+\section*{Discussion}
+\label{sec:discussion}
+We propose a registration-segmentation algorithm designed for biomedical
+  image analyses that are affected by all or some of the following circumstances:
+  \begin{itemize}
+  	\item Reference and target images do not present appropriate contrasts to
+  	perform volume-based registration reliably, or there is not available an apt image
+ 		to be used as reference.
+  	\item The low resolution of the target volume produces strong partial volume effects
+  	that exclude the use of voxel-wise segmentation algorithms and hinder volume-based
+  	registration.
+  	\item The unknown warping is smooth enough to be represented with a sufficient number
+  	of BSpline kernels, and its explicit need is justified (i.e. the distortion
+  	field in \gls*{dmri} images, object tracking applications, etc.).
+  \end{itemize}
+The algorithm is designed for the proposed application on correcting distortions of
+  \gls*{dmri} data, a required preliminary step to extract the structural connectivity
+  networks.
+As a consequence, our approach relies on the availability of precise segmentations or
+  surfaces of the objects that are to be segmented on the target volume(s).
+Connectome extraction protocols generally include the acquisition of \gls*{t1} images
+  to provide with prior information about anatomy with high accuracy.
+\todo[inline]{Add sentence about comment RW\#1 of IPMI2013: incorporate knowledge of
+the EPI distortions into regularization}
+Our method solves in a single step a joint problem usually addressed in two steps.
+The first solves the linear registration of the \gls*{t1} and \gls*{dmri} data (i.e.
+  \cite{greve_accurate_2009}), whereas the second corrects for the nonlinear distortions
+  derived from the inhomogenety of magnetic susceptibility across tissues
+  \citep{jezzard_correction_1995}.
+
+{\color{red} We also considered the reproducibility of results a design requirement.
+Therefore, real data are fetched from a publicly available repository
+  (the Human Connectome Project \citep{essen_human_2012}) and all the software
+  involved in this paper is also publicly released.
+\autoref{fig:evworkflows} describes the general structure of the workflow we implemented
+  as evaluation instrument, using \emph{nipype} \citep{gorgolewski_nipype_2011} to ensure
+  reproducibility.}
+
+We implemented the registration method upon the widely used Insight Registration and Segmentation
+	Toolkit (\url{http://www.itk.org}) with the aim to release a useful and free software bundle.
+The instrumentation framework is also distributed with the registration method,
+  and has been implemented using \emph{nipype} \citep{gorgolewski_nipype_2011}.
+The pipelines include the automatic generation of the ``cortex'' phantom.
+The real datasets are publicly available under the \gls*{hcp} project.
+Thus, all the experiments and results presented in this paper are intended to be
+  fully reproducible.
