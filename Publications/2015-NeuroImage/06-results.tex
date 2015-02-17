@@ -2,72 +2,40 @@
 \section*{Results and discussion}
 \label{sec:results}
 
-\subsection*{Proof of concept}
+\subsection*{Proof of concept on digital phantoms}
 \label{sec:results_phantom}
+Using the experimental instrumentation described in section \nameref{sec:experiments_evaluation},
+  we fine tuned the algorithm for its use on real data and collected quantitative results.
+To warp the simulated datasets, we generated 150 realizations of random and smooth displacement
+  fields $U^{-1}_{true}$.
+Smoothness is achieved using two levels of B-Spline functions, with control points evenly
+  located in isotropic grids covering the full extent of the model.
+The first level had $50.5mm$ of separation between control points and the second $25.25mm$.
+The rationale behind this choice is producing large deformations on the contours with
+  the first level, and matching the properties of susceptibility-derived distortions
+  as previously reported by \cite{irfanoglu_susceptibility_2011} with the finer grid.
+Invertibility of $U^{-1}_{true}$ is ensured by controlling the maximum displacement at each
+  level ($20.2mm$ and $10.1mm$ respectively) as studied in \citep{rueckert_diffeomorphic_2006}.
 
-Applying the evaluation protocol introduced in \autoref{sec:experiments_evaluation} on
-  the ``cortex'' phantom (\autoref{fig:phantom}), we successfully tested the method and
-  fine tuned the algorithm for its use on real data.
-In this characterization experiment, we generated random smooth displacement fields $U^{-1}_{true}$
-  (step 4 in \autoref{sec:experiments_evaluation}) based on a B-Spline field with
-  control points evenly located in a $6 \times 6 \times 6$ grid covering the region of the phantom.
-Invertibility is ensured by controlling the maximum	displacement
-  \citep{rueckert_diffeomorphic_2006}.
-The software tool to generate these fields is included with the released package.
-In this experiment we used $\hat{U}_{cc} = (U^{-1}_{true})^{-1}$, i.e. the ground-truth
-  displacement field.
-We performed the experiment in two different realizations of the phantom, one at full resolution
-  and a second with half resolution to study the performance under strong partial volume effect
-  conditions.
-The distorted phantoms and visual results are presented in \autoref{fig:results_phantom}.
-Quantitative evaluation of the \gls*{swindex} is reported in \autoref{tab:swi_phantom}.
+A total of 1200 registration experiments (4 phantom types $\times$ 150 random warpings
+  $\times$ 2 resolutions) were run.
+For each registration, the averaged Hausdorff distance (see \nameref{sec:experiments_evaluation})
+  of the inner and the outer surfaces was computed.
+The results showed a consistent and high accuracy, below voxel resolution.
+\autoref{fig:phantom} (block C) presents the box plots by model type corresponding
+  to the two sets of resolutions of generated phantoms.
+To support that the missregistration errors averaged per experiment was significantly
+  under the resolution of the target image, we proceeded as follows.
+First, we confirmed that the error distributions were skewed using a Shapiro-Wilk test of
+  normality.
+All the distributions of errors under test (4 phantom types $\times$ 2 resolutions) resulted
+  non-normal with $p<0.001$.
+Consequently, we used the non-parametric Wilcoxon signed-rank test along with Bonferroni
+  correction for multiple comparisons ($N=150$).
+Averaged errors resulted significantly lower than voxel resolution with $p < (0.001 / 150)$
+  for all the tests (4 phantom types $\times$ 2 resolutions).
 
-\begin{table}
-	\caption{Quantitative evaluation on phantoms: \acrlong*{swindex}}
-	\label{tab:swi_phantom}
-    \begin{tabular}{llll}
-    Voxel size  & Interior surface & Exterior surface & Average \\
-    $1.0mm$ & $0.718mm$            & $0.724mm$            & $0.721mm$   \\
-    $2.0mm$ & $0.723mm$            & $0.726mm$            & $0.725mm$   \\
-    \end{tabular}
-\end{table}
-
-{\color{red}
-\paragraph*{Convergence evindence and settings}
- discuss choice of $\tau$, Courant-Friedrichs-Lewy (CFL) condition / Wolfe conditions, multi-resolutions on the bspline grid, image samples and surface sampling,  etc.
-\paragraph*{Efficient field densification}
-As long as the dense deformation field is iteratively interpolated
-from the same set of control points that define the $L-1$ contours,
-it is possible to pre-cache all the $\psi_k(\vec{v}_i)$ weights into a
-sparse matrix for fast densification. As well, we achieve a
-diffeomorphic transform by}
-
-% In regular intervals, after certain number of iterations,
-% the parameters $\Theta_l$ of the regions can be reestimated
-% based on the shifted volumetric samples
-% $\vec{x}' = \vec{x_0} + u(\vec{x})$.
-
-
-
-
-\begin{figure*}
-\includegraphics[width=\textwidth]{figures/figure03}
-\caption{Proof of concept of the registration method. First row shows the registration experiment
-  on the high-resolution ($1.0mm$ isometric) realization of the phantom, second row contains the
-  low-resolution ($2.0mm$ isometric) version.
-  Both phantoms were simulated with \gls*{snr} 30.
-  In the first column, the distorted phantoms presented with the undistorted contours.
-  For the second column, the contours have been replaced by the distorted contours using
-    the ground-truth warping $U^{-1}_{true}$.
-  The third column contains again the contours warped with the ground-truth field
-  (thin yellow line), and the corresponding contours (green and blue thick lines)
-  obtained with the presented method.
-  Finally, last row represents the recovered images unwarped using the $\hat{U}_{tst}$
-    found through our registration.
-  }\label{fig:results_phantom}
-\end{figure*}
-
-\subsection*{Susceptibility distortion correction}
+\subsection*{Distortion correction on real datasets}
 \label{sec:results_hcp}
 
 As we propose the \gls*{fa} and the \gls*{md} as target features, we

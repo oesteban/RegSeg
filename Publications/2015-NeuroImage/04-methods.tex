@@ -360,6 +360,15 @@ The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \autore
   \label{eq:gradient_final}
   \end{align}
 
+{\color{red}
+\paragraph*{Convergence evidence and settings}
+ discuss choice of $\tau$, Courant-Friedrichs-Lewy (CFL) condition / Wolfe conditions, multi-resolutions on the bspline grid, image samples and surface sampling,  etc.
+\paragraph*{Efficient field densification}
+As long as the dense deformation field is iteratively interpolated
+from the same set of control points that define the $L-1$ contours,
+it is possible to pre-cache all the $\psi_k(\vec{v}_i)$ weights into a
+sparse matrix for fast densification. As well, we achieve a
+diffeomorphic transform by}
 
 
 \subsection*{Experiments and evaluation}
@@ -402,7 +411,8 @@ Therefore, a \gls*{swindex} can be computed as the one-to-one distance between c
 \paragraph*{Simulated phantoms}%
 \label{sec:digital_phantoms}
 We proved the concept on simplistic digital phantoms which we will name after their
-  appearance as ``box'', ``ball'', ``L-shape'', and ``gyrus'' (\autoref{fig:phantom}).
+  appearance as ``box'', ``ball'', ``L-shape'', and ``gyrus'' (\autoref{fig:phantom},
+  boxes A and B).
 Using \emph{phantomas} \citep{caruyer_phantomas_2014}, we simulated \gls*{t1} and
   \gls*{t2} images (TE/TR=10/1500ms and TE/TR=90/5000ms
   respectively) corresponding to each shape.
@@ -410,25 +420,27 @@ Simulations were conducted with rician noise for a \gls*{snr} of 300.0, and
   two image resolutions, $1.0mm$ and $2.0mm$, both isotropic.
 The reference surfaces were extracted using the marching-cubes algorithm
   shipped with \emph{FreeSurfer} \citep{fischl_freesurfer_2012}
-  at the higher resolution (1.0mm isotropic)..
+  at the higher resolution (1.0mm isotropic).
 
-\begin{figure}
+\begin{figure*}
 	\includegraphics[width=\linewidth]{figures/figure02}
-	\caption{The ``cortex'' phantom is a spherical shape with two sulci and an
-	 outer crust resembling the cortical folding.
-	When the model is used to generate low resolution images, the
-	  partial volume effect turns segmentation of the sulci a
-	  challenging problem with voxel-wise clustering methods,
-	  but it is successfully segmented with the proposed method (see
-	  \autoref{fig:results_phantom}).
-	Top row shows the central-axial plane of the simulated images at
-	  high resolution and noiseless (left is \gls*{t1} and right is
-	  \gls*{t2}).
-	Bottom row represents the extracted contours that are used as shape
-	  priors to be registered to low-resolution, noise corrupted versions
-	  of the phantom.
-	}\label{fig:phantom}
-\end{figure}
+	\caption{A. The ``cortex'' phantom is a spherical shape with two sulci and an
+	  outer crust resembling the cortical folding (left).
+	The model is used to generate \gls*{t1} and \gls*{t2} images after warping the
+	  contours using a random and plausible transformation $U_{true}^{-1}$ (right).
+	B. Visual assessment of the results on the low resolution sets:
+	  ``gyrus'' (top-left), ``L-shape'' (top-right), ``ball'' (bottom-left),
+	  and ``box'' at (bottom-right).
+	In yellow color, the recovered contours after registration are represented.
+	Our method showed high accuracy, as they are overlapping the ground truth surfaces
+	  depicted in green.
+	Partial volume effect turns segmentation of the sulci a challenging problem with voxel-wise
+	  clustering methods, but it is successfully segmented with our method.
+	C. Quantitative evaluation of registration error in terms of average Hausdorff distance of
+	  surfaces at high (left) and low (right) resolutions, demonstrating that the error is
+	  consistently below the image resolution.
+	  }\label{fig:phantom}
+\end{figure*}
 
 \paragraph*{Real datasets} %
 \label{sec:human_connectome}
