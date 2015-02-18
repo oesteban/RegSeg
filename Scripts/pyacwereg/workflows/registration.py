@@ -18,6 +18,7 @@ from nipype.interfaces import fsl
 from nipype.interfaces.fsl.maths import MultiImageMaths, Threshold
 from nipype.interfaces import freesurfer as fs
 from nipype.interfaces import elastix as nex
+from nipype.interfaces.ants import N4BiasFieldCorrection
 
 from pyacwereg.interfaces.acwereg import ACWEReg, ACWEReport
 from pyacwereg.interfaces.warps import FieldBasedWarp, InverseField
@@ -154,8 +155,8 @@ def sdc_t2b(name='SDC_T2B', icorr=True):
         fields=['dwi', 'dwi_mask', 'out_surf']), name='outputnode')
 
     avg_b0 = pe.Node(pmisc.ComputeAveragedB0(), name='avg_b0')
-    n4_b0 = pe.Node(ants.N4BiasFieldCorrection(dimension=3), name='BiasB0')
-    n4_t2 = pe.Node(ants.N4BiasFieldCorrection(dimension=3), name='BiasT2')
+    n4_b0 = pe.Node(N4BiasFieldCorrection(dimension=3), name='BiasB0')
+    n4_t2 = pe.Node(N4BiasFieldCorrection(dimension=3), name='BiasT2')
 
     getparam = pe.Node(nio.JSONFileGrabber(defaults={'enc_dir': 'y'}),
                        name='GetEncDir')
@@ -192,7 +193,7 @@ def sdc_t2b(name='SDC_T2B', icorr=True):
         (inputnode,      swarp, [('in_surf', 'points_file')]),
         (inputnode,        reg, [('t2w_mask', 'fixed_mask'),
                                  ('dwi_mask', 'moving_mask')]),
-        (inputnode,      n4_t2, [('in_t2w', 'mask_image'),
+        (inputnode,      n4_t2, [('in_t2w', 'input_image'),
                                  ('t2w_mask', 'mask_image')]),
         (inputnode,      n4_b0, [('dwi_mask', 'mask_image')]),
         (avg_b0,         n4_b0, [('out_file', 'input_image')]),
