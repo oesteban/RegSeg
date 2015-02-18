@@ -1,9 +1,6 @@
 %\documentclass[numbers,sort&compress]{elsarticle}
 \documentclass[5p,authoryear]{elsarticle}
 \journal{NeuroImage}
-% Some very useful LaTeX packages include:
-% (uncomment the ones you want to load)
-
 
 % *** MISC UTILITY PACKAGES ***
 %
@@ -33,11 +30,19 @@
 %
 \usepackage{url}
 \usepackage[colorlinks=true,linkcolor=black, citecolor=blue, urlcolor=blue]{hyperref}
+\usepackage{doi}
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
 \input{01-acronyms}
+
+\usepackage[T1]{fontenc}
+\usepackage{charter}
+%\usepackage[expert]{mathdesign}
+%\usepackage[libertine,cmintegrals,cmbraces,vvarbb]{newtxmath}
+%\renewcommand*{\familydefault}{\sfdefault}
+\usepackage[switch]{lineno}
 
 
 
@@ -83,6 +88,7 @@ diffusion MRI \sep susceptibility~distortion \sep segmentation %
 
 \end{frontmatter}
 
+\linenumbers
 \input{03-introduction}
 \input{04-methods}
 \input{05-results}
@@ -91,15 +97,16 @@ diffusion MRI \sep susceptibility~distortion \sep segmentation %
 
 \input{07-conclusion}
 
+% ACKs
+\input{08-acknowledgements}
+
+%\bibliographystyle{plainnat}
+\bibliographystyle{mystyle}
+\bibliography{Remote}
 
 % Add appendices
 \appendix
 %\numberwithin{equation}{section}
 \input{08-appendix-00-shapepriors}
 
-% ACKs
-\input{08-acknowledgements}
-
-\bibliographystyle{myplainnat}
-\bibliography{Remote}
 \end{document}

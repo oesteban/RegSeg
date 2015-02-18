@@ -1,17 +1,17 @@
 % -*- root: 00-main.tex -*-
-\section*{Introduction}
-\label{sec:introduction}
-
+\section*{Introduction}\label{sec:introduction}
 Nonlinear registration of images is a challenging task, ubiquitous
   in an endless number of image analysis applications.
 The process aims to find a spatial mapping $U$ that aligns the information available
   in two different coordinate systems (generally called
-  \emph{reference}, $R$, and \emph{moving}, $M$):
+  \emph{reference}, $R$, and \emph{moving}, $M$):%
+
   \begin{align}
   U\colon R \subset \mathbb{R}^n &\to M \subset \mathbb{R}^n \notag\\
   \vec{r} &\mapsto \vec{r}' =\vec{r}+u(\vec{r}),
   \label{eq:transform}
   \end{align}
+
   where $\vec{r}$ denotes a position in the reference domain $R$, $\vec{r}'$ is
   its corresponding location in $M$, and $n$ the dimensionality of images.
 Finally, $\vec{u} = u(\vec{r})$ is the displacement of every point with respect

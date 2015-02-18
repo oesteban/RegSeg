@@ -152,17 +152,18 @@ Whereas \cite{guyader_combined_2011} proposed a nonlinear elasticity smoother, w
   proposed by \cite{nagel_investigation_1986}.
 
 
-\subsection*{Cost-function derivation}
-\label{sec:methods_map}
+\subsection*{Cost-function derivation}\label{sec:methods_map}
 
 In a Bayesian framework, the mappings $U$ in \eqref{eq:transform} are
   evaluated based on their posterior probability given the observed data
   $R$.
 Using the Bayes' rule, the posterior likelihood is computed as:
+
   \begin{equation}
   P(U \mid R,\Gamma_{l,m}) = \frac{P(R \mid U,\Gamma_{l,m})\, P(U)}{P(R)},
   \label{eq:bayes_rule}
   \end{equation}
+
   where $P(R \mid U,\Gamma_{l,m})$ is the data-likelihood, and
   $\Gamma_{l,m}$ are a set of surfaces corresponding to the interfaces
   between piecewise smooth regions $\Omega_i$, such that
@@ -170,6 +171,7 @@ Using the Bayes' rule, the posterior likelihood is computed as:
   contour between tissues $l$ and $m$.
 Then, the \gls*{map} criterium is applied to find the mapping estimate $\hat{U}$
   that aligns $\Gamma$ into $R$:
+
   \begin{align}
   \hat{U} &= \underset{U}{\argmax} \left\{ P(U \mid R,\Gamma_{l,m}) \right\} \notag\\
    &= \underset{U}{\argmax} \left\{ P(R \mid U,\Gamma_{l,m})\, P(U) \right\}.
@@ -178,11 +180,13 @@ Then, the \gls*{map} criterium is applied to find the mapping estimate $\hat{U}$
 
 First, we assume independence between pixels, and thus break down the
   global data likelihood into a product of pixel-wise conditional probabilities:
+
   \begin{equation}
   P(R \mid U,\Omega) = \underset{l}{\prod} \underset{\vec{r}\in \Omega_l}{\prod}
     P\left( \vec{f}' \mid U \right),
   \label{eq:bayes_aposteriori}
   \end{equation}
+
   where $\vec{f}' = R(\vec{r}')$ is the feature vector at the displaced
   position $\vec{r}'$ \eqref{eq:transform} of the multispectral target
   volume.
@@ -191,14 +195,17 @@ For convenience, and because it has been shown to be an appropriate approximatio
   region $\Omega_l$:
   1) the features are i.i.d.; and 2) they can be modeled by multivariate normal
   distributions:
+
   \begin{equation}
   P\left( \vec{f}' \mid U,\Omega_l \right) = \mathcal{N} \left( \vec{f}' \mid \Theta_l \right),
   \label{eq:likelihood}
   \end{equation}
+
  	where $\Theta_l = \lbrace \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} \rbrace$ are the
  	descriptors of region $\Omega_l$.
 We then insert \eqref{eq:likelihood} into \eqref{eq:bayes_rule} to obtain the full
   formulation of the \emph{data term} of our registration model:
+
  	\begin{align}
   P( R \mid U, \Omega ) &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod}
   \mathcal{N} ( \vec{f} \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} ) \notag\\
@@ -206,25 +213,31 @@ We then insert \eqref{eq:likelihood} into \eqref{eq:bayes_rule} to obtain the fu
   \mdist{f'}{l} \right)}},
   \label{eq:pdf}
   \end{align}
+
   using $\mdist{f}{l}$ to denote the squared \emph{Mahalanobis distance} of $\vec{f}$ with respect
   to the descriptors of region $l$ as
   $\mathcal{E}_l(\vec{r}) = \mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
 
 
 We choose a Thikonov regularization prior as follows:
+
   \begin{equation*}
   P(U) = \underset{\vec{r}}{\prod} p(u(\vec{r})) =
   \underset{\vec{r}}{\prod} p_0(u(\vec{r})) \, p_1(u(\vec{r})),
   \end{equation*}
+
   with further:
+
   \begin{align*}
   p_0(u(\vec{r})) &= \mathcal{N}( u(\vec{r}) \mid 0, A^{-1}), \notag\\
   p_1(u(\vec{r})) &= \mathcal{N}(  \nabla \cdot u(\vec{r}) \mid 0, B^{-1}),
   \end{align*}
+
   imposing that the distortion and its gradient have zero
   mean and variance governed by $A$ and $B$.
 Since the anisotropy is generally aligned with the imaging axes, these will be simplified
   in the following for the sake of clarity:
+
   \begin{align}
     p_0(u(\vec{r})) &= \underset{\vec{r}}{\sum} \mathcal{N}( u(\vec{r}) \mid 0,
       (\boldsymbol{\alpha}^{\circ\frac12}\,\vec{I}_n)^{-1}), \notag\\
@@ -233,8 +246,10 @@ Since the anisotropy is generally aligned with the imaging axes, these will be s
   \label{eq:priors}
   \end{align}
 
+
 Finally, the \gls{map} problem is adapted into a variational one applying the
   following log-transform:
+
   \begin{align}
   E(R \mid U) &= -\log \underset{l}{\prod}
   \underset{\vec{r} \in \Omega_l}{\prod}
@@ -245,6 +260,7 @@ Finally, the \gls{map} problem is adapted into a variational one applying the
   + \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{r}))^{\circ2} \right] \,d\vec{r},
   \label{eq:energy}
   \end{align}
+
   that is the dual expression to the energy functional corresponding
   to a discrete \gls*{acwe} framework \citep{chan_active_2001}
   with anisotropic regularization as studied in
@@ -271,36 +287,40 @@ We provide a proof of duality in {\color{red} [REF figshare?]}.
 	}\label{fig:method}
 \end{figure}
 
-\paragraph*{Deformation model}
-\label{sec:deformation_model}
+\paragraph*{Deformation model}\label{sec:deformation_model}
 Let us denote $\{\vec{v}_i\}_{i=1 \ldots N_c}$ the vertices of one or several prior
   surface(s).
 In our application, these surfaces are triangularized meshes extracted using \emph{FreeSurfer}
   \citep{fischl_freesurfer_2012}.
 The transformation from the structural space into the coordinate space of the
   target image is achieved through a dense deformation field $u(\vec{r})$, such that:
+
   \begin{equation}
   \vec{v}_i' = U\{\vec{v}_i\} = \vec{v}_i + u(\vec{v}_i),
   \label{eq:nodes_tfm}
   \end{equation}
+
   where $U$ is defined in \eqref{eq:transform}.
 Since the nodes of the anatomical surfaces likely lay off-grid, it is required to
   derive $u(\vec{r})$ from a discrete set of parameters $\{\vec{u}_k\}_{k=1 \ldots K}$.
 Densification is achieved through a set of associated basis functions $\psi_k$:
+
   \begin{equation}
   u(\vec{r}) = \sum_k \psi_k(\vec{r}) \vec{u}_k.
   \label{eq:intp_kernel}
   \end{equation}
-%
+
 In our implementation, $\psi_k$ is chosen to be a tensor-product B-Spline kernel
   of degree 3 ($B_3$).
 Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
   $\psi$ by the actual kernel function, the transformation writes:
+
   \begin{equation}
     \vec{v}_i' = \vec{v}_i + \sum_k \left[ \vec{u}_k \, \underset{d}{\prod}
       B_3( (\vec{v}_i - \vec{r}_k) \cdot \hat{\mathbf{e}}_d ) \right],
   \label{eq:transformation}
   \end{equation}
+
   with $\hat{\mathbf{e}}_d$ being the unitary vector along axis $d$.
 
 
@@ -309,14 +329,17 @@ Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
 To find the minimum of the energy functional \eqref{eq:energy},
   we propose a gradient-descent approach with respect to the underlying
   deformation field through the following \gls*{pde}:
+
   \begin{equation}
   \frac{\partial u(\vec{r},t)}{\partial t} \propto - \frac{\partial E(\vec{u})}{\partial \vec{u}_k},
   \label{eq:general_gradient_descent}
   \end{equation}
+
   with $t$ being an artificial time parameter of the contour
   evolution, and $\vec{u}_k$ the parameters supporting the estimate
   $\hat{U}$ of the transformation at the current time point.
 Now, we introduce \eqref{eq:energy} in \eqref{eq:general_gradient_descent}:
+
   \begin{align}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
   \frac{ \partial }{\partial \vec{u}_k} \Big\{
@@ -327,8 +350,10 @@ Now, we introduce \eqref{eq:energy} in \eqref{eq:general_gradient_descent}:
   \label{eq:gradient_descent}
   \end{align}
 
+
 Therefore, we can apply a discretized interpretation of \eqref{eq:shape_gradients}
   to compute the data term in \eqref{eq:gradient_descent} as follows:
+
   \begin{align}
   \frac{\partial E_{data}(\vec{u})}{\partial \vec{u}_k} &=
   \frac{ \partial }{\partial \vec{u}_k} \left\{
@@ -337,27 +362,34 @@ Therefore, we can apply a discretized interpretation of \eqref{eq:shape_gradient
    \left\langle \frac{\partial \vec{v}_i'}{\partial \vec{u}_k}, \bar{s}_i'\right\rangle,
   \label{eq:gradient_wshape}
   \end{align}
+
   in this case, the formulation has been adapted to the non-binary case, $\{l,m\}$
   being any pair of neighboring regions, and $\Gamma_{l,m}$ the contour separating
   them such that $\vec{x}' = \vec{v}' \in\Gamma_{l,m} \iff \vec{x}\in \partial\Omega_i \cap \partial\Omega_j$
   and $\vec{n_i}'$ is the unit inward normal to the contour at $c_i'$.
 
+
 Finally, we can compute:
+
   \begin{align}
   \frac{\partial \vec{v}_i'}{\partial \vec{u}_k} &= \frac{\partial}{\partial \vec{u}_k}
   \left\{ \vec{v}_i + \sum_k \psi_k(\vec{v}_i) \vec{u}_k \right\}
   = \psi_k(\vec{v}_i)\, \hat{\vec{e}}
   \label{eq:basis_derivative}
   \end{align}
+
   where $\hat{\vec{e}}$ is the coordinates system's unit vector.
 The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \eqref{eq:shape_gradients},
 	are then projected to the deformation field in order to obtain the derivatives $\vec{g}_k$
 	corresponding to $\vec{u}_k$:
+
   \begin{equation}
   \vec{g}_{i,k} = \left\langle \frac{\partial}{\partial \vec{u}_k}{\vec{v}_i}', \bar{s}_i'\right\rangle
   = - \left[ \mdist{f_i'}{l} - \mdist{f_i'}{m} \right] \psi_k(\vec{v}_i)\, \hat{\vec{e}},
   \end{equation}
+
   then the full gradient evolution equation \eqref{eq:gradient_descent} yields:
+
   \begin{align}
   \frac{\partial E(\vec{u}_k)}{\partial \vec{u}_k} =
   &\underset{i}{\sum} \vec{g}_{i,k} +2\, \boldsymbol{\alpha} \vec{u}_k
@@ -392,10 +424,12 @@ Conversely, the susceptibility-derived distortions only happen along the phase
   encoding axis of the image.
 Therefore, a \gls*{swindex} can be computed as the one-to-one distance between corresponding
   vertices of surfaces, weighted by their respective Voronoi area $w_i$:
+
   \begin{equation}
   sWI = \frac{1}{P} \sum\limits_p^P \frac{1}{A_p} \sum\limits_i^{N_p} w_i\,\|
   \vec{v}_i - \hat{\vec{v}}_i \|
   \end{equation}
+
   where $\vec{v}_i$ are the locations of the $N_p$ vertices in each $p \in \{1, \dots P\}$
   prior, $A_p$ the total area of surface $p$, and $\hat{\vec{v}}_i$ is the location
   recovered corresponding to the vertex $\vec{v}_i$.
