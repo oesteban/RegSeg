@@ -2,15 +2,14 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-17 12:13:07
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-02-18 16:18:54
 
 
-def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
+def hcp_workflow(name='Evaluation_HCP', settings={}):
     """
     The pyacwereg evaluation workflow for the human connectome project (HCP)
     """
-    from nipype import config, logging
     from nipype.pipeline import engine as pe
     from nipype.interfaces import utility as niu
     from nipype.interfaces import io as nio
@@ -29,9 +28,6 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
     from pysdcev.workflows.smri import preprocess_t2, preprocess_dwi
     from pysdcev.workflows.tractography import mrtrix_dti
     from pysdcev.stages.stage1 import stage1
-
-    config.update_config(cfg)
-    logging.update_logging(config)
 
     fnames = dict(t1w='T1w_acpc_dc_restore.nii.gz',
                   t1w_brain='T1w_acpc_dc_restore_brain.nii.gz',

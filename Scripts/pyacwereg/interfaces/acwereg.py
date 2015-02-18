@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-16 11:06:07
+# @Last Modified time: 2015-02-18 18:17:30
 
 import os
 import os.path as op
@@ -150,12 +150,12 @@ pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
     _grouped_traits = []
     _cmd = 'regseg'
     _num_levels = 0
+    _singleworker = False
 
     def __init__(self, command=None, **inputs):
         """ Combine general and grouped inputs """
         super(ACWEReg, self).__init__(command=command, **inputs)
         self.groups = self.input_group_spec()
-
         general_names = ANTSCommandInputSpec().trait_names()
 
         for name in self.groups.trait_names():

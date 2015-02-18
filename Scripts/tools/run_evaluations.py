@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-02 10:35:00
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-02-18 16:13:28
 
 
 import os
@@ -17,6 +17,7 @@ if __name__ == '__main__':
     import os.path as op
     from glob import glob
     import numpy as np
+    from nipype import config, logging
 
     try:
         from enthought.etsconfig.api import ETSConfig
@@ -98,25 +99,28 @@ if __name__ == '__main__':
         from multiprocessing import cpu_count
         nthreads = cpu_count()
 
-    cfg = {}
-    cfg['plugin'] = 'Linear'
+    plugin = 'Linear'
     if nthreads > 1:
-        cfg['plugin'] = 'MultiProc'
-        cfg['plugin_args'] = {'n_proc': nthreads}
+        plugin = 'MultiProc'
+        plugin_args = {'n_proc': nthreads}
 
     # Setup logging dir
     log_dir = op.abspath('logs')
-    cfg['logging'] = {'log_directory': log_dir, 'log_to_file': True,
-                      'workflow_level': 'INFO', 'interface_level': 'INFO'}
     if not op.exists(log_dir):
         os.makedirs(log_dir)
 
+    cfg = {}
+    cfg['logging'] = {'log_directory': log_dir, 'log_to_file': True,
+                      'workflow_level': 'INFO', 'interface_level': 'INFO'}
     # Setup debug mode
     if opts.debug:
         cfg['logging']['workflow_level'] = 'DEBUG'
         cfg['logging']['interface_level'] = 'DEBUG'
+        config.enable_debug_mode()
 
-    wf = hcp_workflow(name=opts.name, settings=settings, cfg=cfg)
+    logging.update_logging(config)
+
+    wf = hcp_workflow(name=opts.name, settings=settings)
     wf.base_dir = settings['work_dir']
     wf.write_graph(format='pdf')
-    wf.run()
+    wf.run(plugin=plugin, plugin_args=plugin_args)
