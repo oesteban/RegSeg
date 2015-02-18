@@ -155,7 +155,7 @@ Whereas \cite{guyader_combined_2011} proposed a nonlinear elasticity smoother, w
 \subsection*{Cost-function derivation}
 \label{sec:methods_map}
 
-In a Bayesian framework, the mappings $U$ in \autoref{eq:transform} are
+In a Bayesian framework, the mappings $U$ in \eqref{eq:transform} are
   evaluated based on their posterior probability given the observed data
   $R$.
 Using the Bayes' rule, the posterior likelihood is computed as:
@@ -184,7 +184,7 @@ First, we assume independence between pixels, and thus break down the
   \label{eq:bayes_aposteriori}
   \end{equation}
   where $\vec{f}' = R(\vec{r}')$ is the feature vector at the displaced
-  position $\vec{r}'$ (\autoref{eq:transform}) of the multispectral target
+  position $\vec{r}'$ \eqref{eq:transform} of the multispectral target
   volume.
 For convenience, and because it has been shown to be an appropriate approximation
   \citep{leemput_automated_1999,cuadra_comparison_2005}, we introduce two assumptions for each
@@ -197,7 +197,7 @@ For convenience, and because it has been shown to be an appropriate approximatio
   \end{equation}
  	where $\Theta_l = \lbrace \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} \rbrace$ are the
  	descriptors of region $\Omega_l$.
-We then insert \autoref{eq:likelihood} into \autoref{eq:bayes_rule} to obtain the full
+We then insert \eqref{eq:likelihood} into \eqref{eq:bayes_rule} to obtain the full
   formulation of the \emph{data term} of our registration model:
  	\begin{align}
   P( R \mid U, \Omega ) &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod}
@@ -262,12 +262,12 @@ We provide a proof of duality in {\color{red} [REF figshare?]}.
 	close-up.
 	They iteratively through their normals $\hat{n}_i$ at each vertex $\vec{v}_i$ of the mesh.
 	The gradient speeds $\bar{s}_i$ are computed as the disparity between data energies of
-	the vertex $\vec{v}_i$ in each limiting region as described in \autoref{eq:energy}.
+	the vertex $\vec{v}_i$ in each limiting region as described in \eqref{eq:energy}.
 	In this figure, the gradient speed corresponding to $\vec{v}_1$ is written in the lower
 	box, $\Omega_{wm}$ being the inner limiting region and $\Omega_{gm}$ the outer.
 	Finally, every $\bar{s}_i$ is projected into the grid of control points $\vec{u}_k$ that
 	support the deformation field through the corresponding weights $\psi_k(\vec{v}_i)$ obtained
-	as in \autoref{eq:basis_derivative}.
+	as in \eqref{eq:basis_derivative}.
 	}\label{fig:method}
 \end{figure}
 
@@ -350,7 +350,7 @@ Finally, we can compute:
   \label{eq:basis_derivative}
   \end{align}
   where $\hat{\vec{e}}$ is the coordinates system's unit vector.
-The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \autoref{eq:shape_gradients},
+The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \eqref{eq:shape_gradients},
 	are then projected to the deformation field in order to obtain the derivatives $\vec{g}_k$
 	corresponding to $\vec{u}_k$:
   \begin{equation}
