@@ -242,7 +242,8 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
         (st1,       cmethod1, [
             ('out_dis_set.dwi', 'inputnode.in_dwi'),
             ('out_dis_set.dwi_mask', 'inputnode.dwi_mask'),
-            ('out_ref_set.t2w_brain', 'inputnode.in_t2w')]),
+            ('out_ref_set.t2w_brain', 'inputnode.in_t2w'),
+            ('out_ref_set.surf', 'inputnode.in_surf')]),
         (ds,        cmethod1, [('bval', 'inputnode.in_bval'),
                                ('mr_param', 'inputnode.in_param')]),
         (cmethod1,   export2, [('outputnode.out_surf', 'surfaces0')]),
