@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-17 12:02:09
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-02-18 11:45:39
 
 import os
 import os.path as op
@@ -115,7 +115,7 @@ def default_regseg(name='REGSEGDefault'):
     return wf
 
 
-def sdc_t2b(name='SDC_T2B', enhance_b0=True, icorr=True):
+def sdc_t2b(name='SDC_T2B', icorr=True):
     """
     The T2w-registration based method (T2B) implements an SDC by nonlinear
     registration of the anatomically correct *T2w* image to the *b0* image
@@ -154,10 +154,9 @@ def sdc_t2b(name='SDC_T2B', enhance_b0=True, icorr=True):
         fields=['dwi', 'dwi_mask', 'out_surf']), name='outputnode')
 
     avg_b0 = pe.Node(pmisc.ComputeAveragedB0(), name='avg_b0')
-    cache_b0 = pe.Node(niu.IdentityInterface(fields=['b0', 'mask']),
-                       name='B0Cache')
-    enh_t2 = pe.Node(pmisc.SigmoidFilter(upper_perc=92.0, lower_perc=65.0),
-                     name='enh_T2')
+    n4_b0 = pe.Node(ants.N4BiasFieldCorrection(dimension=3), name='BiasB0')
+    n4_t2 = pe.Node(ants.N4BiasFieldCorrection(dimension=3), name='BiasT2')
+
     getparam = pe.Node(nio.JSONFileGrabber(defaults={'enc_dir': 'y'}),
                        name='GetEncDir')
     reg = pe.Node(nex.Registration(num_threads=1), name='Elastix')
@@ -190,15 +189,17 @@ def sdc_t2b(name='SDC_T2B', enhance_b0=True, icorr=True):
         (inputnode,   getparam, [('in_param', 'in_file')]),
         (inputnode,  split_dwi, [('in_dwi', 'in_file')]),
         (inputnode,   corr_msk, [('dwi_mask', 'moving_image')]),
-        (inputnode,     enh_t2, [('in_t2w', 'in_file'),
-                                 ('t2w_mask', 'in_mask')]),
         (inputnode,      swarp, [('in_surf', 'points_file')]),
-        (inputnode,        reg, [('t2w_mask', 'fixed_mask')]),
+        (inputnode,        reg, [('t2w_mask', 'fixed_mask'),
+                                 ('dwi_mask', 'moving_mask')]),
+        (inputnode,      n4_t2, [('in_t2w', 'mask_image'),
+                                 ('t2w_mask', 'mask_image')]),
+        (inputnode,      n4_b0, [('dwi_mask', 'mask_image')]),
+        (avg_b0,         n4_b0, [('out_file', 'input_image')]),
         (getparam,         reg, [
-         (('enc_dir', _default_params), 'parameters')]),
-        (enh_t2,           reg, [('out_file', 'fixed_image')]),
-        (cache_b0,         reg, [('b0', 'moving_image'),
-                                 ('mask', 'moving_mask')]),
+            (('enc_dir', _default_params), 'parameters')]),
+        (n4_t2,            reg, [('output_image', 'fixed_image')]),
+        (n4_b0,            reg, [('output_image', 'moving_image')]),
         (reg,           tfx_b0, [
             (('transform', _get_last), 'transform_file')]),
         (avg_b0,        tfx_b0, [('out_file', 'reference_image')]),
@@ -237,19 +238,6 @@ def sdc_t2b(name='SDC_T2B', enhance_b0=True, icorr=True):
             (warp,         warpbuff, [('warped_file', 'unwarped')])
         ])
 
-    if enhance_b0:
-        enh_b0 = pe.Node(pmisc.EnhanceB0(), name='enh_b0')
-        wf.connect([
-            (inputnode,      enh_b0, [('dwi_mask', 'in_mask')]),
-            (avg_b0,         enh_b0, [('out_file', 'in_file')]),
-            (enh_b0,       cache_b0, [('out_file', 'b0'),
-                                      ('out_mask', 'mask')])
-        ])
-    else:
-        wf.connect([
-            (inputnode,    cache_b0, [('dwi_mask', 'mask')]),
-            (avg_b0,       cache_b0, [('out_file', 'b0')])
-        ])
     return wf
 
 
