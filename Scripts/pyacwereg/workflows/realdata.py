@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-18 16:18:54
+# @Last Modified time: 2015-02-19 19:17:37
 
 
 def hcp_workflow(name='Evaluation_HCP', settings={}):
@@ -120,7 +120,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
     dti = mrtrix_dti()
     mdti = pe.Node(niu.Merge(2), name='MergeDTI')
 
-    regseg = regseg_wf()
+    regseg = regseg_wf(usemask=True)
     regseg.inputs.inputnode.images_verbosity = 3
     regseg.inputs.inputnode.alpha = [0.0, 0.0, 0.0]
     regseg.inputs.inputnode.beta = [0.0, 0.0, 0.0]
