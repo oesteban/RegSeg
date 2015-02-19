@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-14 11:43:52
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-02-19 10:46:19
 
 
 def add_annotations(values, ax, level, nlevels, color, lastidx, units=''):
@@ -497,7 +497,7 @@ def phantom_errors(in_csv, resolution='lo',
     return g
 
 
-def metric_map_plot(in_file):
+def metric_map_plot(in_file, out_file=None):
     import pandas as pd
     import numpy as np
     import seaborn as sn
@@ -505,7 +505,6 @@ def metric_map_plot(in_file):
     plt.style.use('ggplot')
     sn.set_context("talk", font_scale=1.25)
     plt.rcParams['font.size'] = 24
-
 
     df = pd.read_csv(in_file)
     df.error.fillna(0.0, inplace=True)
@@ -520,6 +519,10 @@ def metric_map_plot(in_file):
         series.append(ts)
 
     final = pd.DataFrame(np.array(series).T, index=ndf.error, columns=subjects)
-    final.plot(legend=False)
-    return final
+    ax = final.plot(legend=False)
+    ax.set_xlabel(r'Registration error ($\epsilon$)')
+    ax.set_ylabel('Relative metric value')
+    if out_file is not None:
+        plt.savefig(out_file, dpi=300, bbox_inches='tight')
 
+    return final
