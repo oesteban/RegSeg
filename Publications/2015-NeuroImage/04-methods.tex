@@ -452,11 +452,11 @@ Therefore, a \gls*{swindex} can be computed as the one-to-one distance between c
 We proved the concept on simplistic digital phantoms which we will name after their
   appearance as ``box'', ``ball'', ``L-shape'', and ``gyrus'' (\autoref{fig:phantom},
   boxes A and B).
-Using \emph{phantomas} \citep{caruyer_phantomas_2014}, we simulated \gls*{t1} and
-  \gls*{t2} images (TE/TR=10/1500ms and TE/TR=90/5000ms
-  respectively) corresponding to each shape.
-Simulations were conducted with rician noise for a \gls*{snr} of 300.0, and
-  two image resolutions, $1.0mm$ and $2.0mm$, both isotropic.
+Using \emph{phantomas} \citep{caruyer_phantomas_2014}, we simulated
+  \gls*{t1} (TE/TR=10/1500ms) and \gls*{t2} images (TE/TR=90/5000ms)
+  corresponding to each appearance shape, with two resolutions each
+  ($1.0mm$ and $2.0mm$ isotropic).
+Simulations were corrupted with rician noise for a \gls*{snr} of 300.0.
 The reference surfaces were extracted using the marching-cubes algorithm
   shipped with \emph{FreeSurfer} \citep{fischl_freesurfer_2012}
   at the higher resolution (1.0mm isotropic).

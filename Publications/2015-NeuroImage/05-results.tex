@@ -51,8 +51,17 @@ Thus, the energy functional \eqref{eq:energy} was evaluated for the contour posi
   obtained along a lineralized space of distortions
   $\hat{U}\{\vec{r}\} = \epsilon \cdot U_{true} = \vec{r} + \epsilon \cdot u(\vec{r})$,
   with $\epsilon \in [-1.1, 1.1]$.
-The result of this experiment is shown in \autoref{fig:realdata}.
+The result of this experiment is shown in \autoref{fig:energymap}.
 The metric consistently displayed its minimum at the zero-error point.
+
+\begin{figure}
+	\includegraphics[width=\linewidth]{figures/figure04.pdf}
+	\caption{Assessment of the segmentation model, sampling the value of the energy functional
+	\eqref{eq:energy} versus several registration errors generated as explained in
+	\nameref{sec:res_model_and_metric}.
+	The metric of our registration method displayed a smooth gradient towards the minimum
+	located at the $\epsilon = 0.0$ point.}\label{fig:energymap}
+\end{figure}
 
 \paragraph*{Cross-comparison evaluation}\label{sec:res_cc_evaluation}
 %
