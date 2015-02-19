@@ -128,7 +128,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->InitializeContours();
 
 	this->m_RegionValue.SetSize(this->m_NumberOfRegions);
-	this->m_RegionValue.Fill(itk::NumericTraits<MeasureType>::infinity());
+	this->m_RegionValue.Fill(itk::NumericTraits<MeasureType>::ZeroValue());
 
 	this->m_Model = EnergyModelType::New();
 	this->m_Model->SetInput(this->m_ReferenceImage);
