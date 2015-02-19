@@ -32,14 +32,55 @@ Finally, \emph{hybrid methods} map geometrical features and voxel-wise informati
 
 In this work we propose a hybrid approach to nonlinear registration of anatomically correct
   and precise surfaces to warped and low-resolution \gls*{dmri} of the brain.
-Currently, we are witnessing an uprising demand for such algorithms in the challenging context
-  of extracting and characterizing the structural connectivity networks of the
+Currently, we are witnessing an uprising demand for such algorithms in the quest
+  of extracting and characterizing the networks of structural connectivity in the
   human brain \citep{craddock_imaging_2013}.
 Our registration method is demonstrated here as a solution to correct for the susceptibility
   distortions that \gls*{dmri} of the head typically present \citep{jezzard_correction_1995}.
-\todo[inline]{talk about the distortion and cite SDCs}
+The precise segmentation of \gls*{dmri} data is also crucial in such applications, since the
+  definition of the nodes in the network is generally derived from a parcellation performed in
+  an anatomical \gls*{mri} of the same subject \citep{daducci_connectome_2012}.
 
-A fundamental antecedent of the present approach is found in \citep{greve_accurate_2009}.
+\Gls*{dmri} data are usually acquired with \gls*{epi} schemes.
+In order to quickly probe  in many different orientations the diffusion process within the living
+  brain, these sequences minimize the bandwidth of the \gls*{pe} direction.
+This low bandwith originates the artifactual displacement of locations presenting small deviations
+  from the main magnetic field $B_0$.
+The principal source of these deviations, $\Delta B_0$, is the discontinuity of magnetic
+  susceptibility at tissue interfaces.
+Tissue/air boundaries show large steps of susceptibility and this artifact is
+  particularly evident in the surroundings of the orbito-frontal lobe or the temporal
+  bones in both hemispheres.
+The displacements field $U_s$ along the \gls*{pe} axis can be estimated theoretically
+  \citep{jezzard_correction_1995}:
+
+  \begin{equation}
+  \vec{r}' = \vec{r} + \frac{\gamma \, T_{acq}\, s_{PE}}{2\pi}\Delta B_0(\vec{r}) \cdot \hat{\vec{e}}_{PE}.
+  \label{eq:fieldmap}
+  \end{equation}
+
+where $\vec{r}$ is the location in the reference domain as in \eqref{eq:transform},
+  $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time,
+  $s_{PE}$ is the pixel spacing along \gls*{pe}, and $\hat{\vec{e}}_{PE}$ the unitary
+  vector along \gls*{pe}.
+Several methodologies have been proposed to estimate $U_s$ and fix the artifact.
+The first solution was acquiring extra images to estimate $\Delta B_0$ using field mapping
+  techniques \citep{jezzard_correction_1995,andersson_modeling_2001}.
+A second set of methods aquired extra images reproducing the same \gls*{epi} scheme but switching
+  the \gls*{pe} axis \citep{chiou_simple_2000} or reversing the direction of gradient
+  increments in the same axis \citep{cordes_geometric_2000,holland_efficient_2010}.
+\cite{kybic_unwarping_2000} proposed a correction using nonlinear registration of the \gls*{dmri}
+  data versus a \gls*{t2} image.
+Further developments \citep{irfanoglu_susceptibility_2011} extended this method to the
+  three-dimensional problem.
+All methods require extra \gls*{mr} aquisitions. Thus, a tipical protocol for the extraction
+  of structural connectivity comprehends \gls*{dmri}, \gls*{t1}, and the acquisition demanded
+  by the correction method of choice.
+
+Our method is related to the \gls*{t2b} methods as we also render the correction as a
+  registration problem.
+Conversely, the method does not require any of the previously mentioned extra acquisitions.
+A fundamental antecedent to the present approach is found in \citep{greve_accurate_2009}.
 They proposed a registration method to align \gls*{t1} and \gls*{dmri} images
   of the brain using a linear transformation model.
 Similarly, we exploit the precise structures that can be extracted with

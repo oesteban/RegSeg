@@ -143,8 +143,8 @@ The principal application of these techniques was the image registration between
 Finally, \cite{gorthi_active_2011} presented a comprehensive generalization of the
   existing methodologies based on the level sets approximation in the application of
   atlas-based segmentation.
-A recent solution of the segmentation-registration problem close to the one proposed here was
-  presented by \cite{guyader_combined_2011}.
+Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
+  registration method close to the one proposed here.
 Our method differs on two key features:
   it allows multiple active contours for segmentation, and the regularization strategy.
 Whereas \cite{guyader_combined_2011} proposed a nonlinear elasticity smoother, we rely on
@@ -168,15 +168,9 @@ Using the Bayes' rule, the posterior likelihood is computed as:
   $\Gamma_{l,m}$ are a set of surfaces corresponding to the interfaces
   between piecewise smooth regions $\Omega_i$, such that
   $\Gamma_{l,m} = \partial \Omega_l \cap \partial \Omega_m$ is the
-  contour between tissues $l$ and $m$.
-Then, the \gls*{map} criterium is applied to find the mapping estimate $\hat{U}$
-  that aligns $\Gamma$ into $R$:
-
-  \begin{align}
-  \hat{U} &= \underset{U}{\argmax} \left\{ P(U \mid R,\Gamma_{l,m}) \right\} \notag\\
-   &= \underset{U}{\argmax} \left\{ P(R \mid U,\Gamma_{l,m})\, P(U) \right\}.
-  \label{eq:map_u}
-  \end{align}
+  contour between competing regions $\Omega_l$ and $\Omega_m$.
+The best estimate $\hat{U}$ then fulfills the maximum a posteriori criterium
+  \citep{bishop_pattern_2006}, and aligns $\Gamma$ into $R$.
 
 First, we assume independence between pixels, and thus break down the
   global data likelihood into a product of pixel-wise conditional probabilities:
@@ -188,22 +182,15 @@ First, we assume independence between pixels, and thus break down the
   \end{equation}
 
   where $\vec{f}' = R(\vec{r}')$ is the feature vector at the displaced
-  position $\vec{r}'$ \eqref{eq:transform} of the multispectral target
+  position $\vec{r}'$ \eqref{eq:transform} in the multispectral target
   volume.
 For convenience, and because it has been shown to be an appropriate approximation
   \citep{leemput_automated_1999,cuadra_comparison_2005}, we introduce two assumptions for each
   region $\Omega_l$:
   1) the features are i.i.d.; and 2) they can be modeled by multivariate normal
-  distributions:
-
-  \begin{equation}
-  P\left( \vec{f}' \mid U,\Omega_l \right) = \mathcal{N} \left( \vec{f}' \mid \Theta_l \right),
-  \label{eq:likelihood}
-  \end{equation}
-
- 	where $\Theta_l = \lbrace \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} \rbrace$ are the
- 	descriptors of region $\Omega_l$.
-We then insert \eqref{eq:likelihood} into \eqref{eq:bayes_rule} to obtain the full
+  distributions with parameters $\lbrace \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} \rbrace$
+  for each region $\Omega_l$.
+We then insert the normal distribution into \eqref{eq:bayes_rule} to obtain the full
   formulation of the \emph{data term} of our registration model:
 
  	\begin{align}
@@ -219,16 +206,12 @@ We then insert \eqref{eq:likelihood} into \eqref{eq:bayes_rule} to obtain the fu
   $\mathcal{E}_l(\vec{r}) = \mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
 
 
-We choose a Thikonov regularization prior as follows:
-
-  \begin{equation*}
-  P(U) = \underset{\vec{r}}{\prod} p(u(\vec{r})) =
-  \underset{\vec{r}}{\prod} p_0(u(\vec{r})) \, p_1(u(\vec{r})),
-  \end{equation*}
-
-  with further:
+The smoothness of the resulting displacements field is induced by a Thikonov regularization
+  prior:
 
   \begin{align*}
+  P(U) = \underset{\vec{r}}{\prod}\, p(u(\vec{r})) &=
+  \underset{\vec{r}}{\prod}\, p_0(u(\vec{r})) \, p_1(u(\vec{r})), \\
   p_0(u(\vec{r})) &= \mathcal{N}( u(\vec{r}) \mid 0, A^{-1}), \notag\\
   p_1(u(\vec{r})) &= \mathcal{N}(  \nabla \cdot u(\vec{r}) \mid 0, B^{-1}),
   \end{align*}
@@ -292,15 +275,14 @@ Let us denote $\{\vec{v}_i\}_{i=1 \ldots N_c}$ the vertices of one or several pr
   surface(s).
 In our application, these surfaces are triangularized meshes extracted using \emph{FreeSurfer}
   \citep{fischl_freesurfer_2012}.
-The transformation from the structural space into the coordinate space of the
-  target image is achieved through a dense deformation field $u(\vec{r})$, such that:
+The transform $\hat{U}$ \eqref{eq:transform} is supported by a dense deformation field
+  $u(\vec{r})$, such that:
 
   \begin{equation}
-  \vec{v}_i' = U\{\vec{v}_i\} = \vec{v}_i + u(\vec{v}_i),
+  \vec{v}_i' = \hat{U}\{\vec{v}_i\} = \vec{v}_i + u(\vec{v}_i).
   \label{eq:nodes_tfm}
   \end{equation}
 
-  where $U$ is defined in \eqref{eq:transform}.
 Since the nodes of the anatomical surfaces likely lay off-grid, it is required to
   derive $u(\vec{r})$ from a discrete set of parameters $\{\vec{u}_k\}_{k=1 \ldots K}$.
 Densification is achieved through a set of associated basis functions $\psi_k$:
@@ -311,13 +293,13 @@ Densification is achieved through a set of associated basis functions $\psi_k$:
   \end{equation}
 
 In our implementation, $\psi_k$ is chosen to be a tensor-product B-Spline kernel
-  of degree 3 ($B_3$).
+  of degree 3 ($\beta_3$).
 Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
   $\psi$ by the actual kernel function, the transformation writes:
 
   \begin{equation}
     \vec{v}_i' = \vec{v}_i + \sum_k \left[ \vec{u}_k \, \underset{d}{\prod}
-      B_3( (\vec{v}_i - \vec{r}_k) \cdot \hat{\mathbf{e}}_d ) \right],
+      \beta_3( (\vec{v}_i - \vec{r}_k) \cdot \hat{\mathbf{e}}_d ) \right],
   \label{eq:transformation}
   \end{equation}
 
@@ -397,15 +379,10 @@ The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \eqref{
   \label{eq:gradient_final}
   \end{align}
 
-{\color{red}
-\paragraph*{Convergence evidence and settings}
- discuss choice of $\tau$, Courant-Friedrichs-Lewy (CFL) condition / Wolfe conditions, multi-resolutions on the bspline grid, image samples and surface sampling,  etc.
-\paragraph*{Efficient field densification}
-As long as the dense deformation field is iteratively interpolated
-from the same set of control points that define the $L-1$ contours,
-it is possible to pre-cache all the $\psi_k(\vec{v}_i)$ weights into a
-sparse matrix for fast densification. As well, we achieve a
-diffeomorphic transform by}
+{\color{red} \paragraph*{Evidencing convergence and settings}
+discuss choice of $\tau$, Courant-Friedrichs-Lewy (CFL) condition / Wolfe conditions,
+multi-resolutions on the bspline grid, image samples and surface sampling,  etc.
+}
 
 
 \subsection*{Experiments and evaluation}
@@ -435,14 +412,21 @@ Therefore, a \gls*{swindex} can be computed as the one-to-one distance between c
   recovered corresponding to the vertex $\vec{v}_i$.
 
 
-\begin{figure}
-\caption{1) The prior surfaces are extracted from an undistorted and high-resolution dataset
-	  (e.g. \autoref{fig:phantom}). 2) A plausible, synthetic distortion $U^{-1}_{true}$ is generated.
-	3) The low-resolution (target) images are warped using the synthetic distortion.
-	4) Our method is run, obtaining a $\hat{U}_{tst}$.
-	  A cross-comparison methodology is also applied, to obtain a competing $\hat{U}_{cc}$.
+\begin{figure*}
+\includegraphics[width=\linewidth]{figures/figure02}
+\caption{Experimental workflow applied on real data from the \gls*{hcp}.
+  1) The prior surfaces are extracted from the anatomical reference (\gls*{t1} image).
+	2) To operate as ground truth, we generate plausible-synthetic distortion $U^{-1}_{true}$
+	  from the fieldmap using \eqref{eq:fieldmap}.
+	3) The \gls*{dmri} data are warped using $U^{-1}_{true}$ to reproduce the effects of real
+	  susceptibility-derived distortions.
+	Target diffusion scalars (\gls*{fa} and \gls*{adc}) are computed on the distorted data and
+		stacked to feed the multivariate input required by our algorithm.
+	4) Registration is run, obtaining a $U_{test} = \hat{U}_{true}$, an estimation of
+	  the ground-truth deformation $U_{true}$.
+	  A cross-comparison methodology is also applied, to obtain a competing $U_{cc}$.
 	5) Results are visually and quantitatively evaluated.}\label{fig:evworkflows}
-\end{figure}
+\end{figure*}
 
 \subsection*{Image Data and preprocessing}
 \label{sec:datasets}
@@ -462,7 +446,7 @@ The reference surfaces were extracted using the marching-cubes algorithm
   at the higher resolution (1.0mm isotropic).
 
 \begin{figure*}
-	\includegraphics[width=\linewidth]{figures/figure02}
+	\includegraphics[width=\linewidth]{figures/figure03}
 	\caption{A. The ``cortex'' phantom is a spherical shape with two sulci and an
 	  outer crust resembling the cortical folding (left).
 	The model is used to generate \gls*{t1} and \gls*{t2} images after warping the
@@ -510,7 +494,7 @@ The choice of this particular model of homogeneous regions responds to the joint
   Materials (Figure XX)}.
 
 In this case, we derived the deformation $U_{true}^{-1}$ from the field maps released with
-  the corresponding packages of each dataset from the \gls*{hcp},
+  the corresponding packages of each dataset from the \gls*{hcp} applying \eqref{eq:fieldmap},
   mimicking the real distortions, using a derivation of our previous work
   \citep{esteban_simulationbased_2014}.
 After warping the original \gls*{dmri} with $U_{true}^{-1}$, we computed the \gls*{dti} and

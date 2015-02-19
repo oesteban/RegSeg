@@ -3,8 +3,10 @@
 
 \section*{Appendix}
 
-\subsection*{Instant shape priors}
+\subsection*{Instant velocity of contours}
 \label{app:shape_priors}
+The computation of gradients at the locations of the active contours in the
+  instant $t$ is based on the work of \cite{herbulot_segmentation_2006}.
 Let $F(\vec{r})$ be an ``arbitrary'' function over the image domain
   $\Omega = \Omega_l \cup \Omega_m$ splitted in two regions $l$ and
   $m$, and $\Gamma_{l,m}$ a closed boundary between them
@@ -20,7 +22,7 @@ We now derive the domain integral w.r.t. $t$:
 
   where $\left\langle\frac{\partial\Gamma_{l,m}}{\partial t}, N_{\Gamma_{l,m}}\right\rangle$ is
   the projection of the boundary movement on the unit inward normal $N_{\Gamma_{l,m}}$.
-Assuming that the region descriptors $\Theta_l$ vary slowly enough, we can consider
+Assuming that the region descriptors $\{\mu_l, \Sigma_l\}$ vary slowly enough, we can consider
   that $\frac{\partial}{\partial t} F(\vec{r}) = 0$ and thus:
 
   \begin{equation*}
@@ -29,9 +31,8 @@ Assuming that the region descriptors $\Theta_l$ vary slowly enough, we can consi
   N_{\Gamma_{l,m}}\right\rangle d\vec{r}
   \end{equation*}
 
-  In our formulation, $F(\vec{r})$ is the difference on
-    sample likelihood between the inner ($\Omega_l$) and the outer ($\Omega_m$) regions.
-  Therefore, we substitute:
+  As inner ($\Omega_l$) and outer ($\Omega_m$) regions are competing and introducing
+    the energy functional \eqref{eq:energy}:
 
     \begin{equation}
     \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
@@ -42,3 +43,10 @@ Assuming that the region descriptors $\Theta_l$ vary slowly enough, we can consi
     \end{equation}
 
     where $\mathcal{E}_l(\vec{r}) = \mathcal{D}^2_{l}(R(\vec{r}))$ for briefness.
+
+\subsection*{Efficient field densification}
+As long as the dense deformation field is iteratively interpolated
+from the same set of control points that define the $L-1$ contours,
+it is possible to pre-cache all the $\psi_k(\vec{v}_i)$ weights into a
+sparse matrix for fast densification. As well, we achieve a
+diffeomorphic transform by

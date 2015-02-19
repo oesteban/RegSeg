@@ -6,9 +6,9 @@
 \label{sec:results_phantom}
 Using the experimental instrumentation described in section \nameref{sec:experiments_evaluation},
   we collected quantitative results on the digital phantoms.
-To warp the simulated datasets, we generated 150 realizations of random and smooth displacement
-  fields $U^{-1}_{true}$.
-Smoothness is achieved using two levels of B-Spline functions, with control points evenly
+To warp the simulated datasets, we randomly generated 150 different realizations of
+  the distortion $U^{-1}_{true}$.
+Smoothness is introduced using two levels of B-Spline functions, with control points evenly
   located in isotropic grids covering the full extent of the phantom.
 The first level had $50.5mm$ of separation between control points and the second $25.25mm$.
 The rationale behind this choice is producing large deformations on the contours with
@@ -34,6 +34,7 @@ Consequently, we used the non-parametric Wilcoxon signed-rank test along with Bo
   correction for multiple comparisons ($N=150$).
 Averaged errors resulted significantly lower than voxel resolution with $p < (0.001 / 150)$
   for all the tests (4 phantom types $\times$ 2 resolutions).
+
 
 \subsection*{Correction of distortions on real datasets}\label{sec:results_hcp}
 
@@ -67,3 +68,8 @@ The metric consistently displayed its minimum at the zero-error point.
 %
 Finally, we evaluated the performance of our registration method, and compared it to correcting
   for distortions using the \emph{b0}-to-\gls*{t2} registration approach.
+
+\begin{figure*}
+	\includegraphics[width=\linewidth]{figures/figure05.pdf}
+	\caption{Results on real data}\label{fig:results_real}
+\end{figure*}
