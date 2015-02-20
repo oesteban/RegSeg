@@ -248,7 +248,6 @@ Finally, the \gls{map} problem is adapted into a variational one applying the
   to a discrete \gls*{acwe} framework \citep{chan_active_2001}
   with anisotropic regularization as studied in
   \citep{nagel_investigation_1986}.
-We provide a proof of duality in {\color{red} [REF figshare?]}.
 
 
 \subsection*{Numerical Implementation}
@@ -379,10 +378,15 @@ The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \eqref{
   \label{eq:gradient_final}
   \end{align}
 
-{\color{red} \paragraph*{Evidencing convergence and settings}
-discuss choice of $\tau$, Courant-Friedrichs-Lewy (CFL) condition / Wolfe conditions,
-multi-resolutions on the bspline grid, image samples and surface sampling,  etc.
-}
+\paragraph*{Settings, implementation details, and evidencing convergence}
+\label{sec:conv_report}
+The registration parameters (such as $\tau$, the multi-resolutions on the B-Spline grid,
+  target image smoothing, etc.) and implementation details (for instance the sparse matrix approach
+  to fast interpolation) are dicussed in the {\color{red} Supplemental Materials, section XX.XX}.
+The actual choice of parameter settings are publicly distributed with the source code of the experiments.
+Additionally, we release our software along with a tool for generating convergence reports to
+  demonstrate the behavior of the tool and help scientists configure their experiments.
+A sample of report is found in the {\color{red} Supplemental Materials, section XX.XX}.
 
 
 \subsection*{Experiments and evaluation}
@@ -428,6 +432,7 @@ Therefore, a \gls*{swindex} can be computed as the one-to-one distance between c
 	5) Results are visually and quantitatively evaluated.}\label{fig:evworkflows}
 \end{figure*}
 
+
 \subsection*{Image Data and preprocessing}
 \label{sec:datasets}
 
@@ -469,7 +474,7 @@ The reference surfaces were extracted using the marching-cubes algorithm
 \label{sec:human_connectome}
 %
 For the evaluation of the algorithm on real \gls*{dmri} data of human brains,
-  we collected 15 datasets from the ``minimally preprocessed''
+  we collected 16 datasets from the ``minimally preprocessed''
 	 database of the \gls*{hcp}.
 We refer the reader to \citep{essen_human_2012} for exact details about acquisition
   parameters, and \citep{glasser_minimal_2013} for the preprocessing issues.
@@ -489,9 +494,7 @@ Selecting the appropriate labels in the \emph{aparc} segmentation, we applied
   4) brain stem and cerebellar \gls*{wm};
 	5) cerebellar \gls*{gm}; and
 	6) cortical \gls*{gm} surface.
-The choice of this particular model of homogeneous regions responds to the joint distribution
-  of \gls*{fa} and \gls*{adc} of the human brain, as shown in the {\color{red} Supplemental
-  Materials (Figure XX)}.
+The choice of this particular model is further addressed in \nameref{sec:res_model_and_metric}.
 
 In this case, we derived the deformation $U_{true}^{-1}$ from the field maps released with
   the corresponding packages of each dataset from the \gls*{hcp} applying \eqref{eq:fieldmap},

@@ -1,11 +1,14 @@
 % -*- root: 00-main.tex -*-
 \section*{Discussion}
 \label{sec:discussion}
-We present a variational framework using to simultaneously segment and
-  register 3D \gls*{dmri} of the human brain using the corresponding-anatomical image
-  as reference.
+In section \nameref{sec:methods_background}, we framed our method within the current
+  state of art and defined the contributions in our approach.
+We chose active contours without edges as we were interested in the homogeneous
+  regions of diffusion properties within the brain.
+Iteratively, the active contours are updated following the instant shape gradients
+  (see \nameref{app:shape_priors} in Appendix) with a gradient descent strategy.
 The aproach is valid for image processing applications in which a precise segmentation is
-  available (from an atlas or corresponding anatomical data) and match any or all
+  available (from an atlas or within subject anatomical data), and match any or all
   the following circumstances:
   i) reference and target images do not present appropriate contrasts to
   	perform volume-based registration reliably;
@@ -16,53 +19,40 @@ The aproach is valid for image processing applications in which a precise segmen
     deformation field is smooth enough to be represented with a sufficient number
   	of B-Spline kernels (i.e. the distortion in \gls*{dmri} images,
   	object tracking in time series, etc.).
-
-The algorithm is designed for the proposed application on correcting distortions of
-  \gls*{dmri} data, a required preliminary step to extract the structural connectivity
-  networks.
-As a consequence, our approach relies on the availability of precise segmentations or
-  surfaces of the objects that are to be segmented on the target volume(s).
-Connectome extraction protocols generally include the acquisition of \gls*{t1} images
-  to provide with prior information about anatomy with high accuracy.
-Our method solves in a single step a joint problem usually addressed in two steps.
-The first solves the linear registration of the \gls*{t1} and \gls*{dmri} data (i.e.
-  \cite{greve_accurate_2009}), whereas the second corrects for the nonlinear distortions
-  derived from the inhomogenety of magnetic susceptibility across tissues
-  \citep{jezzard_correction_1995}.
-
-In section \nameref{sec:methods_background}, we framed our method within the current
-  state-of-art and defined the novelty of our approach.
-The registration method performs the segmentation of the target image in several
-  competing regions defined explicitly by their limiting surfaces.
-We chose active contours without edges as we were interested in the homogeneous
-  regions of diffusion properties within the brain.
-Finally, a B-Spline deformation field supports and keeps track of the evolution of the
-  active contours.
-Iteratively, the active contours are updated following the instant shape gradients
-  (see \nameref{app:shape_priors} in Appendix) with a gradient descent strategy.
 To support our claim that images can be simultaneously segmented and registered to a
   reference coordinate system, we conducted evaluation experiments on digital
   simulated phantoms and real datasets.
 
+The algorithm is designed for the proposed application on correcting distortions of
+  \gls*{dmri} data, a required preliminary step to extract the structural connectivity
+  networks.
+Connectome extraction protocols generally include the acquisition of \gls*{t1} images
+  to provide with prior information about anatomy with high accuracy.
+Our method solves in a single step a joint problem usually addressed in two steps.
+The first solves the linear registration of the \gls*{t1} and \gls*{dmri} data
+  \citep{greve_accurate_2009}, whereas the second corrects for the nonlinear distortions
+  derived from the inhomogenety of magnetic susceptibility across tissues
+  \citep{jezzard_correction_1995}.
 
-\todo[inline]{Add sentence about comment RW\#1 of IPMI2013: incorporate knowledge of
-the EPI distortions into regularization}
 
 
-\paragraph*{Availability and reproducibility statement}
-{\color{red} We also considered the reproducibility of results a design requirement.
-Therefore, real data are fetched from a publicly available repository
-  (the Human Connectome Project \citep{essen_human_2012}) and all the software
-  involved in this paper is also publicly released.
-\autoref{fig:evworkflows} describes the general structure of the workflow we implemented
-  as evaluation instrument, using \emph{nipype} \citep{gorgolewski_nipype_2011} to ensure
-  reproducibility.
+\paragraph*{Prospects}
+Future extensions or improvements of \emph{regseg} similar to the evolution of existing
+  alternative methodologies.
+Incorporating knowledge about the distortion initializing our method with the theory-based
+  correction using fieldmaps would be the most profitable.
+The main pitfall using fieldmap correction is the challenging problem of unwrapping the
+  range of the phase map, as it is clipped in the range $(-\pi, \pi]$.
+The most extended solution to this is \emph{prelude} \citep{jenkinson_fast_2003}, and some
+  alternatives have been proposed \citep{daga_susceptibility_2014} to circumvent the
+  inherent unreliability of the method.
+The \emph{regseg} algorithm would naturally correct missregistered areas due to errors in
+  phase unwrapping, and errors derived to the important smoothing processes that are
+  typically to clean up field maps.
+This integration has been recently applied in the \emph{b0}-to-\gls*{t2} approach
+  by \cite{irfanoglu_susceptibility_2011}, studied along with the virtues of using
+  nonregular B-Spline grids.
+This is also a potential extension to our deformation model.
 
-We implemented the registration method upon the widely used Insight Registration and Segmentation
-	Toolkit (\url{http://www.itk.org}) with the aim to release a useful and free software bundle.
-The instrumentation framework is also distributed with the registration method,
-  and has been implemented using \emph{nipype} \citep{gorgolewski_nipype_2011}.
-The pipelines include the automatic generation of the ``cortex'' phantom.
-The real datasets are publicly available under the \gls*{hcp} project.
-Thus, all the experiments and results presented in this paper are intended to be
-  fully reproducible.}
+Finally, we are currently studying substitute features to build the energy functional on,
+  enabling to perform \emph{regseg} directly on the raw \gls*{dmri} data.

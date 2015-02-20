@@ -4,8 +4,9 @@
 
 \subsection*{Proof of concept on digital phantoms}
 \label{sec:results_phantom}
-Using the experimental instrumentation described in section \nameref{sec:experiments_evaluation},
-  we collected quantitative results on the digital phantoms.
+Using a simplified subset of the experimental instrumentation described in section
+  \nameref{sec:experiments_evaluation}, we collected quantitative results on the digital
+  phantoms.
 To warp the simulated datasets, we randomly generated 150 different realizations of
   the distortion $U^{-1}_{true}$.
 Smoothness is introduced using two levels of B-Spline functions, with control points evenly
@@ -19,6 +20,8 @@ Invertibility of $U^{-1}_{true}$ is ensured by controlling the maximum displacem
 
 A total of 1200 registration experiments (4 phantom types $\times$ 150 random warpings
   $\times$ 2 resolutions) were run.
+Parameter settings of every processing step in the experiments are made available along with
+  the source code.
 For each registration, the averaged Hausdorff distance (see \nameref{sec:experiments_evaluation})
   of the inner and the outer surfaces was computed.
 The results showed a consistent and high accuracy, below voxel resolution.
@@ -42,18 +45,19 @@ Averaged errors resulted significantly lower than voxel resolution with $p < (0.
 %
 Preliminarly, we investigated the aptness of our segmentation model to play as cost function
   driving the registration process.
-First, we selected the 6-regions model described in \nameref{sec:human_connectome} after
-  visual evaluation of the joint distribution {\color{red} REF Supplemental} of several
-  alternative models for segmenting the target bivariate images (\gls*{fa} and \gls*{adc}).
-Since susceptibility-derived distortions are always aligned with the phase encoding axis
-  and feature the property of being linear with respect to the phase inhomogeneity map,
-  we reduced the dimensionality of the error space to one dimension.
-Thus, the energy functional \eqref{eq:energy} was evaluated for the contour positions
-  obtained along a lineralized space of distortions
+First, we evaluated several alternative models to segment the target bivariate images
+  (\gls*{fa} and \gls*{adc}).
+Based on the observed joint distribution of each (see {\color{red} Supplemental Materials, ...}),
+  we selected the 6-regions scheme described in \nameref{sec:human_connectome}.
+
+The distortions follow expression \eqref{eq:fieldmap} and hence, we easily reduced the
+  error space to one dimension as follows.
+The energy functional \eqref{eq:energy} was evaluated for the warpings given by
+  a lineralized space of distortions
   $\hat{U}\{\vec{r}\} = \epsilon \cdot U_{true} = \vec{r} + \epsilon \cdot u(\vec{r})$,
   with $\epsilon \in [-1.1, 1.1]$.
 The result of this experiment is shown in \autoref{fig:energymap}.
-The metric consistently displayed its minimum at the zero-error point.
+The metric consistently displayed its minimum at $\epsilon=0.0$ (ground-truth location).
 
 \begin{figure}
 	\includegraphics[width=\linewidth]{figures/figure04.pdf}
@@ -64,12 +68,34 @@ The metric consistently displayed its minimum at the zero-error point.
 	located at the $\epsilon = 0.0$ point.}\label{fig:energymap}
 \end{figure}
 
-\paragraph*{Cross-comparison evaluation}\label{sec:res_cc_evaluation}
+\paragraph*{Evaluation \& cross-comparison}\label{sec:res_cc_evaluation}
 %
-Finally, we evaluated the performance of our registration method, and compared it to correcting
-  for distortions using the \emph{b0}-to-\gls*{t2} registration approach.
+Finally, we tested the performance of our registration method, and compared it to a competing
+  method: the \emph{b0}-to-\gls*{t2} registration approach.
+To this end, we integrated the registration software \emph{elastix} \citep{klein_elastix_2010},
+  and reproduced the settings that internally uses \emph{ExploreDTI}
+  \citep{leemans_exploredti_2009}, a widely used toolkit for tractography analysis of
+  \gls*{dti}.
+A dual workflow to the general evaluation framework (\autoref{fig:evworkflows})
+  was also implemented to run the correction experiment with the competing method.
+First, the average \emph{b0} volume is computed using all the \emph{low-b} volumes within
+  the distorted \gls*{dmri} dataset.
+Using the ``preprocessed'' instance of the \gls*{t2} image of the corresponding subject as
+  reference image, and the \emph{b0} image as moving image, we performed the same correction
+  experiment.
+
 
 \begin{figure*}
 	\includegraphics[width=\linewidth]{figures/figure05.pdf}
-	\caption{Results on real data}\label{fig:results_real}
+	\caption{The evaluation instrument automatically renders the overlay of the
+	  target \gls*{fa} image and the resulting contours after distortion correction (yellow color) and
+	  their theoretical location using the ground-truth (green color).
+	The first two rows show several axial slices for \emph{regseg} (``proposed'' row) and the
+	  competing method.
+	The last two rows represent the sagittal view.
+	We intentionally ommited the coronal slicing due to it is the less informative given the properties
+	  of the distortion.
+	Red arrows point to regions where the accuracy of the proposed method more clearly overperformed
+	  the competing method.
+	}\label{fig:results_real}
 \end{figure*}
