@@ -1,0 +1,95 @@
+% @Author: Oscar Esteban
+% @Date:   2015-02-20 15:40:09
+% @Last Modified by:   Oscar Esteban
+% @Last Modified time: 2015-02-20 16:27:53
+
+\documentclass[a4paper,notitlepage]{report}
+
+
+\usepackage{natbib}
+%\usepackage[style=numeric-comp,doi=false]{biblatex}
+
+% *** GRAPHICS RELATED PACKAGES ***
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+\usepackage{ifpdf}
+\graphicspath{{figures/},{../Figures/}}
+
+% *** MATH PACKAGES ***
+\usepackage[cmex10]{amsmath}
+\usepackage{amssymb}
+
+\usepackage[T1]{fontenc}
+\usepackage{charter}
+%\usepackage[expert]{mathdesign}
+%\usepackage[libertine,cmintegrals,cmbraces,vvarbb]{newtxmath}
+
+% *** SPECIALIZED LIST PACKAGES ***
+%\usepackage{algorithmic}
+%\usepackage{algorithm}
+
+
+% *** ALIGNMENT PACKAGES ***
+%\usepackage{array}
+
+% *** SUBFIGURE PACKAGES ***
+\usepackage[font={small}]{caption}
+%\usepackage{sidecap}
+
+% *** FLOAT PACKAGES ***
+\usepackage[framemethod=tikz]{mdframed}
+% \usepackage{fixltx2e}
+% \usepackage{stfloats}
+% \usepackage{dblfloatfix}
+
+
+% *** MISC UTILITY PACKAGES ***
+%\usepackage{fancyhdr}
+\usepackage{multicol}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{booktabs} % to use \toprule
+\usepackage{makeidx}
+%\usepackage[scale=2.0]{ccicons}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[marginparwidth=1.2in]{geometry}
+\usepackage{changepage}
+\usepackage{epigraph}
+\usepackage[toc,nomain,acronym,shortcuts,translate=false]{glossaries}
+\usepackage[hyphens]{url}
+\usepackage[breaklinks,hidelinks]{hyperref}
+\usepackage[hyphenbreaks]{breakurl} %fixes boxes spanning through pages
+
+\renewcommand\thesection{S\arabic{section}}
+\renewcommand\thesubsection{S\arabic{section}.\arabic{subsection}}
+
+\begin{document}
+\title{Supplemental Materials: \emph{Simultaneous segmentation and registration of
+diffusion MR images of the brain driven by active-contours}}
+\author{Oscar Esteban}
+\date{February 2015}
+
+\maketitle
+
+\section{Parameter settings and implementation details of \emph{regseg}}
+
+\subsection{Settings}
+
+\subsection{Implementation}
+
+\subsection{Convergence evidencing}
+
+\section{Instruments for evaluation}
+
+\section{Model considerations}
+
+\begin{figure*}[h!]
+	\includegraphics[width=\textwidth]{figures/Suppl-figure01.pdf}
+	\caption{Evaluating the joint distribution}\label{fig:jointplot}
+\end{figure*}
+
+\section{Extended results on phantom data}
+
+\section{Extended results on real data}
+
+\end{document}
