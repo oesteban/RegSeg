@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-19 19:17:37
+# @Last Modified time: 2015-02-20 10:12:32
 
 
 def hcp_workflow(name='Evaluation_HCP', settings={}):
@@ -213,7 +213,8 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
         (mesh1,      csv1, [('distance', 'surf_dist')])
     ])
 
-    mapen = ev.map_energy()
+    out_csv = op.abspath(op.join(name, 'energiesmapping.csv'))
+    mapen = ev.map_energy(out_csv=out_csv)
     wf.connect([
         (inputnode, mapen, [('subject_id', 'inputnode.subject_id')]),
         (regseg,    mapen, [('outputnode.out_enh', 'inputnode.reference'),
