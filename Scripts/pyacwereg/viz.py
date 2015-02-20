@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-19 10:46:19
+# @Last Modified time: 2015-02-20 15:29:00
 
 
 def add_annotations(values, ax, level, nlevels, color, lastidx, units=''):
@@ -324,6 +324,62 @@ def jointplot_data(im1data, im2data, in_seg, labels=None, out_file=None,
 
     plt.savefig(out_file, dpi=300, bbox_inches='tight')
     return g, out_file
+
+
+def jointplot_real(imageX, imageY, segmentation, mask,
+                   labels=None, xlabel='X', ylabel='Y',
+                   huelabel='tissue',
+                   xlims=None, ylims=None, out_file=None):
+    import os.path as op
+    import nibabel as nb
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sn
+    import pandas as pd
+
+    fa = nb.load(imageX).get_data().reshape(-1)
+    md = nb.load(imageY).get_data().reshape(-1)
+    seg = nb.load(segmentation).get_data().astype(np.uint8).reshape(-1)
+    msk = nb.load(mask).get_data().astype(np.uint8).reshape(-1)
+
+    if xlims is None:
+        xlims = (fa.min(), fa.max())
+
+    if ylims is None:
+        ylims = (md.min(), md.max())
+
+    md[md < ylims[0]] = np.nan
+    md[md > ylims[1]] = np.nan
+
+    if labels is None:
+        labels = ['Label%02d' % i for i in range(seg.max() + 1)]
+
+    df_pieces = []
+    for i, l in zip(np.unique(seg), labels):
+        idxs = np.where((seg == i) & (msk > 0))
+        fa_f = fa[idxs]
+        md_f = md[idxs]
+        d = {xlabel: fa_f,
+             ylabel: md_f,
+             huelabel: [l] * len(fa_f)}
+        df_pieces.append(pd.DataFrame(d))
+
+    df = pd.concat(df_pieces)
+    df = df[df.tissue != 'do-not-show']
+    sn.set_context("talk", font_scale=1.8)
+
+    g = sn.JointGrid(xlabel, ylabel, df, hue=huelabel, xlim=xlims, ylim=ylims,
+                     size=20, inline_labels=True)
+    # g.plot_joint(plt.scatter)
+    g.plot_joint(sn.kdeplot, linewidths=3.0)
+    g.plot_marginals(sn.distplot)
+
+    plt.setp(g.ax_joint.get_yticklabels(), visible=False)
+    plt.setp(g.ax_joint.get_xticklabels(), visible=False)
+
+    if out_file is not None:
+        plt.savefig(out_file, dpi=300, bbox_inches='tight')
+    return g
 
 
 def jointplot_gmm(locs, covs, labels=None, out_file=None,
