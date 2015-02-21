@@ -5,6 +5,7 @@
 # @Last Modified by:   Oscar Esteban
 # @Last Modified time: 2015-02-20 10:12:32
 
+import os.path as op
 
 def hcp_workflow(name='Evaluation_HCP', settings={}):
     """
