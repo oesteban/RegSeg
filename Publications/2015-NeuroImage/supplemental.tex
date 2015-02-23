@@ -1,10 +1,16 @@
 % @Author: Oscar Esteban
 % @Date:   2015-02-20 15:40:09
 % @Last Modified by:   Oscar Esteban
-% @Last Modified time: 2015-02-20 16:27:53
+% @Last Modified time: 2015-02-23 13:43:56
 
-\documentclass[a4paper,notitlepage]{report}
+\documentclass[a4paper]{report}
 
+\usepackage{titlesec}
+\newcommand{\sectionbreak}{\clearpage}
+
+\usepackage{aliascnt}
+\usepackage{relsize}
+\usepackage[procnames]{listings}
 
 \usepackage{natbib}
 %\usepackage[style=numeric-comp,doi=false]{biblatex}
@@ -38,6 +44,7 @@
 
 % *** FLOAT PACKAGES ***
 \usepackage[framemethod=tikz]{mdframed}
+%\usepackage{float}
 % \usepackage{fixltx2e}
 % \usepackage{stfloats}
 % \usepackage{dblfloatfix}
@@ -63,6 +70,68 @@
 \renewcommand\thesection{S\arabic{section}}
 \renewcommand\thesubsection{S\arabic{section}.\arabic{subsection}}
 
+% Listings style -----------------------------------------------------------------------------
+\definecolor{pink}{RGB}{255,0,90}
+\definecolor{comments}{RGB}{50,120,110}
+\definecolor{string}{RGB}{160,0,0}
+\definecolor{keywords}{RGB}{0,150,0}
+\def\listingsfont{\ttfamily}
+\def\listingsfontinline{\ttfamily}
+
+\lstnewenvironment{bashcode}[1][]
+  {\lstset{language=bash}\lstset{%
+  showstringspaces=false,
+  formfeed=\newpage,
+  tabsize=4,
+  breaklines=true,
+  basicstyle=\ttfamily\smaller\relax,
+  keywordstyle=\color{keywords}\bfseries,
+  commentstyle=\color{comments}\itshape,
+  stringstyle=\color{string},
+  showstringspaces=false,
+  %identifierstyle=\color{green},
+  procnamekeys={def,class},
+  morekeywords={models, lambda, forms, as, from},
+  numbers=none,
+  frame=single,
+  xleftmargin= 10pt,
+  xrightmargin= 10pt,
+  framexleftmargin=10pt,
+  frameround=tttt,
+  fillcolor=\color{gray!10},
+  backgroundcolor=\color{gray!10}
+}}
+{}
+
+
+\lstnewenvironment{pythoncode}[1][]
+  {\lstset{language=bash}\lstset{%
+  showstringspaces=false,
+  formfeed=\newpage,
+  tabsize=4,
+  breaklines=true,
+  basicstyle=\ttfamily\smaller\relax,
+  keywordstyle=\color{keywords}\bfseries,
+  commentstyle=\color{comments}\itshape,
+  stringstyle=\color{string},
+  showstringspaces=false,
+  %identifierstyle=\color{green},
+  procnamekeys={def,class},
+  morekeywords={models, lambda, forms, as, from},
+  numbers=left,
+  numberstyle=\smaller\color{black!60},
+  stepnumber=1,
+  numbersep=5pt,
+  frame=single,
+  xleftmargin= 40pt,
+  xrightmargin= 20pt,
+  framexleftmargin=20pt,
+  frameround=tttt,
+  fillcolor=\color{gray!10},
+  backgroundcolor=\color{gray!10}
+}}
+{}
+
 \begin{document}
 \title{Supplemental Materials: \emph{Simultaneous segmentation and registration of
 diffusion MR images of the brain driven by active-contours}}
@@ -73,17 +142,134 @@ diffusion MR images of the brain driven by active-contours}}
 
 \section{Parameter settings and implementation details of \emph{regseg}}
 
-\subsection{Settings}
-
 \subsection{Implementation}
+\paragraph{General} The \emph{regseg} registration and segmentation tool is written in C++, using ITK-4.6 as
+  implementation core.
+We designed a modular implementation, enabling multithreading in several pieces of the software,
+  as the process is computationally expensive.
+The tool generates a log-file in JSON format to easily inter-operate with secondary tools (such
+  as the convergence report generation, \autoref{sec:convergence_evidence}).
 
-\subsection{Convergence evidencing}
+\paragraph{Efficient interpolation using sparse matrices}
+During the registration process, every iteration requires computing the product of all the speeds
+  $\mathbf{s}'_i$ computed at the current position $\mathbf{v}'_i$ by the corresponding weights
+  $\psi_k(\mathbf{v}_i)$ of interpolating functions (Eq. (15)).
+As these weights can be computed once in the beginning of the process and they do not change along
+  it, and they are different from zero only in the proximity of the corresponding control node $k$,
+  they can be pre-cached in a sparse matrix.
+
+\subsection{Interface and Settings}\label{sec:interface_settings}
+
+\paragraph{Command-line interface}
+The command line interface of \emph{regseg} supports general settings and level-wise settings.
+For each multi-resolution level, its corresponding settings are added between brackets.
+
+\begin{bashcode}
+regseg -F fa.gz adc.nii.gz -P white.vtk pial.vtk -o myprefix [ -a 0.00000 -b 0.00000 --convergence-energy -t 1.0e-06 -w 60 --adaptative-descriptors --grid-spacing 16.0 -i 500 -s 0.001] [ -a 0. -b 0. --convergence-energy -t 1.e-08 -w 5 --grid-spacing 8.0 -i 250 -s 0.01]
+\end{bashcode}
+
+
+It is possible to get the description of available options running
+  \lstinline!regseg -h!:
+
+\begin{bashcode}
+Usage:
+
+General options:
+  -h [ --help ]                         show help message
+  -F [ --fixed-images ] arg             fixed image file
+  -P [ --surface-priors ] arg           shape priors
+  -T [ --surface-target ] arg           final shapes to evaluate metric (only
+                                        testing purposes)
+  -M [ --fixed-mask ] arg               fixed image mask
+  -L [ --transform-levels ] arg         number of multi-resolution levels for
+                                        the transform
+  -o [ --output-prefix ] arg (=regseg)  prefix for output files
+  -l [ --logfile ] arg                  log filename
+  -v [ --monitoring-verbosity ] arg (=1)
+                                        verbosity level of intermediate results
+                                        monitoring ( 0 = no output; 5 = verbose
+                                        )
+
+Optimizer options (by levels):
+  -a [ --alpha ] arg              alpha value in regularization
+  -b [ --beta ] arg               beta value in regularization
+  -s [ --step-size ] arg          step-size value in optimization
+  -g [ --gradient-scales ] arg    alpha value in regularization
+  -r [ --learning-rate ] arg      learning rate to update step size
+  -i [ --iterations ] arg         number of iterations
+  -w [ --convergence-window ] arg number of iterations of convergence window
+  -t [ --convergence-thresh ] arg convergence value
+  --grid-size arg                 size of control points grid
+  --grid-spacing arg              spacing between control points
+  -u [ --update-descriptors ] arg frequency (iterations) to update descriptors
+                                  of regions (0=no update)
+  --adaptative-descriptors        recomputes descriptors more often at the
+                                  beginning of the process
+  --convergence-energy            disables lazy convergence tracking: instead
+                                  of fast computation of the mean norm of the
+                                  displacement field, it computes the full
+                                  energy functional
+
+Functional options (by levels):
+  --smoothing arg               apply isotropic smoothing filter on target
+                                image, with kernel sigma=S mm.
+  --smooth-auto                 apply isotropic smoothing filter on target
+                                image, with automatic computation of kernel
+                                sigma.
+  --uniform-bg-membership       consider last ROI as background and do not
+                                compute descriptors.
+  -d [ --decile-threshold ] arg set (decile) threshold to consider a computed
+                                gradient as outlier (ranges 0.0-0.5)
+
+\end{bashcode}
+
+\paragraph{\emph{Nipype} interface}
+Our registration algorithm is released with a \emph{nipype Interface} packaged in
+  \lstinline!pyacwereg.interfaces.acwereg!.
+This interface has been comprehensively used in the evaluation workflows.
+
+\begin{pythoncode}
+from pyacwereg.interfaces.acwereg import ACWEReg
+regseg = ACWEReg()
+regseg.inputs.in_fixed = ['T1w.nii.gz', 'T2w.nii.gz']
+regseg.inputs.in_pior = ['csf.vtk', 'white_lh.vtk', 'white_rh.vtk',
+                         'pial_lh.vtk', 'pial_rh.vtk']
+ifresult = regseg.run()
+\end{pythoncode}
+
+
+
+\subsection{Convergence evidencing}\label{sec:convergence_evidence}
+In order to track the evolution of the registration process, several internal variables
+  are saved in the JSON log-file.
+Using the JSON log-file as input for the \emph{nipype Interface}
+  \lstinline!pyacwereg.interfaces.ACWEReport!, it is straightforward to obtain
+  a visual assessment document presenting the convergence.
+Online checking is also possible as the algorithm writes to the standard output as well.
+
+\begin{pythoncode}
+from pyacwereg.interfaces.acwereg import ACWEReport
+report = ACWEReport()
+report.inputs.in_log = `myprefix.log'
+ifresult = report.run()
+\end{pythoncode}
+
+\begin{figure*}[!ht]
+	\includegraphics[width=\textwidth]{figures/Suppl-figure02.pdf}
+	\caption{The evolution of the registration and segmentation process can be
+	  checked using the \emph{Convergence report},
+	  easily generated using the appropriate \emph{nipype Interface}.
+	The report comprehends several plots tracking the evolution of the algorithm and several
+	  features to help researchers tune up the algorithm in their application.}%
+	  \label{fig:convreport}
+\end{figure*}
 
 \section{Instruments for evaluation}
 
 \section{Model considerations}
 
-\begin{figure*}[h!]
+\begin{figure*}[!ht]
 	\includegraphics[width=\textwidth]{figures/Suppl-figure01.pdf}
 	\caption{Evaluating the joint distribution}\label{fig:jointplot}
 \end{figure*}
