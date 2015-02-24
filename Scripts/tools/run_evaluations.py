@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-24 11:23:40
+# @Last Modified time: 2015-02-24 23:22:34
 
 
 import os
@@ -59,6 +59,8 @@ if __name__ == '__main__':
                             type=int, help='number of repetitions')
     g_settings.add_argument('--debug', action='store_true', default=False,
                             help='switch debug mode ON')
+    g_settings.add_argument('--debug_wf', action='store_true', default=False,
+                            help='switch debug mode ON only for workflows')
     g_settings.add_argument('--metricmap', action='store_true', default=False,
                             help='execute metric map sub-workflow')
 
@@ -116,8 +118,10 @@ if __name__ == '__main__':
                       'workflow_level': 'INFO', 'interface_level': 'INFO'}
     # Setup debug mode
     if opts.debug:
-        cfg['logging']['workflow_level'] = 'DEBUG'
         cfg['logging']['interface_level'] = 'DEBUG'
+
+    if opts.debug or opts.debug_wf:
+        cfg['logging']['workflow_level'] = 'DEBUG'
         config.enable_debug_mode()
 
     logging.update_logging(config)
