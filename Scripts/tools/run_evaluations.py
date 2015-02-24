@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-18 16:13:28
+# @Last Modified time: 2015-02-24 11:19:57
 
 
 import os
@@ -59,6 +59,8 @@ if __name__ == '__main__':
                             type=int, help='number of repetitions')
     g_settings.add_argument('--debug', action='store_true', default=False,
                             help='switch debug mode ON')
+    g_settings.add_argument('--metricmap', action='store_true', default=False,
+                            help='execute metric map sub-workflow')
 
     opts = parser.parse_args()
 
@@ -120,7 +122,8 @@ if __name__ == '__main__':
 
     logging.update_logging(config)
 
-    wf = hcp_workflow(name=opts.name, settings=settings)
+    wf = hcp_workflow(
+        name=opts.name, settings=settings, map_metric=opts.metricmap)
     wf.base_dir = settings['work_dir']
     wf.write_graph(format='pdf')
     wf.run(plugin=plugin, plugin_args=plugin_args)

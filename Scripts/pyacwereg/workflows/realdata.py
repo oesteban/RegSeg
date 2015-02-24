@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-20 10:12:32
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-02-24 11:22:00
 
 
-def hcp_workflow(name='Evaluation_HCP', settings={}):
+def hcp_workflow(name='Evaluation_HCP', settings={}, map_metric=False):
     """
     The pyacwereg evaluation workflow for the human connectome project (HCP)
     """
@@ -213,15 +213,16 @@ def hcp_workflow(name='Evaluation_HCP', settings={}):
         (mesh1,      csv1, [('distance', 'surf_dist')])
     ])
 
-    out_csv = op.abspath(op.join(name, 'energiesmapping.csv'))
-    mapen = ev.map_energy(out_csv=out_csv)
-    wf.connect([
-        (inputnode, mapen, [('subject_id', 'inputnode.subject_id')]),
-        (regseg,    mapen, [('outputnode.out_enh', 'inputnode.reference'),
-                            ('outputnode.reg_msk', 'inputnode.in_mask')]),
-        (st1,       mapen, [('out_dis_set.surf', 'inputnode.surfaces0'),
-                            ('out_ref_set.surf', 'inputnode.surfaces1')])
-    ])
+    if map_metric:
+        out_csv = op.abspath(op.join(name, 'energiesmapping.csv'))
+        mapen = ev.map_energy(out_csv=out_csv)
+        wf.connect([
+            (inputnode, mapen, [('subject_id', 'inputnode.subject_id')]),
+            (regseg,    mapen, [('outputnode.out_enh', 'inputnode.reference'),
+                                ('outputnode.reg_msk', 'inputnode.in_mask')]),
+            (st1,       mapen, [('out_dis_set.surf', 'inputnode.surfaces0'),
+                                ('out_ref_set.surf', 'inputnode.surfaces1')])
+        ])
 
     cmethod1 = sdc_t2b()
     selmask = pe.Node(niu.Select(index=[2]), name='SelectMask')
