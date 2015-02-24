@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-24 11:19:57
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-02-24 11:23:40
 
 
 import os
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     plugin = 'Linear'
     if nthreads > 1:
         plugin = 'MultiProc'
-        plugin_args = {'n_proc': nthreads}
+        plugin_args = {'n_proc': nthreads, 'maxtasksperchild': 4}
 
     # Setup logging dir
     log_dir = op.abspath('logs')
