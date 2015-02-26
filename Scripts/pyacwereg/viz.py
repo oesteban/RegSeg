@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-20 15:29:00
+# @Last Modified time: 2015-02-25 11:36:26
 
 
 def add_annotations(values, ax, level, nlevels, color, lastidx, units=''):
@@ -564,14 +564,15 @@ def metric_map_plot(in_file, out_file=None):
 
     df = pd.read_csv(in_file)
     df.error.fillna(0.0, inplace=True)
-    df = df.sort(columns=['subject_id', 'error'])
+    df = df.sort(columns=['subject_id', 'error']).drop_duplicates(
+        subset=['subject_id', 'error', 'total'])
     subjects = df.subject_id.unique()
 
     series = []
     for s in subjects:
         ndf = df[df.subject_id == s]
         ndf.total /= ndf.total.min()
-        ts = ndf.total
+        ts = np.atleast_1d(ndf.total).tolist()
         series.append(ts)
 
     final = pd.DataFrame(np.array(series).T, index=ndf.error, columns=subjects)
