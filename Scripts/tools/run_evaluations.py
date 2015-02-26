@@ -104,6 +104,7 @@ if __name__ == '__main__':
         nthreads = cpu_count()
 
     plugin = 'Linear'
+    plugin_args = {}
     if nthreads > 1:
         plugin = 'MultiProc'
         plugin_args = {'n_proc': nthreads, 'maxtasksperchild': 4}
