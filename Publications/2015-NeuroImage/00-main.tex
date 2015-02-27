@@ -6,7 +6,7 @@
 %
 \usepackage{glossaries}
 \usepackage{booktabs} % to use \toprule
-
+\usepackage{multirow}
 \usepackage[colorinlistoftodos]{todonotes}
 
 
@@ -45,6 +45,8 @@ align-ed pre-sent}
 %\usepackage[libertine,cmintegrals,cmbraces,vvarbb]{newtxmath}
 %\renewcommand*{\familydefault}{\sfdefault}
 \usepackage[switch]{lineno}
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 
 \begin{document}
 

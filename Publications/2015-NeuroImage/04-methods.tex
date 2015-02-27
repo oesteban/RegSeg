@@ -1,115 +1,10 @@
 % -*- root: 00-main.tex -*-
-
-
-
-%{\color{red} {The main diverging points with respect to
-%\citep{gorthi_active_2011} are: 1) there is no need for an explicit level set function
-%$\Phi_G$, as we replace the level set gradient computation $N_{\Phi_G}$ with shape
-%gradients \citep{besson_dream2s_2003,herbulot_segmentation_2006};
-%2) regularization is also based on linear diffusion smoothing \citep{thirion_image_1998},
-%but we replace the Gaussian filtering by other constraints
-%studied in \citep{nagel_investigation_1986} to better the problem;
-%3) optimization is applied in the spectral
-%domain, observing anisotropic and inhomogeneous mappings along each direction.
-%With respect \citep{guyader_combined_2011}, the main differences are
-%the distance function, and the spectral solution to the optimization updates,
-%as we shall cover in \autoref{sec:numerical_implementation}.}}
-
-
-
-%In this paper we formulate the joint registration-segmentation
-%problem as follows.
-%such that the known contours in anatomical space $T$ optimally segment
-%the diffusion space $D$.
-%
-%
-%Whereas related \glspl*{adf} introduced in \autoref{sec:methods_background}
-%make use of explicit level-set formulations to solve \eqref{eq:gradient_descent},
-%we alternatively use \emph{shape-gradients}
-%\cite{besson_dream2s_2003,herbulot_segmentation_2006}.
-
-%
-%Let us denote by $\vec{x}$ the voxel and $F(\vec{x}) = [ f_1, f_2, \ldots, f_N]^T$
-%  its associated feature vector in the following.
-%
-%In our application, these surfaces are precise tissue interfaces of interest extracted
-%  from a high-resolution, anatomically correct reference volume using
-%  the well-established
-%
-%In this paper we propose a novel registration framework to simultaneously
-%solving the segmentation, distortion and cortical parcellation challenges,
-%by exploiting as strong shape-prior the detailed morphology extracted
-%from high-resolution and anatomically correct \gls{mri}.
-%Indeed, hereafter
-%we assume this segmentation problem in anatomical images is reliably and
-%accurately solved with readily available tools (e.g.
-%\citep{fischl_freesurfer_2012}).
-%After global alignment with \gls{t1} using existing approaches, the remaining
-%spatial mismatch between anatomical and diffusion space is due to susceptibility
-%distortions.
-%Finally, we need to establish precise spatial correspondence between the
-%surfaces in both spaces, including the tangential direction for parcellation.
-%Therefore, we can reduce the problem to finding the differences of spatial
-%distortion in between anatomical and \gls{dwi} space.
-%We thus reformulate the segmentation problem as an inverse problem, where we
-%seek for an underlying deformation field (the distortion) mapping
-%from the structural space into the diffusion space, such that the structural
-%contours segment optimally the \gls{dwi} data.
-%In the process, the one-to-one
-%correspondence between the contours in both spaces is guaranteed, and projection
-%of parcellisation to \gls{dwi} space is implicit and consistent.
-%
-%We test our proposed joint segmentation-registration model on two different
-%synthetic examples.
-%The first example is a scalar sulcus model, where the
-%\gls{csf}-\gls{gm} boundary particularly suffers from \gls{pve} and can only be
-%segmented correctly thanks to the shape prior and its coupling with the inner,
-%\gls{gm}-\gls{wm} boundary through the imposed deformation field regularity.
-%The second case deals with more realistic \gls{dwi} data stemming from
-%phantom simulations of a simplistic brain data.
-%Again, we show that the
-%proposed model successfully segments the \gls{dwi} data based on two derived
-%scalar features, namely \gls{fa} and \gls{md}, while establishing an estimate
-%of the dense distortion field.
-%
-%The rest of this paper is organized as follows.
-%First, in \autoref{sec:methods}
-%we introduce our proposed model for joint multivariate segmentation-registration.
-%Then we provide a more detailed description of the data and experimental setup in
-%\autoref{sec:experiments}.
-%We present results in \autoref{sec:results} and conclude
-%in \autoref{sec:conclusion}.
-%
-%
-%The properties of the reconstructed tensors and derived scalar maps have
-%been studied by \cite{ennis_orthogonal_2006}. Based on their
-%findings, \gls{fa}~\eqref{eq:fa} and \gls{md}~\eqref{eq:md} are
-%considered complementary features, and therefore we selected them for the
-%energy model \eqref{eq:complete_energy} in driving the
-%registration-segmentation process.
-%Whereas \gls{fa} informs mainly about the \emph{shape} of diffusion,
-%the \gls{md} is more related to the \emph{magnitude} of the process:
-%
-%\begin{align}
-%\mathrm{FA} &= \sqrt{ \frac{1}{2}}\,\frac{\sqrt{ (\lambda_1 - \lambda_2)^2 + (\lambda_2 - \lambda_3)^2 + (\lambda_3 - \lambda_1)^2}}{\sqrt{ {\lambda_1}^2 + {\lambda_2}^2 + {\lambda_3}^2}} \label{eq:fa} \\
-%\mathrm{MD} &= ( \lambda_1 + \lambda_2 + \lambda_3 ) / 3 \label{eq:md}
-%\end{align}
-%where $\lambda_i$ are the eigenvalues of the diffusion tensor
-%associated with the diffusion signal $S(\vec{q})$. There exist
-%two main reasons to justify their choice.
-%First, they are well-understood and standardized in clinical routine.
-%Second, together they contain most of the information that is
-%usually extracted from the \gls{dwi}-derived scalar maps
-%\cite{ennis_orthogonal_2006}.
-%
-
-
 \section*{Methods}
 \label{sec:methods}
 %
 \subsection*{Related work}
 \label{sec:methods_background}
-Registration-segmentation methods are generally built including a deformation model to
+Registration-segmentation methods are generally built on a deformation model to
   support the evolution of a segmentation algorithm that drives the mapping process.
 Thus, solutions usually select first a segmentation strategy to derive the cost function and
   regularization of the problem.
@@ -121,18 +16,18 @@ These methods either have an implicit description of the relative boundary locat
   \citep{cremers_kernel_2006,gastaud_combining_2004}.
 Some Bayesian approaches have been proposed as well
   \citep{wyatt_map_2003,pohl_bayesian_2006,gass_simultaneous_2014}.
-In \autoref{sec:methods_map} we start from a probabilistic framework to finally propose
+In section \nameref{sec:methods_map}, we start from a probabilistic framework to finally propose
 	a cost function defined on the location of explicit surfaces, showing the duality of the
-	existing approaches.
+	two existing approaches.
 
 An early ``morphing''-segmentation approach was proposed in \citep{bertalmio_morphing_2000}.
 Shortly, \cite{yezzi_variational_2001} presented the first method including a full solution to
   the registration, where the energy functional is defined simultaneously in the target
   and reference images with an affine transformation supporting the coordinates mapping.
-\cite{vemuri_joint_2003} proposed an atlas-based registration using a level sets
-  framework and only one \gls*{pde} for first.
-The principal application of these techniques was the image registration between timesteps in
-  a time-series or between different images \citep{paragios_level_2003}.
+\cite{vemuri_joint_2003} proposed an atlas-based registration using a level-sets
+  framework and only one \gls*{pde} for first time.
+The principal application of these techniques was to perform registration between timesteps in
+  time-series or between different images \citep{paragios_level_2003}.
 \cite{unal_coupled_2005} and later \cite{wang_joint_2006},
   extended the ``two \glspl*{pde}'' method of \cite{yezzi_variational_2001}
   to nonlinear registration with a free deformation field.
@@ -141,14 +36,13 @@ The principal application of these techniques was the image registration between
   registration-segmentation, through the propagation of the deformation field from
   the contours to the whole image definition.
 Finally, \cite{gorthi_active_2011} presented a comprehensive generalization of the
-  existing methodologies based on the level sets approximation in the application of
-  atlas-based segmentation.
+  existing methodologies based on level sets in the application of atlas-based segmentation.
 Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
   registration method close to the one proposed here.
 Our method differs on two key features:
   it allows multiple active contours for segmentation, and the regularization strategy.
 Whereas \cite{guyader_combined_2011} proposed a nonlinear elasticity smoother, we rely on
-  the smoothing effects of the deformation field and the anisotropic regularization
+  the inherent smoothness of the deformation field, and on the anisotropic regularization
   proposed by \cite{nagel_investigation_1986}.
 
 
@@ -203,7 +97,7 @@ We then insert the normal distribution into \eqref{eq:bayes_rule} to obtain the 
 
   using $\mdist{f}{l}$ to denote the squared \emph{Mahalanobis distance} of $\vec{f}$ with respect
   to the descriptors of region $l$ as
-  $\mathcal{E}_l(\vec{r}) = \mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
+  $\mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
 
 
 The smoothness of the resulting displacements field is induced by a Thikonov regularization
@@ -212,12 +106,12 @@ The smoothness of the resulting displacements field is induced by a Thikonov reg
   \begin{align*}
   P(U) = \underset{\vec{r}}{\prod}\, p(u(\vec{r})) &=
   \underset{\vec{r}}{\prod}\, p_0(u(\vec{r})) \, p_1(u(\vec{r})), \\
-  p_0(u(\vec{r})) &= \mathcal{N}( u(\vec{r}) \mid 0, A^{-1}), \notag\\
-  p_1(u(\vec{r})) &= \mathcal{N}(  \nabla \cdot u(\vec{r}) \mid 0, B^{-1}),
+  p_0(u(\vec{r})) &= \mathcal{N}( u(\vec{r}) \mid 0, \mathbf{A}^{-1}), \notag\\
+  p_1(u(\vec{r})) &= \mathcal{N}(  \nabla \cdot u(\vec{r}) \mid 0, \mathbf{B}^{-1}),
   \end{align*}
 
   imposing that the distortion and its gradient have zero
-  mean and variance governed by $A$ and $B$.
+  mean and variance governed by the matrices $\mathbf{A}$ and $\mathbf{B}$.
 Since the anisotropy is generally aligned with the imaging axes, these will be simplified
   in the following for the sake of clarity:
 
@@ -230,8 +124,8 @@ Since the anisotropy is generally aligned with the imaging axes, these will be s
   \end{align}
 
 
-Finally, the \gls{map} problem is adapted into a variational one applying the
-  following log-transform:
+Finally, the maximum a posteriori problem is adapted into a variational one where we look for
+  the minimum of an energy functional, by applying a log-transform:
 
   \begin{align}
   E(R \mid U) &= -\log \underset{l}{\prod}
@@ -244,10 +138,9 @@ Finally, the \gls{map} problem is adapted into a variational one applying the
   \label{eq:energy}
   \end{align}
 
-  that is the dual expression to the energy functional corresponding
+  this expression is dual to the energy functional corresponding
   to a discrete \gls*{acwe} framework \citep{chan_active_2001}
-  with anisotropic regularization as studied in
-  \citep{nagel_investigation_1986}.
+  with the corresponding anisotropic regularization term \citep{nagel_investigation_1986}.
 
 
 \subsection*{Numerical Implementation}
@@ -255,17 +148,17 @@ Finally, the \gls{map} problem is adapted into a variational one applying the
 
 \begin{figure}
 	\includegraphics[width=\linewidth]{figures/figure01}
-	\caption{The active contours are defined as the interfacing surfaces of the segmenting
-	\glspl{roi} $\Omega_i$, and represented in green and dark blue colors in this
-	close-up.
-	They iteratively through their normals $\hat{n}_i$ at each vertex $\vec{v}_i$ of the mesh.
+	\caption{The active contours are defined as the interfacing surfaces of the competing
+	  \glspl{roi} $\Omega_i$.
+	They are represented in green and dark blue colors in this close-up.
+	They iteratively evolve following their inner normals $\hat{n}_i$ at each vertex
+	  $\vec{v}_i$ of the mesh.
 	The gradient speeds $\bar{s}_i$ are computed as the disparity between data energies of
-	the vertex $\vec{v}_i$ in each limiting region as described in \eqref{eq:energy}.
+	  the vertex $\vec{v}_i$ in each limiting region (see \nameref{app:shape_priors}).
 	In this figure, the gradient speed corresponding to $\vec{v}_1$ is written in the lower
-	box, $\Omega_{wm}$ being the inner limiting region and $\Omega_{gm}$ the outer.
-	Finally, every $\bar{s}_i$ is projected into the grid of control points $\vec{u}_k$ that
-	support the deformation field through the corresponding weights $\psi_k(\vec{v}_i)$ obtained
-	as in \eqref{eq:basis_derivative}.
+	  box, $\Omega_{wm}$ being the inner limiting region and $\Omega_{gm}$ the outer.
+	Finally, every $\bar{s}_i$ is associated with the control points $\vec{u}_k$ through
+	  the corresponding weights $\psi_k(\vec{v}_i)$ \eqref{eq:basis_derivative}.
 	}\label{fig:method}
 \end{figure}
 
@@ -332,8 +225,11 @@ Now, we introduce \eqref{eq:energy} in \eqref{eq:general_gradient_descent}:
   \end{align}
 
 
-Therefore, we can apply a discretized interpretation of \eqref{eq:shape_gradients}
-  to compute the data term in \eqref{eq:gradient_descent} as follows:
+We can apply a discretized interpretation of \eqref{eq:shape_gradients} to compute
+  the data term in \eqref{eq:gradient_descent} using shape-gradients
+  \citep{herbulot_segmentation_2006}, and ultimately avoid level sets.
+We refer the reader to the appendix \nameref{app:shape_priors} in order to fill in the gap
+  between \eqref{eq:gradient_descent} and the following expression:
 
   \begin{align}
   \frac{\partial E_{data}(\vec{u})}{\partial \vec{u}_k} &=
@@ -345,9 +241,11 @@ Therefore, we can apply a discretized interpretation of \eqref{eq:shape_gradient
   \end{align}
 
   in this case, the formulation has been adapted to the non-binary case, $\{l,m\}$
-  being any pair of neighboring regions, and $\Gamma_{l,m}$ the contour separating
-  them such that $\vec{x}' = \vec{v}' \in\Gamma_{l,m} \iff \vec{x}\in \partial\Omega_i \cap \partial\Omega_j$
-  and $\vec{n_i}'$ is the unit inward normal to the contour at $c_i'$.
+    being any pair of neighboring regions, and $\Gamma_{l,m}$ the contour separating
+    them such that
+    $\vec{x}' = \vec{v}' \in\Gamma_{l,m} \iff \vec{x}\in \partial\Omega_i \cap \partial\Omega_j$
+    and $\bar{s}_i'$ is the speed vector projected on to the unit inward normal to the contour
+    at $c_i'$ (described in \autoref{fig:method}).
 
 
 Finally, we can compute:
@@ -382,33 +280,34 @@ The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \eqref{
 \label{sec:conv_report}
 The registration parameters (such as $\tau$, the B-Spline grid resolutions,
   target image smoothing, etc.) and implementation details (for instance the sparse matrix approach
-  to fast interpolation) are dicussed in the \suppl{}, {\color{red} section S1}.
-The actual choice of parameter settings are publicly distributed with the source code of the experiments.
+  to fast interpolation) are dicussed in the \suppl{}, section S1.
+The actual choices of parameter settings are publicly distributed with the source code of the experiments.
 Additionally, we release our software along with a tool for generating convergence reports to
-  demonstrate the behavior of the tool and help scientists configure their experiments.
-A sample of report is found in the \suppl{} {\color{red}, section S1.3}.
+  demonstrate the behavior of \emph{regseg} and help scientists configure their own experiments.
+One sample report is found in the \suppl{}, section S1.3.
 
 
 \subsection*{Experiments and evaluation}
 \label{sec:experiments_evaluation}
 %
-In order to demonstrate the applicability of the registration method, we first
-  subjected it to a battery of random tests over synthetic data and then applied
-  it on real data.
+In order to demonstrate the performance of \emph{regseg}, we first conducted a battery of
+  accuarcy tests over synthetic data, and then applied it in the susceptibility distortion
+  correction of real data.
 \autoref{fig:evworkflows} presents the workflow implementing the evaluation instruments.
 Besides a visual assessment of the results, we report quantitative evaluations using
   two metrics.
-In the case of the phantoms, as we warped data along the three available dimensions,
-  we computed the Haussdorf distance, integrating the ``point-to-cell'' method
-	implemented by \cite{commandeur_vtk_2011}.
-Conversely, the susceptibility-derived distortions only happen along the phase
-  encoding axis of the image.
+In the case of the phantoms, since we had produced distortions along the three
+  available dimensions, we computed the Haussdorf distance, by reusing the
+  ``point-to-cell'' method of \cite{commandeur_vtk_2011}.
+Conversely, the susceptibility-derived distortions only happen along the \gls*{pe}
+  axis of the image.
 Therefore, a \gls*{swindex} can be computed as the one-to-one distance between corresponding
   vertices of surfaces, weighted by their respective Voronoi area $w_i$:
 
   \begin{equation}
   sWI = \frac{1}{P} \sum\limits_p^P \frac{1}{A_p} \sum\limits_i^{N_p} w_i\,\|
   \vec{v}_i - \hat{\vec{v}}_i \|
+  \label{eq:swindex}
   \end{equation}
 
   where $\vec{v}_i$ are the locations of the $N_p$ vertices in each $p \in \{1, \dots P\}$
@@ -418,17 +317,17 @@ Therefore, a \gls*{swindex} can be computed as the one-to-one distance between c
 
 \begin{figure*}
 \includegraphics[width=\linewidth]{figures/figure02}
-\caption{Experimental workflow applied on real data from the \gls*{hcp}.
+\caption{Experimental workflow applied on real data from the \acrfull*{hcp}.
   1) The prior surfaces are extracted from the anatomical reference (\gls*{t1} image).
-	2) To operate as ground truth, we generate plausible-synthetic distortion $U^{-1}_{true}$
+	2) To operate as ground truth, we generate a plausible-synthetic distortion $U_{true}$
 	  from the fieldmap using \eqref{eq:fieldmap}.
 	3) The \gls*{dmri} data are warped using $U^{-1}_{true}$ to reproduce the effects of real
 	  susceptibility-derived distortions.
 	Target diffusion scalars (\gls*{fa} and \gls*{adc}) are computed on the distorted data and
 		stacked to feed the multivariate input required by our algorithm.
-	4) Registration is run, obtaining a $U_{test} = \hat{U}_{true}$, an estimation of
-	  the ground-truth deformation $U_{true}$.
-	  A cross-comparison methodology is also applied, to obtain a competing $U_{cc}$.
+	4) \emph{Regseg} is run, obtaining a $U_{test} = \hat{U}_{true}$, the estimation of
+	  the ground-truth deformation.
+	  A cross-comparison methodology is also applied, to obtain a competing $\hat{U}_{cc}$.
 	5) Results are visually and quantitatively evaluated.}\label{fig:evworkflows}
 \end{figure*}
 
@@ -443,7 +342,7 @@ We proved the concept on simplistic digital phantoms which we will name after th
   boxes A and B).
 Using \emph{phantomas} \citep{caruyer_phantomas_2014}, we simulated
   \gls*{t1} (TE/TR=10/1500ms) and \gls*{t2} images (TE/TR=90/5000ms)
-  corresponding to each appearance shape, with two resolutions each
+  corresponding to each phantom type, with two resolutions each
   ($1.0mm$ and $2.0mm$ isotropic).
 Simulations were corrupted with rician noise for a \gls*{snr} of 300.0.
 The reference surfaces were extracted using the marching-cubes algorithm
@@ -478,25 +377,25 @@ For the evaluation of the algorithm on real \gls*{dmri} data of human brains,
 	 database of the \gls*{hcp}.
 We refer the reader to \citep{essen_human_2012} for exact details about acquisition
   parameters, and \citep{glasser_minimal_2013} for the preprocessing issues.
-The datasets comprehend a large of images, containing \gls*{t1}, \gls*{t2} and
+The datasets comprehend a large set of images, containing \gls*{t1}, \gls*{t2} and
   multi-shell \gls*{dmri} images.
 The original acquisitions are released within ``unprocessed'' packages, and
   the ``minimally preprocessed'' are corrected for artifacts, brain-extracted
-  and spatially normalized, along with some results of the standard processing with
-  \emph{FreeSurfer}.
+  and spatially normalized, along with some results of the standard processing
+  pipeline of \emph{FreeSurfer}.
 
 Selecting the appropriate labels in the \emph{aparc} segmentation, we applied
   the marching-cubes algorithm again to extract the surface of the following
   six homogeneous regions $\Omega_l$:
-  1) the thalamus;
-  2) \gls*{csf} of the ventricular system and deep \gls*{gm} structures;
-  3) cerebral \gls*{wm};
-  4) brain stem and cerebellar \gls*{wm};
-	5) cerebellar \gls*{gm}; and
-	6) cortical \gls*{gm} surface.
+  1) the thalamus, $\Gamma_{Tha}$;
+  2) \gls*{csf} of the ventricular system and deep \gls*{gm} structures, $\Gamma_{VdGM}$;
+  3) cerebral \gls*{wm}, $\Gamma_{WM}$;
+  4) brain stem and cerebellar \gls*{wm}, $\Gamma_{Bst}$;
+	5) cerebellar \gls*{gm}, $\Gamma_{cbGM}$; and
+	6) cortical \gls*{gm} surface, $\Gamma_{pial}$.
 The choice of this particular model is further addressed in \nameref{sec:res_model_and_metric}.
 
-In this case, we derived the deformation $U_{true}^{-1}$ from the field maps released with
+In this case, we derived the deformation $U_{true}$ from the field maps released with
   the corresponding packages of each dataset from the \gls*{hcp} applying \eqref{eq:fieldmap},
   mimicking the real distortions, using a derivation of our previous work
   \citep{esteban_simulationbased_2014}.

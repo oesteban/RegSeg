@@ -18,15 +18,15 @@ Finally, $\vec{u} = u(\vec{r})$ is the displacement of every point with respect
   to the reference domain.
 A comprehensive survey by \cite{sotiras_deformable_2013}
   illustrates the wide variety of existing registration methodologies.
-They classify the algorithms by the three principal building blocks that can be identified
+They classified the algorithms by the three principal building blocks that can be identified
   among methods: the matching criteria or similarity function to evaluate the proximity of
   the solution, the deformation model that may implement theoretical properties and constraints
   of the mapping in the selected application, and the optimization method or search strategy.
-The possibly most widespread matching criteria are those classified as \emph{iconic
+The possibly most widespread matching criteria are referred to as \emph{iconic
   methods} in \citep{sotiras_deformable_2013}.
 These algorithms require the definition of an appropriate function on the voxel-wise information
   content of both images.
-A second group, called \emph{geometric methods}, align geometrical features derived from
+A second group, called \emph{geometric methods}, align spatial features derived from
   corresponding objects defined in both spaces, such as landmarks, shapes, surfaces, etc.
 Finally, \emph{hybrid methods} map geometrical features and voxel-wise information.
 
@@ -42,15 +42,15 @@ The precise segmentation of \gls*{dmri} data is also crucial in such application
   an anatomical \gls*{mri} of the same subject \citep{daducci_connectome_2012}.
 
 \Gls*{dmri} data are usually acquired with \gls*{epi} schemes.
-In order to quickly probe  in many different orientations the diffusion process within the living
-  brain, these sequences minimize the bandwidth of the \gls*{pe} direction.
+In order to quickly probe the diffusion process within the brain in many different orientations,
+  these sequences minimize the bandwidth of the \gls*{pe} direction.
 This low bandwith originates the artifactual displacement of locations presenting small deviations
   from the main magnetic field $B_0$.
-The principal source of these deviations, $\Delta B_0$, is the discontinuity of magnetic
+The principal source of these deviations ($\Delta B_0$) is the discontinuity of magnetic
   susceptibility at tissue interfaces.
 Tissue/air boundaries show large steps of susceptibility and this artifact is
   particularly evident in the surroundings of the orbito-frontal lobe or the temporal
-  bones in both hemispheres.
+  bone of both hemispheres.
 The displacements field $U_s$ along the \gls*{pe} axis can be estimated theoretically
   \citep{jezzard_correction_1995}:
 
@@ -59,7 +59,7 @@ The displacements field $U_s$ along the \gls*{pe} axis can be estimated theoreti
   \label{eq:fieldmap}
   \end{equation}
 
-where $\vec{r}$ is the location in the reference domain as in \eqref{eq:transform},
+where $\vec{r}$ is the true location in the undistorted domain as in \eqref{eq:transform},
   $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time,
   $s_{PE}$ is the pixel spacing along \gls*{pe}, and $\hat{\vec{e}}_{PE}$ the unitary
   vector along \gls*{pe}.
@@ -77,23 +77,29 @@ All methods require extra \gls*{mr} aquisitions. Thus, a tipical protocol for th
   of structural connectivity comprehends \gls*{dmri}, \gls*{t1}, and the acquisition demanded
   by the correction method of choice.
 
-Our method is related to the \gls*{t2b} methods as we also render the correction as a
+\emph{Regseg} is related to the methods based on nonlinear registration of the \emph{b0}
+  image\footnote{The term \emph{b0} refers to one or more images within the
+  \gls*{dmri} dataset that are acquired with a null or very low gradient intensity or
+   \emph{b}-value used as signal reference.}
+  to the \gls*{t2} image, since we also render the correction as a
   registration problem.
 Conversely, the method does not require any of the previously mentioned extra acquisitions.
 A fundamental antecedent to the present approach is found in \citep{greve_accurate_2009}.
-They proposed a registration method to align \gls*{t1} and \gls*{dmri} images
-  of the brain using a linear transformation model.
-Similarly, we exploit the precise structures that can be extracted with
-  widely-used software (i.e. \emph{FreeSurfer}~\citep{fischl_freesurfer_2012}),
-  and then map these surfaces into warped data, in which the scale of the
+They proposed a registration method to align contours extracted from the \gls*{t1}
+  to \gls*{dmri} images using a linear transformation model.
+Similarly, we exploit the precise surfaces that can be extracted with
+  \emph{FreeSurfer}~\citep{fischl_freesurfer_2012},
+  and then map this prior into warped data, in which the scale of the
   imaged structures is in the range of the image resolution or above.
 Our approach differs from \citep{greve_accurate_2009} in two fundamental choices.
 First, we use a nonlinear deformation model that enables the correction of the
   susceptibility-derived distortions \citep{jezzard_correction_1995}.
+\cite{greve_accurate_2009} circumvented the nonlinearity by identifying tipically
+  distorted regions and removing them from the metric computation.
 Second, our matching criteria does not necessarily need for clear intensity
   steps at the tissue interfaces where surfaces must be fitted, thanks to the use of
   active contours without edges \citep{chan_active_2001}.
 The hypothesis underpinning our research is that, in those situations,
   image registration can be reliably performed by searching for homogeneous
   regions in one image corresponding to a prior knowledge of the shape of objects in
-  the moving coordinate system.
+  the moving (distorted) coordinate system.
