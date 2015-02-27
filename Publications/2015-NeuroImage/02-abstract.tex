@@ -1,25 +1,20 @@
 % -*- root: 00-main.tex -*-
-Integrating information from different images within- and between-subjects
-  is an ubiquitous necessity required in current neuroimage analyses.
-Many algorithms have been proposed to register image pairs from the same
-  subject and between subjects to resolve the problem.
-Both images are required to present comparable features on top of which
-  an objective function is built to evaluate fitness of the solution.
+Integrating information from different images is an ubiquitous necessity
+  in current neuroimage analyses.
 However, oftentimes one of the images is not available or the objective
   function is not adequate or numerically tractable.
-
-We propose a surface-to-volume variational solution to the registration problem,
-  that exploits the detailed anatomy extracted manually or automatically
-  from structural images.
-We use an ``active contours without edges'' model to search for a
-  deformation field of B-Spline functions that optimally maps the
-  surface prior onto the data in the target space.
-The strategy implicitly segments with sub-pixel resolution the image.
-We illustrate the usefulness of the approach on a digital phantom.
-Finally, we apply the registration to correct for suscetibility distortions
-  10 real diffusion MRI datasets.
-The joint segmentation-registration method successfully estimated the
-  distortions.
-We also compare its performance to a widely-used correction method that
-  demands for an extra MR acquisition.
+We propose a surfaces-to-volume registration method called \emph{regseg}
+  that exploits the detailed anatomy extracted from structural images and
+  simultaneously segments the target image with subvoxel precision.
+We use active contours without edges to search for a deformation field
+  of B-Spline functions that optimally maps the surfaces
+  onto the data in the target space.
+We test \emph{regseg} on four digital phantoms warped with random deformations,
+  and conclude that the precision of the method is below the half-voxel spacing.
+Finally, we apply \emph{regseg} in the correction for susceptibility-derived
+  distortions of 16 real diffusion MRI datasets from the \acrlong*{hcp}
+  database.
+The results suggest that \emph{regseg} overperformed an extended competing method.
+\emph{Regseg} showed a consistent error within the 95\% confidence interval of
+  $0.39-0.93mm$ in images of $1.25mm$ isotropic resolution.
 

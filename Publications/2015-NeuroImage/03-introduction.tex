@@ -44,7 +44,7 @@ The precise segmentation of \gls*{dmri} data is also crucial in such application
 \Gls*{dmri} data are usually acquired with \gls*{epi} schemes.
 In order to quickly probe the diffusion process within the brain in many different orientations,
   these sequences minimize the bandwidth of the \gls*{pe} direction.
-This low bandwith originates the artifactual displacement of locations presenting small deviations
+This low bandwidth originates the artifactual displacement of locations presenting small deviations
   from the main magnetic field $B_0$.
 The principal source of these deviations ($\Delta B_0$) is the discontinuity of magnetic
   susceptibility at tissue interfaces.
@@ -66,14 +66,14 @@ where $\vec{r}$ is the true location in the undistorted domain as in \eqref{eq:t
 Several methodologies have been proposed to estimate $U_s$ and fix the artifact.
 The first solution was acquiring extra images to estimate $\Delta B_0$ using field mapping
   techniques \citep{jezzard_correction_1995,andersson_modeling_2001}.
-A second set of methods aquired extra images reproducing the same \gls*{epi} scheme but switching
+A second set of methods acquired extra images reproducing the same \gls*{epi} scheme but switching
   the \gls*{pe} axis \citep{chiou_simple_2000} or reversing the direction of gradient
   increments in the same axis \citep{cordes_geometric_2000,holland_efficient_2010}.
 \cite{kybic_unwarping_2000} proposed a correction using nonlinear registration of the \gls*{dmri}
   data versus a \gls*{t2} image.
 Further developments \citep{irfanoglu_susceptibility_2011} extended this method to the
   three-dimensional problem.
-All methods require extra \gls*{mr} aquisitions. Thus, a tipical protocol for the extraction
+All methods require extra \gls*{mr} acquisitions. Thus, a typical protocol for the extraction
   of structural connectivity comprehends \gls*{dmri}, \gls*{t1}, and the acquisition demanded
   by the correction method of choice.
 
@@ -94,7 +94,7 @@ Similarly, we exploit the precise surfaces that can be extracted with
 Our approach differs from \citep{greve_accurate_2009} in two fundamental choices.
 First, we use a nonlinear deformation model that enables the correction of the
   susceptibility-derived distortions \citep{jezzard_correction_1995}.
-\cite{greve_accurate_2009} circumvented the nonlinearity by identifying tipically
+\cite{greve_accurate_2009} circumvented the nonlinearity by identifying typically
   distorted regions and removing them from the metric computation.
 Second, our matching criteria does not necessarily need for clear intensity
   steps at the tissue interfaces where surfaces must be fitted, thanks to the use of

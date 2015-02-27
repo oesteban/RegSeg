@@ -26,8 +26,8 @@ Shortly, \cite{yezzi_variational_2001} presented the first method including a fu
   and reference images with an affine transformation supporting the coordinates mapping.
 \cite{vemuri_joint_2003} proposed an atlas-based registration using a level-sets
   framework and only one \gls*{pde} for first time.
-The principal application of these techniques was to perform registration between timesteps in
-  time-series or between different images \citep{paragios_level_2003}.
+The principal application of these techniques was to perform registration between time steps in
+  time series or between different images \citep{paragios_level_2003}.
 \cite{unal_coupled_2005} and later \cite{wang_joint_2006},
   extended the ``two \glspl*{pde}'' method of \cite{yezzi_variational_2001}
   to nonlinear registration with a free deformation field.
@@ -276,11 +276,14 @@ The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \eqref{
   \label{eq:gradient_final}
   \end{align}
 
+\todo[inline]{Include here the final update equation using the FT, introducing the
+step size $\tau$, and refer to the supplementals for intermediate steps}
+
 \paragraph*{Settings, implementation details, and convergence}
 \label{sec:conv_report}
 The registration parameters (such as $\tau$, the B-Spline grid resolutions,
   target image smoothing, etc.) and implementation details (for instance the sparse matrix approach
-  to fast interpolation) are dicussed in the \suppl{}, section S1.
+  to fast interpolation) are discussed in the \suppl{}, section S1.
 The actual choices of parameter settings are publicly distributed with the source code of the experiments.
 Additionally, we release our software along with a tool for generating convergence reports to
   demonstrate the behavior of \emph{regseg} and help scientists configure their own experiments.

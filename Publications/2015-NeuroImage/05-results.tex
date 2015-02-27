@@ -27,7 +27,7 @@ For each registration, the averaged Hausdorff distance (see \nameref{sec:experim
 The results showed a consistent and high accuracy, below voxel resolution.
 \autoref{fig:phantom} (block C) presents the box plots by model type corresponding
   to the two sets of resolutions of generated phantoms.
-To support that the missregistration errors averaged per experiment was significantly
+To support that the misregistration errors averaged per experiment was significantly
   under the resolution of the target image, we proceeded as follows.
 First, we confirmed that the error distributions were skewed using a Shapiro-Wilk test of
   normality.
@@ -65,7 +65,7 @@ Since statistical tests may not be conclusive enough, we also computed the confi
 
 \paragraph*{Assessing the segmentation model}\label{sec:res_model_and_metric} %
 %
-Preliminarly, we investigated the aptness of our segmentation model to play as cost function
+Preliminarily, we investigated the aptness of our segmentation model to play as cost function
   driving the registration process.
 First, we evaluated several alternative models to segment the target bivariate images
   (\gls*{fa} and \gls*{adc}).
@@ -75,7 +75,7 @@ Based on the observed joint distribution of each (\suppl{}, {\color{red} section
 The distortions follow expression \eqref{eq:fieldmap} and hence, we easily reduced the
   error space to one dimension as follows.
 The energy functional \eqref{eq:energy} was evaluated for the warpings given by
-  a lineralized space of distortions
+  a linearized space of distortions
   $\hat{U} = \epsilon \cdot U_{true} = \vec{r} + \epsilon \cdot u(\vec{r})$,
   with $\epsilon \in [-1.1, 1.1]$.
 The results of this experiment are shown in \autoref{fig:energymap}.
@@ -122,7 +122,7 @@ The quantitative results of the ANOVA tests and the CIs are presented in \autore
 		\footnotesize
 		\tabcolsep=0.05cm
     \begin{tabular}{L{1.8cm}ccc}
-                            & Surf. 1  & Surf. 2 & Surf. 3 \\
+                            & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ \\
     \hline
     CI \emph{regseg}        & 0.39 - 0.64 & 0.64 - 0.83 & 0.76 - 0.93 \\
     CI competing            & 2.36 - 3.37 & 2.65 - 3.19 & 2.82 - 3.40 \\
@@ -143,14 +143,16 @@ The quantitative results of the ANOVA tests and the CIs are presented in \autore
 \begin{figure*}
 	\includegraphics[width=\linewidth]{figures/figure05.pdf}
 	\caption{The evaluation instrument automatically renders the overlay of the
-	  target \gls*{fa} image and the resulting contours after distortion correction (yellow color) and
+	  target \gls*{fa} image and the resulting contours after distortion estimation (yellow color) and
 	  their theoretical location using the ground-truth (green color).
 	The first two rows show several axial slices for \emph{regseg} (``proposed'' row) and the
 	  competing method.
 	The last two rows represent the sagittal view.
-	We intentionally ommited the coronal slicing due to it is the less informative given the properties
+	We intentionally omitted the coronal slicing due to it is the less informative given the properties
 	  of the distortion.
 	Red arrows point to regions where the accuracy of the proposed method more clearly overperformed
 	  the competing method.
+	\todo[inline]{This figure will also have the box-plots of the errors of surfaces for both regseg
+	and the t2b method}
 	}\label{fig:results_real}
 \end{figure*}
