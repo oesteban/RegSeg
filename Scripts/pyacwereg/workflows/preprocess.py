@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-03-02 14:48:33
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-02 18:40:50
+# @Last Modified time: 2015-03-02 19:24:00
 
 
 def preprocess(name='Preprocessing'):
@@ -51,8 +51,6 @@ def preprocess(name='Preprocessing'):
     ds.inputs.template_args = ds_tpl_args
 
     bmap_prep = bmap_registration()
-    bmap_prep.inputs.inputnode.factor = 4.0
-
     surfs = all_surfaces()
 
     dwisplit = pe.Node(fsl.Split(dimension='t'), name='SplitDWIs')

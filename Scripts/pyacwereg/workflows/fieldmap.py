@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-02 17:30:46
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-02 19:23:56
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -26,7 +26,7 @@ def bmap_registration(name="Bmap_Registration"):
 
     # Setup i/o
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['mag', 'pha', 't1w_brain', 'dwi_mask', 'factor']),
+        fields=['mag', 'pha', 't1w_brain', 'dwi_mask']),
         name='inputnode')
 
     outputnode = pe.Node(niu.IdentityInterface(
