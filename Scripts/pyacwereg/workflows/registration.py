@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-18 11:45:39
+# @Last Modified time: 2015-03-02 18:01:59
 
 import os
 import os.path as op
@@ -34,14 +34,17 @@ def regseg_wf(name='REGSEG', enhance_inputs=True, usemask=False):
                      'images_verbosity', 'scales', 'descript_update',
                      'convergence_value', 'descript_adaptative']
 
-    wf_inputs = ['in_fixed', 'in_tpms', 'in_surf', 'in_mask']
+    wf_inputs = ['in_fixed', 'in_tpms', 'in_surf', 'in_mask', 'options']
     inputnode = pe.Node(niu.IdentityInterface(
-                        fields=regseg_inputs + wf_inputs), name='inputnode')
+                        fields=wf_inputs), name='inputnode')
 
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['out_corr', 'out_tpms', 'out_enh', 'reg_msk', 'out_surf',
                 'out_field', 'out_mask']),
         name='outputnode')
+
+    # Load options
+    options = pe.Node(nio.JSONFileGrabber(), name='LoadOptions')
 
     # Registration
     regseg = pe.Node(ACWEReg(), name="ACWERegistration")
@@ -53,7 +56,8 @@ def regseg_wf(name='REGSEG', enhance_inputs=True, usemask=False):
 
     # Connect
     wf.connect([
-        (inputnode,   regseg, [(f, f) for f in regseg_inputs]),
+        (inputnode,  options, [('options', 'in_file')]),
+        (options,     regseg, [(f, f) for f in regseg_inputs]),
         (inputnode,   regseg, [('in_surf', 'in_prior')]),
         (inputnode, applytfm, [('in_tpms', 'in_file'),
                                ('in_mask', 'in_mask')]),
@@ -98,21 +102,10 @@ def regseg_wf(name='REGSEG', enhance_inputs=True, usemask=False):
 
 
 def default_regseg(name='REGSEGDefault'):
-    wf = regseg_wf(name=name, enhance_inputs=False)
+    from pyacwereg import data
 
-    # Registration
-    wf.inputs.inputnode.iterations = [500, 250]
-    wf.inputs.inputnode.descript_update = [None, None]
-    wf.inputs.inputnode.step_size = [1.e-3, 0.01]
-    wf.inputs.inputnode.alpha = [0.0, 0.0]
-    wf.inputs.inputnode.beta = [0.0, 0.0]
-    wf.inputs.inputnode.grid_spacing = [16., 8.]
-    wf.inputs.inputnode.convergence_energy = [True] * 2
-    wf.inputs.inputnode.descript_adaptative = [True, False]
-    wf.inputs.inputnode.convergence_window = [60, 5]
-    wf.inputs.inputnode.f_smooth = [None, None]
-    wf.inputs.inputnode.images_verbosity = 1
-    wf.inputs.inputnode.convergence_value = [1.0e-6, 1.0e-8]
+    wf = regseg_wf(name=name, enhance_inputs=False)
+    wf.inputs.inputnode.options = data.get('regseg_default.json')
     return wf
 
 
@@ -286,6 +279,77 @@ def identity_wf(name='Identity', n_tissues=3):
         (applytfm, outputnode, [('out_surf', 'out_surf'),
                                 ('out_mask', 'out_mask')])
     ])
+
+    return wf
+
+
+def apply_dfm(name='ApplyDFM', interp='spline', icorr=True,
+              closemask=False):
+    """
+    A workflow to warp images using DFMs (displacements field maps)
+    computed with FSL.
+    """
+    in_fields = ['in_files', 'in_mask', 'dfm', 'jac']
+
+    inputnode = pe.Node(niu.IdentityInterface(fields=in_fields),
+                        name='inputnode')
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields=['out_files', 'out_mask']), name='outputnode')
+
+    warpmsk = pe.Node(fsl.ApplyWarp(interp='nn', relwarp=True),
+                      name='ResampleMask')
+
+    cachemsk = pe.Node(niu.IdentityInterface(fields=['mask']),
+                       name='CacheMask')
+
+    dwi_ref = pe.Node(niu.Select(index=[0]), name='FirstInput')
+    warp = pe.MapNode(fsl.ApplyWarp(relwarp=True, interp=interp),
+                      iterfield=['in_file'], name='ResampleImages')
+
+    wf = pe.Workflow(name=name)
+    wf.connect([
+        (inputnode,     warpmsk, [('dfm', 'field_file'),
+                                  ('in_mask', 'in_file'),
+                                  ('in_mask', 'ref_file')]),
+        (inputnode,     dwi_ref, [('in_files', 'inlist')]),
+        (inputnode,        warp, [('dfm', 'field_file')]),
+        (dwi_ref,          warp, [('out', 'ref_file')]),
+        (inputnode,        warp, [('in_files', 'in_file')]),
+        (cachemsk,   outputnode, [('mask', 'out_mask')])
+    ])
+
+    if closemask:
+        closmsk = pe.Node(fsl.maths.MathsCommand(
+            args='-kernel sphere 3 -dilM -kernel sphere 2 -ero'),
+            name='MaskClosing')
+        wf.connect([
+            (warpmsk,         closmsk, [('out_file', 'in_file')]),
+            (closmsk,        cachemsk, [('out_file', 'mask')])
+        ])
+    else:
+        wf.connect([
+            (warpmsk,        cachemsk, [('out_file', 'mask')])
+        ])
+
+    if icorr:
+        jacmask = pe.Node(fs.ApplyMask(), name='JacobianMask')
+        jacmult = pe.MapNode(fsl.MultiImageMaths(op_string='-mul %s'),
+                             iterfield=['in_file'], name='ModulateDWIs')
+        wf.connect([
+            (inputnode,     jacmask, [('jac', 'in_file')]),
+            (cachemsk,      jacmask, [('mask', 'mask_file')]),
+            (jacmask,       jacmult, [('out_file', 'operand_files')]),
+            (warp,          jacmult, [('out_file', 'in_file')]),
+            (jacmult,    outputnode, [('out_file', 'out_files')])
+        ])
+    else:
+        mskdwis = pe.MapNode(fs.ApplyMask(), iterfield=['in_file'],
+                             name='MaskWarped')
+        wf.connect([
+            (cachemsk,       mskdwis, [('mask', 'mask_file')]),
+            (warp,           mskdwis, [('out_file', 'in_file')]),
+            (mskdwis,     outputnode, [('out_file', 'out_files')])
+        ])
 
     return wf
 

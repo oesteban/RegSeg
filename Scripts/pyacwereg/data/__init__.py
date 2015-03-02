@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-06-03 11:49:42
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-17 11:42:37
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-02 18:01:15
 """Complementary data necessary in workflows
 
 .. module:: pysdcev.data
@@ -27,6 +27,8 @@ for key in ['x', 'y', 'z']:
     p_paths[key] = op.join(data_path, 't2b_elastix_%s.txt' % key)
 
 folders['t2b_params'] = p_paths
+folders['regseg_hcp'] = op.join(data_path, 'regseg_hcp.json')
+folders['regseg_default'] = op.join(data_path, 'regseg_default.json')
 
 
 def get(value):
