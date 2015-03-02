@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-02 18:01:59
+# @Last Modified time: 2015-03-02 19:55:20
 
 import os
 import os.path as op
@@ -109,7 +109,7 @@ def default_regseg(name='REGSEGDefault'):
     return wf
 
 
-def sdc_t2b(name='SDC_T2B', icorr=True):
+def sdc_t2b(name='SDC_T2B', icorr=True, num_threads=1):
     """
     The T2w-registration based method (T2B) implements an SDC by nonlinear
     registration of the anatomically correct *T2w* image to the *b0* image
@@ -153,7 +153,7 @@ def sdc_t2b(name='SDC_T2B', icorr=True):
 
     getparam = pe.Node(nio.JSONFileGrabber(defaults={'enc_dir': 'y'}),
                        name='GetEncDir')
-    reg = pe.Node(nex.Registration(num_threads=1), name='Elastix')
+    reg = pe.Node(nex.Registration(num_threads=num_threads), name='Elastix')
     tfx_b0 = pe.Node(nex.EditTransform(), name='tfm_b0')
     split_dwi = pe.Node(fsl.utils.Split(dimension='t'), name='split_dwi')
     warp = pe.MapNode(nex.ApplyWarp(), iterfield=['moving_image'],

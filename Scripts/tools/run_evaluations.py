@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-24 23:22:34
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-02 19:56:10
 
 
 import os
@@ -102,6 +102,8 @@ if __name__ == '__main__':
     if nthreads == 0:
         from multiprocessing import cpu_count
         nthreads = cpu_count()
+
+    settings['nthreads'] = nthreads
 
     plugin = 'Linear'
     plugin_args = {}

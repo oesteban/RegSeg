@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-02 18:51:53
+# @Last Modified time: 2015-03-02 19:56:56
 
 import os.path as op
 
@@ -124,7 +124,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
             (mesh0,         csv0, [('distance', 'surf_dist')])
         ])
 
-    cmethod1 = sdc_t2b()
+    cmethod1 = sdc_t2b(num_threads=settings['nthreads'])
     export1 = pe.Node(ExportSlices(all_axis=True), name='ExportT2B')
     mesh1 = pe.MapNode(ComputeMeshWarp(),
                        iterfield=['surface1', 'surface2'],
