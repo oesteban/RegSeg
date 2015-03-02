@@ -3,9 +3,10 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-24 11:22:00
+# @Last Modified time: 2015-03-02 14:01:11
 
 import os.path as op
+
 
 def hcp_workflow(name='Evaluation_HCP', settings={}, map_metric=False):
     """
@@ -128,14 +129,14 @@ def hcp_workflow(name='Evaluation_HCP', settings={}, map_metric=False):
     regseg.inputs.inputnode.convergence_energy = [True, True, True]
     regseg.inputs.inputnode.descript_adaptative = [True, True, False]
     regseg.inputs.inputnode.convergence_value = [1.e-6, 1.e-7, 1.e-8]
-    regseg.inputs.inputnode.convergence_window = [50, 20, 5]
+    regseg.inputs.inputnode.convergence_window = [35, 20, 5]
     regseg.inputs.inputnode.descript_update = [None, None, None]
     regseg.inputs.inputnode.f_smooth = [2.0, 0.5, None]
     regseg.inputs.inputnode.grid_spacing = [
         (40., 100., 40.), (30., 30., 30.), (20., 30., 10.)]
     regseg.inputs.inputnode.iterations = [350, 250, 100]
     regseg.inputs.inputnode.scales = [(0.0, 1.0, 0.0)] * 3
-    regseg.inputs.inputnode.step_size = [1.e-5, 5.e-5, 1.e-4]
+    regseg.inputs.inputnode.step_size = [5.e-6, 5.e-5, 5.e-4]
 
     wf.connect([
         (st1,    dti,    [('out_dis_set.dwi', 'inputnode.in_dwi'),
