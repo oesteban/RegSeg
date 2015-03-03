@@ -3,21 +3,21 @@
 # @Author: oesteban
 # @Date:   2014-10-23 14:43:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-30 15:16:02
+# @Last Modified time: 2015-03-03 15:02:29
 
 import os
 import os.path as op
 
-import nipype.pipeline.engine as pe             # pipeline engine
+from nipype.pipeline import engine as pe             # pipeline engine
 from nipype.interfaces import io as nio              # Data i/o
 from nipype.interfaces import utility as niu         # utility
 from nipype.interfaces import fsl
 from nipype.interfaces import freesurfer as fs
 from nipype.algorithms.misc import NormalizeProbabilityMapSet as Normalize
 
-from pysdcev.workflows.smri import extract_surface
 from pysdcev.workflows.distortion import bspline_deform
 
+from pyacwereg.workflows.surfaces import extract_surface
 from pyacwereg.interfaces import phantoms as pip
 from pyacwereg.interfaces.warps import FieldBasedWarp, InverseField
 from pyacwereg.interfaces.utility import Surf2Vol

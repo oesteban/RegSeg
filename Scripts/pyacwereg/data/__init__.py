@@ -6,11 +6,11 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-06-03 11:49:42
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-02 18:01:15
+# @Last Modified time: 2015-03-03 14:50:07
 """Complementary data necessary in workflows
 
-.. module:: pysdcev.data
-   :synopsis: data required by :py:mod:`pysdcev`
+.. module:: pyacwereg.data
+   :synopsis: data required by :py:mod:`pyacwereg`
 
 .. moduleauthor:: Oscar Esteban <code@oscaresteban>
 
@@ -29,6 +29,7 @@ for key in ['x', 'y', 'z']:
 folders['t2b_params'] = p_paths
 folders['regseg_hcp'] = op.join(data_path, 'regseg_hcp.json')
 folders['regseg_default'] = op.join(data_path, 'regseg_default.json')
+folders['model_labels'] = op.join(data_path, 'model_labels.json')
 
 
 def get(value):

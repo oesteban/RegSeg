@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2015-03-02 14:48:33
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-03 11:40:25
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-03-03 15:02:40
 
 
 def preprocess(name='Preprocessing'):
@@ -16,7 +16,7 @@ def preprocess(name='Preprocessing'):
     from nipype.interfaces import fsl
 
     from pyacwereg.workflows.fieldmap import bmap_registration
-    from pysdcev.workflows.smri import all_surfaces
+    from pyacwereg.workflows.surfaces import all_surfaces
 
     fnames = dict(t1w='T1w_acpc_dc_restore.nii.gz',
                   t1w_brain='T1w_acpc_dc_restore_brain.nii.gz',

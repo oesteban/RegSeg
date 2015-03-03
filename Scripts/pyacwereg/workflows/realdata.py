@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-02 19:56:56
+# @Last Modified time: 2015-03-03 14:37:13
 
 import os.path as op
 
@@ -29,9 +29,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
     from pyacwereg.workflows.preprocess import preprocess
 
     from pysdcev.workflows.warpings import process_vsm
-    from pysdcev.workflows.smri import preprocess_t2, preprocess_dwi
     from pysdcev.workflows.tractography import mrtrix_dti
-    from pysdcev.stages.stage1 import stage1
 
     wf = pe.Workflow(name=name)
 
