@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-02 19:55:20
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-03-03 13:20:43
 
 import os
 import os.path as op
@@ -34,13 +34,13 @@ def regseg_wf(name='REGSEG', enhance_inputs=True, usemask=False):
                      'images_verbosity', 'scales', 'descript_update',
                      'convergence_value', 'descript_adaptative']
 
-    wf_inputs = ['in_fixed', 'in_tpms', 'in_surf', 'in_mask', 'options']
+    wf_inputs = ['in_fixed', 'in_surf', 'in_mask', 'options']
     inputnode = pe.Node(niu.IdentityInterface(
                         fields=wf_inputs), name='inputnode')
 
     outputnode = pe.Node(niu.IdentityInterface(
-        fields=['out_corr', 'out_tpms', 'out_enh', 'reg_msk', 'out_surf',
-                'out_field', 'out_mask']),
+        fields=['out_corr', 'out_enh', 'reg_msk', 'out_surf',
+                'out_field']),
         name='outputnode')
 
     # Load options
@@ -50,24 +50,15 @@ def regseg_wf(name='REGSEG', enhance_inputs=True, usemask=False):
     regseg = pe.Node(ACWEReg(), name="ACWERegistration")
     report = pe.Node(ACWEReport(), name="ACWEReport")
 
-    # Apply tfm to tpms
-    applytfm = pe.MapNode(FieldBasedWarp(), name="ApplyWarp",
-                          iterfield=['in_file'])
-
     # Connect
     wf.connect([
         (inputnode,  options, [('options', 'in_file')]),
         (options,     regseg, [(f, f) for f in regseg_inputs]),
         (inputnode,   regseg, [('in_surf', 'in_prior')]),
-        (inputnode, applytfm, [('in_tpms', 'in_file'),
-                               ('in_mask', 'in_mask')]),
-        (regseg,    applytfm, [('out_field', 'in_field')]),
         (regseg,      report, [('out_log', 'in_log')]),
         (regseg,  outputnode, [('out_warped', 'out_corr'),
                                ('out_field', 'out_field'),
-                               ('out_surfs', 'out_surf')]),
-        (applytfm, outputnode, [('out_file', 'out_tpms'),
-                                ('out_mask', 'out_mask')])
+                               ('out_surfs', 'out_surf')])
     ])
 
     if usemask:
