@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2015-03-02 14:48:33
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-02 19:24:00
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-03 11:40:25
 
 
 def preprocess(name='Preprocessing'):
@@ -94,10 +94,10 @@ def warp_dwi(name='WarpDWIWorkflow'):
     from nipype.pipeline import engine as pe
     from nipype.interfaces import utility as niu
     from nipype.interfaces import io as nio
+    from nipype.algorithms.mesh import WarpPoints
 
     from pyacwereg.workflows.registration import apply_dfm
     from pyacwereg.workflows.fieldmap import vsm_fmb
-    from nipype.algorithms.mesh import WarpPoints
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['in_dwis', 'dwi_mask', 'surf', 'mr_param', 'bmap']),

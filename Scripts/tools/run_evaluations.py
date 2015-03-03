@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-02 19:56:10
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-03-03 12:21:22
 
 
 import os
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     from nipype import config, logging
 
     try:
-        from enthought.etsconfig.api import ETSConfig
+        from traits.etsconfig.etsconfig import ETSConfig
         ETSConfig.toolkit = 'null'
     except:
         pass
