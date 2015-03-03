@@ -5,8 +5,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-05 15:08:55
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-03 15:01:39
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-03 15:40:11
 """
 Surface extraction
 ++++++++++++++++++
@@ -94,7 +94,7 @@ def all_surfaces(name='Surfaces', gen_outer=False):
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['out_surf']), name='outputnode')
 
-    readls = pe.Node(JSONFileGrabber(in_file=data.get('model_labels.json')),
+    readls = pe.Node(JSONFileGrabber(in_file=data.get('model_labels')),
                      name='ReadModelLabels')
 
     nsurfs = 0
