@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-18 18:17:30
+# @Last Modified time: 2015-03-03 12:46:27
 
 import os
 import os.path as op
@@ -277,7 +277,7 @@ class ACWEReportInputSpec(BaseInterfaceInputSpec):
     out_file = File('report.pdf', usedefault=True, desc='output report')
 
 
-class ACWEReportOutputSpec(BaseInterfaceInputSpec):
+class ACWEReportOutputSpec(TraitedSpec):
     out_file = File(desc='output report')
 
 
