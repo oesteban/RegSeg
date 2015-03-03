@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-02-06 13:26:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-06 14:40:42
+# @Last Modified time: 2015-03-03 15:05:53
 
 
 def laplacian_filter(in_file, in_mask=None, out_file=None):
@@ -199,3 +199,38 @@ def wavelets_denoise(in_file, in_mask=None, out_file=None):
                    im.get_header()).to_filename(out_file)
 
     return out_file
+
+
+def sigmoid_filter(data, mask=None, a=2.00, b=85.0, maxout=2000.0):
+    import numpy as np
+
+    msk = np.zeros_like(data)
+    if mask is None:
+        msk[data > 0] = 1.0
+        data[data <= 0] = 0.0
+    else:
+        msk[mask > 0] = 1.0
+
+    d = np.ma.masked_array(data.astype(np.float32), mask=1 - msk)
+    maxi = d.max()
+    mini = d.min()
+
+    idxs = np.where(msk > 0)
+    umdata = data[idxs]
+
+    if maxout is None or maxout == 0.0:
+        maxout = np.percentile(umdata, 99.8)
+
+    alpha = np.percentile(umdata, a)
+    beta = np.percentile(umdata, b)
+    A = 2.0 / (beta - alpha)
+    B = (alpha + beta) / (beta - alpha)
+    res = A * umdata - B
+    ddor = 1.0 / (np.exp(-res) + 1.0)
+    offset = ddor[ddor > 0].min()
+    ddor = ddor - offset
+    newmax = ddor[ddor > 0].max()
+    ddor = ddor * maxout / newmax
+    newdata = np.zeros_like(data)
+    newdata[idxs] = ddor
+    return newdata

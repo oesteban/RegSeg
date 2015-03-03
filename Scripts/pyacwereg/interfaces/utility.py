@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-13 12:41:04
+# @Last Modified time: 2015-03-03 15:19:23
 import os
 import os.path as op
 from glob import glob
@@ -16,7 +16,6 @@ from nipype.interfaces.base import (BaseInterface, traits, TraitedSpec, File,
                                     DynamicTraitedSpec, Directory,
                                     CommandLine, CommandLineInputSpec)
 
-from pyacwereg import misc as pm
 from nipype import logging
 iflogger = logging.getLogger('interface')
 
@@ -244,4 +243,65 @@ class ComputeEnergy(CommandLine):
 
         if not isdefined(self.inputs.descriptors):
             outputs['out_desc'] = op.abspath('descriptors.json')
+        return outputs
+
+
+class SigmoidFilterInputSpec(BaseInterfaceInputSpec):
+    in_file = File(exists=True, mandatory=True,
+                   desc='input image')
+    in_mask = File(exists=True, desc='binary mask')
+    max_out = traits.Float(2000.0, mandatory=True, usedefault=True,
+                           desc='fit maximum value of output')
+    upper_perc = traits.Float(92.0, mandatory=True, usedefault=True,
+                              desc='upper percentile for computations')
+    lower_perc = traits.Float(2.0, mandatory=True, usedefault=True,
+                              desc='lower percentile for computations')
+    out_file = File('enhanced.nii.gz', usedefault=True, desc='enhanced image')
+
+
+class SigmoidFilterOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc='enhanced image')
+
+
+class SigmoidFilter(BaseInterface):
+
+    """
+    An enhancement filter for MI-based registrations
+
+
+    Example
+    -------
+    >>> from pyacwereg.interfaces.utility import SigmoidFilter
+    >>> enh = SigmoidFilter()
+    >>> enh.inputs.in_file = 'T2.nii.gz'
+    >>> result = enh.run() # doctest: +SKIP
+
+    """
+    input_spec = SigmoidFilterInputSpec
+    output_spec = SigmoidFilterOutputSpec
+
+    def _run_interface(self, runtime):
+        from pyacwereg.filters import sigmoid_filter
+
+        im = nb.load(self.inputs.in_file)
+        msk = None
+
+        if isdefined(self.inputs.in_mask):
+            msk = nb.load(self.inputs.in_mask).get_data()
+
+        lower = self.inputs.lower_perc
+        upper = self.inputs.upper_perc
+        maxout = self.inputs.max_out
+
+        enhanced = sigmoid_filter(im.get_data(), msk,
+                                  a=lower, b=upper, maxout=maxout)
+
+        nb.Nifti1Image(enhanced, im.get_affine(), im.get_header()).to_filename(
+            op.abspath(self.inputs.out_file))
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs['out_file'] = op.abspath(self.inputs.out_file)
         return outputs

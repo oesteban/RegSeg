@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-02 19:23:56
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-03-03 15:24:27
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -14,8 +14,7 @@ from nipype.interfaces import ants
 from nipype.algorithms.misc import AddNoise
 from nipype.workflows.dmri.fsl import utils as nwu
 
-from pysdcev.interfaces.misc import SigmoidFilter
-import pysdcev.utils as pu
+from pyacwereg.interfaces.utility import SigmoidFilter
 
 
 def bmap_registration(name="Bmap_Registration"):

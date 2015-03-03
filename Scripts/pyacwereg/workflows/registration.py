@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-03 13:20:43
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-03 15:21:20
 
 import os
 import os.path as op
@@ -20,9 +20,10 @@ from nipype.interfaces import freesurfer as fs
 from nipype.interfaces import elastix as nex
 from nipype.interfaces.ants import N4BiasFieldCorrection
 
+from nipype.workflows.dmri.fsl.utils import b0_average
+
 from pyacwereg.interfaces.acwereg import ACWEReg, ACWEReport
 from pyacwereg.interfaces.warps import FieldBasedWarp, InverseField
-import pysdcev.interfaces.misc as pmisc
 
 
 def regseg_wf(name='REGSEG', enhance_inputs=True, usemask=False):
@@ -138,7 +139,9 @@ def sdc_t2b(name='SDC_T2B', icorr=True, num_threads=1):
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['dwi', 'dwi_mask', 'out_surf']), name='outputnode')
 
-    avg_b0 = pe.Node(pmisc.ComputeAveragedB0(), name='avg_b0')
+    avg_b0 = pe.Node(niu.Function(
+        input_names=['in_dwi', 'in_bval'], output_names=['out_file'],
+        function=b0_average), name='AverageB0')
     n4_b0 = pe.Node(N4BiasFieldCorrection(dimension=3), name='BiasB0')
     n4_t2 = pe.Node(N4BiasFieldCorrection(dimension=3), name='BiasT2')
 
