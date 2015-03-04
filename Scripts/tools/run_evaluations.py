@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-04 14:37:14
+# @Last Modified time: 2015-03-04 15:05:58
 
 
 import os
@@ -140,4 +140,13 @@ if __name__ == '__main__':
     wf.config['logging'] = cfg['logging']
     wf.base_dir = settings['work_dir']
     wf.write_graph(format='pdf')
-    wf.run(plugin=plugin, plugin_args=plugin_args)
+
+    try:
+        wf.run(plugin=plugin, plugin_args=plugin_args)
+    except Exception e:
+        print 'Exception caught: %s' % e.msg
+
+    try:
+        os.remove(op.join(log_dir, 'pypeline.lock'))
+    except:
+        pass
