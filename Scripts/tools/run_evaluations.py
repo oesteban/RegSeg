@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-04 13:10:07
+# @Last Modified time: 2015-03-04 13:20:27
 
 
 import os
@@ -127,7 +127,7 @@ if __name__ == '__main__':
         cfg['logging']['workflow_level'] = 'DEBUG'
         config.enable_debug_mode()
 
-    logging.update_logging(config)
+    logging.update_logging(cfg)
 
     wf = hcp_workflow(
         name=opts.name, settings=settings, map_metric=opts.metricmap)
