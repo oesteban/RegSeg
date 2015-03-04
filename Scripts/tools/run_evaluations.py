@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-03 12:21:22
+# @Last Modified time: 2015-03-04 13:10:07
 
 
 import os
@@ -131,6 +131,7 @@ if __name__ == '__main__':
 
     wf = hcp_workflow(
         name=opts.name, settings=settings, map_metric=opts.metricmap)
+    wf.config['logging'] = cfg['logging']
     wf.base_dir = settings['work_dir']
     wf.write_graph(format='pdf')
     wf.run(plugin=plugin, plugin_args=plugin_args)
