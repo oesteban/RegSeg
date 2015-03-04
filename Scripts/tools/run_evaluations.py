@@ -116,8 +116,10 @@ if __name__ == '__main__':
     if not op.exists(log_dir):
         os.makedirs(log_dir)
 
-    cfg['logging'] = {'log_directory': log_dir, 'log_to_file': True,
-                      'workflow_level': 'INFO', 'interface_level': 'ERROR'}
+    cfg = dict(logging = {'log_directory': log_dir,
+                          'log_to_file': True,
+                          'workflow_level': 'INFO',
+                          'interface_level': 'ERROR'})
     # Setup debug mode
     if opts.debug:
         cfg['logging']['interface_level'] = 'DEBUG'
