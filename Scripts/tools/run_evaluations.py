@@ -143,8 +143,8 @@ if __name__ == '__main__':
 
     try:
         wf.run(plugin=plugin, plugin_args=plugin_args)
-    except Exception e:
-        print 'Exception caught: %s' % e.msg
+    except Exception as e:
+        print 'Exception caught: %s' % str(e)
 
     try:
         os.remove(op.join(log_dir, 'pypeline.lock'))
