@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-04 13:37:30
+# @Last Modified time: 2015-03-04 14:37:14
 
 
 import os
@@ -116,10 +116,14 @@ if __name__ == '__main__':
     if not op.exists(log_dir):
         os.makedirs(log_dir)
 
-    cfg = dict(logging = {'log_directory': log_dir,
-                          'log_to_file': True,
-                          'workflow_level': 'INFO',
-                          'interface_level': 'ERROR'})
+    cfg = dict(
+        logging={'log_directory': log_dir,
+                 'log_to_file': True,
+                 'workflow_level': 'INFO',
+                 'interface_level': 'ERROR'},
+        execution={'plugin': plugin,
+                   'plugin_args': plugin_args}
+    )
     # Setup debug mode
     if opts.debug:
         cfg['logging']['interface_level'] = 'DEBUG'
