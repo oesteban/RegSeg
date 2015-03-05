@@ -43,9 +43,12 @@
 #include <itkVector.h>
 #include <itkContinuousIndex.h>
 #include <itkImage.h>
-#include <itkImageFileReader.h>
 #include <itkVectorImage.h>
 #include "VectorLinearInterpolateImageFunction.h"
+
+
+#include <itkImageFileReader.h>
+#include <itkMeshFileReader.h>
 #include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkQuadEdgeMeshTraits.h>
 #include <itkQuadEdgeMesh.h>
@@ -68,6 +71,7 @@
 #include <itkSimplexMesh.h>
 #include <itkSimplexMeshToTriangleMeshFilter.h>
 #include <itkTriangleMeshToSimplexMeshFilter.h>
+
 
 #include "rstkMacro.h"
 #include "NormalQuadEdgeMeshFilter.h"
@@ -145,9 +149,6 @@ public:
 	typedef typename ReferenceImageType::SpacingType                  ReferenceSpacingType;
 	typedef itk::Array< MeasureType >                                 MeasureArray;
 
-	typedef typename itk::Image<ChannelPixelType, Dimension>          ChannelType;
-	typedef typename itk::ImageFileReader<ChannelType>                ChannelReader;
-
 	typedef itk::SmoothingRecursiveGaussianImageFilter
 			< ReferenceImageType >                                    SmoothingFilterType;
 	typedef typename SmoothingFilterType::Pointer			          SmoothingFilterPointer;
@@ -180,6 +181,10 @@ public:
 
 	typedef itk::QuadEdgeMesh< PointValueType, Dimension >            ScalarContourType;
 	typedef typename ScalarContourType::Pointer                       ScalarContourPointer;
+
+	typedef typename itk::Image<ChannelPixelType, Dimension>          ChannelType;
+	typedef typename itk::ImageFileReader<ChannelType>                ChannelReader;
+	typedef typename itk::MeshFileReader<VectorContourType>           PriorReader;
 
 	typedef vnl_sparse_matrix< PointValueType >                       SparseMatrix;
 	typedef vnl_vector< PointValueType >                              VNLVector;
@@ -397,6 +402,7 @@ public:
 
 	itkGetConstMacro( OffMaskVertices, std::vector<size_t>);
 
+	void LoadShapePriors( std::vector< std::string > movingSurfaceNames );
 	size_t AddShapePrior( const VectorContourType* prior );
 
 	size_t AddShapeTarget( const VectorContourType* surf ) {

@@ -161,10 +161,8 @@ int main(int argc, char *argv[]) {
 	root["inputs"]["target"]["components"]["size"] = Json::Int (fixedImageNames.size());
 	root["inputs"]["target"]["components"]["type"] = std::string("feature");
 	Json::Value targetjson(Json::arrayValue);
-
-	for (size_t i = 0; i < fixedImageNames.size(); i++ ) {
+	for (size_t i = 0; i < fixedImageNames.size(); i++ )
 		targetjson.append( fixedImageNames[i] );
-	}
 	root["inputs"]["target"]["components"] = targetjson;
 	acwereg->SetReferenceNames( fixedImageNames );
 
@@ -179,32 +177,25 @@ int main(int argc, char *argv[]) {
 		acwereg->SetFixedMask( r->GetOutput() );
 	}
 
-
-	if ( movingSurfaceNames.size() > 0 ) {
-		// Read moving surface(s) -----------------------------------------------------------
-		root["inputs"]["moving"]["components"]["size"] = Json::Int (movingSurfaceNames.size());
-		root["inputs"]["moving"]["components"]["type"] = std::string("surface");
-		Json::Value movingjson(Json::arrayValue);
-
-		for (size_t i = 0; i < movingSurfaceNames.size(); i++) {
-			ReaderType::Pointer polyDataReader = ReaderType::New();
-			polyDataReader->SetFileName( movingSurfaceNames[i] );
-			polyDataReader->Update();
-			acwereg->AddShapePrior( polyDataReader->GetOutput() );
-			movingjson.append( movingSurfaceNames[i] );
-		}
-		root["inputs"]["moving"]["components"] = movingjson;
-
-		for (size_t i = 0; i < targetSurfaceNames.size(); i++) {
-			ReaderType::Pointer polyDataReader = ReaderType::New();
-			polyDataReader->SetFileName( targetSurfaceNames[i] );
-			polyDataReader->Update();
-			acwereg->AddShapeTarget( polyDataReader->GetOutput() );
-
-		}
-	} else {
-		std::cerr << "Fixed image is not supplied." << std::endl;
+	if ( movingSurfaceNames.size() < 1 ) {
+		std::cerr << "No priors were supplied." << std::endl;
 		return EXIT_FAILURE;
+	}
+
+	// Read moving surface(s) -----------------------------------------------------------
+	root["inputs"]["moving"]["components"]["size"] = Json::Int (movingSurfaceNames.size());
+	root["inputs"]["moving"]["components"]["type"] = std::string("surface");
+	Json::Value movingjson(Json::arrayValue);
+	for (size_t i = 0; i < movingSurfaceNames.size(); i++)
+		movingjson.append( movingSurfaceNames[i] );
+	root["inputs"]["moving"]["components"] = movingjson;
+	acwereg->SetPriorsNames( movingSurfaceNames );
+
+	for (size_t i = 0; i < targetSurfaceNames.size(); i++) {
+		ReaderType::Pointer polyDataReader = ReaderType::New();
+		polyDataReader->SetFileName( targetSurfaceNames[i] );
+		polyDataReader->Update();
+		acwereg->AddShapeTarget( polyDataReader->GetOutput() );
 	}
 
 	// Set up registration ------------------------------------------------------------
