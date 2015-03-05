@@ -228,8 +228,8 @@ public:
 	rstkVectorMethods( DescriptorRecomputationFreq, NumberValueType );
 
 	// rstkGetObjectListWithLast( Transform, TransformType );
-	rstkGetObjectListWithLast( Optimizer, OptimizerType );
-	rstkGetObjectListWithLast( Functional, FunctionalType );
+	// rstkGetObjectListWithLast( Optimizer, OptimizerType );
+	// rstkGetObjectListWithLast( Functional, FunctionalType );
 
 	void AddShapeTarget( const VectorContourType *surf ) { this->m_Target.push_back( surf ); }
 
@@ -242,7 +242,7 @@ public:
 	virtual const DecoratedOutputTransformType * GetOutput() const;
 
 	const FieldType* GetCurrentDisplacementField() const {
-		return static_cast<const FieldType* >(this->m_Optimizers[this->m_CurrentLevel]->GetCurrentDisplacementField());
+		return static_cast<const FieldType* >(this->m_Optimizer->GetCurrentDisplacementField());
 	}
 
 	FieldList GetCoefficientsField();
@@ -250,13 +250,13 @@ public:
 	PriorsList GetCurrentContours() const {
 		PriorsList contours;
 		for ( size_t i = 0; i<this->m_PriorsNames.size(); i++ ) {
-			contours.push_back( static_cast< const VectorContourType * >(this->m_Functionals[this->m_CurrentLevel]->GetCurrentContours()[i] ) );
+			contours.push_back( static_cast< const VectorContourType * >(this->m_Functional->GetCurrentContours()[i] ) );
 		}
 		return contours;
 	}
 
 	const ROIType* GetCurrentRegion( size_t contour_id ) const {
-		return this->m_Functionals[this->m_CurrentLevel-1]->GetCurrentRegion( contour_id );
+		return this->m_Functional->GetCurrentRegion( contour_id );
 	}
 
 protected:
@@ -301,8 +301,11 @@ private:
 	NumberValueList m_NumberOfIterations;
 
 	// TransformList m_Transforms;
-	FunctionalList m_Functionals;
-	OptimizerList m_Optimizers;
+	FunctionalPointer m_Functional;
+	OptimizerPointer m_Optimizer;
+
+	// FunctionalList m_Functionals;
+	// OptimizerList m_Optimizers;
 	PriorsList m_Target;
 	SettingsList m_Config;
 	OutputTransformPointer m_OutputTransform;
