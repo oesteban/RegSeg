@@ -104,6 +104,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::GenerateData() {
 	this->InvokeEvent( itk::StartEvent() );
 
+	size_t nPriors = this->m_PriorsNames.size();
 	this->Initialize();
 
 	while( this->m_CurrentLevel < this->m_NumberOfLevels ) {
@@ -135,6 +136,17 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 			break;
 		}
 
+		this->m_CurrentContours.resize(nPriors);
+		for (size_t i = 0; i < nPriors; i++ ) {
+			ContourCopyPointer copy = ContourCopyType::New();
+			copy->SetInput( this->m_Functional->GetCurrentContours()[i] );
+			copy->Update();
+			this->m_CurrentContours[i] = copy->GetOutput();
+		}
+
+		this->m_Functional = NULL;
+		this->m_Optimizer = NULL;
+
 		this->m_CurrentLevel++;
 	}
 
@@ -149,14 +161,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		itkExceptionMacro( << "Trying to set up a level beyond NumberOfLevels (level=" << (level+1) << ")." );
 	}
 
-	FunctionalPointer prevFunc;
-	OptimizerPointer prevOpt;
-
-	// Initialize LevelSet function
-	if (level > 0) {
-		prevFunc = this->m_Functional;
-		prevOpt = this->m_Optimizer;
-	}
 	this->m_Functional = FunctionalType::New();
 	this->m_Functional->SetSettings( this->m_Config[level] );
 	this->m_Functional->LoadReferenceImage( this->m_ReferenceNames );
@@ -169,8 +173,9 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		this->m_Functional->LoadShapePriors( this->m_PriorsNames );
 	} else {
 		for ( size_t i = 0; i<this->m_PriorsNames.size(); i++ ) {
-			this->m_Functional->AddShapePrior( prevFunc->GetCurrentContours()[i] );
+			this->m_Functional->AddShapePrior( this->m_CurrentContours[i] );
 		}
+		this->m_CurrentContours.clear();
 	}
 
 	// Add targets (if requested, testing purposes)

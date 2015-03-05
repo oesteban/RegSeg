@@ -119,6 +119,8 @@ public:
 	typedef FunctionalBase< ReferenceImageType >              FunctionalType;
 	typedef typename FunctionalType::Pointer                  FunctionalPointer;
 	typedef std::vector< FunctionalPointer >                  FunctionalList;
+	typedef typename FunctionalType::ContourCopyType          ContourCopyType;
+	typedef typename ContourCopyType::Pointer                 ContourCopyPointer;
 	typedef typename FunctionalType::VectorContourType        VectorContourType;
 	typedef typename FunctionalType::ROIType                  ROIType;
 	typedef typename FunctionalType::ContourPointer           ContourPointer;
@@ -307,6 +309,7 @@ private:
 	// FunctionalList m_Functionals;
 	// OptimizerList m_Optimizers;
 	PriorsList m_Target;
+	PriorsList m_CurrentContours;
 	SettingsList m_Config;
 	OutputTransformPointer m_OutputTransform;
 	OutputTransformPointer m_OutputInverseTransform;
