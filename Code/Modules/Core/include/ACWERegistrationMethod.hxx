@@ -91,8 +91,8 @@ void
 ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::Initialize() {
 	if ( ! m_Initialized ) {
-		this->m_OutputTransform->SetOutputReference(this->GetFixedImage());
-		this->GenerateSchedule();
+		//
+		// this->GenerateSchedule();
 	}
 	m_Initialized = true;
 }
@@ -144,93 +144,15 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 template < typename TFixedImage, typename TTransform, typename TComputationalValue >
 void
 ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
-::GenerateSchedule() {
-	try {
-		ReferenceImageConstPointer refim = this->GetFixedImage();
-
-		for ( size_t i = 0; i<Dimension; i++){
-			if ( m_MaxGridSize[i] == 0 ) {
-				m_MaxGridSize[i] = refim->GetLargestPossibleRegion().GetSize()[i];
-			}
-
-			if ( m_MaxGridSize[i] <= m_MinGridSize[i] ) {
-				m_MaxGridSize[i] = m_MinGridSize[i];
-			}
-		}
-
-		if ( m_MaxGridSize == m_MinGridSize ) {
-			this->SetNumberOfLevels( 1 );
-		}
-
-		// Schedule levels and sizes.
-		if ( m_UseGridLevelsInitialization && m_NumberOfLevels>0 ) {
-			if ( m_NumberOfLevels == 1 ) {
-				m_GridSchedule.push_back( m_MaxGridSize );
-			} else {
-
-				for( size_t i = 0; i < Dimension; i++) {
-					int maxLevels = m_MaxGridSize[i] - m_MinGridSize[i];
-
-					if ( maxLevels <= 0 ) {
-						itkExceptionMacro(<< "image size must be >= 3 pixels along dimension " << i );
-					}
-
-					if ( m_NumberOfLevels > (size_t) maxLevels ) {
-						this->SetNumberOfLevels( maxLevels );
-						itkWarningMacro( << "too many levels required, NumberOfLevels has been updated to " << m_NumberOfLevels );
-					}
-				}
-
-				m_GridSchedule[m_NumberOfLevels-1] = m_MaxGridSize;
-
-				GridSizeType gridStep;
-				for( size_t i = 0; i < Dimension; i++){
-					gridStep[i] = floor(  1.0*(m_MaxGridSize[i]- m_MinGridSize[i]) / (m_NumberOfLevels-1) );
-				}
-
-				for( size_t l = m_NumberOfLevels-1; l > 0; --l ){
-					GridSizeType prevGrid = m_GridSchedule[l];
-
-					for( size_t i = 0; i < Dimension; i++) {
-						prevGrid[i]-= gridStep[i];
-					}
-
-					m_GridSchedule[l-1] = prevGrid;
-				}
-			}
-		} // end if m_UseGridLevelsInitialization
-		else if ( m_UseGridSizeInitialization ) {
-
-		} else {
-			this->m_UseCustomGridSize = true;
-		}
-
-		m_Stop = false;
-		m_Initialized = true;
-
-	} catch ( itk::ExceptionObject & err ) {
-		this->Stop( INITIALIZATION_ERROR, "Error occurred during initialization" );
-		throw err;  // Pass exception to caller
-	}
-
-
-	this->InvokeEvent( itk::InitializeEvent() );
-}
-
-template < typename TFixedImage, typename TTransform, typename TComputationalValue >
-void
-ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::SetUpLevel( size_t level ) {
 	if( level > (this->m_NumberOfLevels-1) ) {
 		itkExceptionMacro( << "Trying to set up a level beyond NumberOfLevels (level=" << (level+1) << ")." );
 	}
 
-	ReferenceImageConstPointer im = this->GetFixedImage();
-
 	// Initialize LevelSet function
 	this->m_Functionals[level] = FunctionalType::New();
 	this->m_Functionals[level]->SetSettings( this->m_Config[level] );
-	this->m_Functionals[level]->SetReferenceImage( im );
+	this->m_Functionals[level]->LoadReferenceImage( this->m_ReferenceNames );
 
 	if (this->m_FixedMask.IsNotNull() ) {
 		this->m_Functionals[level]->SetBackgroundMask(this->m_FixedMask);
@@ -358,6 +280,7 @@ template < typename TFixedImage, typename TTransform, typename TComputationalVal
 void
 ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::GenerateFinalDisplacementField() {
+	// this->m_OutputTransform->SetOutputReference(this->GetFixedImage());
 	this->m_OutputTransform->Interpolate();
 	this->m_DisplacementField = this->m_OutputTransform->GetDisplacementField();
 }

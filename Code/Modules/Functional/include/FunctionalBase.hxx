@@ -47,7 +47,9 @@
 #include <vnl/vnl_random.h>
 #include <itkImageAlgorithm.h>
 #include <itkOrientImageFilter.h>
+#include "InternalOrientationFilter.h"
 #include <itkContinuousIndex.h>
+#include <itkComposeImageFilter.h>
 
 #include <itkIntensityWindowingImageFilter.h>
 #include <itkInvertIntensityImageFilter.h>
@@ -668,46 +670,39 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::SetReferenceImage ( const ReferenceImageType * _arg ) {
-	itkDebugMacro("setting ReferenceImage to " << _arg);
-
-	if ( this->m_ReferenceImage != _arg ) {
-		typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >  Orienter;
-		typename Orienter::Pointer orient = Orienter::New();
-		orient->UseImageDirectionOn();
-		orient->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
-		orient->SetInput(_arg);
-		orient->Update();
-		ReferenceImagePointer ref = orient->GetOutput();
-		ReferenceSizeType size = ref->GetLargestPossibleRegion().GetSize();
-
-		DirectionType idmat; idmat.SetIdentity();
-		DirectionType itk; itk.SetIdentity();
-		itk(0,0) = -1.0; itk(1,1) = -1.0;
-
-		PointType neworig = itk * ref->GetOrigin();
-		ref->SetDirection(idmat);
-		ref->SetOrigin(neworig);
-		this->m_ReferenceImage = ref;
-
-		// Cache image properties
-		this->m_FirstPixelCenter  = this->m_ReferenceImage->GetOrigin();
-		this->m_Direction = this->m_ReferenceImage->GetDirection();
-		this->m_ReferenceSize = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
-		this->m_ReferenceSpacing = this->m_ReferenceImage->GetSpacing();
-
-		ContinuousIndex tmp_idx;
-		tmp_idx.Fill( -0.5 );
-		this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_Origin );
-
-		for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]-1.0;
-		this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_LastPixelCenter );
-
-		for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]- 0.5;
-		this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_End );
-
-		this->Modified();
+::LoadReferenceImage ( const std::vector<std::string> fixedImageNames ) {
+	typedef itk::ComposeImageFilter< ChannelType, ReferenceImageType >     InputToVectorFilterType;
+	typename InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
+	for (size_t i = 0; i < fixedImageNames.size(); i++ ) {
+		typename ChannelReader::Pointer r = ChannelReader::New();
+		r->SetFileName( fixedImageNames[i] );
+		r->Update();
+		comb->SetInput(i,r->GetOutput());
 	}
+
+	comb->Update();
+	typedef InternalOrientationFilter< ReferenceImageType, ReferenceImageType >  InternalOrienter;
+	typename InternalOrienter::Pointer orient = InternalOrienter::New();
+	orient->SetInput(comb->GetOutput());
+	orient->Update();
+
+	this->SetReferenceImage(orient->GetOutput());
+
+	// Cache image properties
+	this->m_FirstPixelCenter  = this->m_ReferenceImage->GetOrigin();
+	this->m_Direction = this->m_ReferenceImage->GetDirection();
+	this->m_ReferenceSize = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
+	this->m_ReferenceSpacing = this->m_ReferenceImage->GetSpacing();
+
+	ContinuousIndex tmp_idx;
+	tmp_idx.Fill( -0.5 );
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_Origin );
+
+	for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]-1.0;
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_LastPixelCenter );
+
+	for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]- 0.5;
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_End );
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >

@@ -171,9 +171,6 @@ public:
 	/** Stop condition internal string type */
 	typedef std::ostringstream                                      StopConditionDescriptionType;
 
-	itkSetInputMacro( FixedImage, ReferenceImageType );
-	itkGetInputMacro( FixedImage, ReferenceImageType );
-
 	itkSetConstObjectMacro( FixedMask, FixedMaskType );
 	itkGetConstObjectMacro( FixedMask, FixedMaskType );
 
@@ -196,6 +193,8 @@ public:
 	itkGetConstMacro( MinGridSize, GridSizeType );
 
 	//itkGetConstMacro( StopConditionDescription, StopConditionDescriptionType );
+
+	void SetReferenceNames(const std::vector< std::string > s) { this->m_ReferenceNames = std::vector<std::string>(s); }
 
 	itkSetMacro( OutputPrefix, std::string );
 	itkGetConstMacro( OutputPrefix, std::string );
@@ -325,6 +324,8 @@ private:
 	size_t m_Verbosity;
 
 	size_t m_TransformNumberOfThreads;
+
+	std::vector< std::string > m_ReferenceNames;
 };
 
 } // namespace rstk

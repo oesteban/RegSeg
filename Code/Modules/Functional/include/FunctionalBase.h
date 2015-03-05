@@ -43,6 +43,7 @@
 #include <itkVector.h>
 #include <itkContinuousIndex.h>
 #include <itkImage.h>
+#include <itkImageFileReader.h>
 #include <itkVectorImage.h>
 #include "VectorLinearInterpolateImageFunction.h"
 #include <itkNearestNeighborInterpolateImageFunction.h>
@@ -135,6 +136,7 @@ public:
 	typedef typename ReferenceImageType::Pointer                      ReferenceImagePointer;
 	typedef typename ReferenceImageType::ConstPointer                 ReferenceImageConstPointer;
 	typedef typename ReferenceImageType::PixelType                    ReferencePixelType;
+	typedef typename ReferenceImageType::InternalPixelType            ChannelPixelType;
 	typedef typename ReferencePixelType::ValueType                    ReferenceValueType;
 	typedef typename ReferenceImageType::PointType                    ReferencePointType;
 	typedef typename ReferenceImageType::IndexType                    ReferenceIndexType;
@@ -142,6 +144,9 @@ public:
 	typedef typename ReferenceImageType::SizeType                     ReferenceSizeType;
 	typedef typename ReferenceImageType::SpacingType                  ReferenceSpacingType;
 	typedef itk::Array< MeasureType >                                 MeasureArray;
+
+	typedef typename itk::Image<ChannelPixelType, Dimension>          ChannelType;
+	typedef typename itk::ImageFileReader<ChannelType>                ChannelReader;
 
 	typedef itk::SmoothingRecursiveGaussianImageFilter
 			< ReferenceImageType >                                    SmoothingFilterType;
@@ -338,7 +343,9 @@ public:
 	virtual void SetCurrentDisplacements( const VNLVectorContainer& vals );
 
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
-	virtual void SetReferenceImage (const ReferenceImageType * _arg);
+	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
+
+	void LoadReferenceImage( const std::vector<std::string> fixedImageNames );
 
 	itkGetConstObjectMacro( CurrentMaps, PriorsImageType);
 
