@@ -244,14 +244,14 @@ int main(int argc, char *argv[]) {
 	//
 	size_t nlevels = acwereg->GetNumberOfLevels();
 
-	for (size_t i = 0; i < nlevels; i++) {
-		std::stringstream sb;
-		sb << outPrefix << "_coeff_" << i << ".vtu";
-		typename CoeffWriter::Pointer w = CoeffWriter::New();
-		w->SetFileName(sb.str().c_str());
-		w->SetInput(acwereg->GetOptimizerOfLevel(i)->GetTransform()->GetFlatParameters());
-		w->Update();
-	}
+	//for (size_t i = 0; i < nlevels; i++) {
+	//	std::stringstream sb;
+	//	sb << outPrefix << "_coeff_" << i << ".vtu";
+	//	typename CoeffWriter::Pointer w = CoeffWriter::New();
+	//	w->SetFileName(sb.str().c_str());
+	//	w->SetInput(acwereg->GetOptimizerOfLevel(i)->GetTransform()->GetFlatParameters());
+	//	w->Update();
+	//}
 
 	// Displacementfield
 	typename FieldWriter::Pointer fwrite = FieldWriter::New();

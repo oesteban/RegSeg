@@ -117,7 +117,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		}
 
 		try {
-			m_Optimizers[this->m_CurrentLevel]->Start();
+			m_Optimizer->Start();
 		} catch ( itk::ExceptionObject & err ) {
 			this->Stop( LEVEL_PROCESS_ERROR, "Error while executing level "
 					+ boost::lexical_cast<std::string>(this->m_CurrentLevel));
@@ -126,7 +126,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 
 		// Add JSON tree to the general logging facility
 		this->m_JSONRoot.append( this->m_CurrentLogger->GetJSONRoot() );
-		this->m_OutputTransform->PushBackTransform(this->m_Optimizers[this->m_CurrentLevel]->GetTransform());
+		this->m_OutputTransform->PushBackTransform(this->m_Optimizer->GetTransform());
 		this->InvokeEvent( itk::IterationEvent() );
 
 		if ( this->m_CurrentLevel == this->m_NumberOfLevels - 1 ) {
@@ -149,50 +149,57 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		itkExceptionMacro( << "Trying to set up a level beyond NumberOfLevels (level=" << (level+1) << ")." );
 	}
 
+	FunctionalPointer prevFunc;
+	OptimizerPointer prevOpt;
+
 	// Initialize LevelSet function
-	this->m_Functionals[level] = FunctionalType::New();
-	this->m_Functionals[level]->SetSettings( this->m_Config[level] );
-	this->m_Functionals[level]->LoadReferenceImage( this->m_ReferenceNames );
+	if (level > 0) {
+		prevFunc = this->m_Functional;
+		prevOpt = this->m_Optimizer;
+	}
+	this->m_Functional = FunctionalType::New();
+	this->m_Functional->SetSettings( this->m_Config[level] );
+	this->m_Functional->LoadReferenceImage( this->m_ReferenceNames );
 
 	if (this->m_FixedMask.IsNotNull() ) {
-		this->m_Functionals[level]->SetBackgroundMask(this->m_FixedMask);
+		this->m_Functional->SetBackgroundMask(this->m_FixedMask);
 	}
 
 	if ( level == 0 ) {
-		this->m_Functionals[level]->LoadShapePriors( this->m_PriorsNames );
+		this->m_Functional->LoadShapePriors( this->m_PriorsNames );
 	} else {
 		for ( size_t i = 0; i<this->m_PriorsNames.size(); i++ ) {
-			this->m_Functionals[level]->AddShapePrior( this->m_Functionals[level-1]->GetCurrentContours()[i] );
+			this->m_Functional->AddShapePrior( prevFunc->GetCurrentContours()[i] );
 		}
 	}
 
 	// Add targets (if requested, testing purposes)
 	for ( size_t i = 0; i<this->m_Target.size(); i++ ) {
-		this->m_Functionals[level]->AddShapeTarget( this->m_Target[i] );
+		this->m_Functional->AddShapeTarget( this->m_Target[i] );
 	}
 
 	// Connect Optimizer
-	this->m_Optimizers[level] = DefaultOptimizerType::New();
-	this->m_Optimizers[level]->SetFunctional( this->m_Functionals[level] );
-	this->m_Optimizers[level]->SetSettings( this->m_Config[level] );
+	this->m_Optimizer = DefaultOptimizerType::New();
+	this->m_Optimizer->SetFunctional( this->m_Functional );
+	this->m_Optimizer->SetSettings( this->m_Config[level] );
 
 	if ( this->m_TransformNumberOfThreads > 0 ) {
-		this->m_Optimizers[level]->GetTransform()->SetNumberOfThreads( this->m_TransformNumberOfThreads );
+		this->m_Optimizer->GetTransform()->SetNumberOfThreads( this->m_TransformNumberOfThreads );
 	}
 
 	this->m_CurrentLogger = JSONLoggerType::New();
-	this->m_CurrentLogger->SetOptimizer( this->m_Optimizers[level] );
+	this->m_CurrentLogger->SetOptimizer( this->m_Optimizer );
 	this->m_CurrentLogger->SetLevel( level );
 
 	if( this->m_Verbosity > 0 ) {
 		this->m_ImageLogger = IterationWriterUpdate::New();
-		this->m_ImageLogger->SetOptimizer( this->m_Optimizers[level] );
+		this->m_ImageLogger->SetOptimizer( this->m_Optimizer );
 		this->m_ImageLogger->SetPrefix( this->m_OutputPrefix );
 		this->m_ImageLogger->SetLevel( level );
 		this->m_ImageLogger->SetVerbosity( this->m_Verbosity );
 
 		this->m_OutLogger = STDOutLoggerType::New();
-		this->m_OutLogger->SetOptimizer( this->m_Optimizers[level] );
+		this->m_OutLogger->SetOptimizer( this->m_Optimizer );
 		this->m_OutLogger->SetLevel( level );
 	}
 
@@ -209,8 +216,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	this->m_NumberOfLevels = levels;
 
 	m_GridSchedule.resize(m_NumberOfLevels);
-	m_Functionals.resize( this->m_NumberOfLevels );
-	m_Optimizers.resize( this->m_NumberOfLevels );
 	m_NumberOfIterations.resize( this->m_NumberOfLevels );
 	m_StepSize.resize( this->m_NumberOfLevels );
 	m_Alpha.resize( this->m_NumberOfLevels );
