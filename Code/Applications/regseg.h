@@ -60,7 +60,6 @@
 #include "rstkVTKPolyDataWriter.h"
 #include "rstkCoefficientsWriter.h"
 #include <itkVectorImageToImageAdaptor.h>
-#include <itkComposeImageFilter.h>
 #include <itkBSplineInterpolateImageFunction.h>
 #include <itkDisplacementFieldTransform.h>
 #include <itkResampleImageFilter.h>
@@ -85,7 +84,6 @@ typedef float                                                ChannelPixelType;
 typedef itk::Image<ChannelPixelType, DIMENSION>              ChannelType;
 typedef itk::VectorImage<ChannelPixelType, DIMENSION>        ImageType;
 typedef typename ImageType::PixelType                        VectorPixelType;
-typedef itk::ComposeImageFilter< ChannelType,ImageType >     InputToVectorFilterType;
 
 typedef float                                                ScalarType;
 typedef BSplineSparseMatrixTransform<ScalarType,

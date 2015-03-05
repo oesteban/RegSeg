@@ -153,23 +153,20 @@ int main(int argc, char *argv[]) {
 
 
 
+	if ( fixedImageNames.size() < 1 ) {
+		std::cerr << "Fixed image is not supplied." << std::endl;
+		return EXIT_FAILURE;
+	}
 	// Read target feature(s) -----------------------------------------------------------
 	root["inputs"]["target"]["components"]["size"] = Json::Int (fixedImageNames.size());
 	root["inputs"]["target"]["components"]["type"] = std::string("feature");
 	Json::Value targetjson(Json::arrayValue);
 
-	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
 	for (size_t i = 0; i < fixedImageNames.size(); i++ ) {
-		ImageReader::Pointer r = ImageReader::New();
-		r->SetFileName( fixedImageNames[i] );
-		r->Update();
-		comb->SetInput(i,r->GetOutput());
 		targetjson.append( fixedImageNames[i] );
 	}
 	root["inputs"]["target"]["components"] = targetjson;
-
-    comb->Update();
-	acwereg->SetFixedImage( comb->GetOutput() );
+	acwereg->SetReferenceNames( fixedImageNames );
 
 	// Read target mask -----------------------------------------------------------------
 	if( vm_general.count( "fixed-mask" ) ) {
@@ -183,25 +180,31 @@ int main(int argc, char *argv[]) {
 	}
 
 
-	// Read moving surface(s) -----------------------------------------------------------
-	root["inputs"]["moving"]["components"]["size"] = Json::Int (movingSurfaceNames.size());
-	root["inputs"]["moving"]["components"]["type"] = std::string("surface");
-	Json::Value movingjson(Json::arrayValue);
+	if ( movingSurfaceNames.size() > 0 ) {
+		// Read moving surface(s) -----------------------------------------------------------
+		root["inputs"]["moving"]["components"]["size"] = Json::Int (movingSurfaceNames.size());
+		root["inputs"]["moving"]["components"]["type"] = std::string("surface");
+		Json::Value movingjson(Json::arrayValue);
 
-	for (size_t i = 0; i < movingSurfaceNames.size(); i++) {
-		ReaderType::Pointer polyDataReader = ReaderType::New();
-		polyDataReader->SetFileName( movingSurfaceNames[i] );
-		polyDataReader->Update();
-		acwereg->AddShapePrior( polyDataReader->GetOutput() );
-		movingjson.append( movingSurfaceNames[i] );
-	}
-	root["inputs"]["moving"]["components"] = movingjson;
+		for (size_t i = 0; i < movingSurfaceNames.size(); i++) {
+			ReaderType::Pointer polyDataReader = ReaderType::New();
+			polyDataReader->SetFileName( movingSurfaceNames[i] );
+			polyDataReader->Update();
+			acwereg->AddShapePrior( polyDataReader->GetOutput() );
+			movingjson.append( movingSurfaceNames[i] );
+		}
+		root["inputs"]["moving"]["components"] = movingjson;
 
-	for (size_t i = 0; i < targetSurfaceNames.size(); i++) {
-		ReaderType::Pointer polyDataReader = ReaderType::New();
-		polyDataReader->SetFileName( targetSurfaceNames[i] );
-		polyDataReader->Update();
-		acwereg->AddShapeTarget( polyDataReader->GetOutput() );
+		for (size_t i = 0; i < targetSurfaceNames.size(); i++) {
+			ReaderType::Pointer polyDataReader = ReaderType::New();
+			polyDataReader->SetFileName( targetSurfaceNames[i] );
+			polyDataReader->Update();
+			acwereg->AddShapeTarget( polyDataReader->GetOutput() );
+
+		}
+	} else {
+		std::cerr << "Fixed image is not supplied." << std::endl;
+		return EXIT_FAILURE;
 	}
 
 	// Set up registration ------------------------------------------------------------
