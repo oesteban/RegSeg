@@ -158,6 +158,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::LoadShapePriors( std::vector< std::string > movingSurfaceNames ) {
+	for( size_t i = 0; i < movingSurfaceNames.size(); i++) {
+		typename PriorReader::Pointer polyDataReader = PriorReader::New();
+		polyDataReader->SetFileName( movingSurfaceNames[i] );
+		polyDataReader->Update();
+		this->AddShapePrior( polyDataReader->GetOutput() );
+	}
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
 size_t
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::VectorContourType* prior ) {

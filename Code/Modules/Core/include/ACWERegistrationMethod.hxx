@@ -159,11 +159,9 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 	}
 
 	if ( level == 0 ) {
-		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
-			this->m_Functionals[level]->AddShapePrior( this->m_Priors[i] );
-		}
+		this->m_Functionals[level]->LoadShapePriors( this->m_PriorsNames );
 	} else {
-		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
+		for ( size_t i = 0; i<this->m_PriorsNames.size(); i++ ) {
 			this->m_Functionals[level]->AddShapePrior( this->m_Functionals[level-1]->GetCurrentContours()[i] );
 		}
 	}

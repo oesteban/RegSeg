@@ -195,6 +195,7 @@ public:
 	//itkGetConstMacro( StopConditionDescription, StopConditionDescriptionType );
 
 	void SetReferenceNames(const std::vector< std::string > s) { this->m_ReferenceNames = std::vector<std::string>(s); }
+	void SetPriorsNames(const std::vector< std::string > s) { this->m_PriorsNames = std::vector<std::string>(s); }
 
 	itkSetMacro( OutputPrefix, std::string );
 	itkGetConstMacro( OutputPrefix, std::string );
@@ -230,7 +231,6 @@ public:
 	rstkGetObjectListWithLast( Optimizer, OptimizerType );
 	rstkGetObjectListWithLast( Functional, FunctionalType );
 
-	void AddShapePrior( const VectorContourType *prior ) { this->m_Priors.push_back( prior ); }
 	void AddShapeTarget( const VectorContourType *surf ) { this->m_Target.push_back( surf ); }
 
 	// Methods inherited from the Configurable interface
@@ -249,7 +249,7 @@ public:
 
 	PriorsList GetCurrentContours() const {
 		PriorsList contours;
-		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
+		for ( size_t i = 0; i<this->m_PriorsNames.size(); i++ ) {
 			contours.push_back( static_cast< const VectorContourType * >(this->m_Functionals[this->m_CurrentLevel]->GetCurrentContours()[i] ) );
 		}
 		return contours;
@@ -303,7 +303,6 @@ private:
 	// TransformList m_Transforms;
 	FunctionalList m_Functionals;
 	OptimizerList m_Optimizers;
-	PriorsList m_Priors;
 	PriorsList m_Target;
 	SettingsList m_Config;
 	OutputTransformPointer m_OutputTransform;
@@ -326,6 +325,7 @@ private:
 	size_t m_TransformNumberOfThreads;
 
 	std::vector< std::string > m_ReferenceNames;
+	std::vector< std::string > m_PriorsNames;
 };
 
 } // namespace rstk
