@@ -179,7 +179,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	Scalar2VectorCopyPointer copy = Scalar2VectorCopyType::New();
 	copy->SetInput( prior );
 	copy->Update();
-	this->m_CurrentContours.push_back( copy->GetOutput() );
 
 	// Increase number of off-grid nodes to set into the sparse-dense interpolator
 	this->m_NumberOfVertices+= prior->GetNumberOfPoints();
@@ -188,7 +187,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_NormalsFilter[this->m_NumberOfContours]->SetWeight(NormalFilterType::AREA);
 	this->m_NormalsFilter[this->m_NumberOfContours]->SetInput(copy->GetOutput());
 	this->m_NormalsFilter[this->m_NumberOfContours]->Update();
-	this->m_Gradients.push_back( this->m_NormalsFilter[this->m_NumberOfContours]->GetOutput() );
+	this->m_CurrentContours.push_back( this->m_NormalsFilter[this->m_NumberOfContours]->GetOutput() );
 
 	this->m_NumberOfContours++;
 	this->m_NumberOfRegions++;
@@ -266,7 +265,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			}
 		}
 
-		this->m_Gradients[icid]->GetPointData()->SetElement( cpid, v );
+		this->m_CurrentContours[icid]->GetPointData()->SetElement( cpid, v );
 	}
 
 }
@@ -322,7 +321,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		}
 
 		// Reset gradients
-		this->m_Gradients[contid]->SetPoints(this->m_CurrentContours[contid]->GetPoints());
+		// this->m_Gradients[contid]->SetPoints(this->m_CurrentContours[contid]->GetPoints());
 
 	}
 
@@ -506,14 +505,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		// Set up outer regions
 		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-			// Compute mesh of normals
-			NormalFilterPointer normalsFilter = NormalFilterType::New();
-			normalsFilter->SetInput( this->m_CurrentContours[contid] );
-			normalsFilter->Update();
-			VectorContourPointer normals = normalsFilter->GetOutput();
-
-			PointsConstIterator c_it  = normals->GetPoints()->Begin();
-			PointsConstIterator c_end = normals->GetPoints()->End();
+			PointsConstIterator c_it  = this->m_CurrentContours[contid]->GetPoints()->Begin();
+			PointsConstIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
 
 			PointType ci;
 			VectorType v;
@@ -532,8 +525,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					this->m_OffMaskVertices[contid]++;
 				}
 
-				this->m_Gradients[contid]->GetPointData()->SetElement( pid, zerov );
-				normals->GetPointData( pid, &ni );
+				ni = this->m_CurrentContours[contid]->GetPointData()->GetElement( pid );
 				ROIPixelType inner = interp->Evaluate( ci + ni );
 				ROIPixelType outer = interp->Evaluate( ci - ni );
 
