@@ -172,11 +172,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 size_t
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::VectorContourType* prior ) {
+::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::ScalarContourType* prior ) {
 	this->m_Offsets.push_back( this->m_NumberOfVertices );
 	this->m_Priors.push_back( prior );
 
-	ContourCopyPointer copy = ContourCopyType::New();
+	Scalar2VectorCopyPointer copy = Scalar2VectorCopyType::New();
 	copy->SetInput( prior );
 	copy->Update();
 	this->m_CurrentContours.push_back( copy->GetOutput() );
@@ -186,13 +186,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	this->m_NormalsFilter.push_back(NormalFilterType::New());
 	this->m_NormalsFilter[this->m_NumberOfContours]->SetWeight(NormalFilterType::AREA);
-	this->m_NormalsFilter[this->m_NumberOfContours]->SetInput( this->m_CurrentContours[this->m_NumberOfContours] );
+	this->m_NormalsFilter[this->m_NumberOfContours]->SetInput(copy->GetOutput());
 	this->m_NormalsFilter[this->m_NumberOfContours]->Update();
-
-	ContourCopyPointer copygrad = ContourCopyType::New();
-	copygrad->SetInput( this->m_NormalsFilter[this->m_NumberOfContours]->GetOutput() );
-	copygrad->Update();
-	this->m_Gradients.push_back( copygrad->GetOutput() );
+	this->m_Gradients.push_back( this->m_NormalsFilter[this->m_NumberOfContours]->GetOutput() );
 
 	this->m_NumberOfContours++;
 	this->m_NumberOfRegions++;
@@ -210,7 +206,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	PointIdentifier pid;      // universal id of vertex
 	PointIdentifier cpid;     // id of vertex in its contour
 
-	ContourPointType ci_prime;
+	VectorContourPointType ci_prime;
 	PointValueType gi[nvertices];
 	PointValueType sum = 0.0;
 	std::vector< PointValueType > sample;
@@ -256,7 +252,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		icid = this->m_InnerRegion[vvid];
 		cpid = pid - this->m_Offsets[icid];
 		ni = normals[icid]->ElementAt(cpid);
-
 		g = gi[vvid];
 		if ( g > this->m_GradientStatistics[5] ) g = this->m_GradientStatistics[5];
 		if ( g < this->m_GradientStatistics[1] ) g = this->m_GradientStatistics[1];
@@ -297,7 +292,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename VectorContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
 		PointsContainerPointer curPoints = this->m_CurrentContours[contid]->GetPoints();
 
-		ContourPointType ci, ci_prime;
+		VectorContourPointType ci, ci_prime;
 		VectorType disp;
 		size_t pid;
 
@@ -374,7 +369,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 inline bool
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::CheckExtent( typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContourPointType& p, typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
+::CheckExtent( typename FunctionalBase<TReferenceImageType, TCoordRepType>::VectorContourPointType& p, typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
 	ReferencePointType ref;
 	ref.CastFrom ( p );
 	bool isInside = this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex( ref , idx );
@@ -445,16 +440,17 @@ template< typename TReferenceImageType, typename TCoordRepType >
 const typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureArray
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetFinalEnergy() const {
-	ContourList groundtruth;
+	ScalarContourList groundtruth;
 
 	for(size_t idx = 0; idx < this->m_Target.size(); idx++) {
-		ContourCopyPointer copy = ContourCopyType::New();
+		ScalarContourCopyPointer copy = ScalarContourCopyType::New();
 		copy->SetInput( this->m_Target[idx] );
 		copy->Update();
 		groundtruth.push_back(copy->GetOutput());
 	}
 
-	BinarizeMeshFilterPointer newp = BinarizeMeshFilterType::New();
+	typedef MultilabelBinarizeMeshFilter< ScalarContourType > ScalarBinarizeMeshFilterType;
+	typename ScalarBinarizeMeshFilterType::Pointer newp = ScalarBinarizeMeshFilterType::New();
 	newp->SetInputs( groundtruth );
 	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
 	newp->Update();
@@ -514,7 +510,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			NormalFilterPointer normalsFilter = NormalFilterType::New();
 			normalsFilter->SetInput( this->m_CurrentContours[contid] );
 			normalsFilter->Update();
-			ContourPointer normals = normalsFilter->GetOutput();
+			VectorContourPointer normals = normalsFilter->GetOutput();
 
 			PointsConstIterator c_it  = normals->GetPoints()->Begin();
 			PointsConstIterator c_end = normals->GetPoints()->End();
@@ -525,6 +521,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			size_t pid;
 			float step = 1;
 			while( c_it != c_end ) {
+
 				pid = c_it.Index();
 				ci = c_it.Value();
 
@@ -576,7 +573,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	QEType* temp = edge;
 	CellIdentifier cell_id(0);
 	double totalArea = 0.0;
-	ContourPointType pt[3];
+	VectorContourPointType pt[3];
 	typedef typename PolygonType::PointIdIterator PolygonPointIterator;
 
 	do {

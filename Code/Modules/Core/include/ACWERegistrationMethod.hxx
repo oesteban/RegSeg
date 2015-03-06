@@ -138,7 +138,7 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 
 		this->m_CurrentContours.resize(nPriors);
 		for (size_t i = 0; i < nPriors; i++ ) {
-			ContourCopyPointer copy = ContourCopyType::New();
+			Shape2PriorCopyPointer copy = Shape2PriorCopyType::New();
 			copy->SetInput( this->m_Functional->GetCurrentContours()[i] );
 			copy->Update();
 			this->m_CurrentContours[i] = copy->GetOutput();

@@ -108,15 +108,11 @@ typedef itk::BSplineInterpolateImageFunction
 
 typedef ACWERegistrationMethod< ImageType, TransformType, ScalarType >   RegistrationType;
 typedef typename RegistrationType::Pointer                   RegistrationPointer;
-typedef typename RegistrationType::VectorContourType         VectorContourType;
-typedef typename VectorContourType::Pointer                  ContourPointer;
 typedef typename RegistrationType::PriorsList                ContourList;
 typedef typename RegistrationType::OptimizerType             OptimizerType;
 typedef typename RegistrationType::FunctionalType            FunctionalType;
 typedef typename FunctionalType::ProbabilityMapType          ProbabilityMapType;
 typedef typename OptimizerType::FieldType                    FieldType;
-typedef itk::VTKPolyDataReader< VectorContourType >          ReaderType;
-typedef rstk::VTKPolyDataWriter< VectorContourType >         WriterType;
 typedef itk::ImageFileReader<ChannelType>                    ImageReader;
 typedef itk::ImageFileWriter<ChannelType>                    ImageWriter;
 typedef rstk::DisplacementFieldComponentsFileWriter
@@ -132,6 +128,9 @@ typedef typename WarpFilter::Pointer                         WarpFilterPointer;
 
 typedef LevelObserver< RegistrationType >                    LevelObserverType;
 typedef typename LevelObserverType::Pointer                  LevelObserverPointer;
+
+typedef typename RegistrationType::PriorsType                PriorType;
+typedef itk::MeshFileWriter<PriorType>                       WriterType;
 
 #ifndef NDEBUG
 	const static size_t DEFAULT_VERBOSITY = 5;

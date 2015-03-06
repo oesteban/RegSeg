@@ -43,10 +43,10 @@ public:
 	typedef typename FunctionalType::ReferenceImageType         ReferenceImageType;
 	typedef typename FunctionalType::ROIType                    ROIType;
 	typedef typename FunctionalType::PriorsImageType            ProbabilityMapType;
-	typedef typename FunctionalType::ShapeGradientType          ShapeGradientType;
+	typedef typename FunctionalType::VectorContourType          VectorContourType;
 	typedef typename OptimizerType::TransformType               TransformType;
 	typedef typename TransformType::AltCoeffType                AltCoeffType;
-	typedef itk::MeshFileWriter< ShapeGradientType >            ContourVectorWriterType;
+	typedef itk::MeshFileWriter< VectorContourType >            ContourVectorWriterType;
 	typedef typename ContourVectorWriterType::Pointer           ContourVectorWriterPointer;
 
 	typedef rstk::DisplacementFieldFileWriter<FieldType> FieldWriter;
@@ -117,7 +117,7 @@ public:
     		}
 
     		if( this->m_Verbosity > 1 ) {
-				typename FunctionalType::ShapeGradientList grads = this->m_Optimizer->GetFunctional()->GetGradients();
+				typename FunctionalType::VectorContourList grads = this->m_Optimizer->GetFunctional()->GetGradients();
 				for( size_t r = 0; r < nContours; r++ ) {
 					ContourVectorWriterPointer wc = ContourVectorWriterType::New();
 					std::stringstream ss;

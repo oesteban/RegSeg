@@ -45,6 +45,7 @@
 
 #include <itkCommand.h>
 #include <itkWeakPointer.h>
+#include <itkMeshFileWriter.h>
 #include "ACWERegistrationMethod.h"
 #include "rstkVTKPolyDataWriter.h"
 
@@ -63,8 +64,10 @@ public:
 	typedef itk::SmartPointer< const Self >                    ConstPointer;
 
 	typedef typename RegistrationMethodType::PriorsList        ContourList;
-	typedef typename RegistrationMethodType::VectorContourType VectorContourType;
-	typedef rstk::VTKPolyDataWriter< VectorContourType >       WriterType;
+	typedef typename RegistrationMethodType::PriorsType        PriorsType;
+	typedef itk::MeshFileWriter<PriorsType>                    WriterType;
+	// typedef typename RegistrationMethodType::VectorContourType VectorContourType;
+	// typedef rstk::VTKPolyDataWriter< VectorContourType >       WriterType;
 
 	itkTypeMacro( LevelObserver, itk::CommandIterationUpdate ); // Run-time type information (and related methods)
 	itkNewMacro( Self );

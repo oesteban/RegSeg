@@ -201,12 +201,12 @@ public:
 #ifdef ITK_USE_CONCEPT_CHECKING
   // Begin concept checking
   itkConceptMacro( InputConvertibleToOutput,
-                   ( Concept::Convertible< InputImagePixelType, OutputImagePixelType > ) );
+                   ( itk::Concept::Convertible< InputImagePixelType, OutputImagePixelType > ) );
   itkConceptMacro( SameDimension,
-                   ( Concept::SameDimension< itkGetStaticConstMacro(InputImageDimension),
+                   ( itk::Concept::SameDimension< itkGetStaticConstMacro(InputImageDimension),
                                              itkGetStaticConstMacro(OutputImageDimension) > ) );
   itkConceptMacro( DimensionShouldBe3,
-                   ( Concept::SameDimension< itkGetStaticConstMacro(InputImageDimension), 3 > ) );
+                   ( itk::Concept::SameDimension< itkGetStaticConstMacro(InputImageDimension), 3 > ) );
   // End concept checking
 #endif
 
@@ -221,11 +221,11 @@ protected:
   void GenerateInputRequestedRegion();
 
   /** InternalOrientationFilter will produce the entire output. */
-  void EnlargeOutputRequestedRegion( DataObject *itkNotUsed(output) );
+  void EnlargeOutputRequestedRegion( itk::DataObject *itkNotUsed(output) );
 
   /*** Member functions used by GenerateData: */
-  void DeterminePermutationsAndFlips(const SpatialOrientation::ValidCoordinateOrientationFlags fixed_orient,
-                                     const SpatialOrientation::ValidCoordinateOrientationFlags moving_orient);
+  void DeterminePermutationsAndFlips(const itk::SpatialOrientation::ValidCoordinateOrientationFlags fixed_orient,
+                                     const itk::SpatialOrientation::ValidCoordinateOrientationFlags moving_orient);
 
   bool NeedToPermute();
 

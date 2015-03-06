@@ -191,12 +191,8 @@ int main(int argc, char *argv[]) {
 	root["inputs"]["moving"]["components"] = movingjson;
 	acwereg->SetPriorsNames( movingSurfaceNames );
 
-	for (size_t i = 0; i < targetSurfaceNames.size(); i++) {
-		ReaderType::Pointer polyDataReader = ReaderType::New();
-		polyDataReader->SetFileName( targetSurfaceNames[i] );
-		polyDataReader->Update();
-		acwereg->AddShapeTarget( polyDataReader->GetOutput() );
-	}
+	// Set target surfaces(s) ---------------------------------------------------------
+	acwereg->SetTargetNames( targetSurfaceNames );
 
 	// Set up registration ------------------------------------------------------------
 	if ( vm_general.count("transform-levels") && cli_nlevels == 0 ) {
@@ -264,7 +260,7 @@ int main(int argc, char *argv[]) {
     size_t nCont = conts.size();
     for ( size_t contid = 0; contid < nCont; contid++) {
     	bfs::path contPath(movingSurfaceNames[contid]);
-    	WriterType::Pointer polyDataWriter = WriterType::New();
+    	typename WriterType::Pointer polyDataWriter = WriterType::New();
     	std::stringstream ss;
     	ss << outPrefix << "_swarped_" << contid << ".vtk";
     	polyDataWriter->SetInput( conts[contid] );
