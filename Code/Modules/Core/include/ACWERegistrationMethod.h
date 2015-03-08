@@ -241,6 +241,8 @@ public:
 	rstkVectorMethods( Beta, OptCompValueType );
 	rstkVectorMethods( DescriptorRecomputationFreq, NumberValueType );
 
+	itkGetObjectMacro(Optimizer, OptimizerType);
+
 	// rstkGetObjectListWithLast( Transform, TransformType );
 	// rstkGetObjectListWithLast( Optimizer, OptimizerType );
 	// rstkGetObjectListWithLast( Functional, FunctionalType );

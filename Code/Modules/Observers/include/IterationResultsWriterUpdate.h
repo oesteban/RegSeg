@@ -117,7 +117,7 @@ public:
     		}
 
     		if( this->m_Verbosity > 1 ) {
-				typename FunctionalType::VectorContourList grads = this->m_Optimizer->GetFunctional()->GetGradients();
+				typename FunctionalType::VectorContourList grads = this->m_Optimizer->GetFunctional()->GetCurrentContours();
 				for( size_t r = 0; r < nContours; r++ ) {
 					ContourVectorWriterPointer wc = ContourVectorWriterType::New();
 					std::stringstream ss;
