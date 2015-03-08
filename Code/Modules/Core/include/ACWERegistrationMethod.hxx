@@ -288,7 +288,7 @@ template < typename TFixedImage, typename TTransform, typename TComputationalVal
 void
 ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 ::GenerateFinalDisplacementField() {
-	// this->m_OutputTransform->SetOutputReference(this->GetFixedImage());
+	this->m_OutputTransform->SetOutputReference(this->m_Functional->GetReferenceImage());
 	this->m_OutputTransform->Interpolate();
 	this->m_DisplacementField = this->m_OutputTransform->GetDisplacementField();
 }
