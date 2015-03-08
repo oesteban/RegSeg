@@ -179,16 +179,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	Scalar2VectorCopyPointer copy = Scalar2VectorCopyType::New();
 	copy->SetInput( prior );
 	copy->Update();
+	this->m_CurrentContours.push_back(copy->GetOutput());
 
 	// Increase number of off-grid nodes to set into the sparse-dense interpolator
 	this->m_NumberOfVertices+= prior->GetNumberOfPoints();
-
-	this->m_NormalsFilter.push_back(NormalFilterType::New());
-	this->m_NormalsFilter[this->m_NumberOfContours]->SetWeight(NormalFilterType::AREA);
-	this->m_NormalsFilter[this->m_NumberOfContours]->SetInput(copy->GetOutput());
-	this->m_NormalsFilter[this->m_NumberOfContours]->Update();
-	this->m_CurrentContours.push_back( this->m_NormalsFilter[this->m_NumberOfContours]->GetOutput() );
-
 	this->m_NumberOfContours++;
 	this->m_NumberOfRegions++;
 
@@ -217,8 +211,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	std::vector< PointDataContainerPointer > normals;
 	std::vector< PointsContainerPointer > points;
 	for (size_t i = 0; i < this->m_NumberOfContours; i++ ) {
-		areas.push_back(this->m_NormalsFilter[i]->GetVertexAreaContainer());
-		normals.push_back(this->m_NormalsFilter[i]->GetOutput()->GetPointData() );
+		NormalFilterPointer nfilter = NormalFilterType::New();
+		nfilter->SetWeight(NormalFilterType::AREA);
+		nfilter->SetInput(this->m_CurrentContours[i]);
+		nfilter->Update();
+		areas.push_back(nfilter->GetVertexAreaContainer());
+		normals.push_back(nfilter->GetOutput()->GetPointData() );
 		points.push_back(this->m_CurrentContours[i]->GetPoints());
 	}
 
@@ -329,7 +327,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		itkWarningMacro(<< "a total of " << invalid.size() << " mesh nodes were to be moved off the image domain." );
 	}
 
-	this->UpdateNormals();
 	this->m_DisplacementsUpdated = true;
 	this->m_RegionsUpdated = (changed==0);
 	this->m_EnergyUpdated = (changed==0);
@@ -505,6 +502,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		// Set up outer regions
 		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+			NormalFilterPointer nfilter = NormalFilterType::New();
+			nfilter->SetWeight(NormalFilterType::AREA);
+			nfilter->SetInput(this->m_CurrentContours[contid]);
+			nfilter->Update();
+			PointDataContainer* normals = nfilter->GetOutput()->GetPointData();
 			PointsConstIterator c_it  = this->m_CurrentContours[contid]->GetPoints()->Begin();
 			PointsConstIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
 
@@ -525,7 +527,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					this->m_OffMaskVertices[contid]++;
 				}
 
-				ni = this->m_CurrentContours[contid]->GetPointData()->GetElement( pid );
+				ni = normals->GetElement( pid );
 				ROIPixelType inner = interp->Evaluate( ci + ni );
 				ROIPixelType outer = interp->Evaluate( ci - ni );
 
