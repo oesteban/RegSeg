@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-03 12:46:27
+# @Last Modified time: 2015-03-09 11:45:39
 
 import os
 import os.path as op
@@ -284,6 +284,7 @@ class ACWEReportOutputSpec(TraitedSpec):
 class ACWEReport(BaseInterface):
     input_spec = ACWEReportInputSpec
     output_spec = ACWEReportOutputSpec
+    _redirect_x = True
 
     def _run_interface(self, runtime):
         from pyacwereg import viz
