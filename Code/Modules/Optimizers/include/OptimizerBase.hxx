@@ -251,7 +251,7 @@ void OptimizerBase<TFunctional>::Resume() {
 			break;
 		}
 
-		if( this->m_MaximumGradient < 1e-5 ) {
+		if( (this->m_MaximumGradient * this->m_StepSize) < 1e-5 ) {
 			this->m_StopConditionDescription << "Maximum gradient update changed below the minimum threshold.";
 			this->m_StopCondition = Self::STEP_TOO_SMALL;
 			this->Stop();
