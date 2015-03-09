@@ -89,7 +89,7 @@ m_StepSize(1.0),
 m_MaxSpeed(0.0),
 m_MeanSpeed(0.0),
 m_AvgSpeed(0.0),
-m_AutoStepSize(true),
+m_AutoStepSize(false),
 m_IsDiffeomorphic(true),
 m_DiffeomorphismForced(false),
 m_ForceDiffeomorphic(true),
@@ -323,7 +323,6 @@ template< typename TFunctional >
 void OptimizerBase<TFunctional>
 ::SetStepSize (const InternalComputationValueType _arg) {
     if ( this->m_StepSize != _arg ){
-    	this->m_AutoStepSize = false;
     	this->m_StepSize = _arg;
     	this->Modified();
     }
@@ -345,6 +344,7 @@ void OptimizerBase<TFunctional>
 			("grid-spacing", bpo::value< std::vector<float> >()->multitoken(), "spacing between control points ")
 			("update-descriptors,u", bpo::value< size_t > (), "frequency (iterations) to update descriptors of regions (0=no update)")
 			("adaptative-descriptors", bpo::bool_switch(), "recomputes descriptors more often at the beginning of the process")
+			("step-auto", bpo::bool_switch(), "guess appropriate step size depending on first iteration")
 			("convergence-energy", bpo::bool_switch(), "disables lazy convergence tracking: instead of fast computation of the mean norm of "
 					"the displacement field, it computes the full energy functional");
 }
@@ -408,6 +408,9 @@ void OptimizerBase<TFunctional>
 
 	bpo::variable_value a = this->m_Settings["adaptative-descriptors"];
 	this->m_UseAdaptativeDescriptors = a.as<bool>();
+
+	bpo::variable_value sa = this->m_Settings["step-auto"];
+	this->m_AutoStepSize = sa.as<bool>();
 }
 
 } // end namespace rstk
