@@ -54,13 +54,17 @@ class PhaseUnwrap(BaseInterface):
             wrapped = (2.0 * pi * wrapped) / wrapped.max()
             wrapped -= pi
 
+        msk = None
         if isdefined(self.inputs.in_mask):
-            msk = nb.load(self.inputs.in_mask)
+            msk = nb.load(self.inputs.in_mask).get_data()
             msk[msk > 0.0] = 1.0
             msk[msk < 1.0] = 0.0
-            wrapped *= msk
-            wrapped = np.ma.masked_equal(wrapped, 0)
-        unw = unwrap(wrapped)
+            wrapped = np.ma.array(wrapped, mask=1-msk)
+        unw = unwrap(wrapped).astype(np.float32)
+
+        if msk is not None:
+            unw = np.ma.array(unw, mask=np.zeros_like(msk))
+            unw[msk<1.0] = 0
 
         hdr = im.get_header().copy()
         hdr.set_data_dtype(np.float32)
