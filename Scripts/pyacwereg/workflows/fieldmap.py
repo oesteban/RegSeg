@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-10 17:37:07
+# @Last Modified time: 2015-03-10 17:47:02
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -38,6 +38,7 @@ def bmap_registration(name="Bmap_Registration"):
 
     mag2RAS = pe.Node(fs.MRIConvert(out_type="niigz", out_orientation="RAS"),
                       name='MagToRAS')
+    unwrap = pe.Node(PhaseUnwrap(), name='PhaseUnwrap')
     pha2RAS = pe.Node(fs.MRIConvert(out_type="niigz", out_orientation="RAS"),
                       name='PhaToRAS')
 
@@ -48,7 +49,7 @@ def bmap_registration(name="Bmap_Registration"):
                       name='enh_mag')
     enh_t1w = pe.Node(SigmoidFilter(upper_perc=78.0, lower_perc=15.0),
                       name='enh_t1w')
-    unwrap = pe.Node(PhaseUnwrap(), name='PhaseUnwrap')
+
     pha2rads = pe.Node(niu.Function(input_names=['in_file'],
                                     output_names=['out_file'],
                                     function=to_rads), name='Phase2rads')
@@ -108,7 +109,6 @@ def bmap_registration(name="Bmap_Registration"):
     workflow.connect([
         (inputnode,        binarize, [('t1w_brain', 'in_file')]),
         (inputnode,          fslroi, [('mag', 'in_file')]),
-        (inputnode,         pha2RAS, [('pha', 'in_file')]),
         # Connect first nodes
         (fslroi,            mag2RAS, [('roi_file', 'in_file')]),
         (mag2RAS,                n4, [('out_file', 'input_image')]),
@@ -124,8 +124,9 @@ def bmap_registration(name="Bmap_Registration"):
         (bet,               fmm2t1w, [('mask_file', 'moving_image_mask')]),
 
         # Unwrap
-        (pha2RAS,            unwrap, [('out_file', 'in_file')]),
-        (unwrap,           pha2rads, [('out_file', 'in_file')]),
+        (inputnode,          unwrap, [('pha', 'in_file')]),
+        (unwrap,            pha2RAS, [('out_file', 'in_file')]),
+        (pha2RAS,          pha2rads, [('out_file', 'in_file')]),
 
         # Transforms
         (inputnode,       warpPhase, [('t1w_brain', 'reference_image')]),
