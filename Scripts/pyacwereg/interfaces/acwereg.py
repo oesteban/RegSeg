@@ -5,7 +5,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-09 18:57:20
+# @Last Modified time: 2015-03-10 12:36:55
 
 import os
 import os.path as op
@@ -70,6 +70,11 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
     step_size = traits.Either(
         float_trait, traits.List(float_trait), default=1.0, argstr='-s %0.5f',
         desc=('update step size in gradient descent optimization'))
+
+    auto_step = traits.Either(
+        bool_trait, traits.List(bool_trait), default=False,
+        argstr='--auto-step',
+        desc=('automatically estimate the appropriate step size'))
 
     ivect_trait = traits.Either(
         int_trait, traits.Tuple(int_trait, int_trait, int_trait))
