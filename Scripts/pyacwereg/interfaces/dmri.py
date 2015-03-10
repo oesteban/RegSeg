@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-03-10 16:15:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-10 16:31:55
+# @Last Modified time: 2015-03-10 16:45:18
 
 import os
 import os.path as op
@@ -43,7 +43,8 @@ class PhaseUnwrap(BaseInterface):
     output_spec = PhaseUnwrapOutputSpec
 
     def _run_interface(self, runtime):
-        from unwrap import unwrap
+        from skimage.restoration import unwrap_phase as unwrap
+        # from unwrap import unwrap
         from math import pi
         im = nb.load(self.inputs.in_file)
         wrapped = im.get_data()
