@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-10 17:47:02
+# @Last Modified time: 2015-03-10 17:52:32
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -49,10 +49,6 @@ def bmap_registration(name="Bmap_Registration"):
                       name='enh_mag')
     enh_t1w = pe.Node(SigmoidFilter(upper_perc=78.0, lower_perc=15.0),
                       name='enh_t1w')
-
-    pha2rads = pe.Node(niu.Function(input_names=['in_file'],
-                                    output_names=['out_file'],
-                                    function=to_rads), name='Phase2rads')
 
     # Setup ANTS and registration
     def _aslist(tname):
@@ -126,11 +122,10 @@ def bmap_registration(name="Bmap_Registration"):
         # Unwrap
         (inputnode,          unwrap, [('pha', 'in_file')]),
         (unwrap,            pha2RAS, [('out_file', 'in_file')]),
-        (pha2RAS,          pha2rads, [('out_file', 'in_file')]),
 
         # Transforms
         (inputnode,       warpPhase, [('t1w_brain', 'reference_image')]),
-        (pha2rads,        warpPhase, [('out_file', 'input_image')]),
+        (pha2RAS,         warpPhase, [('out_file', 'input_image')]),
         (fmm2t1w,    warpPhase, [
             ('forward_transforms', 'transforms'),
             ('forward_invert_flags', 'invert_transform_flags')]),
