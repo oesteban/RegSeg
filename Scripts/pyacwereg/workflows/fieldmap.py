@@ -92,8 +92,7 @@ def bmap_registration(name="Bmap_Registration"):
         resample_type='cubic', out_datatype='float'), name='Regrid_pha')
 
     denoise = pe.Node(niu.Function(
-        # input_names=['in_file', 'in_mask'], output_names=['out_file'],
-        input_names=['in_file'], output_names=['out_file'],
+        input_names=['in_file', 'in_mask'], output_names=['out_file'],
         function=filter_fmap), name='SmoothBmap')
     addnoise = pe.Node(AddNoise(snr=30), name='PhaseAddNoise')
     wrap_pha = pe.Node(niu.Function(
@@ -142,7 +141,7 @@ def bmap_registration(name="Bmap_Registration"):
         (warpPhase,      regrid_pha, [('output_image', 'in_file')]),
         (inputnode,      regrid_pha, [('dwi_mask', 'reslice_like')]),
         (regrid_pha,        denoise, [('out_file', 'in_file')]),
-        # (inputnode,         denoise, [('dwi_mask', 'in_mask')]),
+        (inputnode,         denoise, [('dwi_mask', 'in_mask')]),
         (denoise,          addnoise, [('out_file', 'in_file')]),
         (inputnode,        addnoise, [('dwi_mask', 'in_mask')]),
         (addnoise,         wrap_pha, [('out_file', 'in_file')]),
