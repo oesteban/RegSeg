@@ -65,13 +65,12 @@ public:
 
 	typedef typename RegistrationMethodType::PriorsList        ContourList;
 	typedef typename RegistrationMethodType::PriorsType        PriorsType;
-	typedef itk::MeshFileWriter<PriorsType>                    WriterType;
+	typedef rstk::VTKPolyDataWriter<PriorsType>                WriterType;
+	// typedef itk::MeshFileWriter<PriorsType>                    WriterType;
 
 	typedef typename RegistrationMethodType::TransformType       TransformType;
 	typedef typename TransformType::AltCoeffType                 AltCoeffType;
 	typedef rstk::CoefficientsWriter< AltCoeffType >             CoeffWriter;
-	// typedef typename RegistrationMethodType::VectorContourType VectorContourType;
-	// typedef rstk::VTKPolyDataWriter< VectorContourType >       WriterType;
 
 	itkTypeMacro( LevelObserver, itk::CommandIterationUpdate ); // Run-time type information (and related methods)
 	itkNewMacro( Self );
@@ -106,7 +105,7 @@ public:
 
     	    // Write transform parameters
     	    ss.str("");
-    	    ss << this->m_Prefix << "_coeff_" << m_RegistrationMethod->GetCurrentLevel() << ".vtu";
+    	    ss << this->m_Prefix << "coeff_" << m_RegistrationMethod->GetCurrentLevel() << ".vtu";
     	    typename CoeffWriter::Pointer w = CoeffWriter::New();
     	    w->SetFileName(ss.str().c_str());
     	    w->SetInput(m_RegistrationMethod->GetOptimizer()->GetTransform()->GetFlatParameters());
