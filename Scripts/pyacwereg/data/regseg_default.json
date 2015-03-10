@@ -54,7 +54,7 @@
         0.0, 
         0.0
     ], 
-    "auto_step": [
+    "step_auto": [
         true, 
         true, 
         true
