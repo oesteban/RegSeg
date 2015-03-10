@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-03-10 16:15:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-10 16:45:18
+# @Last Modified time: 2015-03-10 17:32:23
 
 import os
 import os.path as op
@@ -64,7 +64,7 @@ class PhaseUnwrap(BaseInterface):
 
         if msk is not None:
             unw = np.ma.array(unw, mask=np.zeros_like(msk))
-            unw[msk<1.0] = 0
+            unw[msk < 1.0] = 0
 
         hdr = im.get_header().copy()
         hdr.set_data_dtype(np.float32)

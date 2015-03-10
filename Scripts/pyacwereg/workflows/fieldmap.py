@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-03 15:24:27
+# @Last Modified time: 2015-03-10 17:37:07
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -14,6 +14,7 @@ from nipype.interfaces import ants
 from nipype.algorithms.misc import AddNoise
 from nipype.workflows.dmri.fsl import utils as nwu
 
+from pyacwereg.interfaces.dmri import PhaseUnwrap
 from pyacwereg.interfaces.utility import SigmoidFilter
 
 
@@ -47,11 +48,10 @@ def bmap_registration(name="Bmap_Registration"):
                       name='enh_mag')
     enh_t1w = pe.Node(SigmoidFilter(upper_perc=78.0, lower_perc=15.0),
                       name='enh_t1w')
-
+    unwrap = pe.Node(PhaseUnwrap(), name='PhaseUnwrap')
     pha2rads = pe.Node(niu.Function(input_names=['in_file'],
                                     output_names=['out_file'],
                                     function=to_rads), name='Phase2rads')
-    prelude = pe.Node(fsl.PRELUDE(process3d=True), name='PhaseUnwrap')
 
     # Setup ANTS and registration
     def _aslist(tname):
@@ -123,13 +123,13 @@ def bmap_registration(name="Bmap_Registration"):
         (binarize,          fmm2t1w, [('binary_file', 'fixed_image_mask')]),
         (bet,               fmm2t1w, [('mask_file', 'moving_image_mask')]),
 
+        # Unwrap
+        (pha2RAS,            unwrap, [('out_file', 'in_file')]),
+        (unwrap,           pha2rads, [('out_file', 'in_file')]),
+
         # Transforms
         (inputnode,       warpPhase, [('t1w_brain', 'reference_image')]),
-        (pha2RAS,          pha2rads, [('out_file', 'in_file')]),
-        (pha2rads,          prelude, [('out_file', 'phase_file')]),
-        (n4,                prelude, [('output_image', 'magnitude_file')]),
-        (prelude,         warpPhase, [
-         ('unwrapped_phase_file', 'input_image')]),
+        (pha2rads,        warpPhase, [('out_file', 'input_image')]),
         (fmm2t1w,    warpPhase, [
             ('forward_transforms', 'transforms'),
             ('forward_invert_flags', 'invert_transform_flags')]),
