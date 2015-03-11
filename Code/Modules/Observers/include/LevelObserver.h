@@ -45,6 +45,7 @@
 
 #include <itkCommand.h>
 #include <itkWeakPointer.h>
+#include <itkMeshFileWriter.h>
 #include "ACWERegistrationMethod.h"
 #include "rstkVTKPolyDataWriter.h"
 
@@ -63,8 +64,14 @@ public:
 	typedef itk::SmartPointer< const Self >                    ConstPointer;
 
 	typedef typename RegistrationMethodType::PriorsList        ContourList;
-	typedef typename RegistrationMethodType::VectorContourType VectorContourType;
-	typedef rstk::VTKPolyDataWriter< VectorContourType >       WriterType;
+	typedef typename RegistrationMethodType::PriorsType        PriorsType;
+	typedef itk::MeshFileWriter<PriorsType>                    WriterType;
+
+	typedef typename RegistrationMethodType::TransformType       TransformType;
+	typedef typename TransformType::AltCoeffType                 AltCoeffType;
+	typedef rstk::CoefficientsWriter< AltCoeffType >             CoeffWriter;
+	// typedef typename RegistrationMethodType::VectorContourType VectorContourType;
+	// typedef rstk::VTKPolyDataWriter< VectorContourType >       WriterType;
 
 	itkTypeMacro( LevelObserver, itk::CommandIterationUpdate ); // Run-time type information (and related methods)
 	itkNewMacro( Self );
@@ -97,6 +104,13 @@ public:
     	    	polyDataWriter->Update();
     	    }
 
+    	    // Write transform parameters
+    	    ss.str("");
+    	    ss << this->m_Prefix << "_coeff_" << m_RegistrationMethod->GetCurrentLevel() << ".vtu";
+    	    typename CoeffWriter::Pointer w = CoeffWriter::New();
+    	    w->SetFileName(ss.str().c_str());
+    	    w->SetInput(m_RegistrationMethod->GetOptimizer()->GetTransform()->GetFlatParameters());
+    	    w->Update();
     	}
     }
 
