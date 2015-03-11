@@ -465,7 +465,7 @@ protected:
 	struct ParallelGradientStruct {
 		Self* selfptr;
 		size_t total;
-		PointValuesVector gradients;
+		PointValuesVector* gradients;
 		std::mutex mutex;
 		std::vector<NormalFilterAreasContainer> areas;
 		std::vector<PointsContainerPointer> points;
