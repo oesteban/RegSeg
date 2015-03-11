@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-10 18:06:23
+# @Last Modified time: 2015-03-11 10:21:57
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -91,10 +91,6 @@ def bmap_registration(name="Bmap_Registration"):
     regrid_pha = pe.Node(fs.MRIConvert(
         resample_type='cubic', out_datatype='float'), name='Regrid_pha')
 
-    denoise = pe.Node(niu.Function(
-        # input_names=['in_file', 'in_mask'], output_names=['out_file'],
-        input_names=['in_file'], output_names=['out_file'],
-        function=filter_fmap), name='SmoothBmap')
     addnoise = pe.Node(AddNoise(snr=30), name='PhaseAddNoise')
     wrap_pha = pe.Node(niu.Function(
         input_names=['in_file'], output_names=['out_file'],
@@ -141,13 +137,15 @@ def bmap_registration(name="Bmap_Registration"):
         (inputnode,      regrid_bmg, [('dwi_mask', 'reslice_like')]),
         (warpPhase,      regrid_pha, [('output_image', 'in_file')]),
         (inputnode,      regrid_pha, [('dwi_mask', 'reslice_like')]),
-        (regrid_pha,        denoise, [('out_file', 'in_file')]),
+        (regrid_pha,        addnoise, [('out_file', 'in_file')]),
+        # (regrid_pha,        denoise, [('out_file', 'in_file')]),
         # (inputnode,         denoise, [('dwi_mask', 'in_mask')]),
-        (denoise,          addnoise, [('out_file', 'in_file')]),
+        # (denoise,          addnoise, [('out_file', 'in_file')]),
         (inputnode,        addnoise, [('dwi_mask', 'in_mask')]),
         (addnoise,         wrap_pha, [('out_file', 'in_file')]),
         (regrid_bmg,     munwrapped, [('out_file', 'in1')]),
-        (denoise,        munwrapped, [('out_file', 'in2')]),
+        (regrid_pha,     munwrapped, [('out_file', 'in2')]),
+        # (denoise,        munwrapped, [('out_file', 'in2')]),
         (regrid_bmg,       mwrapped, [('out_file', 'in1')]),
         (wrap_pha,         mwrapped, [('out_file', 'in2')]),
         (regrid_mag,     outputnode, [('out_file', 'magnitude')]),
