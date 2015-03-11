@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-03-10 16:15:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-11 10:20:23
+# @Last Modified time: 2015-03-11 10:30:33
 
 import os
 import os.path as op
@@ -55,17 +55,21 @@ class PhaseUnwrap(BaseInterface):
             wrapped = (2.0 * pi * wrapped) / wrapped.max()
             wrapped -= pi
 
+        unw = unwrap(wrapped).astype(np.float32)
+
         msk = None
         if isdefined(self.inputs.in_mask):
             msk = nb.load(self.inputs.in_mask).get_data()
             msk[msk > 0.0] = 1.0
             msk[msk < 1.0] = 0.0
-            wrapped = np.ma.array(wrapped, mask=1-msk)
-        unw = unwrap(wrapped).astype(np.float32)
+            unw *= msk
+            unw = np.ma.array(wrapped, mask=1-msk)
+
         unw = denoise(unw, 7, h=0.15, multichannel=False).astype(np.float32)
-        if msk is not None:
-            unw = np.ma.array(unw, mask=np.zeros_like(msk))
-            unw[msk < 1.0] = 0
+
+        # if msk is not None:
+        #     unw = np.ma.array(unw, mask=np.zeros_like(msk))
+        #     unw[msk < 1.0] = 0
 
         hdr = im.get_header().copy()
         hdr.set_data_dtype(np.float32)
