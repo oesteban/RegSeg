@@ -204,12 +204,65 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	struct ParallelGradientStruct str;
 	str.selfptr = this;
 	str.total = this->m_ValidVertices.size();
+	str.gradients.resize(str.total);
+
+
+	std::vector<PointDataContainerPointer> normals;
+	for (size_t i = 0; i < this->m_NumberOfContours; i++ ) {
+		NormalFilterPointer nfilter = NormalFilterType::New();
+		nfilter->SetWeight(NormalFilterType::AREA);
+		nfilter->SetInput(this->m_CurrentContours[i]);
+		nfilter->Update();
+		normals.push_back(nfilter->GetOutput()->GetPointData() );
+
+		str.areas.push_back(nfilter->GetVertexAreaContainer());
+		str.points.push_back(this->m_CurrentContours[i]->GetPoints());
+		str.totalAreas.push_back(nfilter->GetTotalArea());
+	}
 
 	// Start multithreading engine
 	this->GetMultiThreader()->SetNumberOfThreads(this->GetNumberOfThreads());
 	this->GetMultiThreader()->SetSingleMethod(this->ThreadedDerivativeCallback, &str);
 	this->GetMultiThreader()->SingleMethodExecute();
-	// this->AfterComputeMatrix(type);
+
+
+	PointValuesVector sample(str.gradients);
+	std::sort(sample.begin(), sample.end());
+
+	this->m_GradientStatistics[0] = sample.front();
+	this->m_GradientStatistics[1] = sample[int(0.05 * (sample.size()-1))];
+	this->m_GradientStatistics[2] = sample[int(0.25 * (sample.size()-1))];
+	this->m_GradientStatistics[3] = sample[int(0.50 * (sample.size()-1))];
+	this->m_GradientStatistics[4] = sample[int(0.75 * (sample.size()-1))];
+	this->m_GradientStatistics[5] = sample[int(0.95 * (sample.size()-1))];
+	this->m_GradientStatistics[6] = sample.back();
+
+	VectorType ni, v;
+	PointValueType g;
+	size_t nvertices = this->m_ValidVertices.size();
+	PointIdentifier pid, cpid;     // id of vertex in its contour
+	ROIPixelType icid = 0;
+	for(size_t vvid = 0; vvid < nvertices; vvid++ ) {
+		pid = this->m_ValidVertices[vvid];
+		icid = this->m_InnerRegion[vvid];
+		cpid = pid - this->m_Offsets[icid];
+		ni = normals[icid]->ElementAt(cpid);
+		g = str.gradients[vvid];
+		if ( g > this->m_GradientStatistics[5] ) g = this->m_GradientStatistics[5];
+		if ( g < this->m_GradientStatistics[1] ) g = this->m_GradientStatistics[1];
+
+		v.Fill(0.0);
+		for( size_t i = 0; i < Dimension; i++ ) {
+			if( scales[i] > 1.0e-8 ) {
+				v[i] = scales[i] * g * ni[i];
+				grad[vvid + i * nvertices] = static_cast<float>(v[i]);
+			} else {
+				grad[vvid + i * nvertices] = 0.0;
+			}
+		}
+
+		this->m_CurrentContours[icid]->GetPointData()->SetElement( cpid, v );
+	}
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -231,9 +284,11 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	if (threadId == threadCount - 1)
 		stop = nvertices - 1;
 
-	PointValuesVector segment;
-	segment = str->selfptr->ThreadedDerivativeCompute(start, stop);
+	PointValuesVector segment = str->selfptr->ThreadedDerivativeCompute(start, stop, str->points, str->areas, str->totalAreas);
 
+	str->mutex.lock();
+	str->gradients.insert(str->gradients.begin() + start, segment.begin(), segment.end());
+	str->mutex.unlock();
 
 	return ITK_THREAD_RETURN_VALUE;
 }
@@ -241,23 +296,17 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointValuesVector
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::ThreadedDerivativeCompute(size_t start, size_t stop) {
+::ThreadedDerivativeCompute(size_t start, size_t stop,
+		std::vector<PointsContainerPointer> points,
+		std::vector<NormalFilterAreasContainer> areas,
+		std::vector< double > totalAreas) {
 	size_t nvertices = stop - start;
 	size_t fullsize = nvertices * Dimension;
-
-	std::vector<NormalFilterAreasContainer> areas;
-	std::vector<PointDataContainerPointer> normals;
-	std::vector<PointsContainerPointer> points;
-	for (size_t i = 0; i < this->m_NumberOfContours; i++ ) {
-		areas.push_back(this->m_NormalsFilter[i]->GetVertexAreaContainer());
-		normals.push_back(this->m_NormalsFilter[i]->GetOutput()->GetPointData() );
-		points.push_back(this->m_CurrentContours[i]->GetPoints());
-	}
 
 	PointIdentifier pid;      // universal id of vertex
 	PointIdentifier cpid;     // id of vertex in its contour
 
-	ContourPointType ci_prime;
+	VectorContourPointType ci_prime;
 	PointValuesVector sample;
 	ROIPixelType ocid;
 	ROIPixelType icid = 0;
@@ -269,7 +318,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		pid = this->m_ValidVertices[vvid];
 		cpid = pid - this->m_Offsets[icid];
 		ci_prime = points[icid]->ElementAt(cpid); // Get c'_i
-		wi = areas[icid][cpid];
+		wi = areas[icid][cpid] / totalAreas[icid];
 		sample.push_back(this->EvaluateGradient( ci_prime, ocid, icid )  * wi);
 	}
 
@@ -423,16 +472,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_EnergyUpdated = (changed==0);
 
 	this->ComputeCurrentRegions();
-}
-
-template< typename TReferenceImageType, typename TCoordRepType >
-void
-FunctionalBase<TReferenceImageType, TCoordRepType>
-::UpdateNormals() {
-	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
-		// Compute mesh of normals
-		this->m_NormalsFilter[contid]->Update();
-	}
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
