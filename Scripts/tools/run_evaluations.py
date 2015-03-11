@@ -63,7 +63,7 @@ if __name__ == '__main__':
                             help='switch debug mode ON only for workflows')
     g_settings.add_argument('--metricmap', action='store_true', default=False,
                             help='execute metric map sub-workflow')
-    g_settings.add_argument('--log_dir', actoion='store', default='logs',
+    g_settings.add_argument('--log_dir', action='store', default='logs',
                             help='directory for logs')
 
     opts = parser.parse_args()
