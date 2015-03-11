@@ -43,6 +43,7 @@
 #include <iostream>
 #include <iomanip>
 #include <math.h>
+#include <memory>
 #include <numeric>
 #include <vnl/vnl_random.h>
 #include <itkImageAlgorithm.h>
@@ -76,6 +77,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_Value(0.0),
  m_MaxEnergy(0.0)
  {
+
+	this->m_Threader = itk::MultiThreader::New();
+	this->m_NumberOfThreads = this->m_Threader->GetNumberOfThreads();
+
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_Sigma.Fill(0.0);
 	this->m_Interp = InterpolatorType::New();
@@ -190,6 +195,89 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeDerivative(PointValueType* grad, ScalesType scales) {
+	// Update contours and initialize sizes
+	this->UpdateContour();
+
+	struct ParallelGradientStruct str;
+	str.selfptr = this;
+	str.total = this->m_ValidVertices.size();
+
+	// Start multithreading engine
+	this->GetMultiThreader()->SetNumberOfThreads(this->GetNumberOfThreads());
+	this->GetMultiThreader()->SetSingleMethod(this->ThreadedDerivativeCallback, &str);
+	this->GetMultiThreader()->SingleMethodExecute();
+	// this->AfterComputeMatrix(type);
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+ITK_THREAD_RETURN_TYPE
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::ThreadedDerivativeCallback(void *arg) {
+	itk::ThreadIdType total, threadId, threadCount;
+	threadId = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->ThreadID;
+	threadCount = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->NumberOfThreads;
+
+	ParallelGradientStruct* str = (ParallelGradientStruct *)( ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->UserData );
+
+	// Compute indices corresponding to each segment
+	size_t nvertices = str->total;
+	size_t ssize = ceil(1.0 * nvertices / threadCount);
+	size_t start = threadId * ssize;
+	size_t stop = ( threadId + 1 ) * ssize - 1;
+
+	if (threadId == threadCount - 1)
+		stop = nvertices - 1;
+
+	PointValuesVector segment;
+	segment = str->selfptr->ThreadedDerivativeCompute(start, stop);
+
+
+	return ITK_THREAD_RETURN_VALUE;
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointValuesVector
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::ThreadedDerivativeCompute(size_t start, size_t stop) {
+	size_t nvertices = stop - start;
+	size_t fullsize = nvertices * Dimension;
+
+	std::vector<NormalFilterAreasContainer> areas;
+	std::vector<PointDataContainerPointer> normals;
+	std::vector<PointsContainerPointer> points;
+	for (size_t i = 0; i < this->m_NumberOfContours; i++ ) {
+		areas.push_back(this->m_NormalsFilter[i]->GetVertexAreaContainer());
+		normals.push_back(this->m_NormalsFilter[i]->GetOutput()->GetPointData() );
+		points.push_back(this->m_CurrentContours[i]->GetPoints());
+	}
+
+	PointIdentifier pid;      // universal id of vertex
+	PointIdentifier cpid;     // id of vertex in its contour
+
+	ContourPointType ci_prime;
+	PointValuesVector sample;
+	ROIPixelType ocid;
+	ROIPixelType icid = 0;
+	double wi = 0.0;
+
+	for(size_t vvid = start; vvid <= stop; vvid++ ) {
+		icid = this->m_InnerRegion[vvid];
+		ocid = this->m_OuterRegion[vvid];
+		pid = this->m_ValidVertices[vvid];
+		cpid = pid - this->m_Offsets[icid];
+		ci_prime = points[icid]->ElementAt(cpid); // Get c'_i
+		wi = areas[icid][cpid];
+		sample.push_back(this->EvaluateGradient( ci_prime, ocid, icid )  * wi);
+	}
+
+	return sample;
+}
+
+/*
+template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::ComputeDerivative(PointValueType* grad, ScalesType scales) {
 	this->UpdateContour();
 	size_t nvertices = this->m_ValidVertices.size();
 	size_t fullsize = nvertices * Dimension;
@@ -199,7 +287,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	ContourPointType ci_prime;
 	PointValueType gi[nvertices];
 	PointValueType sum = 0.0;
-	std::vector< PointValueType > sample;
+	PointValuesVector sample;
 	ROIPixelType ocid;
 	ROIPixelType icid = 0;
 	double wi = 0.0;
@@ -261,6 +349,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 }
+*/
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
