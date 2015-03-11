@@ -29,7 +29,8 @@ namespace rstk
 template< typename TInputMesh, typename TOutputMesh >
 NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
 ::NormalQuadEdgeMeshFilter():
- m_IsWindingCCW(false)
+ m_IsWindingCCW(false),
+ m_TotalArea(0.0)
 {
   this->m_Weight = THURMER;
 }
@@ -209,7 +210,9 @@ NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
     }
   while ( temp != edge );
 
-  this->m_VertexAreaContainer[iId] = twi / nfaces;
+  double a = twi / nfaces;
+  this->m_VertexAreaContainer[iId] = a;
+  this->m_TotalArea+= a;
   n.Normalize();
   return n;
 }
@@ -320,6 +323,7 @@ void NormalQuadEdgeMeshFilter< TInputMesh, TOutputMesh >
 	this->CopyInputMeshToOutputMesh();
 	this->m_VertexAreaContainer.SetSize(this->GetOutput()->GetNumberOfPoints());
 	this->m_VertexAreaContainer.Fill(0.0);
+	this->m_TotalArea = 0.0;
 	this->ComputeAllFaceNormals();
 	this->ComputeAllVertexNormals();
 }

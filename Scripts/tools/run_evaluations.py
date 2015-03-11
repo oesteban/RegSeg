@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-04 15:05:58
+# @Last Modified time: 2015-03-10 14:56:04
 
 
 import os
@@ -63,6 +63,8 @@ if __name__ == '__main__':
                             help='switch debug mode ON only for workflows')
     g_settings.add_argument('--metricmap', action='store_true', default=False,
                             help='execute metric map sub-workflow')
+    g_settings.add_argument('--log_dir', actoion='store', default='logs',
+                            help='directory for logs')
 
     opts = parser.parse_args()
 
@@ -112,7 +114,7 @@ if __name__ == '__main__':
         plugin_args = {'n_proc': nthreads, 'maxtasksperchild': 4}
 
     # Setup logging dir
-    log_dir = op.abspath('logs')
+    log_dir = op.abspath(opts.log_dir)
     if not op.exists(log_dir):
         os.makedirs(log_dir)
 
