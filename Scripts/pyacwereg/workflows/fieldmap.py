@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-11 10:24:25
+# @Last Modified time: 2015-03-11 10:35:14
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -122,6 +122,7 @@ def bmap_registration(name="Bmap_Registration"):
 
         # Unwrap
         (inputnode,          unwrap, [('pha', 'in_file')]),
+        (bet,                unwrap, [('mask_file', 'in_mask')]),
         (unwrap,            pha2RAS, [('out_file', 'in_file')]),
 
         # Transforms
