@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-03-10 16:15:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-11 10:30:33
+# @Last Modified time: 2015-03-11 10:40:09
 
 import os
 import os.path as op
@@ -63,7 +63,7 @@ class PhaseUnwrap(BaseInterface):
             msk[msk > 0.0] = 1.0
             msk[msk < 1.0] = 0.0
             unw *= msk
-            unw = np.ma.array(wrapped, mask=1-msk)
+            unw = np.ma.array(unw, mask=1-msk)
 
         unw = denoise(unw, 7, h=0.15, multichannel=False).astype(np.float32)
 
