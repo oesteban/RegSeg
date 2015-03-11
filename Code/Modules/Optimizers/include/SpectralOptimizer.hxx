@@ -114,8 +114,8 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	ParametersVector gradVector = ParametersVector(fullsize, 0.0 );
 	float* gvdata = gradVector.data_block();
 	this->m_Functional->ComputeDerivative(gvdata, scales);
-	this->m_MaximumGradient = fabs(this->m_Functional->GetGradientStatistics()[4] -
-			this->m_Functional->GetGradientStatistics()[2]);
+	//this->m_MaximumGradient = fabs(this->m_Functional->GetGradientStatistics()[4] -
+	//		this->m_Functional->GetGradientStatistics()[2]);
 
 	ParametersContainer derivative;
 	ParametersVector dimVector = ParametersVector(dimsize);
@@ -140,12 +140,9 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
 	InternalComputationValueType val;
 	size_t dim;
-	VectorType maxSpeed, vs;
-	maxSpeed.Fill(0.0);
+	VectorType vs;
 
-	//double norm = this->m_Functional->GetValidVertices().size();
 	std::vector< double > speednorms;
-
 	for( size_t r = 0; r<nPix; r++ ){
 		vs.Fill(0.0);
 		for( size_t c=0; c<Dimension; c++) {
@@ -161,9 +158,12 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	}
 	std::sort(speednorms.begin(), speednorms.end());
 
-	//if( this->m_AutoStepSize && this->m_CurrentIteration < 5 ) {
-	//	this->m_StepSize = (this->m_StepSize  + this->m_LearningRate * ( this->m_MaxDisplacement.GetNorm() / maxSpeed.GetNorm() ) )*0.5;
-	//}
+	this->m_MaximumGradient = speednorms.back();
+
+	if( this->m_AutoStepSize && this->m_CurrentIteration == 1 ) {
+		this->m_StepSize = this->m_MaxDisplacement.GetNorm() / ( this->m_MaximumGradient * this->m_NumberOfIterations * 0.10 );
+		std::cout << "Step size auto-computed, delta=" << this->m_StepSize << std::endl;
+	}
 }
 
 template< typename TFunctional >

@@ -10,23 +10,22 @@
 
 #include <itkQuadEdgeMeshToQuadEdgeMeshFilter.h>
 
-namespace itk
+namespace rstk
 {
 template<typename TInputMesh, typename TOutputMesh>
-class CopyQuadEdgeMeshFilter : public QuadEdgeMeshToQuadEdgeMeshFilter<TInputMesh, TOutputMesh>
+class CopyQuadEdgeMeshFilter : public itk::QuadEdgeMeshToQuadEdgeMeshFilter<TInputMesh, TOutputMesh>
 {
 public:
     typedef CopyQuadEdgeMeshFilter    Self;
-    typedef QuadEdgeMeshToQuadEdgeMeshFilter<TInputMesh, TOutputMesh> Superclass;
-    typedef SmartPointer<Self>        Pointer;
+    typedef itk::QuadEdgeMeshToQuadEdgeMeshFilter<TInputMesh, TOutputMesh> Superclass;
+    typedef itk::SmartPointer<Self>        Pointer;
 
     itkNewMacro(Self);
 protected:
     CopyQuadEdgeMeshFilter(){}
     ~CopyQuadEdgeMeshFilter(){}
 
-    void GenerateData()
-    {
+    void GenerateData() {
         this->CopyInputMeshToOutputMesh();
     }
 };

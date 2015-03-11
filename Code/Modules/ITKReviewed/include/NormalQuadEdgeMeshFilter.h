@@ -128,6 +128,8 @@ public:
   itkSetMacro (Weight, WeightType);
   itkGetConstMacro (Weight, WeightType);
 
+  itkGetConstMacro( TotalArea, double );
+
   itkGetConstMacro( IsWindingCCW, bool);
 
   itkGetConstMacro( VertexAreaContainer, AreaContainerType);
@@ -186,6 +188,7 @@ private:
 
   bool m_IsWindingCCW;
   AreaContainerType m_VertexAreaContainer;
+  double m_TotalArea;
 };
 }
 
