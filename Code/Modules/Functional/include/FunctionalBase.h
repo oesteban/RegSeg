@@ -38,6 +38,8 @@
 #ifndef FUNCTIONALBASE_H_
 #define FUNCTIONALBASE_H_
 
+#include <mutex>
+
 #include <itkObject.h>
 #include <itkNumericTraits.h>
 #include <itkVector.h>
@@ -463,10 +465,18 @@ protected:
 	struct ParallelGradientStruct {
 		Self* selfptr;
 		size_t total;
+		PointValuesVector gradients;
+		std::mutex mutex;
+		std::vector<NormalFilterAreasContainer> areas;
+		std::vector<PointsContainerPointer> points;
+		std::vector< double > totalAreas;
 	};
 
 	static ITK_THREAD_RETURN_TYPE ThreadedDerivativeCallback(void *arg);
-	PointValuesVector ThreadedDerivativeCompute(size_t start, size_t stop);
+	PointValuesVector ThreadedDerivativeCompute(size_t start, size_t stop,
+			std::vector<PointsContainerPointer> points,
+			std::vector<NormalFilterAreasContainer> areas,
+			std::vector< double > totalAreas);
 
 
 
@@ -490,7 +500,6 @@ protected:
 	VectorContourList m_Gradients;
 	ScalarConstContourList m_Priors;
 	ScalarConstContourList m_Target;
-	NormalFilterList m_NormalsFilter;
 	EnergyModelPointer m_Model;
 	EnergyFilterPointer m_EnergyCalculator;
 	// ROIList m_ROIs;
@@ -529,7 +538,6 @@ private:
 	void operator=(const Self &); //purposely not implemented
 
 	void UpdateContour();
-	void UpdateNormals();
 	void ComputeCurrentRegions();
 	void InitializeContours();
 	void InitializeInterpolatorGrid();
