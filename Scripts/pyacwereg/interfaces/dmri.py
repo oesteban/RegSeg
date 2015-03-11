@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-03-10 16:15:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-11 10:40:09
+# @Last Modified time: 2015-03-11 11:13:51
 
 import os
 import os.path as op
@@ -44,7 +44,7 @@ class PhaseUnwrap(BaseInterface):
 
     def _run_interface(self, runtime):
         from skimage.restoration import unwrap_phase as unwrap
-        from skimage.restoration import nl_means_denoising as denoise
+        from scipy.ndimage import median_filter as denoise
         from math import pi
 
         im = nb.load(self.inputs.in_file)
@@ -63,13 +63,9 @@ class PhaseUnwrap(BaseInterface):
             msk[msk > 0.0] = 1.0
             msk[msk < 1.0] = 0.0
             unw *= msk
-            unw = np.ma.array(unw, mask=1-msk)
+            unw = np.ma.array(unw, mask=1 - msk)
 
-        unw = denoise(unw, 7, h=0.15, multichannel=False).astype(np.float32)
-
-        # if msk is not None:
-        #     unw = np.ma.array(unw, mask=np.zeros_like(msk))
-        #     unw[msk < 1.0] = 0
+        unw = denoise(unw, 4).astype(np.float32)
 
         hdr = im.get_header().copy()
         hdr.set_data_dtype(np.float32)
