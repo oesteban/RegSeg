@@ -47,7 +47,9 @@
 #include <vnl/vnl_random.h>
 #include <itkImageAlgorithm.h>
 #include <itkOrientImageFilter.h>
+#include "InternalOrientationFilter.h"
 #include <itkContinuousIndex.h>
+#include <itkComposeImageFilter.h>
 
 #include <itkIntensityWindowingImageFilter.h>
 #include <itkInvertIntensityImageFilter.h>
@@ -156,30 +158,31 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::LoadShapePriors( std::vector< std::string > movingSurfaceNames ) {
+	for( size_t i = 0; i < movingSurfaceNames.size(); i++) {
+		typename PriorReader::Pointer polyDataReader = PriorReader::New();
+		polyDataReader->SetFileName( movingSurfaceNames[i] );
+		polyDataReader->Update();
+		this->AddShapePrior( polyDataReader->GetOutput() );
+	}
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
 size_t
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::VectorContourType* prior ) {
+::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::ScalarContourType* prior ) {
 	this->m_Offsets.push_back( this->m_NumberOfVertices );
 	this->m_Priors.push_back( prior );
 
-	ContourCopyPointer copy = ContourCopyType::New();
+	Scalar2VectorCopyPointer copy = Scalar2VectorCopyType::New();
 	copy->SetInput( prior );
 	copy->Update();
-	this->m_CurrentContours.push_back( copy->GetOutput() );
+	this->m_CurrentContours.push_back(copy->GetOutput());
 
 	// Increase number of off-grid nodes to set into the sparse-dense interpolator
 	this->m_NumberOfVertices+= prior->GetNumberOfPoints();
-
-	this->m_NormalsFilter.push_back(NormalFilterType::New());
-	this->m_NormalsFilter[this->m_NumberOfContours]->SetWeight(NormalFilterType::AREA);
-	this->m_NormalsFilter[this->m_NumberOfContours]->SetInput( this->m_CurrentContours[this->m_NumberOfContours] );
-	this->m_NormalsFilter[this->m_NumberOfContours]->Update();
-
-	ContourCopyPointer copygrad = ContourCopyType::New();
-	copygrad->SetInput( this->m_NormalsFilter[this->m_NumberOfContours]->GetOutput() );
-	copygrad->Update();
-	this->m_Gradients.push_back( copygrad->GetOutput() );
-
 	this->m_NumberOfContours++;
 	this->m_NumberOfRegions++;
 
@@ -196,7 +199,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	PointIdentifier pid;      // universal id of vertex
 	PointIdentifier cpid;     // id of vertex in its contour
 
-	ContourPointType ci_prime;
+	VectorContourPointType ci_prime;
 	PointValueType gi[nvertices];
 	PointValueType sum = 0.0;
 	std::vector< PointValueType > sample;
@@ -208,8 +211,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	std::vector< PointDataContainerPointer > normals;
 	std::vector< PointsContainerPointer > points;
 	for (size_t i = 0; i < this->m_NumberOfContours; i++ ) {
-		areas.push_back(this->m_NormalsFilter[i]->GetVertexAreaContainer());
-		normals.push_back(this->m_NormalsFilter[i]->GetOutput()->GetPointData() );
+		NormalFilterPointer nfilter = NormalFilterType::New();
+		nfilter->SetWeight(NormalFilterType::AREA);
+		nfilter->SetInput(this->m_CurrentContours[i]);
+		nfilter->Update();
+		areas.push_back(nfilter->GetVertexAreaContainer());
+		normals.push_back(nfilter->GetOutput()->GetPointData() );
 		points.push_back(this->m_CurrentContours[i]->GetPoints());
 	}
 
@@ -242,7 +249,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		icid = this->m_InnerRegion[vvid];
 		cpid = pid - this->m_Offsets[icid];
 		ni = normals[icid]->ElementAt(cpid);
-
 		g = gi[vvid];
 		if ( g > this->m_GradientStatistics[5] ) g = this->m_GradientStatistics[5];
 		if ( g < this->m_GradientStatistics[1] ) g = this->m_GradientStatistics[1];
@@ -257,7 +263,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			}
 		}
 
-		this->m_Gradients[icid]->GetPointData()->SetElement( cpid, v );
+		this->m_CurrentContours[icid]->GetPointData()->SetElement( cpid, v );
 	}
 
 }
@@ -283,7 +289,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename VectorContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
 		PointsContainerPointer curPoints = this->m_CurrentContours[contid]->GetPoints();
 
-		ContourPointType ci, ci_prime;
+		VectorContourPointType ci, ci_prime;
 		VectorType disp;
 		size_t pid;
 
@@ -313,7 +319,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		}
 
 		// Reset gradients
-		this->m_Gradients[contid]->SetPoints(this->m_CurrentContours[contid]->GetPoints());
+		// this->m_Gradients[contid]->SetPoints(this->m_CurrentContours[contid]->GetPoints());
 
 	}
 
@@ -321,7 +327,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		itkWarningMacro(<< "a total of " << invalid.size() << " mesh nodes were to be moved off the image domain." );
 	}
 
-	this->UpdateNormals();
 	this->m_DisplacementsUpdated = true;
 	this->m_RegionsUpdated = (changed==0);
 	this->m_EnergyUpdated = (changed==0);
@@ -360,7 +365,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 inline bool
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::CheckExtent( typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContourPointType& p, typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
+::CheckExtent( typename FunctionalBase<TReferenceImageType, TCoordRepType>::VectorContourPointType& p, typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
 	ReferencePointType ref;
 	ref.CastFrom ( p );
 	bool isInside = this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex( ref , idx );
@@ -431,16 +436,17 @@ template< typename TReferenceImageType, typename TCoordRepType >
 const typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureArray
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetFinalEnergy() const {
-	ContourList groundtruth;
+	ScalarContourList groundtruth;
 
 	for(size_t idx = 0; idx < this->m_Target.size(); idx++) {
-		ContourCopyPointer copy = ContourCopyType::New();
+		ScalarContourCopyPointer copy = ScalarContourCopyType::New();
 		copy->SetInput( this->m_Target[idx] );
 		copy->Update();
 		groundtruth.push_back(copy->GetOutput());
 	}
 
-	BinarizeMeshFilterPointer newp = BinarizeMeshFilterType::New();
+	typedef MultilabelBinarizeMeshFilter< ScalarContourType > ScalarBinarizeMeshFilterType;
+	typename ScalarBinarizeMeshFilterType::Pointer newp = ScalarBinarizeMeshFilterType::New();
 	newp->SetInputs( groundtruth );
 	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
 	newp->Update();
@@ -496,14 +502,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		// Set up outer regions
 		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-			// Compute mesh of normals
-			NormalFilterPointer normalsFilter = NormalFilterType::New();
-			normalsFilter->SetInput( this->m_CurrentContours[contid] );
-			normalsFilter->Update();
-			ContourPointer normals = normalsFilter->GetOutput();
-
-			PointsConstIterator c_it  = normals->GetPoints()->Begin();
-			PointsConstIterator c_end = normals->GetPoints()->End();
+			NormalFilterPointer nfilter = NormalFilterType::New();
+			nfilter->SetWeight(NormalFilterType::AREA);
+			nfilter->SetInput(this->m_CurrentContours[contid]);
+			nfilter->Update();
+			PointDataContainer* normals = nfilter->GetOutput()->GetPointData();
+			PointsConstIterator c_it  = this->m_CurrentContours[contid]->GetPoints()->Begin();
+			PointsConstIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
 
 			PointType ci;
 			VectorType v;
@@ -511,6 +516,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			size_t pid;
 			float step = 1;
 			while( c_it != c_end ) {
+
 				pid = c_it.Index();
 				ci = c_it.Value();
 
@@ -521,8 +527,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					this->m_OffMaskVertices[contid]++;
 				}
 
-				this->m_Gradients[contid]->GetPointData()->SetElement( pid, zerov );
-				normals->GetPointData( pid, &ni );
+				ni = normals->GetElement( pid );
 				ROIPixelType inner = interp->Evaluate( ci + ni );
 				ROIPixelType outer = interp->Evaluate( ci - ni );
 
@@ -562,7 +567,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	QEType* temp = edge;
 	CellIdentifier cell_id(0);
 	double totalArea = 0.0;
-	ContourPointType pt[3];
+	VectorContourPointType pt[3];
 	typedef typename PolygonType::PointIdIterator PolygonPointIterator;
 
 	do {
@@ -668,46 +673,39 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::SetReferenceImage ( const ReferenceImageType * _arg ) {
-	itkDebugMacro("setting ReferenceImage to " << _arg);
-
-	if ( this->m_ReferenceImage != _arg ) {
-		typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >  Orienter;
-		typename Orienter::Pointer orient = Orienter::New();
-		orient->UseImageDirectionOn();
-		orient->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
-		orient->SetInput(_arg);
-		orient->Update();
-		ReferenceImagePointer ref = orient->GetOutput();
-		ReferenceSizeType size = ref->GetLargestPossibleRegion().GetSize();
-
-		DirectionType idmat; idmat.SetIdentity();
-		DirectionType itk; itk.SetIdentity();
-		itk(0,0) = -1.0; itk(1,1) = -1.0;
-
-		PointType neworig = itk * ref->GetOrigin();
-		ref->SetDirection(idmat);
-		ref->SetOrigin(neworig);
-		this->m_ReferenceImage = ref;
-
-		// Cache image properties
-		this->m_FirstPixelCenter  = this->m_ReferenceImage->GetOrigin();
-		this->m_Direction = this->m_ReferenceImage->GetDirection();
-		this->m_ReferenceSize = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
-		this->m_ReferenceSpacing = this->m_ReferenceImage->GetSpacing();
-
-		ContinuousIndex tmp_idx;
-		tmp_idx.Fill( -0.5 );
-		this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_Origin );
-
-		for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]-1.0;
-		this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_LastPixelCenter );
-
-		for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]- 0.5;
-		this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_End );
-
-		this->Modified();
+::LoadReferenceImage ( const std::vector<std::string> fixedImageNames ) {
+	typedef itk::ComposeImageFilter< ChannelType, ReferenceImageType >     InputToVectorFilterType;
+	typename InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
+	for (size_t i = 0; i < fixedImageNames.size(); i++ ) {
+		typename ChannelReader::Pointer r = ChannelReader::New();
+		r->SetFileName( fixedImageNames[i] );
+		r->Update();
+		comb->SetInput(i,r->GetOutput());
 	}
+
+	comb->Update();
+	typedef InternalOrientationFilter< ReferenceImageType, ReferenceImageType >  InternalOrienter;
+	typename InternalOrienter::Pointer orient = InternalOrienter::New();
+	orient->SetInput(comb->GetOutput());
+	orient->Update();
+
+	this->SetReferenceImage(orient->GetOutput());
+
+	// Cache image properties
+	this->m_FirstPixelCenter  = this->m_ReferenceImage->GetOrigin();
+	this->m_Direction = this->m_ReferenceImage->GetDirection();
+	this->m_ReferenceSize = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
+	this->m_ReferenceSpacing = this->m_ReferenceImage->GetSpacing();
+
+	ContinuousIndex tmp_idx;
+	tmp_idx.Fill( -0.5 );
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_Origin );
+
+	for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]-1.0;
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_LastPixelCenter );
+
+	for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]- 0.5;
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_End );
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >

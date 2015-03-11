@@ -45,6 +45,10 @@
 #include <itkImage.h>
 #include <itkVectorImage.h>
 #include "VectorLinearInterpolateImageFunction.h"
+
+
+#include <itkImageFileReader.h>
+#include <itkMeshFileReader.h>
 #include <itkNearestNeighborInterpolateImageFunction.h>
 #include <itkQuadEdgeMeshTraits.h>
 #include <itkQuadEdgeMesh.h>
@@ -68,10 +72,12 @@
 #include <itkSimplexMeshToTriangleMeshFilter.h>
 #include <itkTriangleMeshToSimplexMeshFilter.h>
 
+
 #include "rstkMacro.h"
 #include "NormalQuadEdgeMeshFilter.h"
 #include "ConfigurableObject.h"
 #include "CopyQuadEdgeMeshFilter.h"
+#include "CopyCastMeshFilter.h"
 #include "CopyQEMeshStructureFilter.h"
 #include "WarpQEMeshFilter.h"
 #include "SparseMatrixTransform.h"
@@ -135,6 +141,7 @@ public:
 	typedef typename ReferenceImageType::Pointer                      ReferenceImagePointer;
 	typedef typename ReferenceImageType::ConstPointer                 ReferenceImageConstPointer;
 	typedef typename ReferenceImageType::PixelType                    ReferencePixelType;
+	typedef typename ReferenceImageType::InternalPixelType            ChannelPixelType;
 	typedef typename ReferencePixelType::ValueType                    ReferenceValueType;
 	typedef typename ReferenceImageType::PointType                    ReferencePointType;
 	typedef typename ReferenceImageType::IndexType                    ReferenceIndexType;
@@ -153,11 +160,11 @@ public:
 	typedef typename InterpolatorType::Pointer                        InterpolatorPointer;
 
 	typedef itk::QuadEdgeMesh< VectorType, Dimension >                VectorContourType;
-	typedef typename VectorContourType::Pointer                       ContourPointer;
-	typedef typename VectorContourType::PointType                     ContourPointType;
-	typedef typename VectorContourType::ConstPointer                  ContourConstPointer;
-	typedef typename std::vector<ContourPointer>                      ContourList;
-	typedef typename std::vector<ContourConstPointer>                 ConstContourList;
+	typedef typename VectorContourType::Pointer                       VectorContourPointer;
+	typedef typename VectorContourType::PointType                     VectorContourPointType;
+	typedef typename VectorContourType::ConstPointer                  VectorContourConstPointer;
+	typedef typename std::vector<VectorContourPointer>                VectorContourList;
+	typedef typename std::vector<VectorContourConstPointer>           VectorConstContourList;
 	typedef typename VectorContourType::PointsContainerPointer        PointsContainerPointer;
 	typedef typename VectorContourType::PointDataContainer            PointDataContainer;
 	typedef typename VectorContourType::PointDataContainerPointer     PointDataContainerPointer;
@@ -168,13 +175,21 @@ public:
 	typedef typename VectorContourType::CellIdentifier                CellIdentifier;
 	typedef typename VectorContourType::CellType                      CellType;
 	typedef typename itk::QuadEdgeMeshPolygonCell<CellType>           PolygonType;
-	typedef itk::TriangleHelper< ContourPointType >                   TriangleType;
+	typedef itk::TriangleHelper< VectorContourPointType >             TriangleType;
 
 	typedef std::vector< PointIdentifier >                            PointIdContainer;
 	typedef typename PointIdContainer::iterator                       PointIdIterator;
 
 	typedef itk::QuadEdgeMesh< PointValueType, Dimension >            ScalarContourType;
 	typedef typename ScalarContourType::Pointer                       ScalarContourPointer;
+	typedef typename ScalarContourType::PointType                     ScalarContourPointType;
+	typedef typename ScalarContourType::ConstPointer                  ScalarContourConstPointer;
+	typedef typename std::vector<ScalarContourPointer>                ScalarContourList;
+	typedef typename std::vector<ScalarContourConstPointer>           ScalarConstContourList;
+
+	typedef typename itk::Image<ChannelPixelType, Dimension>          ChannelType;
+	typedef typename itk::ImageFileReader<ChannelType>                ChannelReader;
+	typedef typename itk::MeshFileReader<ScalarContourType>           PriorReader;
 
 	typedef vnl_sparse_matrix< PointValueType >                       SparseMatrix;
 	typedef vnl_vector< PointValueType >                              VNLVector;
@@ -186,13 +201,20 @@ public:
 	typedef typename NormalFilterType::AreaContainerType              NormalFilterAreasContainer;
 	typedef std::vector< NormalFilterPointer >                        NormalFilterList;
 
-	typedef typename itk::CopyQuadEdgeMeshFilter
-			      <VectorContourType,VectorContourType>               ContourCopyType;
-	typedef typename ContourCopyType::Pointer                         ContourCopyPointer;
-
-	typedef typename itk::CopyQuadEdgeMeshFilter
-			      <VectorContourType,ScalarContourType>               ScalarContourCopyType;
+	// Contour copiers
+	typedef typename rstk::CopyQuadEdgeMeshFilter
+				  <ScalarContourType, ScalarContourType>              ScalarContourCopyType;
 	typedef typename ScalarContourCopyType::Pointer                   ScalarContourCopyPointer;
+
+	typedef typename rstk::CopyQuadEdgeMeshFilter
+				  <VectorContourType, VectorContourType>              VectorContourCopyType;
+	typedef typename VectorContourCopyType::Pointer                   VectorContourCopyPointer;
+	typedef typename rstk::CopyCastMeshFilter
+			      <ScalarContourType, VectorContourType>              Scalar2VectorCopyType;
+	typedef typename Scalar2VectorCopyType::Pointer                   Scalar2VectorCopyPointer;
+	typedef typename rstk::CopyCastMeshFilter
+			      <VectorContourType,ScalarContourType>               Vector2ScalarCopyType;
+	typedef typename Vector2ScalarCopyType::Pointer                   Vector2ScalarCopyPointer;
 
 	typedef itk::Image< VectorType, Dimension >                       FieldType;
 	typedef typename FieldType::Pointer                               FieldPointer;
@@ -271,14 +293,14 @@ public:
 	typedef typename std::vector< PointType >                         PointsVector;
 	typedef typename std::vector< PointsVector >                      PointsList;
 
-	typedef itk::QuadEdgeMesh< VectorType, Dimension> 	  	          ShapeGradientType;
-	typedef typename ShapeGradientType::Pointer                       ShapeGradientPointer;
-	typedef typename ShapeGradientType::PointDataContainer            ShapeGradientsContainer;
-    typedef typename ShapeGradientsContainer::Pointer                 ShapeGradientsContainerPointer;
-	typedef typename std::vector<ShapeGradientPointer>                ShapeGradientList;
-	typedef typename itk::CopyQEMeshStructureFilter
-			                <VectorContourType,ShapeGradientType>     ShapeCopyType;
-	typedef typename ShapeCopyType::Pointer                           ShapeCopyPointer;
+	// typedef itk::QuadEdgeMesh< VectorType, Dimension> 	  	          ShapeGradientType;
+	// typedef typename ShapeGradientType::Pointer                       ShapeGradientPointer;
+	// typedef typename ShapeGradientType::PointDataContainer            ShapeGradientsContainer;
+    // typedef typename ShapeGradientsContainer::Pointer                 ShapeGradientsContainerPointer;
+	// typedef typename std::vector<ShapeGradientPointer>                ShapeGradientList;
+	// typedef typename itk::CopyQEMeshStructureFilter
+	// 		                <VectorContourType,ShapeGradientType>     ShapeCopyType;
+	// typedef typename ShapeCopyType::Pointer                           ShapeCopyPointer;
 	typedef itk::FixedArray< PointValueType, 7u >                     GradientStatsArray;
 
 	struct GradientSample {
@@ -330,15 +352,17 @@ public:
 	itkSetClampMacro( DecileThreshold, float, 0.0, 0.5 );
 	itkGetMacro( DecileThreshold, float );
 
-	itkGetMacro( CurrentContours, ContourList);
-	itkGetMacro( Gradients, ShapeGradientList );
+	itkGetMacro( CurrentContours, VectorContourList);
+	itkGetMacro( Gradients, VectorContourList );
 	itkGetMacro( Vertices, PointsVector );
 	itkGetMacro( ValidVertices, PointIdContainer );
 
 	virtual void SetCurrentDisplacements( const VNLVectorContainer& vals );
 
 	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
-	virtual void SetReferenceImage (const ReferenceImageType * _arg);
+	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
+
+	void LoadReferenceImage( const std::vector<std::string> fixedImageNames );
 
 	itkGetConstObjectMacro( CurrentMaps, PriorsImageType);
 
@@ -390,9 +414,10 @@ public:
 
 	itkGetConstMacro( OffMaskVertices, std::vector<size_t>);
 
-	size_t AddShapePrior( const VectorContourType* prior );
+	void LoadShapePriors( std::vector< std::string > movingSurfaceNames );
+	size_t AddShapePrior( const ScalarContourType* prior );
 
-	size_t AddShapeTarget( const VectorContourType* surf ) {
+	size_t AddShapeTarget( const ScalarContourType* surf ) {
 		this->m_Target.push_back( surf );
 	}
 
@@ -424,7 +449,7 @@ protected:
 	MeasureType GetEnergyAtPoint( const PointType& point, size_t roi, ReferencePixelType& value ) const;
 	inline MeasureType EvaluateGradient( const PointType& point, size_t outer_roi, size_t inner_roi ) const;
 
-	inline bool CheckExtent( ContourPointType& p, ContinuousIndex& idx ) const;
+	inline bool CheckExtent( VectorContourPointType& p, ContinuousIndex& idx ) const;
 	virtual void ParseSettings();
 
 	//virtual MeasureType GetEnergyOffset(size_t roi) const = 0;
@@ -445,10 +470,10 @@ protected:
 	mutable MeasureArray m_RegionValue;
 	mutable MeasureType m_MaxEnergy;
 	FieldPointer m_ReferenceSamplingGrid;
-	ContourList m_CurrentContours;
-	ShapeGradientList m_Gradients;
-	ConstContourList m_Priors;
-	ConstContourList m_Target;
+	VectorContourList m_CurrentContours;
+	VectorContourList m_Gradients;
+	ScalarConstContourList m_Priors;
+	ScalarConstContourList m_Target;
 	NormalFilterList m_NormalsFilter;
 	EnergyModelPointer m_Model;
 	EnergyFilterPointer m_EnergyCalculator;

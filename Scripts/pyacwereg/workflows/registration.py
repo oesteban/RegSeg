@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-03 15:21:20
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-03-09 15:48:12
 
 import os
 import os.path as op
@@ -147,7 +147,7 @@ def sdc_t2b(name='SDC_T2B', icorr=True, num_threads=1):
 
     getparam = pe.Node(nio.JSONFileGrabber(defaults={'enc_dir': 'y'}),
                        name='GetEncDir')
-    reg = pe.Node(nex.Registration(num_threads=num_threads), name='Elastix')
+    reg = pe.Node(nex.Registration(num_threads=1), name='Elastix')
     tfx_b0 = pe.Node(nex.EditTransform(), name='tfm_b0')
     split_dwi = pe.Node(fsl.utils.Split(dimension='t'), name='split_dwi')
     warp = pe.MapNode(nex.ApplyWarp(), iterfield=['moving_image'],
