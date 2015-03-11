@@ -270,6 +270,7 @@ public:
 	typedef typename std::vector< ContourOuterRegions >               ContourOuterRegionsList;
 	typedef typename std::vector< PointType >                         PointsVector;
 	typedef typename std::vector< PointsVector >                      PointsList;
+	typedef typename std::vector< PointValueType >                    PointValuesVector;
 
 	typedef itk::QuadEdgeMesh< VectorType, Dimension> 	  	          ShapeGradientType;
 	typedef typename ShapeGradientType::Pointer                       ShapeGradientPointer;
@@ -407,6 +408,11 @@ public:
 		return result;
 	}
 
+    /** Return the multithreader used by this class. */
+    itk::MultiThreader * GetMultiThreader() const { return m_Threader; }
+    itkSetClampMacro( NumberOfThreads, itk::ThreadIdType, 1, ITK_MAX_THREADS);
+    itkGetConstReferenceMacro(NumberOfThreads, itk::ThreadIdType);
+
 protected:
 	FunctionalBase();
 	virtual ~FunctionalBase() {}
@@ -426,8 +432,18 @@ protected:
 
 	inline bool CheckExtent( ContourPointType& p, ContinuousIndex& idx ) const;
 	virtual void ParseSettings();
-
 	//virtual MeasureType GetEnergyOffset(size_t roi) const = 0;
+
+	// Methods for multithreading
+	struct ParallelGradientStruct {
+		Self* selfptr;
+		size_t total;
+	};
+
+	static ITK_THREAD_RETURN_TYPE ThreadedDerivativeCallback(void *arg);
+	PointValuesVector ThreadedDerivativeCompute(size_t start, size_t stop);
+
+
 
 	size_t m_NumberOfContours;
 	size_t m_NumberOfRegions;
@@ -494,6 +510,9 @@ private:
 	void InitializeInterpolatorGrid();
 	double ComputePointArea( const PointIdentifier &iId, VectorContourType *mesh );
 
+	/** Support processing data in multiple threads. */
+	itk::MultiThreader::Pointer m_Threader;
+	itk::ThreadIdType           m_NumberOfThreads;
 }; // end FunctionalBase Class
 
 itkEventMacro(WarningEvent, itk::AnyEvent);
