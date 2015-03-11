@@ -210,6 +210,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	std::vector< NormalFilterAreasContainer > areas;
 	std::vector< PointDataContainerPointer > normals;
 	std::vector< PointsContainerPointer > points;
+	std::vector< double > totalAreas;
 	for (size_t i = 0; i < this->m_NumberOfContours; i++ ) {
 		NormalFilterPointer nfilter = NormalFilterType::New();
 		nfilter->SetWeight(NormalFilterType::AREA);
@@ -218,6 +219,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		areas.push_back(nfilter->GetVertexAreaContainer());
 		normals.push_back(nfilter->GetOutput()->GetPointData() );
 		points.push_back(this->m_CurrentContours[i]->GetPoints());
+		totalAreas.push_back(nfilter->GetTotalArea());
 	}
 
 	for(size_t vvid = 0; vvid < nvertices; vvid++ ) {
@@ -226,7 +228,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		pid = this->m_ValidVertices[vvid];
 		cpid = pid - this->m_Offsets[icid];
 		ci_prime = points[icid]->ElementAt(cpid); // Get c'_i
-		wi = areas[icid][cpid];
+		wi = areas[icid][cpid] / totalAreas[icid];
 		gi[vvid] = this->EvaluateGradient( ci_prime, ocid, icid )  * wi;
 		sample.push_back(gi[vvid]);
 		sum+= fabs(gi[vvid]);

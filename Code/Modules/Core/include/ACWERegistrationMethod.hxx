@@ -128,13 +128,6 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 		// Add JSON tree to the general logging facility
 		this->m_JSONRoot.append( this->m_CurrentLogger->GetJSONRoot() );
 		this->m_OutputTransform->PushBackTransform(this->m_Optimizer->GetTransform());
-		this->InvokeEvent( itk::IterationEvent() );
-
-		if ( this->m_CurrentLevel == this->m_NumberOfLevels - 1 ) {
-			this->Stop( ALL_LEVELS_DONE, "All levels are finished ("
-					+ boost::lexical_cast<std::string>(this->m_NumberOfLevels) + " levels)." );
-			break;
-		}
 
 		this->m_CurrentContours.resize(nPriors);
 		for (size_t i = 0; i < nPriors; i++ ) {
@@ -142,6 +135,14 @@ ACWERegistrationMethod< TFixedImage, TTransform, TComputationalValue >
 			copy->SetInput( this->m_Functional->GetCurrentContours()[i] );
 			copy->Update();
 			this->m_CurrentContours[i] = copy->GetOutput();
+		}
+
+		this->InvokeEvent( itk::IterationEvent() );
+
+		if ( this->m_CurrentLevel == this->m_NumberOfLevels - 1 ) {
+			this->Stop( ALL_LEVELS_DONE, "All levels are finished ("
+					+ boost::lexical_cast<std::string>(this->m_NumberOfLevels) + " levels)." );
+			break;
 		}
 
 		this->m_Functional = NULL;

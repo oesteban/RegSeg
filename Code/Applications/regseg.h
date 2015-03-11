@@ -130,7 +130,8 @@ typedef LevelObserver< RegistrationType >                    LevelObserverType;
 typedef typename LevelObserverType::Pointer                  LevelObserverPointer;
 
 typedef typename RegistrationType::PriorsType                PriorType;
-typedef itk::MeshFileWriter<PriorType>                       WriterType;
+typedef rstk::VTKPolyDataWriter<PriorType>                   WriterType;
+// typedef itk::MeshFileWriter<PriorType>                       WriterType;
 
 #ifndef NDEBUG
 	const static size_t DEFAULT_VERBOSITY = 5;
