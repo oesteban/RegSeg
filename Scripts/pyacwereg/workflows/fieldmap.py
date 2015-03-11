@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-11 10:23:11
+# @Last Modified time: 2015-03-11 10:24:25
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -91,12 +91,10 @@ def bmap_registration(name="Bmap_Registration"):
     regrid_pha = pe.Node(fs.MRIConvert(
         resample_type='cubic', out_datatype='float'), name='Regrid_pha')
 
-<<<<<<< HEAD
-=======
-    denoise = pe.Node(niu.Function(
-        input_names=['in_file', 'in_mask'], output_names=['out_file'],
-        function=filter_fmap), name='SmoothBmap')
->>>>>>> f3ecebbf8308e7b4574a75c89f68c135f84d8052
+    # denoise = pe.Node(niu.Function(
+    #     input_names=['in_file', 'in_mask'], output_names=['out_file'],
+    #     function=filter_fmap), name='SmoothBmap')
+
     addnoise = pe.Node(AddNoise(snr=30), name='PhaseAddNoise')
     wrap_pha = pe.Node(niu.Function(
         input_names=['in_file'], output_names=['out_file'],
