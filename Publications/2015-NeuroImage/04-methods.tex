@@ -1,52 +1,99 @@
 % -*- root: 00-main.tex -*-
-\section*{Methods}
+\section{Methods}
 \label{sec:methods}
 %
-\subsection*{Related work}
-\label{sec:methods_background}
-Registration-segmentation methods are generally built on a deformation model to
-  support the evolution of a segmentation algorithm that drives the mapping process.
-Thus, solutions usually select first a segmentation strategy to derive the cost function and
-  regularization of the problem.
-Generally, evolving active contours is the most extended segmentation approach to be
-  integrated within the registration process.
-These methods either have an implicit description of the relative boundary locations of the
-  objects to be delineated using level sets \citep{chen_using_2002,bresson_variational_2006,
-  chan_level_2005}, or model the statistical deviations from original shape
-  \citep{cremers_kernel_2006,gastaud_combining_2004}.
-Some Bayesian approaches have been proposed as well
-  \citep{wyatt_map_2003,pohl_bayesian_2006,gass_simultaneous_2014}.
-In section \nameref{sec:methods_map}, we start from a probabilistic framework to finally propose
-	a cost function defined on the location of explicit surfaces, showing the duality of the
-	two existing approaches.
 
-An early ``morphing''-segmentation approach was proposed in \citep{bertalmio_morphing_2000}.
-Shortly, \cite{yezzi_variational_2001} presented the first method including a full solution to
-  the registration, where the energy functional is defined simultaneously in the target
-  and reference images with an affine transformation supporting the coordinates mapping.
-\cite{vemuri_joint_2003} proposed an atlas-based registration using a level-sets
-  framework and only one \gls*{pde} for first time.
-The principal application of these techniques was to perform registration between time steps in
-  time series or between different images \citep{paragios_level_2003}.
-\cite{unal_coupled_2005} and later \cite{wang_joint_2006},
-  extended the ``two \glspl*{pde}'' method of \cite{yezzi_variational_2001}
-  to nonlinear registration with a free deformation field.
-\cite{droske_mumfordshah_2009} reviewed the latter set of techniques, and proposed two different
-  approaches to apply the Mumford-Shah functional \citep{mumford_optimal_1989} in simultaneous
-  registration-segmentation, through the propagation of the deformation field from
-  the contours to the whole image definition.
-Finally, \cite{gorthi_active_2011} presented a comprehensive generalization of the
-  existing methodologies based on level sets in the application of atlas-based segmentation.
-Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
-  registration method close to the one proposed here.
-Our method differs on two key features:
-  it allows multiple active contours for segmentation, and the regularization strategy.
-Whereas \cite{guyader_combined_2011} proposed a nonlinear elasticity smoother, we rely on
-  the inherent smoothness of the deformation field, and on the anisotropic regularization
-  proposed by \cite{nagel_investigation_1986}.
+\subsection{Susceptibility-derived distortions}
+\label{sec:distortions}
+\Gls*{dmri} data are usually acquired with \gls*{epi} schemes.
+In order to quickly probe the diffusion process within the brain in many different orientations,
+  these sequences minimize the bandwidth of the \gls*{pe} direction.
+This low bandwidth originates the artifactual displacement of locations presenting small deviations
+  from the main magnetic field $B_0$.
+The principal source of these deviations ($\Delta B_0$) is the discontinuity of magnetic
+  susceptibility at tissue interfaces.
+Tissue/air boundaries show large steps of susceptibility and this artifact is
+  particularly evident in the surroundings of the orbito-frontal lobe or the temporal
+  bone of both hemispheres.
+The displacements field $U_s$ along the \gls*{pe} axis can be estimated theoretically
+  \citep{jezzard_correction_1995}:
+
+  \begin{equation}
+  \vec{r}' = \vec{r} + \frac{\gamma \, T_{acq}\, s_{PE}}{2\pi}\Delta B_0(\vec{r}) \cdot \hat{\vec{e}}_{PE},
+  \label{eq:fieldmap}
+  \end{equation}
+%
+where $\vec{r}$ is the true location in the undistorted domain as in \eqref{eq:transform},
+  $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time,
+  $s_{PE}$ is the pixel spacing along \gls*{pe}, and $\hat{\vec{e}}_{PE}$ the unitary
+  vector along \gls*{pe}.
+Several methodologies have been proposed to estimate $U_s$ and fix the artifact.
+The first solution consisted on estimating $\Delta B_0$ with field mapping
+  techniques \citep{andersson_modeling_2001}.
+A second family of methods require an extra \gls*{epi} acquisition, but switching
+  the \gls*{pe} axis \citep{chiou_simple_2000} or reversing the direction of gradient \gls*{pe}
+  increments \citep{cordes_geometric_2000,holland_efficient_2010}.
+\cite{kybic_unwarping_2000} proposed a correction using nonlinear registration of the \emph{b0}
+  image\footnote{The term \emph{b0} refers to one or more images within the
+  \gls*{dmri} dataset that are acquired with a null or very low gradient intensity or
+   \emph{b}-value used as signal reference.} of the \gls*{dmri} versus a \gls*{t2} image.
+Further developments \citep{irfanoglu_susceptibility_2011} extended this method to the
+  three-dimensional problem.
+Therefore, a typical protocol for the extraction of structural connectivity
+  comprehends \gls*{dmri}, \gls*{t1}, and the acquisition determined by the correction
+  method of choice \citep{daducci_connectome_2012}.
 
 
-\subsection*{Cost-function derivation}\label{sec:methods_map}
+\subsection{Our method and contributions}
+\label{sec:our_method}
+\emph{Regseg} is related to \emph{bbregister}, as both methods exploit the precise
+  surfaces that can be extracted with \emph{FreeSurfer}~\citep{fischl_freesurfer_2012},
+  to then map this prior information into a target image.
+However, \emph{bbregister} features an affine transform that is unable to compensate the
+  distortions.
+To avoid this problem, the active contours are dismissed in regions typically affected by
+  warpings.
+Additionally, \emph{bbregister} is robust in finding clear tissue boundaries.
+In the case of \gls*{dmri} data, oftentimes the registration process is restricted to finding
+  the pial surface, as it is the only clear boundary.
+
+to the methods based on nonlinear registration of the
+  to the \gls*{t2} image, since we also render the correction as a
+  registration problem.
+Conversely, the method does not require any of the previously mentioned extra acquisitions.
+A fundamental antecedent to \emph{regseg} is found in .
+They proposed a registration method to align surfaces extracted from the \gls*{t1}
+  to \gls*{dmri} images using a linear transformation model using active contours
+  with edges.
+Similarly, we  warped data, in which the scale of the
+  imaged structures is in the range of the image resolution or above.
+Our approach differs from \citep{greve_accurate_2009} in two fundamental choices.
+First, we use a nonlinear deformation model that enables the correction of the
+  susceptibility-derived distortions \citep{jezzard_correction_1995}.
+\cite{greve_accurate_2009} circumvented the nonlinearity by identifying typically
+  distorted regions and removing them from the metric computation.
+Second, our matching criteria does not necessarily need for clear intensity
+  steps at the tissue interfaces where surfaces must be fitted, thanks to the use of
+  active contours without edges \citep{chan_active_2001}.
+
+
+This choice is similar to \citep{guyader_combined_2011}, but \emph{regseg} differs in two
+  features.
+First, the regularization relies on the inherent smoothness of the deformation field,
+  and on the anisotropic approach proposed by \cite{nagel_investigation_1986}.
+Second, it accepts several contours to be mapped as in \citep{gorthi_active_2011}.
+However, \emph{regseg} makes use of the explicit representation of surfaces, and
+  does not implement multiphase level sets.
+Our registration method is demonstrated here as a solution to correct for the susceptibility
+  distortions that \gls*{dmri} of the head typically present \citep{jezzard_correction_1995}.
+The distortion correction and the precise segmentation of \gls*{dmri} data is crucial in
+	applications such as connectome extraction \citep{craddock_imaging_2013}, since the
+  definition of the nodes in the network is generally derived from a parcellation performed in
+  an anatomical \gls*{mri} of the same subject \citep{daducci_connectome_2012}.
+
+
+
+\subsection{Cost-function derivation}\label{sec:methods_map}
 
 In a Bayesian framework, the mappings $U$ in \eqref{eq:transform} are
   evaluated based on their posterior probability given the observed data
@@ -143,7 +190,7 @@ Finally, the maximum a posteriori problem is adapted into a variational one wher
   with the corresponding anisotropic regularization term \citep{nagel_investigation_1986}.
 
 
-\subsection*{Numerical Implementation}
+\subsection{Numerical Implementation}
 \label{sec:numerical_implementation}
 
 \begin{figure}
@@ -154,7 +201,7 @@ Finally, the maximum a posteriori problem is adapted into a variational one wher
 	They iteratively evolve following their inner normals $\hat{n}_i$ at each vertex
 	  $\vec{v}_i$ of the mesh.
 	The gradient speeds $\bar{s}_i$ are computed as the disparity between data energies of
-	  the vertex $\vec{v}_i$ in each limiting region (see \nameref{app:shape_priors}).
+	  the vertex $\vec{v}_i$ in each limiting region (see \autoref{app:shape_priors}).
 	In this figure, the gradient speed corresponding to $\vec{v}_1$ is written in the lower
 	  box, $\Omega_{wm}$ being the inner limiting region and $\Omega_{gm}$ the outer.
 	Finally, every $\bar{s}_i$ is associated with the control points $\vec{u}_k$ through
@@ -228,7 +275,7 @@ Now, we introduce \eqref{eq:energy} in \eqref{eq:general_gradient_descent}:
 We can apply a discretized interpretation of \eqref{eq:shape_gradients} to compute
   the data term in \eqref{eq:gradient_descent} using shape-gradients
   \citep{herbulot_segmentation_2006}, and ultimately avoid level sets.
-We refer the reader to the appendix \nameref{app:shape_priors} in order to fill in the gap
+We refer the reader to the appendix \autoref{app:shape_priors} in order to fill in the gap
   between \eqref{eq:gradient_descent} and the following expression:
 
   \begin{align}
@@ -290,7 +337,7 @@ Additionally, we release our software along with a tool for generating convergen
 One sample report is found in the \suppl{}, section S1.3.
 
 
-\subsection*{Experiments and evaluation}
+\subsection{Experiments and evaluation}
 \label{sec:experiments_evaluation}
 %
 In order to demonstrate the performance of \emph{regseg}, we first conducted a battery of
@@ -335,7 +382,7 @@ Therefore, a \gls*{swindex} can be computed as the one-to-one distance between c
 \end{figure*}
 
 
-\subsection*{Image Data and preprocessing}
+\subsection{Image Data and preprocessing}
 \label{sec:datasets}
 
 \paragraph*{Simulated phantoms}%
@@ -400,7 +447,7 @@ Selecting the appropriate labels in the \emph{aparc} segmentation, we applied
   4) brain stem and cerebellar \gls*{wm}, $\Gamma_{Bst}$;
 	5) cerebellar \gls*{gm}, $\Gamma_{cbGM}$; and
 	6) cortical \gls*{gm} surface, $\Gamma_{pial}$.
-The choice of this particular model is further addressed in \nameref{sec:res_model_and_metric}.
+The choice of this particular model is further addressed in \autoref{sec:res_model_and_metric}.
 
 In this case, we derived the deformation $U_{true}$ from the field maps released with
   the corresponding packages of each dataset from the \gls*{hcp} applying \eqref{eq:fieldmap},
