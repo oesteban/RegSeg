@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2012, Oscar Esteban - oesteban@dionte.upm.es
+ Copyright (c) 2012, Oscar Esteban - oesteban@die.upm.es
  with Biomedical Image Technology, UPM (BIT-UPM)
  All rights reserved.
 
@@ -29,67 +29,129 @@
 
 #include "regseg.h"
 
+#include <boost/shared_ptr.hpp>
+#include <boost/asio/signal_set.hpp>
+
+
 int main(int argc, char *argv[]) {
 	std::string outPrefix;
-	std::vector< std::string > fixedImageNames, movingSurfaceNames;
-	std::string logFileName = ".log";
+	std::vector< std::string > fixedImageNames, movingSurfaceNames, targetSurfaceNames;
+	std::string logFileName = "";
 	bool outImages = false;
-	size_t verbosity = 1;
 
-	bpo::options_description desc("Usage");
-	desc.add_options()
+	bpo::options_description all_desc("Usage");
+	bpo::options_description general_desc("General options");
+	general_desc.add_options()
 			("help,h", "show help message")
 			("fixed-images,F", bpo::value < std::vector<std::string>	> (&fixedImageNames)->multitoken()->required(), "fixed image file")
-			("moving-surfaces,M", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken()->required(),	"moving image file")
-			("output-prefix,o", bpo::value < std::string > (&outPrefix), "prefix for output files")
-			("output-all", bpo::bool_switch(&outImages),"output intermediate images")
-			("alpha,a", bpo::value< float > (), "alpha value in regularization")
-			("beta,b", bpo::value< float > (), "beta value in regularization")
-			("step-size,s", bpo::value< float > (), "step-size value in optimization")
-			("iterations,i", bpo::value< int > (), "number of iterations")
-			("grid-size,g", bpo::value< int > (), "grid size")
+			("surface-priors,P", bpo::value < std::vector<std::string>	> (&movingSurfaceNames)->multitoken()->required(),	"shape priors")
+			("surface-target,T", bpo::value < std::vector<std::string>	> (&targetSurfaceNames)->multitoken(),	"final shapes to evaluate metric (only testing purposes)")
+			("fixed-mask,M", bpo::value< std::string >(), "fixed image mask")
+			("transform-levels,L", bpo::value< size_t > (), "number of multi-resolution levels for the transform")
+			("output-prefix,o", bpo::value < std::string > (&outPrefix)->default_value("regseg"), "prefix for output files")
 			("logfile,l", bpo::value<std::string>(&logFileName), "log filename")
-			("verbosity,V", bpo::value<size_t>(&verbosity), "verbosity level ( 0 = no output; 5 = verbose )");
-	bpo::positional_options_description pdesc;
-	bpo::variables_map vmap;
-	bpo::store(
-			bpo::command_line_parser(argc, argv).options(desc).positional(pdesc).run(),
-			vmap);
+			("monitoring-verbosity,v", bpo::value<size_t>()->default_value(DEFAULT_VERBOSITY), "verbosity level of intermediate results monitoring ( 0 = no output; 5 = verbose )");
 
-	if (vmap.count("help")) {
-		std::cout << desc << std::endl;
-		return 1;
+	bpo::options_description opt_desc("Optimizer options (by levels)");
+	OptimizerType::AddOptions( opt_desc );
+	bpo::options_description fun_desc("Functional options (by levels)");
+	FunctionalType::AddOptions( fun_desc );
+
+
+	std::vector< std::string > cli_token;
+	std::vector< std::string > cli_general;
+	std::vector< std::vector< std::string > > cli_levels;
+
+	bool isLevel = false;
+	std::string token;
+	for( int i = 0; i < argc; i++) {
+		token = argv[i];
+		if( !isLevel ) {
+			if ( token.at(0)=='[' ) {
+				cli_token.clear();
+				isLevel = true;
+				token.erase(0,1);
+			} else {
+				cli_general.push_back( argv[i] );
+			}
+		}
+
+		if( isLevel ) {
+			if ( *token.rbegin() == ']' ) {
+				token = token.substr( 0, token.size() -1 );
+				isLevel = false;
+			}
+			cli_token.push_back( token );
+
+			if ( !isLevel ) {
+				cli_levels.push_back( cli_token );
+			}
+		}
 	}
 
+	size_t cli_nlevels = cli_levels.size();
+
+	bpo::variables_map vm_general;
+	std::vector< bpo::variables_map > vm_levels;
+
+
+	all_desc.add( general_desc ).add( opt_desc ).add( fun_desc );
+
 	try {
-		bpo::notify(vmap);
+		// Deal with general options
+		if( cli_nlevels == 0 ) {
+			bpo::store(	bpo::command_line_parser( cli_general ).options(all_desc).run(),vm_general);
+		} else {
+			bpo::store( bpo::command_line_parser( cli_general ).options(general_desc).run(), vm_general );
+		}
+
+
+		if (vm_general.count("help")) {
+			std::cout << all_desc << std::endl;
+			return 1;
+		}
+
+		bpo::notify(vm_general);
+
+
+		if( cli_nlevels > 0 ) {
+			for ( size_t i = 0; i<cli_nlevels; i++ ) {
+				bpo::variables_map vm;
+				bpo::options_description ndesc("Level " + boost::lexical_cast<std::string> (i) + " options");
+				OptimizerType::AddOptions( ndesc );
+				FunctionalType::AddOptions( ndesc );
+
+				bpo::store(	bpo::command_line_parser( cli_levels[i] ).options(ndesc).run(), vm );
+				bpo::notify( vm );
+				vm_levels.push_back( vm );
+			}
+		}
 	} catch (boost::exception_detail::clone_impl
 			< boost::exception_detail::error_info_injector<	boost::program_options::required_option> > &err) {
 		std::cout << "Error: " << err.what() << std::endl;
-		std::cout << desc << std::endl;
+		std::cout << all_desc << std::endl;
 		return EXIT_FAILURE;
 	}
 
+	// Initialize registration
+	RegistrationPointer acwereg = RegistrationType::New();
+	acwereg->SetOutputPrefix( outPrefix );
+	acwereg->SetVerbosity( vm_general["monitoring-verbosity"].as< size_t >() );
+
 	// Create the JSON output object
 	Json::Value root;
-	root["description"] = "RSTK Summary File";
-	std::time_t time;
-	root["information"] = std::ctime( &time );
-
-	// Read fixed image(s) --------------------------------------------------------------
-	clock_t preProcessStart = clock();
-
-
-	// Initialize LevelSet function
-	FunctionalType::Pointer functional = FunctionalType::New();
-	// Connect Optimizer
-	OptimizerPointer opt = Optimizer::New();
-	opt->SetFunctional( functional );
+	root["description"]["title"] = "ACWE-Reg Summary File";
+	std::time_t rawtime;
+	std::tm* timeinfo;
+	char buffer[40];
+	std::time(&rawtime);
+	timeinfo = std::localtime(&rawtime);
+	std::strftime( buffer, 20, "%Y-%m-%d",timeinfo);
+	root["description"]["date"] = buffer;
+	std::strftime( buffer, 20, "%H:%M:%S",timeinfo);
+	root["description"]["time"] = buffer;
 
 
-	//typename ObserverType::Pointer o = ObserverType::New();
-	//o->SetCallbackFunction( opt, & PrintIteration );
-	//o->AddObserver( itk::IterationEvent(), o );
 
 	// Read target feature(s) -----------------------------------------------------------
 	root["inputs"]["target"]["components"]["size"] = Json::Int (fixedImageNames.size());
@@ -107,8 +169,19 @@ int main(int argc, char *argv[]) {
 	root["inputs"]["target"]["components"] = targetjson;
 
     comb->Update();
-	ImageType::Pointer im = comb->GetOutput();
-	functional->SetReferenceImage( im );
+	acwereg->SetFixedImage( comb->GetOutput() );
+
+	// Read target mask -----------------------------------------------------------------
+	if( vm_general.count( "fixed-mask" ) ) {
+		std::string maskfname = vm_general["fixed-mask"].as< std::string >();
+		root["inputs"]["target"]["mask"] = maskfname;
+
+		ImageReader::Pointer r = ImageReader::New();
+		r->SetFileName(maskfname);
+		r->Update();
+		acwereg->SetFixedMask( r->GetOutput() );
+	}
+
 
 	// Read moving surface(s) -----------------------------------------------------------
 	root["inputs"]["moving"]["components"]["size"] = Json::Int (movingSurfaceNames.size());
@@ -119,90 +192,135 @@ int main(int argc, char *argv[]) {
 		ReaderType::Pointer polyDataReader = ReaderType::New();
 		polyDataReader->SetFileName( movingSurfaceNames[i] );
 		polyDataReader->Update();
-		functional->AddShapePrior( polyDataReader->GetOutput() );
+		acwereg->AddShapePrior( polyDataReader->GetOutput() );
 		movingjson.append( movingSurfaceNames[i] );
 	}
 	root["inputs"]["moving"]["components"] = movingjson;
 
+	for (size_t i = 0; i < targetSurfaceNames.size(); i++) {
+		ReaderType::Pointer polyDataReader = ReaderType::New();
+		polyDataReader->SetFileName( targetSurfaceNames[i] );
+		polyDataReader->Update();
+		acwereg->AddShapeTarget( polyDataReader->GetOutput() );
+	}
+
 	// Set up registration ------------------------------------------------------------
-	if (vmap.count("grid-size")) {
-		opt->SetGridSize( vmap["grid-size"].as<int>() );
+	if ( vm_general.count("transform-levels") && cli_nlevels == 0 ) {
+		acwereg->SetNumberOfLevels( vm_general["transform-levels"].as<size_t>() );
+		acwereg->SetUseGridLevelsInitialization( true );
 	}
-	if (vmap.count("iterations")) {
-		opt->SetNumberOfIterations( vmap["iterations"].as<int>() );
-	}
-	if (vmap.count("step-size")) {
-		opt->SetStepSize( vmap["step-size"].as<float>() );
-
-	}
-	if (vmap.count("alpha")) {
-		opt->SetAlpha( vmap["alpha"].as<float>() );
+	if ( cli_nlevels ) {
+		acwereg->SetNumberOfLevels( cli_nlevels );
+		acwereg->SetUseGridLevelsInitialization( false );
 	}
 
-	IterationUpdatePointer iup = IterationUpdateType::New();
-	iup->SetOptimizer( opt );
-	iup->SetTrackEnergyOn();
+	for( size_t i = 0; i < cli_nlevels; i++ ) {
+		bpo::variables_map vm = vm_levels[i];
+		acwereg->SetSettingsOfLevel( i, vm );
+	}
 
-	clock_t preProcessStop = clock();
-	float pre_tot_t = (float) (((double) (preProcessStop - preProcessStart)) / CLOCKS_PER_SEC);
-	root["time"]["preprocessing"] = pre_tot_t;
+	LevelObserverPointer levelObserver = LevelObserverType::New();
+	levelObserver->SetRegistrationMethod(acwereg);
+	levelObserver->SetPrefix( outPrefix );
 
-	// Start registration -------------------------------------------------------------
-	std::cout << " --------------------------------- Starting registration process." << std::endl;
-	clock_t initTime = clock();
+	try {
+		acwereg->Update();
+	} catch (const std::exception &exc) {
+		// Set-up & write out log file
+		root["levels"] = acwereg->GetJSONRoot();
+		root["error"]["message"] = std::string(exc.what());
+		std::ofstream logfile((outPrefix + logFileName + ".log" ).c_str());
+		logfile << root;
+		throw;
+	} catch (...) {
+		root["levels"] = acwereg->GetJSONRoot();
+		root["error"]["message"] = std::string("Unknown exception");
+		std::ofstream logfile((outPrefix + logFileName + ".log" ).c_str());
+		logfile << root;
+		throw;
+	}
 
-	opt->Start();
-
-	clock_t finishTime = clock();
-	std::cout << " --------------------------------- Finished registration process." << std::endl;
-
-	float tot_t = (float) (((double) (finishTime - initTime)) / CLOCKS_PER_SEC);
-	root["time"]["processing"] = tot_t;
+	root["levels"] = acwereg->GetJSONRoot();
+	// Set-up & write out log file
+	std::ofstream logfile((outPrefix + logFileName + ".log" ).c_str());
+	logfile << root;
 
 	//
 	// Write out final results ---------------------------------------------------------
 	//
+	size_t nlevels = acwereg->GetNumberOfLevels();
+
+	for (size_t i = 0; i < nlevels; i++) {
+		std::stringstream sb;
+		sb << outPrefix << "_coeff_" << i << ".vtu";
+		typename CoeffWriter::Pointer w = CoeffWriter::New();
+		w->SetFileName(sb.str().c_str());
+		w->SetInput(acwereg->GetOptimizerOfLevel(i)->GetTransform()->GetFlatParameters());
+		w->Update();
+	}
 
 	// Displacementfield
-	typename DisplacementFieldWriter::Pointer p = DisplacementFieldWriter::New();
-	p->SetFileName( (outPrefix + "_field.nii.gz" ).c_str() );
-	p->SetInput( functional->GetCurrentDisplacementField() );
-	p->Update();
+	typename FieldWriter::Pointer fwrite = FieldWriter::New();
+	fwrite->SetFileName( (outPrefix + "_field.nii.gz" ).c_str() );
+	fwrite->SetInput( acwereg->GetDisplacementField() );
+	fwrite->Update();
 
 	// Contours and regions
-    size_t nCont = functional->GetCurrentContours().size();
+	ContourList conts = acwereg->GetCurrentContours();
+    size_t nCont = conts.size();
     for ( size_t contid = 0; contid < nCont; contid++) {
     	bfs::path contPath(movingSurfaceNames[contid]);
     	WriterType::Pointer polyDataWriter = WriterType::New();
-    	polyDataWriter->SetInput( functional->GetCurrentContours()[contid] );
-    	polyDataWriter->SetFileName( (outPrefix + "_" + contPath.filename().string()).c_str() );
+    	std::stringstream ss;
+    	ss << outPrefix << "_swarped_" << contid << ".vtk";
+    	polyDataWriter->SetInput( conts[contid] );
+    	polyDataWriter->SetFileName( ss.str().c_str() );
     	polyDataWriter->Update();
-
-    	typename ROIWriter::Pointer w = ROIWriter::New();
-    	w->SetInput( functional->GetCurrentRegion(contid) );
-    	w->SetFileName( (outPrefix + "_roi_" + contPath.stem().string() + ".nii.gz" ).c_str() );
-    	w->Update();
     }
 
-    // Last ROI (excluded region)
-	typename ROIWriter::Pointer w = ROIWriter::New();
-	w->SetInput( functional->GetCurrentRegion(nCont) );
-	w->SetFileName( (outPrefix + "_roi_background.nii.gz" ).c_str() );
-	w->Update();
+	// Read and transform images if present
+	for( size_t i = 0; i<fixedImageNames.size(); i++) {
+		typename ImageReader::Pointer r = ImageReader::New();
+		r->SetFileName( fixedImageNames[i] );
+		r->Update();
+
+		typename ChannelType::Pointer im = r->GetOutput();
+		typename ChannelType::DirectionType dir = im->GetDirection();
+		typename ChannelType::PointType ref_orig = im->GetOrigin();
+
+		typename ChannelType::DirectionType itk;
+		itk.SetIdentity();
+		itk(0,0)=-1.0;
+		itk(1,1)=-1.0;
+		im->SetDirection( dir * itk );
+		im->SetOrigin( itk * ref_orig );
+
+		WarpFilterPointer res = WarpFilter::New();
+		res->SetInterpolator( DefaultInterpolator::New() );
+		res->SetOutputParametersFromImage( im );
+		res->SetInput( im );
+		res->SetDisplacementField( acwereg->GetDisplacementField() );
+		res->Update();
 
 
-	root["iterations"] = iup->GetJSONRoot();
-	// JSON Summary
-	root["summary"]["energy"]["total"] = opt->GetCurrentValue();
-	root["summary"]["energy"]["data"] = functional->GetValue();
-	root["summary"]["energy"]["regularization"] = opt->GetCurrentRegularizationEnergy();
-	root["summary"]["iterations"] = Json::Int (opt->GetCurrentIteration());
-	root["summary"]["conv_status"] = opt->GetStopCondition();
-	root["summary"]["stop_msg"] = opt->GetStopConditionDescription();
+		ThresholdPointer th = ThresholdFilter::New();
+		th->SetInput( res->GetOutput() );
+		th->ThresholdBelow( 0.0 );
+		th->SetOutsideValue( 0.0 );
 
-	// Set-up & write out log file
-	std::ofstream logfile((outPrefix + logFileName ).c_str());
-	logfile << root;
+		typename ChannelType::Pointer im_res = th->GetOutput();
+		im_res->SetDirection( dir );
+		im_res->SetOrigin( ref_orig );
+
+		std::stringstream ss;
+		ss.str("");
+		ss << outPrefix << "_warped_" << i << ".nii.gz";
+		typename ImageWriter::Pointer w = ImageWriter::New();
+		w->SetInput( im_res );
+		w->SetFileName( ss.str().c_str() );
+		w->Update();
+
+	}
 
 	return EXIT_SUCCESS;
 }

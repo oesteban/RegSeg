@@ -45,6 +45,8 @@
 
 #include "SpectralGradientDescentOptimizer.h"
 
+#include <itkImageAlgorithm.h>
+
 using namespace std;
 
 namespace rstk {
@@ -53,9 +55,7 @@ namespace rstk {
  * Default constructor
  */
 template< typename TFunctional >
-SpectralGradientDescentOptimizer<TFunctional>::SpectralGradientDescentOptimizer() {
-
-}
+SpectralGradientDescentOptimizer<TFunctional>::SpectralGradientDescentOptimizer() {}
 
 template< typename TFunctional >
 void SpectralGradientDescentOptimizer<TFunctional>
@@ -67,20 +67,33 @@ void SpectralGradientDescentOptimizer<TFunctional>
 template< typename TFunctional >
 void SpectralGradientDescentOptimizer<TFunctional>::Iterate() {
 	itkDebugMacro("Optimizer Iteration");
-
-	this->SpectralUpdate( this->m_Parameters, this->m_Functional->GetDerivative(), this->m_NextParameters, true );
-
+	this->ComputeUpdate(this->m_Coefficients, this->m_DerivativeCoefficients, this->m_NextCoefficients, true);
 }
 
 template< typename TFunctional >
 void SpectralGradientDescentOptimizer<TFunctional>
 ::SetUpdate() {
-	const VectorType* next = this->m_NextParameters->GetBufferPointer();
-	VectorType* curr = this->m_Parameters->GetBufferPointer();
-	size_t nPix = this->m_Parameters->GetLargestPossibleRegion().GetNumberOfPixels();
+	const typename CoefficientsImageType::PixelType* current[Dimension];
+	for (size_t i = 0; i < Dimension; i++) {
+		current[i] = this->m_NextCoefficients[i]->GetBufferPointer();
+		itk::ImageAlgorithm::Copy< CoefficientsImageType, CoefficientsImageType > (
+			this->m_NextCoefficients[i],
+			this->m_Coefficients[i],
+			this->m_NextCoefficients[i]->GetLargestPossibleRegion(),
+			this->m_Coefficients[i]->GetLargestPossibleRegion()
+		);
+	}
 
-	for( size_t pix = 0; pix<nPix; pix++){
-		*(curr+pix) = *(next+pix);
+	VectorType v;
+	VectorType* buffer = this->m_CurrentCoefficients->GetBufferPointer();
+	size_t nPix = this->m_NextCoefficients[0]->GetLargestPossibleRegion().GetNumberOfPixels();
+
+	for(size_t i = 0; i < nPix; i++) {
+		for(size_t d=0; d < Dimension; d++) {
+			v[d] = *(current[d] + i);
+		}
+		*(buffer + i) = v;
+
 	}
 }
 

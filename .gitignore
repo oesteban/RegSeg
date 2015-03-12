@@ -1,6 +1,10 @@
 Debug/
 Release/
+temp/
+Data/
 .project
+*.sublime-*
+.ipynb_checkpoints/
 .fuse*
 *.vtk
 *.aux
@@ -37,12 +41,14 @@ Release/
 *.dot
 *.dot.png
 *.npz
+*.pklz
 *.html
 *.csv
 *.sql
 Publications/2013-TMI/ACWE.bib
 *.pdf
 papers/FINF-ITK
-temp/
-Data/Phantom*
 provenance.*
+Untitled*.ipynb
+*-notrack.ipynb
+

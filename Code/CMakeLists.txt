@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 #######################################
 
+if(UNIX)
+#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    #SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS ")
+endif()
+
 FIND_PACKAGE(ITK)
 IF(ITK_FOUND)
   INCLUDE(${ITK_USE_FILE})
@@ -9,10 +15,37 @@ ELSE(ITK_FOUND)
           "Please Set ITK_DIR")
 ENDIF(ITK_FOUND)
 
-SET( CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Core )
 
-SET( LEVELSETS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Functional )
-SET( LEVELSETS_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Functional )
+FIND_PACKAGE( Boost 1.49 COMPONENTS program_options filesystem system REQUIRED )
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
+
+FIND_PATH(JsonCpp_INCLUDE_DIR     
+  NAMES 
+        jsoncpp/json/json.h   
+  PATHS
+        /usr/local/include
+        /usr/include
+)
+INCLUDE_DIRECTORIES(${JsonCpp_INCLUDE_DIR})
+
+find_library(JsonCpp_LIBRARY 
+    NAMES 
+        jsoncpp
+        libjsoncpp
+    PATHS
+       /usr/lib 
+       /usr/local/lib
+)
+
+SET( CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Core )
+SET( ITKRV_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/ITKReviewed )
+SET( IO_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/IO )
+
+SET( OBSERVERS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Observers )
+SET( OBSERVERS_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Functional )
+
+SET( FUNCTIONAL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Functional )
+SET( FUNCTIONAL_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Functional )
 
 SET( OPTIMIZERS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Optimizers )
 SET( OPTIMIZERS_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Optimizers )
@@ -20,29 +53,49 @@ SET( OPTIMIZERS_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Optimizers )
 SET( TRANSFORM_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Transform )
 SET( TRANSFORM_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Transform )
 
+SET( FILTERING_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Modules/Filtering )
+SET( FILTERING_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Modules/Filtering )
+
+SET( VTKHAUSSDORF_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/Hausdorff )
+SET( VTKHAUSSDORF_LIBRARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/ThirdParty/Hausdorff )
 
 INCLUDE_DIRECTORIES( ${OPTIMIZERS_SOURCE_DIR}/include
-                     ${LEVELSETS_SOURCE_DIR}/include
+                     ${FUNCTIONAL_SOURCE_DIR}/include
+                     ${FILTERING_SOURCE_DIR}/include
                      ${TRANSFORM_SOURCE_DIR}/include
+                     ${IO_SOURCE_DIR}/include
+                     ${OBSERVERS_SOURCE_DIR}/include
                      ${CORE_SOURCE_DIR}/include
-                     
+                     ${ITKRV_SOURCE_DIR}/include
+                     ${VTKHAUSSDORF_SOURCE_DIR}
 )
 
 ENABLE_TESTING()
 
-#find_package(GTest REQUIRED)
-ADD_SUBDIRECTORY( GTest/ )
 
 ADD_SUBDIRECTORY( Modules/Core )
 
+#find_package(GTest REQUIRED)
+ADD_SUBDIRECTORY( GTest/ )
+
+ADD_SUBDIRECTORY( ThirdParty/Hausdorff )
+SET( VTKHAUSDORFF_LIB "vtkHausdorffDistance" )
+
+ADD_SUBDIRECTORY( Modules/Observers )
+SET( OBSERVERS_LIB "RSTKFunctional" )
+
+
 ADD_SUBDIRECTORY( Modules/Functional )
-SET( LEVELSETS_LIB "RSTKFunctional" )
+SET( FUNCTIONAL_LIB "RSTKFunctional" )
 
 ADD_SUBDIRECTORY( Modules/Optimizers )
 SET( OPTIMIZERS_LIB "RSTKOptimizers" )
 
 ADD_SUBDIRECTORY( Modules/Transform )
 SET( TRANSFORM_LIB "RSTKTransform" )
+
+ADD_SUBDIRECTORY( Modules/Filtering )
+SET( FILTERING_LIB "RSTKFiltering" )
 
 ADD_SUBDIRECTORY( Examples/ )
 
@@ -187,4 +240,4 @@ ADD_SUBDIRECTORY( Applications/ )
 # unset(itk-module-test)
 # 
 #  
-# SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS")
+#SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -Wunused-local-typedefs")

@@ -85,45 +85,38 @@ public:
 	/** Stop condition internal string type */
 	typedef typename Superclass::StopConditionDescriptionType     StopConditionDescriptionType;
 
-	/** Internal computation value type */
-	typedef typename Superclass::InternalComputationValueType     InternalComputationValueType;
-
 	/** Functional definitions */
 	typedef typename Superclass::FunctionalPointer                FunctionalPointer;
 	typedef typename Superclass::ParametersType                   ParametersType;
-	typedef typename Superclass::DerivativeType                   DerivativeType;
 	typedef typename Superclass::MeasureType                      MeasureType;
 	typedef typename Superclass::PointType                        PointType;
 	typedef typename Superclass::VectorType                       VectorType;
 	typedef typename Superclass::PointValueType                   PointValueType;
-	typedef typename Superclass::ParametersPointer                ParametersPointer;
-	typedef typename Superclass::ParametersConstPointer           ParametersConstPointer;
-	typedef typename Superclass::ParametersPointType              ParametersPointType;
-	typedef typename Superclass::ParametersDirectionType          ParametersDirectionType;
-	typedef typename Superclass::GridSizeType                     GridSizeType;
-	typedef typename Superclass::ParametersComponentType          ParametersComponentType;
-	typedef typename Superclass::ParametersComponentPointer       ParametersComponentPointer;
 	typedef typename Superclass::FFTType                          FFTType;
 	typedef typename Superclass::FFTPointer                       FFTPointer;
 	typedef typename Superclass::FTDomainType                     FTDomainType;
 	typedef typename Superclass::FTDomainPointer                  FTDomainPointer;
 	typedef typename Superclass::ComplexType                      ComplexType;
-	typedef typename Superclass::ComplexValueType                 ComplexValueType;
+	typedef typename Superclass::InternalComputationValueType     InternalComputationValueType;
+	typedef typename Superclass::InternalVectorType               InternalVectorType;
+	typedef typename Superclass::InternalVectorFieldType          InternalVectorFieldType;
+	typedef typename Superclass::InternalVectorFieldPointer       InternalVectorFieldPointer;
+
 	typedef typename Superclass::IFFTType                         IFFTType;
 	typedef typename Superclass::IFFTPointer                      IFFTPointer;
 	typedef typename Superclass::RealPartType                     RealPartType;
-	typedef typename Superclass::ComplexValuesVector              ComplexValuesVector;
 	typedef typename Superclass::ComplexFieldValue                ComplexFieldValue;
 	typedef typename Superclass::ComplexFieldType                 ComplexFieldType;
 	typedef typename Superclass::ComplexFieldPointer              ComplexFieldPointer;
-	typedef typename Superclass::MatrixType                       MatrixType;
-	typedef typename Superclass::TensorFieldType                  TensorFieldType;
-	typedef typename Superclass::TensorFieldPointer               TensorFieldPointer;
+//	typedef typename Superclass::MatrixType                       MatrixType;
+//	typedef typename Superclass::TensorFieldType                  TensorFieldType;
+//	typedef typename Superclass::TensorFieldPointer               TensorFieldPointer;
 	typedef typename Superclass::SizeValueType                    SizeValueType;
 
 	/** Type for the convergence checker */
 	typedef typename Superclass::ConvergenceMonitoringType        ConvergenceMonitoringType;
 
+	typedef typename Superclass::CoefficientsImageType            CoefficientsImageType;
 protected:
 	SpectralGradientDescentOptimizer();
 	~SpectralGradientDescentOptimizer() {}

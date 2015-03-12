@@ -10,6 +10,7 @@
 
 #include <itkCommandIterationUpdate.h>
 #include <itkWeakPointer.h>
+#include "OptimizerBase.h"
 
 
 namespace rstk {
@@ -36,7 +37,7 @@ public:
 
     	if( typeid( event ) == typeid( itk::IterationEvent ) ) {
     		std::cout << "[" << this->m_Optimizer->GetCurrentIteration() << "] ";
-    		if ( this->m_TrackEnergy ) {
+    		if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
     			std::cout << this->m_Optimizer->GetCurrentEnergy() << " | " << this->m_Optimizer->GetFunctional()->GetValue() << " | " << this->m_Optimizer->GetCurrentRegularizationEnergy();
     		}
     		std::cout << "\t" << this->m_Optimizer->GetCurrentValue() << std::endl;
@@ -48,25 +49,20 @@ public:
       m_Optimizer->AddObserver( itk::IterationEvent(), this );
     }
 
-    void SetTrackEnergyOn() { this->m_TrackEnergy = true; }
-    void SetTrackEnergyOff(){ this->m_TrackEnergy = false; }
-
-    itkSetMacro( TrackEnergy, bool );
-    itkGetConstMacro( TrackEnergy, bool );
+    itkSetMacro( Level, size_t );
 
 protected:
-	IterationUpdate(){
-		this->m_TrackEnergy = false;
-	}
+	IterationUpdate(): m_Level(0) {}
+	~IterationUpdate(){}
 
 	//void PrintSelf( std::ostream &os, itk::Indent indent ) const;
+	size_t m_Level;
 private:
 	IterationUpdate( const Self & ); // purposely not implemented
 	void operator=( const Self & ); // purposely not implemented
 
 
 	OptimizerPointer   m_Optimizer;
-	bool m_TrackEnergy;
 };
 
 } // end namespace rstk

@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------------
-// File:             DisplacementFieldComponentsFileWriter.h
+// File:             ComponentsFileWriter.h
 // Date:             22/07/2013
 // Author:           code@oscaresteban.es (Oscar Esteban, OE)
 // Version:          0.1
@@ -35,18 +35,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef DisplacementFieldComponentsFileWriter_H_
-#define DisplacementFieldComponentsFileWriter_H_
+#ifndef ComponentsFileWriter_H_
+#define ComponentsFileWriter_H_
 
 // Include headers
 #include <itkObject.h>
 #include <itkImageFileWriter.h>
+#include <itkVectorIndexSelectionCastImageFilter.h>
 
 #include <iostream>
 // Namespace declaration
 
 namespace rstk {
-/** \class DisplacementFieldComponentsFileWriter
+/** \class ComponentsFileWriter
  *  \brief This class
  *
  *  Long description
@@ -54,85 +55,71 @@ namespace rstk {
  *  \ingroup
  */
 
-template< typename TDisplacementField >
-class DisplacementFieldComponentsFileWriter: public itk::Object {
+template< typename TVectorImageType >
+class ComponentsFileWriter: public itk::Object {
 public:
-	typedef DisplacementFieldComponentsFileWriter   Self;
+	typedef ComponentsFileWriter   Self;
 	typedef itk::Object                   Superclass;
 	typedef itk::SmartPointer<Self>       Pointer;
 	typedef itk::SmartPointer<const Self> ConstPointer;
 
 	/** Run-time type information (and related methods). */
-	itkTypeMacro( DisplacementFieldComponentsFileWriter, itk::Object );
+	itkTypeMacro( ComponentsFileWriter, itk::Object );
 	itkNewMacro( Self );
 
-	typedef TDisplacementField                              DisplacementFieldType;
-	typedef typename DisplacementFieldType::ConstPointer    DisplacementFieldPointer;
-	typedef typename DisplacementFieldType::PixelType       VectorType;
-	//typedef typename VectorType::ValueType                  ValueType;
-	typedef float ValueType;
+	typedef TVectorImageType                              VectorImageType;
+	typedef typename VectorImageType::Pointer             VectorImagePointer;
+	typedef typename VectorImageType::ConstPointer        VectorImageConstPointer;
+	typedef typename VectorImageType::PixelType           VectorType;
+	typedef typename VectorType::ValueType                ValueType;
 
-	itkStaticConstMacro( Dimension, unsigned int, itkGetStaticConstMacro(VectorType::Dimension) );
+	itkStaticConstMacro( Dimension, unsigned int, itkGetStaticConstMacro(VectorImageType::ImageDimension) );
 
-	itkSetConstObjectMacro(Input,DisplacementFieldType);
+	typedef typename itk::Image< ValueType, Dimension >     ComponentImageType;
+	typedef itk::ImageFileWriter<ComponentImageType >       ComponentWriterType;
+	typedef typename ComponentWriterType::Pointer           ComponentWriterPointer;
+
+	typedef itk::VectorIndexSelectionCastImageFilter< VectorImageType, ComponentImageType >
+	                                                        SelectComponentFilter;
+	typedef typename SelectComponentFilter::Pointer         SelectComponentPointer;
+
+	itkSetConstObjectMacro(Input, VectorImageType);
 	itkSetStringMacro(FileName);
 
 	void Update() const {
-		typedef itk::Image<ValueType,Dimension> FieldType;
-		typename FieldType::Pointer out[Dimension];
+		size_t ncomps = this->m_Input->GetNumberOfComponentsPerPixel();
 
-		typename FieldType::SizeType outSize = m_Input->GetLargestPossibleRegion().GetSize();
-		typename FieldType::SpacingType outSpacing = m_Input->GetSpacing();
-		typename FieldType::DirectionType outDirection = m_Input->GetDirection();
-		typename FieldType::PointType outOrigin = m_Input->GetOrigin();
-		ValueType* buffer[3];
+		SelectComponentPointer adaptor = SelectComponentFilter::New();
+		adaptor->SetInput(this->m_Input);
 
-		for( size_t comp = 0; comp<Dimension; comp++ ){
-			out[comp] = FieldType::New();
-			out[comp]->SetRegions( outSize );
-			out[comp]->SetSpacing( outSpacing );
-			out[comp]->SetDirection( outDirection );
-			out[comp]->SetOrigin( outOrigin );
-			out[comp]->Allocate();
-			out[comp]->FillBuffer(0.0);
-			buffer[comp] = out[comp]->GetBufferPointer();
-		}
+		for( size_t comp=0; comp<ncomps; comp++) {
+			adaptor->SetIndex(comp);
+			adaptor->Update();
 
-		const VectorType* vectBuffer = m_Input->GetBufferPointer();
-		size_t nVect = m_Input->GetLargestPossibleRegion().GetNumberOfPixels();
-		for(size_t pix = 0; pix< nVect; pix++) {
-			VectorType val = *(vectBuffer+pix);
-			for( size_t comp=0; comp<Dimension; comp++) {
-				*(buffer[comp]+pix) = static_cast<ValueType> (val[comp]);
-			}
-		}
-
-		for( size_t comp=0; comp<Dimension; comp++) {
 			std::stringstream ss;
-			ss << "cmp" << comp << "_" << m_FileName;
-			typename itk::ImageFileWriter<FieldType>::Pointer w = itk::ImageFileWriter<FieldType>::New();
-			w->SetInput( out[comp] );
+			ss << m_FileName << "_cmp" << comp << ".nii.gz";
+			ComponentWriterPointer w = ComponentWriterType::New();
+			w->SetInput( adaptor->GetOutput() );
 			w->SetFileName( ss.str().c_str() );
 			w->Update();
 		}
 	}
 
 protected:
-	DisplacementFieldComponentsFileWriter(){}
-	~DisplacementFieldComponentsFileWriter(){}
+	ComponentsFileWriter(){}
+	~ComponentsFileWriter(){}
 
 	void PrintSelf( std::ostream& os, itk::Indent indent) const {
 		Superclass::Print(os, indent);
 	}
 
 private:
-	DisplacementFieldComponentsFileWriter( const Self &); // purposely not implemented
+	ComponentsFileWriter( const Self &); // purposely not implemented
 	void operator=(const Self &); // purposely not implemented
 
 	std::string m_FileName;
-	DisplacementFieldPointer m_Input;
-}; // End of class DisplacementFieldComponentsFileWriter
+	VectorImageConstPointer m_Input;
+}; // End of class ComponentsFileWriter
 } // End of namespace
 
-
-#endif /* DisplacementFieldComponentsFileWriter_H_ */
+#endif /* ComponentsFileWriter_H_ */

@@ -11,6 +11,7 @@
 
 #include "itkFixedArray.h"
 #include <itkTransform.h>
+#include <itkImage.h>
 #include <itkImageRegionIterator.h>
 #include <itkImageToImageFilter.h>
 #include <itkExtrapolateImageFunction.h>
@@ -48,7 +49,7 @@ namespace rstk
  */
 template< class TInputImage,
           class TOutputImage,
-          class TPrecisionType = double>
+          class TPrecisionType = float>
 class ITK_EXPORT DownsampleAveragingFilter :
   public itk::ImageToImageFilter< TInputImage, TOutputImage >
 {
@@ -92,9 +93,14 @@ public:
 
   /** Image pixel value typedef. */
   typedef typename TOutputImage::PixelType PixelType;
+  typedef typename TOutputImage::InternalPixelType OutputPixelValueType;
   typedef typename TInputImage::PixelType  InputPixelType;
+  typedef typename TInputImage::InternalPixelType  InputPixelValueType;
+
+  typedef itk::Image<OutputPixelValueType, ImageDimension > MaskImageType;
 
   typedef itk::DefaultConvertPixelTraits<PixelType> PixelConvertType;
+  typedef itk::DefaultConvertPixelTraits<PixelType> InputPixelConvertType;
 
   typedef typename PixelConvertType::ComponentType PixelComponentType;
 
@@ -107,6 +113,7 @@ public:
 
   /** Image spacing,origin and direction typedef */
   typedef typename TOutputImage::SpacingType   SpacingType;
+  typedef typename TOutputImage::SpacingValueType   SpacingValueType;
   typedef typename TOutputImage::PointType     OriginPointType;
   typedef typename TOutputImage::DirectionType DirectionType;
 
@@ -153,12 +160,15 @@ public:
    *  Reference image must be present to override the defaul behavior.
    */
   void SetReferenceImage(const TOutputImage *image);
-
   const TOutputImage * GetReferenceImage() const;
+
+  void SetMaskImage(const MaskImageType *image);
+  const MaskImageType * GetMaskImage() const;
 
   itkSetMacro(UseReferenceImage, bool);
   itkBooleanMacro(UseReferenceImage);
   itkGetConstMacro(UseReferenceImage, bool);
+
 
   /** DownsampleAveragingFilter produces an image which is a different size
    * than its input.  As such, it needs to provide an implementation
@@ -222,16 +232,18 @@ private:
   DownsampleAveragingFilter(const Self &); //purposely not implemented
   void operator=(const Self &);      //purposely not implemented
 
-  SizeType                m_Size;         // Size of the output image
-  SizeType  m_WindowSize;                 // Size of the averaging window
-  size_t    m_WindowN;
-  PixelType m_DefaultPixelValue;          // default pixel value
+  SizeType        m_WindowSize;           // Size of the averaging window
+  size_t          m_WindowN;
+  PixelType       m_DefaultPixelValue;    // default pixel value
                                           // if the point is
                                           // outside the image
+  PixelType       m_MaskedPixelValue;    // default pixel value
+  SizeType        m_Size;                 // Size of the output image
   SpacingType     m_OutputSpacing;        // output image spacing
   OriginPointType m_OutputOrigin;         // output image origin
   DirectionType   m_OutputDirection;      // output image direction cosines
   IndexType       m_OutputStartIndex;     // output image start index
+  size_t          m_NumberOfComponents;
   bool            m_UseReferenceImage;
 
 };

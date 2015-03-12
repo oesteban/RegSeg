@@ -5,11 +5,11 @@ set(RSTKExamples
   Model2Registration.cxx
 )
 
-ADD_EXECUTABLE(fstest FreeSurferTest.cxx ) 
-TARGET_LINK_LIBRARIES(fstest ${ITK_LIBRARIES} )
+#ADD_EXECUTABLE(fstest FreeSurferTest.cxx ) 
+#TARGET_LINK_LIBRARIES(fstest ${ITK_LIBRARIES} ${Boost_LIBRARIES} )
 
-ADD_EXECUTABLE(phantom1 phantom1.cxx ) 
-TARGET_LINK_LIBRARIES(phantom1 ${ITK_LIBRARIES} )
+#ADD_EXECUTABLE(phantom1 phantom1.cxx ) 
+#TARGET_LINK_LIBRARIES(phantom1 ${ITK_LIBRARIES}  ${Boost_LIBRARIES}  )
 
 
 #ADD_EXECUTABLE(model1 Model1Registration.cxx ) 
