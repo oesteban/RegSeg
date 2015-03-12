@@ -1,0 +1,46 @@
+% -*- root: 00-main.tex -*-
+\renewcommand{\theequation}{A.\arabic{equation}}
+
+\section*{Appendix}
+
+\subsection*{Instant velocity of contours}
+\label{app:shape_priors}
+The computation of gradients at the locations of the active contours in the
+  instant $t$ is based on the work of \cite{herbulot_segmentation_2006}.
+Let $F(\vec{r})$ be an ``arbitrary'' function over the image domain
+  $\Omega = \Omega_l \cup \Omega_m$ splitted in two regions $l$ and
+  $m$, and $\Gamma_{l,m}$ a closed boundary between them
+  as defined in \nameref{sec:methods_map}.
+We now derive the domain integral w.r.t. $t$:
+
+  \begin{align*}
+  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} &=
+  \int_\Omega \frac{\partial}{\partial t}F(\vec{r}) d\vec{r} \notag\\
+  &- \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
+  N_{\Gamma_{l,m}}\right\rangle d\vec{r},
+  \end{align*}
+
+  where $\left\langle\frac{\partial\Gamma_{l,m}}{\partial t}, N_{\Gamma_{l,m}}\right\rangle$ is
+  the projection of the boundary movement on the unit inward normal $N_{\Gamma_{l,m}}$.
+Assuming that the region descriptors $\{\mu_l, \Sigma_l\}$ vary slowly enough, we can consider
+  that $\frac{\partial}{\partial t} F(\vec{r}) = 0$ and thus:
+
+  \begin{equation*}
+  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
+  - \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
+  N_{\Gamma_{l,m}}\right\rangle d\vec{r}
+  \end{equation*}
+
+  As inner ($\Omega_l$) and outer ($\Omega_m$) regions are competing and introducing
+    the energy functional \eqref{eq:energy}:
+
+    \begin{equation}
+    \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
+    - \int_{\Gamma_{l,m}} \left[ \mathcal{E}_{l}(\vec{r}) - \mathcal{E}_{m}(\vec{r}) \right]
+    \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
+  N_{\Gamma_{l,m}}\right\rangle d\vec{r},
+  	\label{eq:shape_gradients}
+    \end{equation}
+
+    where $\mathcal{E}_l(\vec{r}) = \mathcal{D}^2_{l}(R(\vec{r}))$ for briefness.
+

@@ -1,0 +1,114 @@
+%\documentclass[numbers,sort&compress]{elsarticle}
+\documentclass[5p,authoryear]{elsarticle}
+\journal{ArXiv archiving for pre-submission review}
+
+% *** MISC UTILITY PACKAGES ***
+%
+\usepackage{glossaries}
+\usepackage{booktabs} % to use \toprule
+\usepackage{multirow}
+\usepackage[colorinlistoftodos]{todonotes}
+
+
+%\usepackage[cmex10,intlimits]{amsmath}
+\usepackage{amsmath}
+\usepackage{amssymb}
+%\usepackage{algorithmic}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\argmax}{argmax}
+\DeclareMathOperator{\argmin}{argmin}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\dist}{dist}
+\DeclareMathOperator{\const}{Const.}
+\providecommand{\e}[1]{\ensuremath{\times 10^{#1}}}
+\providecommand{\mdist}[2]{ \mathcal{D}_{#2}^2(\mathbf{#1}) }
+\let\oldhat\hat
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\providecommand{\nvec}[1]{\hat{\mathbf{#1}}}
+\providecommand{\suppl}{\href{http://dx.doi.org/mydoi}{Supplemental Materials}}
+
+% *** PDF, URL AND HYPERLINK PACKAGES ***
+%
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=black, citecolor=blue, urlcolor=blue]{hyperref}
+\usepackage{doi}
+
+% correct bad hyphenation here
+\hyphenation{op-tical net-works semi-conduc-tor an-isot-ropy regis-tra-tion iso-tropic Free-Surfer %
+align-ed pre-sent}
+
+\input{01-acronyms}
+
+\usepackage[T1]{fontenc}
+\usepackage{charter}
+%\usepackage[expert]{mathdesign}
+%\usepackage[libertine,cmintegrals,cmbraces,vvarbb]{newtxmath}
+%\renewcommand*{\familydefault}{\sfdefault}
+\usepackage[switch]{lineno}
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\begin{document}
+
+\begin{frontmatter}
+
+%% Use \dochead if there is an article header, e.g. \dochead{Short communication}
+% \dochead{Preprint for ArXiv archiving and pre-submission review}
+
+\title{Simultaneous segmentation and registration of diffusion MR images of the brain driven
+by active-contours}
+
+\author[bit]{Oscar~Esteban\corref{corrauthor}}
+\cortext[corrauthor]{Corresponding author}
+\ead{phd@oscaresteban.es}
+\author[ucla]{Dominique~Zosso}
+\author[lts5]{Alessandro~Daducci}
+\author[chuv,lts5]{Meritxell~Bach-Cuadra}
+\author[bit]{Mar\'ia-J.~Ledesma-Carbayo}
+\author[lts5]{Jean-Philippe~Thiran}
+\author[bit]{Andr\'es~Santos}
+
+
+\address[bit]{Biomedical Image Technologies (BIT), ETSI Telecomunicaci\'on, %
+Universidad Polit\'ecnica de Madrid and CIBER-BBN, Madrid, Spain}
+\address[ucla]{Department of Mathematics, University of California,
+Los Angeles (UCLA), Los Angeles, CA, US}
+\address[lts5]{Signal Processing Laboratory (LTS5), \'Ecole Polytechnique
+F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland}
+\address[chuv]{Dept. of Radiology, University
+Hospital Center (CHUV) and University of Lausanne (UNIL), Lausanne, Switzerland}
+
+\begin{abstract}
+\input{02-abstract}
+\end{abstract}
+
+% Note that keywords are not normally used for peerreview papers.
+\begin{keyword}
+diffusion MRI \sep susceptibility~distortion \sep segmentation %
+\sep registration \sep parcellation \sep shape-prior.
+\end{keyword}
+
+\end{frontmatter}
+
+\linenumbers
+\input{03-introduction}
+\input{04-methods}
+\input{05-results}
+\input{06-discussion}
+
+
+\input{07-conclusion}
+
+% ACKs
+\input{08-acknowledgements}
+
+%\bibliographystyle{plainnat}
+\bibliographystyle{mystyle}
+\bibliography{Remote}
+
+% Add appendices
+\appendix
+%\numberwithin{equation}{section}
+\input{08-appendix-00-shapepriors}
+
+\end{document}
