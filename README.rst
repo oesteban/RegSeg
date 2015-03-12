@@ -10,13 +10,21 @@ non-linear registration of strong priors to a reference image with subvoxel prec
 Credits
 -------
 
-* Oscar Esteban (@oesteban): implementation
-* Dominique Zosso (@zosso): mathematical formulation
-* Alessandro Daducci (@daducci)
-* Jean-Philippe Thiran
-* Meritxell Bach-Cuadra (@meribach)
-* Andrés Santos Lleó
+Authors
+-------
 
+* Oscar Esteban (@oesteban): registration and evaluation methods implementation,
+  design of evaluation methods.
+* Dominique Zosso (@zosso): registration method formulation
+* Alessandro Daducci (@daducci): early datasets generation, interpretation of results.
+* Meritxell Bach-Cuadra (@meribach): interpretation of results, project coordination.
+
+Supervision
+-----------
+
+* Andrés Santos Lleó
+* Jean-Philippe Thiran
+* M.-J. Ledesma-Carbayo
 
 
 -----------

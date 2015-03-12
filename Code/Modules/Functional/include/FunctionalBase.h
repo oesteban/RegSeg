@@ -35,8 +35,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef LEVELSETSBASE_H_
-#define LEVELSETSBASE_H_
+#ifndef FUNCTIONALBASE_H_
+#define FUNCTIONALBASE_H_
 
 #include <itkObject.h>
 #include <itkNumericTraits.h>
@@ -44,10 +44,10 @@
 #include <itkContinuousIndex.h>
 #include <itkImage.h>
 #include <itkVectorImage.h>
-#include <itkVectorLinearInterpolateImageFunction.h>
+#include "VectorLinearInterpolateImageFunction.h"
 #include <itkNearestNeighborInterpolateImageFunction.h>
+#include <itkQuadEdgeMeshTraits.h>
 #include <itkQuadEdgeMesh.h>
-#include <itkNormalQuadEdgeMeshFilter.h>
 #include <itkWarpMeshFilter.h>
 #include <itkMeshSpatialObject.h>
 #include <itkGroupSpatialObject.h>
@@ -57,10 +57,29 @@
 #include <itkTriangleMeshToBinaryImageFilter.h>
 #include <itkDisplacementFieldJacobianDeterminantFilter.h>
 #include <itkDisplacementFieldTransform.h>
+#include <itkQuadEdgeMeshPolygonCell.h>
+#include <itkTriangleHelper.h>
+#include <itkSmoothingRecursiveGaussianImageFilter.h>
+#include <vnl/vnl_sparse_matrix.h>
 
+#include <itkMahalanobisDistanceMembershipFunction.h>
+
+#include <itkSimplexMesh.h>
+#include <itkSimplexMeshToTriangleMeshFilter.h>
+#include <itkTriangleMeshToSimplexMeshFilter.h>
+
+#include "rstkMacro.h"
+#include "NormalQuadEdgeMeshFilter.h"
+#include "ConfigurableObject.h"
 #include "CopyQuadEdgeMeshFilter.h"
+#include "CopyQEMeshStructureFilter.h"
+#include "WarpQEMeshFilter.h"
 #include "SparseMatrixTransform.h"
 #include "DownsampleAveragingFilter.h"
+#include "MultilabelBinarizeMeshFilter.h"
+
+#include "EnergyCalculatorFilter.h"
+#include "MahalanobisDistanceModel.h"
 
 namespace rstk {
 /** \class FunctionalBase
@@ -84,155 +103,309 @@ namespace rstk {
  */
 
 
-template <typename TReferenceImageType, typename TCoordRepType = double>
-class FunctionalBase: public itk::Object {
+template <typename TReferenceImageType, typename TCoordRepType = float>
+class FunctionalBase:
+		public itk::Object,
+		public ConfigurableObject  {
 public:
-	typedef FunctionalBase                    Self;
-	typedef itk::Object                      Superclass;
-	typedef itk::SmartPointer<Self>          Pointer;
-	typedef itk::SmartPointer< const Self >  ConstPointer;
+	typedef FunctionalBase                                   Self;
+	typedef itk::Object                                      Superclass;
+	typedef itk::SmartPointer<Self>                          Pointer;
+	typedef itk::SmartPointer< const Self >                  ConstPointer;
+	typedef ConfigurableObject                               SettingsClass;
+	typedef typename SettingsClass::SettingsMap              SettingsMap;
+	typedef typename SettingsClass::SettingsDesc             SettingsDesc;
+	typedef std::vector< SettingsMap >                       SettingsList;
 
 	/** Run-time type information (and related methods). */
 	itkTypeMacro(FunctionalBase, itk::Object);
+	itkNewMacro(FunctionalBase);
 
 	itkStaticConstMacro( Dimension, unsigned int, TReferenceImageType::ImageDimension );
 
-	typedef double                                           MeasureType;
-	typedef TCoordRepType                                    PointValueType;
-	typedef itk::Vector< PointValueType, Dimension >         VectorType;
-	typedef itk::Point< PointValueType, Dimension >          PointType;
-	typedef itk::ContinuousIndex<TCoordRepType, Dimension >  ContinuousIndex;
+	typedef double                                                    MeasureType;
+	typedef TCoordRepType                                             PointValueType;
+	typedef itk::Vector< PointValueType, Dimension >                  VectorType;
+	typedef itk::Point< PointValueType, Dimension >                   PointType;
+	typedef itk::ContinuousIndex<TCoordRepType, Dimension >           ContinuousIndex;
 
-	typedef TReferenceImageType                              ReferenceImageType;
-	typedef typename ReferenceImageType::Pointer             ReferenceImagePointer;
-	typedef typename ReferenceImageType::ConstPointer        ReferenceImageConstPointer;
-	typedef typename ReferenceImageType::PixelType           ReferencePixelType;
-	typedef typename ReferencePixelType::ValueType           ReferenceValueType;
-	typedef typename ReferenceImageType::PointType           ReferencePointType;
-	typedef typename ReferenceImageType::DirectionType       DirectionType;
+	typedef itk::FixedArray<TCoordRepType, Dimension >                ScalesType;
 
-	typedef itk::VectorLinearInterpolateImageFunction
-			< ReferenceImageType >                           InterpolatorType;
-	typedef typename InterpolatorType::Pointer               InterpolatorPointer;
+	typedef TReferenceImageType                                       ReferenceImageType;
+	typedef typename ReferenceImageType::Pointer                      ReferenceImagePointer;
+	typedef typename ReferenceImageType::ConstPointer                 ReferenceImageConstPointer;
+	typedef typename ReferenceImageType::PixelType                    ReferencePixelType;
+	typedef typename ReferencePixelType::ValueType                    ReferenceValueType;
+	typedef typename ReferenceImageType::PointType                    ReferencePointType;
+	typedef typename ReferenceImageType::IndexType                    ReferenceIndexType;
+	typedef typename ReferenceImageType::DirectionType                DirectionType;
+	typedef typename ReferenceImageType::SizeType                     ReferenceSizeType;
+	typedef typename ReferenceImageType::SpacingType                  ReferenceSpacingType;
+	typedef itk::Array< MeasureType >                                 MeasureArray;
 
-	typedef itk::QuadEdgeMesh< VectorType, Dimension >       ContourType;
-	typedef typename ContourType::Pointer                    ContourPointer;
-	typedef typename ContourType::PointType                  ContourPointType;
-	typedef typename ContourType::ConstPointer               ContourConstPointer;
-	typedef typename std::vector<ContourPointer>             ContourList;
-	typedef typename std::vector<ContourConstPointer>        ConstContourList;
-	typedef typename ContourType::PointDataContainerPointer  PointDataContainerPointer;
-	typedef typename ContourType::PointsContainerIterator    PointsIterator;
-	typedef typename ContourType::PointsContainerConstIterator    PointsConstIterator;
+	typedef itk::SmoothingRecursiveGaussianImageFilter
+			< ReferenceImageType >                                    SmoothingFilterType;
+	typedef typename SmoothingFilterType::Pointer			          SmoothingFilterPointer;
+	typedef typename SmoothingFilterType::SigmaArrayType              SigmaArrayType;
 
-	typedef itk::NormalQuadEdgeMeshFilter
-			< ContourType, ContourType >                     NormalFilterType;
-	typedef typename NormalFilterType::Pointer               NormalFilterPointer;
-	typedef std::vector< NormalFilterPointer >               NormalFilterList;
+	typedef rstk::VectorLinearInterpolateImageFunction
+			< ReferenceImageType >                                    InterpolatorType;
+	typedef typename InterpolatorType::Pointer                        InterpolatorPointer;
+
+	typedef itk::QuadEdgeMesh< VectorType, Dimension >                VectorContourType;
+	typedef typename VectorContourType::Pointer                       ContourPointer;
+	typedef typename VectorContourType::PointType                     ContourPointType;
+	typedef typename VectorContourType::ConstPointer                  ContourConstPointer;
+	typedef typename std::vector<ContourPointer>                      ContourList;
+	typedef typename std::vector<ContourConstPointer>                 ConstContourList;
+	typedef typename VectorContourType::PointsContainerPointer        PointsContainerPointer;
+	typedef typename VectorContourType::PointDataContainer            PointDataContainer;
+	typedef typename VectorContourType::PointDataContainerPointer     PointDataContainerPointer;
+	typedef typename VectorContourType::PointsContainerIterator       PointsIterator;
+	typedef typename VectorContourType::PointsContainerConstIterator  PointsConstIterator;
+	typedef typename VectorContourType::PointIdentifier               PointIdentifier;
+	typedef typename VectorContourType::QEType                        QEType;
+	typedef typename VectorContourType::CellIdentifier                CellIdentifier;
+	typedef typename VectorContourType::CellType                      CellType;
+	typedef typename itk::QuadEdgeMeshPolygonCell<CellType>           PolygonType;
+	typedef itk::TriangleHelper< ContourPointType >                   TriangleType;
+
+	typedef std::vector< PointIdentifier >                            PointIdContainer;
+	typedef typename PointIdContainer::iterator                       PointIdIterator;
+
+	typedef itk::QuadEdgeMesh< PointValueType, Dimension >            ScalarContourType;
+	typedef typename ScalarContourType::Pointer                       ScalarContourPointer;
+
+	typedef vnl_sparse_matrix< PointValueType >                       SparseMatrix;
+	typedef vnl_vector< PointValueType >                              VNLVector;
+	typedef itk::FixedArray< VNLVector, Dimension >                   VNLVectorContainer;
+
+	typedef rstk::NormalQuadEdgeMeshFilter
+			< VectorContourType, VectorContourType >                  NormalFilterType;
+	typedef typename NormalFilterType::Pointer                        NormalFilterPointer;
+	typedef typename NormalFilterType::AreaContainerType              NormalFilterAreasContainer;
+	typedef std::vector< NormalFilterPointer >                        NormalFilterList;
 
 	typedef typename itk::CopyQuadEdgeMeshFilter
-			                  <ContourType,ContourType>      ContourCopyType;
-	typedef typename ContourCopyType::Pointer                ContourCopyPointer;
+			      <VectorContourType,VectorContourType>               ContourCopyType;
+	typedef typename ContourCopyType::Pointer                         ContourCopyPointer;
 
-	typedef itk::Image< VectorType, Dimension >              FieldType;
-	typedef typename FieldType::Pointer                      FieldPointer;
-	typedef typename FieldType::ConstPointer                 FieldConstPointer;
-	typedef typename FieldType::PointType                    FieldPointType;
-	typedef typename FieldType::IndexType                    FieldIndexType;
+	typedef typename itk::CopyQuadEdgeMeshFilter
+			      <VectorContourType,ScalarContourType>               ScalarContourCopyType;
+	typedef typename ScalarContourCopyType::Pointer                   ScalarContourCopyPointer;
+
+	typedef itk::Image< VectorType, Dimension >                       FieldType;
+	typedef typename FieldType::Pointer                               FieldPointer;
+	typedef typename FieldType::ConstPointer                          FieldConstPointer;
+	typedef typename FieldType::PointType                             FieldPointType;
+	typedef typename FieldType::IndexType                             FieldIndexType;
 
 	typedef itk::VectorLinearInterpolateImageFunction
-			           < FieldType >                         VectorInterpolatorType;
-	typedef typename VectorInterpolatorType::Pointer         VectorInterpolatorPointer;
+			           < FieldType >                                  VectorInterpolatorType;
+	typedef typename VectorInterpolatorType::Pointer                  VectorInterpolatorPointer;
 
 	typedef itk::VectorResampleImageFilter
-                                  <FieldType,FieldType >     DisplacementResamplerType;
-	typedef typename DisplacementResamplerType::Pointer      DisplacementResamplerPointer;
+                                  <FieldType,FieldType >              DisplacementResamplerType;
+	typedef typename DisplacementResamplerType::Pointer               DisplacementResamplerPointer;
 
 	typedef itk::DisplacementFieldJacobianDeterminantFilter
-		< FieldType >                                        ModulateFilterType;
-	typedef typename ModulateFilterType::Pointer             ModulateFilterPointer;
+		< FieldType >                                                 ModulateFilterType;
+	typedef typename ModulateFilterType::Pointer                      ModulateFilterPointer;
 
-
-	typedef itk::DisplacementFieldTransform<TCoordRepType, Dimension>
-															 DisplacementTransformType;
-	typedef typename DisplacementTransformType::Pointer      DisplacementTransformPointer;
-
-	typedef unsigned char                                    ROIPixelType;
-	typedef itk::Image< ROIPixelType, Dimension >            ROIType;
-	typedef typename ROIType::Pointer                        ROIPointer;
-	typedef typename ROIType::ConstPointer                   ROIConstPointer;
+	typedef unsigned char                                             ROIPixelType;
+	typedef itk::Image< ROIPixelType, Dimension >                     ROIType;
+	typedef typename ROIType::Pointer                                 ROIPointer;
+	typedef typename ROIType::ConstPointer                            ROIConstPointer;
 	typedef typename itk::NearestNeighborInterpolateImageFunction
-			< ROIType, TCoordRepType >                       ROIInterpolatorType;
-	typedef std::vector< ROIConstPointer >                   ROIList;
-	typedef itk::TriangleMeshToBinaryImageFilter
-			          <ContourType, ROIType>	             BinarizeMeshFilterType;
-	typedef typename BinarizeMeshFilterType::Pointer         BinarizeMeshFilterPointer;
+			< ROIType, TCoordRepType >                                ROIInterpolatorType;
+	typedef itk::ResampleImageFilter
+			< ROIType, ROIType, TCoordRepType >                       ROIResampleType;
+	typedef std::vector< ROIConstPointer >                            ROIList;
 
-	typedef itk::Image< float, Dimension >                   ProbabilityMapType;
-	typedef typename ProbabilityMapType::Pointer             ProbabilityMapPointer;
-	typedef typename ProbabilityMapType::ConstPointer        ProbabilityMapConstPointer;
-	typedef std::vector< ProbabilityMapPointer >             ProbabilityMapList;
+	typedef MahalanobisDistanceModel< ReferenceImageType >            EnergyModelType;
+	typedef typename EnergyModelType::Pointer                         EnergyModelPointer;
 
-	typedef typename itk::MeshSpatialObject<ContourType>     ContourSpatialObject;
-	typedef typename ContourSpatialObject::Pointer           ContourSpatialPointer;
-	typedef typename ContourSpatialObject::ConstPointer      ContourSpatialConstPointer;
-	typedef typename std::vector<ContourSpatialPointer>      SpatialObjectsVector;
+	typedef EnergyCalculatorFilter<ReferenceImageType>                EnergyFilter;
+	typedef typename EnergyFilter::Pointer                            EnergyFilterPointer;
+	typedef typename EnergyFilter::PriorsImageType                    PriorsImageType;
+	typedef typename PriorsImageType::Pointer                         PriorsImagePointer;
+	typedef typename PriorsImageType::PixelType                       PriorsPixelType;
+	typedef typename PriorsImageType::InternalPixelType               PriorsValueType;
 
-	typedef itk::SpatialObjectToImageFilter
-			       < ContourSpatialObject, ROIType >         SpatialObjectToImageFilterType;
-	typedef typename SpatialObjectToImageFilterType::Pointer SpatialObjectToImageFilterPointer;
-
-	typedef SparseMatrixTransform<TCoordRepType, Dimension > FieldInterpolatorType;
-	typedef typename FieldInterpolatorType::Pointer          FieldInterpolatorPointer;
+	typedef MultilabelBinarizeMeshFilter< VectorContourType >         BinarizeMeshFilterType;
+	typedef typename BinarizeMeshFilterType::Pointer                  BinarizeMeshFilterPointer;
+	typedef typename BinarizeMeshFilterType::OutputImageType          BinarizationImageType;
 
 	typedef DownsampleAveragingFilter
-			                 <ROIType, ProbabilityMapType >  ResampleROIFilterType;
-	typedef typename ResampleROIFilterType::Pointer          ResampleROIFilterPointer;
-	typedef std::vector< ResampleROIFilterPointer >          ResampleROIFilterList;
+			< BinarizationImageType, PriorsImageType >                DownsampleFilter;
+	typedef typename DownsampleFilter::Pointer                        DownsamplePointer;
 
-	typedef typename itk::WarpMeshFilter
-			< ContourType,
-			  ContourType,
-			  FieldType>                                     WarpContourType;
-	typedef typename WarpContourType::Pointer                WarpContourPointer;
+	typedef itk::Image< float, Dimension >                            ProbabilityMapType;
+	typedef typename ProbabilityMapType::Pointer                      ProbabilityMapPointer;
+	typedef typename ProbabilityMapType::ConstPointer                 ProbabilityMapConstPointer;
+	typedef std::vector< ProbabilityMapPointer >                      ProbabilityMapList;
 
-	typedef typename std::vector< ROIPixelType >             ContourOuterRegions;
-	typedef typename std::vector< ContourOuterRegions >      ContourOuterRegionsList;
-	typedef typename std::vector< PointType >                PointsVector;
-	typedef typename std::vector< PointsVector >             PointsList;
+	typedef itk::NearestNeighborInterpolateImageFunction
+			< ProbabilityMapType >                                    MaskInterpolatorType;
+	typedef typename MaskInterpolatorType::Pointer                    MaskInterpolatorPointer;
+	typedef itk::ResampleImageFilter
+			< ProbabilityMapType, ProbabilityMapType >                ProbmapResampleType;
+	typedef typename ProbmapResampleType::Pointer                     ProbmapResamplePointer;
 
-	void CopyInformation( const FieldType* field);
+	typedef typename itk::MeshSpatialObject<VectorContourType>        ContourSpatialObject;
+	typedef typename ContourSpatialObject::Pointer                    ContourSpatialPointer;
+	typedef typename ContourSpatialObject::ConstPointer               ContourSpatialConstPointer;
+	typedef typename std::vector<ContourSpatialPointer>               SpatialObjectsVector;
+
+	typedef itk::SpatialObjectToImageFilter
+			       < ContourSpatialObject, ROIType >                  SpatialObjectToImageFilterType;
+	typedef typename SpatialObjectToImageFilterType::Pointer          SpatialObjectToImageFilterPointer;
+
+	typedef DownsampleAveragingFilter
+			                 <ROIType, ProbabilityMapType >           ResampleROIFilterType;
+	typedef typename ResampleROIFilterType::Pointer                   ResampleROIFilterPointer;
+	typedef std::vector< ResampleROIFilterPointer >                   ResampleROIFilterList;
+
+	typedef typename std::vector< ROIPixelType >                      ContourOuterRegions;
+	typedef typename std::vector< ContourOuterRegions >               ContourOuterRegionsList;
+	typedef typename std::vector< PointType >                         PointsVector;
+	typedef typename std::vector< PointsVector >                      PointsList;
+
+	typedef itk::QuadEdgeMesh< VectorType, Dimension> 	  	          ShapeGradientType;
+	typedef typename ShapeGradientType::Pointer                       ShapeGradientPointer;
+	typedef typename ShapeGradientType::PointDataContainer            ShapeGradientsContainer;
+    typedef typename ShapeGradientsContainer::Pointer                 ShapeGradientsContainerPointer;
+	typedef typename std::vector<ShapeGradientPointer>                ShapeGradientList;
+	typedef typename itk::CopyQEMeshStructureFilter
+			                <VectorContourType,ShapeGradientType>     ShapeCopyType;
+	typedef typename ShapeCopyType::Pointer                           ShapeCopyPointer;
+	typedef itk::FixedArray< PointValueType, 7u >                     GradientStatsArray;
+
+	struct GradientSample {
+		PointValueType grad;
+		PointValueType w;
+		VectorType normal;
+		size_t cid;         // point id in contour sid
+		size_t gid;         // global point id
+		size_t sid;         // shape id
+
+		//GradientSample(): grad(0), cid(0), gid(0) {}
+		GradientSample( PointValueType g, VectorType n, size_t i ): grad(g), w(1.0), normal(n), cid(0),gid(i),sid(0) {}
+		GradientSample( PointValueType g, PointValueType weight, VectorType n, size_t i, size_t j, size_t k ): grad(g), w(weight), normal(n), cid(i), gid(j), sid(k) {}
+		GradientSample( const GradientSample &s ): grad(s.grad), w(s.w), normal(s.normal), cid(s.cid), gid(s.gid), sid(s.sid) {}
+
+		GradientSample operator+(const GradientSample& g) const {
+			PointValueType val = (grad*w + g.grad * g.w )/ (w+g.w);
+			return GradientSample( grad+g.grad, cid, gid );
+		}
+
+		bool operator<(const GradientSample& g) const {
+			return grad < g.grad;
+		}
+
+		bool operator>(const GradientSample& g) const {
+			return grad > g.grad;
+		}
+	};
+
+//	struct by_grad {
+//		bool operator()( GradientSample const &a, GradientSample const &b ) {
+//			return a.grad < b.grad;
+//		}
+//	};
+	struct by_gid {
+		bool operator()( GradientSample const &a, GradientSample const &b ) {
+			return a.gid < b.gid;
+		}
+	};
+	struct by_cid {
+		bool operator()( GradientSample const &a, GradientSample const &b ) {
+			return a.cid < b.cid;
+		}
+	};
+
+
+	typedef typename std::vector< GradientSample >           SampleType;
+
+	itkSetClampMacro( DecileThreshold, float, 0.0, 0.5 );
+	itkGetMacro( DecileThreshold, float );
+
+	itkGetMacro( CurrentContours, ContourList);
+	itkGetMacro( Gradients, ShapeGradientList );
+	itkGetMacro( Vertices, PointsVector );
+	itkGetMacro( ValidVertices, PointIdContainer );
+
+	virtual void SetCurrentDisplacements( const VNLVectorContainer& vals );
+
+	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
+	virtual void SetReferenceImage (const ReferenceImageType * _arg);
+
+	itkGetConstObjectMacro( CurrentMaps, PriorsImageType);
+
+	itkGetMacro( ApplySmoothing, bool );
+	itkGetMacro( UseBackground, bool );
+	itkSetMacro( UseBackground, bool );
+
+	itkGetMacro( Sigma, SigmaArrayType );
+	itkSetMacro( Sigma, SigmaArrayType );
+
+	itkGetMacro( MaxEnergy, MeasureType );
+
+	void SetSigma( float s ) {
+		itkDebugMacro( "set Sigma to " << s );
+		bool modified = false;
+		for( size_t i = 0; i<Dimension; i++){
+			if ( this->m_Sigma[i] != s ) {
+				modified = true;
+				break;
+			}
+		}
+		if ( modified ) {
+			this->m_Sigma.Fill(s);
+			this->m_ApplySmoothing = true;
+			this->Modified();
+		}
+	}
 
 	MeasureType GetValue();
+	itkGetConstMacro(RegionValue, MeasureArray);
+	itkGetConstMacro(GradientStatistics, GradientStatsArray);
+	void ComputeDerivative(PointValueType* gradVector, ScalesType scales);
 
-	void ComputeDerivative( void );
+	virtual void Initialize();
+	virtual void UpdateDescriptors() {
+		this->m_Model->SetPriorsMap(this->m_CurrentMaps);
+		this->m_Model->Update();
+		this->m_MaxEnergy = this->m_Model->GetMaxEnergy();
+	}
 
-	void UpdateContour( const FieldType* newField );
+	virtual std::string PrintFormattedDescriptors() {
+		return this->m_Model->PrintFormattedDescriptors();
+	}
 
-	virtual void Initialize( void );
+	itkGetConstObjectMacro( CurrentRegions, ROIType );
 
-	ROIConstPointer GetCurrentRegion( size_t idx );
-	ROIConstPointer GetCurrentRegions( void );
+	itkGetConstObjectMacro( BackgroundMask, ProbabilityMapType);
+	virtual void SetBackgroundMask (const ProbabilityMapType * _arg);
 
-	const ProbabilityMapType* GetCurrentMap( size_t idx );
+	itkGetConstMacro( OffMaskVertices, std::vector<size_t>);
 
+	size_t AddShapePrior( const VectorContourType* prior );
 
-	size_t AddShapePrior( const ContourType* prior );
-	//itkGetMacro(ShapePrior, ContourList);
+	size_t AddShapeTarget( const VectorContourType* surf ) {
+		this->m_Target.push_back( surf );
+	}
 
-	itkGetMacro(CurrentContours, ContourList);
+	static void AddOptions( SettingsDesc& opts );
 
-	itkSetObjectMacro(Derivative, FieldType);
-	itkGetConstObjectMacro(Derivative, FieldType);
-
-	itkSetObjectMacro(CurrentDisplacementField, FieldType);
-	itkGetConstObjectMacro(CurrentDisplacementField, FieldType);
-
-	itkSetConstObjectMacro(ReferenceImage, ReferenceImageType);
-	itkGetConstObjectMacro(ReferenceImage, ReferenceImageType);
-
-	itkSetObjectMacro(FieldInterpolator, FieldInterpolatorType);
-	itkGetObjectMacro(FieldInterpolator, FieldInterpolatorType);
+	const MeasureArray GetFinalEnergy() const;
+	std::string GetInfoString() {
+		this->m_InfoBuffer << " } }";
+		std::string result = this->m_InfoBuffer.str();
+		this->m_InfoBuffer.str("");
+		this->m_InfoBuffer << "{ \"info\": { ";
+		return result;
+	}
 
 protected:
 	FunctionalBase();
@@ -246,56 +419,89 @@ protected:
 
 	void InitializeSamplingGrid( void );
 
-	inline virtual MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roi ) = 0;
-	inline virtual MeasureType GetEnergyAtPoint( PointType& point, size_t roi ) = 0;
-	inline virtual MeasureType GetEnergyAtPoint( PointType& point, size_t roi, ReferencePixelType& value ) = 0;
+	//virtual MeasureType GetEnergyOfSample( ReferencePixelType sample, size_t roim, bool bias = false ) const = 0;
+	MeasureType GetEnergyAtPoint( const PointType& point, size_t roi ) const;
+	MeasureType GetEnergyAtPoint( const PointType& point, size_t roi, ReferencePixelType& value ) const;
+	inline MeasureType EvaluateGradient( const PointType& point, size_t outer_roi, size_t inner_roi ) const;
 
+	inline bool CheckExtent( ContourPointType& p, ContinuousIndex& idx ) const;
+	virtual void ParseSettings();
 
-	inline bool IsInside( const PointType p, ContinuousIndex& idx ) const;
-	//bool CheckExtents( const ContourType* prior ) const;
+	//virtual MeasureType GetEnergyOffset(size_t roi) const = 0;
 
-	mutable MeasureType m_Value;
-	FieldPointer m_Derivative;
-	FieldPointer m_ReferenceSamplingGrid;
-	FieldPointer m_CurrentDisplacementField;
-	ContourList m_CurrentContours;
-	ConstContourList m_Priors;
-	NormalFilterList m_NormalFilter;
-	ContourCopyPointer m_ContourCopier;
-	WarpContourPointer m_ContourUpdater;
-	FieldInterpolatorPointer m_FieldInterpolator;
-	DisplacementResamplerPointer m_EnergyResampler;
-	ROIList m_ROIs;
-	ROIList m_CurrentROIs;
-	ProbabilityMapList m_CurrentMaps;
-	ROIPointer m_CurrentRegions;
-	DisplacementTransformPointer m_Transform;
-	ReferenceImageConstPointer m_ReferenceImage;
-	ContourOuterRegionsList m_OuterList;
+	size_t m_NumberOfContours;
+	size_t m_NumberOfRegions;
+	size_t m_NumberOfVertices;
+	size_t m_SamplingFactor;
+	SigmaArrayType m_Sigma;
+	float m_DecileThreshold;
+	bool m_DisplacementsUpdated;
 	bool m_EnergyUpdated;
 	bool m_RegionsUpdated;
-	size_t m_NumberOfContours;
+	bool m_ApplySmoothing;
+	bool m_UseBackground;
 
-	size_t m_NumberOfPoints;
-	size_t m_NumberOfNodes;
-
-	ReferencePointType m_Origin, m_End;
+	mutable MeasureType m_Value;
+	mutable MeasureArray m_RegionValue;
+	mutable MeasureType m_MaxEnergy;
+	FieldPointer m_ReferenceSamplingGrid;
+	ContourList m_CurrentContours;
+	ShapeGradientList m_Gradients;
+	ConstContourList m_Priors;
+	ConstContourList m_Target;
+	NormalFilterList m_NormalsFilter;
+	EnergyModelPointer m_Model;
+	EnergyFilterPointer m_EnergyCalculator;
+	// ROIList m_ROIs;
+	ROIList m_CurrentROIs;
+	PriorsImagePointer m_CurrentMaps;
+	ProbabilityMapConstPointer m_BackgroundMask;
+	ROIPointer m_CurrentRegions;
+	ReferenceImageConstPointer m_ReferenceImage;
+	ReferencePointType m_Origin, m_End, m_FirstPixelCenter, m_LastPixelCenter;
+	ReferencePointType m_OldOrigin;
+	ReferenceSizeType m_ReferenceSize;
+	ReferenceSpacingType m_ReferenceSpacing;
 	DirectionType m_Direction;
+	DirectionType m_OldDirection;
+	//VectorInterpolatorPointer m_LinearInterpolator;
+	//WarpContourFilterList m_WarpContourFilter;
+
+
+	InterpolatorPointer m_Interp;
+	MaskInterpolatorPointer m_MaskInterp;
+	PointDataContainerPointer m_CurrentDisplacements;
+	PointsVector m_Vertices;
+	PointIdContainer m_ValidVertices;
+	PointIdContainer m_OuterRegion;
+	PointIdContainer m_InnerRegion;
+	PointIdContainer m_Offsets;
+
+	std::vector<size_t> m_OffMaskVertices;
+
+	GradientStatsArray m_GradientStatistics;
+
+	mutable std::stringstream m_InfoBuffer;
+
 private:
 	FunctionalBase(const Self &);  //purposely not implemented
 	void operator=(const Self &); //purposely not implemented
 
-	void ComputeCurrentRegions( void );
-	void ComputeOuterRegions( void );
-	void InitializeCurrentContours( void );
-	void InitializeInterpolatorGrid( void );
-
+	void UpdateContour();
+	void UpdateNormals();
+	void ComputeCurrentRegions();
+	void InitializeContours();
+	void InitializeInterpolatorGrid();
+	double ComputePointArea( const PointIdentifier &iId, VectorContourType *mesh );
 
 }; // end FunctionalBase Class
+
+itkEventMacro(WarningEvent, itk::AnyEvent);
+
 } // end namespace rstk
 
 #ifndef ITK_MANUAL_INSTANTIATION
 #include "FunctionalBase.hxx"
 #endif
 
-#endif /* LEVELSETSBASE_H_ */
+#endif /* FUNCTIONALBASE_H_ */

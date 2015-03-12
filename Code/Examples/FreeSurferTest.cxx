@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
 	polyDataWriter->Update();
 
 	DisplacementResamplerType::Pointer disResampler = DisplacementResamplerType::New();
-	disResampler->SetInput(ls->GetCurrentDisplacementField() );
+	disResampler->SetInput( opt->GetCurrentDisplacementField() );
 	disResampler->SetOutputOrigin(    im->GetOrigin()  );
 	disResampler->SetOutputSpacing(   im->GetSpacing() );
 	disResampler->SetSize(            im->GetLargestPossibleRegion().GetSize() );

@@ -44,20 +44,22 @@
 #define SPECTRALOPTIMIZER_HXX_
 
 #include "SpectralOptimizer.h"
-
+#include <algorithm>
 #include <vector>
+#include <vnl/vnl_vector.h>
 #include <vnl/vnl_math.h>
 #include <vnl/vnl_matrix.h>
 #include <vnl/vnl_diag_matrix.h>
 #include <cmath>
-#include <itkComplexToRealImageFilter.h>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+
+#include <itkComplexToRealImageFilter.h>
+#include <itkImageAlgorithm.h>
+
 using namespace std;
 
-#include "DisplacementFieldFileWriter.h"
-#include "DisplacementFieldComponentsFileWriter.h"
 
 namespace rstk {
 
@@ -65,23 +67,22 @@ namespace rstk {
  * Default constructor
  */
 template< typename TFunctional >
-SpectralOptimizer<TFunctional>::SpectralOptimizer() {
-	this->m_LearningRate = itk::NumericTraits<InternalComputationValueType>::One;
-	this->m_CurrentValue = itk::NumericTraits<MeasureType>::infinity();
-	this->m_MinimumConvergenceValue = 1e-8;
-	this->m_ConvergenceWindowSize = 30;
-	this->m_StepSize =  1.0e-3;
-	this->SetAlpha( 2.0 );
-	this->SetBeta( 2.0 );
-
-	this->m_NumberOfIterations = 100;
-	this->m_CurrentIteration   = 0;
-	this->m_StopCondition      = MAXIMUM_NUMBER_OF_ITERATIONS;
+SpectralOptimizer<TFunctional>::SpectralOptimizer():
+Superclass(),
+m_DenominatorCached( false ),
+m_RegularizationEnergy( 0.0 ),
+m_CurrentTotalEnergy(itk::NumericTraits<MeasureType>::infinity()),
+m_RegularizationEnergyUpdated(true)
+{
+	this->m_Alpha.Fill( 0.0 );
+	this->m_Beta.Fill( 0.0 );
 	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
-	this->m_GridSize.Fill( 15 );
+	SplineTransformPointer defaultTransform = SplineTransformType::New();
+	this->m_Transform = itkDynamicCastInDebugMode< TransformType* >( defaultTransform.GetPointer() );
+	this->m_Transform->SetNumberOfThreads( this->GetNumberOfThreads() );
 
-	m_CurrentTotalEnergy = itk::NumericTraits<MeasureType>::infinity();
-	m_RegularizationEnergyUpdated = false;
+	this->m_Scales.SetSize(Dimension);
+	this->m_Scales.Fill(1.0);
 }
 
 template< typename TFunctional >
@@ -93,511 +94,523 @@ void SpectralOptimizer<TFunctional>
 	os << indent << "Current iteration: " << this->m_CurrentIteration << std::endl;
 	os << indent << "Stop condition:" << this->m_StopCondition << std::endl;
 	os << indent << "Stop condition description: " << this->m_StopConditionDescription.str() << std::endl;
+	os << indent << "Alpha: " << this->m_Alpha << std::endl;
+	os << indent << "Beta: " << this->m_Beta << std::endl;
 }
 
-
-
 template< typename TFunctional >
-void SpectralOptimizer<TFunctional>::Start() {
-	itkDebugMacro("SpectralOptimizer::Start()");
+void SpectralOptimizer<TFunctional>::ComputeDerivative() {
+	// Multiply phi and copy reshaped on this->m_Derivative
+	WeightsMatrix phi = this->m_Transform->GetPhi()->transpose();
 
+	size_t dimsize = this->m_Functional->GetValidVertices().size();
+	size_t fullsize = dimsize * Dimension;
 
-	/* Settings validation */
-	if ( this->m_Functional.IsNull() ) {
-		itkExceptionMacro("Energy functional must be set");
+	GradientScales scales;
+	for( size_t i = 0; i < Dimension; i++ ) {
+		scales[i] = this->m_Scales[i];
 	}
 
-	/* Check & initialize parameter fields */
-	this->InitializeParameters();
+	ParametersVector gradVector = ParametersVector(fullsize, 0.0 );
+	float* gvdata = gradVector.data_block();
+	this->m_Functional->ComputeDerivative(gvdata, scales);
+	this->m_MaximumGradient = fabs(this->m_Functional->GetGradientStatistics()[4] -
+			this->m_Functional->GetGradientStatistics()[2]);
 
-	this->InitializeAuxiliarParameters();
+	ParametersContainer derivative;
+	ParametersVector dimVector = ParametersVector(dimsize);
 
-	/* Initialize convergence checker */
-	this->m_ConvergenceMonitoring = ConvergenceMonitoringType::New();
-	this->m_ConvergenceMonitoring->SetWindowSize( this->m_ConvergenceWindowSize );
+	typename CoefficientsImageType::PixelType* buff[Dimension];
+	float* dimdata;
 
-//	if( this->m_ReturnBestParametersAndValue )	{
-//		this->m_BestParameters = this->GetCurrentPosition( );
-//		this->m_CurrentBestValue = NumericTraits< MeasureType >::max();
-//	}
+	double norm = 1.0;
+	for ( size_t i = 0; i<Dimension; i++) {
+		if( this->m_Scales[i] > 1.0e-8 ) {
+			dimdata = &gvdata[i*dimsize];
+			dimVector.copy_in(dimdata);
+			phi.mult( dimVector, derivative[i] );
 
-	this->m_Functional->CopyInformation( this->m_Parameters );
-	this->m_Functional->Initialize();
-	this->m_CurrentIteration = 1;
-	this->Resume();
-}
-
-template< typename TFunctional >
-const typename SpectralOptimizer<TFunctional>::StopConditionReturnStringType
-SpectralOptimizer<TFunctional>::
-GetStopConditionDescription() const {
-  return this->m_StopConditionDescription.str();
-}
-
-template< typename TFunctional >
-void SpectralOptimizer<TFunctional>::Stop() {
-	itkDebugMacro( "Stop called with a description - "
-	  << this->GetStopConditionDescription() );
-	this->m_Stop = true;
-	this->InvokeEvent( itk::EndEvent() );
-
-//	if( this->m_ReturnBestParametersAndValue )	{
-//		this->GetMetric()->SetParameters( this->m_BestParameters );
-//		this->m_CurrentValue = this->m_CurrentBestValue;
-//	}
-}
-
-template< typename TFunctional >
-void SpectralOptimizer<TFunctional>::Resume() {
-	this->m_StopConditionDescription.str("");
-	this->m_StopConditionDescription << this->GetNameOfClass() << ": ";
-	this->InvokeEvent( itk::StartEvent() );
-	this->m_Stop = false;
-
-
-	while( ! this->m_Stop )	{
-		/* Compute functional value/derivative. */
-		try	{
-			this->m_Functional->ComputeDerivative();
+			double m = derivative[i].inf_norm();
+			if ( m > norm )	norm = m;
 		}
-		catch ( itk::ExceptionObject & err ) {
-			this->m_StopCondition = COSTFUNCTION_ERROR;
-			this->m_StopConditionDescription << "Functional error during optimization";
-			this->Stop();
-			throw err;  // Pass exception to caller
-		}
+		this->m_DerivativeCoefficients[i]->FillBuffer( 0.0 );
+		buff[i] = this->m_DerivativeCoefficients[i]->GetBufferPointer();
+	}
 
-		/* Check if optimization has been stopped externally.
-		 * (Presumably this could happen from a multi-threaded client app?) */
-		if ( this->m_Stop ) {
-			this->m_StopConditionDescription << "Stop() called externally";
-			break;
-		}
+	size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
+	InternalComputationValueType val;
+	size_t dim;
+	VectorType maxSpeed, vs;
+	maxSpeed.Fill(0.0);
 
+	//double norm = this->m_Functional->GetValidVertices().size();
+	std::vector< double > speednorms;
 
-		/* Advance one step along the gradient.
-		 * This will modify the gradient and update the transform. */
-		this->Iterate();
+	for( size_t r = 0; r<nPix; r++ ){
+		vs.Fill(0.0);
+		for( size_t c=0; c<Dimension; c++) {
+			if (this->m_Scales[c] > 1.0e-8) {
+				val = derivative[c][r];
+				vs[c] = val;
 
-		/* Update the level sets contour and deformation field */
-		this->m_Functional->UpdateContour( this->m_NextParameters );
-
-		this->m_CurrentValue = this->ComputeIterationChange();
-
-		this->SetUpdate();
-
-
-		/* TODO Store best value and position */
-		//if ( this->m_ReturnBestParametersAndValue && this->m_CurrentValue < this->m_CurrentBestValue )
-		//{
-		//	this->m_CurrentBestValue = this->m_CurrentValue;
-		//	this->m_BestParameters = this->GetCurrentPosition( );
-		//}
-
-#ifndef NDEBUG
-		size_t nContours =this->m_Functional->GetCurrentContours().size();
-
-		typedef rstk::DisplacementFieldComponentsFileWriter<ParametersType> Writer;
-		typename Writer::Pointer p = Writer::New();
-		std::stringstream ss;
-		ss.str("");
-		ss << "parameters_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
-		p->SetFileName( ss.str().c_str() );
-		p->SetInput( this->m_Parameters );
-		p->Update();
-
-		typedef itk::ImageFileWriter< typename FunctionalType::ProbabilityMapType > MapWriter;
-		for( size_t r = 0; r <= nContours; r++){
-			ss.str("");
-			ss << "region_" << r << "_it" << std::setfill('0')<<std::setw(3) << this->m_CurrentIteration << ".nii.gz";
-			typename MapWriter::Pointer wr = MapWriter::New();
-			wr->SetInput( this->m_Functional->GetCurrentMap(r));
-			wr->SetFileName(ss.str().c_str() );
-			wr->Update();
-		}
-#endif
-
-		this->InvokeEvent( itk::IterationEvent() );
-
-		/*
-		 * Check the convergence by WindowConvergenceMonitoringFunction.
-		 */
-
-		/*
-		this->m_ConvergenceMonitoring->AddEnergyValue( this->m_CurrentValue );
-		try {
-			this->m_ConvergenceValue = this->m_ConvergenceMonitoring->GetConvergenceValue();
-			if (this->m_ConvergenceValue <= this->m_MinimumConvergenceValue) {
-				this->m_StopConditionDescription << "Convergence checker passed at iteration " << this->m_CurrentIteration << ".";
-				this->m_StopCondition = Superclass::CONVERGENCE_CHECKER_PASSED;
-				this->Stop();
-				break;
+				if ( fabs(val) > 1.0e-8 )
+					*( buff[c] + r ) = val;
 			}
 		}
-		catch(std::exception & e) {
-			std::cerr << "GetConvergenceValue() failed with exception: " << e.what() << std::endl;
-		}
+		speednorms.push_back(vs.GetNorm());
+	}
+	std::sort(speednorms.begin(), speednorms.end());
 
+	//if( this->m_AutoStepSize && this->m_CurrentIteration < 5 ) {
+	//	this->m_StepSize = (this->m_StepSize  + this->m_LearningRate * ( this->m_MaxDisplacement.GetNorm() / maxSpeed.GetNorm() ) )*0.5;
+	//}
+}
 
-		if( this->m_CurrentValue < this->m_ConvergenceValue ) {
-			this->m_StopConditionDescription << "Parameters field changed below the minimum threshold.";
-			this->m_StopCondition = Superclass::STEP_TOO_SMALL;
-			this->Stop();
-			break;
-		}
-		*/
+template< typename TFunctional >
+void SpectralOptimizer<TFunctional>::PostIteration() {
+	/* Update the deformation field */
+	this->ComputeIterationSpeed();
 
-		/* Update and check iteration count */
-		if ( this->m_CurrentIteration >= this->m_NumberOfIterations ) {
-			this->m_StopConditionDescription << "Maximum number of iterations (" << this->m_NumberOfIterations << ") exceeded.";
-			this->m_StopCondition = MAXIMUM_NUMBER_OF_ITERATIONS;
-			this->Stop();
-			break;
-		}
+	this->m_CurrentNorm = this->m_MaxSpeed;
 
-		this->m_CurrentIteration++;
-	} //while (!m_Stop)
+	if (this->m_UseLightWeightConvergenceChecking) {
+		this->m_CurrentEnergy = this->m_MaximumGradient;
+	} else {
+		this->m_CurrentEnergy = this->GetCurrentEnergy();
+	}
+
+	this->m_CurrentValue = this->m_CurrentEnergy;
+	this->m_Transform->SetCoefficientsImages( this->m_NextCoefficients );
+	this->m_Transform->InterpolatePoints();
+	this->SetUpdate();
+
+	this->m_Functional->SetCurrentDisplacements( this->m_Transform->GetPointValues() );
 }
 
 
 template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
+	bool haveAlpha = this->m_Alpha.GetNorm() > 1.0e-8;
+	bool haveBeta = this->m_Beta.GetNorm() > 1.0e-8;
+
+	if (!haveAlpha && !haveBeta) {
+		return 0;
+	}
+
 	if (!this->m_RegularizationEnergyUpdated ){
 		this->m_RegularizationEnergy=0;
-		const VectorType* fBuffer = this->m_LastField->GetBufferPointer();
-		size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
+
+		const VectorType* fBuffer = this->m_LastCoeff->GetBufferPointer();
+		const VectorType* dBuffer;
+		FieldConstPointer derivCoeff;
+
+		if (haveBeta) {
+			dBuffer = derivCoeff->GetBufferPointer();
+		}
+
+		// Initialize dimensional parameters
+		double alpha[Dimension];
+		double beta[Dimension];
+		double vxvol = 1.0;
+		for (size_t i = 0; i<Dimension; i++ ) {
+			alpha[i] = this->m_Alpha[i];
+			beta[i] = this->m_Beta[i];
+			vxvol*= this->m_LastCoeff->GetSpacing()[i];
+		}
 
 		VectorType u;
+		VectorType du;
+		double u2, du2;
+		double energy = 0.0;
+		double totalVol = 0.0;
+		double eA, eB, e;
+		size_t nPix = this->m_LastCoeff->GetLargestPossibleRegion().GetNumberOfPixels();
 
+		u.Fill(0.0);
+		du.Fill(0.0);
 		for ( size_t pix = 0; pix<nPix; pix++) {
-			u = *(fBuffer+pix);
-			this->m_RegularizationEnergy+= dot_product(u.GetVnlVector(), this->m_A.GetVnlMatrix() * u.GetVnlVector() );
+			if (haveAlpha) u = *(fBuffer+pix);
+			if (haveBeta) du = *(dBuffer + pix);
+
+			e = 0.0;
+			eA = 0.0;
+			eB = 0.0;
+			for ( size_t i = 0; i<Dimension; i++) {
+				// Regularization, first term
+				u2 = u[i] * u[i];
+				if (u2 > 1.0e-4)
+					eA+= alpha[i] * u2;
+
+				// Regularization, second term
+				du2 = du[i] * du[i];
+				if (du2 > 1.0e-5)
+					eB+= beta[i] * du2;
+			}
+			energy+= (eA + eB);
 		}
 
-		double normalizer = 1.0;
-
-		for( size_t i = 0; i<Dimension; i++ ) {
-			normalizer*= this->m_LastField->GetSpacing()[i];
-		}
-
-		this->m_Functional->GetFieldInterpolator()->ComputeJacobian();
-
-		typedef typename FunctionalType::FieldInterpolatorType::JacobianType JacobianType;
-		JacobianType j;
-		JacobianType M;
-
-		for ( size_t pix = 0; pix<nPix; pix++) {
-			j = this->m_Functional->GetFieldInterpolator()->GetJacobian(pix);
-			M = (j * m_B) * j.GetTranspose();
-			for ( size_t i = 0; i<Dimension; i++ )
-				this->m_RegularizationEnergy+= M(i,i);
-		}
-
-
-		this->m_RegularizationEnergy = normalizer * this->m_RegularizationEnergy;
+		this->m_RegularizationEnergy = energy;
 		this->m_RegularizationEnergyUpdated = true;
 	}
 	return this->m_RegularizationEnergy;
 }
 
 template< typename TFunctional >
-void SpectralOptimizer<TFunctional>::SpectralUpdate(
-		ParametersPointer parameters,
-		const ParametersType* lambda,
-		ParametersPointer nextParameters,
-		bool changeDirection )
-{
+void SpectralOptimizer<TFunctional>::ComputeUpdate(
+		CoefficientsImageArray uk,
+		const CoefficientsImageArray gk,
+		CoefficientsImageArray next_uk,
+		bool changeDirection){
+
+	CoefficientsImagePointer result;
+	InternalVectorType s;
+
+	for( size_t d = 0; d < Dimension; d++ ) {
+		typename MultiplyFilterType::Pointer step_f = MultiplyFilterType::New();
+		step_f->SetConstant( this->m_StepSize );
+		step_f->SetInput( gk[d] );
+		step_f->Update();
+
+		typename AddFilterType::Pointer add_f = AddFilterType::New();
+		add_f->SetInput1( uk[d] );
+		add_f->SetInput2( step_f->GetOutput() );
+		add_f->Update();
+		s[d] = 1.0;
+
+		if( this->m_Alpha[d] > 1.0e-8) {
+			typename MultiplyFilterType::Pointer scale_f = MultiplyFilterType::New();
+			s[d] = 1.0 / (1.0 + 2.0 * this->m_Alpha[d] * this->m_StepSize);
+			scale_f->SetConstant( s[d] );
+			scale_f->SetInput(add_f->GetOutput());
+			scale_f->Update();
+			result = scale_f->GetOutput();
+		} else {
+			result = add_f->GetOutput();
+		}
+
+		if( this->m_Beta[d] > 1.0e-8) {
+			InternalComputationValueType scaler = 2.0 * this->m_Beta[d] * this->m_StepSize * s[d];
+			this->BetaRegularization(result, next_uk, scaler, d);
+		} else {
+			// Set component in destination buffer of coefficients
+			itk::ImageAlgorithm::Copy< CoefficientsImageType, CoefficientsImageType >(
+				result, next_uk[d],
+				result->GetLargestPossibleRegion(),
+				next_uk[d]->GetLargestPossibleRegion()
+			);
+		}
+	}
+
+//	double norm = 0.0;
+//	double maxs = 0.0;
+//	VectorType v;
+//	const typename CoefficientsImageType::PixelType* buffer[3];
+//	size_t nPix = next_uk[0]->GetLargestPossibleRegion().GetNumberOfPixels();
+//	for( size_t d = 0; d < Dimension; d++ ) {
+//		buffer[d] = next_uk[d]->GetBufferPointer();
+//	}
+//	for(size_t i = 0; i < nPix; i++) {
+//		for(size_t d = 0; d < Dimension; d++) {
+//			v[d] = *(buffer[d] + i);
+//		}
+//		norm = v.GetNorm();
+//		if (norm > maxs) {
+//			maxs = norm;
+//		}
+//	}
+//
+//	std::cout << "Speed=" << maxs << "." << std::endl;
+}
+
+template< typename TFunctional >
+void SpectralOptimizer<TFunctional>::BetaRegularization(
+		CoefficientsImagePointer numerator,
+		CoefficientsImageArray next_uk,
+		InternalComputationValueType s,
+		size_t d) {
 	itkDebugMacro("Optimizer Spectral Update");
-	InternalComputationValueType min_val = 1.0e-5;
-	InternalComputationValueType dir = (changeDirection)?(-1.0):1.0;
 
-	// Get deformation fields pointers
-	const VectorType* uFieldBuffer = parameters->GetBufferPointer();
-	const VectorType* lFieldBuffer = lambda->GetBufferPointer();
-	VectorType* nextBuffer = nextParameters->GetBufferPointer();
+	FFTPointer fftFilter = FFTType::New();
+	fftFilter->SetInput( numerator );
+	fftFilter->Update();  // This is required for computing the denominator for first time
 
-	// Create container for deformation field components
-	ParametersComponentPointer fieldComponent = ParametersComponentType::New();
-	fieldComponent->SetDirection( this->m_Parameters->GetDirection() );
-	fieldComponent->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
-	fieldComponent->SetSpacing( this->m_Parameters->GetSpacing() );
-	fieldComponent->SetOrigin( this->m_Parameters->GetOrigin());
-	fieldComponent->Allocate();
-	PointValueType* dCompBuffer = fieldComponent->GetBufferPointer();
+	if ( !this->m_DenominatorCached )
+		this->InitializeDenominator( fftFilter->GetOutput() );
 
-	ComplexFieldPointer fftNum;
+	typename FTMultiplyFilterType::Pointer scale_f = FTMultiplyFilterType::New();
+	scale_f->SetInput(this->m_FTLaplacian);
+	scale_f->SetConstant( -1.0 * s);
 
-	size_t nPix = fieldComponent->GetLargestPossibleRegion().GetNumberOfPixels();
-	InternalComputationValueType r = 1.0/this->m_StepSize;
-	VectorType u,l;
+	typename FTAddFilterType::Pointer add_f = FTAddFilterType::New();
+	add_f->SetInput1(this->m_FTOnes);
+	add_f->SetInput2(scale_f->GetOutput());
 
-	for( size_t d = 0; d < Dimension; d++ ) {
+	typename FTDivideFilterType::Pointer div_f = FTDivideFilterType::New();
+	div_f->SetInput1(fftFilter->GetOutput());
+	div_f->SetInput2(add_f->GetOutput());
+	div_f->Update();
 
-		for(size_t pix = 0; pix< nPix; pix++) {
-			u = *(uFieldBuffer+pix);
-			l = *(lFieldBuffer+pix);
-			*(dCompBuffer+pix) =  u[d] * r + dir * l[d];
-		}
+	IFFTPointer ifft = IFFTType::New();
+	ifft->SetInput( div_f->GetOutput() );
 
-		FFTPointer fftFilter = FFTType::New();
-		fftFilter->SetInput( fieldComponent );
-		fftFilter->Update();  // This is required for computing the denominator for first time
-		FTDomainPointer fftComponent =  fftFilter->GetOutput();
-
-		if ( fftNum.IsNull() ) {
-			fftNum = ComplexFieldType::New();
-			fftNum->SetRegions( fftComponent->GetLargestPossibleRegion() );
-			fftNum->Allocate();
-			fftNum->FillBuffer( ComplexType( itk::NumericTraits<ComplexValueType>::Zero, itk::NumericTraits<ComplexValueType>::Zero) );
-		}
-
-		// Fill in ND fourier transform of numerator
-		ComplexFieldValue* fftBuffer = fftNum->GetBufferPointer();
-		ComplexType* fftCompBuffer = fftComponent->GetBufferPointer();
-		size_t nFrequel = fftComponent->GetLargestPossibleRegion().GetNumberOfPixels();
-		ComplexFieldValue cur;
-		for(size_t fr = 0; fr< nFrequel; fr++) {
-			cur = *(fftBuffer+fr);
-			cur[d] = *(fftCompBuffer+fr);
-			*(fftBuffer+fr) = cur;
-		}
+	try {
+		ifft->Update();
+	}
+	catch ( itk::ExceptionObject & err ) {
+		this->m_StopCondition = Superclass::UPDATE_PARAMETERS_ERROR;
+		this->m_StopConditionDescription << "Optimizer error: spectral update failed";
+		this->Stop();
+		// Pass exception to caller
+		throw err;
 	}
 
-	this->ApplyRegularizationTerm( fftNum );
+	// Set component in destination buffer of coefficients
+	itk::ImageAlgorithm::Copy< CoefficientsImageType, CoefficientsImageType >(
+		ifft->GetOutput(),
+		next_uk[d],
+		ifft->GetOutput()->GetLargestPossibleRegion(),
+		next_uk[d]->GetLargestPossibleRegion()
+	);
 
-	for( size_t d = 0; d < Dimension; d++ ) {
-		// Take out fourier component
-		FTDomainPointer fftComponent = FTDomainType::New();
-		fftComponent->SetRegions( fftNum->GetLargestPossibleRegion() );
-		fftComponent->SetOrigin( fftNum->GetOrigin() );
-		fftComponent->SetSpacing( fftNum->GetSpacing() );
-		fftComponent->Allocate();
-		fftComponent->FillBuffer( ComplexType(0.0,0.0) );
-		ComplexType* fftCompBuffer = fftComponent->GetBufferPointer();
-		ComplexFieldValue* fftBuffer = fftNum->GetBufferPointer();
-		size_t nFrequel = fftComponent->GetLargestPossibleRegion().GetNumberOfPixels();
-		for(size_t fr = 0; fr< nFrequel; fr++) {
-			*(fftCompBuffer+fr) = (*(fftBuffer+fr))[d];
-		}
-
-		IFFTPointer ifft = IFFTType::New();
-		ifft->SetInput( fftComponent );
-
-		try {
-			ifft->Update();
-		}
-		catch ( itk::ExceptionObject & err ) {
-			this->m_StopCondition = UPDATE_PARAMETERS_ERROR;
-			this->m_StopConditionDescription << "Optimizer error: spectral update failed";
-			this->Stop();
-			// Pass exception to caller
-			throw err;
-		}
-
-		// Set component on this->m_ParametersNext
-		const PointValueType* resultBuffer = ifft->GetOutput()->GetBufferPointer();
-		PointValueType val;
-		for(size_t pix = 0; pix< nPix; pix++) {
-			val = *(resultBuffer+pix);
-			(*(nextBuffer+pix))[d] = ( fabs(val) > min_val )?val:0.0;
-		}
-	}
-
+	// typedef itk::ComplexToRealImageFilter<FTDomainType, CoefficientsImageType> RealFilterType;
+	// typename RealFilterType::Pointer realFilter = RealFilterType::New();
+	// realFilter->SetInput(add_f->GetOutput());
+	// realFilter->Update();
+    //
+	// std::stringstream ss;
+	// ss << "test_coeff" << d << "_it" << this->m_CurrentIteration << ".nii.gz";
+	// typename itk::ImageFileWriter<CoefficientsImageType>::Pointer w = itk::ImageFileWriter<CoefficientsImageType>::New();
+	// w->SetFileName(ss.str().c_str());
+	// w->SetInput(realFilter->GetOutput());
+	// w->Update();
 }
 
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>
-::ApplyRegularizationTerm( typename SpectralOptimizer<TFunctional>::ComplexFieldType* reference ){
-	if( this->m_Denominator.IsNull() ) { // If executed for first time, cache the map
-		this->InitializeDenominator( reference );
-	}
+::InitializeDenominator( itk::ImageBase<Dimension>* reference ){
+	PointValueType pi2 = 2* vnl_math::pi;
+	size_t nPix = reference->GetLargestPossibleRegion().GetNumberOfPixels();
+	ControlPointsGridSizeType size = reference->GetLargestPossibleRegion().GetSize();
 
-	// Fill reference buffer with elements updated with the filter
-	ComplexFieldValue* nBuffer = reference->GetBufferPointer();
-	MatrixType* dBuffer = this->m_Denominator->GetBufferPointer();
-	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
-	ComplexFieldValue curval;
-	VectorType realval;
-	VectorType imagval;
-	MatrixType regTensor;
+	ComplexType one = itk::NumericTraits<ComplexType>::One;
+	this->m_FTOnes = FTDomainType::New();
+	this->m_FTOnes->SetSpacing(   reference->GetSpacing() );
+	this->m_FTOnes->SetDirection( reference->GetDirection() );
+	this->m_FTOnes->SetRegions(   reference->GetLargestPossibleRegion().GetSize() );
+	this->m_FTOnes->Allocate();
+	this->m_FTOnes->FillBuffer(one);
 
+	this->m_FTLaplacian = FTDomainType::New();
+	this->m_FTLaplacian->SetSpacing(   reference->GetSpacing() );
+	this->m_FTLaplacian->SetDirection( reference->GetDirection() );
+	this->m_FTLaplacian->SetRegions(   reference->GetLargestPossibleRegion().GetSize() );
+	this->m_FTLaplacian->Allocate();
+	this->m_FTLaplacian->FillBuffer( itk::NumericTraits<ComplexType>::Zero);
+
+	// Fill Buffer with denominator data
+	ComplexType* buffer = this->m_FTLaplacian->GetBufferPointer();
+	InternalComputationValueType lag_el; // accumulates the FT{lagrange operator}.
+	typename FTDomainType::IndexType idx;
 	for (size_t pix = 0; pix < nPix; pix++ ) {
-		curval = *(nBuffer+pix);
-		regTensor = *(dBuffer+pix);
-
-		for( size_t i = 0; i<Dimension; i++ ) {
-			realval[i] = curval[i].real();
-			imagval[i] = curval[i].imag();
+		lag_el = 0.0;
+		idx = this->m_FTLaplacian->ComputeIndex(pix);
+		for(size_t d = 0; d < Dimension; d++ ) {
+			lag_el+= 2.0 * cos( (pi2*idx[d])/size[d] ) - 2.0;
 		}
-
-		realval = regTensor * realval;
-		imagval = regTensor * imagval;
-
-		for( size_t i = 0; i<Dimension; i++ ) {
-			curval[i] = ComplexType(realval[i], imagval[i]);
-		}
-
-
-		*(nBuffer+pix) = curval;
+		*(buffer+pix) = one * lag_el;
 	}
+	this->m_DenominatorCached = true;
+}
+
+
+template< typename TFunctional >
+void
+SpectralOptimizer<TFunctional>::UpdateField() {
+	itk::ImageAlgorithm::Copy<FieldType, FieldType>(
+		this->m_Transform->GetCoefficientsField(), this->m_CurrentCoefficients,
+		this->m_Transform->GetCoefficientsField()->GetLargestPossibleRegion(),
+		this->m_CurrentCoefficients->GetLargestPossibleRegion()
+	);
+
+
 }
 
 template< typename TFunctional >
-void SpectralOptimizer<TFunctional>
-::InitializeDenominator( typename SpectralOptimizer<TFunctional>::ComplexFieldType* reference ){
-	InternalComputationValueType pi2 = 2* vnl_math::pi;
-	InternalComputationValueType tfFactor = this->m_Parameters->GetLargestPossibleRegion().GetNumberOfPixels();
-	InternalComputationValueType singular_threshold = 1.0e-9;
-	MatrixType I, t;
-	I.SetIdentity();
+void
+SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
+	VectorType* fBuffer = this->m_CurrentCoefficients->GetBufferPointer();
+	size_t nPix = this->m_CurrentCoefficients->GetLargestPossibleRegion().GetNumberOfPixels();
 
-	this->m_Denominator = TensorFieldType::New();
-	this->m_Denominator->SetSpacing(   reference->GetSpacing() );
-	this->m_Denominator->SetDirection( reference->GetDirection() );
-	this->m_Denominator->SetRegions( reference->GetLargestPossibleRegion().GetSize() );
-	this->m_Denominator->Allocate();
-
-	MatrixType* buffer = this->m_Denominator->GetBufferPointer();
-
-	MatrixType C = ( I * (1.0/this->m_StepSize) + m_A ) * tfFactor;
-
-	// Check that C is not singular
-	vnl_matrix_inverse< ComplexValueType > inv_C( C.GetVnlMatrix() );
-	InternalComputationValueType detC = inv_C.determinant_magnitude();
-
-	if( detC <= singular_threshold ) {
-		itkExceptionMacro( << "norm penalizer is singular.")
-	}
-
-	t = MatrixType(inv_C);
-	this->m_Denominator->FillBuffer( t );
-
-	size_t nPix = this->m_Denominator->GetLargestPossibleRegion().GetNumberOfPixels();
-
-	// Check that B is not singular
-	vnl_matrix_inverse< ComplexValueType > inv_B( m_B.GetVnlMatrix() );
-	InternalComputationValueType detB = inv_B.determinant_magnitude();
-
-	if( detB > singular_threshold ) {
-		typename TensorFieldType::SizeType size = this->m_Denominator->GetLargestPossibleRegion().GetSize();
-
-		// Fill Buffer with denominator data
-		InternalComputationValueType lag_el; // accumulates the FT{lagrange operator}.
-		typename TensorFieldType::IndexType idx;
-		for (size_t pix = 0; pix < nPix; pix++ ) {
-			lag_el = 0.0;
-			idx = this->m_Denominator->ComputeIndex( pix );
-			for(size_t d = 0; d < Dimension; d++ ) {
-				lag_el+= 2.0 * cos( (pi2*idx[d])/size[d]) - 2.0;
-			}
-			t = C - m_B * lag_el * (-1.0) * tfFactor;
-
-			*(buffer+pix) = t.GetInverse();
-		}
-	}
-}
-
-template< typename TFunctional >
-typename SpectralOptimizer<TFunctional>::MeasureType
-SpectralOptimizer<TFunctional>::ComputeIterationChange() {
-	const VectorType* fnextBuffer = this->m_Functional->GetCurrentDisplacementField()->GetBufferPointer();
-
-#ifndef NDEBUG
-		typedef rstk::DisplacementFieldFileWriter<typename FunctionalType::FieldType> Writer;
-		typename Writer::Pointer p = Writer::New();
-		std::stringstream ss;
-		ss.str("");
-		ss << "field_" << std::setfill('0')  << std::setw(3) << this->m_CurrentIteration << ".nii.gz";
-		p->SetFileName( ss.str().c_str() );
-		p->SetInput( this->m_Functional->GetCurrentDisplacementField() );
-		p->Update();
-#endif
-
-	VectorType* fBuffer = this->m_LastField->GetBufferPointer();
-	size_t nPix = this->m_LastField->GetLargestPossibleRegion().GetNumberOfPixels();
+	PointValueType* fnextBuffer[Dimension];
+	for(size_t d = 0; d < Dimension; d++)
+		fnextBuffer[d] = this->m_NextCoefficients[d]->GetBufferPointer();
 
 	InternalComputationValueType totalNorm = 0;
 	VectorType t0,t1;
 	InternalComputationValueType diff = 0.0;
+
+	this->m_DiffeomorphismForced = false;
+	this->m_IsDiffeomorphic = true;
+	std::vector< InternalComputationValueType > speednorms;
+	std::vector< double > speedangs;
+	typedef vnl_vector< PointValueType > VNLVector;
+	VNLVector v(Dimension);
 	for (size_t pix = 0; pix < nPix; pix++ ) {
 		t0 = *(fBuffer+pix);
-		t1 = *(fnextBuffer+pix);
+		for( size_t d = 0; d<Dimension; d++) {
+			t1[d] = *(fnextBuffer[d]+pix);
+
+			if ( fabs(t1[d]) > this->m_MaxDisplacement[d] ) {
+				if (this->m_ForceDiffeomorphic) {
+					t1[d] = this->m_MaxDisplacement[d] * (t1[d]>0)?1.0:-1.0;
+					this->m_DiffeomorphismForced = true;
+					*(fnextBuffer[d]+pix) = t1[d];
+				} else {
+					this->m_IsDiffeomorphic = false;
+				}
+			}
+
+		}
 		diff = ( t1 - t0 ).GetNorm();
-		totalNorm += diff;
-
-		*(fBuffer+pix) = t1; // Copy current to last, once evaluated
+		speednorms.push_back(diff);
+		totalNorm+= diff;
 	}
-
 	this->m_RegularizationEnergyUpdated = (totalNorm==0);
-
-	return totalNorm/nPix;
+	std::sort(speednorms.begin(), speednorms.end());
+	this->m_MaxSpeed = speednorms.back();
+	this->m_MeanSpeed = speednorms[int(0.5*(speednorms.size()-1))];
+	this->m_AvgSpeed = totalNorm / nPix;
 }
-
 
 template< typename TFunctional >
 void SpectralOptimizer<TFunctional>::InitializeParameters() {
-	VectorType zerov = itk::NumericTraits<VectorType>::Zero;
-
-	if (this->m_Parameters.IsNull()) {
-		PointType orig = this->m_Functional->GetReferenceImage()->GetOrigin();
-		PointType end;
-		typename ParametersType::IndexType end_idx;
-		typename ParametersType::SizeType refSize = this->m_Functional->GetReferenceImage()->GetLargestPossibleRegion().GetSize();
-
-		for( size_t dim = 0; dim < Dimension; dim++ ) end_idx[dim] = refSize[dim];
-		this->m_Functional->GetReferenceImage()->TransformIndexToPhysicalPoint( end_idx, end );
-
-		this->m_Parameters = ParametersType::New();
-
-		typename ParametersType::SpacingType spacing;
-		for( size_t dim = 0; dim < Dimension; dim++ ) {
-			spacing[dim] = fabs( (end[dim]-orig[dim])/(1.0*this->m_GridSize[dim]));
-		}
-
-		VectorType zerov;
-		zerov.Fill(0.0);
-
-		this->m_Parameters->SetRegions( this->m_GridSize );
-		this->m_Parameters->SetSpacing( spacing );
-		this->m_Parameters->SetDirection( this->m_Functional->GetReferenceImage()->GetDirection() );
-		this->m_Parameters->SetOrigin( orig );
-		this->m_Parameters->Allocate();
-		this->m_Parameters->FillBuffer( zerov );
-
+	// Check functional exists and hold a reference image
+	if ( this->m_Functional.IsNull() ) {
+		itkExceptionMacro( << "functional must be set." );
 	}
 
-	/* Initialize next parameters */
-	this->m_NextParameters = ParametersType::New();
-	this->m_NextParameters->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
-	this->m_NextParameters->SetSpacing( this->m_Parameters->GetSpacing() );
-	this->m_NextParameters->SetDirection( this->m_Parameters->GetDirection() );
-	this->m_NextParameters->SetOrigin( this->m_Parameters->GetOrigin() );
-	this->m_NextParameters->Allocate();
-	this->m_NextParameters->FillBuffer( zerov );
+	this->m_Transform->SetDomainExtent( this->m_Functional->GetReferenceImage() );
+	this->m_Transform->SetFieldParametersFromImage( this->m_Functional->GetReferenceImage() );
+	this->m_Transform->SetOutputPoints( this->m_Functional->GetVertices(), this->m_Functional->GetValidVertices() );
+	this->m_Transform->SetControlGridSize( this->m_GridSize );
+	this->m_Transform->SetControlGridSpacing( this->m_GridSpacing );
+	this->m_Transform->Initialize();
+	this->m_MaxDisplacement = this->m_Transform->GetMaximumDisplacement();
 
+	VectorType zerov; zerov.Fill( 0.0 );
+	/* Initialize next uk */
+	for ( size_t i=0; i<Dimension; i++ ) {
+		this->m_Coefficients[i] = CoefficientsImageType::New();
+		this->m_Coefficients[i]->SetRegions(   this->m_Transform->GetControlGridSize() );
+		this->m_Coefficients[i]->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
+		this->m_Coefficients[i]->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
+		this->m_Coefficients[i]->Allocate();
+		this->m_Coefficients[i]->FillBuffer( 0.0 );
 
-	this->m_LastField = ParametersType::New();
-	this->m_LastField->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
-	this->m_LastField->SetSpacing( this->m_Parameters->GetSpacing() );
-	this->m_LastField->SetDirection( this->m_Parameters->GetDirection() );
-	this->m_LastField->SetOrigin( this->m_Parameters->GetOrigin() );
-	this->m_LastField->Allocate();
-	this->m_LastField->FillBuffer( zerov );
-	//this->m_CurrentField = ParametersType::New();
-	//this->m_CurrentField->SetRegions( this->m_Parameters->GetLargestPossibleRegion() );
-	//this->m_CurrentField->SetSpacing( this->m_Parameters->GetSpacing() );
-	//this->m_CurrentField->SetDirection( this->m_Parameters->GetDirection() );
-	//this->m_CurrentField->SetOrigin( this->m_Parameters->GetOrigin() );
-	//this->m_CurrentField->Allocate();
-	//this->m_CurrentField->FillBuffer( zerov );
+		this->m_NextCoefficients[i] = CoefficientsImageType::New();
+		this->m_NextCoefficients[i]->SetRegions(   this->m_Transform->GetControlGridSize() );
+		this->m_NextCoefficients[i]->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
+		this->m_NextCoefficients[i]->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
+		this->m_NextCoefficients[i]->Allocate();
+		this->m_NextCoefficients[i]->FillBuffer( 0.0 );
+
+		this->m_DerivativeCoefficients[i] = CoefficientsImageType::New();
+		this->m_DerivativeCoefficients[i]->SetRegions(   this->m_Transform->GetControlGridSize() );
+		this->m_DerivativeCoefficients[i]->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
+		this->m_DerivativeCoefficients[i]->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
+		this->m_DerivativeCoefficients[i]->Allocate();
+		this->m_DerivativeCoefficients[i]->FillBuffer( 0.0 );
+	}
+
+	this->m_LastCoeff = FieldType::New();
+	this->m_LastCoeff->SetRegions(   this->m_Transform->GetControlGridSize() );
+	this->m_LastCoeff->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
+	this->m_LastCoeff->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
+	this->m_LastCoeff->Allocate();
+	this->m_LastCoeff->FillBuffer( zerov );
+
+	this->m_CurrentCoefficients = FieldType::New();
+	this->m_CurrentCoefficients->SetRegions(   this->m_Transform->GetControlGridSize() );
+	this->m_CurrentCoefficients->SetSpacing(   this->m_Transform->GetControlGridSpacing() );
+	this->m_CurrentCoefficients->SetOrigin(    this->m_Transform->GetControlGridOrigin() );
+	this->m_CurrentCoefficients->Allocate();
+	this->m_CurrentCoefficients->FillBuffer( zerov );
 }
+
 
 template< typename TFunctional >
 typename SpectralOptimizer<TFunctional>::MeasureType
 SpectralOptimizer<TFunctional>::GetCurrentEnergy() {
 	this->m_CurrentTotalEnergy = this->m_Functional->GetValue() + this->GetCurrentRegularizationEnergy();
 	return this->m_CurrentTotalEnergy;
+}
+
+
+template< typename TFunctional >
+void SpectralOptimizer<TFunctional>
+::AddOptions( SettingsDesc& opts ) {
+	Superclass::AddOptions( opts );
+	opts.add_options()
+			("alpha,a", bpo::value< float > (), "alpha value in regularization")
+			("beta,b", bpo::value< float > (), "beta value in regularization");
+}
+
+template< typename TFunctional >
+void SpectralOptimizer<TFunctional>
+::ParseSettings() {
+	Superclass::ParseSettings();
+
+	if( this->m_Settings.count( "alpha" ) ) {
+		bpo::variable_value v = this->m_Settings["alpha"];
+		std::vector<float> alpha = v.as< std::vector<float> > ();
+		if (alpha.size() == 1) {
+			this->SetAlpha( alpha[0] );
+		} else if (alpha.size() == Dimension) {
+			InternalVectorType v;
+			for( size_t i = 0; i < Dimension; i++)
+				v[i] = alpha[i];
+			this->SetAlpha(v);
+		}
+	}
+	if( this->m_Settings.count( "beta" ) ){
+		bpo::variable_value v = this->m_Settings["beta"];
+		std::vector<float> beta = v.as< std::vector<float> > ();
+		if (beta.size() == 1) {
+			this->SetBeta( beta[0] );
+		} else if (beta.size() == Dimension) {
+			InternalVectorType v;
+			for( size_t i = 0; i < Dimension; i++)
+				v[i] = beta[i];
+			this->SetBeta(v);
+		}
+	}
+
+	if( this->m_Settings.count( "grid-size" ) ){
+		bpo::variable_value v = this->m_Settings["grid-size"];
+		std::vector<size_t> s = v.as< std::vector<size_t> > ();
+		typename TransformType::SizeType size;
+		if (s.size() == 1) {
+			size.Fill(s[0]);
+		} else if (s.size() == Dimension) {
+			for( size_t i = 0; i < Dimension; i++)
+				size[i] = s[i];
+		}
+		this->SetGridSize(size);
+	}
+
+	if( this->m_Settings.count( "grid-spacing" ) ){
+		bpo::variable_value v = this->m_Settings["grid-spacing"];
+		std::vector<float> s = v.as< std::vector<float> > ();
+		typename TransformType::SpacingType sp;
+		if (s.size() == 1) {
+			sp.Fill(s[0]);
+		} else if (s.size() == Dimension) {
+			for( size_t i = 0; i < Dimension; i++)
+				sp[i] = s[i];
+		}
+		this->SetGridSpacing(sp);
+	}
 }
 
 } // end namespace rstk

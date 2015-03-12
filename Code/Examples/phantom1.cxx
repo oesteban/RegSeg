@@ -142,7 +142,6 @@ int main(int argc, char *argv[]) {
 
 	IterationUpdatePointer iup = IterationUpdateType::New();
 	iup->SetOptimizer( opt );
-	iup->SetTrackEnergy( true );
 
 	// Start
 	opt->Start();
