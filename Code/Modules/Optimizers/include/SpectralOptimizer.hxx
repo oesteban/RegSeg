@@ -161,7 +161,7 @@ void SpectralOptimizer<TFunctional>::ComputeDerivative() {
 	this->m_MaximumGradient = speednorms.back();
 
 	if( this->m_AutoStepSize && this->m_CurrentIteration == 1 ) {
-		this->m_StepSize = this->m_MaxDisplacement.GetNorm() / ( this->m_MaximumGradient * this->m_NumberOfIterations * 0.10 );
+		this->m_StepSize = this->m_MaxDisplacement.GetNorm() / ( this->m_MaximumGradient * this->m_ConvergenceWindowSize * 0.6 );
 		std::cout << "Step size auto-computed, delta=" << this->m_StepSize << std::endl;
 	}
 }
