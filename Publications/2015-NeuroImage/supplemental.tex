@@ -1,7 +1,7 @@
 % @Author: Oscar Esteban
 % @Date:   2015-02-20 15:40:09
 % @Last Modified by:   Oscar Esteban
-% @Last Modified time: 2015-02-27 15:21:03
+% @Last Modified time: 2015-03-13 16:03:13
 
 \documentclass[a4paper]{report}
 
@@ -68,6 +68,21 @@
 \usepackage[hyphens]{url}
 \usepackage[breaklinks,hidelinks]{hyperref}
 \usepackage[hyphenbreaks]{breakurl} %fixes boxes spanning through pages
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+%\usepackage{algorithmic}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\argmax}{argmax}
+\DeclareMathOperator{\argmin}{argmin}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\dist}{dist}
+\DeclareMathOperator{\const}{Const.}
+\providecommand{\e}[1]{\ensuremath{\times 10^{#1}}}
+\providecommand{\mdist}[2]{ \mathcal{D}_{#2}^2(\mathbf{#1}) }
+\let\oldhat\hat
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\providecommand{\nvec}[1]{\hat{\mathbf{#1}}}
 
 \renewcommand\thesection{S\arabic{section}}
 \renewcommand\thesubsection{S\arabic{section}.\arabic{subsection}}
@@ -144,6 +159,20 @@ diffusion MR images of the brain driven by active-contours}}
 \date{February 2015}
 
 \maketitle
+\section{Extensions to the mathematical formulation of the methods}
+
+\paragraph{Discretization of the shape gradients} The energy functional to be optimized
+  in \emph{regseg} is presented in Eq. 7:
+
+  \begin{equation}
+  E(R \mid U) = C + \underset{l}{\sum} \int_{\Omega_l}
+  \mdist{f'}{l} \,d\vec{r}
+  + \int_{\Omega} \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
+  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r},
+  \label{eq:energy}
+  \end{equation}
+
+
 
 \section{Parameter settings and implementation details of \emph{regseg}}
 

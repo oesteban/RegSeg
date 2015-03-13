@@ -15,6 +15,20 @@ The principal source of these deviations ($\Delta B_0$) is the discontinuity of 
 Tissue/air boundaries show large steps of susceptibility and this artifact is
   particularly evident in the surroundings of the orbito-frontal lobe or the temporal
   bone of both hemispheres.
+Distortion can be rendered as a registration problem between the undistorted $R$ (reference), 
+  and distorted $M$ (moving) spaces:
+
+  \begin{align}
+  U_s\colon R \subset \mathbb{R}^n &\to M \subset \mathbb{R}^n \notag\\
+  \vec{r} &\mapsto \vec{r}' =\vec{r}+u(\vec{r}),
+  \label{eq:transform}
+  \end{align}
+%
+  where $\vec{r}$ denotes a position in the reference domain $R$, $\vec{r}'$ is
+  its corresponding location in $M$, and $n$ the dimensionality of images.
+Finally, $\vec{u} = u(\vec{r})$ is the displacement of every point with respect
+  to the reference domain.
+
 The displacements field $U_s$ along the \gls*{pe} axis can be estimated theoretically
   \citep{jezzard_correction_1995}:
 
@@ -23,8 +37,7 @@ The displacements field $U_s$ along the \gls*{pe} axis can be estimated theoreti
   \label{eq:fieldmap}
   \end{equation}
 %
-where $\vec{r}$ is the true location in the undistorted domain as in \eqref{eq:transform},
-  $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time,
+where $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time,
   $s_{PE}$ is the pixel spacing along \gls*{pe}, and $\hat{\vec{e}}_{PE}$ the unitary
   vector along \gls*{pe}.
 Several methodologies have been proposed to estimate $U_s$ and fix the artifact.
@@ -46,50 +59,48 @@ Therefore, a typical protocol for the extraction of structural connectivity
 
 \subsection{Our method and contributions}
 \label{sec:our_method}
-\emph{Regseg} is related to \emph{bbregister}, as both methods exploit the precise
-  surfaces that can be extracted with \emph{FreeSurfer} \citep{fischl_freesurfer_2012},
-  to then map this prior information into a target image.
-However, \emph{bbregister} features an affine transform that is unable to compensate the
-  distortions.
-To avoid this problem, the active contours are dismissed in regions typically affected by
-  warpings.
-Additionally, \emph{bbregister} is robust in finding clear tissue boundaries.
-In the case of \gls*{dmri} data, oftentimes the registration process is restricted to finding
-  the pial surface, as it is the only clear boundary.
-
-to the methods based on nonlinear registration of the
-  to the \gls*{t2} image, since we also render the correction as a
-  registration problem.
-Conversely, the method does not require any of the previously mentioned extra acquisitions.
-A fundamental antecedent to \emph{regseg} is found in .
-They proposed a registration method to align surfaces extracted from the \gls*{t1}
-  to \gls*{dmri} images using a linear transformation model using active contours
-  with edges.
-Similarly, we  warped data, in which the scale of the
-  imaged structures is in the range of the image resolution or above.
-Our approach differs from \citep{greve_accurate_2009} in two fundamental choices.
-First, we use a nonlinear deformation model that enables the correction of the
-  susceptibility-derived distortions \citep{jezzard_correction_1995}.
-\cite{greve_accurate_2009} circumvented the nonlinearity by identifying typically
-  distorted regions and removing them from the metric computation.
-Second, our matching criteria does not necessarily need for clear intensity
-  steps at the tissue interfaces where surfaces must be fitted, thanks to the use of
-  active contours without edges \citep{chan_active_2001}.
-
-
-This choice is similar to \citep{guyader_combined_2011}, but \emph{regseg} differs in two
-  features.
-First, the regularization relies on the inherent smoothness of the deformation field,
-  and on the anisotropic approach proposed by \cite{nagel_investigation_1986}.
-Second, it accepts several contours to be mapped as in \citep{gorthi_active_2011}.
-However, \emph{regseg} makes use of the explicit representation of surfaces, and
-  does not implement multiphase level sets.
-Our registration method is demonstrated here as a solution to correct for the susceptibility
-  distortions that \gls*{dmri} of the head typically present \citep{jezzard_correction_1995}.
-The distortion correction and the precise segmentation of \gls*{dmri} data is crucial in
-	applications such as connectome extraction \citep{craddock_imaging_2013}, since the
-  definition of the nodes in the network is generally derived from a parcellation performed in
-  an anatomical \gls*{mri} of the same subject \citep{daducci_connectome_2012}.
+% \emph{Regseg} is related to \emph{bbregister}, as both methods exploit the precise
+%   surfaces that can be extracted with \emph{FreeSurfer} \citep{fischl_freesurfer_2012},
+%   to then map this prior information into a target image.
+% However, \emph{bbregister} features an affine transform that is unable to compensate the
+%   distortions.
+% To avoid this problem, the active contours are dismissed in regions typically affected by
+%   warpings.
+% Additionally, \emph{bbregister} is robust in finding clear tissue boundaries.
+% In the case of \gls*{dmri} data, oftentimes the registration process is restricted to finding
+%   the pial surface, as it is the only clear boundary.
+% 
+% to the methods based on nonlinear registration of the
+%   to the \gls*{t2} image, since we also render the correction as a
+%   registration problem.
+% Conversely, the method does not require any of the previously mentioned extra acquisitions.
+% A fundamental antecedent to \emph{regseg} is found in .
+% They proposed a registration method to align surfaces extracted from the \gls*{t1}
+%   to \gls*{dmri} images using a linear transformation model using active contours
+%   with edges.
+% Similarly, we  warped data, in which the scale of the
+%   imaged structures is in the range of the image resolution or above.
+% Our approach differs from \citep{greve_accurate_2009} in two fundamental choices.
+% First, we use a nonlinear deformation model that enables the correction of the
+%   susceptibility-derived distortions \citep{jezzard_correction_1995}.
+% \cite{greve_accurate_2009} circumvented the nonlinearity by identifying typically
+%   distorted regions and removing them from the metric computation.
+% Second, our matching criteria does not necessarily need for clear intensity
+%   steps at the tissue interfaces where surfaces must be fitted, thanks to the use of
+%   active contours without edges \citep{chan_active_2001}.
+% This choice is similar to \citep{guyader_combined_2011}, but \emph{regseg} differs in two
+%   features.
+% First, the regularization relies on the inherent smoothness of the deformation field,
+%   and on the anisotropic approach proposed by \cite{nagel_investigation_1986}.
+% Second, it accepts several contours to be mapped as in \citep{gorthi_active_2011}.
+% However, \emph{regseg} makes use of the explicit representation of surfaces, and
+%   does not implement multiphase level sets.
+% Our registration method is demonstrated here as a solution to correct for the susceptibility
+%   distortions that \gls*{dmri} of the head typically present \citep{jezzard_correction_1995}.
+% The distortion correction and the precise segmentation of \gls*{dmri} data is crucial in
+% 	applications such as connectome extraction \citep{craddock_imaging_2013}, since the
+%   definition of the nodes in the network is generally derived from a parcellation performed in
+%   an anatomical \gls*{mri} of the same subject \citep{daducci_connectome_2012}.
 
 
 
@@ -104,7 +115,7 @@ Using the Bayes' rule, the posterior likelihood is computed as:
   P(U \mid R,\Gamma_{l,m}) = \frac{P(R \mid U,\Gamma_{l,m})\, P(U)}{P(R)},
   \label{eq:bayes_rule}
   \end{equation}
-
+%
   where $P(R \mid U,\Gamma_{l,m})$ is the data-likelihood, and
   $\Gamma_{l,m}$ are a set of surfaces corresponding to the interfaces
   between piecewise smooth regions $\Omega_i$, such that
@@ -121,7 +132,7 @@ First, we assume independence between pixels, and thus break down the
     P\left( \vec{f}' \mid U \right),
   \label{eq:bayes_aposteriori}
   \end{equation}
-
+%
   where $\vec{f}' = R(\vec{r}')$ is the feature vector at the displaced
   position $\vec{r}'$ \eqref{eq:transform} in the multispectral target
   volume.
@@ -141,7 +152,7 @@ We then insert the normal distribution into \eqref{eq:bayes_rule} to obtain the 
   \mdist{f'}{l} \right)}},
   \label{eq:pdf}
   \end{align}
-
+%
   using $\mdist{f}{l}$ to denote the squared \emph{Mahalanobis distance} of $\vec{f}$ with respect
   to the descriptors of region $l$ as
   $\mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
@@ -151,24 +162,21 @@ The smoothness of the resulting displacements field is induced by a Thikonov reg
   prior:
 
   \begin{align*}
-  P(U) = \underset{\vec{r}}{\prod}\, p(u(\vec{r})) &=
-  \underset{\vec{r}}{\prod}\, p_0(u(\vec{r})) \, p_1(u(\vec{r})), \\
-  p_0(u(\vec{r})) &= \mathcal{N}( u(\vec{r}) \mid 0, \mathbf{A}^{-1}), \notag\\
-  p_1(u(\vec{r})) &= \mathcal{N}(  \nabla \cdot u(\vec{r}) \mid 0, \mathbf{B}^{-1}),
+  P(U) = \underset{\vec{r}}{\prod}\, p(\vec{u}) &=
+  \underset{\vec{r}}{\prod}\, p_0(\vec{u}) \, p_1(\vec{u}), \\
+  p_0(\vec{u}) &= \mathcal{N}( \vec{u} \mid 0, \mathbf{A}^{-1}), \notag\\
+  p_1(\vec{u}) &= \mathcal{N}(  \nabla \vec{u} \mid 0, \mathbf{B}^{-1}),
   \end{align*}
-
+%
   imposing that the distortion and its gradient have zero
-  mean and variance governed by the matrices $\mathbf{A}$ and $\mathbf{B}$.
-Since the anisotropy is generally aligned with the imaging axes, these will be simplified
-  in the following for the sake of clarity:
-
-  \begin{align}
-    p_0(u(\vec{r})) &= \underset{\vec{r}}{\sum} \mathcal{N}( u(\vec{r}) \mid 0,
-      (\boldsymbol{\alpha}^{\circ\frac12}\,\vec{I}_n)^{-1}), \notag\\
-    p_1(u(\vec{r})) &= \underset{\vec{r}}{\sum} \mathcal{N}( \nabla \cdot u(\vec{r}) \mid 0,
-      (\boldsymbol{\beta}^{\circ\frac12}\,\vec{I}_n)^{-1}).
-  \label{eq:priors}
-  \end{align}
+  mean and variance governed by the matrices $\mathbf{A} = (a_{ij})$ and $\mathbf{B} = (b_{ij})$.
+Since the anisotropy is generally aligned with the imaging axes, $\mathbf{A}$ and $\mathbf{B}$
+  can be simplified to diagonal matrices.
+For convenience, we will set $\alpha_i = a_{ii}^2$ and $\beta_i = b_{ii}^2$, what can be reduced
+  using the Hadamard square root notation\footnote{The Hadamard power of a matrix or a vector
+  is the power of its elements $\mathbf{M}^{\circ p} = ({m_{ij}}^{p})$} as
+  $\mathbf{A}=\boldsymbol{\alpha}^{\circ\frac12}\,\vec{I}_n$ and
+  $\mathbf{B}=\boldsymbol{\beta}^{\circ\frac12}\,\vec{I}_n$.
 
 
 Finally, the maximum a posteriori problem is adapted into a variational one where we look for
@@ -177,14 +185,14 @@ Finally, the maximum a posteriori problem is adapted into a variational one wher
   \begin{align}
   E(R \mid U) &= -\log \underset{l}{\prod}
   \underset{\vec{r} \in \Omega_l}{\prod}
-  \mathcal{N} \left( \vec{f}' \mid \Theta_l \right)\,p_0( u(\vec{r}))\,p_1( u(\vec{r})) \notag\\
+  \mathcal{N} \left( \vec{f}' \mid \Theta_l \right)\,p_0( \vec{u})\,p_1( \vec{u}) \notag\\
   &= C + \underset{l}{\sum} \int_{\Omega_l}
   \mdist{f'}{l} \,d\vec{r} \notag\\
-  &+ \int_{\Omega} \left[ \boldsymbol{\alpha} \cdot u(\vec{r})^{\circ2}
-  + \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{r}))^{\circ2} \right] \,d\vec{r},
+  &+ \int_{\Omega} \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
+  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r},
   \label{eq:energy}
   \end{align}
-
+%
   this expression is dual to the energy functional corresponding
   to a discrete \gls*{acwe} framework \citep{chan_active_2001}
   with the corresponding anisotropic regularization term \citep{nagel_investigation_1986}.
@@ -215,7 +223,7 @@ Let us denote $\{\vec{v}_i\}_{i=1 \ldots N_c}$ the vertices of one or several pr
 In our application, these surfaces are triangularized meshes extracted using \emph{FreeSurfer}
   \citep{fischl_freesurfer_2012}.
 The transform $\hat{U}$ \eqref{eq:transform} is supported by a dense deformation field
-  $u(\vec{r})$, such that:
+  $\vec{u}$, such that:
 
   \begin{equation}
   \vec{v}_i' = \hat{U}\{\vec{v}_i\} = \vec{v}_i + u(\vec{v}_i).
@@ -223,11 +231,11 @@ The transform $\hat{U}$ \eqref{eq:transform} is supported by a dense deformation
   \end{equation}
 
 Since the nodes of the anatomical surfaces likely lay off-grid, it is required to
-  derive $u(\vec{r})$ from a discrete set of parameters $\{\vec{u}_k\}_{k=1 \ldots K}$.
+  derive $\vec{u}$ from a discrete set of parameters $\{\vec{u}_k\}_{k=1 \ldots K}$.
 Densification is achieved through a set of associated basis functions $\psi_k$:
 
   \begin{equation}
-  u(\vec{r}) = \sum_k \psi_k(\vec{r}) \vec{u}_k.
+  \vec{u} = \sum_k \psi_k(\vec{r}) \vec{u}_k.
   \label{eq:intp_kernel}
   \end{equation}
 
@@ -241,7 +249,7 @@ Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
       \beta_3( (\vec{v}_i - \vec{r}_k) \cdot \hat{\mathbf{e}}_d ) \right],
   \label{eq:transformation}
   \end{equation}
-
+%
   with $\hat{\mathbf{e}}_d$ being the unitary vector along axis $d$.
 
 
@@ -255,7 +263,7 @@ To find the minimum of the energy functional \eqref{eq:energy},
   \frac{\partial u(\vec{r},t)}{\partial t} \propto - \frac{\partial E(\vec{u})}{\partial \vec{u}_k},
   \label{eq:general_gradient_descent}
   \end{equation}
-
+%
   with $t$ being an artificial time parameter of the contour
   evolution, and $\vec{u}_k$ the parameters supporting the estimate
   $\hat{U}$ of the transformation at the current time point.
@@ -265,8 +273,8 @@ Now, we introduce \eqref{eq:energy} in \eqref{eq:general_gradient_descent}:
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
   \frac{ \partial }{\partial \vec{u}_k} \Big\{
   \int_{\Omega} \underset{l}{\sum} \mdist{f'}{l} \,d\vec{r} \notag\\
-  &+ \int_{\Omega} [ \boldsymbol{\alpha} \cdot u(\vec{r})^{\circ2}
-  + \boldsymbol{\beta} \cdot (\nabla \cdot u(\vec{r}))^{\circ2} ] \,d\vec{r}
+  &+ \int_{\Omega} [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
+  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}
   \Big\}.
   \label{eq:gradient_descent}
   \end{align}
@@ -286,7 +294,7 @@ We refer the reader to the appendix \autoref{app:shape_priors} in order to fill 
    \left\langle \frac{\partial \vec{v}_i'}{\partial \vec{u}_k}, \bar{s}_i'\right\rangle,
   \label{eq:gradient_wshape}
   \end{align}
-
+%
   in this case, the formulation has been adapted to the non-binary case, $\{l,m\}$
     being any pair of neighboring regions, and $\Gamma_{l,m}$ the contour separating
     them such that
@@ -313,7 +321,7 @@ The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \eqref{
   \vec{g}_{i,k} = \left\langle \frac{\partial}{\partial \vec{u}_k}{\vec{v}_i}', \bar{s}_i'\right\rangle
   = - \left[ \mdist{f_i'}{l} - \mdist{f_i'}{m} \right] \psi_k(\vec{v}_i)\, \hat{\vec{e}},
   \end{equation}
-
+%
   then the full gradient evolution equation \eqref{eq:gradient_descent} yields:
 
   \begin{align}
@@ -323,13 +331,23 @@ The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \eqref{
   \label{eq:gradient_final}
   \end{align}
 
-\todo[inline]{Include here the final update equation using the FT, introducing the
-step size $\tau$, and refer to the supplementals for intermediate steps}
+Finally, we introduce a step size parameter $\delta$ to discretize the artificial time parameter
+  in the iterative optimization.
+Then, applying the Fourier transform as detailed in the \suppl{}, section S1, the
+  update equation is derived from \eqref{eq:gradient_final}:
+
+  \begin{align}
+  \vec{u}_k^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{\vec{u}_k^t / \delta - \sum_i \vec{g}_{i,k}\}}%
+                  {\mathcal{F}\{(1/\delta+\boldsymbol{\alpha})I-\boldsymbol{\beta}\Delta\}} \right\}
+  \label{eq:update_equation}
+  \end{align}
+
 
 \paragraph*{Settings, implementation details, and convergence}
 \label{sec:conv_report}
-The registration parameters (such as $\tau$, the B-Spline grid resolutions,
-  target image smoothing, etc.) and implementation details (for instance the sparse matrix approach
+The registration parameters (such as $\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$,
+  the B-Spline grid resolutions, target image smoothing, etc.)
+  and other implementation details (for instance the sparse matrix approach
   to fast interpolation) are discussed in the \suppl{}, section S1.
 The actual choices of parameter settings are publicly distributed with the source code of the experiments.
 Additionally, we release our software along with a tool for generating convergence reports to

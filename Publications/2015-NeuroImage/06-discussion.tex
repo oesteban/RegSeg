@@ -1,27 +1,27 @@
 % -*- root: 00-main.tex -*-
 \section*{Discussion}
 \label{sec:discussion}
-In section \nameref{sec:methods_background}, we framed our method within the current
-  state of art and defined the contributions in our approach.
-We chose active contours without edges as we were interested in the homogeneous
-  regions of diffusion properties within the brain.
-Iteratively, the active contours are updated following the instant shape gradients
-  (see \nameref{app:shape_priors} in Appendix) with a gradient descent strategy.
-The approach is valid for image processing applications in which a precise segmentation is
-  available (from an atlas or within subject anatomical data), and match any or all
-  the following circumstances:
-  i) reference and target images do not present appropriate contrasts to
-  	perform volume-based registration reliably;
-  ii) the low resolution of the target volume produces strong partial volume effects
-  	that preclude voxel-wise segmentation algorithms and hinder volume-based
-  	registration; and,
-  iii) the estimation of the unknown warping is explicitly needed and the
-    deformation field is smooth enough to be represented with a sufficient number
-  	of B-Spline kernels (i.e. the distortion in \gls*{dmri} images,
-  	object tracking in time series, etc.).
-To support our claim that images can be simultaneously segmented and registered to a
-  reference coordinate system, we conducted evaluation experiments on digital
-  simulated phantoms and real datasets.
+% In section \nameref{sec:methods_background}, we framed our method within the current
+%   state of art and defined the contributions in our approach.
+% We chose active contours without edges as we were interested in the homogeneous
+%   regions of diffusion properties within the brain.
+% Iteratively, the active contours are updated following the instant shape gradients
+%   (see \nameref{app:shape_priors} in Appendix) with a gradient descent strategy.
+% The approach is valid for image processing applications in which a precise segmentation is
+%   available (from an atlas or within subject anatomical data), and match any or all
+%   the following circumstances:
+%   i) reference and target images do not present appropriate contrasts to
+%   	perform volume-based registration reliably;
+%   ii) the low resolution of the target volume produces strong partial volume effects
+%   	that preclude voxel-wise segmentation algorithms and hinder volume-based
+%   	registration; and,
+%   iii) the estimation of the unknown warping is explicitly needed and the
+%     deformation field is smooth enough to be represented with a sufficient number
+%   	of B-Spline kernels (i.e. the distortion in \gls*{dmri} images,
+%   	object tracking in time series, etc.).
+% To support our claim that images can be simultaneously segmented and registered to a
+%   reference coordinate system, we conducted evaluation experiments on digital
+%   simulated phantoms and real datasets.
 
 We designed \emph{regseg} as a method to correct \gls*{dmri} data for susceptibility
   distortions.

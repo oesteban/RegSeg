@@ -1,27 +1,16 @@
 % -*- root: 00-main.tex -*-
-\section{Introduction}\label{sec:introduction}
-Image registration is the process to find a spatial mapping $U$ that aligns the information available
-  in two different coordinate systems (generally called \emph{reference},
-  $R$, and \emph{moving}, $M$):%
-
-  \begin{align}
-  U\colon R \subset \mathbb{R}^n &\to M \subset \mathbb{R}^n \notag\\
-  \vec{r} &\mapsto \vec{r}' =\vec{r}+u(\vec{r}),
-  \label{eq:transform}
-  \end{align}
-%
-  where $\vec{r}$ denotes a position in the reference domain $R$, $\vec{r}'$ is
-  its corresponding location in $M$, and $n$ the dimensionality of images.
-Finally, $\vec{u} = u(\vec{r})$ is the displacement of every point with respect
-  to the reference domain.
-A comprehensive survey by \cite{sotiras_deformable_2013} illustrates the wide variety
-  of existing methodologies, and classifies them by their three principal building blocks:
+\section{Introduction}%
+\label{sec:introduction}
+Image registration is the process to find a spatial mapping that aligns the information available
+  in two different coordinate systems.
+In their comprehensive survey, \cite{sotiras_deformable_2013} illustrated the wide variety
+  of existing methodologies, and classified them by their three principal building blocks:
   the matching criteria to evaluate the proximity of the solution,
   the deformation model that may implement theoretical properties of the mapping
   (i.e. linearity, elasticity, viscosity, etc.), and the optimization method.
 The matching criteria can be defined as a function on the intensities of voxels of the
   two images, the alignment of spatial features derived from the corresponding objects in
-  $R$ and $M$, or use both intensity and spatial informations.
+  the spaces to be registered, or use both intensity and spatial informations.
 In \citep{sotiras_deformable_2013} these methods are referred to as \emph{iconic}, \emph{geometric},
   and \emph{hybrid}, respectively.
 When segmentation is introduced to define the matching criteria, we face a \emph{hybrid}
@@ -34,7 +23,7 @@ Shortly, \cite{yezzi_variational_2003} presented the first method including a fu
 \cite{vemuri_joint_2003} proposed an atlas-based registration framework using level sets and only
   one \gls*{pde} for first time.
 \cite{unal_coupled_2005} and later \cite{wang_joint_2006},
-  extended the ``two \glspl*{pde}'' method of \cite{yezzi_variational_2001}
+  extended the ``two \glspl*{pde}'' method of \cite{yezzi_variational_2003}
   to nonlinear registration implementing a free deformation field.
 \cite{droske_mumfordshah_2009} reviewed the latter set of techniques, and proposed two different
   approaches to apply the Mumford-Shah functional \citep{mumford_optimal_1989} in simultaneous
@@ -50,7 +39,7 @@ Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
 Finally, \cite{gorthi_active_2011} extended the existing methodologies using a multiphase
   level-set function for the registration of several active contours, in the application
   of atlas-based segmentation.
-Alternatively to the historical use of active contours based methods, some Bayesian approaches
+Alternatively to the historical use of active contours, some Bayesian approaches
   have been proposed as well \citep{wyatt_map_2003,pohl_bayesian_2006,gass_simultaneous_2014}.
 
 We propose \emph{regseg}, a registration method based on active contours without edges
