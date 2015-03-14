@@ -49,7 +49,7 @@ A second family of methods require an extra \gls*{epi} acquisition, but switchin
 \cite{kybic_unwarping_2000} proposed a correction using nonlinear registration of the \emph{b0}
   image\footnote{The term \emph{b0} refers to one or more images within the
   \gls*{dmri} dataset that are acquired with a null or very low gradient intensity or
-   \emph{b}-value used as signal reference.} of the \gls*{dmri} versus a \gls*{t2} image.
+   \emph{b}-value.} of the \gls*{dmri} versus a \gls*{t2} image.
 Further developments \citep{irfanoglu_susceptibility_2011} extended this method to the
   three-dimensional problem.
 Therefore, a typical protocol for the extraction of structural connectivity
@@ -58,7 +58,33 @@ Therefore, a typical protocol for the extraction of structural connectivity
 
 
 \subsection{Our method and contributions}
-\label{sec:our_method}
+\label{sec:contributions}
+%
+\emph{Regseg} can be viewed as a derivation of \emph{bbregister} \citep{greve_accurate_2009}.
+Both methods exploit the anatomically correct and precise surfaces that are readily
+  extracted with \emph{FreeSurfer} \citep{fischl_freesurfer_2012}, mapping them
+  to a target \gls*{dmri} image using active contours.
+We implemented active contours without edges \citep{chan_active_2001}, that allow
+  \emph{regseg} to segment homogeneous regions within the brain, while \emph{bbregister}
+  use active contours with edges to look for intensity boundaries in the target image.
+Another identifying difference is the deformation model:
+  \emph{bbregister} includes an affine transformation and overcomes the distortion
+  problem by excluding typically affected regions from computation.
+Conversely, \emph{regseg} implements a free-deformation field supported with B-Spline
+  functions.
+Our method is close to \citep{guyader_combined_2011} and \citep{gorthi_active_2011}
+  in the use of active contours without edges for registration, however we avoided
+  the use of level sets with the application of shape gradients
+  \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
+\cite{gorthi_active_2011} used a gaussian regularizer, and \cite{guyader_combined_2011}
+  proposed a nonlinear elasticity smoother.
+In contrast, \emph{regseg} implements the anisotropic regularization proposed by
+  \citep{nagel_investigation_1986}.
+We also present an ellaborated evaluation instrumentation to create realistic distortions
+  and test algorithms.
+Integrating \emph{regseg} and an in-house implementation of the \gls*{t2b} correction method
+  in the workflow, we compared the performance of both solutions.
+
 % \emph{Regseg} is related to \emph{bbregister}, as both methods exploit the precise
 %   surfaces that can be extracted with \emph{FreeSurfer} \citep{fischl_freesurfer_2012},
 %   to then map this prior information into a target image.
@@ -223,19 +249,19 @@ Let us denote $\{\vec{v}_i\}_{i=1 \ldots N_c}$ the vertices of one or several pr
 In our application, these surfaces are triangularized meshes extracted using \emph{FreeSurfer}
   \citep{fischl_freesurfer_2012}.
 The transform $\hat{U}$ \eqref{eq:transform} is supported by a dense deformation field
-  $\vec{u}$, such that:
+  $\vec{u} = u(\vec{r})$, such that:
 
   \begin{equation}
-  \vec{v}_i' = \hat{U}\{\vec{v}_i\} = \vec{v}_i + u(\vec{v}_i).
+  \vec{v}_i' = \hat{U}\{\vec{v}_i\} = \vec{v}_i + u(\vec{v}_i) = \vec{v}_i + \vec{u}_i.
   \label{eq:nodes_tfm}
   \end{equation}
 
 Since the nodes of the anatomical surfaces likely lay off-grid, it is required to
-  derive $\vec{u}$ from a discrete set of parameters $\{\vec{u}_k\}_{k=1 \ldots K}$.
+  derive $u(\vec{r})$ from a discrete set of parameters $\{\vec{u}_k\}_{k=1 \ldots K}$.
 Densification is achieved through a set of associated basis functions $\psi_k$:
 
   \begin{equation}
-  \vec{u} = \sum_k \psi_k(\vec{r}) \vec{u}_k.
+  u(\vec{r}) = \sum_k \psi_k(\vec{r}) \vec{u}_k.
   \label{eq:intp_kernel}
   \end{equation}
 
@@ -260,7 +286,7 @@ To find the minimum of the energy functional \eqref{eq:energy},
   deformation field through the following \gls*{pde}:
 
   \begin{equation}
-  \frac{\partial u(\vec{r},t)}{\partial t} \propto - \frac{\partial E(\vec{u})}{\partial \vec{u}_k},
+  \frac{\partial u(\vec{r},t)}{\partial t} \propto - \frac{\partial E(R \mid U)}{\partial \vec{u}_k},
   \label{eq:general_gradient_descent}
   \end{equation}
 %
@@ -443,10 +469,6 @@ The reference surfaces were extracted using the marching-cubes algorithm
 For the evaluation of the algorithm on real \gls*{dmri} data of human brains,
   we collected 16 datasets from the ``minimally preprocessed''
 	 database of the \gls*{hcp}.
-\todo[inline]{This is partially true: I am currently processing the data and
-only 5 subjects with regseg and 10 with the competing method are processed.
-All the results presented afterwards are based on this processed cases, and will be
-updated for the final submission.}
 We refer the reader to \citep{essen_human_2012} for exact details about acquisition
   parameters, and \citep{glasser_minimal_2013} for the preprocessing issues.
 The datasets comprehend a large set of images, containing \gls*{t1}, \gls*{t2} and

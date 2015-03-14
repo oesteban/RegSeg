@@ -1,5 +1,5 @@
 % -*- root: 00-main.tex -*-
-\section*{Discussion}
+\section{Discussion}
 \label{sec:discussion}
 % In section \nameref{sec:methods_background}, we framed our method within the current
 %   state of art and defined the contributions in our approach.
@@ -22,6 +22,11 @@
 % To support our claim that images can be simultaneously segmented and registered to a
 %   reference coordinate system, we conducted evaluation experiments on digital
 %   simulated phantoms and real datasets.
+
+The hypothesis underpinning our research is that image registration can be reliably performed
+  by searching for homogeneous regions in the target image that correspond to precise contours
+  from an atlas, or extracted from other image (i.e. a different time step).
+
 
 We designed \emph{regseg} as a method to correct \gls*{dmri} data for susceptibility
   distortions.
