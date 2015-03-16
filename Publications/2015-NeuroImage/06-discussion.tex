@@ -39,13 +39,10 @@ After a preliminary experiment to demonstrate the aptness of our segmentation mo
   in section \autoref{sec:res_model_and_metric}, we evaluated \emph{regseg} in
   a real environment, using the experimental framework presented in \autoref{fig:evworkflows}.
 We processed 16 subjects from the \gls*{hcp} database with both \emph{regseg}
-  and an in-house replication of a competing method.
-This alternative approach solves distortion using \emph{b0}-to-\gls*{t2} registration.
+  and an in-house replication of the \gls*{t2b} correction method.
 Our method presented significantly different results (ANOVA tests are reported in
   \autoref{tab:results_real}), and the 95\% CIs revealed the high accuracy of
   \emph{regseg}.
-The aggregated CI for \emph{regseg} was $[0.39 - 0.93] mm$, whereas the competing method
-  yielded an aggregated CI of $[2.36 - 3.40] mm$.
 Even though we carefully configured the competing method by using the same algorithm and
   extending the same settings from a widely used software, cross-comparison
   experiments are prone to the so-called instrumentation bias \citep{tustison_instrumentation_2013}.

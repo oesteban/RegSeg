@@ -82,31 +82,36 @@ The metric consistently displayed its minimum at $\epsilon=0.0$ (ground-truth lo
 %
 Finally, we tested the performance of our registration method, and compared it to the
   a standard \gls*{t2b} correction.
-For both \emph{regseg} and the \gls*{t2b} methods, we computed the \gls*{swindex} \eqref{eq:swindex}
-  of every surface.
+We computed the \gls*{swindex} \eqref{eq:swindex} of every surface after correction,
+  for both \emph{regseg} and the \gls*{t2b} methods.
 Finally, to statistically compare the results, we performed a one-way ANOVA test
-  on the warping indices for three surfaces.
-Following the nomenclature introduced in section \autoref{sec:human_connectome}, we selected
-  $\Gamma_{VdGM}$, $\Gamma_{WM}$, and $\Gamma_{pial}$ as surfaces of interest.
-These interfaces are critical in connectivity analyses, and small errors in their location may
-  lead to discarding fundamental paths between regions.
-We also reported the 95\% CIs of the warping indices for those surfaces.
+  on the warping indices for three specific surfaces of interest
+  ($\Gamma_{VdGM}$, $\Gamma_{WM}$, and $\Gamma_{pial}$).
+These interfaces are critical in analyses on whole-brain tractography.
+The one-way ANOVA evidenced that error distributions were significantly different,
+  $p \approx 2 \times 10^{-9}$.
+We also reported the 95\% CIs of the \gls*{swindex} for those surfaces.
+The aggregated CI for \emph{regseg} was $[1.08 - 1.50] mm$, whereas the competing method
+  yielded an aggregated CI of $[2.06 - 2.43] mm$.
 The quantitative results of the ANOVA tests and the CIs are presented in \autoref{tab:results_real}.
 Visual assessment of one case is shown in \autoref{fig:results_real}, along with the corresponding
   box plots of error distributions by correction method and surface.
-Extended visual assessment of the 16 cases is aggregated in the \suppl{section S4}.
+Extended visual assessment of the 16 cases is included in the \suppl{section S4}.
 
 \begin{table}
 		\centering
 		\footnotesize
 		\tabcolsep=0.05cm
-    \begin{tabular}{L{1.8cm}ccc}
-                            & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ \\
+    \begin{tabular}{cccccc}
+    & & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ & Aggregated \\
     \hline
-    CI \emph{regseg}        & 0.39 - 0.64 & 0.64 - 0.83 & 0.76 - 0.93 \\
-    CI competing            & 2.36 - 3.37 & 2.65 - 3.19 & 2.82 - 3.40 \\
+    \multirow{2}{*}{CI}
+       & \emph{regseg}        & 0.77 - 1.18 & 0.95 - 1.85 & 1.33 - 2.13 & 1.08 - 1.50 \\
+       & T2B                  & 1.73 - 2.62 & 1.96 - 2.40 & 2.16 - 2.63 & 2.06 - 2.43 \\
     \hline
-    ANOVA (f-stat/p-value)  & (51.81/1.5e-06) & (148.25/8.1e-10) & (143.01/1.1e-09) \\
+    \multirow{2}{*}{ANOVA}
+       & p-value  & 1.4$\times$10$^{-5}$& 1.3$\times$10$^{-3}$& 2.5$\times$10$^{-3}$ & 2$\times$10$^{-9}$ \\
+       & f-stat   & 27.87               & 12.89               & 11.13                & 45.04 \\
     \hline
     \end{tabular}
     \caption{All the 95\% CIs of the \gls*{swindex} distributions computed for the
