@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-25 11:36:26
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-03-16 21:20:04
+import os.path as op
 
 
 def add_annotations(values, ax, level, nlevels, color, lastidx, units=''):
@@ -527,8 +528,121 @@ def slices_gridplot(in_files, view=['axial'], size=(3, 3), discard=3,
     return out_file
 
 
-def phantom_errors(in_csv, resolution='lo',
-                   mtypes=['ball', 'box', 'L', 'gyrus']):
+def phantom_errors(in_csv, size=(80, 30), out_file=None):
+    import pandas as pd
+    import seaborn as sn
+    import matplotlib.pyplot as plt
+    sn.set_context("poster", font_scale=4.5)
+    df = pd.read_csv(in_csv).drop_duplicates(subset=['surf_id', 'repetition',
+                                             'surfdist_avg', 'model_type'])
+    df.surf_id[df.surf_id == 0] = 'internal'
+    df.surf_id[df.surf_id == 1] = 'external'
+    mtypes = df.model_type.unique()
+    cols = len(mtypes) * 2
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=size)
+    
+    lodf = df[df.resolution == 'lo']
+    plot0 = sn.violinplot(x='model_type', y='surfdist_avg', hue='surf_id',
+                          hue_order=['internal', 'external'],
+                          data=lodf, scale_hue=.9, width=.9, ax=ax1)
+    plot0.set_xlabel('Model Type')
+    plot0.set_ylabel('Averaged error of surfaces (mm)')
+    plot0.set_ylim([0.0, 2.25])
+    plot0.set_title(
+        r'Registration error @ $%.1f \times %.1f \times %.1fmm^3$' %
+        tuple([2.0] * 3))
+
+    hidf = df[df.resolution == 'hi']
+    plot1 = sn.violinplot(x='model_type', y='surfdist_avg', hue='surf_id',
+                          hue_order=['internal', 'external'],
+                          data=hidf, scale_hue=.9, width=.9, ax=ax2)
+    plot1.set_xlabel('Model Type')
+    plot1.set_ylabel('')
+    plot1.set_ylim([0.0, 1.15])
+    plot1.set_title(
+        r'Registration error @ $%.1f \times %.1f \times %.1fmm^3$' %
+        tuple([1.0] * 3))
+
+    leg = plot0.legend(loc="best")
+    leg = plot1.legend(loc="best")
+
+    sn.despine(left=True, bottom=True)
+
+    if out_file is None:
+        out_file = op.abspath('phantom_violinplots.pdf')
+
+    plt.savefig(out_file, dpi=320, bbox_inches='tight')
+
+#    lg = plot0.add_legend(title='Surface')
+    return fig
+
+
+def realdata_errors(in_csv, size=(80, 25), out_file=None,
+                    columns=['surf_dist_1', 'surf_dist_3', 'surf_dist_5']):
+    import pandas as pd
+    import seaborn as sn
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    def _extract_method(mdf, method_name, columns):
+        rsd = mdf[columns].values.T
+        values = rsd.reshape(-1).tolist()
+        numvals = rsd.shape[1]
+        totalvals = len(values)
+        surflist = ([0] * numvals + [1] * numvals +
+                    [2] * numvals + [3] * totalvals)
+
+        data = {'method': [method_name] * (totalvals * 2),
+                'surf': surflist,
+                'error': values + values}
+        return pd.DataFrame(data)
+
+    fig = plt.figure(num=None, figsize=size)
+
+    sn.set_context("poster", font_scale=5)
+    df = pd.read_csv(in_csv).drop_duplicates(subset=['method', 'subject_id'])
+    del df['Unnamed: 0']
+
+    regsegdf = df[df.method == 'REGSEG'].reset_index(drop=True)
+    t2bdf = df[df.method == 'T2B'].reset_index(drop=True)
+    df1 = _extract_method(regsegdf, 'regseg', columns)
+    df2 = _extract_method(t2bdf, 'T2B', columns)
+
+    plot0 = sn.violinplot(x='surf', y='error', hue='method', size=size,
+                          data=pd.concat([df1, df2]), scale_hue=.9, width=.4)
+
+    ymax = plot0.get_ylim()[1]
+    plot0.set_ylim([0.0, ymax])
+
+    plot0.set_xticklabels([r'$\Gamma_{VdGM}$', r'$\Gamma_{WM}$',
+                           r'$\Gamma_{pial}$', 'Aggregated'])
+    plot0.set_xlabel('Surface')
+    plot0.set_ylabel('Surface warping index ($sWI$, mm)')
+    l = plot0.axhline(y=2.5, lw=15, xmin=0.07, xmax=0.93,
+                      color='gray', alpha=.4)
+    plot0.annotate(
+        "voxel size", xy=(-0.15, 2.5), xytext=(-250, 105),
+        xycoords='data', textcoords='offset points', va='center',
+        color='w', fontsize=80,
+        bbox=dict(boxstyle='round', fc='gray', ec='none', color='w'),
+        arrowprops=dict(arrowstyle='wedge,tail_width=.7',
+                        fc='gray', ec='none',
+                        ))
+
+    plot0.set_title('Comparison in real data experiments')
+    leg = plot0.legend(loc="best")
+    sn.despine(left=True, bottom=True)
+
+    if out_file is None:
+        out_file = op.abspath('real_violinplots.pdf')
+    plt.savefig(out_file, dpi=320, bbox_inches='tight')
+
+#    lg = plot0.add_legend(title='Surface')
+    return plot0
+
+
+def phantom_boxplot(in_csv, resolution='lo',
+                    mtypes=['ball', 'box', 'L', 'gyrus']):
     import pandas as pd
     import seaborn as sn
     import matplotlib
@@ -541,11 +655,12 @@ def phantom_errors(in_csv, resolution='lo',
 
     sn.set(style="whitegrid")
     sn.set_context("poster", font_scale=1.5)
-    g = sn.factorplot('model_type', 'surfdist_avg', 'surf_id', filtdf,
-                      size=15, kind='box', x_order=mtypes, legend=False)
-    g.set_axis_labels('Type of model', 'Averaged error of surfaces (mm)')
-    lg = g.add_legend(title='Surface')
 
+
+    g = sn.factorplot('model_type', 'surfdist_avg', 'surf_id', filtdf,
+                      size=15, kind='box', x_order=mtypes, legend=False,
+                      n_boot=10e4, estimator=np.median)
+    g.set_axis_labels('Type of model', 'Averaged error of surfaces (mm)')
     mytitle = (r'Registration error @ $%.1f \times %.1f \times %.1fmm^3$' %
                tuple([1.0 if resolution == 'hi' else 2.0] * 3))
     g.fig.suptitle(mytitle, y=1.05, fontsize=30)
