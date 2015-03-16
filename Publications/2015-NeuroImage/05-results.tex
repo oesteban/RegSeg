@@ -120,7 +120,20 @@ Extended visual assessment of the 16 cases is aggregated in the \suppl{section S
 \end{table}
 
 \begin{figure*}
-	\includegraphics[width=\linewidth]{figures/figure05.pdf}
+    \centering
+    \resizebox{\textwidth}{!}{%
+      \begin{tikzpicture}
+        \node[inner sep=15pt, draw=black!40](fig05a) at (0,11)
+          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure05-a}};
+        \node[inner sep=15pt, draw=black!40](fig05b) at (0,0)
+          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure05-b}};
+        % \node[inner sep=5pt, draw=black!40](fig03c) at (0,0)
+        %   {\includegraphics[width=\linewidth]{figures/figure03-c}};
+        \node[circle, text=black!75] at (-9.5,17) {\Huge \textbf{A}};
+        \node[circle, text=black!75] at (-9.5,3) {\Huge \textbf{B}};
+        % \node[circle, text=black!75] at (-8.8,3.4) {\Huge \textbf{C}};
+      \end{tikzpicture}
+    }%
 	\caption{The evaluation instrument automatically renders the overlay between the
 	  target \gls*{fa} image and the resulting contours after distortion estimation (yellow color) and
 	  their theoretical location using the ground-truth (green color).
@@ -131,7 +144,5 @@ Extended visual assessment of the 16 cases is aggregated in the \suppl{section S
 	  of distortions.
 	Red arrows point to regions where the accuracy of the proposed method more clearly overperformed
 	  the competing method.
-	\todo[inline]{This figure will also have the box-plots of the errors of surfaces for both regseg
-	and the t2b method}
 	}\label{fig:results_real}
 \end{figure*}
