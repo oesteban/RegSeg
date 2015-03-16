@@ -1,9 +1,10 @@
 % -*- root: 00-main.tex -*-
 \renewcommand{\theequation}{A.\arabic{equation}}
+\renewcommand{\thesubsection}{Appendix \arabic{subsection}}
 
 \section*{Appendix}
 
-\subsection*{Instant velocity of contours}
+\subsection{Instant velocity of contours}
 \label{app:shape_priors}
 The computation of gradients at the locations of the active contours in the
   instant $t$ is based on the work of \cite{herbulot_segmentation_2006}.
@@ -19,7 +20,7 @@ We now derive the domain integral w.r.t. $t$:
   &- \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
   N_{\Gamma_{l,m}}\right\rangle d\vec{r},
   \end{align*}
-
+%
   where $\left\langle\frac{\partial\Gamma_{l,m}}{\partial t}, N_{\Gamma_{l,m}}\right\rangle$ is
   the projection of the boundary movement on the unit inward normal $N_{\Gamma_{l,m}}$.
 Assuming that the region descriptors $\{\mu_l, \Sigma_l\}$ vary slowly enough, we can consider
@@ -41,6 +42,6 @@ Assuming that the region descriptors $\{\mu_l, \Sigma_l\}$ vary slowly enough, w
   N_{\Gamma_{l,m}}\right\rangle d\vec{r},
   	\label{eq:shape_gradients}
     \end{equation}
-
+%
     where $\mathcal{E}_l(\vec{r}) = \mathcal{D}^2_{l}(R(\vec{r}))$ for briefness.
 

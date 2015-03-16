@@ -10,8 +10,8 @@ In order to quickly probe the diffusion process within the brain in many differe
   these sequences minimize the bandwidth of the \gls*{pe} direction.
 This low bandwidth originates the artifactual displacement of locations presenting small deviations
   from the main magnetic field $B_0$.
-The principal source of these deviations ($\Delta B_0$) is the discontinuity of magnetic
-  susceptibility at tissue interfaces.
+One important source of these deviations ($\Delta B_0$) is the discontinuity of magnetic
+  susceptibility across the imaged object.
 Tissue/air boundaries show large steps of susceptibility and this artifact is
   particularly evident in the surroundings of the orbito-frontal lobe or the temporal
   bone of both hemispheres.
@@ -24,7 +24,7 @@ Distortion can be rendered as a registration problem between the undistorted $R$
   \label{eq:transform}
   \end{align}
 %
-  where $\vec{r}$ denotes a position in the reference domain $R$, $\vec{r}'$ is
+  where $\vec{r}$ denotes a position in $R$, $\vec{r}'$ is
   its corresponding location in $M$, and $n$ the dimensionality of images.
 Finally, $\vec{u} = u(\vec{r})$ is the displacement of every point with respect
   to the reference domain.
@@ -38,7 +38,7 @@ The displacements field $U_s$ along the \gls*{pe} axis can be estimated theoreti
   \end{equation}
 %
 where $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time,
-  $s_{PE}$ is the pixel spacing along \gls*{pe}, and $\hat{\vec{e}}_{PE}$ the unitary
+  $s_{PE}$ is the pixel size along \gls*{pe}, and $\hat{\vec{e}}_{PE}$ the unitary
   vector along \gls*{pe}.
 Several methodologies have been proposed to estimate $U_s$ and fix the artifact.
 The first solution consisted on estimating $\Delta B_0$ with field mapping
@@ -46,12 +46,14 @@ The first solution consisted on estimating $\Delta B_0$ with field mapping
 A second family of methods require an extra \gls*{epi} acquisition, but switching
   the \gls*{pe} axis \citep{chiou_simple_2000} or reversing the direction of gradient \gls*{pe}
   increments \citep{cordes_geometric_2000,holland_efficient_2010}.
-\cite{kybic_unwarping_2000} proposed a correction using nonlinear registration of the \emph{b0}
+\cite{kybic_unwarping_2000} proposed nonlinear registration of the \emph{b0}
   image\footnote{The term \emph{b0} refers to one or more images within the
   \gls*{dmri} dataset that are acquired with a null or very low gradient intensity or
-   \emph{b}-value.} of the \gls*{dmri} versus a \gls*{t2} image.
-Further developments \citep{irfanoglu_susceptibility_2011} extended this method to the
-  three-dimensional problem.
+   \emph{b}-value.} of the \gls*{dmri} to an undistorted \gls*{t2} image of
+   the same subject.
+In the following, we will refer to this method as \gls*{t2b}.
+Further developments \citep{irfanoglu_susceptibility_2011} extended the \gls*{t2b} 
+  approach to the 3D problem.
 Therefore, a typical protocol for the extraction of structural connectivity
   comprehends \gls*{dmri}, \gls*{t1}, and the acquisition determined by the correction
   method of choice \citep{daducci_connectome_2012}.
@@ -82,56 +84,12 @@ In contrast, \emph{regseg} implements the anisotropic regularization proposed by
   \citep{nagel_investigation_1986}.
 We also present an ellaborated evaluation instrumentation to create realistic distortions
   and test algorithms.
-Integrating \emph{regseg} and an in-house implementation of the \gls*{t2b} correction method
+Integrating \emph{regseg} and an in-house implementation of the \gls*{t2b} correction
   in the workflow, we compared the performance of both solutions.
-
-% \emph{Regseg} is related to \emph{bbregister}, as both methods exploit the precise
-%   surfaces that can be extracted with \emph{FreeSurfer} \citep{fischl_freesurfer_2012},
-%   to then map this prior information into a target image.
-% However, \emph{bbregister} features an affine transform that is unable to compensate the
-%   distortions.
-% To avoid this problem, the active contours are dismissed in regions typically affected by
-%   warpings.
-% Additionally, \emph{bbregister} is robust in finding clear tissue boundaries.
-% In the case of \gls*{dmri} data, oftentimes the registration process is restricted to finding
-%   the pial surface, as it is the only clear boundary.
-% 
-% to the methods based on nonlinear registration of the
-%   to the \gls*{t2} image, since we also render the correction as a
-%   registration problem.
-% Conversely, the method does not require any of the previously mentioned extra acquisitions.
-% A fundamental antecedent to \emph{regseg} is found in .
-% They proposed a registration method to align surfaces extracted from the \gls*{t1}
-%   to \gls*{dmri} images using a linear transformation model using active contours
-%   with edges.
-% Similarly, we  warped data, in which the scale of the
-%   imaged structures is in the range of the image resolution or above.
-% Our approach differs from \citep{greve_accurate_2009} in two fundamental choices.
-% First, we use a nonlinear deformation model that enables the correction of the
-%   susceptibility-derived distortions \citep{jezzard_correction_1995}.
-% \cite{greve_accurate_2009} circumvented the nonlinearity by identifying typically
-%   distorted regions and removing them from the metric computation.
-% Second, our matching criteria does not necessarily need for clear intensity
-%   steps at the tissue interfaces where surfaces must be fitted, thanks to the use of
-%   active contours without edges \citep{chan_active_2001}.
-% This choice is similar to \citep{guyader_combined_2011}, but \emph{regseg} differs in two
-%   features.
-% First, the regularization relies on the inherent smoothness of the deformation field,
-%   and on the anisotropic approach proposed by \cite{nagel_investigation_1986}.
-% Second, it accepts several contours to be mapped as in \citep{gorthi_active_2011}.
-% However, \emph{regseg} makes use of the explicit representation of surfaces, and
-%   does not implement multiphase level sets.
-% Our registration method is demonstrated here as a solution to correct for the susceptibility
-%   distortions that \gls*{dmri} of the head typically present \citep{jezzard_correction_1995}.
-% The distortion correction and the precise segmentation of \gls*{dmri} data is crucial in
-% 	applications such as connectome extraction \citep{craddock_imaging_2013}, since the
-%   definition of the nodes in the network is generally derived from a parcellation performed in
-%   an anatomical \gls*{mri} of the same subject \citep{daducci_connectome_2012}.
-
 
 
 \subsection{Cost-function derivation}\label{sec:methods_map}
-
+%
 In a Bayesian framework, the mappings $U$ in \eqref{eq:transform} are
   evaluated based on their posterior probability given the observed data
   $R$.
@@ -235,11 +193,11 @@ Finally, the maximum a posteriori problem is adapted into a variational one wher
 	They iteratively evolve following their inner normals $\hat{n}_i$ at each vertex
 	  $\vec{v}_i$ of the mesh.
 	The gradient speeds $\bar{s}_i$ are computed as the disparity between data energies of
-	  the vertex $\vec{v}_i$ in each limiting region (see \autoref{app:shape_priors}).
+	  the vertex $\vec{v}_i$ in each limiting region (see \ref{app:shape_priors}).
 	In this figure, the gradient speed corresponding to $\vec{v}_1$ is written in the lower
 	  box, $\Omega_{wm}$ being the inner limiting region and $\Omega_{gm}$ the outer.
 	Finally, every $\bar{s}_i$ is associated with the control points $\vec{u}_k$ through
-	  the corresponding weights $\psi_k(\vec{v}_i)$ \eqref{eq:basis_derivative}.
+	  the corresponding weights $\psi_k(\vec{v}_i)$ by Eq. \eqref{eq:gradient_wshape}.
 	}\label{fig:method}
 \end{figure}
 
@@ -306,7 +264,7 @@ Now, we introduce \eqref{eq:energy} in \eqref{eq:general_gradient_descent}:
   \end{align}
 
 
-We can apply a discretized interpretation of \eqref{eq:shape_gradients} to compute
+We apply a discretized interpretation of \eqref{eq:shape_gradients} to compute
   the data term in \eqref{eq:gradient_descent} using shape-gradients
   \citep{herbulot_segmentation_2006}, and ultimately avoid level sets.
 We refer the reader to the appendix \autoref{app:shape_priors} in order to fill in the gap
@@ -315,8 +273,8 @@ We refer the reader to the appendix \autoref{app:shape_priors} in order to fill 
   \begin{align}
   \frac{\partial E_{data}(\vec{u})}{\partial \vec{u}_k} &=
   \frac{ \partial }{\partial \vec{u}_k} \left\{
-   \underset{\vec{x} \in \Omega_l}{\sum} \underset{l}{\sum} \mdist{f'}{l} \right\}
-  = \underset{i}{\sum}
+   \underset{\vec{x} \in \Omega_l}{\sum} \underset{l}{\sum} \mdist{f'}{l} \right\} \notag\\
+  &= \underset{i}{\sum} w_i
    \left\langle \frac{\partial \vec{v}_i'}{\partial \vec{u}_k}, \bar{s}_i'\right\rangle,
   \label{eq:gradient_wshape}
   \end{align}
@@ -324,9 +282,10 @@ We refer the reader to the appendix \autoref{app:shape_priors} in order to fill 
   in this case, the formulation has been adapted to the non-binary case, $\{l,m\}$
     being any pair of neighboring regions, and $\Gamma_{l,m}$ the contour separating
     them such that
-    $\vec{x}' = \vec{v}' \in\Gamma_{l,m} \iff \vec{x}\in \partial\Omega_i \cap \partial\Omega_j$
-    and $\bar{s}_i'$ is the speed vector projected on to the unit inward normal to the contour
-    at $c_i'$ (described in \autoref{fig:method}).
+    $\vec{x}' = \vec{v}' \in\Gamma_{l,m} \iff \vec{x}\in \partial\Omega_i \cap \partial\Omega_j$,
+    $\bar{s}_i'$ is the speed vector projected on to the unit inward normal to the contour
+    at $c_i'$ (described in \autoref{fig:method}), $w_i$ is the area contribution of vertex
+    $c_i'$ to the the total area of the surface it belongs.
 
 
 Finally, we can compute:
@@ -337,15 +296,15 @@ Finally, we can compute:
   = \psi_k(\vec{v}_i)\, \hat{\vec{e}}
   \label{eq:basis_derivative}
   \end{align}
-
+%
   where $\hat{\vec{e}}$ is the coordinates system's unit vector.
 The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \eqref{eq:shape_gradients},
 	are then projected to the deformation field in order to obtain the derivatives $\vec{g}_k$
 	corresponding to $\vec{u}_k$:
 
   \begin{equation}
-  \vec{g}_{i,k} = \left\langle \frac{\partial}{\partial \vec{u}_k}{\vec{v}_i}', \bar{s}_i'\right\rangle
-  = - \left[ \mdist{f_i'}{l} - \mdist{f_i'}{m} \right] \psi_k(\vec{v}_i)\, \hat{\vec{e}},
+  \vec{g}_{i,k} = w_i \, \left\langle \frac{\partial}{\partial \vec{u}_k}{\vec{v}_i}', \bar{s}_i'\right\rangle
+  = - w_i \left[ \mdist{f_i'}{l} - \mdist{f_i'}{m} \right] \psi_k(\vec{v}_i)\, \hat{\vec{n}}_i,
   \end{equation}
 %
   then the full gradient evolution equation \eqref{eq:gradient_descent} yields:
@@ -359,7 +318,7 @@ The vertex speeds $\bar{s}_i'$ obtained by computing the shape-gradients \eqref{
 
 Finally, we introduce a step size parameter $\delta$ to discretize the artificial time parameter
   in the iterative optimization.
-Then, applying the Fourier transform as detailed in the \suppl{}, section S1, the
+Then, applying the Fourier transform as detailed in the \suppl{section S1}, the
   update equation is derived from \eqref{eq:gradient_final}:
 
   \begin{align}
@@ -374,18 +333,18 @@ Then, applying the Fourier transform as detailed in the \suppl{}, section S1, th
 The registration parameters (such as $\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$,
   the B-Spline grid resolutions, target image smoothing, etc.)
   and other implementation details (for instance the sparse matrix approach
-  to fast interpolation) are discussed in the \suppl{}, section S1.
+  to fast interpolation) are discussed in the \suppl{section S1}.
 The actual choices of parameter settings are publicly distributed with the source code of the experiments.
 Additionally, we release our software along with a tool for generating convergence reports to
   demonstrate the behavior of \emph{regseg} and help scientists configure their own experiments.
-One sample report is found in the \suppl{}, section S1.3.
+One sample report is found in the \suppl{section S1.3}.
 
 
 \subsection{Experiments and evaluation}
 \label{sec:experiments_evaluation}
 %
 In order to demonstrate the performance of \emph{regseg}, we first conducted a battery of
-  accuarcy tests over synthetic data, and then applied it in the susceptibility distortion
+  accuracy tests over synthetic data, and then applied it in the susceptibility distortion
   correction of real data.
 \autoref{fig:evworkflows} presents the workflow implementing the evaluation instruments.
 Besides a visual assessment of the results, we report quantitative evaluations using
@@ -396,14 +355,14 @@ In the case of the phantoms, since we had produced distortions along the three
 Conversely, the susceptibility-derived distortions only happen along the \gls*{pe}
   axis of the image.
 Therefore, a \gls*{swindex} can be computed as the one-to-one distance between corresponding
-  vertices of surfaces, weighted by their respective Voronoi area $w_i$:
+  vertices of surfaces, weighted by their respective Voronoi area $a_i$:
 
   \begin{equation}
-  sWI = \frac{1}{P} \sum\limits_p^P \frac{1}{A_p} \sum\limits_i^{N_p} w_i\,\|
+  sWI = \frac{1}{P} \sum\limits_p^P \frac{1}{A_p} \sum\limits_i^{N_p} a_i\,\|
   \vec{v}_i - \hat{\vec{v}}_i \|
   \label{eq:swindex}
   \end{equation}
-
+%
   where $\vec{v}_i$ are the locations of the $N_p$ vertices in each $p \in \{1, \dots P\}$
   prior, $A_p$ the total area of surface $p$, and $\hat{\vec{v}}_i$ is the location
   recovered corresponding to the vertex $\vec{v}_i$.
@@ -421,7 +380,6 @@ Therefore, a \gls*{swindex} can be computed as the one-to-one distance between c
 		stacked to feed the multivariate input required by our algorithm.
 	4) \emph{Regseg} is run, obtaining a $U_{test} = \hat{U}_{true}$, the estimation of
 	  the ground-truth deformation.
-	  A cross-comparison methodology is also applied, to obtain a competing $\hat{U}_{cc}$.
 	5) Results are visually and quantitatively evaluated.}\label{fig:evworkflows}
 \end{figure*}
 
@@ -439,9 +397,9 @@ Using \emph{phantomas} \citep{caruyer_phantomas_2014}, we simulated
   corresponding to each phantom type, with two resolutions each
   ($1.0mm$ and $2.0mm$ isotropic).
 Simulations were corrupted with rician noise for a \gls*{snr} of 300.0.
-The reference surfaces were extracted using the marching-cubes algorithm
-  shipped with \emph{FreeSurfer} \citep{fischl_freesurfer_2012}
-  at the higher resolution (1.0mm isotropic).
+The reference surfaces were extracted at the higher resolution (1.0mm isotropic),
+  using \texttt{mri\_tessellate}\footnote{A marching-cubes algorithm shipped with 
+  \emph{FreeSurfer} \citep{fischl_freesurfer_2012}}.
 
 \begin{figure*}
 	\includegraphics[width=\linewidth]{figures/figure03}
@@ -453,15 +411,27 @@ The reference surfaces were extracted using the marching-cubes algorithm
 	  ``gyrus'' (top-left), ``L-shape'' (top-right), ``ball'' (bottom-left),
 	  and ``box'' at (bottom-right).
 	In yellow color, the recovered contours after registration are represented.
-	Our method showed high accuracy, as they are overlapping the ground truth surfaces
-	  depicted in green.
+	Our method showed high accuracy, as demonstrates almost exact location of the registered
+    contours with respect to their ground truth position depicted in green.
 	Partial volume effect turns segmentation of the sulci a challenging problem with voxel-wise
 	  clustering methods, but it is successfully segmented with our method.
 	C. Quantitative evaluation of registration error in terms of average Hausdorff distance of
 	  surfaces at high (left) and low (right) resolutions, demonstrating that the error is
-	  consistently below the image resolution.
+	  consistently below the voxel size.
 	  }\label{fig:phantom}
 \end{figure*}
+
+To warp the simulated datasets, we generated 150 different realizations of
+  the distortion $U_{true}$.
+Smoothness is introduced using two levels of B-Spline functions, with control points evenly
+  located in isotropic grids covering the full extent of the phantom.
+The first level had $50.5mm$ of separation between control points and the second $25.25mm$.
+The rationale behind this choice is producing large deformations on the contours with
+  the first level, and matching the properties of susceptibility-derived distortions
+  as previously reported by \cite{irfanoglu_susceptibility_2011} with the finer grid.
+The coefficients of the B-Spline functions were randomly generated for each resolution level.
+Invertibility of $U_{true}$ is ensured by controlling the maximum displacement at each
+  level ($20.2mm$ and $10.1mm$ respectively) as studied in \citep{rueckert_diffeomorphic_2006}.
 
 \paragraph*{Real datasets} %
 \label{sec:human_connectome}
@@ -479,12 +449,12 @@ The original acquisitions are released within ``unprocessed'' packages, and
   pipeline of \emph{FreeSurfer}.
 
 Selecting the appropriate labels in the \emph{aparc} segmentation, we applied
-  the marching-cubes algorithm again to extract the surface of the following
+  \texttt{mri\_tessellate} to extract the surface of the following
   six homogeneous regions $\Omega_l$:
   1) the thalamus, $\Gamma_{Tha}$;
   2) \gls*{csf} of the ventricular system and deep \gls*{gm} structures, $\Gamma_{VdGM}$;
   3) cerebral \gls*{wm}, $\Gamma_{WM}$;
-  4) brain stem and cerebellar \gls*{wm}, $\Gamma_{Bst}$;
+  4) brain stem and cerebellar \gls*{wm}, $\Gamma_{bst}$;
 	5) cerebellar \gls*{gm}, $\Gamma_{cbGM}$; and
 	6) cortical \gls*{gm} surface, $\Gamma_{pial}$.
 The choice of this particular model is further addressed in \autoref{sec:res_model_and_metric}.
@@ -495,3 +465,18 @@ In this case, we derived the deformation $U_{true}$ from the field maps released
   \citep{esteban_simulationbased_2014}.
 After warping the original \gls*{dmri} with $U_{true}^{-1}$, we computed the \gls*{dti} and
   the derived scalars (\gls*{fa} and \gls*{adc}) using \emph{MRtrix} \citep{tournier_mrtrix_2012}.
+The stack of \gls*{fa} and \gls*{adc} conforms the multivariate input for \emph{regseg}.
+
+A dual workflow to the general evaluation framework (\autoref{fig:evworkflows})
+  was also implemented to integrate the \gls*{t2b} registration scheme.
+We reproduced the solution and settings provided with \emph{ExploreDTI}
+  \citep{leemans_exploredti_2009}, a widely used toolkit for tractography analysis of
+  \gls*{dti}.
+\emph{ExploreDTI}, internally uses \emph{elastix} \citep{klein_elastix_2010} to
+  perform registration.
+First, the average \emph{b0} volume is computed using all the \emph{low-b} volumes within
+  the distorted \gls*{dmri} dataset.
+Using the ``preprocessed'' instance of the \gls*{t2} image of the corresponding subject as
+  reference image, and the \emph{b0} image as moving image, we registered both and
+  projected the correct (undistorted) contours to the warped space using the resulting
+  transform.

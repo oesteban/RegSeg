@@ -1,27 +1,6 @@
 % -*- root: 00-main.tex -*-
 \section{Discussion}
 \label{sec:discussion}
-% In section \nameref{sec:methods_background}, we framed our method within the current
-%   state of art and defined the contributions in our approach.
-% We chose active contours without edges as we were interested in the homogeneous
-%   regions of diffusion properties within the brain.
-% Iteratively, the active contours are updated following the instant shape gradients
-%   (see \nameref{app:shape_priors} in Appendix) with a gradient descent strategy.
-% The approach is valid for image processing applications in which a precise segmentation is
-%   available (from an atlas or within subject anatomical data), and match any or all
-%   the following circumstances:
-%   i) reference and target images do not present appropriate contrasts to
-%   	perform volume-based registration reliably;
-%   ii) the low resolution of the target volume produces strong partial volume effects
-%   	that preclude voxel-wise segmentation algorithms and hinder volume-based
-%   	registration; and,
-%   iii) the estimation of the unknown warping is explicitly needed and the
-%     deformation field is smooth enough to be represented with a sufficient number
-%   	of B-Spline kernels (i.e. the distortion in \gls*{dmri} images,
-%   	object tracking in time series, etc.).
-% To support our claim that images can be simultaneously segmented and registered to a
-%   reference coordinate system, we conducted evaluation experiments on digital
-%   simulated phantoms and real datasets.
 
 The hypothesis underpinning our research is that image registration can be reliably performed
   by searching for homogeneous regions in the target image that correspond to precise contours
@@ -59,7 +38,7 @@ Therefore, we also conclude that the error is bounded and below the half of the
 After a preliminary experiment to demonstrate the aptness of our segmentation model
   in section \nameref{sec:res_model_and_metric}, we evaluated \emph{regseg} in
   a real environment, using the experimental framework presented in \autoref{fig:evworkflows}.
-We processed 16 subjects downloaded from the \gls*{hcp} database with both \emph{regseg}
+We processed 16 subjects from the \gls*{hcp} database with both \emph{regseg}
   and an in-house replication of a competing method.
 This alternative approach solves distortion using \emph{b0}-to-\gls*{t2} registration.
 Our method presented significantly different results (ANOVA tests are reported in
@@ -70,7 +49,7 @@ The aggregated CI for \emph{regseg} was $[0.39 - 0.93] mm$, whereas the competin
 Even though we carefully configured the competing method by using the same algorithm and
   extending the same settings from a widely used software, cross-comparison
   experiments are prone to the so-called instrumentation bias \citep{tustison_instrumentation_2013}.
-Therefore, these results do not reflect that the \emph{regseg} software \emph{is} better than the
+Therefore, these results do not show that the \emph{regseg} software \emph{is} better than the
   competing method, but they are communicated to proof that \emph{regseg} is a solid option to
   correct \gls*{dmri} data for distortions, and any other potential application.
 
@@ -88,7 +67,7 @@ The \emph{regseg} algorithm would naturally correct misregistered areas due to e
   phase unwrapping, and underestimations introduced by necessary smoothing
   applied to clean up field maps.
 This integration has been recently applied in the \emph{b0}-to-\gls*{t2} approach
-  by \cite{irfanoglu_susceptibility_2011}, studied along with the virtues of using
+  by \cite{irfanoglu_susceptibility_2011}, also investigating the usefulness of
   nonregular B-Spline grids.
 This is also a potential extension to our deformation model.
 
