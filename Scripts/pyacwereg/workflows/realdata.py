@@ -59,7 +59,8 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
 
     regseg = regseg_wf(usemask=True)
     regseg.inputs.inputnode.options = data.get('regseg_hcp')
-    exprs = pe.Node(ExportSlices(all_axis=True), name='ExportREGSEG')
+    exprs = pe.Node(ExportSlices(slices=[38, 48, 57, 67, 76, 86],
+                    axis=['axial', 'sagittal']), name='ExportREGSEG')
     gridrs = pe.Node(SlicesGridplot(
         label=['regseg', 'regseg'], slices=[38, 48, 57, 67, 76, 86],
         view=['axial', 'sagittal']), name='GridPlotREGSEG')
@@ -74,8 +75,8 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
         (mdti,      regseg, [('out', 'inputnode.in_fixed')]),
         (pre,       regseg, [('outputnode.surf', 'inputnode.in_surf'),
                              ('outputnode.warped_msk', 'inputnode.in_mask')]),
-        (pre,        exprs, [('outputnode.warped_surf', 'surfaces0')]),
-        (regseg,     exprs, [('outputnode.out_surf', 'surfaces1')]),
+        (pre,        exprs, [('outputnode.warped_surf', 'sgreen')]),
+        (regseg,     exprs, [('outputnode.out_surf', 'syellow')]),
         (wdti,       exprs, [('outputnode.fa', 'reference')]),
         (exprs,     gridrs, [('out_files', 'in_files')]),
         (pre,       meshrs, [('outputnode.warped_surf', 'surface1')]),
@@ -93,7 +94,8 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
         dfm.inputs.inputnode.enc_dir = 'y-'
         wrpsurf = pe.MapNode(WarpPoints(), iterfield=['points'],
                              name='UnwarpSurfs')
-        export0 = pe.Node(ExportSlices(all_axis=True), name='ExportFMB')
+        export0 = pe.Node(ExportSlices(slices=[38, 48, 57, 67, 76, 86],
+                          axis=['axial', 'sagittal']), name='ExportFMB')
         mesh0 = pe.MapNode(ComputeMeshWarp(),
                            iterfield=['surface1', 'surface2'],
                            name='FMBSurfDistance')
@@ -118,8 +120,8 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
                 ('outputnode.warped_msk', 'inputnode.reference')]),
             (dfm,        wrpsurf, [('outputnode.dfm', 'warp')]),
             (pre,        wrpsurf, [('outputnode.surf', 'points')])
-            (wrpsurf,    export0, [('out_points', 'surfaces0')]),
-            (pre,        export0, [('outputnode.warped_surf', 'surfaces1')]),
+            (wrpsurf,    export0, [('out_points', 'syellow')]),
+            (pre,        export0, [('outputnode.warped_surf', 'sgreen')]),
             (wdti,       export0, [('outputnode.fa', 'reference')]),
             (export0,      grid0, [('out_files', 'in_files')]),
             (pre,          mesh0, [('outputnode.warped_surf', 'surface1')]),
@@ -129,7 +131,8 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
         ])
 
     cmethod1 = sdc_t2b(num_threads=settings['nthreads'])
-    export1 = pe.Node(ExportSlices(all_axis=True), name='ExportT2B')
+    export1 = pe.Node(ExportSlices(slices=[38, 48, 57, 67, 76, 86],
+                      axis=['axial', 'sagittal']), name='ExportT2B')
     grid1 = pe.Node(SlicesGridplot(
         label=['T2B']*2, slices=[38, 48, 57, 67, 76, 86],
         view=['axial', 'sagittal']), name='GridPlotT2B')
@@ -149,8 +152,8 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
             ('outputnode.surf', 'inputnode.in_surf'),
             ('outputnode.bval', 'inputnode.in_bval'),
             ('outputnode.mr_param', 'inputnode.in_param')]),
-        (cmethod1,   export1, [('outputnode.out_surf', 'surfaces0')]),
-        (pre,        export1, [('outputnode.warped_surf', 'surfaces1')]),
+        (cmethod1,   export1, [('outputnode.out_surf', 'syellow')]),
+        (pre,        export1, [('outputnode.warped_surf', 'sgreen')]),
         (wdti,       export1, [('outputnode.fa', 'reference')]),
         (export1,      grid1, [('out_files', 'in_files')]),
         (pre,          mesh1, [('outputnode.warped_surf', 'surface1')]),

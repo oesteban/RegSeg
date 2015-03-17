@@ -34,21 +34,22 @@ int main(int argc, char *argv[]) {
 #endif
 
 	std::string image;
-	std::vector<std::string> surfaces, rsurfaces, osurfaces;
-	int slice_num, nimages;
-	std::string axisname = "axial";
+	std::vector<std::string> ysurfs, gsurfs, bsurfs;
+	std::vector<int> sl_vect;
+	size_t nimages;
 	std::vector<int> axislist;
+	std::vector<std::string> axisnames;
 
 	bpo::options_description all_desc("Usage");
 	all_desc.add_options()
 		("help,h", "show help message")
 		("input-image,i", bpo::value<std::string>(&image)->required(), "reference image file")
-		("surfaces,S", bpo::value<std::vector<std::string>	>(&surfaces)->multitoken(), "surfaces (vtk files)")
-		("ref-surfaces,R", bpo::value<std::vector<std::string>	>(&rsurfaces)->multitoken(), "reference surfaces (vtk files)")
-		("orig-surfaces,O", bpo::value<std::vector<std::string>	>(&osurfaces)->multitoken(), "original surfaces (vtk files)")
+		("yellow,y", bpo::value<std::vector<std::string>	>(&ysurfs)->multitoken(), "surfaces to display in yellow color")
+		("green,g", bpo::value<std::vector<std::string>	>(&gsurfs)->multitoken(), "surfaces to display in green color")
+		("blue,b", bpo::value<std::vector<std::string>	>(&bsurfs)->multitoken(), "surfaces to display in blue color")
 		("num-slices,n", bpo::value < int >(&nimages)->default_value(14), "number of slices")
-		("slice,s", bpo::value < int >(&slice_num)->default_value(-1), "slice number")
-		("axis,a", bpo::value < std::vector<int> >(&axislist), "axes to be extracted")
+		("slices,s", bpo::value < std::vector<int> >(&sl_vect)->multitoken(), "slice number")
+		("axis,a", bpo::value < std::vector<std::string> >(&axisnames), "axes to be extracted")
 		("all-axis,A", bpo::bool_switch(), "export all axes");
 
 	bpo::variables_map vm;
@@ -58,6 +59,11 @@ int main(int argc, char *argv[]) {
 
 		if (vm.count("help")) {
 			std::cout << all_desc << std::endl;
+			return 1;
+		}
+
+		if (vm.count("num-slices")==0 && vm.count("slices")==0) {
+			std::cerr << "Error: either --slices or --num-slices must be supplied." << std::endl;
 			return 1;
 		}
 
@@ -115,41 +121,52 @@ int main(int argc, char *argv[]) {
 		axislist.resize(0);
 
 		for (size_t aa = 0; aa < 3; aa++) axislist.push_back(aa);
+	} else {
+		for(size_t aa = 0; aa < axisnames.size(); aa++) {
+			std::string name = axisnames[aa];
+
+			if (name.compare("axial") == 0)
+				axislist.push_back(2);
+			if (name.compare("coronal") == 0)
+				axislist.push_back(1);
+			if (name.compare("sagittal") == 0)
+				axislist.push_back(0);
+		}
 	}
 
-	size_t nsurf = surfaces.size();
-	size_t nrsurf = rsurfaces.size();
-	size_t nosurf = osurfaces.size();
+	size_t nsurf = ysurfs.size();
+	size_t nrsurf = gsurfs.size();
+	size_t nosurf = bsurfs.size();
 
-	std::vector< vtkSmartPointer<vtkPolyData> > vp;
-	for(size_t surf = 0; surf < surfaces.size(); surf++) {
+	std::vector< vtkSmartPointer<vtkPolyData> > vp_yellow;
+	for(size_t surf = 0; surf < ysurfs.size(); surf++) {
 		VTK_CREATE(vtkPolyDataReader, reader);
-		reader->SetFileName(surfaces[surf].c_str());
+		reader->SetFileName(ysurfs[surf].c_str());
 		reader->Update();
-		vp.push_back(reader->GetOutput());
+		vp_yellow.push_back(reader->GetOutput());
 	}
 
-	std::vector< vtkSmartPointer<vtkPolyData> > vpr;
+	std::vector< vtkSmartPointer<vtkPolyData> > vp_green;
 	for(size_t surf = 0; surf < nrsurf; surf++) {
 		VTK_CREATE(vtkPolyDataReader, reader);
-		reader->SetFileName(rsurfaces[surf].c_str());
+		reader->SetFileName(gsurfs[surf].c_str());
 		reader->Update();
-		vpr.push_back(reader->GetOutput());
+		vp_green.push_back(reader->GetOutput());
 	}
 
-	std::vector< vtkSmartPointer<vtkPolyData> > vpo;
+	std::vector< vtkSmartPointer<vtkPolyData> > vp_blue;
 	for(size_t surf = 0; surf < nosurf; surf++) {
 		VTK_CREATE(vtkPolyDataReader, reader);
-		reader->SetFileName(osurfaces[surf].c_str());
+		reader->SetFileName(bsurfs[surf].c_str());
 		reader->Update();
-		vpo.push_back(reader->GetOutput());
+		vp_blue.push_back(reader->GetOutput());
 	}
 
-	double totalims = 1.0 * (nimages+1);
 	int slice2DExtent[4];
 	int sliceExtent[6];
 	double sliceOrigin[3];
 	float height = 0.0;
+	std::string axisname;
 
 	for(size_t ax = 0; ax < axislist.size(); ax++) {
 		int axis = axislist[ax];
@@ -199,6 +216,11 @@ int main(int argc, char *argv[]) {
 
 		// std::cout << "Axis (" << axisname << ") Normal[" << axis<< "]=[" << normal[0] << ", " << normal[1] << ", " << normal[2] << "]";
 
+		bool slicesSet = sl_vect.size() > 0;
+		if (slicesSet) {
+			nimages = sl_vect.size();
+		}
+		double totalims = 1.0 * (nimages+1);
 		for (size_t sl = 0; sl < nimages; sl++) {
 			// Setup renderers
 			VTK_CREATE(vtkRenderer, renderer);
@@ -210,8 +232,12 @@ int main(int argc, char *argv[]) {
 			renderWindow->Render();
 			renderWindow->AddRenderer(renderer);
 
-			double factor = ((sl+1) / totalims);
-			idx[axis] = int( (s[axis]-1)* factor);
+			if (slicesSet) {
+				double factor = ((sl+1) / totalims);
+				idx[axis] = int( (s[axis]-1)* factor);
+			} else {
+				idx[axis] = sl_vect[sl];
+			}
 			im->TransformIndexToPhysicalPoint(idx, c);
 
 			vtkim->GetOrigin(sliceOrigin);
@@ -237,13 +263,13 @@ int main(int argc, char *argv[]) {
 			imSlice->GetProperty()->SetInterpolationTypeToNearest();
 			renderer->AddViewProp(imSlice);
 
-			for(size_t surf = 0; surf < rsurfaces.size(); surf++) {
+			for(size_t surf = 0; surf < gsurfs.size(); surf++) {
 				VTK_CREATE(vtkCutter, cutter);
 				cutter->SetCutFunction(cutPlane);
 #if VTK_MAJOR_VERSION <= 5
-				cutter->SetInput(vpr[surf]);
+				cutter->SetInput(vp_green[surf]);
 #else
-				cutter->SetInputData(vpr[surf]);
+				cutter->SetInputData(vp_green[surf]);
 #endif
 
 				VTK_CREATE(vtkStripper, stripper);
@@ -259,13 +285,13 @@ int main(int argc, char *argv[]) {
 				renderer->AddActor(outlineActor);
 			}
 
-			for(size_t surf = 0; surf < osurfaces.size(); surf++) {
+			for(size_t surf = 0; surf < bsurfs.size(); surf++) {
 				VTK_CREATE(vtkCutter, cutter);
 				cutter->SetCutFunction(cutPlane);
 #if VTK_MAJOR_VERSION <= 5
-				cutter->SetInput(vpo[surf]);
+				cutter->SetInput(vp_blue[surf]);
 #else
-				cutter->SetInputData(vpo[surf]);
+				cutter->SetInputData(vp_blue[surf]);
 #endif
 
 				VTK_CREATE(vtkStripper, stripper);
@@ -281,13 +307,13 @@ int main(int argc, char *argv[]) {
 				renderer->AddActor(outlineActor);
 			}
 
-			for(size_t surf = 0; surf < surfaces.size(); surf++) {
+			for(size_t surf = 0; surf < ysurfs.size(); surf++) {
 				VTK_CREATE(vtkCutter, cutter);
 	            cutter->SetCutFunction(cutPlane);
 #if VTK_MAJOR_VERSION <= 5
-				cutter->SetInput(vp[surf]);
+				cutter->SetInput(vp_yellow[surf]);
 #else
-				cutter->SetInputData(vp[surf]);
+				cutter->SetInputData(vp_yellow[surf]);
 #endif
 				VTK_CREATE(vtkStripper, stripper);
 				stripper->SetInputConnection(cutter->GetOutputPort()); // valid circle

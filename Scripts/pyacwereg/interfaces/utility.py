@@ -23,19 +23,22 @@ iflogger = logging.getLogger('interface')
 class ExportSlicesInputSpec(CommandLineInputSpec):
     reference = File(exists=True, argstr='-i %s', mandatory=True,
                      desc=('reference image to show in background'))
-    surfaces0 = InputMultiPath(
-        File(exists=True), argstr='-S %s',
+    syellow = InputMultiPath(
+        File(exists=True), argstr='-y %s',
         desc=('vtk contours that will be overlaid on reference'))
-    surfaces1 = InputMultiPath(
-        File(exists=True), argstr='-R %s',
+    sgreen = InputMultiPath(
+        File(exists=True), argstr='-g %s',
         desc=('vtk contours that will be overlaid on reference'))
-    surfaces3 = InputMultiPath(
-        File(exists=True), argstr='-O %s',
+    sblue = InputMultiPath(
+        File(exists=True), argstr='-b %s',
         desc=('vtk contours that will be overlaid on reference'))
-
+    slices = traits.List(traits.Int(), argstr='--slices %d',
+                         desc='list of slices to export')
     num_slices = traits.Int(14, argstr='-n %d', desc='total num. of slices')
-    axis = traits.Enum(2, 0, 1, argstr='-a %d', usedefault=True,
-                       desc='axis to cut through')
+    axis_trait = traits.Enum('axial', 'coronal', 'sagittal')
+    axis = traits.Either(view_trait, traits.List(axis_trait),
+                         usedefault=True, default='axial',
+                         desc='view plane to export')
     all_axis = traits.Bool(argstr='-A', desc='slice through all axes')
 
 
