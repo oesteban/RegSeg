@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-17 13:03:07
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-17 13:09:47
 
 import os.path as op
 
@@ -130,7 +130,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
 
     cmethod1 = sdc_t2b(num_threads=settings['nthreads'])
     export1 = pe.Node(ExportSlices(all_axis=True), name='ExportT2B')
-    grid0 = pe.Node(SlicesGridplot(
+    grid1 = pe.Node(SlicesGridplot(
         label=['T2B']*2, slices=[38, 48, 57, 67, 76, 86],
         view=['axial', 'sagittal']), name='GridPlotT2B')
     mesh1 = pe.MapNode(ComputeMeshWarp(),
@@ -161,7 +161,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
 
     tile = pe.Node(TileSlicesGrid(), name='TileGridplots')
     csvtile = pe.Node(AddCSVRow(
-        in_file=op.join(op.basedir(settings['out_csv']), 'tiles.csv')),
+        in_file=op.join(op.dirname(settings['out_csv']), 'tiles.csv')),
         name="TileAddRow")
 
     wf.connect([

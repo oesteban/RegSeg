@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-17 12:51:44
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-03-17 13:08:48
 import os
 import os.path as op
 from glob import glob
@@ -77,7 +77,7 @@ class TileSlicesGridInputSpec(CommandLineInputSpec):
 
 
 class TileSlicesGridOutputSpec(TraitedSpec):
-    out_files = OutputMultiPath(File(exists=True), desc='output files')
+    out_file = OutputMultiPath(File(exists=True), desc='output files')
 
 
 class TileSlicesGrid(CommandLine):
@@ -111,7 +111,7 @@ class TileSlicesGrid(CommandLine):
     def _list_outputs(self):
         from glob import glob
         outputs = self.output_spec().get()
-        outputs['out_files'] = op.abspath(self.inputs.out_file + '.pdf')
+        outputs['out_file'] = op.abspath(self.inputs.out_file + '.pdf')
         return outputs
 
 
