@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-03 15:30:39
+# @Last Modified time: 2015-03-17 13:03:07
 
 import os.path as op
 
@@ -21,7 +21,8 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
     from nipype.workflows.dmri.fsl.artifacts import sdc_fmb
 
     from pyacwereg import data
-    from pyacwereg.interfaces.utility import ExportSlices
+    from pyacwereg.interfaces.utility import (ExportSlices, TileSlicesGrid,
+                                              SlicesGridplot)
     from pyacwereg.workflows.registration import regseg_wf, sdc_t2b
     from pyacwereg.workflows import evaluation as ev
     from pyacwereg.workflows.preprocess import preprocess
@@ -59,6 +60,9 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
     regseg = regseg_wf(usemask=True)
     regseg.inputs.inputnode.options = data.get('regseg_hcp')
     exprs = pe.Node(ExportSlices(all_axis=True), name='ExportREGSEG')
+    gridrs = pe.Node(SlicesGridplot(
+        label=['regseg', 'regseg'], slices=[38, 48, 57, 67, 76, 86],
+        view=['axial', 'sagittal']), name='GridPlotREGSEG')
     meshrs = pe.MapNode(ComputeMeshWarp(),
                         iterfield=['surface1', 'surface2'],
                         name='REGSEGSurfDistance')
@@ -73,6 +77,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
         (pre,        exprs, [('outputnode.warped_surf', 'surfaces0')]),
         (regseg,     exprs, [('outputnode.out_surf', 'surfaces1')]),
         (wdti,       exprs, [('outputnode.fa', 'reference')]),
+        (exprs,     gridrs, [('out_files', 'in_files')]),
         (pre,       meshrs, [('outputnode.warped_surf', 'surface1')]),
         (regseg,    meshrs, [('outputnode.out_surf', 'surface2')]),
         (inputnode,  csvrs, [('subject_id', 'subject_id')]),
@@ -92,6 +97,9 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
         mesh0 = pe.MapNode(ComputeMeshWarp(),
                            iterfield=['surface1', 'surface2'],
                            name='FMBSurfDistance')
+        grid0 = pe.Node(SlicesGridplot(
+            label=['FMB']*2, slices=[38, 48, 57, 67, 76, 86],
+            view=['axial', 'sagittal']), name='GridPlotFMB')
         csv0 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
                        name="FMBAddRow")
         csv0.inputs.method = 'FMB'
@@ -113,6 +121,7 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
             (wrpsurf,    export0, [('out_points', 'surfaces0')]),
             (pre,        export0, [('outputnode.warped_surf', 'surfaces1')]),
             (wdti,       export0, [('outputnode.fa', 'reference')]),
+            (export0,      grid0, [('out_files', 'in_files')]),
             (pre,          mesh0, [('outputnode.warped_surf', 'surface1')]),
             (wrpsurf,      mesh0, [('out_points', 'surface2')]),
             (inputnode,     csv0, [('subject_id', 'subject_id')]),
@@ -121,6 +130,9 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
 
     cmethod1 = sdc_t2b(num_threads=settings['nthreads'])
     export1 = pe.Node(ExportSlices(all_axis=True), name='ExportT2B')
+    grid0 = pe.Node(SlicesGridplot(
+        label=['T2B']*2, slices=[38, 48, 57, 67, 76, 86],
+        view=['axial', 'sagittal']), name='GridPlotT2B')
     mesh1 = pe.MapNode(ComputeMeshWarp(),
                        iterfield=['surface1', 'surface2'],
                        name='T2BSurfDistance')
@@ -140,10 +152,23 @@ def hcp_workflow(name='Evaluation_HCP', settings={},
         (cmethod1,   export1, [('outputnode.out_surf', 'surfaces0')]),
         (pre,        export1, [('outputnode.warped_surf', 'surfaces1')]),
         (wdti,       export1, [('outputnode.fa', 'reference')]),
+        (export1,      grid1, [('out_files', 'in_files')]),
         (pre,          mesh1, [('outputnode.warped_surf', 'surface1')]),
         (cmethod1,     mesh1, [('outputnode.out_surf', 'surface2')]),
         (inputnode,     csv1, [('subject_id', 'subject_id')]),
         (mesh1,         csv1, [('distance', 'surf_dist')])
+    ])
+
+    tile = pe.Node(TileSlicesGrid(), name='TileGridplots')
+    csvtile = pe.Node(AddCSVRow(
+        in_file=op.join(op.basedir(settings['out_csv']), 'tiles.csv')),
+        name="TileAddRow")
+
+    wf.connect([
+        (inputnode,     tile, [('subject_id', 'out_file')]),
+        (gridrs,        tile, [('out_file', 'in_reference')]),
+        (grid1,         tile, [('out_file', 'in_competing')]),
+        (tile,       csvtile, [('out_file', 'names')])
     ])
 
     if map_metric:

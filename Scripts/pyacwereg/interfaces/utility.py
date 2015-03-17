@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-03 15:19:23
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-17 12:51:44
 import os
 import os.path as op
 from glob import glob
@@ -63,16 +63,75 @@ class ExportSlices(CommandLine):
         return outputs
 
 
+class TileSlicesGridInputSpec(CommandLineInputSpec):
+    in_reference = InputMultiPath(File(exists=True), mandatory=True,
+                                  desc='input reference tiles')
+    in_competing = InputMultiPath(File(exists=True),
+                                  desc='input reference tiles')
+    geometry = traits.Int(2000, usedefault=True, argstr='-geometry %d',
+                          desc='output geometry')
+    depth = traits.Int(320, usedefault=True, argstr='-depth %d',
+                       desc='output dpi')
+    out_file = File('assembly', usedefault=True, position=-1,
+                    argstr='%s.pdf', desc='output file name')
+
+
+class TileSlicesGridOutputSpec(TraitedSpec):
+    out_files = OutputMultiPath(File(exists=True), desc='output files')
+
+
+class TileSlicesGrid(CommandLine):
+
+    """
+    Uses ImageMagick to combine pdfs of SlicesGridplot
+    """
+    input_spec = TileSlicesGridInputSpec
+    output_spec = TileSlicesGridOutputSpec
+    _cmd = 'montage'
+
+    def _parse_inputs(self, skip=None):
+        all_args = []
+        if skip is None:
+            skip = []
+
+        isComp = isdefined(self.inputs.in_competing)
+        if isComp:
+            for f0, f1 in zip(self.inputs.in_reference,
+                              self.inputs.in_competing):
+                all_args += [f0, f1]
+            skip += ['in_reference', 'in_competing']
+        else:
+            all_args += self.inputs.in_reference
+            skip += ['in_reference']
+
+        all_args += ['-tile 1x%d' % len(all_args)]
+        all_args += super(TileSlicesGrid, self)._parse_inputs(skip=skip)
+        return all_args
+
+    def _list_outputs(self):
+        from glob import glob
+        outputs = self.output_spec().get()
+        outputs['out_files'] = op.abspath(self.inputs.out_file + '.pdf')
+        return outputs
+
+
 class SlicesGridplotInputSpec(BaseInterfaceInputSpec):
-    slices = File(exists=True, mandatory=True, desc='input slices list')
-    view = traits.Enum('axial', 'coronal', 'sagittal', 'all', usedefault=True,
-                       desc='view plane to export')
-    out_file = File('slices_gridplot.pdf',
+    in_files = InputMultiPath(File(exists=True), mandatory=True,
+                              desc='input files list')
+
+    view_trait = traits.Enum('axial', 'coronal', 'sagittal')
+    view = traits.Either(view_trait, traits.List(view_trait),
+                         usedefault=True, default='axial',
+                         desc='view plane to export')
+    split = traits.Bool(True, usedefault=True, desc='separate views')
+    slices = traits.List(traits.Int, desc='list of slices to plot')
+    label = traits.List(traits.Str(), desc='label for each row')
+    out_file = File('slices_gridplot',
                     usedefault=True, desc='output report')
 
 
 class SlicesGridplotOutputSpec(BaseInterfaceInputSpec):
-    out_file = File(desc='output report')
+    out_file = InputMultiPath(desc='output report')
 
 
 class SlicesGridplot(BaseInterface):
@@ -82,18 +141,38 @@ class SlicesGridplot(BaseInterface):
     def _run_interface(self, runtime):
         from pyacwereg import viz
 
-        view = [self.inputs.view]
         if self.inputs.view == 'all':
             view = ['axial', 'coronal', 'sagittal']
+        else:
+            view = np.atleast_1d(self.inputs.view).tolist()
 
-        viz.slices_gridplot(self.inputs.slices, view=view,
-                            out_file=op.abspath(self.inputs.out_file))
+        label = None
+        if isdefined(self.inputs.label):
+            label = self.inputs.label
+
+        slices = None
+        if isdefined(self.inputs.slices):
+            slices = self.inputs.slices
+
+        if self.inputs.split:
+            self._out_file = []
+            for i, v in enumerate(view):
+                o = op.abspath('%s%d.pdf' % (self.inputs.out_file, i))
+                viz.slices_gridplot(self.inputs.in_files, view=v,
+                                    out_file=o, label=label[i],
+                                    slices=slices)
+                self._out_file.append(o)
+        else:
+            self._out_file = [op.abspath(self.inputs.out_file + '.pdf')]
+            viz.slices_gridplot(self.inputs.in_files, view=view,
+                                out_file=self._out_file, label=label,
+                                slices=slices)
         return runtime
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
-        outputs['out_file'] = op.abspath(self.inputs.out_file)
-        return outputsOutputSpec
+        outputs['out_file'] = self._out_file
+        return outputs
 
 
 class Surf2VolInputSpec(CommandLineInputSpec):

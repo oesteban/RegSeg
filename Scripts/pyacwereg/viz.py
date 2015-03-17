@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-17 00:40:27
+# @Last Modified time: 2015-03-17 11:59:18
 import os.path as op
 
 
@@ -493,33 +493,49 @@ def jointplot_gmm(locs, covs, labels=None, out_file=None,
     return out_file
 
 
-def slices_gridplot(in_files, view=['axial'], size=(3, 3), discard=3,
-                    out_file=None):
+def slices_gridplot(in_files, view=['axial'], size=(5, 5), discard=3,
+                    slices=None, label=None, out_file=None):
     from matplotlib import pyplot as plt
     import numpy as np
 
     view = np.atleast_1d(view).tolist()
     rows = len(view)
-    cols = 0
 
     fileslist = []
-    for v in view:
-        filtlist = [f for f in in_files if v in f]
-        if cols == 0:
-            viewlist = filtlist[discard:-discard]
-            cols = len(viewlist)
-        else:
-            viewlist = filtlist[discard:cols + discard]
-        fileslist.append(viewlist)
+    if slices is None:
+        cols = 0
+        for v in view:
+            filtlist = [f for f in in_files if v in f]
+            if cols == 0:
+                viewlist = filtlist[discard:-discard]
+                cols = len(viewlist)
+            else:
+                viewlist = filtlist[discard:cols + discard]
+            fileslist.append(viewlist)
+    else:
+        for v in view:
+            cview = [f for f in in_files for s in slices
+                     if '%s%04d' % (v, s) in f]
+            fileslist.append(cview)
+
+        rows, cols = np.shape(fileslist)
 
     fig, axes = plt.subplots(rows, cols,
                              figsize=(size[0] * cols, size[1] * rows),
                              subplot_kw={'xticks': [], 'yticks': []})
     fig.subplots_adjust(hspace=0.1, wspace=0.05)
 
+    axes = np.atleast_2d(axes)
     for r in range(rows):
         for c in range(cols):
-            axes[r, c].imshow(plt.imread(fileslist[r][c]))
+            ax = axes[r, c]
+            im = plt.imread(fileslist[r][c])
+            ax.imshow(im)
+
+    if label is not None:
+        label = np.atleast_1d(label).tolist()
+        for i, l in enumerate(label):
+            axes[i][0].set_ylabel(l, fontsize=40)
 
     if out_file is None:
         out_file = op.abspath('slices_gridplot.pdf')
