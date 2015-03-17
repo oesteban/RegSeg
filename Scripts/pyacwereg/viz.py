@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-16 21:45:50
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-03-17 00:40:27
 import os.path as op
 
 
@@ -619,10 +619,10 @@ def realdata_errors(in_csv, size=(80, 25), out_file=None,
                            r'$\Gamma_{pial}$', 'Aggregated'])
     plot0.set_xlabel('Surface')
     plot0.set_ylabel('Surface warping index ($sWI$, mm)')
-    l = plot0.axhline(y=2.5, lw=15, xmin=0.07, xmax=0.93,
+    l = plot0.axhline(y=1.25, lw=15, xmin=0.07, xmax=0.93,
                       color='gray', alpha=.4)
     plot0.annotate(
-        "voxel size", xy=(-0.15, 2.5), xytext=(-250, 105),
+        "voxel size", xy=(-0.15, 1.25), xytext=(-250, 105),
         xycoords='data', textcoords='offset points', va='center',
         color='w', fontsize=80,
         bbox=dict(boxstyle='round', fc='gray', ec='none', color='w'),
