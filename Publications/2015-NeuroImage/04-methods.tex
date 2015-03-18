@@ -256,7 +256,7 @@ Now, we introduce \eqref{eq:energy} in \eqref{eq:general_gradient_descent}:
   \begin{align}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
   \frac{ \partial }{\partial \vec{u}_k} \Big\{
-  \int_{\Omega} \underset{l}{\sum} \mdist{f'}{l} \,d\vec{r} \notag\\
+  \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r} \notag\\
   &+ \int_{\Omega} [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
   + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}
   \Big\}.

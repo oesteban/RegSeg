@@ -1,7 +1,7 @@
 % @Author: Oscar Esteban
 % @Date:   2015-02-20 15:40:09
 % @Last Modified by:   Oscar Esteban
-% @Last Modified time: 2015-03-18 11:56:12
+% @Last Modified time: 2015-03-18 15:08:42
 
 \documentclass[a4paper]{report}
 
@@ -65,12 +65,11 @@
 \usepackage{changepage}
 \usepackage{epigraph}
 \usepackage[toc,nomain,acronym,shortcuts,translate=false]{glossaries}
-\usepackage[hyphens]{url}
-\usepackage[breaklinks,hidelinks]{hyperref}
-\usepackage[hyphenbreaks]{breakurl} %fixes boxes spanning through pages
 
+\usepackage{mathtools}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{cancel}
 %\usepackage{algorithmic}
 \DeclareMathOperator{\tr}{tr}
 \DeclareMathOperator{\argmax}{argmax}
@@ -86,6 +85,8 @@
 
 \renewcommand\thesection{S\arabic{section}}
 \renewcommand\thesubsection{S\arabic{section}.\arabic{subsection}}
+\renewcommand\thefigure{S\arabic{figure}}
+\renewcommand{\theequation}{SM\arabic{equation}}
 
 % Listings style -----------------------------------------------------------------------------
 \definecolor{pink}{RGB}{255,0,90}
@@ -152,6 +153,12 @@
 }}
 {}
 
+\usepackage[hyphens]{url}
+\usepackage[hyphenbreaks]{breakurl} %fixes boxes spanning through pages
+\usepackage[colorlinks=true,citecolor=blue,urlcolor=blue,linkcolor=blue]{hyperref}
+
+\input{01-acronyms}
+
 \begin{document}
 \title{Supplemental Materials: \emph{Simultaneous segmentation and registration of
 diffusion MR images of the brain driven by active-contours}}
@@ -163,16 +170,103 @@ diffusion MR images of the brain driven by active-contours}}
 
 \paragraph{Discretization of the shape gradients} The energy functional to be optimized
   in \emph{regseg} is presented in Eq. 7:
-
   \begin{equation}
-  E(R \mid U) = C + \underset{l}{\sum} \int_{\Omega_l}
-  \mdist{f'}{l} \,d\vec{r}
-  + \int_{\Omega} \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
-  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r},
+  E(R \mid U) = C + \underbracket{\underset{l}{\sum} \int_{\Omega_l}
+  \mdist{f'}{l} \,d\vec{r}}_{\text{Data term}}
+  + \underbracket{\underset{\Omega}{\int} \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
+  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r}}_{\text{Regularization term}}.
   \label{eq:energy}
   \end{equation}
 
+To search for the minimum of $E(R \mid U)$ w.r.t. the coefficients $\vec{u}_k$, we use a gradient descent strategy.
+In Eq. 11 we introduced the derivative of \eqref{eq:energy}:
+  \begin{equation}
+  \frac{\partial E(\vec{u})}{\partial \vec{u}_k} =
+  \frac{ \partial }{\partial \vec{u}_k} \Big\{
+  \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r}
+  + \int_{\Omega} [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
+  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}
+  \Big\}.
+  \label{eq:gradient_descent}
+  \end{equation}
 
+Let us compute the derivative of the data term first (Eq. 12):
+\begin{equation}
+  \frac{\partial E_{data}(\vec{u})}{\partial \vec{u}_k} =
+  \frac{ \partial }{\partial \vec{u}_k} \Big\{
+  \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \Big\} =
+  \underset{l}{\sum} \, \frac{ \partial }{\partial \vec{u}_k} \Big\{
+  \int_{\Omega_l} \mdist{f'}{l} \Big\},
+  \label{eq:data_derivative}
+\end{equation}
+where we can introduce the shape-gradients theory from Appendix 1.
+The equation A.1 is discretized as follows.
+First, the surface between limiting regions $\{l, m\}$, $\Gamma_{l,m}$ is explicitly represented by
+  a discrete set of vertices $\vec{v}_i$, with $i \in \{0, \ldots, N_p -1 \}$.
+Complementarily, the inwards normal of the surface $N_{\Gamma_{l,m}}$ is represented by the discrete
+  set of normals $\hat{\vec{n}}_i$ at each vertex of the mesh.
+The resulting summation is, therefore, discrete and the integral operator is replaced by the sum.
+  \begin{align}
+  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} &=
+  \underbracket{\cancel{\int_\Omega \frac{\partial}{\partial t}F(\vec{r}) d\vec{r} }}_{\text{Functional's evolution}}
+  - \underbracket{\int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m}}{\partial t},
+  N_{\Gamma_{l,m}}\right\rangle d\vec{r}}_{\text{Shape's evolution}} \notag \\
+  & = - \underset{p}{\sum} \frac{1}{A_p} \underset{i}{\sum} \, a_i \, F(\vec{v}_i) \left\langle \underbracket{\frac{\partial \vec{v}_i}{\partial t}}_{\text{speed of }\vec{v}_i},
+  \hat{\vec{n}}_{i}\right\rangle.
+  \label{eq:shape_gradient_orig}
+  \end{align}
+where $a_i$ is the area corresponding to vertex $\vec{v}_i$, and $A_p = \sum_i a_i$ is the total area of surface $p$.
+In the following, we will refer as $w_{p,i} = a_i / A_p $ to the area contribution of $\vec{v}_i$ to the
+  total area of the surface it belongs to.
+For simplicity, the sum over $p$ can be also removed, as the vertices belong to only one of the total $P$ contours
+
+Then, the speed of $\vec{v}_i$ is discretized using the artificial timestep parameter $\delta$, as the displacement
+  $\vec{d}_i = \vec{v}_i(\delta = t+1) - \vec{v}_i(\delta = t)$:
+  \begin{equation}
+  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) \, d\vec{r} =
+  - \underset{i}{\sum} w_{p,i} F(\vec{v}_i) \vec{d}_i \cdot \hat{\vec{n}}_i.
+  \label{eq:shape_gradient_disc1}
+  \end{equation}
+
+Since the energy functional is defined over competing regions, the displacement of $\vec{v}_i$ will cause
+  an energy exchange between the limiting regions, and therefore $F(\vec{r})$ must be splitted in
+  two terms, $F_{in}(\vec{r})$ corresponding to the interior region and $F_{out}(\vec{r})$ to the exterior:
+  \begin{equation}
+  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) \, d\vec{r} =
+  - \underset{i}{\sum} w_{p,i} \, \vec{d}_i \cdot
+  \underbracket{\Big[ \big(F_{out}(\vec{v}_i) - F_{in}(\vec{v}_i) \big) \hat{\vec{n}}_i \Big]}_{\bar{s}_i \text{ in Figure 1}}.
+  \label{eq:shape_gradient_disc2}
+  \end{equation}
+
+Now we can identify $t$ with the set of time-dependent coefficients, $\{\vec{u}_k\}$, and the target function $F$ with $\mathcal{D}_l^2$.
+To introduce the speed of the vertices from equation 13, we replace $\vec{d}_i$:
+\begin{equation}
+  \frac{\partial E_{data}(\vec{u})}{\partial \vec{u}_k} =
+  - \underset{i}{\sum} w_{p,i} \, \psi_k(\vec{v}_i) \hat{\vec{e}} \cdot \bar{s}_i =
+  - \underset{i}{\sum} w_{p,i} \, \psi_k(\vec{v}_i) \bar{s}_i = - \underset{i}{\sum} \vec{g}_{i,k}.
+  \label{eq:shape_gradient_final}
+\end{equation}
+
+Inserting \eqref{eq:shape_gradient_final} in \eqref{eq:gradient_descent} we reach equation 15,
+  and renaming $\vec{g}_k = - \underset{i}{\sum} \vec{g}_{i,k}$:
+  \begin{equation}
+  \frac{\partial E(\vec{u})}{\partial \vec{u}_k} =
+  \vec{g}_k + \boldsymbol{\alpha} \vec{u}_k
+  -\boldsymbol{\beta} \Delta \vec{u}_k.
+  \label{eq:gradient_final}
+  \end{equation}
+
+
+\paragraph{Obtaining the update equation} Once the shape gradients are obtained \eqref{eq:gradient_final},
+  we apply the Fourier Transform to solve the \gls*{pde}:
+\begin{align}
+  \frac{\partial E(\vec{u})}{\partial \vec{u}_k} \equiv \frac{\vec{u}_k^{t+1} - \vec{u}_k^t}{\delta} \implies
+  \vec{u}_k^{t+1} &= \delta \Big( \vec{g}_k + \boldsymbol{\alpha} \vec{u}_k
+  - \boldsymbol{\beta} \Delta \vec{u}_k \Big) + \vec{u}_k^t, \notag \\
+  \vec{u}_k^{t+1} &= \delta \vec{g}_k +  \boldsymbol{\alpha} \delta \vec{u}_k
+  - \boldsymbol{\beta} \delta \Delta \vec{u}_k + \vec{u}_k^t
+  \label{eq:discrete_derivative}
+\end{align}
 
 \section{Parameter settings and implementation details of \emph{regseg}}
 
@@ -185,12 +279,22 @@ The tool generates a log-file in JSON format to easily inter-operate with second
   as the convergence report generation, \autoref{sec:convergence_evidence}).
 
 \paragraph{Efficient interpolation using sparse matrices}
-During the registration process, every iteration requires computing the product of all the speeds
-  $\mathbf{s}'_i$ computed at the current position $\mathbf{v}'_i$ by the corresponding weights
-  $\psi_k(\mathbf{v}_i)$ of interpolating functions (Eq. (15)).
+During the registration process, every iteration requires computing the product of all the gradients
+  $\vec{g}_k$ associated to the control point $k$, and computed at the current position
+  $\vec{v}_i$ by the corresponding weights $\psi_{ik} = \psi_k(\mathbf{v}_i)$ of interpolating functions
+  \eqref{eq:shape_gradient_final}.
+In order to optimize multiplications and summations, all the $\psi_{ik}$ are collected in a
+  matrix $\boldsymbol{\Psi} = (\psi_{ik})$.
+Given the limited support of the basis function $\psi$, $\boldsymbol{\Psi}$ will hold the property
+  of being sparse, as only few $\psi_{ik} > 0$ in the surroundings of $\vec{v}_i$.
+Then, the gradients $g_k$ are easily computed using the matrix product:
+\begin{equation}
+  \big(\vec{g}_k \big) = \boldsymbol{\Psi} \cdot \big( w_i \, \bar{s}_i \big)^T
+  \label{eq:sparse_matrix}
+\end{equation}
+
 As these weights can be computed once in the beginning of the process and they do not change along
-  it, and they are different from zero only in the proximity of the corresponding control node $k$,
-  they can be pre-cached in a sparse matrix.
+  it, $\boldsymbol{\Psi}$ can be pre-cached.
 
 \subsection{Interface and Settings}\label{sec:interface_settings}
 
@@ -273,15 +377,13 @@ ifresult = regseg.run()
 \end{pythoncode}
 
 
-
 \subsection{Convergence evidencing}\label{sec:convergence_evidence}
+
 In order to track the evolution of the registration process, several internal variables
   are saved in the JSON log-file.
 Using the JSON log-file as input for the \emph{nipype Interface}
   \codeinline{ACWEReport}, it is straightforward to obtain
   a visual assessment document presenting the convergence.
-Online checking is also possible as the algorithm writes to the standard output as well.
-
 \begin{pythoncode}
 from pyacwereg.interfaces.acwereg import ACWEReport
 report = ACWEReport()
@@ -289,14 +391,17 @@ report.inputs.in_log = `myprefix.log'
 ifresult = report.run()
 \end{pythoncode}
 
-\begin{figure*}[!ht]
-	\includegraphics[width=\textwidth]{figures/Suppl-figure02.pdf}
-	\caption{The evolution of the registration and segmentation process can be
-	  checked using the \emph{Convergence report},
-	  easily generated using the appropriate \emph{nipype Interface}.
-	The report comprehends several plots tracking the evolution of the algorithm and several
-	  features to help researchers tune up the algorithm in their application.}%
-	  \label{fig:convreport}
+Online checking is also possible as the algorithm writes to the standard output as well.
+A sample report is found in \autoref{fig:convreport}.
+
+\begin{figure*}[b]
+  \includegraphics[width=\textwidth]{figures/Suppl-figure02.pdf}
+  \caption{The evolution of the registration and segmentation process can be
+    checked using the \emph{Convergence report},
+    easily generated using the appropriate \emph{nipype Interface}.
+  The report comprehends several plots tracking the evolution of the algorithm and several
+    features to help researchers tune up the algorithm in their application.}%
+    \label{fig:convreport}
 \end{figure*}
 
 \section{Instruments for evaluation}
@@ -320,8 +425,6 @@ In this section, we review the main elements of the evaluation pipelines.
 	\includegraphics[width=\textwidth]{figures/Suppl-figure01.pdf}
 	\caption{Evaluating the joint distribution}\label{fig:jointplot}
 \end{figure*}
-
-\section{Extended results on phantom data}
 
 \newpage
 \section{Extended results on real data}

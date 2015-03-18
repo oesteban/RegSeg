@@ -26,11 +26,12 @@ We now derive the domain integral w.r.t. $t$:
 Assuming that the region descriptors $\{\mu_l, \Sigma_l\}$ vary slowly enough, we can consider
   that $\frac{\partial}{\partial t} F(\vec{r}) = 0$ and thus:
 
-  \begin{equation*}
+  \begin{equation}
   \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
   - \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
   N_{\Gamma_{l,m}}\right\rangle d\vec{r}
-  \end{equation*}
+  \label{eq:shape_gradient_orig}
+  \end{equation}
 
   As inner ($\Omega_l$) and outer ($\Omega_m$) regions are competing and introducing
     the energy functional \eqref{eq:energy}:
