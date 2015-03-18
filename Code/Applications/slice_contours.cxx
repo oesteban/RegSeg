@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
 		("blue,b", bpo::value<std::vector<std::string>	>(&bsurfs)->multitoken(), "surfaces to display in blue color")
 		("num-slices,n", bpo::value < size_t >(&nimages)->default_value(14), "number of slices")
 		("slices,s", bpo::value < std::vector<int> >(&sl_vect)->multitoken(), "slice number")
-		("axis,a", bpo::value < std::vector<std::string> >(&axisnames), "axes to be extracted")
+		("axis,a", bpo::value < std::vector<std::string> >(&axisnames)->multitoken(), "axes to be extracted")
 		("all-axis,A", bpo::bool_switch(), "export all axes");
 
 	bpo::variables_map vm;
@@ -232,12 +232,13 @@ int main(int argc, char *argv[]) {
 			renderWindow->Render();
 			renderWindow->AddRenderer(renderer);
 
-			if (slicesSet) {
+			if (!slicesSet) {
 				double factor = ((sl+1) / totalims);
 				idx[axis] = int( (s[axis]-1)* factor);
 			} else {
 				idx[axis] = sl_vect[sl];
 			}
+
 			im->TransformIndexToPhysicalPoint(idx, c);
 
 			vtkim->GetOrigin(sliceOrigin);
