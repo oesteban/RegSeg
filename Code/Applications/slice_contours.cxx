@@ -113,10 +113,6 @@ int main(int argc, char *argv[]) {
 		idx[i] = int(0.5*(s[i]-1));
 	}
 
-	if (axislist.size() == 0) {
-		axislist.push_back(2);
-	}
-
 	if (vm.count("all-axis") && vm["all-axis"].as<bool>()) {
 		axislist.resize(0);
 
