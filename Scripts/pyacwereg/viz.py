@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-17 11:59:18
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-18 19:01:24
 import os.path as op
 
 
@@ -551,15 +551,17 @@ def phantom_errors(in_csv, size=(80, 30), out_file=None):
     sn.set_context("poster", font_scale=4.5)
     df = pd.read_csv(in_csv).drop_duplicates(subset=['surf_id', 'repetition',
                                              'surfdist_avg', 'model_type'])
+    del df['Unnamed: 0']
+
     df.surf_id[df.surf_id == 0] = 'internal'
     df.surf_id[df.surf_id == 1] = 'external'
     mtypes = df.model_type.unique()
     cols = len(mtypes) * 2
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=size)
-    
+
     lodf = df[df.resolution == 'lo']
     plot0 = sn.violinplot(x='model_type', y='surfdist_avg', hue='surf_id',
-                          hue_order=['internal', 'external'],
+                          hue_order=['internal', 'external'], inner='quartile',
                           data=lodf, scale_hue=.9, width=.9, ax=ax1)
     plot0.set_xlabel('Model Type')
     plot0.set_ylabel('Averaged error of surfaces (mm)')
@@ -568,9 +570,24 @@ def phantom_errors(in_csv, size=(80, 30), out_file=None):
         r'Registration error @ $%.1f \times %.1f \times %.1fmm^3$' %
         tuple([2.0] * 3))
 
+    l = plot0.axhline(y=2.0, lw=15, xmin=0.07, xmax=0.93,
+                      color='gray', alpha=.4)
+    plot0.annotate(
+        "voxel size", xy=(2.5, 2.0), xytext=(100, -150),
+        xycoords='data', textcoords='offset points', va='center',
+        color='w', fontsize=80,
+        bbox=dict(boxstyle='round', fc='gray', ec='none', color='w'),
+        arrowprops=dict(arrowstyle='wedge,tail_width=.7',
+                        fc='gray', ec='none',
+                        ))
+    
+    frame = plot0.legend(loc=2, fancybox=True).get_frame()
+    frame.set_facecolor('white')
+    frame.set_edgecolor('white')
+
     hidf = df[df.resolution == 'hi']
     plot1 = sn.violinplot(x='model_type', y='surfdist_avg', hue='surf_id',
-                          hue_order=['internal', 'external'],
+                          hue_order=['internal', 'external'], inner='quartile',
                           data=hidf, scale_hue=.9, width=.9, ax=ax2)
     plot1.set_xlabel('Model Type')
     plot1.set_ylabel('')
@@ -578,9 +595,17 @@ def phantom_errors(in_csv, size=(80, 30), out_file=None):
     plot1.set_title(
         r'Registration error @ $%.1f \times %.1f \times %.1fmm^3$' %
         tuple([1.0] * 3))
-
-    leg = plot0.legend(loc="best")
-    leg = plot1.legend(loc="best")
+    l = plot1.axhline(y=1.0, lw=15, xmin=0.07, xmax=0.93,
+                      color='gray', alpha=.4)
+    plot1.annotate(
+        "voxel size", xy=(0.1, 1.0), xytext=(-200, -120),
+        xycoords='data', textcoords='offset points', va='center',
+        color='w', fontsize=80,
+        bbox=dict(boxstyle='round', fc='gray', ec='none', color='w'),
+        arrowprops=dict(arrowstyle='wedge,tail_width=.7',
+                        fc='gray', ec='none',
+                        ))
+    plot1.legend_.remove()
 
     sn.despine(left=True, bottom=True)
 
