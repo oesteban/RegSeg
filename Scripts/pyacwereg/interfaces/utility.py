@@ -32,12 +32,12 @@ class ExportSlicesInputSpec(CommandLineInputSpec):
     sblue = InputMultiPath(
         File(exists=True), argstr='-b %s',
         desc=('vtk contours that will be overlaid on reference'))
-    slices = traits.List(traits.Int(), argstr='--slices %d',
+    slices = traits.List(traits.Int(), argstr='--slices %s',
                          desc='list of slices to export')
     num_slices = traits.Int(14, argstr='-n %d', desc='total num. of slices')
     axis_trait = traits.Enum('axial', 'coronal', 'sagittal')
-    axis = traits.Either(view_trait, traits.List(axis_trait),
-                         usedefault=True, default='axial',
+    axis = traits.Either(axis_trait, traits.List(axis_trait),
+                         argstr='-a %s', usedefault=True, default='axial',
                          desc='view plane to export')
     all_axis = traits.Bool(argstr='-A', desc='slice through all axes')
 
