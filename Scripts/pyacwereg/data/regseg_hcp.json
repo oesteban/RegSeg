@@ -54,11 +54,11 @@
         0.0, 
         0.0
     ], 
-    "step_auto": [
-        true, 
-        true, 
-        true
-    ], 
+    "step_size": [
+        1.5, 
+        1.8, 
+        2.0
+    ],
     "iterations": [
         350, 
         250, 

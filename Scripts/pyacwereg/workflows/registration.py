@@ -5,8 +5,8 @@
 #
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-03-28 20:38:30
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-10 13:29:28
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-18 17:03:44
 
 import os
 import os.path as op
@@ -29,7 +29,7 @@ from pyacwereg.interfaces.warps import FieldBasedWarp, InverseField
 def regseg_wf(name='REGSEG', enhance_inputs=True, usemask=False):
     wf = pe.Workflow(name=name)
 
-    regseg_inputs = ['iterations', 'alpha', 'beta', 'step_auto',
+    regseg_inputs = ['iterations', 'alpha', 'beta', 'step_size',
                      'grid_spacing', 'convergence_energy',
                      'convergence_window', 'f_smooth',
                      'images_verbosity', 'scales', 'descript_update',
