@@ -1,7 +1,7 @@
 % @Author: Oscar Esteban
 % @Date:   2015-02-20 15:40:09
 % @Last Modified by:   Oscar Esteban
-% @Last Modified time: 2015-03-13 16:03:13
+% @Last Modified time: 2015-03-18 11:56:12
 
 \documentclass[a4paper]{report}
 
@@ -61,7 +61,7 @@
 \usepackage{makeidx}
 %\usepackage[scale=2.0]{ccicons}
 \usepackage[colorinlistoftodos]{todonotes}
-\usepackage[marginparwidth=1.2in]{geometry}
+\usepackage[top=2cm,bottom=1.8cm,left=2.1cm,right=1.7cm,marginparwidth=1.2in]{geometry}
 \usepackage{changepage}
 \usepackage{epigraph}
 \usepackage[toc,nomain,acronym,shortcuts,translate=false]{glossaries}
@@ -323,7 +323,11 @@ In this section, we review the main elements of the evaluation pipelines.
 
 \section{Extended results on phantom data}
 
+\newpage
 \section{Extended results on real data}
+
+\immediate\write18{./visual_report.sh}
+\input{suppl-realdata.tex}
 
 \end{document}
 
