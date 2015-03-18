@@ -30,19 +30,9 @@ Assuming that the region descriptors $\{\mu_l, \Sigma_l\}$ vary slowly enough, w
   \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
   - \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
   N_{\Gamma_{l,m}}\right\rangle d\vec{r}
-  \label{eq:shape_gradient_orig}
+  \label{eq:shape_gradients}
   \end{equation}
 
-  As inner ($\Omega_l$) and outer ($\Omega_m$) regions are competing and introducing
-    the energy functional \eqref{eq:energy}:
-
-    \begin{equation}
-    \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
-    - \int_{\Gamma_{l,m}} \left[ \mathcal{E}_{l}(\vec{r}) - \mathcal{E}_{m}(\vec{r}) \right]
-    \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
-  N_{\Gamma_{l,m}}\right\rangle d\vec{r},
-  	\label{eq:shape_gradients}
-    \end{equation}
-%
-    where $\mathcal{E}_l(\vec{r}) = \mathcal{D}^2_{l}(R(\vec{r}))$ for briefness.
+  The application of \eqref{eq:shape_gradients} to our problem and its discretization are
+    discussed in the \suppl{section S1}, equations (SM1) to (SM8).
 

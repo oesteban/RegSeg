@@ -14,7 +14,7 @@ Parameter settings of every processing step in the experiments are made availabl
 For each registration, the averaged Hausdorff distance (see \autoref{sec:experiments_evaluation})
   of the inner and the outer surfaces was computed.
 The results showed a consistent and high accuracy, below the image resolution.
-\autoref{fig:phantom} (block C) presents the box plots by model type corresponding
+\autoref{fig:phantom} (block C) presents the violin plots by model type corresponding
   to the two sets of resolutions of generated phantoms.
 To support that the misregistration errors averaged per experiment was significantly
   under the resolution of the target image, we proceeded as follows.
@@ -33,22 +33,12 @@ Since statistical tests may not be conclusive enough, we also computed the confi
 \begin{table}
 		\centering
 		\footnotesize
-    \begin{tabular}{ccccc}
-    Res. & ``gyrus'' & ``ball''  & ``box''   & ``L''     \\\hline
-    Low  & 0.58-0.60 & 0.66-0.73 & 0.68-0.71 & 0.67-0.73 \\
-    High & 0.18-0.36 & 0.32-0.41 & 0.35-0.39 & 0.35-0.39 \\
+    \begin{tabular}{lccccc}
+    Res. & ``gyrus'' & ``ball''  & ``box''   & ``L''     & Aggreg.    \\\hline
+    Low  & 0.59-0.60 & 0.65-0.76 & 0.68-0.71 & 0.67-0.77 & 0.64-0.66  \\
+    High & 0.18-0.38 & 0.31-0.45 & 0.34-0.42 & 0.34-0.40 & 0.34-0.38  \\
     \hline
     \end{tabular}
-%
-%    \begin{tabular}{llcc}
-%    Type      & Low-res.  & Hi-res. \\
-%    \hline
-%    ``gyrus'' & 0.58-0.60 & 0.18-0.36 \\
-%    ``L''     & 0.67-0.73 & 0.35-0.39 \\
-%    ``ball''  & 0.66-0.73 & 0.32-0.41 \\
-%    ``box''   & 0.68-0.71 & 0.35-0.39 \\
-%    \hline
-%    \end{tabular}
     \caption{95\% Confidence Intervals (CIs) were computed using bootstrapping of $10^4$ samples,
       for each phantom type and resolution.
     Taking into account the non-normal distribution of errors, we used the median as location
@@ -64,7 +54,7 @@ Preliminarily, we investigated the aptness of our segmentation model to play as 
   driving the registration process.
 First, we evaluated several alternative models to segment the target bivariate images
   (\gls*{fa} and \gls*{adc}).
-Based on the observed joint distribution of each (\suppl{section S2}),
+Based on the observed joint distribution of each (\suppl{section S4}),
   we selected the 6-regions scheme described in \autoref{sec:human_connectome}.
 
 The distortions follow expression \eqref{eq:fieldmap} and hence, we easily reduced the
@@ -87,14 +77,14 @@ The metric consistently displayed its minimum at $\epsilon=0.0$ (ground-truth lo
 
 \paragraph*{Evaluation \& cross-comparison}\label{sec:res_cc_evaluation}
 %
-Finally, we tested the performance of our registration method, and compared it to the
-  a standard \gls*{t2b} correction.
+Finally, we compared the performance of \emph{regseg} and the standard \gls*{t2b}
+  correction.
 We computed the \gls*{swindex} \eqref{eq:swindex} of every surface after correction,
   for both \emph{regseg} and the \gls*{t2b} methods.
 Finally, to statistically compare the results, we performed a one-way ANOVA test
   on the warping indices for three specific surfaces of interest
   ($\Gamma_{VdGM}$, $\Gamma_{WM}$, and $\Gamma_{pial}$).
-These interfaces are critical in analyses on whole-brain tractography.
+These interfaces are critical in analyses of whole-brain tractography.
 The one-way ANOVA evidenced that error distributions were significantly different,
   $p \approx 2 \times 10^{-9}$.
 We also reported the 95\% CIs of the \gls*{swindex} for those surfaces.
@@ -102,8 +92,8 @@ The aggregated CI for \emph{regseg} was $[1.08 - 1.50] mm$, whereas the competin
   yielded an aggregated CI of $[2.06 - 2.43] mm$.
 The quantitative results of the ANOVA tests and the CIs are presented in \autoref{tab:results_real}.
 Visual assessment of one case is shown in \autoref{fig:results_real}, along with the corresponding
-  box plots of error distributions by correction method and surface.
-Extended visual assessment of the 16 cases is included in the \suppl{section S4}.
+  violin plots of error distributions by correction method and surface.
+Extended visual assessment of the 16 cases is included in the \suppl{section S5}.
 
 \begin{table}
 		\centering

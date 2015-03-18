@@ -267,7 +267,7 @@ Now, we introduce \eqref{eq:energy} in \eqref{eq:general_gradient_descent}:
 We apply a discretized interpretation of \eqref{eq:shape_gradients} to compute
   the data term in \eqref{eq:gradient_descent} using shape-gradients
   \citep{herbulot_segmentation_2006}, and ultimately avoid level sets.
-We refer the reader to the appendix \autoref{app:shape_priors} in order to fill in the gap
+We refer the reader to \ref{app:shape_priors} in order to fill in the gap
   between \eqref{eq:gradient_descent} and the following expression:
 
   \begin{align}
@@ -358,13 +358,13 @@ Therefore, a \gls*{swindex} can be computed as the one-to-one distance between c
   vertices of surfaces, weighted by their respective Voronoi area $a_i$:
 
   \begin{equation}
-  sWI = \frac{1}{P} \sum\limits_p^P \frac{1}{A_p} \sum\limits_i^{N_p} a_i\,\|
+  sWI = \frac{1}{\sum_i a_i} \sum\limits_i^{N_p} a_i\,\|
   \vec{v}_i - \hat{\vec{v}}_i \|
   \label{eq:swindex}
   \end{equation}
 %
   where $\vec{v}_i$ are the locations of the $N_p$ vertices in each $p \in \{1, \dots P\}$
-  prior, $A_p$ the total area of surface $p$, and $\hat{\vec{v}}_i$ is the location
+  prior, and $\hat{\vec{v}}_i$ is the location
   recovered corresponding to the vertex $\vec{v}_i$.
 
 
@@ -405,15 +405,15 @@ The reference surfaces were extracted at the higher resolution (1.0mm isotropic)
     \centering
     \resizebox{\textwidth}{!}{%
       \begin{tikzpicture}
-        \node[inner sep=5pt, draw=black!40](fig03a) at (0,14)
-          {\includegraphics[width=\linewidth]{figures/figure03-a}};
-        \node[inner sep=5pt, draw=black!40](fig03b) at (0,7.6)
-          {\includegraphics[width=\linewidth]{figures/figure03-b}};
-        \node[inner sep=5pt, draw=black!40](fig03c) at (0,0)
-          {\includegraphics[width=\linewidth]{figures/figure03-c}};
-        \node[circle, text=black!75] at (-8.8,16.2) {\Huge \textbf{A}};
-        \node[circle, text=black!75] at (-8.8,10.05) {\Huge \textbf{B}};
-        \node[circle, text=black!75] at (-8.8,3.4) {\Huge \textbf{C}};
+        \node[inner sep=10pt, draw=black!40](fig03a) at (0,14.8)
+          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure03-a}};
+        \node[inner sep=10pt, draw=black!40](fig03b) at (0,7.9)
+          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure03-b}};
+        \node[inner sep=10pt, draw=black!40](fig03c) at (0,0)
+          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure03-c}};
+        \node[circle, text=black!75] at (-9.4,17.3) {\Huge \textbf{A}};
+        \node[circle, text=black!75] at (-9.4,10.6) {\Huge \textbf{B}};
+        \node[circle, text=black!75] at (-9.4,3.5) {\Huge \textbf{C}};
       \end{tikzpicture}
     }%
 	\caption{A. The ``cortex'' phantom is a spherical shape with two sulci and an
