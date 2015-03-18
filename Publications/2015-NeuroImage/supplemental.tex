@@ -1,7 +1,7 @@
 % @Author: Oscar Esteban
 % @Date:   2015-02-20 15:40:09
 % @Last Modified by:   Oscar Esteban
-% @Last Modified time: 2015-03-18 15:08:42
+% @Last Modified time: 2015-03-18 15:12:35
 
 \documentclass[a4paper]{report}
 
@@ -203,7 +203,7 @@ where we can introduce the shape-gradients theory from Appendix 1.
 The equation A.1 is discretized as follows.
 First, the surface between limiting regions $\{l, m\}$, $\Gamma_{l,m}$ is explicitly represented by
   a discrete set of vertices $\vec{v}_i$, with $i \in \{0, \ldots, N_p -1 \}$.
-Complementarily, the inwards normal of the surface $N_{\Gamma_{l,m}}$ is represented by the discrete
+Consequently, the inwards normal of the surface $N_{\Gamma_{l,m}}$ is represented by the discrete
   set of normals $\hat{\vec{n}}_i$ at each vertex of the mesh.
 The resulting summation is, therefore, discrete and the integral operator is replaced by the sum.
   \begin{align}
@@ -220,7 +220,7 @@ In the following, we will refer as $w_{p,i} = a_i / A_p $ to the area contributi
   total area of the surface it belongs to.
 For simplicity, the sum over $p$ can be also removed, as the vertices belong to only one of the total $P$ contours
 
-Then, the speed of $\vec{v}_i$ is discretized using the artificial timestep parameter $\delta$, as the displacement
+Then, the speed of $\vec{v}_i$ is discretized using the artificial time-step parameter $\delta$, as the displacement
   $\vec{d}_i = \vec{v}_i(\delta = t+1) - \vec{v}_i(\delta = t)$:
   \begin{equation}
   \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) \, d\vec{r} =
@@ -229,7 +229,7 @@ Then, the speed of $\vec{v}_i$ is discretized using the artificial timestep para
   \end{equation}
 
 Since the energy functional is defined over competing regions, the displacement of $\vec{v}_i$ will cause
-  an energy exchange between the limiting regions, and therefore $F(\vec{r})$ must be splitted in
+  an energy exchange between the limiting regions, and therefore $F(\vec{r})$ must be split in
   two terms, $F_{in}(\vec{r})$ corresponding to the interior region and $F_{out}(\vec{r})$ to the exterior:
   \begin{equation}
   \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) \, d\vec{r} =
