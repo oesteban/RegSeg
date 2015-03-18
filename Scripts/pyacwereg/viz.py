@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-18 19:01:24
+# @Last Modified time: 2015-03-18 20:00:10
 import os.path as op
 
 
@@ -549,8 +549,8 @@ def phantom_errors(in_csv, size=(80, 30), out_file=None):
     import seaborn as sn
     import matplotlib.pyplot as plt
     sn.set_context("poster", font_scale=4.5)
-    df = pd.read_csv(in_csv).drop_duplicates(subset=['surf_id', 'repetition',
-                                             'surfdist_avg', 'model_type'])
+    df = pd.read_csv(in_csv).drop_duplicates(
+        subset=['surf_id', 'repetition', 'surfdist_avg', 'model_type'])
     del df['Unnamed: 0']
 
     df.surf_id[df.surf_id == 0] = 'internal'
@@ -580,7 +580,7 @@ def phantom_errors(in_csv, size=(80, 30), out_file=None):
         arrowprops=dict(arrowstyle='wedge,tail_width=.7',
                         fc='gray', ec='none',
                         ))
-    
+
     frame = plot0.legend(loc=2, fancybox=True).get_frame()
     frame.set_facecolor('white')
     frame.set_edgecolor('white')
@@ -697,7 +697,6 @@ def phantom_boxplot(in_csv, resolution='lo',
 
     sn.set(style="whitegrid")
     sn.set_context("poster", font_scale=1.5)
-
 
     g = sn.factorplot('model_type', 'surfdist_avg', 'surf_id', filtdf,
                       size=15, kind='box', x_order=mtypes, legend=False,
