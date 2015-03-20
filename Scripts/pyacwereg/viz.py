@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-18 20:00:10
+# @Last Modified time: 2015-03-20 13:18:39
 import os.path as op
 
 
@@ -650,8 +650,8 @@ def realdata_errors(in_csv, size=(80, 25), out_file=None,
     df2 = _extract_method(t2bdf, 'T2B', columns)
 
     plot0 = sn.violinplot(x='surf', y='error', hue='method', size=size,
-                          bw=0.2, inner='quartile', linewidth=8,
-                          data=pd.concat([df1, df2]), scale_hue=.9, width=.4)
+                          inner='quartile', linewidth=8,  # bw=0.2,
+                          data=pd.concat([df1, df2]), scale_hue=.9, width=.7)
 
     ymax = plot0.get_ylim()[1]
     plot0.set_ylim([0.0, 4.0])
