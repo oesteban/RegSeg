@@ -88,8 +88,8 @@ These interfaces are critical in analyses of whole-brain tractography.
 The one-way ANOVA evidenced that error distributions were significantly different,
   $p \approx 2 \times 10^{-9}$.
 We also reported the 95\% CIs of the \gls*{swindex} for those surfaces.
-The aggregated CI for \emph{regseg} was $[1.08 - 1.50] mm$, whereas the competing method
-  yielded an aggregated CI of $[2.06 - 2.43] mm$.
+The aggregate CI for \emph{regseg} was $[1.08 - 1.50] mm$, whereas the competing method
+  yielded an aggregate CI of $[2.06 - 2.43] mm$.
 The quantitative results of the ANOVA tests and the CIs are presented in \autoref{tab:results_real}.
 Visual assessment of one case is shown in \autoref{fig:results_real}, along with the corresponding
   violin plots of error distributions by correction method and surface.
@@ -100,15 +100,15 @@ Extended visual assessment of the 16 cases is included in the \suppl{section S5}
 		\footnotesize
 		\tabcolsep=0.05cm
     \begin{tabular}{cccccc}
-    & & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ & Aggregated \\
+    & & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ & Aggregate \\
     \hline
     \multirow{2}{*}{CI}
-       & \emph{regseg}        & 0.77 - 1.18 & 0.95 - 1.85 & 1.33 - 2.13 & 1.08 - 1.50 \\
-       & T2B                  & 1.73 - 2.62 & 1.96 - 2.40 & 2.16 - 2.63 & 2.06 - 2.43 \\
+       & \emph{regseg}        & 0.50 - 0.78 & 0.50 - 0.55 & 0.66 - 0.73 & 0.56 - 0.66 \\
+       & T2B                  & 1.78 - 2.58 & 1.94 - 2.36 & 2.16 - 2.58 & 2.05 - 2.39 \\
     \hline
     \multirow{2}{*}{ANOVA}
-       & p-value  & 1.4$\times$10$^{-5}$& 1.3$\times$10$^{-3}$& 2.5$\times$10$^{-3}$ & 2$\times$10$^{-9}$ \\
-       & f-stat   & 27.87               & 12.89               & 11.13                & 45.04 \\
+       & p-value  & 1.5$\times$10$^{-8}$& 6.3$\times$10$^{-16}$& 4.2$\times$10$^{-16}$ & 4$\times$10$^{-34}$ \\
+       & f-stat   & 60.03               & 255.82               & 263.97                & 377.82              \\
     \hline
     \end{tabular}
     \caption{All the 95\% CIs of the \gls*{swindex} distributions computed for the
