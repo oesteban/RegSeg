@@ -62,7 +62,7 @@ Therefore, a typical protocol for the extraction of structural connectivity
 \subsection{Our method and contributions}
 \label{sec:contributions}
 %
-\emph{Regseg} can be viewed as a derivation of \emph{bbregister} \citep{greve_accurate_2009}.
+The most immediate antecedent of \emph{regseg} is \emph{bbregister} \citep{greve_accurate_2009}.
 Both methods exploit the anatomically correct and precise surfaces that are readily
   extracted with \emph{FreeSurfer} \citep{fischl_freesurfer_2012}, mapping them
   to a target \gls*{dmri} image using active contours.
@@ -72,6 +72,8 @@ We implemented active contours without edges \citep{chan_active_2001}, that allo
 Another identifying difference is the deformation model:
   \emph{bbregister} includes an affine transformation and overcomes the distortion
   problem by excluding typically affected regions from computation.
+Therefore, correction must be addressed independently because \emph{bbregister} is
+  not an unwarping method.
 Conversely, \emph{regseg} implements a free-deformation field supported with B-Spline
   functions.
 Our method is close to \citep{guyader_combined_2011} and \citep{gorthi_active_2011}

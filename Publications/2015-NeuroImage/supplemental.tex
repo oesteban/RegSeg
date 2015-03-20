@@ -1,7 +1,7 @@
 % @Author: Oscar Esteban
 % @Date:   2015-02-20 15:40:09
 % @Last Modified by:   Oscar Esteban
-% @Last Modified time: 2015-03-18 15:12:35
+% @Last Modified time: 2015-03-20 13:21:27
 
 \documentclass[a4paper]{report}
 
@@ -287,7 +287,7 @@ In order to optimize multiplications and summations, all the $\psi_{ik}$ are col
   matrix $\boldsymbol{\Psi} = (\psi_{ik})$.
 Given the limited support of the basis function $\psi$, $\boldsymbol{\Psi}$ will hold the property
   of being sparse, as only few $\psi_{ik} > 0$ in the surroundings of $\vec{v}_i$.
-Then, the gradients $g_k$ are easily computed using the matrix product:
+Then, the gradients $\vec{g}_k$ are easily computed using the matrix product:
 \begin{equation}
   \big(\vec{g}_k \big) = \boldsymbol{\Psi} \cdot \big( w_i \, \bar{s}_i \big)^T
   \label{eq:sparse_matrix}
