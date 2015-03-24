@@ -1,7 +1,7 @@
 % @Author: Oscar Esteban
 % @Date:   2015-02-20 15:40:09
 % @Last Modified by:   Oscar Esteban
-% @Last Modified time: 2015-03-20 13:21:27
+% @Last Modified time: 2015-03-24 16:12:10
 
 \documentclass[a4paper]{report}
 
@@ -257,16 +257,20 @@ Inserting \eqref{eq:shape_gradient_final} in \eqref{eq:gradient_descent} we reac
   \end{equation}
 
 
-\paragraph{Obtaining the update equation} Once the shape gradients are obtained \eqref{eq:gradient_final},
-  we apply the Fourier Transform to solve the \gls*{pde}:
+\paragraph{Obtaining the update equation} To solve the differential equation in \eqref{eq:gradient_descent},
+  we use a semi-implicit Euler scheme, where the shape-gradients $\vec{g}_k$ are explicit:
 \begin{align}
-  \frac{\partial E(\vec{u})}{\partial \vec{u}_k} \equiv \frac{\vec{u}_k^{t+1} - \vec{u}_k^t}{\delta} \implies
-  \vec{u}_k^{t+1} &= \delta \Big( \vec{g}_k + \boldsymbol{\alpha} \vec{u}_k
-  - \boldsymbol{\beta} \Delta \vec{u}_k \Big) + \vec{u}_k^t, \notag \\
-  \vec{u}_k^{t+1} &= \delta \vec{g}_k +  \boldsymbol{\alpha} \delta \vec{u}_k
-  - \boldsymbol{\beta} \delta \Delta \vec{u}_k + \vec{u}_k^t
+  \vec{g}_k^{t+1} &= \vec{g}_k^{t} - \vec{u}_k^{t}, \notag \\
+  \vec{u}_k^{t+1} &= \vec{u}_k^{t} + \delta \, \Big( \vec{g}_k^{t+1} + (\boldsymbol{\alpha} - \boldsymbol{\beta} \Delta) \, \vec{u}_k^{t+1} \Big),
+  \label{eq:semiimplicit_euler}
+\end{align}
+and introducing the $\vec{g}_k^{t+1}$ in the second equation:
+\begin{align}
+  \vec{u}_k^{t+1} &= \vec{u}_k^{t} + \delta \Big( \vec{g}_k^{t} + \delta \vec{u}_k^t + (\boldsymbol{\alpha} - \boldsymbol{\beta} \Delta) \, \vec{u}_k^{t+1} \Big) \notag \\
+  \vec{u}_k^{t+1} &= \frac{ (1+\delta^2) \, \vec{u}_k^{t} + \vec{g}_k^{t}} {1 - \boldsymbol{\alpha} + \boldsymbol{\beta} \Delta}
   \label{eq:discrete_derivative}
 \end{align}
+
 
 \section{Parameter settings and implementation details of \emph{regseg}}
 

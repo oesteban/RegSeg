@@ -8,15 +8,18 @@
 \Gls*{dmri} data are usually acquired with \gls*{epi} schemes.
 In order to quickly probe the diffusion process within the brain in many different orientations,
   these sequences minimize the bandwidth of the \gls*{pe} direction.
-This low bandwidth originates the artifactual displacement of locations presenting small deviations
-  from the main magnetic field $B_0$.
+This limitation originates a warping of the reconstructed image in regions affected by
+  small deviations from the main magnetic field $B_0$.
 One important source of these deviations ($\Delta B_0$) is the discontinuity of magnetic
   susceptibility across the imaged object.
 Tissue/air boundaries show large steps of susceptibility and this artifact is
   particularly evident in the surroundings of the orbito-frontal lobe or the temporal
   bone of both hemispheres.
-Distortion can be rendered as a registration problem between the undistorted $R$ (reference), 
-  and distorted $M$ (moving) spaces:
+
+Distortion can be rendered as a registration problem where we look for an underlying deformation 
+  field $U_s$, mapping from an undistorted \gls*{t1} image (the reference $R$) to the distorted
+  \gls*{dmri} images (the moving space $M$), such that the structures identified in $R$ optimally
+  align with the corresponding features in $M$:
 
   \begin{align}
   U_s\colon R \subset \mathbb{R}^n &\to M \subset \mathbb{R}^n \notag\\
@@ -28,7 +31,6 @@ Distortion can be rendered as a registration problem between the undistorted $R$
   its corresponding location in $M$, and $n$ the dimensionality of images.
 Finally, $\vec{u} = u(\vec{r})$ is the displacement of every point with respect
   to the reference domain.
-
 The displacements field $U_s$ along the \gls*{pe} axis can be estimated theoretically
   \citep{jezzard_correction_1995}:
 
@@ -54,40 +56,55 @@ A second family of methods require an extra \gls*{epi} acquisition, but switchin
 In the following, we will refer to this method as \gls*{t2b}.
 Further developments \citep{irfanoglu_susceptibility_2011} extended the \gls*{t2b} 
   approach to the 3D problem.
-Therefore, a typical protocol for the extraction of structural connectivity
-  comprehends \gls*{dmri}, \gls*{t1}, and the acquisition determined by the correction
-  method of choice \citep{daducci_connectome_2012}.
 
 
-\subsection{Our method and contributions}
+\subsection{Contributions}
 \label{sec:contributions}
 %
-The most immediate antecedent of \emph{regseg} is \emph{bbregister} \citep{greve_accurate_2009}.
-Both methods exploit the anatomically correct and precise surfaces that are readily
-  extracted with \emph{FreeSurfer} \citep{fischl_freesurfer_2012}, mapping them
-  to a target \gls*{dmri} image using active contours.
-We implemented active contours without edges \citep{chan_active_2001}, that allow
-  \emph{regseg} to segment homogeneous regions within the brain, while \emph{bbregister}
-  use active contours with edges to look for intensity boundaries in the target image.
-Another identifying difference is the deformation model:
-  \emph{bbregister} includes an affine transformation and overcomes the distortion
-  problem by excluding typically affected regions from computation.
-Therefore, correction must be addressed independently because \emph{bbregister} is
-  not an unwarping method.
-Conversely, \emph{regseg} implements a free-deformation field supported with B-Spline
-  functions.
-Our method is close to \citep{guyader_combined_2011} and \citep{gorthi_active_2011}
-  in the use of active contours without edges for registration, however we avoided
-  the use of level sets with the application of shape gradients
-  \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
-\cite{gorthi_active_2011} used a gaussian regularizer, and \cite{guyader_combined_2011}
-  proposed a nonlinear elasticity smoother.
-In contrast, \emph{regseg} implements the anisotropic regularization proposed by
-  \citep{nagel_investigation_1986}.
-We also present an ellaborated evaluation instrumentation to create realistic distortions
-  and test algorithms.
-Integrating \emph{regseg} and an in-house implementation of the \gls*{t2b} correction
-  in the workflow, we compared the performance of both solutions.
+While all the correction methods require an extra acquisition, \emph{regseg} is especially
+  indicated in scanning protocols without specific data for correction,
+  such as historical datasets.
+
+Joint segmentation and distortion correction of \gls*{dmri} data is also interesting to
+  improve the overall consistence of complex processing workflows.
+The closest antecedent of \emph{regseg} is \emph{bbregister} \citep{greve_accurate_2009}.
+Both methods use active contours to align surfaces to same-subject \gls*{dmri} images.
+However, \emph{bbregister} is limited to affine transformations, and thus, it is not able to
+  solve the susceptibility-derived distortions, generally nonlinear.
+To enable registration of uncorrected data, \emph{bbregister} excludes from the cost-function
+  those regions frequently warped.
+Conversely, \emph{regseg} implements a free-deformation field, supported with B-Spline
+  functions to estimate deformations.
+A second diverging foundation is the active-contours framework.
+In \emph{regseg}, active contours are implemented without edges \citep{chan_active_2001},
+  enabling the tool to segment homogeneous regions within the brain.
+On the other hand, \emph{bbregister} requires that the target features present intensity
+  boundaries as it implements active contours with edges.
+The tissue interfaces imaged with \gls*{dmri} are affected by partial volume effects that
+  blur boundaries.
+In practice, registration of \gls*{t1} and \gls*{dmri} data with \emph{bbregister}
+  is limited to the linear match of the pial surface of the brain.
+
+Finally, we present an instrumentation framework to evaluate correction and
+  segmentation pipelines using realistic distortions as ground truth.
+With the integration of \emph{regseg} and an in-house implementation of the 
+  \gls*{t2b} correction in the framework, we compare the performance
+  of both solutions.
+
+
+% Our method is close to \citep{guyader_combined_2011} and \citep{gorthi_active_2011}
+%   in the use of active contours without edges for registration, however we avoided
+%   the use of level sets with the application of shape gradients
+%   \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
+% \cite{gorthi_active_2011} used a gaussian regularizer, and \cite{guyader_combined_2011}
+%   proposed a nonlinear elasticity smoother.
+% In contrast, \emph{regseg} implements the anisotropic regularization proposed by
+%   \citep{nagel_investigation_1986}.
+% We demonstrate its aptness on the correction of the nonlinear distortions typically
+%   presented by \gls*{dmri} data of the brain.
+% Therefore, a typical protocol for the extraction of structural connectivity
+%   comprehends \gls*{dmri}, \gls*{t1}, and the acquisition determined by the correction
+%   method of choice \citep{daducci_connectome_2012}.
 
 
 \subsection{Cost-function derivation}\label{sec:methods_map}
@@ -98,23 +115,24 @@ In a Bayesian framework, the mappings $U$ in \eqref{eq:transform} are
 Using the Bayes' rule, the posterior likelihood is computed as:
 
   \begin{equation}
-  P(U \mid R,\Gamma_{l,m}) = \frac{P(R \mid U,\Gamma_{l,m})\, P(U)}{P(R)},
+  P(U \mid R, \boldsymbol{\Gamma}) = \frac{P(R \mid U,\boldsymbol{\Gamma})\, P(U)}{P(R)},
   \label{eq:bayes_rule}
   \end{equation}
 %
-  where $P(R \mid U,\Gamma_{l,m})$ is the data-likelihood, and
-  $\Gamma_{l,m}$ are a set of surfaces corresponding to the interfaces
-  between piecewise smooth regions $\Omega_i$, such that
-  $\Gamma_{l,m} = \partial \Omega_l \cap \partial \Omega_m$ is the
-  contour between competing regions $\Omega_l$ and $\Omega_m$.
-The best estimate $\hat{U}$ then fulfills the maximum a posteriori criterium
-  \citep{bishop_pattern_2006}, and aligns $\Gamma$ into $R$.
+  where $P(R \mid U,\boldsymbol{\Gamma})$ is the data-likelihood, and
+  $\boldsymbol{\Gamma} = \{\Gamma_{\text{in},\text{out}}\}$ is a set of surfaces 
+  corresponding to the interfaces between pairs of competing regions $\Omega_\text{in}$
+  and $\Omega_\text{out}$ drawn from the full set of regions $\{\Omega_l \mid l \in \mathbb{N}, l \leq L\}$.
+As $\boldsymbol{\Gamma}$ are mapped by $U$, we simplify
+  $P(U, \boldsymbol{\Gamma}) = P(U) \implies P(R \mid U,\boldsymbol{\Gamma}) = P(R \mid U)$.
 
+The best estimate $\hat{U}$ then fulfills the maximum a posteriori criterium
+  \citep{bishop_pattern_2006}, and aligns $\boldsymbol{\Gamma}$ into $R$.
 First, we assume independence between pixels, and thus break down the
   global data likelihood into a product of pixel-wise conditional probabilities:
 
   \begin{equation}
-  P(R \mid U,\Omega) = \underset{l}{\prod} \underset{\vec{r}\in \Omega_l}{\prod}
+  P(R \mid U) = \underset{l}{\prod} \underset{\vec{r}\in \Omega_l}{\prod}
     P\left( \vec{f}' \mid U \right),
   \label{eq:bayes_aposteriori}
   \end{equation}
@@ -132,7 +150,7 @@ We then insert the normal distribution into \eqref{eq:bayes_rule} to obtain the 
   formulation of the \emph{data term} of our registration model:
 
  	\begin{align}
-  P( R \mid U, \Omega ) &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod}
+  P( R \mid U) &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod}
   \mathcal{N} ( \vec{f} \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} ) \notag\\
   &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod} \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}
   \mdist{f'}{l} \right)}},
@@ -142,6 +160,7 @@ We then insert the normal distribution into \eqref{eq:bayes_rule} to obtain the 
   using $\mdist{f}{l}$ to denote the squared \emph{Mahalanobis distance} of $\vec{f}$ with respect
   to the descriptors of region $l$ as
   $\mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
+$C$ is the number of channels comprised in the reference image $R$.
 
 
 The smoothness of the resulting displacements field is induced by a Thikonov regularization
@@ -171,8 +190,8 @@ Finally, the maximum a posteriori problem is adapted into a variational one wher
   \begin{align}
   E(R \mid U) &= -\log \underset{l}{\prod}
   \underset{\vec{r} \in \Omega_l}{\prod}
-  \mathcal{N} \left( \vec{f}' \mid \Theta_l \right)\,p_0( \vec{u})\,p_1( \vec{u}) \notag\\
-  &= C + \underset{l}{\sum} \int_{\Omega_l}
+  \mathcal{N} \left( \vec{f}' \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_l \right)\,p_0( \vec{u})\,p_1( \vec{u}) \notag\\
+  &= \const + \underset{l}{\sum} \int_{\Omega_l}
   \mdist{f'}{l} \,d\vec{r} \notag\\
   &+ \int_{\Omega} \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
   + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r},
@@ -180,8 +199,8 @@ Finally, the maximum a posteriori problem is adapted into a variational one wher
   \end{align}
 %
   this expression is dual to the energy functional corresponding
-  to a discrete \gls*{acwe} framework \citep{chan_active_2001}
-  with the corresponding anisotropic regularization term \citep{nagel_investigation_1986}.
+  to a discrete \acrlong*{acwe} framework \citep{chan_active_2001}
+  with the corresponding anisotropic regularization term of \cite{nagel_investigation_1986}.
 
 
 \subsection{Numerical Implementation}
@@ -218,25 +237,25 @@ The transform $\hat{U}$ \eqref{eq:transform} is supported by a dense deformation
 
 Since the nodes of the anatomical surfaces likely lay off-grid, it is required to
   derive $u(\vec{r})$ from a discrete set of parameters $\{\vec{u}_k\}_{k=1 \ldots K}$.
-Densification is achieved through a set of associated basis functions $\psi_k$:
+Densification is achieved through a set of associated basis functions $\psi_k$.
+In our implementation, $\psi_k$ is chosen to be a tensor-product B-Spline kernel
+  of degree 3: % ($\beta_3$).
 
   \begin{equation}
   u(\vec{r}) = \sum_k \psi_k(\vec{r}) \vec{u}_k.
   \label{eq:intp_kernel}
   \end{equation}
 
-In our implementation, $\psi_k$ is chosen to be a tensor-product B-Spline kernel
-  of degree 3 ($\beta_3$).
-Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
-  $\psi$ by the actual kernel function, the transformation writes:
-
-  \begin{equation}
-    \vec{v}_i' = \vec{v}_i + \sum_k \left[ \vec{u}_k \, \underset{d}{\prod}
-      \beta_3( (\vec{v}_i - \vec{r}_k) \cdot \hat{\mathbf{e}}_d ) \right],
-  \label{eq:transformation}
-  \end{equation}
+%Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
+%  $\psi$ by the actual kernel function, the transformation writes:
 %
-  with $\hat{\mathbf{e}}_d$ being the unitary vector along axis $d$.
+%  \begin{equation}
+%    \vec{v}_i' = \vec{v}_i + \sum_k \left[ \vec{u}_k \, \underset{d}{\prod}
+%      \beta_3( (\vec{v}_i - \vec{r}_k) \cdot \hat{\mathbf{e}}_d ) \right],
+%  \label{eq:transformation}
+%  \end{equation}
+%%
+%  with $\hat{\mathbf{e}}_d$ being the unitary vector along axis $d$.
 
 
 \paragraph*{Optimization}
@@ -397,10 +416,11 @@ We proved the concept on simplistic digital phantoms which we will name after th
 Using \emph{phantomas} \citep{caruyer_phantomas_2014}, we simulated
   \gls*{t1} (TE/TR=10/1500ms) and \gls*{t2} images (TE/TR=90/5000ms)
   corresponding to each phantom type, with two resolutions each
-  ($1.0mm$ and $2.0mm$ isotropic).
+  (1.0mm and 2.0mm isotropic).
+Field of view at both resolutions was \isores{100}mm.
 Simulations were corrupted with rician noise for a \gls*{snr} of 300.0.
-The reference surfaces were extracted at the higher resolution (1.0mm isotropic),
-  using \texttt{mri\_tessellate}\footnote{A marching-cubes algorithm shipped with 
+The reference surfaces were extracted at high resolution, using 
+  \texttt{mri\_tessellate}\footnote{A marching-cubes algorithm shipped with 
   \emph{FreeSurfer}.}.
 
 \begin{figure*}
@@ -440,13 +460,14 @@ To warp the simulated datasets, we generated 150 different realizations of
   the distortion $U_{true}$.
 Smoothness is introduced using two levels of B-Spline functions, with control points evenly
   located in isotropic grids covering the full extent of the phantom.
-The first level had $50.5mm$ of separation between control points and the second $25.25mm$.
+Separation between control points was isotropic, and set to 50.5mm for the first level
+  of distortion and 25.25mm for the second.
 The rationale behind this choice is producing large deformations on the contours with
   the first level, and matching the properties of susceptibility-derived distortions
   as previously reported by \cite{irfanoglu_susceptibility_2011} with the finer grid.
 The coefficients of the B-Spline functions were randomly generated for each resolution level.
 Invertibility of $U_{true}$ is ensured by controlling the maximum displacement at each
-  level ($20.2mm$ and $10.1mm$ respectively) as studied in \citep{rueckert_diffeomorphic_2006}.
+  level (20.2mm and 10.1mm respectively) as studied in \citep{rueckert_diffeomorphic_2006}.
 
 \paragraph*{Real datasets} %
 \label{sec:human_connectome}

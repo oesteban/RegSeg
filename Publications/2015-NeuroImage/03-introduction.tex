@@ -1,20 +1,10 @@
 % -*- root: 00-main.tex -*-
 \section{Introduction}%
 \label{sec:introduction}
-Image registration is the process to find a spatial mapping that aligns the information available
-  in two different coordinate systems.
-In their comprehensive survey, \cite{sotiras_deformable_2013} illustrated the wide variety
-  of existing methodologies, and classified them by their three principal building blocks:
-  the matching criteria to evaluate the proximity of the solution,
-  the deformation model that may implement theoretical properties of the mapping
-  (i.e. linearity, elasticity, viscosity, etc.), and the optimization method.
-The matching criteria can be defined as a function on the intensities of voxels of the
-  two images, the alignment of spatial features derived from the corresponding objects in
-  the spaces to be registered, or use both intensity and spatial informations.
-In \citep{sotiras_deformable_2013} these methods are referred to as \emph{iconic}, \emph{geometric},
-  and \emph{hybrid}, respectively.
-When the matching criteria is defined over an optimizable partition of one or both reference an
-  moving spaces, we face a hybrid method which simultaneously segments and registers images.
+Image registration and segmentation are crucial in current pipelines for
+  analysis of whole-brain connectivity using \gls*{dmri}, such as the extraction
+  of brain connectivity \citep{craddock_imaging_2013}.
+
 An early integration of segmentation and registration by \cite{bertalmio_morphing_2000} proposed
   a sequential deformation of active contours for object tracking in series of 2D images.
 Shortly, \cite{yezzi_variational_2003} presented the first method including a full solution to
@@ -41,20 +31,12 @@ Finally, \cite{gorthi_active_2011} extended the existing methodologies using a m
 Alternatively to the historical use of active contours, some Bayesian approaches
   have been proposed as well \citep{wyatt_map_2003,pohl_bayesian_2006,gass_simultaneous_2014}.
 
-We propose \emph{regseg}, an active-contours driven registration method.
-Then, we demonstrate its aptness on the correction of the nonlinear distortions typically
-  presented by \gls*{dmri} data of the brain.
-This problem is briefly described in \autoref{sec:distortions}.
-The general overview of our method, along with the contributions with respect 
-  to the current state of art are summarized in \autoref{sec:contributions}.
-In \autoref{sec:methods_map}, we start from a probabilistic framework to finally show its duality
-  with respect to the active-contours route.
-Following sections
-  introduce the specific features of \emph{regseg} (\autoref{sec:numerical_implementation}),
-  state the evaluation experiments (\autoref{sec:experiments_evaluation}),
-  and describe the synthetic and real data involved in this study (\autoref{sec:datasets}).
-In \autoref{sec:results} we describe our findings to support the usefulness of \emph{regseg}
-  in the described application, compared to a well-established tool.
-The interpretation of the results and prospects is addressed in \autoref{sec:discussion}.
-
-
+We propose \emph{regseg} as a solution to joint segmentation and registration 
+  problems with a shape priors approach.
+An immediate application of \emph{regseg} is the correction of susceptibility-derived
+  distortions typically present in \gls*{dmri} data and its segmentation
+  after correction.
+Both correction and segmentation are required steps in current investigations of whole-brain
+  tractography, such as the connectome extraction \citep{daducci_connectome_2012}.
+Indeed, the joint segmentation and correction can exploit the anatomy extracted from
+  the \gls*{t1} as strong shape-priors.
