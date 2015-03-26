@@ -1,7 +1,7 @@
 % @Author: Oscar Esteban
 % @Date:   2015-02-20 15:40:09
 % @Last Modified by:   Oscar Esteban
-% @Last Modified time: 2015-03-24 16:12:10
+% @Last Modified time: 2015-03-26 17:57:06
 
 \documentclass[a4paper]{report}
 
@@ -162,50 +162,45 @@
 \begin{document}
 \title{Supplemental Materials: \emph{Simultaneous segmentation and registration of
 diffusion MR images of the brain driven by active-contours}}
-\author{Oscar Esteban}
+\author{Oscar Esteban and Dominique Zosso}
 \date{February 2015}
 
 \maketitle
 \section{Extensions to the mathematical formulation of the methods}
 
-\paragraph{Discretization of the shape gradients} The energy functional to be optimized
-  in \emph{regseg} is presented in Eq. 7:
+\subsection{Computing the gradients of shape-priors}\label{sec:shape_priors}
+The computation of gradients at the locations of the active contours in the
+  instant $t$ is based on the work of \cite{herbulot_segmentation_2006}.
+Let $F(\vec{r})$ be an ``arbitrary'' function over the image domain
+  $\Omega = \Omega_l \cup \Omega_m$ splitted in two regions $l$ and
+  $m$, and $\Gamma_{l,m}$ a closed boundary between them.
+We now derive the domain integral w.r.t. $t$:
+
   \begin{equation}
-  E(R \mid U) = C + \underbracket{\underset{l}{\sum} \int_{\Omega_l}
-  \mdist{f'}{l} \,d\vec{r}}_{\text{Data term}}
-  + \underbracket{\underset{\Omega}{\int} \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
-  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r}}_{\text{Regularization term}}.
-  \label{eq:energy}
+  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
+  \int_\Omega \frac{\partial}{\partial t}F(\vec{r}) d\vec{r} 
+  - \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
+  N_{\Gamma_{l,m}}\right\rangle d\vec{r},
+  \end{equation}
+%
+  where $\left\langle\frac{\partial\Gamma_{l,m}}{\partial t}, N_{\Gamma_{l,m}}\right\rangle$ is
+  the projection of the boundary movement on the unit inward normal $N_{\Gamma_{l,m}}$.
+Assuming that the region descriptors $\{\boldsymbol{\mu}_l, \boldsymbol{\Sigma}_l\}$ vary slowly enough, we can consider
+  that $\frac{\partial}{\partial t} F(\vec{r}) = 0$ and thus:
+
+  \begin{equation}
+  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
+  - \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
+  N_{\Gamma_{l,m}}\right\rangle d\vec{r}.
+  \label{eq:shape_gradients}
   \end{equation}
 
-To search for the minimum of $E(R \mid U)$ w.r.t. the coefficients $\vec{u}_k$, we use a gradient descent strategy.
-In Eq. 11 we introduced the derivative of \eqref{eq:energy}:
-  \begin{equation}
-  \frac{\partial E(\vec{u})}{\partial \vec{u}_k} =
-  \frac{ \partial }{\partial \vec{u}_k} \Big\{
-  \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r}
-  + \int_{\Omega} [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
-  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}
-  \Big\}.
-  \label{eq:gradient_descent}
-  \end{equation}
-
-Let us compute the derivative of the data term first (Eq. 12):
-\begin{equation}
-  \frac{\partial E_{data}(\vec{u})}{\partial \vec{u}_k} =
-  \frac{ \partial }{\partial \vec{u}_k} \Big\{
-  \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \Big\} =
-  \underset{l}{\sum} \, \frac{ \partial }{\partial \vec{u}_k} \Big\{
-  \int_{\Omega_l} \mdist{f'}{l} \Big\},
-  \label{eq:data_derivative}
-\end{equation}
-where we can introduce the shape-gradients theory from Appendix 1.
-The equation A.1 is discretized as follows.
+The equation \eqref{eq:shape_gradients} is discretized as follows.
 First, the surface between limiting regions $\{l, m\}$, $\Gamma_{l,m}$ is explicitly represented by
   a discrete set of vertices $\vec{v}_i$, with $i \in \{0, \ldots, N_p -1 \}$.
 Consequently, the inwards normal of the surface $N_{\Gamma_{l,m}}$ is represented by the discrete
   set of normals $\hat{\vec{n}}_i$ at each vertex of the mesh.
-The resulting summation is, therefore, discrete and the integral operator is replaced by the sum.
+The resulting summation is, therefore, discrete and the integral operator is replaced by the sum:
   \begin{align}
   \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} &=
   \underbracket{\cancel{\int_\Omega \frac{\partial}{\partial t}F(\vec{r}) d\vec{r} }}_{\text{Functional's evolution}}
@@ -221,10 +216,10 @@ In the following, we will refer as $w_{p,i} = a_i / A_p $ to the area contributi
 For simplicity, the sum over $p$ can be also removed, as the vertices belong to only one of the total $P$ contours
 
 Then, the speed of $\vec{v}_i$ is discretized using the artificial time-step parameter $\delta$, as the displacement
-  $\vec{d}_i = \vec{v}_i(\delta = t+1) - \vec{v}_i(\delta = t)$:
+  $\frac{\partial \vec{v}_i}{\partial t} = \vec{v}_i(\delta = t+1) - \vec{v}_i(\delta = t)$:
   \begin{equation}
   \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) \, d\vec{r} =
-  - \underset{i}{\sum} w_{p,i} F(\vec{v}_i) \vec{d}_i \cdot \hat{\vec{n}}_i.
+  - \underset{i}{\sum} w_{p,i} F(\vec{v}_i) \frac{\partial \vec{v}_i}{\partial t} \cdot \hat{\vec{n}}_i.
   \label{eq:shape_gradient_disc1}
   \end{equation}
 
@@ -233,56 +228,136 @@ Since the energy functional is defined over competing regions, the displacement 
   two terms, $F_{in}(\vec{r})$ corresponding to the interior region and $F_{out}(\vec{r})$ to the exterior:
   \begin{equation}
   \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) \, d\vec{r} =
-  - \underset{i}{\sum} w_{p,i} \, \vec{d}_i \cdot
-  \underbracket{\Big[ \big(F_{out}(\vec{v}_i) - F_{in}(\vec{v}_i) \big) \hat{\vec{n}}_i \Big]}_{\bar{s}_i \text{ in Figure 1}}.
+  - \underset{i}{\sum} \, \frac{\partial \vec{v}_i}{\partial t} \cdot
+  \underbracket{w_{p,i} \, \Big[ F_{out}(\vec{v}_i) - F_{in}(\vec{v}_i) \Big] \hat{\vec{n}}_i}_{\bar{s}_i \text{ in Figure 1}}.
   \label{eq:shape_gradient_disc2}
   \end{equation}
 
-Now we can identify $t$ with the set of time-dependent coefficients, $\{\vec{u}_k\}$, and the target function $F$ with $\mathcal{D}_l^2$.
-To introduce the speed of the vertices from equation 13, we replace $\vec{d}_i$:
+\subsection{Gradient-descent optimization}\label{sec:gradient_descent}
+The energy functional to be optimized
+  in \emph{regseg} is presented in Eq. 7:
+  \begin{equation}
+  E(R \mid U) = C + \underbracket{\underset{l}{\sum} \int_{\Omega_l}
+  \mdist{f'}{l} \,d\vec{r}}_{\text{Data term } (E_{data})}
+  + \underbracket{\underset{\Omega}{\int} \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
+  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r}}_{\text{Regularization term } (E_{reg})}.
+  \label{eq:energy}
+  \end{equation}
+
+To search for the minimum of $E(R \mid U)$ w.r.t. the coefficients $\vec{u}_k$, we use a gradient descent strategy.
+In Eq. 11 we introduced the derivative of \eqref{eq:energy}:
+  \begin{equation}
+  \frac{\partial E(\vec{u})}{\partial \vec{u}_k} =
+  \frac{ \partial }{\partial \vec{u}_k} \Big\{
+  \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r}
+  + \int_{\Omega} \frac12 [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
+  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}
+  \Big\}.
+  \label{eq:gradient_descent}
+  \end{equation}
+
+We split \eqref{eq:gradient_descent} in the derivatives of its data and regularization terms.
+Let $\frac{\partial E_{data}}{\partial \vec{u}_k} = \vec{g}_k$ for simplicity, 
+  we compute the derivative of the data term and discretize the domain $\Omega$ as follows:
 \begin{equation}
-  \frac{\partial E_{data}(\vec{u})}{\partial \vec{u}_k} =
-  - \underset{i}{\sum} w_{p,i} \, \psi_k(\vec{v}_i) \hat{\vec{e}} \cdot \bar{s}_i =
-  - \underset{i}{\sum} w_{p,i} \, \psi_k(\vec{v}_i) \bar{s}_i = - \underset{i}{\sum} \vec{g}_{i,k}.
+  \vec{g}_k =
+  \frac{ \partial }{\partial \vec{u}_k} \Big\{
+  \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \Big\} =
+  \frac{ \partial }{\partial \vec{u}_k} \Big\{ \underset{l}{\sum} \underset{\vec{x} \in \Omega_l}{\sum} \, \mdist{f'}{l} \Big\},
+  \label{eq:data_derivative}
+\end{equation}
+  where we can apply the shape-gradients \eqref{eq:shape_gradient_disc2} introduced
+  in \autoref{sec:shape_priors}, and ultimately avoid implementing level sets:
+
+  \begin{align}
+  \vec{g}_k &= \underset{i}{\sum} \left\langle \frac{\partial \vec{v}_i'}{\partial \vec{u}_k}, \bar{s}_i'\right\rangle, \\
+  \text{with }
+  \bar{s}_i' &= - w_i \left[ \mdist{f_i'}{out} - \mdist{f_i'}{in} \right] \, \hat{\vec{n}}_i, \\
+  \text{and } 
+  \frac{\partial \vec{v}_i'}{\partial \vec{u}_k} &=
+  \frac{\partial}{\partial \vec{u}_k} \left\{ \vec{v}_i + \sum_k \psi_k(\vec{v}_i) \vec{u}_k \right\} = \psi_k(\vec{v}_i)\, \hat{\vec{e}}.
+  \label{eq:gradient_wshape}
+  \end{align}%
+  where $\hat{\vec{e}}$ is the coordinates system's unit vector.
+Therefore, the shape gradients projected to the grid of B-Spline control points is:
+\begin{equation}
+  \vec{g}_k =
+  - \underset{i}{\sum} \bar{s}_i \cdot \psi_k(\vec{v}_i) \, \hat{\vec{e}} = - \underset{i}{\sum} \vec{g}_{i,k}.
   \label{eq:shape_gradient_final}
 \end{equation}
 
-Inserting \eqref{eq:shape_gradient_final} in \eqref{eq:gradient_descent} we reach equation 15,
-  and renaming $\vec{g}_k = - \underset{i}{\sum} \vec{g}_{i,k}$:
+It is also necessary to obtain and discretize the derivatives of the regularization term of \eqref{eq:gradient_descent}:
   \begin{equation}
-  \frac{\partial E(\vec{u})}{\partial \vec{u}_k} =
-  \vec{g}_k + \boldsymbol{\alpha} \vec{u}_k
-  -\boldsymbol{\beta} \Delta \vec{u}_k.
+  \frac{\partial E_{reg}(\vec{u})}{\partial \vec{u}_k} = \frac{ \partial }{\partial \vec{u}_k} \Big\{
+  \int_{\Omega} \frac12 [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
+  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}
+  \Big\} = \boldsymbol{\alpha} \cdot \vec{u}_k + \boldsymbol{\beta} \cdot \Delta \vec{u}_k.
+  \label{eq:gradient_regterm}
+  \end{equation}
+
+Inserting \eqref{eq:shape_gradient_final} and \eqref{eq:gradient_regterm} into \eqref{eq:gradient_descent} we get the
+  final evolution equation:
+  \begin{equation}
+  \frac{\partial E(\vec{u})}{\partial \vec{u}_k} = \vec{g}_k + \boldsymbol{\alpha} \cdot \vec{u}_k + \boldsymbol{\beta} \cdot \Delta \vec{u}_k,
   \label{eq:gradient_final}
   \end{equation}
 
 
-\paragraph{Obtaining the update equation} To solve the differential equation in \eqref{eq:gradient_descent},
-  we use a semi-implicit Euler scheme, where the shape-gradients $\vec{g}_k$ are explicit:
+\subsection{Obtaining the update equation} To solve the differential equation in \eqref{eq:gradient_descent},
+  we use a semi-implicit Euler scheme, referring to the discrete step size as $\delta$ and where the
+  shape-gradients $\vec{g}_k$ are explicit:
 \begin{align}
-  \vec{g}_k^{t+1} &= \vec{g}_k^{t} - \vec{u}_k^{t}, \notag \\
-  \vec{u}_k^{t+1} &= \vec{u}_k^{t} + \delta \, \Big( \vec{g}_k^{t+1} + (\boldsymbol{\alpha} - \boldsymbol{\beta} \Delta) \, \vec{u}_k^{t+1} \Big),
-  \label{eq:semiimplicit_euler}
-\end{align}
-and introducing the $\vec{g}_k^{t+1}$ in the second equation:
-\begin{align}
-  \vec{u}_k^{t+1} &= \vec{u}_k^{t} + \delta \Big( \vec{g}_k^{t} + \delta \vec{u}_k^t + (\boldsymbol{\alpha} - \boldsymbol{\beta} \Delta) \, \vec{u}_k^{t+1} \Big) \notag \\
-  \vec{u}_k^{t+1} &= \frac{ (1+\delta^2) \, \vec{u}_k^{t} + \vec{g}_k^{t}} {1 - \boldsymbol{\alpha} + \boldsymbol{\beta} \Delta}
+  \vec{u}_k^{t+1} &= \vec{u}_k^{t} + \delta \, \Big( \vec{g}_k^{t+1} + (\boldsymbol{\alpha} - \boldsymbol{\beta} \Delta) \, \vec{u}_k^{t+1} \Big) \notag \\
+  (1 - \delta \boldsymbol{\alpha} - \delta \boldsymbol{\beta} \Delta)\, \vec{u}_k^{t+1} &= \vec{u}_k^{t} + \delta\, \vec{g}_k^{t}
   \label{eq:discrete_derivative}
 \end{align}
 
+This expression is easily translated into Fourier domain as follows:
+
+  \begin{align}
+  \vec{u}_k^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{\delta^{-1} \, \vec{u}_k^t + \vec{g}_k\} }%
+                  {\mathcal{F}\{(\delta^{-1} - \boldsymbol{\alpha})\, I-\boldsymbol{\beta}\Delta\}} \right\},
+  \label{eq:update_equation}
+  \end{align}
+  where $I$ denotes the identity operator.
+Here, we rewrite the Laplacian as a linear combination of the identity and shift operators:
+  \begin{equation}
+  \Delta = \{\sum_{d=1}^n \mathcal{S}_d^- + \mathcal{S}_d^+\}  - 2n \mathcal{I}
+  \end{equation}
+  where $\mathcal{S}_d^{\pm}$ stands for the forward ($+$) and backward ($-$) shift operator along axis $d$, of which the Fourier transform is found easily as
+  \begin{equation}
+  \mathcal{F}\{\mathcal{S}_d^{\pm}\} = e^{\pm i\omega_d},
+  \end{equation}
+  where $\omega_d$ is the normalized pulsation along direction $d$.
+Accordingly, the Fourier transform of the discrete Laplacian is found as
+  \begin{align}
+  \mathcal{F}\{\Delta\} &= \sum_d e^{-i\omega_d} + e^{i\omega_d} - 2n = n \, \left( \sum_d \cos(\omega_d) - 2\, \right)
+  \end{align}
+
+The remaining transforms are trivial or can be computed using FFT as in \citep{estellers_efficient_2012}.
+
+%Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
+%  $\psi$ by the actual kernel function, the transformation writes:
+%
+%  \begin{equation}
+%    \vec{v}_i' = \vec{v}_i + \sum_k \left[ \vec{u}_k \, \underset{d}{\prod}
+%      \beta_3( (\vec{v}_i - \vec{r}_k) \cdot \hat{\mathbf{e}}_d ) \right],
+%  \label{eq:transformation}
+%  \end{equation}
+%%
+%  with $\hat{\mathbf{e}}_d$ being the unitary vector along axis $d$.
 
 \section{Parameter settings and implementation details of \emph{regseg}}
 
 \subsection{Implementation}
-\paragraph{General} The \emph{regseg} registration and segmentation tool is written in C++, using ITK-4.6 as
+\subsection{General} The \emph{regseg} registration and segmentation tool is written in C++, using ITK-4.6 as
   implementation core.
 We designed a modular implementation, enabling multithreading in several pieces of the software,
   as the process is computationally expensive.
 The tool generates a log-file in JSON format to easily inter-operate with secondary tools (such
   as the convergence report generation, \autoref{sec:convergence_evidence}).
 
-\paragraph{Efficient interpolation using sparse matrices}
+\subsection{Efficient interpolation using sparse matrices}
 During the registration process, every iteration requires computing the product of all the gradients
   $\vec{g}_k$ associated to the control point $k$, and computed at the current position
   $\vec{v}_i$ by the corresponding weights $\psi_{ik} = \psi_k(\mathbf{v}_i)$ of interpolating functions
@@ -419,9 +494,9 @@ An overview of the general workflow is presented in the Figure 2 of the paper.
 However, this figure has been extremely simplified for the best of visualization.
 In this section, we review the main elements of the evaluation pipelines.
 
-\paragraph{Preprocessing}
+\subsection{Preprocessing}
 
-\paragraph{Distortion}
+\subsection{Distortion}
 
 \section{Model considerations}
 
@@ -435,6 +510,9 @@ In this section, we review the main elements of the evaluation pipelines.
 
 \immediate\write18{./visual_report.sh}
 \input{suppl-realdata.tex}
+
+\bibliographystyle{mystyle}
+\bibliography{Remote}
 
 \end{document}
 

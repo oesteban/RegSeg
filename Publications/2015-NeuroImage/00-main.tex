@@ -20,6 +20,9 @@
 \DeclareMathOperator{\const}{Const.}
 \providecommand{\e}[1]{\ensuremath{\times 10^{#1}}}
 \providecommand{\mdist}[2]{ \mathcal{D}_{#2}^2(\mathbf{#1}) }
+\providecommand{\omegaset}{\ensuremath{\boldsymbol{\Omega}}}
+\providecommand{\gammaset}{\ensuremath{\boldsymbol{\Gamma}}}
+
 \let\oldhat\hat
 \renewcommand{\vec}[1]{\mathbf{#1}}
 
@@ -109,7 +112,7 @@ diffusion MRI \sep susceptibility~distortion \sep segmentation %
 
 % Add appendices
 \appendix
-%\numberwithin{equation}{section}
+\numberwithin{equation}{section}
 \input{08-appendix-00-shapepriors}
 
 \end{document}

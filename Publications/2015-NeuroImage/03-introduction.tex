@@ -1,12 +1,49 @@
 % -*- root: 00-main.tex -*-
-\section{Introduction}%
-\label{sec:introduction}
-Image registration and segmentation are crucial in current pipelines for
-  analysis of whole-brain connectivity using \gls*{dmri}, such as the extraction
-  of brain connectivity \citep{craddock_imaging_2013}.
+\section{Introduction}\label{sec:introduction}
 
-An early integration of segmentation and registration by \cite{bertalmio_morphing_2000} proposed
-  a sequential deformation of active contours for object tracking in series of 2D images.
+\Gls*{dmri} data of the brain present severe distortions, directly related to the
+  effort in minimizing acquisition time.
+In order to quickly probe the diffusion process in sufficiently different orientations,
+  \gls*{dmri} are acquired with \gls*{epi} sequences, which minimize the bandwidth of the \gls*{pe}
+  direction.
+This limitation originates a warping of the reconstructed image in regions affected by
+  small deviations from the main magnetic field $B_0$.
+One important source of these deviations is the discontinuity of magnetic susceptibility across
+  the imaged object.
+In fact, the distortion is the effect of the underlaying misregistration between correct and
+  warped data.
+Tissue/air boundaries show large steps of susceptibility and this artifact is
+  particularly evident in the surroundings of the orbito-frontal lobe and the temporal
+  bone of both hemispheres.
+Several approaches have been proposed to estimate the distortion and correct
+  for the artifact.
+The first solution consisted on estimating the deviations from $B_0$ with field mapping
+  techniques \citep{andersson_modeling_2001}.
+A second family of methods require an extra \gls*{epi} acquisition, but switching
+  the \gls*{pe} axis \citep{chiou_simple_2000} or reversing the direction of gradient \gls*{pe}
+  increments \citep{cordes_geometric_2000,holland_efficient_2010}.
+\cite{kybic_unwarping_2000} proposed nonlinear registration of the \emph{b0}
+  image of the \gls*{dmri} to an undistorted \gls*{t2} image of
+   the same subject.
+
+The artifact has been proven to cause an important impact on the anatomy extracted
+  from \gls*{dmri} \citep{irfanoglu_effects_2012}, particularly in certain fiber bundles
+  when used in whole-brain tractography.
+Currently, a broad range of applications make use of whole-brain tractography, such as
+  connectome extraction \citep{craddock_imaging_2013} or tract-based spatial statistics
+  \citep{smith_tractbased_2006}.
+These applications generally require the segmentation of the \gls*{dmri} data, also
+  hindered by distortions.
+One way to identify the regions of interest is extracting them from an appropriate 
+  \gls*{t1} of the same subject and map them into diffusion space,
+  in a sort of atlas-based segmentation.
+
+\paragraph{State of the art}\label{sec:state_of_art}
+  Active contours have been successfully integrated in image registration methods
+  for applications such as longitudinal object tracking \citep{paragios_level_2003} and
+  atlas-based segmentation \citep{gorthi_active_2011}.
+\cite{bertalmio_morphing_2000} proposed morphing active-contours for object tracking in 
+  series of 2D images.
 Shortly, \cite{yezzi_variational_2003} presented the first method including a full solution to
   the registration problem with an affine transformation supporting the mapping.
 \cite{vemuri_joint_2003} proposed an atlas-based registration framework using level sets and only
@@ -18,25 +55,41 @@ Shortly, \cite{yezzi_variational_2003} presented the first method including a fu
   approaches to apply the Mumford-Shah functional \citep{mumford_optimal_1989} in simultaneous
   registration and segmentation, through the propagation of the deformation field from
   the contours to the whole image definition.
-\cite{greve_accurate_2009} presented a widely used registration method called \emph{bbregister},
-  included in \emph{FreeSurfer} \citep{fischl_freesurfer_2012}.
-Their framework performs robust registration of brain surfaces into the intensity information
-  of a target \gls*{mri}, using an affine transformation and active contours.
 Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
   registration method using level sets and a nonlinear elasticity smoother on the
   displacement vector field, which preserves topology even with very large deformations.
 Finally, \cite{gorthi_active_2011} extended the existing methodologies using a multiphase
   level-set function for the registration of several active contours, in the application
   of atlas-based segmentation.
-Alternatively to the historical use of active contours, some Bayesian approaches
-  have been proposed as well \citep{wyatt_map_2003,pohl_bayesian_2006,gass_simultaneous_2014}.
+  
+\cite{greve_accurate_2009} presented a relevant registration method called \emph{bbregister},
+  now included in \emph{FreeSurfer} \citep{fischl_freesurfer_2012}.
+The method is a standard choice to map surfaces extracted in the \gls*{t1} image to the \emph{b0}
+  image\footnote{The term \emph{b0} refers to one or more images within the
+  \gls*{dmri} dataset that are acquired with a null or very low gradient intensity or
+   \emph{b}-value.} of the \gls*{dmri} dataset with two limitations.
+First, the transform is affine and therefore it does not cope with the nonlinear distortions.
+Second, \emph{bbregister} looks for intensity steps in the image, using active contours with edges.
+In practice, the target \emph{b0} does not present clear frontiers of intensity between
+  interfacing tissues, what limits \emph{bbregister} to mapping the cortical surface only.
 
-We propose \emph{regseg} as a solution to joint segmentation and registration 
-  problems with a shape priors approach.
-An immediate application of \emph{regseg} is the correction of susceptibility-derived
-  distortions typically present in \gls*{dmri} data and its segmentation
-  after correction.
-Both correction and segmentation are required steps in current investigations of whole-brain
-  tractography, such as the connectome extraction \citep{daducci_connectome_2012}.
-Indeed, the joint segmentation and correction can exploit the anatomy extracted from
-  the \gls*{t1} as strong shape-priors.
+\paragraph{Contributions}\label{sec:contributions}
+The hypothesis under this research is that the registration and segmentation
+  problems can be solved jointly, increasing the geometrical accuracy of the process.
+We propose \emph{regseg} as a joint solution to distortion correction and segmentation,
+  using active contours without edges \citep{chan_active_2001} that evolve driving a
+  free-deformation field of B-Spline functions.
+Optimization is performed using a descent strategy of shape-gradients
+  \citep{herbulot_segmentation_2006,besson_dream2s_2003}, therefore \emph{regseg}
+  does not implement level sets as most of the presented methods.
+Given the properties of the distortion, \emph{regseg} includes the anisotropic regularization
+  of displacement fields of \cite{nagel_investigation_1986}.
+
+While all the correction methods require an extra acquisition, \emph{regseg} is especially
+  indicated in scanning protocols without specific data for correction,
+  such as historical datasets.
+Finally, we present an instrumentation framework to evaluate correction and
+  segmentation pipelines using realistic distortions as ground truth.
+With the integration of \emph{regseg} and an in-house implementation of the 
+  \gls*{t2b} correction in the framework, we compare the performance
+  of both solutions.

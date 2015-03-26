@@ -4,35 +4,26 @@
 
 \section*{Appendix}
 
-\subsection{Instant velocity of contours}
-\label{app:shape_priors}
-The computation of gradients at the locations of the active contours in the
-  instant $t$ is based on the work of \cite{herbulot_segmentation_2006}.
-Let $F(\vec{r})$ be an ``arbitrary'' function over the image domain
-  $\Omega = \Omega_l \cup \Omega_m$ splitted in two regions $l$ and
-  $m$, and $\Gamma_{l,m}$ a closed boundary between them
-  as defined in \nameref{sec:methods_map}.
-We now derive the domain integral w.r.t. $t$:
-
-  \begin{align*}
-  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} &=
-  \int_\Omega \frac{\partial}{\partial t}F(\vec{r}) d\vec{r} \notag\\
-  &- \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
-  N_{\Gamma_{l,m}}\right\rangle d\vec{r},
-  \end{align*}
+\subsection{Simplifying the regularization term}\label{app:reg_term}
+The exponentials of the Thikonov regularization prior \eqref{eq:thikonov} have the general form
+  $\vec{v}^T \mathbf{M} \vec{v}$.
+If $\mathbf{M}$ is a $n \times n$ diagonal matrix such that $\mathbf{M} = \vec{m} \, \mathbf{I}_n$, 
+  then:
+\begin{equation*}
+\vec{v}^T \mathbf{M} \vec{v} = \vec{m} \cdot (\vec{v}^T \mathbf{I}_n \vec{v}) = \vec{m} \cdot \vec{v}^{\circ2},
+\end{equation*}
 %
-  where $\left\langle\frac{\partial\Gamma_{l,m}}{\partial t}, N_{\Gamma_{l,m}}\right\rangle$ is
-  the projection of the boundary movement on the unit inward normal $N_{\Gamma_{l,m}}$.
-Assuming that the region descriptors $\{\mu_l, \Sigma_l\}$ vary slowly enough, we can consider
-  that $\frac{\partial}{\partial t} F(\vec{r}) = 0$ and thus:
+  where we have introduced the Hadamard power notation\footnote{The Hadamard power of a matrix or a vector
+  is the power of its elements $\mathbf{M}^{\circ p} = ({m_{ij}}^{p})$}.
 
-  \begin{equation}
-  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
-  - \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
-  N_{\Gamma_{l,m}}\right\rangle d\vec{r}
-  \label{eq:shape_gradients}
-  \end{equation}
-
-  The application of \eqref{eq:shape_gradients} to our problem and its discretization are
-    discussed in the \suppl{section S1}, equations (SM1) to (SM8).
-
+Since the anisotropy is generally aligned with the imaging axes, 
+  $\mathbf{A}$ and $\mathbf{B}$ of \eqref{eq:energy} can be simplified to diagonal matrices, such that
+  $\mathbf{A}= \, \boldsymbol{\alpha}\,\vec{I}_n$ and
+  $\mathbf{B}= \, \boldsymbol{\beta}\,\vec{I}_n$.
+Substituting in the equation \eqref{eq:energy}, we get:
+  \begin{align}
+  E(M \mid U) &= \const + \underset{l}{\sum} \int_{\Omega_l}
+  \mdist{f'}{l} \,d\vec{r} \notag\\
+  &+ \int_{\Omega} \frac12 \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2} + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r}.
+  \label{eq:app_energy}
+  \end{align}
