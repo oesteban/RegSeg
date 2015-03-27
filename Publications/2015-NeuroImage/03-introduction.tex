@@ -46,11 +46,13 @@ Other efforts include mixture models on sets of directionally invariant maps
 To solve registration, \cite{saad_new_2009} used Pearson correlation to perform linear
   alignment of \gls*{t1} and \emph{b0}.
 Another linear registration method is \emph{bbregister} \citep{greve_accurate_2009},
-  that uses active contours extracted from the \gls*{t1}\footnote{using \emph{FreeSurfer}
-  \citep{fischl_freesurfer_2012}} to look for intensity boundaries in the \emph{b0}
+  uses active contours with edges to look for intensity boundaries in the \emph{b0}
   image.
-In practice, the target \emph{b0} does not present clear frontiers of intensity between
-  interfacing tissues, what limits \emph{bbregister} to mapping the cortical surface only.
+The active contours are initialized by surfaces extracted from the 
+  \gls*{t1}\footnote{using \emph{FreeSurfer}\citep{fischl_freesurfer_2012}}:
+  the pial surface (exterior of cortical \gls*{gm}) and the \gls*{wm}/\gls*{gm} interface.
+In practice, the \emph{b0} image only presents a detectable frontier for the pial surface
+  and \emph{bbregister} is limited to align the cortical surface.
 Since the distortions found in \gls*{dmri} are nonlinear, \emph{bbregister} excludes
   from the boundary search those regions typically warped by the artifact.
 This tool has become the standard method for its proven robustness.
@@ -80,19 +82,20 @@ Finally, \cite{gorthi_active_2011} extended the existing methodologies using a m
   of atlas-based segmentation.
   
 The hypothesis under this research is that the registration and segmentation
-  problems can be solved jointly, increasing the geometrical accuracy of the process.
-We propose \emph{regseg} as a joint solution to distortion correction and segmentation,
-  using active contours without edges \citep{chan_active_2001} that evolve driving a
+  problems in \gls*{dmri} can be solved simultaneously, increasing the geometrical
+  accuracy of the process.
+We propose a tool called \emph{regseg} to exploit the prior information of shapes
+  extracted on \gls*{t1} images to register the anatomical reference
+  to \gls*{dmri} space, implicitly segmenting these data.
+The approach uses active contours without edges \citep{chan_active_2001} that evolve driving a
   free-deformation field of B-Spline functions.
 Optimization is performed using a descent strategy of shape-gradients
-  \citep{herbulot_segmentation_2006,besson_dream2s_2003}, therefore \emph{regseg}
-  does not implement level sets as most of the presented methods.
-Given the properties of the distortion, \emph{regseg} includes the anisotropic regularization
-  of displacement fields of \cite{nagel_investigation_1986}.
-
-% While all the correction methods require an extra acquisition, \emph{regseg} is especially
-%   indicated in scanning protocols without specific data for correction,
-%   such as historical datasets.
+  \citep{besson_dream2s_2003,herbulot_segmentation_2006}, therefore \emph{regseg}
+  does not implement levelsets as most of the presented methods.
+The nonlinear warping caused by distortion is aligned with one of the imaging axis due
+  to the theory underpinning \gls*{epi} sequences.
+Therefore, \emph{regseg} includes an anisotropic regularizer of the displacement field 
+  proposed by \cite{nagel_investigation_1986}.
 Finally, we present an instrumentation framework to evaluate correction and
   segmentation pipelines using realistic distortions as ground truth.
 With the integration of \emph{regseg} and an in-house implementation of the 
