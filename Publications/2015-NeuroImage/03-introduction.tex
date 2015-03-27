@@ -18,7 +18,7 @@ The extremely low \gls*{snr} and high dimensionality of \glspl*{dwi} disable the
 The contrast between \gls*{gm} and \gls*{wm} in the \emph{b0} volumes is not suitable for 
   segmentation either.
 Finally, \gls*{dmri} images are acquired using \gls*{epi} to speed up acquisition
-  at the cost of presenting comprehensively reported geometrical distortion and 
+  at the cost of presenting geometrical distortion and 
   signal losses \citep{jezzard_correction_1995} that hinder the segmentation by
   registering an anatomical image as source of same-subject prior information.
 The artifact has been proven to cause an important impact on the anatomy extracted
@@ -40,11 +40,11 @@ A large body of work targets the definition of appropriate features to segmentat
 Other efforts include mixture models on sets of directionally invariant maps
   \citep{liu_brain_2007}, iterative \citep{hadjiprocopis_unbiased_2005} and
   hierarchical \citep{lu_segmentation_2008} clusterings,
-  graph-cuts \citep{han_experimental_2009}, and volume fraction modeling
-  \citep{kumazawa_improvement_2013}.
-
-\cite{saad_new_2009} used Pearson correlation to perform linear registration
-  of the \gls*{t1} image to the \emph{b0} of the \gls*{dmri}.
+  and graph-cuts \citep{han_experimental_2009}.
+  % , and volume fraction modeling \citep{kumazawa_improvement_2013}.
+ 
+To solve registration, \cite{saad_new_2009} used Pearson correlation to perform linear
+  alignment of \gls*{t1} and \emph{b0}.
 Another linear registration method is \emph{bbregister} \citep{greve_accurate_2009},
   that uses active contours extracted from the \gls*{t1}\footnote{using \emph{FreeSurfer}
   \citep{fischl_freesurfer_2012}} to look for intensity boundaries in the \emph{b0}
@@ -60,12 +60,13 @@ Nonlinear registration has been successfully performed between \gls*{t2} and \em
 Further registration of \gls*{t1} and \gls*{t2} images was still required to map the anatomical
   information (and the \gls*{wm} segmentation) into \gls*{dmri} space.
 
+
 To jointly solve registration and segmentation problems such as longitudinal object
   tracking \citep{paragios_level_2003} and atlas-based segmentation 
   \citep{gorthi_active_2011}, active contours have been successfully integrated 
   in image registration methods.
 \cite{unal_coupled_2005} and later \cite{wang_joint_2006},
-  extended an existing linear registration \cite{yezzi_variational_2003}
+  extended an existing method using linear registration \citep{yezzi_variational_2003}
   to the nonlinear case implementing a free deformation field.
 \cite{droske_mumfordshah_2009} reviewed the latter set of techniques, and proposed two different
   approaches to apply the Mumford-Shah functional \citep{mumford_optimal_1989} in simultaneous
@@ -78,8 +79,6 @@ Finally, \cite{gorthi_active_2011} extended the existing methodologies using a m
   level-set function for the registration of several active contours, in the application
   of atlas-based segmentation.
   
-
-\paragraph{Contributions}\label{sec:contributions}
 The hypothesis under this research is that the registration and segmentation
   problems can be solved jointly, increasing the geometrical accuracy of the process.
 We propose \emph{regseg} as a joint solution to distortion correction and segmentation,
@@ -91,9 +90,9 @@ Optimization is performed using a descent strategy of shape-gradients
 Given the properties of the distortion, \emph{regseg} includes the anisotropic regularization
   of displacement fields of \cite{nagel_investigation_1986}.
 
-While all the correction methods require an extra acquisition, \emph{regseg} is especially
-  indicated in scanning protocols without specific data for correction,
-  such as historical datasets.
+% While all the correction methods require an extra acquisition, \emph{regseg} is especially
+%   indicated in scanning protocols without specific data for correction,
+%   such as historical datasets.
 Finally, we present an instrumentation framework to evaluate correction and
   segmentation pipelines using realistic distortions as ground truth.
 With the integration of \emph{regseg} and an in-house implementation of the 

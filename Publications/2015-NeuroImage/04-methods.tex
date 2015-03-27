@@ -10,64 +10,14 @@ Distortion can be rendered as a registration problem where we look for an underl
 
   \begin{align}
   U_s\colon R \subset \mathbb{R}^n &\to M \subset \mathbb{R}^n \notag\\
-  \vec{r} &\mapsto \vec{r}' =\vec{r}+u(\vec{r}),
+  \vec{r} &\mapsto \vec{r}' =\vec{r}+\vec{u}(\vec{r}),
   \label{eq:transform}
   \end{align}
 %
   where $\vec{r}$ denotes a position in $R$, $\vec{r}'$ is
   its corresponding location in $M$, and $n$ the dimensionality of images.
-Finally, $\vec{u} = u(\vec{r})$ is the displacement of every point with respect
+Finally, $\vec{u} = \vec{u}(\vec{r})$ is the displacement of every point with respect
   to the reference domain.
-The displacements along the \gls*{pe} axis are related to the local field
-  deviation $\Delta B_0(\vec{r})$ \citep{jezzard_correction_1995}:
-
-  \begin{equation}
-  u(\vec{r}) = \frac{\gamma \, T_{acq}\, s_{PE}}{2\pi}\Delta B_0(\vec{r}) \: \hat{\vec{e}}_{PE},
-  \label{eq:fieldmap}
-  \end{equation}
-%
-where $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time,
-  $s_{PE}$ is the pixel size along \gls*{pe}, and $\hat{\vec{e}}_{PE}$ the unitary
-  vector along \gls*{pe}.
-
-
-
-% Joint segmentation and distortion correction of \gls*{dmri} data is also interesting to
-%   improve the overall consistence of complex processing workflows.
-% The closest antecedent of \emph{regseg} is \emph{bbregister} \citep{greve_accurate_2009}.
-% Both methods use active contours to align surfaces to same-subject \gls*{dmri} images.
-% However, \emph{bbregister} is limited to affine transformations, and thus, it is not able to
-%   solve the susceptibility-derived distortions, generally nonlinear.
-% To enable registration of uncorrected data, \emph{bbregister} excludes from the cost-function
-%   those regions frequently warped.
-% Conversely, \emph{regseg} implements a free-deformation field, supported with B-Spline
-%   functions to estimate deformations.
-% A second diverging foundation is the active-contours framework.
-% In \emph{regseg}, active contours are implemented without edges \citep{chan_active_2001},
-%   enabling the tool to segment homogeneous regions within the brain.
-% On the other hand, \emph{bbregister} requires that the target features present intensity
-%   boundaries as it implements active contours with edges.
-% The tissue interfaces imaged with \gls*{dmri} are affected by partial volume effects that
-%   blur boundaries.
-% In practice, registration of \gls*{t1} and \gls*{dmri} data with \emph{bbregister}
-%   is limited to the linear match of the pial surface of the brain.
-
-
-
-% Our method is close to \citep{guyader_combined_2011} and \citep{gorthi_active_2011}
-%   in the use of active contours without edges for registration, however we avoided
-%   the use of level sets with the application of shape gradients
-%   \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
-% \cite{gorthi_active_2011} used a gaussian regularizer, and \cite{guyader_combined_2011}
-%   proposed a nonlinear elasticity smoother.
-% In contrast, \emph{regseg} implements the anisotropic regularization proposed by
-%   \citep{nagel_investigation_1986}.
-% We demonstrate its aptness on the correction of the nonlinear distortions typically
-%   presented by \gls*{dmri} data of the brain.
-% Therefore, a typical protocol for the extraction of structural connectivity
-%   comprehends \gls*{dmri}, \gls*{t1}, and the acquisition determined by the correction
-%   method of choice \citep{daducci_connectome_2012}.
-
 
 \subsection{Cost-function derivation}\label{sec:methods_map}
 %
@@ -386,6 +336,20 @@ Selecting the appropriate labels in the \emph{aparc} segmentation, we applied
 	5) cerebellar \gls*{gm}, $\Gamma_{cbGM}$; and
 	6) cortical \gls*{gm} surface, $\Gamma_{pial}$.
 The choice of this particular model is further addressed in \autoref{sec:res_model_and_metric}.
+
+
+The displacements along the \gls*{pe} axis are related to the local field
+  deviation $\Delta B_0(\vec{r})$ \citep{jezzard_correction_1995}:
+
+  \begin{equation}
+  u(\vec{r}) = \frac{\gamma \, T_{acq}\, s_{PE}}{2\pi}\Delta B_0(\vec{r}) \: \hat{\vec{e}}_{PE},
+  \label{eq:fieldmap}
+  \end{equation}
+%
+where $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time,
+  $s_{PE}$ is the pixel size along \gls*{pe}, and $\hat{\vec{e}}_{PE}$ the unitary
+  vector along \gls*{pe}.
+
 
 In this case, we derived the deformation $U_{true}$ from the field maps released with
   the corresponding packages of each dataset from the \gls*{hcp} applying \eqref{eq:fieldmap},
