@@ -9,7 +9,7 @@ However, segmenting \gls*{dmri} data precisely and coregistration of anatomical
   images are difficult for several reasons.
 First, \gls{dmri} images suffer from partial voluming of several tissues in 
   interfacing voxels due to the low resolution of images (generally around
-  \isores{2.2} [mm]).
+  \isores[mm]{2.2}).
 Second, \gls*{dmri} schemes probe the diffusion process within the brain in 
   many angles called \glspl*{dwi}, completed by one or more baseline (\emph{b0}) 
   volumes without directional gradients.
@@ -28,9 +28,8 @@ The artifact has been proven to cause an important impact on the anatomy extract
 Early attempts to delineate the \gls*{wm} proceeded by thresholding the 
   \gls*{fa}\footnote{the \gls*{fa} is a scalar parameter of diffusion derived from
   the \gls*{dmri} data.} map.
-However, there is a large variability in the mask obtained depending on the value of
-  choice \citep{taoka_fractional_2009}.
-The approach is unreliable for the high variability of \gls*{fa} and its
+However, the mask and subsequent analyses strongly depend on the threshold set
+  \citep{taoka_fractional_2009} owing to the large variability of \gls*{fa} and its
   decay with the increase of incoherence between fibers.
 \cite{zhukov_level_2003} proposed active contours with edges represented
   by level sets, evolving on directionally invariant scalar maps.

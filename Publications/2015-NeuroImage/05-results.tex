@@ -4,6 +4,33 @@
 
 \subsection{Proof of concept on digital phantoms}
 \label{sec:results_phantom}
+
+\begin{figure*}
+    \centering
+    \resizebox{\textwidth}{!}{%
+      \begin{tikzpicture}
+        \node[inner sep=10pt, draw=black!40](fig03b) at (0,7.9)
+          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure03-b}};
+        \node[inner sep=10pt, draw=black!40](fig03c) at (0,0)
+          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure03-c}};
+        \node[circle, text=black!75] at (-9.4,10.6) {\Huge \textbf{A}};
+        \node[circle, text=black!75] at (-9.4,3.5) {\Huge \textbf{B}};
+      \end{tikzpicture}
+    }%
+  \caption{A. Visual assessment of the results on the low resolution sets:
+    ``gyrus'' (top-left), ``L-shape'' (top-right), ``ball'' (bottom-left),
+    and ``box'' at (bottom-right).
+  In yellow color, the recovered contours after registration are represented.
+  Our method showed high accuracy, as demonstrates almost exact location of the registered
+    contours with respect to their ground truth position depicted in green.
+  Partial volume effect turns segmentation of the sulci a challenging problem with voxel-wise
+    clustering methods, but it is successfully segmented with our method.
+  B. Quantitative evaluation of registration error in terms of average Hausdorff distance of
+    surfaces at high (left) and low (right) resolutions, demonstrating that the error is
+    consistently below the voxel size.
+    }\label{fig:phantom}
+\end{figure*}
+
 Using a simplified subset of the experimental instrumentation described in
   \autoref{sec:experiments_evaluation}, we collected quantitative results on the digital
   phantoms.
@@ -66,14 +93,6 @@ The energy functional \eqref{eq:energy} was evaluated for the warpings given by
 The results of this experiment are shown in \autoref{fig:energymap}.
 The metric consistently displayed its minimum at $\epsilon=0.0$ (ground-truth location).
 
-\begin{figure}
-	\includegraphics[width=\linewidth]{figures/figure04.pdf}
-	\caption{Assessment of the segmentation model, sampling the value of the energy functional
-	\eqref{eq:energy} versus several registration errors generated as explained in
-	\autoref{sec:res_model_and_metric}.
-	The metric of our registration method displayed a smooth gradient towards the minimum
-	located at the $\epsilon = 0.0$ point.}\label{fig:energymap}
-\end{figure}
 
 \paragraph*{Evaluation \& cross-comparison}\label{sec:res_cc_evaluation}
 %

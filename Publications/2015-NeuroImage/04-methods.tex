@@ -230,23 +230,6 @@ Therefore, a \gls*{swindex} can be computed as the one-to-one distance between c
   prior, and $\hat{\vec{v}}_i$ is the location
   recovered corresponding to the vertex $\vec{v}_i$.
 
-
-\begin{figure*}
-\includegraphics[width=\linewidth]{figures/figure02}
-\caption{Experimental workflow applied on real data from the \acrfull*{hcp}.
-  1) The prior surfaces are extracted from the anatomical reference (\gls*{t1} image).
-	2) To operate as ground truth, we generate a plausible-synthetic distortion $U_{true}$
-	  from the fieldmap using \eqref{eq:fieldmap}.
-	3) The \gls*{dmri} data are warped using $U^{-1}_{true}$ to reproduce the effects of real
-	  susceptibility-derived distortions.
-	Target diffusion scalars (\gls*{fa} and \gls*{adc}) are computed on the distorted data and
-		stacked to feed the multivariate input required by our algorithm.
-	4) \emph{Regseg} is run, obtaining a $U_{test} = \hat{U}_{true}$, the estimation of
-	  the ground-truth deformation.
-	5) Results are visually and quantitatively evaluated.}\label{fig:evworkflows}
-\end{figure*}
-
-
 \subsection{Image Data and preprocessing}
 \label{sec:datasets}
 
@@ -259,43 +242,15 @@ Using \emph{phantomas} \citep{caruyer_phantomas_2014}, we simulated
   \gls*{t1} (TE/TR=10/1500ms) and \gls*{t2} images (TE/TR=90/5000ms)
   corresponding to each phantom type, with two resolutions each
   (1.0mm and 2.0mm isotropic).
-Field of view at both resolutions was \isores{100}mm.
+The field of view at both resolutions was \isores[mm]{100}.
 Simulations were corrupted with rician noise for a \gls*{snr} of 300.0.
 The reference surfaces were extracted at high resolution, using 
   \texttt{mri\_tessellate}\footnote{A marching-cubes algorithm shipped with 
   \emph{FreeSurfer}.}.
 
 \begin{figure*}
-    \centering
-    \resizebox{\textwidth}{!}{%
-      \begin{tikzpicture}
-        \node[inner sep=10pt, draw=black!40](fig03a) at (0,14.8)
-          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure03-a}};
-        \node[inner sep=10pt, draw=black!40](fig03b) at (0,7.9)
-          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure03-b}};
-        \node[inner sep=10pt, draw=black!40](fig03c) at (0,0)
-          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure03-c}};
-        \node[circle, text=black!75] at (-9.4,17.3) {\Huge \textbf{A}};
-        \node[circle, text=black!75] at (-9.4,10.6) {\Huge \textbf{B}};
-        \node[circle, text=black!75] at (-9.4,3.5) {\Huge \textbf{C}};
-      \end{tikzpicture}
-    }%
-	\caption{A. The ``cortex'' phantom is a spherical shape with two sulci and an
-	  outer crust resembling the cortical folding (left).
-	The model is used to generate \gls*{t1} and \gls*{t2} images after warping the
-	  contours using a random and plausible transformation $U_{true}^{-1}$ (right).
-	B. Visual assessment of the results on the low resolution sets:
-	  ``gyrus'' (top-left), ``L-shape'' (top-right), ``ball'' (bottom-left),
-	  and ``box'' at (bottom-right).
-	In yellow color, the recovered contours after registration are represented.
-	Our method showed high accuracy, as demonstrates almost exact location of the registered
-    contours with respect to their ground truth position depicted in green.
-	Partial volume effect turns segmentation of the sulci a challenging problem with voxel-wise
-	  clustering methods, but it is successfully segmented with our method.
-	C. Quantitative evaluation of registration error in terms of average Hausdorff distance of
-	  surfaces at high (left) and low (right) resolutions, demonstrating that the error is
-	  consistently below the voxel size.
-	  }\label{fig:phantom}
+\includegraphics[width=\linewidth]{figures/figure03}
+\caption{Evaluation workflow of phantoms}\label{fig:evphantoms}
 \end{figure*}
 
 To warp the simulated datasets, we generated 150 different realizations of
@@ -325,6 +280,21 @@ The original acquisitions are released within ``unprocessed'' packages, and
   the ``minimally preprocessed'' are corrected for artifacts, brain-extracted
   and spatially normalized, along with some results of the standard processing
   pipeline of \emph{FreeSurfer}.
+
+\begin{figure*}
+\includegraphics[width=\linewidth]{figures/figure02}
+\caption{Experimental workflow applied on real data from the \acrfull*{hcp}.
+  1) The prior surfaces are extracted from the anatomical reference (\gls*{t1} image).
+  2) To operate as ground truth, we generate a plausible-synthetic distortion $U_{true}$
+    from the fieldmap using \eqref{eq:fieldmap}.
+  3) The \gls*{dmri} data are warped using $U^{-1}_{true}$ to reproduce the effects of real
+    susceptibility-derived distortions.
+  Target diffusion scalars (\gls*{fa} and \gls*{adc}) are computed on the distorted data and
+    stacked to feed the multivariate input required by our algorithm.
+  4) \emph{Regseg} is run, obtaining a $U_{test} = \hat{U}_{true}$, the estimation of
+    the ground-truth deformation.
+  5) Results are visually and quantitatively evaluated.}\label{fig:evworkflows}
+\end{figure*}
 
 Selecting the appropriate labels in the \emph{aparc} segmentation, we applied
   \texttt{mri\_tessellate} to extract the surface of the following
