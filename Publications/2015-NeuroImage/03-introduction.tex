@@ -15,9 +15,9 @@ Second, \gls*{dmri} schemes probe the diffusion process within the brain in
   volumes without directional gradients.
 The extremely low \gls*{snr} and high dimensionality of \glspl*{dwi} disable their
   use for direct segmentation.
-The contrast between \gls*{gm} and \gls*{wm} in the \emph{b0} volumes is not suitable for 
+The low contrast between \gls*{gm} and \gls*{wm} in the \emph{b0} volumes is not suitable for 
   segmentation either.
-Finally, \gls*{dmri} images are acquired using \gls*{epi} to speed up acquisition
+Lastly, \gls*{dmri} images are acquired using \gls*{epi} to speed up acquisition
   at the cost of presenting geometrical distortion and 
   signal losses \citep{jezzard_correction_1995} that hinder the segmentation by
   registering an anatomical image as source of same-subject prior information.
@@ -44,38 +44,46 @@ Other efforts include mixture models on sets of directionally invariant maps
   and graph-cuts \citep{han_experimental_2009},
   and volume fraction modeling \citep{kumazawa_improvement_2013}.
  
-To solve registration, \cite{saad_new_2009} used Pearson correlation to perform linear
-  alignment of \gls*{t1} and \emph{b0}.
-Another linear registration method is \emph{bbregister} \citep{greve_accurate_2009},
-  uses active contours with edges to look for intensity boundaries in the \emph{b0}
+To solve the segmentation problem through registration, \cite{saad_new_2009} 
+  used Pearson correlation to perform linear alignment of the \gls*{t1} and 
+  the \emph{b0}.
+Similarly, an also linear registration method is \emph{bbregister} \citep{greve_accurate_2009}.
+It uses active contours with edges to look for intensity boundaries in the \emph{b0}
   image.
 The active contours are initialized by surfaces extracted from the 
   \gls*{t1} using \emph{FreeSurfer} \citep{fischl_freesurfer_2012}:
-  the pial surface (exterior of cortical \gls*{gm}) and the \gls*{wm}/\gls*{gm} interface.
-In practice, the \emph{b0} image only presents a detectable frontier for the pial surface
-  and \emph{bbregister} is limited to align the cortical surface.
-Since the distortions found in \gls*{dmri} are nonlinear, \emph{bbregister} excludes
-  from the boundary search those regions typically warped by the artifact.
-This tool has become the standard method for its proven robustness.
+  the \emph{pial} surface (exterior of cortical \gls*{gm}) and the \emph{white}
+  surface (the \gls*{wm}/\gls*{gm} interface). 
+Since the \emph{b0} image only presents a detectable frontier for the pial surface,
+  \emph{bbregister} is limited to align the cortical layer in this
+  application.
+This tool has become the standard method for its proven robustness, despite the 
+  distortions found in \gls*{dmri} are nonlinear.
+To overcome this issue, \emph{bbregister} excludes from the boundary search those
+  regions typically warped by the artifact.
+As the distortion is not accounted for, it should be addressed separately.
 Nonlinear registration has been successfully performed between \gls*{t2} and \emph{b0}
   images for their similarity, but uniquely as a way to correct for distortions
   \citep{kybic_unwarping_2000,studholme_accurate_2000,wu_comparison_2008,tao_variational_2009}.
 Further registration of \gls*{t1} and \gls*{t2} images was still required to map the anatomical
   information (and the \gls*{wm} segmentation) into \gls*{dmri} space.
 
-
-To jointly solve registration and segmentation problems such as longitudinal object
-  tracking \citep{paragios_level_2003} and atlas-based segmentation 
-  \citep{gorthi_active_2011}, active contours have been successfully integrated 
-  in image registration methods.
+Therefore, given the described circumstances, a method performing simultaneously
+  segmentation in \gls*{dmri} space and registration of the corresponding \gls*{t1} image
+  to \gls*{dmri} data could provide the optimal solution.
+Previously, joint segmentation and registration has been successfully applied to
+  longitudinal object tracking \citep{paragios_level_2003} and atlas-based
+  segmentation \citep{gorthi_active_2011}.
+The most extended approach is integrating active contours in image registration 
+  methods.
 \cite{unal_coupled_2005} and later \cite{wang_joint_2006},
-  extended an existing method using linear registration \citep{yezzi_variational_2003}
-  to the nonlinear case implementing a free deformation field.
+  improved an existing method \citep{yezzi_variational_2003} based on linear registration
+  to the nonlinear case implementing a free-form deformation field.
 \cite{droske_mumfordshah_2009} reviewed the latter set of techniques, and proposed two different
   approaches to apply the Mumford-Shah functional \citep{mumford_optimal_1989} in simultaneous
   registration and segmentation, through the propagation of the deformation field from
   the contours to the whole image definition.
-Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
+Recently, \cite{guyader_combined_2011} proposed a 2D simultaneous segmentation and
   registration method using level sets and a nonlinear elasticity smoother on the
   displacement vector field, which preserves topology even with very large deformations.
 Finally, \cite{gorthi_active_2011} extended the existing methodologies using a multiphase
@@ -90,7 +98,7 @@ We propose a tool called \emph{regseg} to exploit the prior information of shape
   to \gls*{dmri} space, implicitly segmenting these data.
 The approach uses active contours without edges \citep{chan_active_2001} that evolve driving a
   free-deformation field of B-Spline functions.
-Optimization is performed using a descent strategy of shape-gradients
+Optimization is performed using a descent strategy of explicit shape-gradients
   \citep{besson_dream2s_2003,herbulot_segmentation_2006}, therefore \emph{regseg}
   does not implement levelsets as most of the presented methods.
 The nonlinear warping caused by distortion is aligned with one of the imaging axis due

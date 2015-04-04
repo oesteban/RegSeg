@@ -4,12 +4,13 @@
 %
 Let $\gammaset = \{\Gamma_m: m \in \mathbb{N}, m \leq N_c\}$ be the set of $N_c$ surfaces
   extracted from the undistorted \gls*{t1} image (the reference space $R$).
-Distortion can be rendered as a registration problem where we look for an underlying deformation 
-  field $U_s$, mapping $R$ (with $\gammaset \subset R$) to the corresponding features in the distorted 
-  \gls*{dmri} images (the moving space $M$):
+We reformulate the segmentation of the distorted \gls*{dmri} images (the moving space $M$)
+  as a registration problem where we look for an underlying deformation field $U$, such that 
+  the structures in $R$ defined by \gammaset{} optimally align with their corresponding
+  structures in $M$:
 
   \begin{align}
-  U_s\colon R \subset \mathbb{R}^n &\to M \subset \mathbb{R}^n \notag\\
+  U\colon R \subset \mathbb{R}^n &\to M \subset \mathbb{R}^n \notag\\
   \vec{r} &\mapsto \vec{r}' =\vec{r}+\vec{u}(\vec{r}),
   \label{eq:transform}
   \end{align}
@@ -40,7 +41,7 @@ As $\omegaset$ are mapped by $U$, we simplify
   $P(U, \omegaset) = P(U) \implies P(M \mid U,\omegaset) = P(M \mid U)$.
 
 The best estimate $\hat{U}$ then fulfills the maximum a posteriori criterium
-  \citep{bishop_pattern_2006}, and aligns \gammaset into $M$.
+  \citep{bishop_pattern_2006}, and aligns \gammaset{} into $M$.
 First, we assume independence between pixels, and thus break down the
   global data likelihood into a product of pixel-wise conditional probabilities:
 
@@ -128,7 +129,7 @@ This expression is dual of the Mumford-Shah functional corresponding
 \end{figure}
 
 \paragraph*{Deformation model}\label{sec:deformation_model}
-Since the vertices of the surfaces $\{\vec{v}_i: \vec{v}_i \subset \gammaset \}_{i=1 \ldots V}$
+Since the vertices of the surfaces $\{\vec{v}_i: \vec{v}_i \subset \gammaset \}_{i=1 \ldots N_v}$
   likely lay off-grid, it is required to derive $u(\vec{v}_i)$ from a discrete set of parameters
   $\{\vec{u}_k\}_{k=1 \ldots K}$.
 Densification is achieved through a set of associated basis functions $\psi_k$.
@@ -172,12 +173,13 @@ Let us assume that anisotropy is aligned with the imaging axes to simplify
   where $\vec{u}^{\circ2} = \vec{u}^T \cdot \vec{u}$.
 Then, the data and regularization terms are split and discretized to compute their
   derivatives.
-The intermediate steps to get to \eqref{eq:gradient_descent} from \eqref{eq:final_gradient} are
+The computation of the explicit shape gradients at each $\vec{v}_i'$ is described in \autoref{fig:method}.
+The intermediate steps to get to \eqref{eq:final_gradient} from \eqref{eq:gradient_descent} are
   detailed in the \suppl{equations SM6-SM12}:
 
   \begin{align}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
-  \vec{g}_k  + \boldsymbol{\alpha} \cdot \vec{u}_k + \boldsymbol{\beta} \cdot (\Delta \vec{u}_k).
+  \vec{g}_k  + \boldsymbol{\alpha} \cdot \vec{u}_k - \boldsymbol{\beta} \cdot (\Delta \vec{u}_k).
   \label{eq:final_gradient}
   \end{align}
 
@@ -186,29 +188,31 @@ Finally, to descend this gradient we establish a semi-implicit Euler scheme (see
 
   \begin{align}
   \vec{u}_k^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{\delta^{-1} \, \vec{u}_k^t + \vec{g}_k\} }%
-                  {\mathcal{F}\{(\delta^{-1} - \boldsymbol{\alpha})\, I-\boldsymbol{\beta}\Delta\}} \right\}
+                  {\mathcal{F}\{(\delta^{-1} + \boldsymbol{\alpha})\, I - \boldsymbol{\beta}\Delta\}} \right\}
   \label{eq:update_equation}
   \end{align}
 
 
-\paragraph*{Settings, implementation details, and convergence}
+\paragraph*{Implementation details, settings and convergence}
 \label{sec:conv_report}
-The registration parameters (such as $\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$,
-  the B-Spline grid resolutions, target image smoothing, etc.)
-  and other implementation details (for instance the sparse matrix approach
-  to fast interpolation) are discussed in the \suppl{section S1}.
+The \emph{regseg} tool includes a multiresolution strategy on the free-form deformation field.
+Registration pyramids are created by setting the spacing between control points of the B-Spline basis
+  functions for each level of the multiresolution.
+This implementation detail, along with other features (as the sparse matrix approach
+  to fast interpolation) and the main parameters 
+  (such as $\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$, the B-Spline grid resolutions,
+  target image smoothing, etc.) are discussed in the \suppl{section S1}.
 The actual choices of parameter settings are publicly distributed with the source code of the experiments.
-Additionally, we release our software along with a tool for generating convergence reports to
-  demonstrate the behavior of \emph{regseg} and help scientists configure their own experiments.
-One sample report is found in the \suppl{section S1.3}.
+These final settings were manually obtained based on the feedback of post-registration convergence
+  reports (as the one found in the \suppl{section S1.3}).
+We release \emph{regseg} along with the tool for generating the convergence report.
 
 
 \subsection{Experiments and evaluation}
 \label{sec:experiments_evaluation}
 %
 In order to demonstrate the performance of \emph{regseg}, we first conducted a battery of
-  accuracy tests over synthetic data, and then applied it in the susceptibility distortion
-  correction of real data.
+  accuracy tests over synthetic data, and then applied to real \gls*{dmri} data.
 \autoref{fig:evworkflows} presents the workflow implementing the evaluation instruments.
 Besides a visual assessment of the results, we report quantitative evaluations using
   two metrics.
@@ -305,11 +309,12 @@ Selecting the appropriate labels in the \emph{aparc} segmentation, we applied
   4) brain stem and cerebellar \gls*{wm}, $\Gamma_{bst}$;
 	5) cerebellar \gls*{gm}, $\Gamma_{cbGM}$; and
 	6) cortical \gls*{gm} surface, $\Gamma_{pial}$.
-The choice of this particular model is further addressed in \autoref{sec:res_model_and_metric}.
+The segmentation model corresponding to this selection of surfaces is presented in
+  \autoref{fig:model}, and further addressed in \autoref{sec:res_model_and_metric}.
 
 
-The displacements along the \gls*{pe} axis are related to the local field
-  deviation $\Delta B_0(\vec{r})$ \citep{jezzard_correction_1995}:
+The displacements along the \gls*{pe} axis are related to the local deviation of the
+  field $\Delta B_0(\vec{r})$ \citep{jezzard_correction_1995}:
 
   \begin{equation}
   u(\vec{r}) = \frac{\gamma \, T_{acq}\, s_{PE}}{2\pi}\Delta B_0(\vec{r}) \: \hat{\vec{e}}_{PE},
@@ -319,9 +324,10 @@ The displacements along the \gls*{pe} axis are related to the local field
 where $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time,
   $s_{PE}$ is the pixel size along \gls*{pe}, and $\hat{\vec{e}}_{PE}$ the unitary
   vector along \gls*{pe}.
+With certain \gls*{mr} sequences it is possible to estimate $\Delta B_0$, obtaining
+  the so-called fieldmap.
 
-
-In this case, we derived the deformation $U_{true}$ from the field maps released with
+In this case, we derived the deformation $U_{true}$ from the fieldmaps released with
   the corresponding packages of each dataset from the \gls*{hcp} applying \eqref{eq:fieldmap},
   mimicking the real distortions, using a derivation of our previous work
   \citep{esteban_simulationbased_2014}.
