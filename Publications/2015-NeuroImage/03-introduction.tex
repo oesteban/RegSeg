@@ -28,15 +28,15 @@ The artifact has been proven to cause an important impact on the anatomy extract
 Early attempts to delineate the \gls*{wm} proceeded by thresholding the 
   \gls*{fa}\footnote{the \gls*{fa} is a scalar parameter of diffusion derived from
   the \gls*{dmri} data.} map.
-However, the mask and subsequent analyses strongly depend on the threshold set
+However, the mask and subsequent analyses substantially depend on the threshold set
   \citep{taoka_fractional_2009} owing to the large variability of \gls*{fa} and its
   decay with the increase of incoherence between fibers.
 \cite{zhukov_level_2003} proposed active contours with edges represented
-  by level sets, evolving on directionally invariant scalar maps.
+  by levelsets, evolving on directionally invariant scalar maps.
 \cite{rousson_level_2004} successfully segmented the corpus callosum with
-  region-based level-sets on the eigenvalues of tensors fitted on the
+  region-based levelsets on the eigenvalues of tensors fitted on the
   \gls*{dmri} data.
-A large body of work targets the definition of appropriate features to segmentation,
+A large body of work targeted the definition of appropriate features to cluster,
   such as the 5D representation proposed by \cite{jonasson_segmentation_2005}.
 Other efforts include mixture models on sets of directionally invariant maps
   \citep{liu_brain_2007}, iterative \citep{hadjiprocopis_unbiased_2005} and
@@ -70,7 +70,7 @@ Further registration of \gls*{t1} and \gls*{t2} images was still required to map
 
 Therefore, given the described circumstances, a method performing simultaneously
   segmentation in \gls*{dmri} space and registration of the corresponding \gls*{t1} image
-  to \gls*{dmri} data could provide the optimal solution.
+  to the \gls*{dmri} data could provide the optimal solution.
 Previously, joint segmentation and registration has been successfully applied to
   longitudinal object tracking \citep{paragios_level_2003} and atlas-based
   segmentation \citep{gorthi_active_2011}.
@@ -79,15 +79,15 @@ The most extended approach is integrating active contours in image registration
 \cite{unal_coupled_2005} and later \cite{wang_joint_2006},
   improved an existing method \citep{yezzi_variational_2003} based on linear registration
   to the nonlinear case implementing a free-form deformation field.
-\cite{droske_mumfordshah_2009} reviewed the latter set of techniques, and proposed two different
+\cite{droske_mumfordshah_2009} reviewed the existing techniques, and proposed two different
   approaches to apply the Mumford-Shah functional \citep{mumford_optimal_1989} in simultaneous
   registration and segmentation, through the propagation of the deformation field from
   the contours to the whole image definition.
-Recently, \cite{guyader_combined_2011} proposed a 2D simultaneous segmentation and
-  registration method using level sets and a nonlinear elasticity smoother on the
+Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
+  registration method in 2D using levelsets and a nonlinear elasticity smoother on the
   displacement vector field, which preserves topology even with very large deformations.
 Finally, \cite{gorthi_active_2011} extended the existing methodologies using a multiphase
-  level-set function for the registration of several active contours, in the application
+  levelset function for the registration of several active contours, in the application
   of atlas-based segmentation.
   
 The hypothesis under this research is that the registration and segmentation
@@ -97,16 +97,15 @@ We propose a tool called \emph{regseg} to exploit the prior information of shape
   extracted on \gls*{t1} images to register the anatomical reference
   to \gls*{dmri} space, implicitly segmenting these data.
 The approach uses active contours without edges \citep{chan_active_2001} that evolve driving a
-  free-deformation field of B-Spline functions.
+  free-form deformation field of B-Spline basis functions.
 Optimization is performed using a descent strategy of explicit shape-gradients
   \citep{besson_dream2s_2003,herbulot_segmentation_2006}, therefore \emph{regseg}
   does not implement levelsets as most of the presented methods.
-The nonlinear warping caused by distortion is aligned with one of the imaging axis due
-  to the theory underpinning \gls*{epi} sequences.
-Therefore, \emph{regseg} includes an anisotropic regularizer of the displacement field 
-  proposed by \cite{nagel_investigation_1986}.
-Finally, we present an instrumentation framework to evaluate correction and
-  segmentation pipelines using realistic distortions as ground truth.
-With the integration of \emph{regseg} and an in-house implementation of the 
-  \gls*{t2b} correction in the framework, we compare the performance
-  of both solutions.
+Since the nonlinear distortion is aligned with one of the imaging axis (see 
+  \autoref{sec:datasets}), \emph{regseg} includes an anisotropic regularizer of
+  the displacements field proposed by \cite{nagel_investigation_1986}.
+Finally, we evaluate \emph{regseg} using an extension of our instrumentation framework
+  \citep{esteban_simulationbased_2014} that simulates known and realistic distortions
+  on \gls*{dmri} data.
+The evaluation includes a comparison to the \gls*{t2b} correction by integrating in the framework
+  an in-house implementation of the method.

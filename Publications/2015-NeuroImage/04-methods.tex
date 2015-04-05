@@ -26,9 +26,8 @@ In a Bayesian framework for registration \citep{wyatt_map_2003,pohl_bayesian_200
   the mappings $U$ in \eqref{eq:transform} are
   evaluated based on their posterior probability given the observed data
   $M$.
-Let $\omegaset = \{\Omega_l: l \in \mathbb{N}, l \leq L\}$ be the set of $L$ competing regions in
-  which $M$ is partitioned by the projection of \gammaset, 
-  the given surfaces serving as shape priors.
+Let $\omegaset = \{\Omega_l: l \in \mathbb{N}, l \leq N_L\}$ be the set of $N_L$ competing regions in
+  which $M$ is partitioned by the projection of \gammaset.
 Using the Bayes' rule, the posterior likelihood is computed as:
 
   \begin{equation}
@@ -59,13 +58,11 @@ For convenience, and because it has been shown to be an appropriate approximatio
   region $\Omega_l$:
   1) the features are i.i.d.; and 2) they can be modeled by multivariate normal
   distributions with parameters $\lbrace \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} \rbrace$
-  for each region $\Omega_l$.
-We then insert the normal distribution into \eqref{eq:bayes_rule} to obtain the full
-  formulation of the \emph{data term} of our registration model:
+  for each region $\Omega_l$:
 
  	\begin{align}
   P( M \mid U) &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod}
-  \mathcal{N} ( \vec{f} \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} ) \notag\\
+  \mathcal{N} ( \vec{f} \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} ) = \notag\\
   &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod} \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}
   \mdist{f'}{l} \right)}},
   \label{eq:pdf}
@@ -91,10 +88,10 @@ The smoothness of the resulting displacements field is induced by a Thikonov reg
   imposing that the distortion and its gradient have zero
   mean and variance governed by the matrices $\mathbf{A}$ and $\mathbf{B}$.
 Finally, the maximum a posteriori problem is adapted into a variational one where we look for
-  the minimum of an energy functional, by applying a log-transform:
+  the minimum of an energy functional, by applying $E(\vec{u}) = -\log P(U)$:
 
   \begin{align}
-  E(M \mid U) &= -\log \underset{l}{\prod}
+  E(\vec{u}) &= -\log \underset{l}{\prod}
   \underset{\vec{r} \in \Omega_l}{\prod}
   \mathcal{N} \left( \vec{f}' \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_l \right)\,p_0( \vec{u})\,p_1( \vec{u}) \notag\\
   &= \const + \underset{l}{\sum} \int_{\Omega_l}
@@ -103,9 +100,8 @@ Finally, the maximum a posteriori problem is adapted into a variational one wher
   \label{eq:energy}
   \end{align}
 %
-
 This expression is dual of the Mumford-Shah functional corresponding
-  to a discrete \acrlong*{acwe} framework \citep{chan_active_2001}
+  to a framework of \acrlong*{acwe} \citep{chan_active_2001}
   with the corresponding anisotropic regularization term of \cite{nagel_investigation_1986}.
 
 
@@ -130,14 +126,14 @@ This expression is dual of the Mumford-Shah functional corresponding
 
 \paragraph*{Deformation model}\label{sec:deformation_model}
 Since the vertices of the surfaces $\{\vec{v}_i: \vec{v}_i \subset \gammaset \}_{i=1 \ldots N_v}$
-  likely lay off-grid, it is required to derive $u(\vec{v}_i)$ from a discrete set of parameters
+  likely lay off-grid, it is required to derive $\vec{u}_i = \vec{u}(\vec{v}_i)$ from a discrete set of parameters
   $\{\vec{u}_k\}_{k=1 \ldots K}$.
-Densification is achieved through a set of associated basis functions $\psi_k$.
+Densification is achieved through a set of associated basis functions $\psi_k$ \eqref{eq:nodes_tfm}.
 In our implementation, $\psi_k$ is chosen to be a tensor-product B-Spline kernel
-  of degree 3: % ($\beta_3$).
+  of degree 3.
 
   \begin{equation}
-  \vec{v}_i' = \vec{v}_i + u(\vec{v}_i) = \vec{v}_i + \sum_k \psi_k(\vec{r}) \: \vec{u}_k.
+  \vec{v}_i' = \vec{v}_i + \vec{u}_i = \vec{v}_i + \sum_k \psi_k(\vec{r}) \: \vec{u}_k.
   \label{eq:nodes_tfm}
   \end{equation}
 
@@ -149,7 +145,7 @@ To find the minimum of the energy functional \eqref{eq:energy},
   deformation field through the following \gls*{pde}:
 
   \begin{equation}
-  \frac{\partial u(\vec{r},t)}{\partial t} \propto - \frac{\partial E(M \mid U)}{\partial \vec{u}_k},
+  \frac{\partial \vec{u}(\vec{r},t)}{\partial t} \propto - \frac{\partial E(\vec{u})}{\partial \vec{u}_k},
   \label{eq:general_gradient_descent}
   \end{equation}
 %
@@ -158,7 +154,7 @@ To find the minimum of the energy functional \eqref{eq:energy},
   $\hat{U}$ of the transformation at the current time point.
 Let us assume that anisotropy is aligned with the imaging axes to simplify
   \eqref{eq:energy} into expression \eqref{eq:app_energy} of \ref{app:reg_term}
-  and compute the derivative \eqref{eq:general_gradient_descent}:
+  and compute its derivative \eqref{eq:general_gradient_descent}:
 
   \begin{align}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
@@ -207,72 +203,67 @@ These final settings were manually obtained based on the feedback of post-regist
   reports (as the one found in the \suppl{section S1.3}).
 We release \emph{regseg} along with the tool for generating the convergence report.
 
-
-\subsection{Experiments and evaluation}
-\label{sec:experiments_evaluation}
-%
-In order to demonstrate the performance of \emph{regseg}, we first conducted a battery of
-  accuracy tests over synthetic data, and then applied to real \gls*{dmri} data.
-\autoref{fig:evworkflows} presents the workflow implementing the evaluation instruments.
-Besides a visual assessment of the results, we report quantitative evaluations using
-  two metrics.
-In the case of the phantoms, since we had produced distortions along the three
-  available dimensions, we computed the Haussdorf distance, by reusing the
-  ``point-to-cell'' method of \cite{commandeur_vtk_2011}.
-Conversely, the susceptibility-derived distortions only happen along the \gls*{pe}
-  axis of the image.
-Therefore, a \gls*{swindex} can be computed as the one-to-one distance between corresponding
-  vertices of surfaces, weighted by their respective Voronoi area $a_i$:
-
-  \begin{equation}
-  sWI = \frac{1}{\sum_i a_i} \sum\limits_i^{N_p} a_i\,\|
-  \vec{v}_i - \hat{\vec{v}}_i \|
-  \label{eq:swindex}
-  \end{equation}
-%
-  where $\vec{v}_i$ are the locations of the $N_p$ vertices in each $p \in \{1, \dots P\}$
-  prior, and $\hat{\vec{v}}_i$ is the location
-  recovered corresponding to the vertex $\vec{v}_i$.
-
-\subsection{Image Data and preprocessing}
+\subsection{Data and corresponding evaluations}
 \label{sec:datasets}
+In order to assess the performance of \emph{regseg}, we defined a general
+  evaluation protocol:
+1) Extraction of the set of undistorted surfaces \gammaset{};  
+2) computation of a ground-truth field of displacements that is applied to
+  generate warped images ($M$) to segment;
+3) execution of \emph{regseg} with \gammaset{} and the warped data as inputs; and
+4) visual assessment and computation of error metrics.
 
-\paragraph*{Simulated phantoms}%
-\label{sec:digital_phantoms}
-We proved the concept on simplistic digital phantoms which we will name after their
-  appearance as ``box'', ``ball'', ``L-shape'', and ``gyrus'' (\autoref{fig:phantom},
-  boxes A and B).
-Using \emph{phantomas} \citep{caruyer_phantomas_2014}, we simulated
+
+\paragraph*{Simulated phantoms}\label{sec:digital_phantoms}
+The workflow to generate the digital phantoms and assess
+  \emph{regseg} on them is presented in \autoref{fig:evphantoms}.
+A set of four binary objects (called ``box'', ``ball'', ``L'',
+  and ``gyrus'') are generated combining binarization of
+  analytical shapes and mathematical morphology.
+Using \emph{FreeSurfer} tools, the reference surfaces \gammaset{}
+  are generated.
+The ground-truth distortion is generated with a chain of two displacement 
+  fields supported by grids of B-Spline basis functions.
+The coefficients of the basis functions are generated randomly for
+  both levels in their three dimensions.
+The three components of the displacements $\vec{u} = (u_d)$ 
+  are bounded above by 40\% of the separation between control points
+  at each level, to obtain diffeomorphic transforms
+  after concatenation \citep{rueckert_diffeomorphic_2006}.
+The first deformation field is intended to generate large warpings,
+  with control points separated by 50.50mm along the three dimensions
+  ($u_d\leq$ 20.20mm).
+With the second warping, we look for a resulting field with smoothness
+  close to the found in a typical distortion field of \gls*{dmri} data
+  \citep{irfanoglu_susceptibility_2011}.
+Therefore, the control points are separated 25.25mm ($u_d\leq$ 10.10mm).
+Once the ground-truth deformation is generated, the original surfaces
+  are warped interpolating the displacements field at each vertex.
+The warped surfaces are binarized to generate a distorted version of
+  the model in two target resolutions: \isores[mm]{2.0} and \isores[mm]{1.0}.
+Using a \gls*{mr} simulator \citep{caruyer_phantomas_2014}, we synthesized
   \gls*{t1} (TE/TR=10/1500ms) and \gls*{t2} images (TE/TR=90/5000ms)
   corresponding to each phantom type, with two resolutions each
   (1.0mm and 2.0mm isotropic).
 The field of view at both resolutions was \isores[mm]{100}.
 Simulations were corrupted with rician noise for a \gls*{snr} of 300.0.
-The reference surfaces were extracted at high resolution, using 
-  \texttt{mri\_tessellate}\footnote{A marching-cubes algorithm shipped with 
-  \emph{FreeSurfer}.}.
+
+To evaluate the error, we computed the Haussdorf distance (as implemented
+ by \cite{commandeur_vtk_2011}) between the surfaces warped with the ground-truth
+ and their corresponding contours estimated with \emph{regseg}.
 
 \begin{figure*}
 \includegraphics[width=\linewidth]{figures/figure03}
-\caption{Evaluation workflow of phantoms}\label{fig:evphantoms}
+\caption{Evaluation workflow of phantoms.
+
+}\label{fig:evphantoms}
 \end{figure*}
 
-To warp the simulated datasets, we generated 150 different realizations of
-  the distortion $U_{true}$.
-Smoothness is introduced using two levels of B-Spline functions, with control points evenly
-  located in isotropic grids covering the full extent of the phantom.
-Separation between control points was isotropic, and set to 50.5mm for the first level
-  of distortion and 25.25mm for the second.
-The rationale behind this choice is producing large deformations on the contours with
-  the first level, and matching the properties of susceptibility-derived distortions
-  as previously reported by \cite{irfanoglu_susceptibility_2011} with the finer grid.
-The coefficients of the B-Spline functions were randomly generated for each resolution level.
-Invertibility of $U_{true}$ is ensured by controlling the maximum displacement at each
-  level (20.2mm and 10.1mm respectively) as studied in \citep{rueckert_diffeomorphic_2006}.
 
 \paragraph*{Real datasets} %
 \label{sec:human_connectome}
-%
+% 
+\autoref{fig:evworkflows}
 For the evaluation of the algorithm on real \gls*{dmri} data of human brains,
   we collected 16 datasets from the ``minimally preprocessed''
 	 database of the \gls*{hcp}.
@@ -348,3 +339,17 @@ Using the ``preprocessed'' instance of the \gls*{t2} image of the corresponding 
   reference image, and the \emph{b0} image as moving image, we registered both and
   projected the correct (undistorted) contours to the warped space using the resulting
   transform.
+
+Conversely, the susceptibility-derived distortions only happen along the \gls*{pe}
+  axis of the image.
+Therefore, a \gls*{swindex} can be computed as the one-to-one distance between corresponding
+  vertices of surfaces, weighted by their respective Voronoi area $a_i$:
+
+  \begin{equation}
+  sWI = \frac{1}{\sum_i a_i} \sum\limits_i^{N_V} a_i\,\|
+  \vec{v}_i - \hat{\vec{v}}_i \|
+  \label{eq:swindex}
+  \end{equation}
+%
+  where $\vec{v}_i \subset \gammaset$ are the locations of the total $N_V$ vertices, and $\hat{\vec{v}}_i$ is the location
+  recovered corresponding to the vertex $\vec{v}_i$.
