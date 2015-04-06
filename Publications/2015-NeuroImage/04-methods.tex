@@ -2,11 +2,11 @@
 \section{Methods}
 \label{sec:methods}
 %
-Let $\gammaset = \{\Gamma_m: m \in \mathbb{N}, m \leq N_c\}$ be the set of $N_c$ surfaces
+Let $\gammaset_R = \{\Gamma_m: m \in \mathbb{N}, m \leq N_c\}$ be the set of $N_c$ surfaces
   extracted from the undistorted \gls*{t1} image (the reference space $R$).
 We reformulate the segmentation of the distorted \gls*{dmri} images (the moving space $M$)
   as a registration problem where we look for an underlying deformation field $U$, such that 
-  the structures in $R$ defined by \gammaset{} optimally align with their corresponding
+  the structures in $R$ defined by $\gammaset_R$ optimally align with their corresponding
   structures in $M$:
 
   \begin{align}
@@ -27,7 +27,7 @@ In a Bayesian framework for registration \citep{wyatt_map_2003,pohl_bayesian_200
   evaluated based on their posterior probability given the observed data
   $M$.
 Let $\omegaset = \{\Omega_l: l \in \mathbb{N}, l \leq N_L\}$ be the set of $N_L$ competing regions in
-  which $M$ is partitioned by the projection of \gammaset.
+  which $M$ is partitioned by the projection of $\gammaset_R$.
 Using the Bayes' rule, the posterior likelihood is computed as:
 
   \begin{equation}
@@ -40,7 +40,7 @@ As $\omegaset$ are mapped by $U$, we simplify
   $P(U, \omegaset) = P(U) \implies P(M \mid U,\omegaset) = P(M \mid U)$.
 
 The best estimate $\hat{U}$ then fulfills the maximum a posteriori criterium
-  \citep{bishop_pattern_2006}, and aligns \gammaset{} into $M$.
+  \citep{bishop_pattern_2006}, and aligns $\gammaset_R$ into $M$.
 First, we assume independence between pixels, and thus break down the
   global data likelihood into a product of pixel-wise conditional probabilities:
 
@@ -72,7 +72,8 @@ For convenience, and because it has been shown to be an appropriate approximatio
   to the descriptors of region $l$ as
   $\mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
 $C$ is the number of channels comprised in the reference image $M$.
-
+In fact, the projection of $\gammaset_R$ onto $M$ is an implicit segmentation model, for which
+  the covariance matrix $\boldsymbol{\Sigma}_l$ of each region is minimized.
 
 The smoothness of the resulting displacements field is induced by a Thikonov regularization
   prior:
@@ -215,13 +216,13 @@ In order to assess the performance of \emph{regseg}, we defined a general
 
 
 \paragraph*{Simulated phantoms}\label{sec:digital_phantoms}
-The workflow to generate the digital phantoms and assess
+The workflow to simulate the digital phantoms and assess
   \emph{regseg} on them is presented in \autoref{fig:evphantoms}.
 A set of four binary objects (called ``box'', ``ball'', ``L'',
   and ``gyrus'') are generated combining binarization of
   analytical shapes and mathematical morphology.
-Using \emph{FreeSurfer} tools, the reference surfaces \gammaset{}
-  are generated.
+The reference surfaces $\gammaset_R$ are extracted from the binary shapes
+  using \emph{FreeSurfer} tools.
 The ground-truth distortion is generated with a chain of two displacement 
   fields supported by grids of B-Spline basis functions.
 The coefficients of the basis functions are generated randomly for
@@ -239,47 +240,78 @@ With the second warping, we look for a resulting field with smoothness
 Therefore, the control points are separated 25.25mm ($u_d\leq$ 10.10mm).
 Once the ground-truth deformation is generated, the original surfaces
   are warped interpolating the displacements field at each vertex.
-The warped surfaces are binarized to generate a distorted version of
-  the model in two target resolutions: \isores[mm]{2.0} and \isores[mm]{1.0}.
-Using a \gls*{mr} simulator \citep{caruyer_phantomas_2014}, we synthesized
-  \gls*{t1} (TE/TR=10/1500ms) and \gls*{t2} images (TE/TR=90/5000ms)
+The warped surfaces $\gammaset_\text{true}$ are binarized to generate tissue fractions
+  in low (\isores[mm]{2.0}) and high (\isores[mm]{1.0}).
+Using a \gls*{mr} simulator \citep{caruyer_phantomas_2014}, we synthesize
+  \gls*{t1} (TE/TR= 10/1500ms) and \gls*{t2} images (TE/TR= 90/5000ms)
   corresponding to each phantom type, with two resolutions each
   (1.0mm and 2.0mm isotropic).
-The field of view at both resolutions was \isores[mm]{100}.
-Simulations were corrupted with rician noise for a \gls*{snr} of 300.0.
-
-To evaluate the error, we computed the Haussdorf distance (as implemented
- by \cite{commandeur_vtk_2011}) between the surfaces warped with the ground-truth
- and their corresponding contours estimated with \emph{regseg}.
+The field of view at both resolutions is \isores[mm]{100}.
+Then, \emph{regseg} is applied to map $\gammaset_R$ into the warped phantoms to
+  obtain the registered surfaces ($\hat{\gammaset}_{test}$).
+% Simulations were corrupted with rician noise for a \gls*{snr} of 300.0.
+To quantify the misregistration error, we compute the Hausdorff distance between
+ $\hat{\gammaset}_{test}$ and $\gammaset_\text{true}$, using \citep{commandeur_vtk_2011}.
 
 \begin{figure*}
-\includegraphics[width=\linewidth]{figures/figure03}
-\caption{Evaluation workflow of phantoms.
-
-}\label{fig:evphantoms}
+\includegraphics[width=\linewidth]{figures/figure02}
+\caption{The evaluation of \emph{regseg} on phantom data is performed with the presented instrumental workflow:
+  1) The reference surfaces $\gammaset_R$ are triangularized meshes extracted from the four binary shapes (``box'', ``ball'', ``L'', ``gyrus'');
+  2) A ground-truth displacement field is generated as described in \autoref{sec:digital_phantoms}, and applied to warp
+      $\gammaset_R$, obtaining $\gammaset_\text{true}$;
+  3) Once warped, $\gammaset_\text{true}$ are projected to the corresponding discrete 3D volume, and downsampled creating partial volume effects to two resolutions
+     of \isores[mm]{2.0} and \isores[mm]{1.0}, producing sets of tissue fractions maps;
+  4) The tissue fractions are fed to an \acrfull*{mr} simulator, generating \acrfull*{t1} and \acrfull*{t2} -like images at the
+     two available resolutions;
+  5) The \emph{regseg} is run, using the warped test images as moving multispectral-image and $\gammaset_R$ as shape-priors;
+  6) Assessment of the agreement between the surfaces fitted with \emph{regseg} ($\hat{\gammaset}_{test}$) and $\gammaset_\text{true}$
+     with automatically generated visual reports and computing the Hausdorff distance between corresponding surfaces.}\label{fig:evphantoms}
 \end{figure*}
 
 
 \paragraph*{Real datasets} %
 \label{sec:human_connectome}
 % 
-\autoref{fig:evworkflows}
-For the evaluation of the algorithm on real \gls*{dmri} data of human brains,
-  we collected 16 datasets from the ``minimally preprocessed''
-	 database of the \gls*{hcp}.
-We refer the reader to \citep{essen_human_2012} for exact details about acquisition
-  parameters, and \citep{glasser_minimal_2013} for the preprocessing issues.
-The datasets comprehend a large set of images, containing \gls*{t1}, \gls*{t2} and
-  multi-shell \gls*{dmri} images.
+For the evaluation of \emph{regseg} on real \gls*{dmri} data of human brains,
+  we collected 16 datasets from the \gls*{hcp} database.
 The original acquisitions are released within ``unprocessed'' packages, and
   the ``minimally preprocessed'' are corrected for artifacts, brain-extracted
   and spatially normalized, along with some results of the standard processing
   pipeline of \emph{FreeSurfer}.
+We refer the reader to \citep{essen_human_2012} for exact details about acquisition
+  parameters, and \citep{glasser_minimal_2013} for the preprocessing issues.
+The datasets comprehend a large set of images, containing \gls*{t1}, \gls*{t2} and
+  multi-shell \gls*{dmri} images.
+
+\begin{figure}
+\includegraphics[width=\linewidth]{figures/figure04-fa-md-jointplot}
+\caption{Segmentation model. The prior surfaces $\gammaset_R$ projected into the
+  multispectral image to be segmented $M$ actually partition the image in the
+  \omegaset{} homogeneous regions.}\label{fig:model}
+\end{figure}
+
+The general experimental framework for the real datasets is presented in \autoref{fig:evworkflows}.
+We designed the workflow with based on two arbitrary decisions:
+First, we map $\gammaset_R$ into a bivariates image comprising the \gls*{fa} and the
+  \gls*{adc} maps derived from the distorted \gls*{dmri} dataset.
+Previous studies \citep{ennis_orthogonal_2006,}
+The underlying segmentation model \omegaset{}
+Selecting the appropriate labels in the \emph{aparc} segmentation, we applied
+  \texttt{mri\_tessellate} to extract the surface of the following
+  six homogeneous regions $\Omega_l$:
+  1) the thalamus, $\Omega_{Tha}$;
+  2) \gls*{csf} of the ventricular system and deep \gls*{gm} structures, $\Omega_{VdGM}$;
+  3) cerebral \gls*{wm}, $\Omega_{WM}$;
+  4) brain stem and cerebellar \gls*{wm}, $\Omega_{bst}$;
+	5) cerebellar \gls*{gm}, $\Omega_{cbGM}$; and
+	6) cortical \gls*{gm} surface, $\Omega_{pial}$.
+The segmentation model corresponding to this selection of surfaces is presented in
+  \autoref{fig:model}, and further addressed in \autoref{sec:res_model_and_metric}.
 
 \begin{figure*}
-\includegraphics[width=\linewidth]{figures/figure02}
-\caption{Experimental workflow applied on real data from the \acrfull*{hcp}.
-  1) The prior surfaces are extracted from the anatomical reference (\gls*{t1} image).
+\includegraphics[width=\linewidth]{figures/figure03}
+\caption{Experimental workflow real data from the \acrfull*{hcp}.
+  1) $\gammaset_R$ are extracted from the anatomical reference (\gls*{t1} image).
   2) To operate as ground truth, we generate a plausible-synthetic distortion $U_{true}$
     from the fieldmap using \eqref{eq:fieldmap}.
   3) The \gls*{dmri} data are warped using $U^{-1}_{true}$ to reproduce the effects of real
@@ -290,18 +322,6 @@ The original acquisitions are released within ``unprocessed'' packages, and
     the ground-truth deformation.
   5) Results are visually and quantitatively evaluated.}\label{fig:evworkflows}
 \end{figure*}
-
-Selecting the appropriate labels in the \emph{aparc} segmentation, we applied
-  \texttt{mri\_tessellate} to extract the surface of the following
-  six homogeneous regions $\Omega_l$:
-  1) the thalamus, $\Gamma_{Tha}$;
-  2) \gls*{csf} of the ventricular system and deep \gls*{gm} structures, $\Gamma_{VdGM}$;
-  3) cerebral \gls*{wm}, $\Gamma_{WM}$;
-  4) brain stem and cerebellar \gls*{wm}, $\Gamma_{bst}$;
-	5) cerebellar \gls*{gm}, $\Gamma_{cbGM}$; and
-	6) cortical \gls*{gm} surface, $\Gamma_{pial}$.
-The segmentation model corresponding to this selection of surfaces is presented in
-  \autoref{fig:model}, and further addressed in \autoref{sec:res_model_and_metric}.
 
 
 The displacements along the \gls*{pe} axis are related to the local deviation of the

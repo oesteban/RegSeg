@@ -8,6 +8,7 @@
 \usepackage{multirow}
 \usepackage[colorinlistoftodos]{todonotes}
 \usepackage{xifthen}
+\usepackage{xspace}
 
 %\usepackage[cmex10,intlimits]{amsmath}
 \usepackage{amsmath}
@@ -30,8 +31,7 @@
 \providecommand{\nvec}[1]{\hat{\mathbf{#1}}}
 \providecommand{\suppl}[1]{\href{http://dx.doi.org/mydoi}{Supplemental Materials}, #1}
 \providecommand{\isores}[2][]{#2\ensuremath{\times}#2\ensuremath{\times}#2%
-\ifthenelse{\equal{#1}{}}{}{ [#1]}
-}
+\ifthenelse{\equal{#1}{}}{}{ [#1]}\xspace}
 
 % *** PDF, URL AND HYPERLINK PACKAGES ***
 %
