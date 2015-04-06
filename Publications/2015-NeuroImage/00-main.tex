@@ -63,8 +63,7 @@ align-ed pre-sent work-flow data-set data-sets}
 %% Use \dochead if there is an article header, e.g. \dochead{Short communication}
 % \dochead{Preprint for ArXiv archiving and pre-submission review}
 
-\title{Active-contours driven registration applied in the correction of
-susceptibility-derived distortions of diffusion MR images}
+\title{Active-contours driven registration method for structure-informed segmentation of diffusion MR images}
 
 \author[bit,ciber]{Oscar~Esteban\corref{corrauthor}}
 \cortext[corrauthor]{Corresponding author}
@@ -94,7 +93,7 @@ Hospital Center (CHUV) and University of Lausanne (UNIL), Lausanne, Switzerland}
 
 % Note that keywords are not normally used for peerreview papers.
 \begin{keyword}
-diffusion MRI \sep susceptibility~distortion \sep segmentation %
+diffusion MRI \sep cortical~parcellation \sep segmentation %
 \sep nonlinear~registration \sep active~contours \sep echo-planar imaging.
 \end{keyword}
 
@@ -112,14 +111,15 @@ diffusion MRI \sep susceptibility~distortion \sep segmentation %
 % ACKs
 \input{08-acknowledgements}
 
-%\bibliographystyle{plainnat}
-% \section*{References}
-\bibliographystyle{mystyle}
-\bibliography{Remote}
 
 % Add appendices
 \appendix
 \numberwithin{equation}{section}
 \input{08-appendix-00-shapepriors}
+
+%\bibliographystyle{plainnat}
+\bibliographystyle{mystyle}
+\bibliography{Remote}
+
 
 \end{document}

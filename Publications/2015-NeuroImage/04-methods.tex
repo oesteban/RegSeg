@@ -51,8 +51,7 @@ First, we assume independence between pixels, and thus break down the
   \end{equation}
 %
   where $\vec{f}' = M(\vec{r}')$ is the feature vector at the displaced
-  position $\vec{r}'$ \eqref{eq:transform} in the multispectral target
-  volume.
+  position $\vec{r}'$ \eqref{eq:transform} in the moving image.
 For convenience, and because it has been shown to be an appropriate approximation
   \citep{leemput_automated_1999,cuadra_comparison_2005}, we introduce two assumptions for each
   region $\Omega_l$:
@@ -71,7 +70,7 @@ For convenience, and because it has been shown to be an appropriate approximatio
   using $\mdist{f}{l}$ to denote the squared \emph{Mahalanobis distance} of $\vec{f}$ with respect
   to the descriptors of region $l$ as
   $\mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
-$C$ is the number of channels comprised in the reference image $M$.
+$C$ is the number of channels comprised in the image $M$.
 In fact, the projection of $\gammaset_R$ onto $M$ is an implicit segmentation model, for which
   the covariance matrix $\boldsymbol{\Sigma}_l$ of each region is minimized.
 
@@ -117,11 +116,13 @@ This expression is dual of the Mumford-Shah functional corresponding
 	They iteratively evolve following their inner normals $\hat{n}_i$ at each vertex
 	  $\vec{v}_i$ of the mesh.
 	The gradient speeds $\bar{s}_i$ are computed as the disparity between data energies of
-	  the vertex $\vec{v}_i$ in each limiting region (see \ref{app:shape_priors}).
+	  the vertex $\vec{v}_i$ in each limiting region (see \suppl{equation SM5})..
 	In this figure, the gradient speed corresponding to $\vec{v}_1$ is written in the lower
-	  box, $\Omega_{wm}$ being the inner limiting region and $\Omega_{gm}$ the outer.
-	Finally, every $\bar{s}_i$ is associated with the control points $\vec{u}_k$ through
-	  the corresponding weights $\psi_k(\vec{v}_i)$ by Eq. \eqref{eq:gradient_wshape}.
+	  box, $\Omega_{wm}$ being the inner limiting region and $\Omega_{gm}$ the outer, and
+    $w_{0,1}$ the relative area associated to vertex $\vec{v}_1$ with respect to
+    the total area of surface $\Gamma_0$.
+	% Finally, every $\bar{s}_i$ is associated with the control points $\vec{u}_k$ through
+	%   the corresponding weights $\psi_k(\vec{v}_i)$ by Eq. \eqref{eq:gradient_wshape}.
 	}\label{fig:method}
 \end{figure}
 
@@ -163,7 +164,7 @@ Let us assume that anisotropy is aligned with the imaging axes to simplify
   \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r} \, + \notag\\
   &+ \int_{\Omega} \frac12 [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
   + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}
-  \Big\}.
+  \Big\},
   \label{eq:gradient_descent}
   \end{align}
 %
@@ -181,11 +182,11 @@ The intermediate steps to get to \eqref{eq:final_gradient} from \eqref{eq:gradie
   \end{align}
 
 Finally, to descend this gradient we establish a semi-implicit Euler scheme (see \suppl{section S1.3}),
-  with a step size parameter $\delta$, that we solve it in the spectral domain as follows:
+  with a step size parameter $\delta$, that we solve in the spectral domain as follows:
 
   \begin{align}
   \vec{u}_k^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{\delta^{-1} \, \vec{u}_k^t + \vec{g}_k\} }%
-                  {\mathcal{F}\{(\delta^{-1} + \boldsymbol{\alpha})\, I - \boldsymbol{\beta}\Delta\}} \right\}
+                  {\mathcal{F}\{(\delta^{-1} + \boldsymbol{\alpha})\, I - \boldsymbol{\beta}\Delta\}} \right\}.
   \label{eq:update_equation}
   \end{align}
 
@@ -204,18 +205,17 @@ These final settings were manually obtained based on the feedback of post-regist
   reports (as the one found in the \suppl{section S1.3}).
 We release \emph{regseg} along with the tool for generating the convergence report.
 
-\subsection{Data and corresponding evaluations}
-\label{sec:datasets}
+\subsection{Evaluation protocol}\label{sec:evaluation_protocol}
 In order to assess the performance of \emph{regseg}, we defined a general
   evaluation protocol:
-1) Extraction of the set of undistorted surfaces \gammaset{};  
-2) computation of a ground-truth field of displacements that is applied to
+1) Extraction of the set of undistorted surfaces $\gammaset_R$;
+2) computation of a ground-truth field of displacements $U_{true}$ that is applied to
   generate warped images ($M$) to segment;
-3) execution of \emph{regseg} with \gammaset{} and the warped data as inputs; and
+3) execution of \emph{regseg} with $\gammaset_R$ and the warped data as inputs; and
 4) visual assessment and computation of error metrics.
 
 
-\paragraph*{Simulated phantoms}\label{sec:digital_phantoms}
+\subsection{Simulated phantoms}\label{sec:digital_phantoms}
 The workflow to simulate the digital phantoms and assess
   \emph{regseg} on them is presented in \autoref{fig:evphantoms}.
 A set of four binary objects (called ``box'', ``ball'', ``L'',
@@ -269,46 +269,12 @@ To quantify the misregistration error, we compute the Hausdorff distance between
 \end{figure*}
 
 
-\paragraph*{Real datasets} %
+\subsection{Real datasets} %
 \label{sec:human_connectome}
 % 
-For the evaluation of \emph{regseg} on real \gls*{dmri} data of human brains,
-  we collected 16 datasets from the \gls*{hcp} database.
-The original acquisitions are released within ``unprocessed'' packages, and
-  the ``minimally preprocessed'' are corrected for artifacts, brain-extracted
-  and spatially normalized, along with some results of the standard processing
-  pipeline of \emph{FreeSurfer}.
-We refer the reader to \citep{essen_human_2012} for exact details about acquisition
-  parameters, and \citep{glasser_minimal_2013} for the preprocessing issues.
-The datasets comprehend a large set of images, containing \gls*{t1}, \gls*{t2} and
-  multi-shell \gls*{dmri} images.
-
-\begin{figure}
-\includegraphics[width=\linewidth]{figures/figure04-fa-md-jointplot}
-\caption{Segmentation model. The prior surfaces $\gammaset_R$ projected into the
-  multispectral image to be segmented $M$ actually partition the image in the
-  \omegaset{} homogeneous regions.}\label{fig:model}
-\end{figure}
-
 The general experimental framework for the real datasets is presented in \autoref{fig:evworkflows}.
-\citep{esteban_brain_2012}
-
-We designed the workflow with based on two arbitrary decisions:
-First, we map $\gammaset_R$ into a bivariate image comprising the \gls*{fa} and the
-  \gls*{adc} maps derived from the distorted \gls*{dmri} dataset.
-In a previous study
-The underlying segmentation model \omegaset{}
-Selecting the appropriate labels in the \emph{aparc} segmentation, we applied
-  \texttt{mri\_tessellate} to extract the surface of the following
-  six homogeneous regions $\Omega_l$:
-  1) the thalamus, $\Omega_{Tha}$;
-  2) \gls*{csf} of the ventricular system and deep \gls*{gm} structures, $\Omega_{VdGM}$;
-  3) cerebral \gls*{wm}, $\Omega_{WM}$;
-  4) brain stem and cerebellar \gls*{wm}, $\Omega_{bst}$;
-	5) cerebellar \gls*{gm}, $\Omega_{cbGM}$; and
-	6) cortical \gls*{gm} surface, $\Omega_{pial}$.
-The segmentation model corresponding to this selection of surfaces is presented in
-  \autoref{fig:model}, and further addressed in \autoref{sec:res_model_and_metric}.
+It extends our previous work \citep{esteban_simulationbased_2014} evaluating distortions
+  on \gls*{dmri} phantoms.
 
 \begin{figure*}
 \includegraphics[width=\linewidth]{figures/figure03}
@@ -326,46 +292,94 @@ The segmentation model corresponding to this selection of surfaces is presented 
 \end{figure*}
 
 
-The displacements along the \gls*{pe} axis are related to the local deviation of the
-  field $\Delta B_0(\vec{r})$ \citep{jezzard_correction_1995}:
+\paragraph*{Data}
+For the evaluation of \emph{regseg} on real \gls*{dmri} data of human brains,
+  we collected 16 subjects from the \gls*{hcp} database.
+The original acquisitions are released within ``unprocessed'' packages, and
+  the ``minimally preprocessed'' are corrected for artifacts, brain-extracted
+  and spatially normalized, along with some results of the standard processing
+  pipeline of \emph{FreeSurfer}.
+We refer the reader to \citep{essen_human_2012} for exact details about acquisition
+  parameters, and \citep{glasser_minimal_2013} for the preprocessing issues.
+The datasets comprehend a large set of images, containing \gls*{t1}, \gls*{t2} and
+  multi-shell \gls*{dmri} images.
+
+\begin{figure}
+\includegraphics[width=\linewidth]{figures/figure04-fa-md-jointplot}
+\caption{Segmentation model defined by the homogeneous regions $\Omega_i$ in which
+  the image to be segmented is partitioned by the theoretical projection 
+  ($\gammaset_{true}$) of $\gammaset_R$ into $M$.
+The plot represents a kernel density estimation of the location and spread of
+  each region $\Omega_i$ in the bivariate feature space of $M$, comprising 
+  the \gls*{fa} and \gls*{adc} maps.
+On top and right margins the marginal distributions of $\Omega_i$ are also plotted for
+  the \gls*{fa} and \gls*{adc}, respectively.
+}\label{fig:model}
+\end{figure}
+
+\paragraph*{Segmentation model}
+Based on our experience \citep{esteban_brain_2012} and previous studies \citep{ennis_orthogonal_2006},
+  we define the moving image as a stack of the \gls*{fa} and \gls*{adc} maps derived
+  from \gls*{dmri} data.
+After evaluating several alternative models, we empirically defined the partition \omegaset{} 
+  of the reference image $R$ as follows:
+  1) $\Omega_{Tha}$ including the thalamus;
+  2) $\Omega_{VdGM}$ including the ventricular system and deep \gls*{gm} structures;
+  3) $\Omega_{WM}$ including the cerebral \gls*{wm};
+  4) $\Omega_{bst}$ including the brain stem and cerebellar \gls*{wm};
+	5) $\Omega_{cbGM}$ including the cerebellar \gls*{gm}; and
+	6) $\Omega_{GM}$ including the cortical \gls*{gm}.
+Using tools of \emph{FreeSurfer}, and the appropriate selections of labels in the 
+  \emph{aparc} segmentation released with the \gls*{hcp} data, the $\gammaset_R$ set of
+  reference surfaces is extracted.
+The segmentation model corresponding to this partition is depicted in \autoref{fig:model},
+  and discussed with finer detail in \suppl{section S4}.
+
+\paragraph*{Ground-truth generation}
+Realistic deformation is achieved generating displacements fields that meet the theoretical
+  properties of distortion \citep{jezzard_correction_1995}.
+The displacements along the \gls*{pe} axis of the \gls*{dmri} image are related to the local
+  deviation of the field $\Delta B_0(\vec{r})$ from its nominal value $B_0$ as follows:
 
   \begin{equation}
-  u(\vec{r}) = \frac{\gamma \, T_{acq}\, s_{PE}}{2\pi}\Delta B_0(\vec{r}) \: \hat{\vec{e}}_{PE},
+  u_\text{PE} = \frac{\gamma \, T_{acq}\, s_\text{PE}}{2\pi}\Delta B_0(\vec{r})\text{ [mm]},
   \label{eq:fieldmap}
   \end{equation}
 %
-where $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time,
-  $s_{PE}$ is the pixel size along \gls*{pe}, and $\hat{\vec{e}}_{PE}$ the unitary
-  vector along \gls*{pe}.
-With certain \gls*{mr} sequences it is possible to estimate $\Delta B_0$, obtaining
+where $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time, and
+  $s_\text{PE}$ is the pixel size along \gls*{pe}.
+Certain \gls*{mr} sequences are designed to estimate $\Delta B_0$, obtaining
   the so-called fieldmap.
+We derive the deformation $U_{true}$ from the fieldmap image released with
+  the corresponding packages of each dataset from the \gls*{hcp}.
+The fieldmap is unwrapped\footnote{fieldmaps are phase maps, clipped in the interval
+  of $[-\pi, \pi)$ [rads] or [rads/s].} and smoothed before applying \eqref{eq:fieldmap}.
+Then, the original \gls*{dmri} is warped using the resulting displacements field and fed into
+  a pipeline that process the corresponding \gls*{dti} and computes the derived scalars of
+  interest (\gls*{fa} and \gls*{adc}) using \emph{MRtrix} \citep{tournier_mrtrix_2012}.
 
-In this case, we derived the deformation $U_{true}$ from the fieldmaps released with
-  the corresponding packages of each dataset from the \gls*{hcp} applying \eqref{eq:fieldmap},
-  mimicking the real distortions, using a derivation of our previous work
-  \citep{esteban_simulationbased_2014}.
-After warping the original \gls*{dmri} with $U_{true}^{-1}$, we computed the \gls*{dti} and
-  the derived scalars (\gls*{fa} and \gls*{adc}) using \emph{MRtrix} \citep{tournier_mrtrix_2012}.
-The stack of \gls*{fa} and \gls*{adc} conforms the multivariate input for \emph{regseg}.
+\paragraph*{Metric assessment}
+Preliminarily, we investigated the aptness of the segmentation model.
+For five test datasets, we uniformly sampled the space of distortions
+  $\hat{U} = \epsilon \cdot U_{true} = \vec{r} + \epsilon \, u_\text{PE}$
+  (with $\epsilon \in [-1.1, 1.1]$ and $u_\text{PE}$ from \eqref{eq:fieldmap}),
+  and evaluated the data-term of the cost function \eqref{eq:energy}.
+The metric consistently displayed its minimum at the ground-truth location ($\epsilon=0.0$)
+  for all the cases (\suppl{Figure S2}).
 
-A dual workflow to the general evaluation framework (\autoref{fig:evworkflows})
-  was also implemented to integrate the \gls*{t2b} registration scheme.
+\paragraph*{Cross-comparison}
+A dual workflow to the general evaluation framework of \autoref{fig:evworkflows}
+  integrates the alternate \gls*{t2b} registration scheme.
 We reproduced the solution and settings provided with \emph{ExploreDTI}
   \citep{leemans_exploredti_2009}, a widely used toolkit for tractography analysis of
   \gls*{dti}.
 \emph{ExploreDTI}, internally uses \emph{elastix} \citep{klein_elastix_2010} to
   perform registration.
-First, the average \emph{b0} volume is computed using all the \emph{low-b} volumes within
-  the distorted \gls*{dmri} dataset.
-Using the ``preprocessed'' instance of the \gls*{t2} image of the corresponding subject as
-  reference image, and the \emph{b0} image as moving image, we registered both and
-  projected the correct (undistorted) contours to the warped space using the resulting
-  transform.
 
-Conversely, the susceptibility-derived distortions only happen along the \gls*{pe}
-  axis of the image.
-Therefore, a \gls*{swindex} can be computed as the one-to-one distance between corresponding
-  vertices of surfaces, weighted by their respective Voronoi area $a_i$:
+\paragraph*{Error measurement}\label{sec:experiments_evaluation}
+Since the distortions only happen along the \gls*{pe} axis of the image, we compute the
+  \gls*{swindex} as the area-weighted distance between corresponding vertices of 
+  $\gammaset_{true}$ and their estimation by the method under test $\hat{\gammaset}_{test}$:
 
   \begin{equation}
   sWI = \frac{1}{\sum_i a_i} \sum\limits_i^{N_V} a_i\,\|
@@ -373,5 +387,9 @@ Therefore, a \gls*{swindex} can be computed as the one-to-one distance between c
   \label{eq:swindex}
   \end{equation}
 %
-  where $\vec{v}_i \subset \gammaset$ are the locations of the total $N_V$ vertices, and $\hat{\vec{v}}_i$ is the location
-  recovered corresponding to the vertex $\vec{v}_i$.
+  where $\vec{v}_i \subset \gammaset_\text{true}$ are the locations of the total $N_V$ vertices,
+  and $\hat{\vec{v}}_i \subset \hat{\gammaset}_{test}$ are the locations
+  recovered corresponding to $\vec{v}_i$.
+In practice, we report the \gls*{swindex} only for three surfaces of interest crucial in whole-brain
+  tractography.
+These three surfaces delineate the following regions in the model: $\Omega_{VdGM}$, $\Omega_{WM}$ and $\Omega_{GM}$.

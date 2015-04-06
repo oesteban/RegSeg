@@ -30,16 +30,11 @@
     consistently below the voxel size.
     }\label{fig:phantom}
 \end{figure*}
-
-Using a simplified subset of the experimental instrumentation described in
-  \autoref{sec:experiments_evaluation}, we collected quantitative results on the digital
-  phantoms.
-A total of 1200 registration experiments (4 phantom types $\times$ 150 random warpings
-  $\times$ 2 resolutions) were run.
-Parameter settings of every processing step in the experiments are made available along with
-  the source code.
-For each registration, the averaged Hausdorff distance (see \autoref{sec:experiments_evaluation})
-  of the inner and the outer surfaces was computed.
+A total of 1200 experiments (4 phantom types $\times$ 150 random warpings $\times$ 2 resolutions) were
+  run using the workflow given in \autoref{fig:evphantoms}.
+For each experiment, the misregistration error was measured using the Hausdorff distance
+  (see \autoref{sec:experiments_evaluation}) between the theoretical $\gammaset_\text{true}$ and
+  the estimation done by \emph{regseg} ($\hat{\gammaset}_{test}$).
 The results showed a consistent and high accuracy, below the image resolution.
 \autoref{fig:phantom} (block C) presents the violin plots by model type corresponding
   to the two sets of resolutions of generated phantoms.
@@ -53,8 +48,8 @@ Consequently, we used the non-parametric Wilcoxon signed-rank test along with Bo
   correction for multiple comparisons ($N=150$).
 Averaged errors resulted significantly lower than voxel size with $p < (0.001 / 150)$
   for all the tests (4 phantom types $\times$ 2 resolutions).
-Since statistical tests may not be conclusive enough, we also computed the confidence intervals
-  (\autoref{tab:ci_phantom}).
+Since statistical tests may not be conclusive enough, we also computed the confidence intervals,
+  reported in \autoref{tab:ci_phantom}.
 
 
 \begin{table}
@@ -73,32 +68,11 @@ Since statistical tests may not be conclusive enough, we also computed the confi
     All the CIs were below the corresponding half-voxel size in all the phantom types.}\label{tab:ci_phantom}
 \end{table}
 
-\subsection{Correction of distortions on real datasets}\label{sec:results_hcp}
-
-\paragraph*{Assessing the segmentation model}\label{sec:res_model_and_metric} %
-%
-Preliminarily, we investigated the aptness of our segmentation model to play as cost function
-  driving the registration process.
-First, we evaluated several alternative models to segment the target bivariate images
-  (\gls*{fa} and \gls*{adc}).
-Based on the observed joint distribution of each (\suppl{section S4}),
-  we selected the 6-regions scheme described in \autoref{sec:human_connectome}.
-
-The distortions follow expression \eqref{eq:fieldmap} and hence, we easily reduced the
-  error space to one dimension as follows.
-The energy functional \eqref{eq:energy} was evaluated for the warpings given by
-  a linearized space of distortions
-  $\hat{U} = \epsilon \cdot U_{true} = \vec{r} + \epsilon \cdot u(\vec{r})$,
-  with $\epsilon \in [-1.1, 1.1]$.
-The results of this experiment are shown in \autoref{fig:energymap}.
-The metric consistently displayed its minimum at $\epsilon=0.0$ (ground-truth location).
-
-
-\paragraph*{Evaluation \& cross-comparison}\label{sec:res_cc_evaluation}
+\subsection{Evaluation on real datasets and cross-comparison}\label{sec:results_hcp}
 %
 Finally, we compared the performance of \emph{regseg} and the standard \gls*{t2b}
-  correction.
-We computed the \gls*{swindex} \eqref{eq:swindex} of every surface after correction,
+  registration.
+We computed the \gls*{swindex} \eqref{eq:swindex} of every surface after registration,
   for both \emph{regseg} and the \gls*{t2b} methods.
 Finally, to statistically compare the results, we performed a one-way ANOVA test
   on the warping indices for three specific surfaces of interest
@@ -107,12 +81,13 @@ These interfaces are critical in analyses of whole-brain tractography.
 The one-way ANOVA evidenced that error distributions were significantly different,
   $p \approx 2 \times 10^{-9}$.
 We also reported the 95\% CIs of the \gls*{swindex} for those surfaces.
-The aggregate CI for \emph{regseg} was $[1.08 - 1.50] mm$, whereas the competing method
-  yielded an aggregate CI of $[2.06 - 2.43] mm$.
+The aggregate CI for \emph{regseg} was 1.08 - 1.50 [mm], whereas the \gls*{t2b} method
+  yielded an aggregate CI of 2.06 - 2.43 [mm].
 The quantitative results of the ANOVA tests and the CIs are presented in \autoref{tab:results_real}.
-Visual assessment of one case is shown in \autoref{fig:results_real}, along with the corresponding
-  violin plots of error distributions by correction method and surface.
-Extended visual assessment of the 16 cases is included in the \suppl{section S5}.
+Visual assessment of the 16 cases is included in the \suppl{section S5}.
+In \autoref{fig:results_real}, box A, the visual report for one subject is supplied.
+Box B presents the corresponding violin plots of error distributions by registration method
+  and surface.
 
 \begin{table}
 		\centering
