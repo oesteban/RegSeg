@@ -113,12 +113,13 @@ This expression is dual of the Mumford-Shah functional corresponding
 	\caption{The active contours are defined as the interfacing surfaces of the competing
 	  \glspl{roi} $\Omega_i$.
 	They are represented in green and dark blue colors in this close-up.
-	They iteratively evolve following their inner normals $\hat{n}_i$ at each vertex
+	They iteratively evolve following their inward normals $\hat{n}_i$ at each vertex
 	  $\vec{v}_i$ of the mesh.
-	The gradient speeds $\bar{s}_i$ are computed as the disparity between data energies of
-	  the vertex $\vec{v}_i$ in each limiting region (see \suppl{equation SM5})..
-	In this figure, the gradient speed corresponding to $\vec{v}_1$ is written in the lower
-	  box, $\Omega_{wm}$ being the inner limiting region and $\Omega_{gm}$ the outer, and
+	The gradient speeds $\bar{s}_i$ drive registration, and are computed as the disparity of data
+    energies with respect to the two limiting regions of $M(\vec{v}_i)$, the features of the image
+    $M$ in the location of vertex $\vec{v}_i$ (see \suppl{equation SM5}).
+	In this figure, $\bar{s}_1$ is written in the lower
+	  box, with $\Omega_{wm}$ being the inner limiting region, $\Omega_{gm}$ the outer region, and
     $w_{0,1}$ the relative area associated to vertex $\vec{v}_1$ with respect to
     the total area of surface $\Gamma_0$.
 	% Finally, every $\bar{s}_i$ is associated with the control points $\vec{u}_k$ through
@@ -185,7 +186,7 @@ Finally, to descend this gradient we establish a semi-implicit Euler scheme (see
   with a step size parameter $\delta$, that we solve in the spectral domain as follows:
 
   \begin{align}
-  \vec{u}_k^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{\delta^{-1} \, \vec{u}_k^t + \vec{g}_k\} }%
+  \vec{u}_k^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{\delta^{-1} \, \vec{u}_k^t - \vec{g}_k\} }%
                   {\mathcal{F}\{(\delta^{-1} + \boldsymbol{\alpha})\, I - \boldsymbol{\beta}\Delta\}} \right\},
   \label{eq:update_equation}
   \end{align}
@@ -284,11 +285,11 @@ It extends our previous work \citep{esteban_simulationbased_2014} evaluating dis
   1) $\gammaset_R$ are extracted from the anatomical reference (\gls*{t1} image).
   2) To operate as ground truth, we generate a plausible-synthetic distortion $U_{true}$
     from the fieldmap using \eqref{eq:fieldmap}.
-  3) The \gls*{dmri} data are warped using $U^{-1}_{true}$ to reproduce the effects of real
+  3) The \gls*{dmri} data are warped using $U_{true}$ to reproduce the effects of real
     susceptibility-derived distortions.
   Target diffusion scalars (\gls*{fa} and \gls*{adc}) are computed on the distorted data and
-    stacked to feed the multivariate input required by our algorithm.
-  4) \emph{Regseg} is run, obtaining a $U_{test} = \hat{U}_{true}$, the estimation of
+    stacked to feed the multivariate input required by \emph{regseg}.
+  4) the method is run, obtaining a $U_{test} = \hat{U}_{true}$, the estimation of
     the ground-truth deformation.
   5) Results are visually and quantitatively evaluated.}\label{fig:evworkflows}
 \end{figure*}

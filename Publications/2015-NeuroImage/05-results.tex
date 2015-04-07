@@ -18,7 +18,7 @@
       \end{tikzpicture}
     }%
   \caption{A. Visual assessment of the results on the low resolution sets:
-    ``gyrus'' (top-left), ``L-shape'' (top-right), ``ball'' (bottom-left),
+    ``gyrus'' (top-left), ``L'' (top-right), ``ball'' (bottom-left),
     and ``box'' at (bottom-right).
   In yellow color, the recovered contours after registration are represented.
   Our method showed high accuracy, as it demonstrates the almost exact location of the registered
@@ -55,44 +55,44 @@ Since statistical tests may not be conclusive enough, we also computed the confi
 \begin{table}
 		\centering
 		\footnotesize
+    \tabcolsep=0.1cm
     \begin{tabular}{lccccc}
-    Res. & ``gyrus'' & ``ball''  & ``box''   & ``L''     & Aggreg.    \\\hline
-    Low  & 0.59-0.60 & 0.65-0.76 & 0.68-0.71 & 0.67-0.77 & 0.64-0.66  \\
-    High & 0.18-0.38 & 0.31-0.45 & 0.34-0.42 & 0.34-0.40 & 0.34-0.38  \\
+    Res.   & ``gyrus'' & ``ball''  & ``box''   & ``L''     & Aggreg.    \\\hline
+    1.0mm  & 0.18-0.38 & 0.31-0.45 & 0.34-0.42 & 0.34-0.40 & 0.34-0.38  \\
+    2.0mm  & 0.59-0.60 & 0.65-0.76 & 0.68-0.71 & 0.67-0.77 & 0.64-0.66  \\
     \hline
     \end{tabular}
-    \caption{95\% Confidence Intervals (CIs) were computed using bootstrapping of $10^4$ samples,
-      for each phantom type and resolution.
-    Taking into account the non-normal distribution of errors, we used the median as location
-  		statistic.
-    All the CIs were below the corresponding half-voxel size in all the phantom types.}\label{tab:ci_phantom}
+    \caption{The vertex-wise Haussdorf distance between the ground-truth surfaces and their
+    corresponding estimation with \emph{regseg} presented distributions with 95\% CI below
+    the half-voxel size in all the phantom types.
+    CIs were computed using bootstrapping of 10$^4$ samples, and median as location statistic.}\label{tab:ci_phantom}
 \end{table}
 
 \subsection{Evaluation on real datasets and cross-comparison}\label{sec:results_hcp}
 %
 Finally, we compared the performance of \emph{regseg} and the standard \gls*{t2b}
-  registration.
+  method.
+Visual assessment of the 16 cases is included in the \suppl{section S5}.
+In \autoref{fig:results_real}, box A, the visual report for one subject is supplied.
 We computed the \gls*{swindex} \eqref{eq:swindex} of every surface after registration,
   for both \emph{regseg} and the \gls*{t2b} methods.
-Finally, to statistically compare the results, we performed a one-way ANOVA test
-  on the warping indices for three specific surfaces of interest
-  ($\Gamma_{VdGM}$, $\Gamma_{WM}$, and $\Gamma_{pial}$).
-These interfaces are critical in analyses of whole-brain tractography.
-The one-way ANOVA evidenced that error distributions were significantly different,
-  $p \approx 2 \times 10^{-9}$.
+Finally, to statistically compare the results, we performed Kruskal-Wallis H-tests
+  (a non-parametric alternative to ANOVA) on the warping indices for three specific 
+  surfaces of interest selected in \autoref{sec:experiments_evaluation}.
+All the statistical tests evidenced that error distributions obtained with \emph{regseg} and
+  the \gls*{t2b} were significantly different, and using the violin plots in box B of
+  \autoref{fig:results_real} we observed that errors are always larger for \gls*{t2b}.
 We also reported the 95\% CIs of the \gls*{swindex} for those surfaces.
 The aggregate CI for \emph{regseg} was 1.08 - 1.50 [mm], whereas the \gls*{t2b} method
   yielded an aggregate CI of 2.06 - 2.43 [mm].
-The quantitative results of the ANOVA tests and the CIs are presented in \autoref{tab:results_real}.
-Visual assessment of the 16 cases is included in the \suppl{section S5}.
-In \autoref{fig:results_real}, box A, the visual report for one subject is supplied.
-Box B presents the corresponding violin plots of error distributions by registration method
-  and surface.
+The results of the statistical tests and the CIs are summarized in \autoref{tab:results_real}.
+
+
 
 \begin{table}
 		\centering
 		\footnotesize
-		\tabcolsep=0.05cm
+		\tabcolsep=0.08cm
     \begin{tabular}{cccccc}
     & & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ & Aggregate \\
     \hline
@@ -100,18 +100,18 @@ Box B presents the corresponding violin plots of error distributions by registra
        & \emph{regseg}        & 0.50 - 0.78 & 0.50 - 0.55 & 0.66 - 0.73 & 0.56 - 0.66 \\
        & T2B                  & 1.78 - 2.58 & 1.94 - 2.36 & 2.16 - 2.58 & 2.05 - 2.39 \\
     \hline
-    \multirow{2}{*}{ANOVA}
-       & p-value  & 1.5$\times$10$^{-8}$& 6.3$\times$10$^{-16}$& 4.2$\times$10$^{-16}$ & 4$\times$10$^{-34}$ \\
-       & f-stat   & 60.03               & 255.82               & 263.97                & 377.82              \\
+    \multirow{2}{*}{H-tests}
+       & p-value  & 4.1$\times$10$^{-6}$& 2.3$\times$10$^{-6}$& 2.3$\times$10$^{-6}$ & 1.8$\times$10$^{-16}$ \\
+       & H-stat   & 21.20               & 22.31               & 22.31                & 67.85              \\
     \hline
     \end{tabular}
-    \caption{All the 95\% CIs of the \gls*{swindex} distributions computed for the
-      surfaces of interest were lower for \emph{regseg} with respect to the competing
-      method.
-    CIs reported in this table were computed using bootstrapping with mean as location
-      statistic and $10^4$ samples.
-    One-way-ANOVA tests indicated that there is a significant difference between our method and
-      the competing method of choice.
+    \caption{The statistical analysis of results on real data supported that \emph{regseg} overperformed
+    the alternative \acrfull{t2b} method.
+    The distribution of errors computed for the surfaces of interest ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$)
+      and the aggregate of all surfaces presented lower 95\% CIs for \emph{regseg}.
+    CIs reported in this table were computed using bootstrapping with mean as location statistic and 10$^4$ samples.
+    The Kruskal-Wallis H-tests indicated that there is a significant difference between \emph{regseg} and
+      the \gls*{t2b} method.
     }\label{tab:results_real}
 \end{table}
 
@@ -130,15 +130,15 @@ Box B presents the corresponding violin plots of error distributions by registra
         % \node[circle, text=black!75] at (-8.8,3.4) {\Huge \textbf{C}};
       \end{tikzpicture}
     }%
-	\caption{The evaluation instrument automatically renders the overlay between the
-	  target \gls*{fa} image and the resulting contours after distortion estimation (yellow color) and
-	  their theoretical location using the ground-truth (green color).
-	The first two rows show several axial slices for \emph{regseg} (``proposed'' row) and the
-	  competing method.
-	The last two rows represent the sagittal view.
-	We intentionally omitted the coronal slicing as it is the least informative, given the directional property
-	  of distortions.
-	Red arrows point to regions where the accuracy of the proposed method more clearly overperformed
-	  the competing method.
+	\caption{A. Example of one report for visual assessment, automatically generated by the evaluation instrument.
+    Each view shows one component of the input image (in this case, the \gls*{fa} map), the ground-truth location
+    of the surfaces (green contours), and the resulting surfaces with the method under test (yellow contours).
+  First two rows show axial slices for \emph{regseg} and the \acrfull*{t2b} method, and the last two rows
+    show corresponding sagittal views.
+  Coronal view is omitted since it is the least informative due to the the directional property
+    of distortions.
+	Red arrows point to regions where \emph{regseg} overperformed the \gls*{t2b} method.
+  B. Violin plots of error distributions of each surface, with indication of the voxel size of the \gls*{dmri} images
+    (1.25 mm), and supporting the improved results of \emph{regseg} in the proposed settings.
 	}\label{fig:results_real}
 \end{figure*}
