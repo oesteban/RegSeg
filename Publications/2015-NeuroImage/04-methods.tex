@@ -186,9 +186,10 @@ Finally, to descend this gradient we establish a semi-implicit Euler scheme (see
 
   \begin{align}
   \vec{u}_k^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{\delta^{-1} \, \vec{u}_k^t + \vec{g}_k\} }%
-                  {\mathcal{F}\{(\delta^{-1} + \boldsymbol{\alpha})\, I - \boldsymbol{\beta}\Delta\}} \right\}.
+                  {\mathcal{F}\{(\delta^{-1} + \boldsymbol{\alpha})\, I - \boldsymbol{\beta}\Delta\}} \right\},
   \label{eq:update_equation}
   \end{align}
+  where $I$ denotes the identity operator.
 
 
 \paragraph*{Implementation details, settings and convergence}
@@ -213,7 +214,8 @@ In order to assess the performance of \emph{regseg}, we defined a general
   generate warped images ($M$) to segment;
 3) execution of \emph{regseg} with $\gammaset_R$ and the warped data as inputs; and
 4) visual assessment and computation of error metrics.
-
+How this protocol is adapted to the simulated phantoms and real data is covered in the
+  following sections.
 
 \subsection{Simulated phantoms}\label{sec:digital_phantoms}
 The workflow to simulate the digital phantoms and assess

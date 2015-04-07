@@ -44,14 +44,15 @@ We processed 16 subjects from the \gls*{hcp} database with both \emph{regseg}
 The misregistration error remaining after \emph{regseg} was significantly lower ($p < 0.01$) than the
   error corresponding to the \gls*{t2b} correction, using the one-way ANOVA test
   (\autoref{tab:results_real}).
-Visual inspection of all the results (\suppl{section S5}), and the violin plots included in
-  \autoref{fig:results_real}, confirmed this intuition.
+Visual inspection of all the results (\suppl{section S5}) and the violin plots included in
+  \autoref{fig:results_real} confirmed that \emph{regseg} overperformed the \gls*{t2b} method
+  in our settings.
 Even though we carefully configured the \gls*{t2b} method by using the same algorithm and
   same settings of a widely used software, cross-comparison experiments are prone to
   the so-called \emph{instrumentation bias} \citep{tustison_instrumentation_2013}.
-Therefore, these results do not show that the \emph{regseg} software \emph{is} better than the
-  \gls*{t2b} method, but they are communicated to proof that \emph{regseg} is a solid option
-  in the proposed application.
+Therefore, these results do not prove that the \emph{regseg} software \emph{is better than} the
+  \gls*{t2b} method.
+The results reported let us propose \emph{regseg} as a solid option in the application field.
 Additionally, the \gls*{t2b} may introduce an additional (and small) error in the necessary
   registration of \gls*{t2} to \gls*{t1} space.
 
