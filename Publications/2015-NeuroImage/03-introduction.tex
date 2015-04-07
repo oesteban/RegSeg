@@ -6,24 +6,27 @@ The accurate delineation of \gls*{wm} in \gls*{dmri} and the fusion of prior
   the extraction of structural connectivity \citep{craddock_imaging_2013} or
   tract-based spatial statistics \citep{smith_tractbased_2006}.
 However, segmenting \gls*{dmri} data precisely and coregistration of anatomical
-  images are difficult for several reasons.
+  images are difficult due to several limitations.
 First, \gls{dmri} images suffer from partial voluming of several tissues in 
-  interfacing voxels due to the low resolution of images (generally around
-  \isores[mm]{2.2}).
+  voxels located at their interfaces due to the low resolution of images
+  (generally around \isores[mm]{2.2}).
 Second, \gls*{dmri} schemes probe the diffusion process within the brain in 
   many angles called \glspl*{dwi}, completed by one or more baseline (\emph{b0}) 
   volumes without directional gradients.
 The extremely low \gls*{snr} and high dimensionality of \glspl*{dwi} disable their
-  use for direct segmentation.
+  direct use in segmentation.
 The low contrast between \gls*{gm} and \gls*{wm} in the \emph{b0} volumes is not suitable for 
   segmentation either.
 Lastly, \gls*{dmri} images are acquired using \gls*{epi} to speed up acquisition
-  at the cost of presenting geometrical distortion and 
-  signal losses \citep{jezzard_correction_1995} that hinder the segmentation by
-  registering an anatomical image as source of same-subject prior information.
+  at the cost of presenting geometrical distortion and signal degradation and
+  destruction \citep{jezzard_correction_1995}.
 The artifact has been proven to cause an important impact on the anatomy extracted
   from \gls*{dmri} \citep{irfanoglu_effects_2012}, particularly in certain fiber bundles
   when used in whole-brain tractography.
+These limitations preclude segmentation in native \gls*{dmri} space, including
+  registration-based approaches using anatomical images as source of structural
+  information.
+
 
 Early attempts to delineate the \gls*{wm} proceeded by thresholding the 
   \gls*{fa}\footnote{the \gls*{fa} is a scalar parameter of diffusion derived from
@@ -69,7 +72,7 @@ Further registration of \gls*{t1} and \gls*{t2} images was still required to map
   information (and the \gls*{wm} segmentation) into \gls*{dmri} space.
 
 Therefore, given the described circumstances, a method performing simultaneously
-  segmentation in \gls*{dmri} space and registration of the corresponding \gls*{t1} image
+  segmentation in native \gls*{dmri} space and registration of the corresponding \gls*{t1} image
   to the \gls*{dmri} data could provide the optimal solution.
 Previously, joint segmentation and registration has been successfully applied to
   longitudinal object tracking \citep{paragios_level_2003} and atlas-based

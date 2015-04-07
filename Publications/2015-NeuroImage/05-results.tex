@@ -38,14 +38,14 @@ For each experiment, the misregistration error was measured using the Hausdorff 
 The results showed a consistent and high accuracy, below the image resolution.
 \autoref{fig:phantom} (block C) presents the violin plots by model type corresponding
   to the two sets of resolutions of generated phantoms.
-To support that the misregistration errors averaged per experiment was significantly
-  under the resolution of the target image, we proceeded as follows.
-First, we confirmed that the error distributions were skewed using a Shapiro-Wilk test of
+In order to relate average misregistration error to the resolution of the moving image,
+  we proceeded as follows.
+First, we confirmed that the vertex-wise error distributions were skewed using a Shapiro-Wilk test of
   normality.
 All the distributions of errors under test (4 phantom types $\times$ 2 resolutions) resulted
   non-normal with $p<0.001$.
 Consequently, we used the non-parametric Wilcoxon signed-rank test along with Bonferroni
-  correction for multiple comparisons ($N=150$).
+  correction for multiple comparisons ($N=150$, for each phantom type).
 Averaged errors resulted significantly lower than voxel size with $p < (0.001 / 150)$
   for all the tests (4 phantom types $\times$ 2 resolutions).
 Since statistical tests may not be conclusive enough, we also computed the confidence intervals,
