@@ -1,7 +1,7 @@
 % @Author: Oscar Esteban
 % @Date:   2015-02-20 15:40:09
 % @Last Modified by:   Oscar Esteban
-% @Last Modified time: 2015-04-08 13:07:44
+% @Last Modified time: 2015-04-08 13:28:07
 
 \documentclass[a4paper]{report}
 
@@ -353,12 +353,13 @@ The remaining transforms are trivial or can be computed using FFT as in \citep{e
 \section{Parameter settings and implementation details of \emph{regseg}}
 
 \subsection{Implementation}
-\subsection{General} The \emph{regseg} registration and segmentation tool is written in C++, using ITK-4.6 as
-  implementation core.
+\subsection{General} The \emph{regseg} registration and segmentation tool is written in C++, using ITK-4.6
+  \citep{ibanez_itk_2005} as  implementation core.
 We designed a modular implementation, enabling multithreading in several pieces of the software,
   as the process is computationally expensive.
 The tool generates a log-file in JSON format to easily inter-operate with secondary tools (such
   as the convergence report generation, \autoref{sec:convergence_evidence}).
+The evaluation workflow is independent, and implemented using \emph{nipype} \citep{gorgolewski_nipype_2011}.
 
 \subsection{Efficient interpolation using sparse matrices}
 During the registration process, every iteration requires computing the product of all the gradients
