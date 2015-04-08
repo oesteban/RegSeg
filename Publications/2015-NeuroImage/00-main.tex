@@ -1,5 +1,5 @@
-\documentclass[5p,authoryear]{elsarticle}
-% \documentclass[authoryear,onecolumn]{elsarticle}
+%\documentclass[5p,authoryear]{elsarticle}
+ \documentclass[authoryear,onecolumn]{elsarticle}
 \journal{ArXiv archiving for pre-publication review}
 
 % *** MISC UTILITY PACKAGES ***
@@ -9,6 +9,8 @@
 \usepackage[colorinlistoftodos]{todonotes}
 \usepackage{xifthen}
 \usepackage{xspace}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
 
 %\usepackage[cmex10,intlimits]{amsmath}
 \usepackage{amsmath}
@@ -50,9 +52,23 @@ align-ed pre-sent work-flow data-set data-sets}
 %\usepackage[expert]{mathdesign}
 %\usepackage[libertine,cmintegrals,cmbraces,vvarbb]{newtxmath}
 %\renewcommand*{\familydefault}{\sfdefault}
-\usepackage[switch]{lineno}
+
 \usepackage{array}
 \newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\usepackage{ifpdf}
+
+\ifpdf
+  \usepackage[switch]{lineno}
+  % nothing to do
+\else
+  \makeatletter
+  \def\temp{dvips.def}
+  \ifx\Gin@driver\temp
+  \def\Ginclude@graphics#1{\def\temp{#1}---image \expandafter\strip@prefix\meaning\temp---}
+  \fi
+  \makeatother
+\fi
 
 
 % http://tex.stackexchange.com/questions/56105/missing-references-heading
