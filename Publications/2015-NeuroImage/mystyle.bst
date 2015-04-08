@@ -954,6 +954,7 @@ FUNCTION {phdthesis}
   address output
   format.date "year" output.check
   %format.url output
+  format.doi output
   new.block
   %note output
   fin.entry
