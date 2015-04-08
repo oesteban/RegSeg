@@ -43,11 +43,14 @@
 #include <iostream>
 #include <iomanip>
 #include <math.h>
+#include <memory>
 #include <numeric>
 #include <vnl/vnl_random.h>
 #include <itkImageAlgorithm.h>
 #include <itkOrientImageFilter.h>
+#include "InternalOrientationFilter.h"
 #include <itkContinuousIndex.h>
+#include <itkComposeImageFilter.h>
 
 #include <itkIntensityWindowingImageFilter.h>
 #include <itkInvertIntensityImageFilter.h>
@@ -76,6 +79,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_Value(0.0),
  m_MaxEnergy(0.0)
  {
+
+	this->m_Threader = itk::MultiThreader::New();
+	this->m_NumberOfThreads = this->m_Threader->GetNumberOfThreads();
+
 	this->m_Value = itk::NumericTraits<MeasureType>::infinity();
 	this->m_Sigma.Fill(0.0);
 	this->m_Interp = InterpolatorType::New();
@@ -128,7 +135,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->InitializeContours();
 
 	this->m_RegionValue.SetSize(this->m_NumberOfRegions);
-	this->m_RegionValue.Fill(itk::NumericTraits<MeasureType>::infinity());
+	this->m_RegionValue.Fill(itk::NumericTraits<MeasureType>::ZeroValue());
 
 	this->m_Model = EnergyModelType::New();
 	this->m_Model->SetInput(this->m_ReferenceImage);
@@ -156,30 +163,31 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
+void
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::LoadShapePriors( std::vector< std::string > movingSurfaceNames ) {
+	for( size_t i = 0; i < movingSurfaceNames.size(); i++) {
+		typename PriorReader::Pointer polyDataReader = PriorReader::New();
+		polyDataReader->SetFileName( movingSurfaceNames[i] );
+		polyDataReader->Update();
+		this->AddShapePrior( polyDataReader->GetOutput() );
+	}
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
 size_t
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::VectorContourType* prior ) {
+::AddShapePrior( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::ScalarContourType* prior ) {
 	this->m_Offsets.push_back( this->m_NumberOfVertices );
 	this->m_Priors.push_back( prior );
 
-	ContourCopyPointer copy = ContourCopyType::New();
+	Scalar2VectorCopyPointer copy = Scalar2VectorCopyType::New();
 	copy->SetInput( prior );
 	copy->Update();
-	this->m_CurrentContours.push_back( copy->GetOutput() );
+	this->m_CurrentContours.push_back(copy->GetOutput());
 
 	// Increase number of off-grid nodes to set into the sparse-dense interpolator
 	this->m_NumberOfVertices+= prior->GetNumberOfPoints();
-
-	this->m_NormalsFilter.push_back(NormalFilterType::New());
-	this->m_NormalsFilter[this->m_NumberOfContours]->SetWeight(NormalFilterType::AREA);
-	this->m_NormalsFilter[this->m_NumberOfContours]->SetInput( this->m_CurrentContours[this->m_NumberOfContours] );
-	this->m_NormalsFilter[this->m_NumberOfContours]->Update();
-
-	ContourCopyPointer copygrad = ContourCopyType::New();
-	copygrad->SetInput( this->m_NormalsFilter[this->m_NumberOfContours]->GetOutput() );
-	copygrad->Update();
-	this->m_Gradients.push_back( copygrad->GetOutput() );
-
 	this->m_NumberOfContours++;
 	this->m_NumberOfRegions++;
 
@@ -190,41 +198,41 @@ template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeDerivative(PointValueType* grad, ScalesType scales) {
+	// Update contours and initialize sizes
 	this->UpdateContour();
+
 	size_t nvertices = this->m_ValidVertices.size();
-	size_t fullsize = nvertices * Dimension;
-	PointIdentifier pid;      // universal id of vertex
-	PointIdentifier cpid;     // id of vertex in its contour
 
-	ContourPointType ci_prime;
-	PointValueType gi[nvertices];
-	PointValueType sum = 0.0;
-	std::vector< PointValueType > sample;
-	ROIPixelType ocid;
-	ROIPixelType icid = 0;
-	double wi = 0.0;
+	PointValuesVector gradients;
+	gradients.resize(nvertices);
+	std::fill(gradients.begin(), gradients.end(), -1.0);
 
-	std::vector< NormalFilterAreasContainer > areas;
-	std::vector< PointDataContainerPointer > normals;
-	std::vector< PointsContainerPointer > points;
+	struct ParallelGradientStruct str;
+	str.selfptr = this;
+	str.total = nvertices;
+	str.gradients = &gradients;
+
+
+	std::vector<PointDataContainerPointer> normals;
 	for (size_t i = 0; i < this->m_NumberOfContours; i++ ) {
-		areas.push_back(this->m_NormalsFilter[i]->GetVertexAreaContainer());
-		normals.push_back(this->m_NormalsFilter[i]->GetOutput()->GetPointData() );
-		points.push_back(this->m_CurrentContours[i]->GetPoints());
+		NormalFilterPointer nfilter = NormalFilterType::New();
+		nfilter->SetWeight(NormalFilterType::AREA);
+		nfilter->SetInput(this->m_CurrentContours[i]);
+		nfilter->Update();
+		normals.push_back(nfilter->GetOutput()->GetPointData() );
+
+		str.areas.push_back(nfilter->GetVertexAreaContainer());
+		str.points.push_back(this->m_CurrentContours[i]->GetPoints());
+		str.totalAreas.push_back(nfilter->GetTotalArea());
 	}
 
-	for(size_t vvid = 0; vvid < nvertices; vvid++ ) {
-		icid = this->m_InnerRegion[vvid];
-		ocid = this->m_OuterRegion[vvid];
-		pid = this->m_ValidVertices[vvid];
-		cpid = pid - this->m_Offsets[icid];
-		ci_prime = points[icid]->ElementAt(cpid); // Get c'_i
-		wi = areas[icid][cpid];
-		gi[vvid] = this->EvaluateGradient( ci_prime, ocid, icid )  * wi;
-		sample.push_back(gi[vvid]);
-		sum+= fabs(gi[vvid]);
-	}
+	// Start multithreading engine
+	this->GetMultiThreader()->SetNumberOfThreads(this->GetNumberOfThreads());
+	this->GetMultiThreader()->SetSingleMethod(this->ThreadedDerivativeCallback, &str);
+	this->GetMultiThreader()->SingleMethodExecute();
 
+
+	PointValuesVector sample(gradients);
 	std::sort(sample.begin(), sample.end());
 
 	this->m_GradientStatistics[0] = sample.front();
@@ -237,13 +245,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	VectorType ni, v;
 	PointValueType g;
+	PointIdentifier pid, cpid;     // id of vertex in its contour
+	ROIPixelType icid = 0;
 	for(size_t vvid = 0; vvid < nvertices; vvid++ ) {
 		pid = this->m_ValidVertices[vvid];
 		icid = this->m_InnerRegion[vvid];
 		cpid = pid - this->m_Offsets[icid];
 		ni = normals[icid]->ElementAt(cpid);
-
-		g = gi[vvid];
+		g = gradients[vvid];
 		if ( g > this->m_GradientStatistics[5] ) g = this->m_GradientStatistics[5];
 		if ( g < this->m_GradientStatistics[1] ) g = this->m_GradientStatistics[1];
 
@@ -257,10 +266,78 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			}
 		}
 
-		this->m_Gradients[icid]->GetPointData()->SetElement( cpid, v );
+		this->m_CurrentContours[icid]->GetPointData()->SetElement( cpid, v );
+	}
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+ITK_THREAD_RETURN_TYPE
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::ThreadedDerivativeCallback(void *arg) {
+	itk::ThreadIdType total, threadId, threadCount;
+	threadId = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->ThreadID;
+	threadCount = ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->NumberOfThreads;
+
+	ParallelGradientStruct* str = (ParallelGradientStruct *)( ( (itk::MultiThreader::ThreadInfoStruct *)( arg ) )->UserData );
+
+	// Compute indices corresponding to each segment
+	size_t nvertices = str->total;
+	size_t ssize = ceil(1.0 * nvertices / threadCount);
+	size_t start = threadId * ssize;
+	size_t stop = ( threadId + 1 ) * ssize - 1;
+
+	if (threadId == threadCount - 1)
+		stop = nvertices - 1;
+
+	PointValuesVector segment = str->selfptr->ThreadedDerivativeCompute(start, stop, str->points, str->areas, str->totalAreas);
+
+	str->mutex.lock();
+	typename PointValuesVector::const_iterator it = segment.begin();
+	typename PointValuesVector::const_iterator last = segment.end();
+	typename PointValuesVector::iterator dest = str->gradients->begin() + start;
+
+	while(it!=last) {
+		*dest = *it;
+		++it;
+		++dest;
+	}
+	str->mutex.unlock();
+
+	return ITK_THREAD_RETURN_VALUE;
+}
+
+template< typename TReferenceImageType, typename TCoordRepType >
+typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointValuesVector
+FunctionalBase<TReferenceImageType, TCoordRepType>
+::ThreadedDerivativeCompute(size_t start, size_t stop,
+		std::vector<PointsContainerPointer> points,
+		std::vector<NormalFilterAreasContainer> areas,
+		std::vector< double > totalAreas) {
+	size_t nvertices = stop - start;
+	size_t fullsize = nvertices * Dimension;
+
+	PointIdentifier pid;      // universal id of vertex
+	PointIdentifier cpid;     // id of vertex in its contour
+
+	VectorContourPointType ci_prime;
+	PointValuesVector sample;
+	ROIPixelType ocid;
+	ROIPixelType icid = 0;
+	double wi = 0.0;
+
+	for(size_t vvid = start; vvid <= stop; vvid++ ) {
+		icid = this->m_InnerRegion[vvid];
+		ocid = this->m_OuterRegion[vvid];
+		pid = this->m_ValidVertices[vvid];
+		cpid = pid - this->m_Offsets[icid];
+		ci_prime = points[icid]->ElementAt(cpid); // Get c'_i
+		wi = areas[icid][cpid] / totalAreas[icid];
+		sample.push_back(this->EvaluateGradient( ci_prime, ocid, icid )  * wi);
 	}
 
+	return sample;
 }
+
 
 template< typename TReferenceImageType, typename TCoordRepType >
 void
@@ -283,7 +360,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		typename VectorContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
 		PointsContainerPointer curPoints = this->m_CurrentContours[contid]->GetPoints();
 
-		ContourPointType ci, ci_prime;
+		VectorContourPointType ci, ci_prime;
 		VectorType disp;
 		size_t pid;
 
@@ -311,32 +388,17 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			++p_it;
 			gpid++;
 		}
-
-		// Reset gradients
-		this->m_Gradients[contid]->SetPoints(this->m_CurrentContours[contid]->GetPoints());
-
 	}
 
 	if ( invalid.size() > 0 ) {
 		itkWarningMacro(<< "a total of " << invalid.size() << " mesh nodes were to be moved off the image domain." );
 	}
 
-	this->UpdateNormals();
 	this->m_DisplacementsUpdated = true;
 	this->m_RegionsUpdated = (changed==0);
 	this->m_EnergyUpdated = (changed==0);
 
 	this->ComputeCurrentRegions();
-}
-
-template< typename TReferenceImageType, typename TCoordRepType >
-void
-FunctionalBase<TReferenceImageType, TCoordRepType>
-::UpdateNormals() {
-	for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
-		// Compute mesh of normals
-		this->m_NormalsFilter[contid]->Update();
-	}
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -360,7 +422,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 inline bool
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::CheckExtent( typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContourPointType& p, typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
+::CheckExtent( typename FunctionalBase<TReferenceImageType, TCoordRepType>::VectorContourPointType& p, typename FunctionalBase<TReferenceImageType, TCoordRepType>::ContinuousIndex& idx) const {
 	ReferencePointType ref;
 	ref.CastFrom ( p );
 	bool isInside = this->m_ReferenceImage->TransformPhysicalPointToContinuousIndex( ref , idx );
@@ -431,16 +493,17 @@ template< typename TReferenceImageType, typename TCoordRepType >
 const typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureArray
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::GetFinalEnergy() const {
-	ContourList groundtruth;
+	ScalarContourList groundtruth;
 
 	for(size_t idx = 0; idx < this->m_Target.size(); idx++) {
-		ContourCopyPointer copy = ContourCopyType::New();
+		ScalarContourCopyPointer copy = ScalarContourCopyType::New();
 		copy->SetInput( this->m_Target[idx] );
 		copy->Update();
 		groundtruth.push_back(copy->GetOutput());
 	}
 
-	BinarizeMeshFilterPointer newp = BinarizeMeshFilterType::New();
+	typedef MultilabelBinarizeMeshFilter< ScalarContourType > ScalarBinarizeMeshFilterType;
+	typename ScalarBinarizeMeshFilterType::Pointer newp = ScalarBinarizeMeshFilterType::New();
 	newp->SetInputs( groundtruth );
 	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
 	newp->Update();
@@ -496,14 +559,13 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 		// Set up outer regions
 		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-			// Compute mesh of normals
-			NormalFilterPointer normalsFilter = NormalFilterType::New();
-			normalsFilter->SetInput( this->m_CurrentContours[contid] );
-			normalsFilter->Update();
-			ContourPointer normals = normalsFilter->GetOutput();
-
-			PointsConstIterator c_it  = normals->GetPoints()->Begin();
-			PointsConstIterator c_end = normals->GetPoints()->End();
+			NormalFilterPointer nfilter = NormalFilterType::New();
+			nfilter->SetWeight(NormalFilterType::AREA);
+			nfilter->SetInput(this->m_CurrentContours[contid]);
+			nfilter->Update();
+			PointDataContainer* normals = nfilter->GetOutput()->GetPointData();
+			PointsConstIterator c_it  = this->m_CurrentContours[contid]->GetPoints()->Begin();
+			PointsConstIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
 
 			PointType ci;
 			VectorType v;
@@ -511,6 +573,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			size_t pid;
 			float step = 1;
 			while( c_it != c_end ) {
+
 				pid = c_it.Index();
 				ci = c_it.Value();
 
@@ -521,8 +584,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 					this->m_OffMaskVertices[contid]++;
 				}
 
-				this->m_Gradients[contid]->GetPointData()->SetElement( pid, zerov );
-				normals->GetPointData( pid, &ni );
+				ni = normals->GetElement( pid );
 				ROIPixelType inner = interp->Evaluate( ci + ni );
 				ROIPixelType outer = interp->Evaluate( ci - ni );
 
@@ -562,7 +624,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	QEType* temp = edge;
 	CellIdentifier cell_id(0);
 	double totalArea = 0.0;
-	ContourPointType pt[3];
+	VectorContourPointType pt[3];
 	typedef typename PolygonType::PointIdIterator PolygonPointIterator;
 
 	do {
@@ -668,46 +730,39 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 template< typename TReferenceImageType, typename TCoordRepType >
 void
 FunctionalBase<TReferenceImageType, TCoordRepType>
-::SetReferenceImage ( const ReferenceImageType * _arg ) {
-	itkDebugMacro("setting ReferenceImage to " << _arg);
-
-	if ( this->m_ReferenceImage != _arg ) {
-		typedef itk::OrientImageFilter< ReferenceImageType, ReferenceImageType >  Orienter;
-		typename Orienter::Pointer orient = Orienter::New();
-		orient->UseImageDirectionOn();
-		orient->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
-		orient->SetInput(_arg);
-		orient->Update();
-		ReferenceImagePointer ref = orient->GetOutput();
-		ReferenceSizeType size = ref->GetLargestPossibleRegion().GetSize();
-
-		DirectionType idmat; idmat.SetIdentity();
-		DirectionType itk; itk.SetIdentity();
-		itk(0,0) = -1.0; itk(1,1) = -1.0;
-
-		PointType neworig = itk * ref->GetOrigin();
-		ref->SetDirection(idmat);
-		ref->SetOrigin(neworig);
-		this->m_ReferenceImage = ref;
-
-		// Cache image properties
-		this->m_FirstPixelCenter  = this->m_ReferenceImage->GetOrigin();
-		this->m_Direction = this->m_ReferenceImage->GetDirection();
-		this->m_ReferenceSize = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
-		this->m_ReferenceSpacing = this->m_ReferenceImage->GetSpacing();
-
-		ContinuousIndex tmp_idx;
-		tmp_idx.Fill( -0.5 );
-		this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_Origin );
-
-		for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]-1.0;
-		this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_LastPixelCenter );
-
-		for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]- 0.5;
-		this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_End );
-
-		this->Modified();
+::LoadReferenceImage ( const std::vector<std::string> fixedImageNames ) {
+	typedef itk::ComposeImageFilter< ChannelType, ReferenceImageType >     InputToVectorFilterType;
+	typename InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
+	for (size_t i = 0; i < fixedImageNames.size(); i++ ) {
+		typename ChannelReader::Pointer r = ChannelReader::New();
+		r->SetFileName( fixedImageNames[i] );
+		r->Update();
+		comb->SetInput(i,r->GetOutput());
 	}
+
+	comb->Update();
+	typedef InternalOrientationFilter< ReferenceImageType, ReferenceImageType >  InternalOrienter;
+	typename InternalOrienter::Pointer orient = InternalOrienter::New();
+	orient->SetInput(comb->GetOutput());
+	orient->Update();
+
+	this->SetReferenceImage(orient->GetOutput());
+
+	// Cache image properties
+	this->m_FirstPixelCenter  = this->m_ReferenceImage->GetOrigin();
+	this->m_Direction = this->m_ReferenceImage->GetDirection();
+	this->m_ReferenceSize = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
+	this->m_ReferenceSpacing = this->m_ReferenceImage->GetSpacing();
+
+	ContinuousIndex tmp_idx;
+	tmp_idx.Fill( -0.5 );
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_Origin );
+
+	for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]-1.0;
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_LastPixelCenter );
+
+	for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]- 0.5;
+	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_End );
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
