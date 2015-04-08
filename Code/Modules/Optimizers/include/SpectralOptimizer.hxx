@@ -202,11 +202,16 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 		this->m_RegularizationEnergy=0;
 
 		const VectorType* fBuffer = this->m_LastCoeff->GetBufferPointer();
-		const VectorType* dBuffer;
+		const VectorType* dBuffer[Dimension];
 		FieldConstPointer derivCoeff;
 
+
 		if (haveBeta) {
-			dBuffer = derivCoeff->GetBufferPointer();
+			this->m_Transform->ComputeGradientField();
+			CoefficientsImageArray derivs =this->m_Transform->GetDerivatives();
+
+			for( size_t dim = 0; dim < Dimension; dim++)
+				dBuffer[dim] = derivs[dim]->GetBufferPointer();
 		}
 
 		// Initialize dimensional parameters
@@ -231,7 +236,10 @@ SpectralOptimizer<TFunctional>::GetCurrentRegularizationEnergy() {
 		du.Fill(0.0);
 		for ( size_t pix = 0; pix<nPix; pix++) {
 			if (haveAlpha) u = *(fBuffer+pix);
-			if (haveBeta) du = *(dBuffer + pix);
+			if (haveBeta) {
+				for( size_t dim = 0; dim < Dimension; dim++)
+					du+= *(dBuffer[dim] + pix);
+			}
 
 			e = 0.0;
 			eA = 0.0;

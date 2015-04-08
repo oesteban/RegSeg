@@ -269,15 +269,20 @@ SparseMatrixTransform<TScalar,NDimensions>
 	this->GetMultiThreader()->SetNumberOfThreads( this->GetNumberOfThreads() );
 	this->GetMultiThreader()->SetSingleMethod( this->ComputeThreaderCallback, &str );
 	this->GetMultiThreader()->SingleMethodExecute();
-	this->AfterComputeMatrix(type);
+	this->AfterComputeMatrix(type, dim);
 }
 
 template< class TScalar, unsigned int NDimensions >
 void
 SparseMatrixTransform<TScalar,NDimensions>
-::AfterComputeMatrix(WeightsMatrixType type) {
+::AfterComputeMatrix(WeightsMatrixType type, size_t dim) {
 	size_t numvalid = this->m_ValidLocations.size();
-	this->m_Phi.normalize_rows();
+	if (type == Self::PHI)
+		this->m_Phi.normalize_rows();
+
+	if (type == Self::SPRIME)
+		this->m_SPrime[dim].normalize_rows();
+
 	if(numvalid > 0 &&  numvalid <= this->m_NumberOfPoints ) {
 		if (type == Self::PHI)  {
 			this->m_Phi_valid = WeightsMatrix( numvalid , this->m_NumberOfDimParameters );

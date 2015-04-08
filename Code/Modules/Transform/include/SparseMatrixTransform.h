@@ -338,7 +338,7 @@ protected:
 	FieldPointer          m_GradientField;
 
 	virtual void ComputeMatrix( WeightsMatrixType type, size_t dim = 0 );
-	virtual void AfterComputeMatrix( WeightsMatrixType type );
+	virtual void AfterComputeMatrix( WeightsMatrixType type, size_t dim = 0 );
 	virtual size_t ComputeRegionOfPoint(const PointType& point, VectorType& cvector, IndexType& start, IndexType& end, OffsetTableType offsetTable );
 
 	/** Support processing data in multiple threads. */
