@@ -2,7 +2,7 @@
 
 rm -f suppl-realdata.tex
 
-for i in figures/HCP*.pdf; do
+for i in supplemental/HCP*.pdf; do
     fname=$(basename $i)
     fname=${fname::-4}
     echo "\\begin{figure}[!ht]" >> suppl-realdata.tex

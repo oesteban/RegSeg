@@ -1,7 +1,7 @@
 % @Author: Oscar Esteban
 % @Date:   2015-02-20 15:40:09
 % @Last Modified by:   Oscar Esteban
-% @Last Modified time: 2015-03-26 17:57:06
+% @Last Modified time: 2015-04-08 13:07:44
 
 \documentclass[a4paper]{report}
 
@@ -21,7 +21,7 @@
 \usepackage[table]{xcolor}
 \usepackage{graphicx}
 \usepackage{ifpdf}
-\graphicspath{{figures/},{../Figures/}}
+\graphicspath{{figures/},{supplemental/}}
 
 % *** MATH PACKAGES ***
 \usepackage[cmex10]{amsmath}
@@ -45,6 +45,7 @@
 %\usepackage{sidecap}
 
 % *** FLOAT PACKAGES ***
+\usepackage{floatrow}
 \usepackage[framemethod=tikz]{mdframed}
 %\usepackage{float}
 % \usepackage{fixltx2e}
@@ -156,12 +157,12 @@
 \usepackage[hyphens]{url}
 \usepackage[hyphenbreaks]{breakurl} %fixes boxes spanning through pages
 \usepackage[colorlinks=true,citecolor=blue,urlcolor=blue,linkcolor=blue]{hyperref}
+\usepackage{doi}
 
 \input{01-acronyms}
 
 \begin{document}
-\title{Supplemental Materials: \emph{Simultaneous segmentation and registration of
-diffusion MR images of the brain driven by active-contours}}
+\title{Supplemental Materials: \\ \emph{Active-contours driven registration method for structure-informed segmentation of diffusion MR images}}
 \author{Oscar Esteban and Dominique Zosso}
 \date{February 2015}
 
@@ -234,18 +235,19 @@ Since the energy functional is defined over competing regions, the displacement 
   \end{equation}
 
 \subsection{Gradient-descent optimization}\label{sec:gradient_descent}
-The energy functional to be optimized
-  in \emph{regseg} is presented in Eq. 7:
+The energy functional to be optimized in \emph{regseg} is presented in Eq. 7.
+After the simplifications described in equation (A.1) of Appendix 1, we obtain the
+  following energy functional:
   \begin{equation}
-  E(R \mid U) = C + \underbracket{\underset{l}{\sum} \int_{\Omega_l}
+  E(\vec{u}) = C + \underbracket{\underset{l}{\sum} \int_{\Omega_l}
   \mdist{f'}{l} \,d\vec{r}}_{\text{Data term } (E_{data})}
   + \underbracket{\underset{\Omega}{\int} \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
   + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r}}_{\text{Regularization term } (E_{reg})}.
   \label{eq:energy}
   \end{equation}
 
-To search for the minimum of $E(R \mid U)$ w.r.t. the coefficients $\vec{u}_k$, we use a gradient descent strategy.
-In Eq. 11 we introduced the derivative of \eqref{eq:energy}:
+To search for the minimum of $E(\vec{u})$ w.r.t. the coefficients $\vec{u}_k$, we use a gradient descent strategy.
+In Eq. (9) we introduced the derivative of \eqref{eq:energy}:
   \begin{equation}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} =
   \frac{ \partial }{\partial \vec{u}_k} \Big\{
@@ -281,8 +283,7 @@ Let $\frac{\partial E_{data}}{\partial \vec{u}_k} = \vec{g}_k$ for simplicity,
   where $\hat{\vec{e}}$ is the coordinates system's unit vector.
 Therefore, the shape gradients projected to the grid of B-Spline control points is:
 \begin{equation}
-  \vec{g}_k =
-  - \underset{i}{\sum} \bar{s}_i \cdot \psi_k(\vec{v}_i) \, \hat{\vec{e}} = - \underset{i}{\sum} \vec{g}_{i,k}.
+  \vec{g}_k = - \underset{i}{\sum} \bar{s}_i \cdot \psi_k(\vec{v}_i) \, \hat{\vec{e}} = - \underset{i}{\sum} \vec{g}_{i,k}.
   \label{eq:shape_gradient_final}
 \end{equation}
 
@@ -291,38 +292,39 @@ It is also necessary to obtain and discretize the derivatives of the regularizat
   \frac{\partial E_{reg}(\vec{u})}{\partial \vec{u}_k} = \frac{ \partial }{\partial \vec{u}_k} \Big\{
   \int_{\Omega} \frac12 [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
   + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}
-  \Big\} = \boldsymbol{\alpha} \cdot \vec{u}_k + \boldsymbol{\beta} \cdot \Delta \vec{u}_k.
+  \Big\} = \boldsymbol{\alpha} \cdot \vec{u}_k - \boldsymbol{\beta} \cdot \Delta \vec{u}_k.
   \label{eq:gradient_regterm}
   \end{equation}
 
 Inserting \eqref{eq:shape_gradient_final} and \eqref{eq:gradient_regterm} into \eqref{eq:gradient_descent} we get the
   final evolution equation:
-  \begin{equation}
-  \frac{\partial E(\vec{u})}{\partial \vec{u}_k} = \vec{g}_k + \boldsymbol{\alpha} \cdot \vec{u}_k + \boldsymbol{\beta} \cdot \Delta \vec{u}_k,
+  \begin{align}
+  \frac{\partial \vec{u}}{\partial t} &\propto - \frac{\partial E(\vec{u})}{\partial \vec{u}_k}, \notag\\
+  \frac{\partial \vec{u}}{\partial t} &\propto - \Big( \vec{g}_k - \boldsymbol{\alpha} \cdot \vec{u}_k + \boldsymbol{\beta} \cdot \Delta \vec{u}_k \Big).
   \label{eq:gradient_final}
-  \end{equation}
+  \end{align}
 
 
-\subsection{Obtaining the update equation} To solve the differential equation in \eqref{eq:gradient_descent},
+\subsection{Obtaining the update equation} To solve the differential equation in \eqref{eq:gradient_final},
   we use a semi-implicit Euler scheme, referring to the discrete step size as $\delta$ and where the
   shape-gradients $\vec{g}_k$ are explicit:
 \begin{align}
-  \vec{u}_k^{t+1} &= \vec{u}_k^{t} + \delta \, \Big( \vec{g}_k^{t+1} + (\boldsymbol{\alpha} - \boldsymbol{\beta} \Delta) \, \vec{u}_k^{t+1} \Big) \notag \\
-  (1 - \delta \boldsymbol{\alpha} - \delta \boldsymbol{\beta} \Delta)\, \vec{u}_k^{t+1} &= \vec{u}_k^{t} + \delta\, \vec{g}_k^{t}
+  \vec{u}_k^{t+1} &= \vec{u}_k^{t} + \delta \, \Big( - \vec{g}_k^{t} - ( \boldsymbol{\alpha} - \boldsymbol{\beta} \Delta) \, \vec{u}_k^{t+1} \Big) \notag \\
+  (1 + \delta \, \boldsymbol{\alpha} - \delta \, \boldsymbol{\beta} \Delta)\, \vec{u}_k^{t+1} &= \vec{u}_k^{t} - \delta\, \vec{g}_k^{t}
   \label{eq:discrete_derivative}
 \end{align}
 
 This expression is easily translated into Fourier domain as follows:
 
   \begin{align}
-  \vec{u}_k^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{\delta^{-1} \, \vec{u}_k^t + \vec{g}_k\} }%
-                  {\mathcal{F}\{(\delta^{-1} - \boldsymbol{\alpha})\, I-\boldsymbol{\beta}\Delta\}} \right\},
+  \vec{u}_k^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{\delta^{-1} \, \vec{u}_k^t - \vec{g}_k^t\} }%
+                  {\mathcal{F}\{(\delta^{-1} + \boldsymbol{\alpha})\, I-\boldsymbol{\beta}\Delta\}} \right\},
   \label{eq:update_equation}
   \end{align}
   where $I$ denotes the identity operator.
 Here, we rewrite the Laplacian as a linear combination of the identity and shift operators:
   \begin{equation}
-  \Delta = \{\sum_{d=1}^n \mathcal{S}_d^- + \mathcal{S}_d^+\}  - 2n \mathcal{I}
+  \Delta = \Big\{\sum_{d=1}^n \mathcal{S}_d^- + \mathcal{S}_d^+\Big\}  - 2n \mathcal{I}
   \end{equation}
   where $\mathcal{S}_d^{\pm}$ stands for the forward ($+$) and backward ($-$) shift operator along axis $d$, of which the Fourier transform is found easily as
   \begin{equation}
@@ -347,6 +349,7 @@ The remaining transforms are trivial or can be computed using FFT as in \citep{e
 %%
 %  with $\hat{\mathbf{e}}_d$ being the unitary vector along axis $d$.
 
+\newpage
 \section{Parameter settings and implementation details of \emph{regseg}}
 
 \subsection{Implementation}
@@ -374,6 +377,22 @@ Then, the gradients $\vec{g}_k$ are easily computed using the matrix product:
 
 As these weights can be computed once in the beginning of the process and they do not change along
   it, $\boldsymbol{\Psi}$ can be pre-cached.
+
+\subsection{Assessment of the segmentation model}
+\begin{figure}[!ht]
+  \floatbox[{\capbeside\thisfloatsetup{capbesideposition={right,top},capbesidewidth=0.5\textwidth}}]{figure}[\FBwidth]
+  {\caption{\textbf{Assessment of the segmentation model}: 
+  Preliminarily, we investigated the aptness of the segmentation model.
+  For five test datasets, we uniformly sampled the space of distortions
+    $\hat{U} = \epsilon \cdot U_{true} = \vec{r} + \epsilon \, u_\text{PE}$
+    (with $\epsilon \in [-1.1, 1.1]$ and $u_\text{PE}$ from Equation 13 in the
+    paper), and evaluated the data-term of the cost function \eqref{eq:energy}.
+  The metric consistently displayed its minimum at the ground-truth location ($\epsilon=0.0$)
+    for all the cases, indicating that the segmentation model is appropriate for
+    registration.}}
+  {\includegraphics[width=\linewidth]{Suppl-figure04.pdf}}
+  \label{fig:energymap}
+\end{figure}
 
 \subsection{Interface and Settings}\label{sec:interface_settings}
 
@@ -474,7 +493,7 @@ Online checking is also possible as the algorithm writes to the standard output 
 A sample report is found in \autoref{fig:convreport}.
 
 \begin{figure*}[b]
-  \includegraphics[width=\textwidth]{figures/Suppl-figure02.pdf}
+  \includegraphics[width=\linewidth]{Suppl-figure02.pdf}
   \caption{The evolution of the registration and segmentation process can be
     checked using the \emph{Convergence report},
     easily generated using the appropriate \emph{nipype Interface}.
@@ -483,36 +502,64 @@ A sample report is found in \autoref{fig:convreport}.
     \label{fig:convreport}
 \end{figure*}
 
+\newpage
 \section{Instruments for evaluation}
 
 This work is supported by two \emph{nipype Workflows} in order to ensure the reproducibility
   of the results.
 All the intermediate results and figures in this paper have been encapsulated into
-  the workflows and are available in \url{http://dx.doi.org/zenodolink}.
+  the workflows and are available in \citep{esteban_acweregistration_2015}.
 
-An overview of the general workflow is presented in the Figure 2 of the paper.
-However, this figure has been extremely simplified for the best of visualization.
+An overview of the workflow applied in phantoms is presented in the Figure 2 of the paper.
+Subsequently, Figure 3 reproduces the evaluation on real data.
+The two figures have been extremely simplified for the best of visualization.
 In this section, we review the main elements of the evaluation pipelines.
 
-\subsection{Assessment of the segmentation model}
-\begin{figure}
-  \includegraphics[width=\linewidth]{figures/figure04.pdf}
-  \caption{Assessment of the segmentation model, sampling the value of the energy functional
-  \eqref{eq:energy} versus several registration errors generated as explained in
-  \autoref{sec:res_model_and_metric}.
-  The metric of our registration method displayed a smooth gradient towards the minimum
-  located at the $\epsilon = 0.0$ point.}\label{fig:energymap}
+\subsection{Extraction of structural information}
+\begin{figure}[!ht]
+  \includegraphics[width=\linewidth]{surfaces.pdf}
+  \caption{\textbf{Generating Surfaces}.
+  Each surface extracted in the structural reference
+    (in both phantoms and real datasets) is obtained with a unitary pipeline,
+    for instance, the \emph{PialSurface} block.
+  In this figure, the composite workflow to extract the six surfaces that define the
+    segmentation model (\autoref{fig:jointplot}) is represented.
+  }\label{fig:wf_surfaces}
 \end{figure}
 
+\subsection{Processing diffusion MRI data}
+\begin{figure}[!ht]
+  \floatbox[{\capbeside\thisfloatsetup{capbesideposition={right,top},capbesidewidth=.5\linewidth}}]{figure}[\FBwidth]
+  {\includegraphics[width=.9\linewidth]{wf_dti.pdf}}
+  {\caption{\textbf{Workflow to generate \gls*{fa} and \gls*{adc} maps from \gls*{dmri} data}.
+    We use \emph{MRtrix} \citep{tournier_mrtrix_2012} to generate a \gls*{dti} from data and
+      computing the two feature maps of interest (\gls*{fa} and \gls*{adc}).
+    This workflow is performed in both undistorted and warped data.}\label{fig:wf_dti}}
+\end{figure}
 
-\subsection{Preprocessing}
+\subsection{T2-weighted registration to \emph{b0} -based (T2B) method}
+\begin{figure}[!ht]
+  \floatbox[{\capbeside\thisfloatsetup{capbesideposition={right,top},capbesidewidth=0.3\textwidth}}]{figure}[\FBwidth]
+  {\includegraphics[width=.85\linewidth]{wf_t2b.pdf}}
+  {\caption{\textbf{In-house implementation of the T2B method}.
+    Each surface extracted in the structural reference
+      (in both phantoms and real datasets) is obtained with a unitary pipeline,
+      for instance, the \emph{PialSurface} block.
+    In this figure, the composite workflow to extract the six surfaces that define the
+      segmentation model (\autoref{fig:jointplot}) is represented.}\label{fig:wf_t2b}}
+\end{figure}
 
-\subsection{Distortion}
+\subsection{Complete workflow for evaluation on real data}
+\begin{figure}[!ht]
+  \includegraphics[width=\linewidth]{hcp_wf.pdf}
+  \caption{\textbf{The \emph{nipype} design of the workflow for real data}.}\label{fig:wf_hcp}
+\end{figure}
 
+\newpage
 \section{Model considerations}
 
 \begin{figure*}[!ht]
-	\includegraphics[width=\textwidth]{figures/Suppl-figure01.pdf}
+	\includegraphics[width=\linewidth]{Suppl-figure01.pdf}
 	\caption{Evaluating the joint distribution}\label{fig:jointplot}
 \end{figure*}
 
