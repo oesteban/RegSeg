@@ -6,7 +6,7 @@
 # @Author: oesteban - code@oscaresteban.es
 # @Date:   2014-04-04 19:39:38
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-02 10:35:00
+# @Last Modified time: 2015-03-10 14:56:04
 
 
 import os
@@ -17,9 +17,10 @@ if __name__ == '__main__':
     import os.path as op
     from glob import glob
     import numpy as np
+    from nipype import config, logging
 
     try:
-        from enthought.etsconfig.api import ETSConfig
+        from traits.etsconfig.etsconfig import ETSConfig
         ETSConfig.toolkit = 'null'
     except:
         pass
@@ -58,6 +59,12 @@ if __name__ == '__main__':
                             type=int, help='number of repetitions')
     g_settings.add_argument('--debug', action='store_true', default=False,
                             help='switch debug mode ON')
+    g_settings.add_argument('--debug_wf', action='store_true', default=False,
+                            help='switch debug mode ON only for workflows')
+    g_settings.add_argument('--metricmap', action='store_true', default=False,
+                            help='execute metric map sub-workflow')
+    g_settings.add_argument('--log_dir', action='store', default='logs',
+                            help='directory for logs')
 
     opts = parser.parse_args()
 
@@ -98,25 +105,50 @@ if __name__ == '__main__':
         from multiprocessing import cpu_count
         nthreads = cpu_count()
 
-    cfg = {}
-    cfg['plugin'] = 'Linear'
+    settings['nthreads'] = nthreads
+
+    plugin = 'Linear'
+    plugin_args = {}
     if nthreads > 1:
-        cfg['plugin'] = 'MultiProc'
-        cfg['plugin_args'] = {'n_proc': nthreads}
+        plugin = 'MultiProc'
+        plugin_args = {'n_proc': nthreads, 'maxtasksperchild': 4}
 
     # Setup logging dir
-    log_dir = op.abspath('logs')
-    cfg['logging'] = {'log_directory': log_dir, 'log_to_file': True,
-                      'workflow_level': 'INFO', 'interface_level': 'INFO'}
+    log_dir = op.abspath(opts.log_dir)
     if not op.exists(log_dir):
         os.makedirs(log_dir)
 
+    cfg = dict(
+        logging={'log_directory': log_dir,
+                 'log_to_file': True,
+                 'workflow_level': 'INFO',
+                 'interface_level': 'ERROR'},
+        execution={'plugin': plugin,
+                   'plugin_args': plugin_args}
+    )
     # Setup debug mode
     if opts.debug:
-        cfg['logging']['workflow_level'] = 'DEBUG'
         cfg['logging']['interface_level'] = 'DEBUG'
 
-    wf = hcp_workflow(name=opts.name, settings=settings, cfg=cfg)
+    if opts.debug or opts.debug_wf:
+        cfg['logging']['workflow_level'] = 'DEBUG'
+        config.enable_debug_mode()
+
+    config.update_config(cfg)
+    logging.update_logging(config)
+
+    wf = hcp_workflow(
+        name=opts.name, settings=settings, map_metric=opts.metricmap)
+    wf.config['logging'] = cfg['logging']
     wf.base_dir = settings['work_dir']
     wf.write_graph(format='pdf')
-    wf.run()
+
+    try:
+        wf.run(plugin=plugin, plugin_args=plugin_args)
+    except Exception as e:
+        print 'Exception caught: %s' % str(e)
+
+    try:
+        os.remove(op.join(log_dir, 'pypeline.lock'))
+    except:
+        pass

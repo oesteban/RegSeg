@@ -1,0 +1,87 @@
+{
+    "images_verbosity": 3, 
+    "descript_update": [
+        null, 
+        null, 
+        null
+    ], 
+    "convergence_value": [
+        1e-06, 
+        1e-07, 
+        1e-08
+    ], 
+    "scales": [
+        [
+            0.0, 
+            1.0, 
+            0.0
+        ], 
+        [
+            0.0, 
+            1.0, 
+            0.0
+        ], 
+        [
+            0.0, 
+            1.0, 
+            0.0
+        ]
+    ], 
+    "grid_spacing": [
+        [
+            40.0, 
+            100.0, 
+            40.0
+        ], 
+        [
+            30.0, 
+            30.0, 
+            30.0
+        ], 
+        [
+            20.0, 
+            30.0, 
+            10.0
+        ]
+    ], 
+    "f_smooth": [
+        2.0, 
+        0.5, 
+        null
+    ], 
+    "beta": [
+        0.0, 
+        0.0, 
+        0.0
+    ], 
+    "step_auto": [
+        true, 
+        true, 
+        true
+    ], 
+    "iterations": [
+        350, 
+        250, 
+        100
+    ], 
+    "convergence_window": [
+        25, 
+        15, 
+        5
+    ], 
+    "alpha": [
+        0.0, 
+        0.0, 
+        0.0
+    ], 
+    "convergence_energy": [
+        true, 
+        true, 
+        true
+    ], 
+    "descript_adaptative": [
+        false, 
+        false, 
+        false
+    ]
+}

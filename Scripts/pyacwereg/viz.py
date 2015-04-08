@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-14 11:43:52
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-20 13:18:39
+import os.path as op
 
 
 def add_annotations(values, ax, level, nlevels, color, lastidx, units=''):
@@ -326,6 +327,62 @@ def jointplot_data(im1data, im2data, in_seg, labels=None, out_file=None,
     return g, out_file
 
 
+def jointplot_real(imageX, imageY, segmentation, mask,
+                   labels=None, xlabel='X', ylabel='Y',
+                   huelabel='tissue',
+                   xlims=None, ylims=None, out_file=None):
+    import os.path as op
+    import nibabel as nb
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sn
+    import pandas as pd
+
+    fa = nb.load(imageX).get_data().reshape(-1)
+    md = nb.load(imageY).get_data().reshape(-1)
+    seg = nb.load(segmentation).get_data().astype(np.uint8).reshape(-1)
+    msk = nb.load(mask).get_data().astype(np.uint8).reshape(-1)
+
+    if xlims is None:
+        xlims = (fa.min(), fa.max())
+
+    if ylims is None:
+        ylims = (md.min(), md.max())
+
+    md[md < ylims[0]] = np.nan
+    md[md > ylims[1]] = np.nan
+
+    if labels is None:
+        labels = ['Label%02d' % i for i in range(seg.max() + 1)]
+
+    df_pieces = []
+    for i, l in zip(np.unique(seg), labels):
+        idxs = np.where((seg == i) & (msk > 0))
+        fa_f = fa[idxs]
+        md_f = md[idxs]
+        d = {xlabel: fa_f,
+             ylabel: md_f,
+             huelabel: [l] * len(fa_f)}
+        df_pieces.append(pd.DataFrame(d))
+
+    df = pd.concat(df_pieces)
+    df = df[df.tissue != 'do-not-show']
+    sn.set_context("talk", font_scale=1.8)
+
+    g = sn.JointGrid(xlabel, ylabel, df, hue=huelabel, xlim=xlims, ylim=ylims,
+                     size=20, inline_labels=True)
+    # g.plot_joint(plt.scatter)
+    g.plot_joint(sn.kdeplot, linewidths=3.0)
+    g.plot_marginals(sn.distplot)
+
+    plt.setp(g.ax_joint.get_yticklabels(), visible=False)
+    plt.setp(g.ax_joint.get_xticklabels(), visible=False)
+
+    if out_file is not None:
+        plt.savefig(out_file, dpi=300, bbox_inches='tight')
+    return g
+
+
 def jointplot_gmm(locs, covs, labels=None, out_file=None,
                   xlims=None, ylims=None,
                   xname='Image A', yname='Image B',
@@ -436,33 +493,49 @@ def jointplot_gmm(locs, covs, labels=None, out_file=None,
     return out_file
 
 
-def slices_gridplot(in_files, view=['axial'], size=(3, 3), discard=3,
-                    out_file=None):
+def slices_gridplot(in_files, view=['axial'], size=(5, 5), discard=3,
+                    slices=None, label=None, out_file=None):
     from matplotlib import pyplot as plt
     import numpy as np
 
     view = np.atleast_1d(view).tolist()
     rows = len(view)
-    cols = 0
 
     fileslist = []
-    for v in view:
-        filtlist = [f for f in in_files if v in f]
-        if cols == 0:
-            viewlist = filtlist[discard:-discard]
-            cols = len(viewlist)
-        else:
-            viewlist = filtlist[discard:cols + discard]
-        fileslist.append(viewlist)
+    if slices is None:
+        cols = 0
+        for v in view:
+            filtlist = [f for f in in_files if v in f]
+            if cols == 0:
+                viewlist = filtlist[discard:-discard]
+                cols = len(viewlist)
+            else:
+                viewlist = filtlist[discard:cols + discard]
+            fileslist.append(viewlist)
+    else:
+        for v in view:
+            cview = [f for f in in_files for s in slices
+                     if '%s%04d' % (v, s) in f]
+            fileslist.append(cview)
+
+        rows, cols = np.shape(fileslist)
 
     fig, axes = plt.subplots(rows, cols,
                              figsize=(size[0] * cols, size[1] * rows),
                              subplot_kw={'xticks': [], 'yticks': []})
     fig.subplots_adjust(hspace=0.1, wspace=0.05)
 
+    axes = np.atleast_2d(axes)
     for r in range(rows):
         for c in range(cols):
-            axes[r, c].imshow(plt.imread(fileslist[r][c]))
+            ax = axes[r, c]
+            im = plt.imread(fileslist[r][c])
+            ax.imshow(im)
+
+    if label is not None:
+        label = np.atleast_1d(label).tolist()
+        for i, l in enumerate(label):
+            axes[i][0].set_ylabel(l, fontsize=40)
 
     if out_file is None:
         out_file = op.abspath('slices_gridplot.pdf')
@@ -471,8 +544,147 @@ def slices_gridplot(in_files, view=['axial'], size=(3, 3), discard=3,
     return out_file
 
 
-def phantom_errors(in_csv, resolution='lo',
-                   mtypes=['ball', 'box', 'L', 'gyrus']):
+def phantom_errors(in_csv, size=(80, 30), out_file=None):
+    import pandas as pd
+    import seaborn as sn
+    import matplotlib.pyplot as plt
+    sn.set_context("poster", font_scale=4.5)
+    df = pd.read_csv(in_csv).drop_duplicates(
+        subset=['surf_id', 'repetition', 'surfdist_avg', 'model_type'])
+    del df['Unnamed: 0']
+
+    df.surf_id[df.surf_id == 0] = 'internal'
+    df.surf_id[df.surf_id == 1] = 'external'
+    mtypes = df.model_type.unique()
+    cols = len(mtypes) * 2
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=size)
+
+    lodf = df[df.resolution == 'lo']
+    plot0 = sn.violinplot(x='model_type', y='surfdist_avg', hue='surf_id',
+                          hue_order=['internal', 'external'], inner='quartile',
+                          data=lodf, scale_hue=.9, width=.9, ax=ax1)
+    plot0.set_xlabel('Model Type')
+    plot0.set_ylabel('Averaged error of surfaces (mm)')
+    plot0.set_ylim([0.0, 2.25])
+    plot0.set_title(
+        r'Registration error @ $%.1f \times %.1f \times %.1fmm^3$' %
+        tuple([2.0] * 3))
+
+    l = plot0.axhline(y=2.0, lw=15, xmin=0.07, xmax=0.93,
+                      color='gray', alpha=.4)
+    plot0.annotate(
+        "voxel size", xy=(2.5, 2.0), xytext=(100, -150),
+        xycoords='data', textcoords='offset points', va='center',
+        color='w', fontsize=80,
+        bbox=dict(boxstyle='round', fc='gray', ec='none', color='w'),
+        arrowprops=dict(arrowstyle='wedge,tail_width=.7',
+                        fc='gray', ec='none',
+                        ))
+
+    frame = plot0.legend(loc=2, fancybox=True).get_frame()
+    frame.set_facecolor('white')
+    frame.set_edgecolor('white')
+
+    hidf = df[df.resolution == 'hi']
+    plot1 = sn.violinplot(x='model_type', y='surfdist_avg', hue='surf_id',
+                          hue_order=['internal', 'external'], inner='quartile',
+                          data=hidf, scale_hue=.9, width=.9, ax=ax2)
+    plot1.set_xlabel('Model Type')
+    plot1.set_ylabel('')
+    plot1.set_ylim([0.0, 1.15])
+    plot1.set_title(
+        r'Registration error @ $%.1f \times %.1f \times %.1fmm^3$' %
+        tuple([1.0] * 3))
+    l = plot1.axhline(y=1.0, lw=15, xmin=0.07, xmax=0.93,
+                      color='gray', alpha=.4)
+    plot1.annotate(
+        "voxel size", xy=(0.1, 1.0), xytext=(-200, -120),
+        xycoords='data', textcoords='offset points', va='center',
+        color='w', fontsize=80,
+        bbox=dict(boxstyle='round', fc='gray', ec='none', color='w'),
+        arrowprops=dict(arrowstyle='wedge,tail_width=.7',
+                        fc='gray', ec='none',
+                        ))
+    plot1.legend_.remove()
+
+    sn.despine(left=True, bottom=True)
+
+    if out_file is None:
+        out_file = op.abspath('phantom_violinplots.pdf')
+
+    plt.savefig(out_file, dpi=320, bbox_inches='tight')
+
+#    lg = plot0.add_legend(title='Surface')
+    return fig
+
+
+def realdata_errors(in_csv, size=(80, 25), out_file=None,
+                    columns=['surf_dist_1', 'surf_dist_3', 'surf_dist_5']):
+    import pandas as pd
+    import seaborn as sn
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    def _extract_method(mdf, method_name, columns):
+        rsd = mdf[columns].values.T
+        values = rsd.reshape(-1).tolist()
+        numvals = rsd.shape[1]
+        totalvals = len(values)
+        surflist = ([0] * numvals + [1] * numvals +
+                    [2] * numvals + [3] * totalvals)
+
+        data = {'method': [method_name] * (totalvals * 2),
+                'surf': surflist,
+                'error': values + values}
+        return pd.DataFrame(data)
+
+    fig = plt.figure(num=None, figsize=size)
+
+    sn.set_context("poster", font_scale=5)
+    df = pd.read_csv(in_csv).drop_duplicates(subset=['method', 'subject_id'])
+    del df['Unnamed: 0']
+
+    regsegdf = df[df.method == 'REGSEG'].reset_index(drop=True)
+    t2bdf = df[df.method == 'T2B'].reset_index(drop=True)
+    df1 = _extract_method(regsegdf, 'regseg', columns)
+    df2 = _extract_method(t2bdf, 'T2B', columns)
+
+    plot0 = sn.violinplot(x='surf', y='error', hue='method', size=size,
+                          inner='quartile', linewidth=8,  # bw=0.2,
+                          data=pd.concat([df1, df2]), scale_hue=.9, width=.7)
+
+    ymax = plot0.get_ylim()[1]
+    plot0.set_ylim([0.0, 4.0])
+
+    plot0.set_xticklabels([r'$\Gamma_{VdGM}$', r'$\Gamma_{WM}$',
+                           r'$\Gamma_{pial}$', 'Aggregated'])
+    plot0.set_xlabel('Surface')
+    plot0.set_ylabel('Surface warping index ($sWI$, mm)')
+    l = plot0.axhline(y=1.25, lw=15, xmin=0.07, xmax=0.93,
+                      color='gray', alpha=.4)
+    plot0.annotate(
+        "voxel size", xy=(-0.15, 1.25), xytext=(-250, 105),
+        xycoords='data', textcoords='offset points', va='center',
+        color='w', fontsize=80,
+        bbox=dict(boxstyle='round', fc='gray', ec='none', color='w'),
+        arrowprops=dict(arrowstyle='wedge,tail_width=.7',
+                        fc='gray', ec='none',
+                        ))
+
+    plot0.set_title('Comparison in real data experiments')
+    leg = plot0.legend(loc="best")
+    sn.despine(left=True, bottom=True)
+
+    if out_file is None:
+        out_file = op.abspath('real_violinplots.pdf')
+    plt.savefig(out_file, dpi=320, bbox_inches='tight')
+
+#    lg = plot0.add_legend(title='Surface')
+    return plot0
+
+
+def phantom_boxplot(in_csv, resolution='lo',
+                    mtypes=['ball', 'box', 'L', 'gyrus']):
     import pandas as pd
     import seaborn as sn
     import matplotlib
@@ -485,11 +697,11 @@ def phantom_errors(in_csv, resolution='lo',
 
     sn.set(style="whitegrid")
     sn.set_context("poster", font_scale=1.5)
-    g = sn.factorplot('model_type', 'surfdist_avg', 'surf_id', filtdf,
-                      size=15, kind='box', x_order=mtypes, legend=False)
-    g.set_axis_labels('Type of model', 'Averaged error of surfaces (mm)')
-    lg = g.add_legend(title='Surface')
 
+    g = sn.factorplot('model_type', 'surfdist_avg', 'surf_id', filtdf,
+                      size=15, kind='box', x_order=mtypes, legend=False,
+                      n_boot=10e4, estimator=np.median)
+    g.set_axis_labels('Type of model', 'Averaged error of surfaces (mm)')
     mytitle = (r'Registration error @ $%.1f \times %.1f \times %.1fmm^3$' %
                tuple([1.0 if resolution == 'hi' else 2.0] * 3))
     g.fig.suptitle(mytitle, y=1.05, fontsize=30)
@@ -497,7 +709,7 @@ def phantom_errors(in_csv, resolution='lo',
     return g
 
 
-def metric_map_plot(in_file):
+def metric_map_plot(in_file, out_file=None):
     import pandas as pd
     import numpy as np
     import seaborn as sn
@@ -506,20 +718,24 @@ def metric_map_plot(in_file):
     sn.set_context("talk", font_scale=1.25)
     plt.rcParams['font.size'] = 24
 
-
     df = pd.read_csv(in_file)
     df.error.fillna(0.0, inplace=True)
-    df = df.sort(columns=['subject_id', 'error'])
+    df = df.sort(columns=['subject_id', 'error']).drop_duplicates(
+        subset=['subject_id', 'error', 'total'])
     subjects = df.subject_id.unique()
 
     series = []
     for s in subjects:
         ndf = df[df.subject_id == s]
         ndf.total /= ndf.total.min()
-        ts = ndf.total
+        ts = np.atleast_1d(ndf.total).tolist()
         series.append(ts)
 
     final = pd.DataFrame(np.array(series).T, index=ndf.error, columns=subjects)
-    final.plot(legend=False)
-    return final
+    ax = final.plot(legend=False)
+    ax.set_xlabel(r'Registration error ($\epsilon$)')
+    ax.set_ylabel('Relative metric value')
+    if out_file is not None:
+        plt.savefig(out_file, dpi=300, bbox_inches='tight')
 
+    return final

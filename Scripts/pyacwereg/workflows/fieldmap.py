@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2015-01-15 15:00:48
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-02-06 14:59:10
+# @Last Modified by:   oesteban
+# @Last Modified time: 2015-03-11 10:35:14
 
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
@@ -12,9 +12,10 @@ from nipype.interfaces import fsl
 from nipype.interfaces.io import JSONFileGrabber, JSONFileSink
 from nipype.interfaces import ants
 from nipype.algorithms.misc import AddNoise
+from nipype.workflows.dmri.fsl import utils as nwu
 
-from pysdcev.interfaces.misc import SigmoidFilter
-import pysdcev.utils as pu
+from pyacwereg.interfaces.dmri import PhaseUnwrap
+from pyacwereg.interfaces.utility import SigmoidFilter
 
 
 def bmap_registration(name="Bmap_Registration"):
@@ -25,8 +26,8 @@ def bmap_registration(name="Bmap_Registration"):
 
     # Setup i/o
     inputnode = pe.Node(niu.IdentityInterface(
-        fields=['mag', 'pha', 't1w_brain', 'dwi_mask', 'poly_mask',
-                'factor']), name='inputnode')
+        fields=['mag', 'pha', 't1w_brain', 'dwi_mask']),
+        name='inputnode')
 
     outputnode = pe.Node(niu.IdentityInterface(
         fields=['magnitude', 'wrapped', 'unwrapped', 'mag_brain']),
@@ -37,6 +38,7 @@ def bmap_registration(name="Bmap_Registration"):
 
     mag2RAS = pe.Node(fs.MRIConvert(out_type="niigz", out_orientation="RAS"),
                       name='MagToRAS')
+    unwrap = pe.Node(PhaseUnwrap(), name='PhaseUnwrap')
     pha2RAS = pe.Node(fs.MRIConvert(out_type="niigz", out_orientation="RAS"),
                       name='PhaToRAS')
 
@@ -47,15 +49,6 @@ def bmap_registration(name="Bmap_Registration"):
                       name='enh_mag')
     enh_t1w = pe.Node(SigmoidFilter(upper_perc=78.0, lower_perc=15.0),
                       name='enh_t1w')
-
-    pha2rads = pe.Node(niu.Function(input_names=['in_file'],
-                                    output_names=['out_file'],
-                                    function=to_rads), name='Phase2rads')
-    # smooth = pe.Node(niu.Function(
-    #     function=median_f, input_names=['in_file', 'in_mask'],
-    #     output_names=['out_file']), name='PhaseDenoise')
-
-    prelude = pe.Node(fsl.PRELUDE(process3d=True), name='PhaseUnwrap')
 
     # Setup ANTS and registration
     def _aslist(tname):
@@ -98,9 +91,10 @@ def bmap_registration(name="Bmap_Registration"):
     regrid_pha = pe.Node(fs.MRIConvert(
         resample_type='cubic', out_datatype='float'), name='Regrid_pha')
 
-    denoise = pe.Node(niu.Function(
-        input_names=['in_file', 'in_mask'], output_names=['out_file'],
-        function=filter_fmap), name='SmoothBmap')
+    # denoise = pe.Node(niu.Function(
+    #     input_names=['in_file', 'in_mask'], output_names=['out_file'],
+    #     function=filter_fmap), name='SmoothBmap')
+
     addnoise = pe.Node(AddNoise(snr=30), name='PhaseAddNoise')
     wrap_pha = pe.Node(niu.Function(
         input_names=['in_file'], output_names=['out_file'],
@@ -112,7 +106,6 @@ def bmap_registration(name="Bmap_Registration"):
     workflow.connect([
         (inputnode,        binarize, [('t1w_brain', 'in_file')]),
         (inputnode,          fslroi, [('mag', 'in_file')]),
-        (inputnode,         pha2RAS, [('pha', 'in_file')]),
         # Connect first nodes
         (fslroi,            mag2RAS, [('roi_file', 'in_file')]),
         (mag2RAS,                n4, [('out_file', 'input_image')]),
@@ -127,13 +120,14 @@ def bmap_registration(name="Bmap_Registration"):
         (binarize,          fmm2t1w, [('binary_file', 'fixed_image_mask')]),
         (bet,               fmm2t1w, [('mask_file', 'moving_image_mask')]),
 
+        # Unwrap
+        (inputnode,          unwrap, [('pha', 'in_file')]),
+        (bet,                unwrap, [('mask_file', 'in_mask')]),
+        (unwrap,            pha2RAS, [('out_file', 'in_file')]),
+
         # Transforms
         (inputnode,       warpPhase, [('t1w_brain', 'reference_image')]),
-        (pha2RAS,          pha2rads, [('out_file', 'in_file')]),
-        (pha2rads,          prelude, [('out_file', 'phase_file')]),
-        (n4,                prelude, [('output_image', 'magnitude_file')]),
-        (prelude,         warpPhase, [
-         ('unwrapped_phase_file', 'input_image')]),
+        (pha2RAS,         warpPhase, [('out_file', 'input_image')]),
         (fmm2t1w,    warpPhase, [
             ('forward_transforms', 'transforms'),
             ('forward_invert_flags', 'invert_transform_flags')]),
@@ -148,13 +142,15 @@ def bmap_registration(name="Bmap_Registration"):
         (inputnode,      regrid_bmg, [('dwi_mask', 'reslice_like')]),
         (warpPhase,      regrid_pha, [('output_image', 'in_file')]),
         (inputnode,      regrid_pha, [('dwi_mask', 'reslice_like')]),
-        (regrid_pha,        denoise, [('out_file', 'in_file')]),
-        (inputnode,         denoise, [('dwi_mask', 'in_mask')]),
-        (denoise,          addnoise, [('out_file', 'in_file')]),
+        (regrid_pha,        addnoise, [('out_file', 'in_file')]),
+        # (regrid_pha,        denoise, [('out_file', 'in_file')]),
+        # (inputnode,         denoise, [('dwi_mask', 'in_mask')]),
+        # (denoise,          addnoise, [('out_file', 'in_file')]),
         (inputnode,        addnoise, [('dwi_mask', 'in_mask')]),
         (addnoise,         wrap_pha, [('out_file', 'in_file')]),
         (regrid_bmg,     munwrapped, [('out_file', 'in1')]),
-        (denoise,        munwrapped, [('out_file', 'in2')]),
+        (regrid_pha,     munwrapped, [('out_file', 'in2')]),
+        # (denoise,        munwrapped, [('out_file', 'in2')]),
         (regrid_bmg,       mwrapped, [('out_file', 'in1')]),
         (wrap_pha,         mwrapped, [('out_file', 'in2')]),
         (regrid_mag,     outputnode, [('out_file', 'magnitude')]),
@@ -163,6 +159,140 @@ def bmap_registration(name="Bmap_Registration"):
         (mwrapped,       outputnode, [('out', 'wrapped')]),
     ])
     return workflow
+
+
+def vsm_fmb(name='VSM_FMB', phase_unwrap=True, fmb_params={}):
+    """
+    Workflow that uses `FUGUE <http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FUGUE>`_
+    to compute the voxel-shift map (VSM) from the corresponding B-fieldmap in
+    EPI data.
+    """
+    wf = pe.Workflow(name=name)
+
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=['in_bmap', 'in_mask', 'echospacing', 'delta_te', 'acc_factor',
+                'enc_dir']), name='inputnode')
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields=['vsm', 'dfm', 'dfm_inv', 'jac', 'jac_inv']), name='outputnode')
+
+    selmag = pe.Node(niu.Select(index=0), name='SelectMag')
+    selpha = pe.Node(niu.Select(index=1), name='SelectPha')
+
+    magmsk = pe.Node(fs.ApplyMask(), name='mask_mag')
+    eff_es = pe.Node(niu.Function(
+        input_names=['echospacing', 'acc_factor'], function=_eff_es_seg,
+        output_names=['echospacing']), name='GetEffEcho')
+    phcache = pe.Node(niu.IdentityInterface(fields=['pha_unwrapped']),
+                      name='PhCache')
+
+    rad2rsec = pe.Node(niu.Function(
+        input_names=['in_file', 'delta_te'], output_names=['out_file'],
+        function=nwu.rads2radsec), name='ToRadSec')
+    pre_fugue = pe.Node(fsl.FUGUE(save_unmasked_fmap=True),
+                        name='PreliminaryFugue')
+    demean = pe.Node(niu.Function(
+        function=nwu.demean_image, input_names=['in_file', 'in_mask'],
+        output_names=['out_file']), name='DemeanFmap')
+    cleanup = nwu.cleanup_edge_pipeline()
+    addvol = pe.Node(niu.Function(
+        function=nwu.add_empty_vol, input_names=['in_file'],
+        output_names=['out_file']), name='AddEmptyVol')
+    vsm = pe.Node(fsl.FUGUE(save_unmasked_shift=True, **fmb_params),
+                  name="Compute_VSM")
+
+    dfm = process_vsm()
+    dfm.inputs.inputnode.scaling = 1.0
+
+    wf.connect([
+        (inputnode,   selmag,     [('in_bmap', 'inlist')]),
+        (inputnode,   selpha,     [('in_bmap', 'inlist')]),
+        (inputnode,   magmsk,     [('in_mask', 'mask_file')]),
+        (inputnode,   eff_es,     [('echospacing', 'echospacing'),
+                                   ('acc_factor', 'acc_factor')]),
+        (selmag,      magmsk,     [('out', 'in_file')]),
+        (phcache,     rad2rsec,   [('pha_unwrapped', 'in_file')]),
+        (inputnode,   rad2rsec,   [('delta_te', 'delta_te')]),
+        (rad2rsec,    pre_fugue,  [('out_file', 'fmap_in_file')]),
+        (inputnode,   pre_fugue,  [('in_mask', 'mask_file')]),
+        (pre_fugue,   demean,     [('fmap_out_file', 'in_file')]),
+        (inputnode,   demean,     [('in_mask', 'in_mask')]),
+        (demean,      cleanup,    [('out_file', 'inputnode.in_file')]),
+        (inputnode,   cleanup,    [('in_mask', 'inputnode.in_mask')]),
+        (cleanup,     addvol,     [('outputnode.out_file', 'in_file')]),
+        (addvol,      vsm,        [('out_file', 'fmap_in_file')]),
+        (eff_es,      vsm,        [('echospacing', 'dwell_time')]),
+        (inputnode,   vsm,        [('in_mask', 'mask_file'),
+                                   ('delta_te', 'asym_se_time')]),
+        (vsm,         outputnode, [('shift_out_file', 'vsm')]),
+        (vsm,         dfm,        [('shift_out_file', 'inputnode.vsm')]),
+        (inputnode,   dfm,        [('in_mask', 'inputnode.reference'),
+                                   ('enc_dir', 'inputnode.enc_dir')]),
+        (dfm,         outputnode, [('outputnode.dfm', 'dfm'),
+                                   ('outputnode.jacobian', 'jac'),
+                                   ('outputnode.inv_dfm', 'dfm_inv'),
+                                   ('outputnode.inv_jacobian', 'jac_inv')])
+    ])
+
+    if phase_unwrap:
+        prelude = pe.Node(fsl.PRELUDE(process3d=True), name='PhaseUnwrap')
+        wf.connect([
+            (selmag,   prelude, [('out', 'magnitude_file')]),
+            (selpha,   prelude, [('out', 'phase_file')]),
+            (magmsk,   prelude, [('out_file', 'mask_file')]),
+            (prelude,  phcache, [('unwrapped_phase_file', 'pha_unwrapped')])
+        ])
+    else:
+        wf.connect(selpha, 'out', phcache, 'pha_unwrapped')
+    return wf
+
+
+def process_vsm(name='VSM2DFM'):
+    """
+    A workflow that computes the inverse and the determinant of jacobians
+    map
+    """
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=['vsm', 'reference', 'scaling', 'enc_dir']), name='inputnode')
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields=['dfm', 'inv_dfm', 'jacobian', 'inv_jacobian']),
+        name='outputnode')
+
+    vsm2dfm = nwu.vsm2warp()
+    invwarp = pe.Node(fsl.InvWarp(relative=True), name='InvWarp')
+    coeffs = pe.Node(fsl.WarpUtils(out_format='spline'),
+                     name='CoeffComp')
+    jacobian = pe.Node(fsl.WarpUtils(write_jacobian=True),
+                       name='JacobianComp')
+    invcoef = pe.Node(fsl.WarpUtils(out_format='spline'),
+                      name='InvCoeffComp')
+    invjac = pe.Node(fsl.WarpUtils(write_jacobian=True),
+                     name='InvJacobianComp')
+    wf = pe.Workflow(name=name)
+    wf.connect([
+        (inputnode, vsm2dfm,    [('reference', 'inputnode.in_ref'),
+                                 ('enc_dir', 'inputnode.enc_dir'),
+                                 ('vsm', 'inputnode.in_vsm'),
+                                 ('scaling', 'inputnode.scaling')]),
+        (vsm2dfm,   invwarp,    [('outputnode.out_warp', 'warp')]),
+        (inputnode, invwarp,    [('reference', 'reference')]),
+        (vsm2dfm,   coeffs,     [('outputnode.out_warp', 'in_file')]),
+        (inputnode, coeffs,     [('reference', 'reference')]),
+        (inputnode, jacobian,   [('reference', 'reference')]),
+        (coeffs,    jacobian,   [('out_file', 'in_file')]),
+        (vsm2dfm,   outputnode, [('outputnode.out_warp', 'dfm')]),
+        (invwarp,   outputnode, [('inverse_warp', 'inv_dfm')]),
+        (jacobian,  outputnode, [('out_jacobian', 'jacobian')]),
+        (invwarp,   invcoef,    [('inverse_warp', 'in_file')]),
+        (inputnode, invcoef,    [('reference', 'reference')]),
+        (inputnode, invjac,     [('reference', 'reference')]),
+        (invcoef,   invjac,     [('out_file', 'in_file')]),
+        (invjac,    outputnode, [('out_jacobian', 'inv_jacobian')])
+    ])
+    return wf
+
+
+def _eff_es_seg(echospacing, acc_factor):
+    return float(echospacing / (1.0 * acc_factor))
 
 
 def median_f(in_file, in_mask, out_file=None):
@@ -517,7 +647,7 @@ def filter_fmap(in_file, in_mask=None, out_file=None):
     result = im.get_data()
     result = median_filter(result, 10)
     result -= np.median(result)
-    result *= (pi / np.percentile(result, 99.99))
+    result *= (pi / np.percentile(result, 99.97))
     nb.Nifti1Image(result, im.get_affine(),
                    im.get_header()).to_filename(out_file)
 

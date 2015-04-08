@@ -119,11 +119,24 @@ public:
 	typedef FunctionalBase< ReferenceImageType >              FunctionalType;
 	typedef typename FunctionalType::Pointer                  FunctionalPointer;
 	typedef std::vector< FunctionalPointer >                  FunctionalList;
-	typedef typename FunctionalType::VectorContourType        VectorContourType;
+	typedef typename FunctionalType::ScalarContourCopyType    ContourCopyType;
+	typedef typename ContourCopyType::Pointer                 ContourCopyPointer;
+	typedef typename FunctionalType::VectorContourCopyType    ShapeCopyType;
+	typedef typename ShapeCopyType::Pointer                   ShapeCopyPointer;
+	typedef typename FunctionalType::Vector2ScalarCopyType    Shape2PriorCopyType;
+	typedef typename Shape2PriorCopyType::Pointer             Shape2PriorCopyPointer;
+
 	typedef typename FunctionalType::ROIType                  ROIType;
-	typedef typename FunctionalType::ContourPointer           ContourPointer;
-	typedef typename FunctionalType::ContourConstPointer      ContourConstPointer;
-	typedef std::vector< ContourConstPointer >                PriorsList;
+	typedef typename FunctionalType::ScalarContourType        PriorsType;
+	typedef typename PriorsType::Pointer                      PriorPointer;
+	typedef typename PriorsType::ConstPointer                 PriorConstPointer;
+	typedef std::vector< PriorConstPointer >                  PriorsList;
+
+	typedef typename FunctionalType::VectorContourType        VectorContourType;
+	typedef typename VectorContourType::Pointer               ShapePointer;
+	typedef typename VectorContourType::ConstPointer          ShapeConstPointer;
+	typedef std::vector< ShapeConstPointer >                  ShapesList;
+
 	typedef typename FunctionalType::ProbabilityMapType       FixedMaskType;
 	typedef typename FixedMaskType::ConstPointer              FixedMaskConstPointer;
 
@@ -171,9 +184,6 @@ public:
 	/** Stop condition internal string type */
 	typedef std::ostringstream                                      StopConditionDescriptionType;
 
-	itkSetInputMacro( FixedImage, ReferenceImageType );
-	itkGetInputMacro( FixedImage, ReferenceImageType );
-
 	itkSetConstObjectMacro( FixedMask, FixedMaskType );
 	itkGetConstObjectMacro( FixedMask, FixedMaskType );
 
@@ -196,6 +206,10 @@ public:
 	itkGetConstMacro( MinGridSize, GridSizeType );
 
 	//itkGetConstMacro( StopConditionDescription, StopConditionDescriptionType );
+
+	void SetReferenceNames(const std::vector< std::string > s) { this->m_ReferenceNames = std::vector<std::string>(s); }
+	void SetPriorsNames(const std::vector< std::string > s) { this->m_PriorsNames = std::vector<std::string>(s); }
+	void SetTargetNames(const std::vector< std::string > s) { this->m_TargetNames = std::vector<std::string>(s); }
 
 	itkSetMacro( OutputPrefix, std::string );
 	itkGetConstMacro( OutputPrefix, std::string );
@@ -227,12 +241,13 @@ public:
 	rstkVectorMethods( Beta, OptCompValueType );
 	rstkVectorMethods( DescriptorRecomputationFreq, NumberValueType );
 
-	// rstkGetObjectListWithLast( Transform, TransformType );
-	rstkGetObjectListWithLast( Optimizer, OptimizerType );
-	rstkGetObjectListWithLast( Functional, FunctionalType );
+	itkGetObjectMacro(Optimizer, OptimizerType);
 
-	void AddShapePrior( const VectorContourType *prior ) { this->m_Priors.push_back( prior ); }
-	void AddShapeTarget( const VectorContourType *surf ) { this->m_Target.push_back( surf ); }
+	// rstkGetObjectListWithLast( Transform, TransformType );
+	// rstkGetObjectListWithLast( Optimizer, OptimizerType );
+	// rstkGetObjectListWithLast( Functional, FunctionalType );
+
+	void AddShapeTarget( const PriorsType *surf ) { this->m_Target.push_back( surf ); }
 
 	// Methods inherited from the Configurable interface
 	virtual void AddOptions( SettingsDesc& opts ) const {};
@@ -243,21 +258,15 @@ public:
 	virtual const DecoratedOutputTransformType * GetOutput() const;
 
 	const FieldType* GetCurrentDisplacementField() const {
-		return static_cast<const FieldType* >(this->m_Optimizers[this->m_CurrentLevel]->GetCurrentDisplacementField());
+		return static_cast<const FieldType* >(this->m_Optimizer->GetCurrentDisplacementField());
 	}
 
 	FieldList GetCoefficientsField();
 
-	PriorsList GetCurrentContours() const {
-		PriorsList contours;
-		for ( size_t i = 0; i<this->m_Priors.size(); i++ ) {
-			contours.push_back( static_cast< const VectorContourType * >(this->m_Functionals[this->m_CurrentLevel]->GetCurrentContours()[i] ) );
-		}
-		return contours;
-	}
+	PriorsList GetCurrentContours() const { return m_CurrentContours; }
 
 	const ROIType* GetCurrentRegion( size_t contour_id ) const {
-		return this->m_Functionals[this->m_CurrentLevel-1]->GetCurrentRegion( contour_id );
+		return this->m_Functional->GetCurrentRegion( contour_id );
 	}
 
 protected:
@@ -302,10 +311,13 @@ private:
 	NumberValueList m_NumberOfIterations;
 
 	// TransformList m_Transforms;
-	FunctionalList m_Functionals;
-	OptimizerList m_Optimizers;
-	PriorsList m_Priors;
+	FunctionalPointer m_Functional;
+	OptimizerPointer m_Optimizer;
+
+	// FunctionalList m_Functionals;
+	// OptimizerList m_Optimizers;
 	PriorsList m_Target;
+	PriorsList m_CurrentContours;
 	SettingsList m_Config;
 	OutputTransformPointer m_OutputTransform;
 	OutputTransformPointer m_OutputInverseTransform;
@@ -325,6 +337,10 @@ private:
 	size_t m_Verbosity;
 
 	size_t m_TransformNumberOfThreads;
+
+	std::vector< std::string > m_ReferenceNames;
+	std::vector< std::string > m_PriorsNames;
+	std::vector< std::string > m_TargetNames;
 };
 
 } // namespace rstk

@@ -4,8 +4,8 @@
 #
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-12 13:20:04
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-16 11:06:07
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-10 12:57:13
 
 import os
 import os.path as op
@@ -70,6 +70,11 @@ class ACWERegInputGroupSpec(ANTSCommandInputSpec):
     step_size = traits.Either(
         float_trait, traits.List(float_trait), default=1.0, argstr='-s %0.5f',
         desc=('update step size in gradient descent optimization'))
+
+    step_auto = traits.Either(
+        bool_trait, traits.List(bool_trait), default=False,
+        argstr='--step-auto',
+        desc=('automatically estimate the appropriate step size'))
 
     ivect_trait = traits.Either(
         int_trait, traits.Tuple(int_trait, int_trait, int_trait))
@@ -150,12 +155,12 @@ pial_lh.vtk pial_rh.vtk -o tests [ -i 30 -u 10 -f 1.0 -s 0.5 -a 0.0 -b 0.0 \
     _grouped_traits = []
     _cmd = 'regseg'
     _num_levels = 0
+    _singleworker = False
 
     def __init__(self, command=None, **inputs):
         """ Combine general and grouped inputs """
         super(ACWEReg, self).__init__(command=command, **inputs)
         self.groups = self.input_group_spec()
-
         general_names = ANTSCommandInputSpec().trait_names()
 
         for name in self.groups.trait_names():
@@ -277,7 +282,7 @@ class ACWEReportInputSpec(BaseInterfaceInputSpec):
     out_file = File('report.pdf', usedefault=True, desc='output report')
 
 
-class ACWEReportOutputSpec(BaseInterfaceInputSpec):
+class ACWEReportOutputSpec(TraitedSpec):
     out_file = File(desc='output report')
 
 

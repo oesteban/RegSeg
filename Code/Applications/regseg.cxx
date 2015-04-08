@@ -153,23 +153,18 @@ int main(int argc, char *argv[]) {
 
 
 
+	if ( fixedImageNames.size() < 1 ) {
+		std::cerr << "Fixed image is not supplied." << std::endl;
+		return EXIT_FAILURE;
+	}
 	// Read target feature(s) -----------------------------------------------------------
 	root["inputs"]["target"]["components"]["size"] = Json::Int (fixedImageNames.size());
 	root["inputs"]["target"]["components"]["type"] = std::string("feature");
 	Json::Value targetjson(Json::arrayValue);
-
-	InputToVectorFilterType::Pointer comb = InputToVectorFilterType::New();
-	for (size_t i = 0; i < fixedImageNames.size(); i++ ) {
-		ImageReader::Pointer r = ImageReader::New();
-		r->SetFileName( fixedImageNames[i] );
-		r->Update();
-		comb->SetInput(i,r->GetOutput());
+	for (size_t i = 0; i < fixedImageNames.size(); i++ )
 		targetjson.append( fixedImageNames[i] );
-	}
 	root["inputs"]["target"]["components"] = targetjson;
-
-    comb->Update();
-	acwereg->SetFixedImage( comb->GetOutput() );
+	acwereg->SetReferenceNames( fixedImageNames );
 
 	// Read target mask -----------------------------------------------------------------
 	if( vm_general.count( "fixed-mask" ) ) {
@@ -182,27 +177,22 @@ int main(int argc, char *argv[]) {
 		acwereg->SetFixedMask( r->GetOutput() );
 	}
 
+	if ( movingSurfaceNames.size() < 1 ) {
+		std::cerr << "No priors were supplied." << std::endl;
+		return EXIT_FAILURE;
+	}
 
 	// Read moving surface(s) -----------------------------------------------------------
 	root["inputs"]["moving"]["components"]["size"] = Json::Int (movingSurfaceNames.size());
 	root["inputs"]["moving"]["components"]["type"] = std::string("surface");
 	Json::Value movingjson(Json::arrayValue);
-
-	for (size_t i = 0; i < movingSurfaceNames.size(); i++) {
-		ReaderType::Pointer polyDataReader = ReaderType::New();
-		polyDataReader->SetFileName( movingSurfaceNames[i] );
-		polyDataReader->Update();
-		acwereg->AddShapePrior( polyDataReader->GetOutput() );
+	for (size_t i = 0; i < movingSurfaceNames.size(); i++)
 		movingjson.append( movingSurfaceNames[i] );
-	}
 	root["inputs"]["moving"]["components"] = movingjson;
+	acwereg->SetPriorsNames( movingSurfaceNames );
 
-	for (size_t i = 0; i < targetSurfaceNames.size(); i++) {
-		ReaderType::Pointer polyDataReader = ReaderType::New();
-		polyDataReader->SetFileName( targetSurfaceNames[i] );
-		polyDataReader->Update();
-		acwereg->AddShapeTarget( polyDataReader->GetOutput() );
-	}
+	// Set target surfaces(s) ---------------------------------------------------------
+	acwereg->SetTargetNames( targetSurfaceNames );
 
 	// Set up registration ------------------------------------------------------------
 	if ( vm_general.count("transform-levels") && cli_nlevels == 0 ) {
@@ -250,15 +240,6 @@ int main(int argc, char *argv[]) {
 	//
 	size_t nlevels = acwereg->GetNumberOfLevels();
 
-	for (size_t i = 0; i < nlevels; i++) {
-		std::stringstream sb;
-		sb << outPrefix << "_coeff_" << i << ".vtu";
-		typename CoeffWriter::Pointer w = CoeffWriter::New();
-		w->SetFileName(sb.str().c_str());
-		w->SetInput(acwereg->GetOptimizerOfLevel(i)->GetTransform()->GetFlatParameters());
-		w->Update();
-	}
-
 	// Displacementfield
 	typename FieldWriter::Pointer fwrite = FieldWriter::New();
 	fwrite->SetFileName( (outPrefix + "_field.nii.gz" ).c_str() );
@@ -270,7 +251,7 @@ int main(int argc, char *argv[]) {
     size_t nCont = conts.size();
     for ( size_t contid = 0; contid < nCont; contid++) {
     	bfs::path contPath(movingSurfaceNames[contid]);
-    	WriterType::Pointer polyDataWriter = WriterType::New();
+    	typename WriterType::Pointer polyDataWriter = WriterType::New();
     	std::stringstream ss;
     	ss << outPrefix << "_swarped_" << contid << ".vtk";
     	polyDataWriter->SetInput( conts[contid] );

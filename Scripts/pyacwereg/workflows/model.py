@@ -3,23 +3,23 @@
 # @Author: oesteban
 # @Date:   2014-10-23 14:43:23
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-01-30 15:16:02
+# @Last Modified time: 2015-03-03 15:33:34
 
 import os
 import os.path as op
 
-import nipype.pipeline.engine as pe             # pipeline engine
+from nipype.pipeline import engine as pe             # pipeline engine
 from nipype.interfaces import io as nio              # Data i/o
 from nipype.interfaces import utility as niu         # utility
 from nipype.interfaces import fsl
 from nipype.interfaces import freesurfer as fs
 from nipype.algorithms.misc import NormalizeProbabilityMapSet as Normalize
 
-from pysdcev.workflows.smri import extract_surface
-from pysdcev.workflows.distortion import bspline_deform
-
+from pyacwereg.workflows.surfaces import extract_surface
 from pyacwereg.interfaces import phantoms as pip
-from pyacwereg.interfaces.warps import FieldBasedWarp, InverseField
+
+from pyacwereg.interfaces.warps import (RandomBSplineDeformation,
+                                        FieldBasedWarp, InverseField)
 from pyacwereg.interfaces.utility import Surf2Vol
 
 
@@ -168,6 +168,67 @@ def generate_phantom(name='PhantomGeneration'):
                                     ('outputnode.out_coeff', 'out_coeff'),
                                     ('outputnode.out_surfs', 'out_surfs')])
     ])
+    return wf
+
+
+def bspline_deform(name='BSplineDistortion', n_tissues=3):
+    """
+    A nipype workflow to produce bspline-based deformation fields
+    """
+    wf = pe.Workflow(name=name)
+    inputnode = pe.Node(niu.IdentityInterface(
+        fields=['in_file', 'in_tpms', 'in_mask', 'in_surfs', 'grid_size']),
+        name='inputnode')
+    outputnode = pe.Node(niu.IdentityInterface(
+        fields=['out_file', 'out_tpms', 'out_surfs', 'out_field',
+                'out_coeff', 'out_mask']),
+        name='outputnode')
+    distort0 = pe.Node(RandomBSplineDeformation(), name='bsfield0')
+    distort1 = pe.Node(RandomBSplineDeformation(), name='bsfield1')
+
+    def _halfsize(inlist):
+        import numpy as np
+        if not isinstance(inlist, list):
+            inlist = [inlist]
+        size = np.array(inlist, dtype=np.float) + 0.5
+
+        return np.round(size * 0.5).astype(np.uint8).tolist()
+
+    wf.connect([
+        (inputnode,   distort0, [('in_surfs', 'in_surfs'),
+                                 (('grid_size', _halfsize), 'grid_size'),
+                                 ('in_mask', 'in_mask')]),
+        (distort0,    distort1, [('out_surfs', 'in_surfs'),
+                                 ('out_mask', 'in_mask')]),
+        (inputnode,   distort1, [('grid_size', 'grid_size')]),
+        (distort1,  outputnode, [('out_surfs', 'out_surfs'),
+                                 ('out_field', 'out_field'),
+                                 ('out_coeff', 'out_coeff'),
+                                 ('out_mask', 'out_mask')])
+    ])
+
+    if n_tissues > 0:
+        merge = pe.Node(niu.Merge(2), name='MergeInputs')
+        split = pe.Node(niu.Split(splits=[2, n_tissues]), name='SplitOutputs')
+        norm_tpms = pe.Node(Normalize(), name='NormWarpedTPMs')
+
+        wf.connect([
+            (inputnode,      merge, [('in_file', 'in1'),
+                                     ('in_tpms', 'in2')]),
+            (merge,       distort0, [('out', 'in_file')]),
+            (distort0,       split, [('out_file', 'inlist')]),
+            (distort0,   norm_tpms, [('out_mask', 'in_mask')]),
+            (split,      norm_tpms, [('out2', 'in_files')]),
+            (split,     outputnode, [('out1', 'out_file')]),
+            (norm_tpms, outputnode, [('out_files', 'out_tpms')])
+        ])
+    else:
+        wf.connect([
+            (inputnode,   distort0, [('in_file', 'in_file')]),
+            (distort0,    distort1, [('out_file', 'in_file')]),
+            (distort1,  outputnode, [('out_file', 'out_file')])
+        ])
+
     return wf
 
 

@@ -2,228 +2,188 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2015-01-15 10:47:12
-# @Last Modified by:   oesteban
-# @Last Modified time: 2015-02-13 16:18:03
+# @Last Modified by:   Oscar Esteban
+# @Last Modified time: 2015-03-17 13:09:47
+
+import os.path as op
 
 
-def hcp_workflow(name='Evaluation_HCP', settings={}, cfg={}):
+def hcp_workflow(name='Evaluation_HCP', settings={},
+                 map_metric=False, compute_fmb=False):
     """
     The pyacwereg evaluation workflow for the human connectome project (HCP)
     """
-    from nipype import config, logging
     from nipype.pipeline import engine as pe
     from nipype.interfaces import utility as niu
     from nipype.interfaces import io as nio
-    from nipype.interfaces import freesurfer as fs
     from nipype.algorithms.mesh import ComputeMeshWarp, WarpPoints
     from nipype.algorithms.misc import AddCSVRow
     from nipype.workflows.dmri.fsl.artifacts import sdc_fmb
 
-    from pyacwereg import misc as acwregmisc
-    from pyacwereg.interfaces.utility import ExportSlices
-    from pyacwereg.workflows.registration import regseg_wf
+    from pyacwereg import data
+    from pyacwereg.interfaces.utility import (ExportSlices, TileSlicesGrid,
+                                              SlicesGridplot)
+    from pyacwereg.workflows.registration import regseg_wf, sdc_t2b
     from pyacwereg.workflows import evaluation as ev
-    from pyacwereg.workflows.fieldmap import bmap_registration
+    from pyacwereg.workflows.preprocess import preprocess
+    from pyacwereg.workflows.fieldmap import process_vsm
+    from pyacwereg.workflows.dti import mrtrix_dti
 
-    from pysdcev.workflows.warpings import process_vsm
-    from pysdcev.workflows.smri import preprocess_t2, preprocess_dwi
-    from pysdcev.workflows.tractography import mrtrix_dti
-    from pysdcev.stages.stage1 import stage1
-
-    config.update_config(cfg)
-    logging.update_logging(config)
-
-    fnames = dict(t1w='T1w_acpc_dc_restore.nii.gz',
-                  t1w_brain='T1w_acpc_dc_restore_brain.nii.gz',
-                  t2w='T2w_acpc_dc_restore.nii.gz',
-                  t2w_brain='T2w_acpc_dc_restore_brain.nii.gz',
-                  t1w_mask='brainmask_fs.nii.gz',
-                  dwi='dwi.nii.gz',
-                  dwi_mask='dwi_brainmask.nii.gz',
-                  bval='bvals',
-                  bvec='bvecs',
-                  aseg='aparc+aseg.nii.gz',
-                  fmap_mag='FM_mag.nii.gz',
-                  fmap_pha='FM_pha.nii.gz',
-                  mr_param='parameters.txt')
+    wf = pe.Workflow(name=name)
 
     inputnode = pe.Node(niu.IdentityInterface(
         fields=['subject_id', 'data_dir']), name='inputnode')
     inputnode.inputs.data_dir = settings['data_dir']
     inputnode.iterables = [('subject_id', settings['subject_id'])]
 
-    ds_tpl_args = {k: [['subject_id', [v]]] for k, v in fnames.iteritems()}
-    ds = pe.Node(nio.DataGrabber(
-        infields=['subject_id'], outfields=ds_tpl_args.keys(),
-        sort_filelist=False, template='*'), name='sMRISource')
-    ds.inputs.field_template = {k: 'subjects/%s/%s'
-                                for k in ds_tpl_args.keys()}
-    ds.inputs.template_args = ds_tpl_args
-
-    bmap_prep = bmap_registration()
-    bmap_prep.inputs.inputnode.factor = 4.0
-
-    poly_msk = pe.Node(fs.Binarize(), name='GenPolyMask')
-    poly_msk.inputs.match = [4, 5, 43, 44, 14, 72, 24, 2, 28, 31,
-                             41, 60, 63, 77, 78, 79, 85, 86, 100, 108, 109,
-                             117, 250, 251, 252, 253, 254, 255,
-                             9, 10, 48, 49, 107, 116,        # thalamus
-                             13, 52, 104, 113,               # pallidum
-                             12, 51, 102, 111, 136, 137,     # putamen
-                             11, 50, 101, 110,               # caudate
-                             26, 58, 103, 112,               # accumbens
-                             17, 53, 106, 115,               # hippocampus
-                             18, 54, 96, 97, 105, 114, 218,
-                             30, 62, 72, 75, 76, 98,
-                             ] + range(1000, 1036) + range(2000, 2036)
-    pmregrid = pe.Node(fs.MRIConvert(out_type='niigz', out_datatype='uchar'),
-                       name='RegridPolymask')
-
-    wf = pe.Workflow(name=name)
-    wf.connect([
-        (inputnode,  ds,        [('subject_id', 'subject_id'),
-                                 ('data_dir', 'base_directory')]),
-        (ds,         poly_msk,  [('aseg', 'in_file')]),
-        (poly_msk,   pmregrid,  [('binary_file', 'in_file')]),
-        (ds,         pmregrid,  [('dwi_mask', 'reslice_like')]),
-        (ds,         bmap_prep, [('t1w_brain', 'inputnode.t1w_brain'),
-                                 ('dwi_mask', 'inputnode.dwi_mask'),
-                                 ('fmap_mag', 'inputnode.mag'),
-                                 ('fmap_pha', 'inputnode.pha')]),
-        (pmregrid,   bmap_prep, [('out_file', 'inputnode.poly_mask')])
-    ])
-
+    # Generate the distorted set, including surfaces
+    pre = preprocess()
     rdti = mrtrix_dti('ReferenceDTI')
-    wf.connect([
-        (ds,    rdti,   [('dwi', 'inputnode.in_dwi'),
-                         ('dwi_mask', 'inputnode.in_mask'),
-                         ('bvec', 'inputnode.in_bvec'),
-                         ('bval', 'inputnode.in_bval')])
-    ])
-
-    st1 = stage1()
-    wf.connect([
-        (ds,        st1, [('t1w', 'inputnode.t1w'),
-                          ('t2w', 'inputnode.t2w'),
-                          ('t1w_brain', 'inputnode.t1w_brain'),
-                          ('t2w_brain', 'inputnode.t2w_brain'),
-                          ('t1w_mask', 'inputnode.t1w_mask'),
-                          ('dwi', 'inputnode.dwi'),
-                          ('dwi', 'inputnode.dwi_brain'),
-                          ('dwi_mask', 'inputnode.dwi_mask'),
-                          ('bvec', 'inputnode.bvec'),
-                          ('bval', 'inputnode.bval'),
-                          ('aseg', 'inputnode.aseg'),
-                          ('aseg', 'inputnode.parcellation'),
-                          ('mr_param', 'inputnode.mr_params')]),
-        (bmap_prep, st1, [
-            ('outputnode.wrapped', 'inputnode.bmap_wrapped'),
-            ('outputnode.unwrapped', 'inputnode.bmap_unwrapped')])
-    ])
-
-    dti = mrtrix_dti()
+    wdti = mrtrix_dti('WarpedDTI')
     mdti = pe.Node(niu.Merge(2), name='MergeDTI')
 
-    regseg = regseg_wf()
-    regseg.inputs.inputnode.images_verbosity = 3
-    regseg.inputs.inputnode.alpha = [0.0, 0.0, 0.0]
-    regseg.inputs.inputnode.beta = [0.0, 0.0, 0.0]
-    regseg.inputs.inputnode.convergence_energy = [True, True, True]
-    regseg.inputs.inputnode.descript_adaptative = [True, True, False]
-    regseg.inputs.inputnode.convergence_value = [1.e-6, 1.e-7, 1.e-8]
-    regseg.inputs.inputnode.convergence_window = [50, 20, 5]
-    regseg.inputs.inputnode.descript_update = [None, None, None]
-    regseg.inputs.inputnode.f_smooth = [2.0, 0.5, None]
-    regseg.inputs.inputnode.grid_spacing = [
-        (40., 100., 40.), (30., 30., 30.), (20., 30., 10.)]
-    regseg.inputs.inputnode.iterations = [350, 250, 100]
-    regseg.inputs.inputnode.scales = [(0.0, 1.0, 0.0)] * 3
-    regseg.inputs.inputnode.step_size = [1.e-5, 5.e-5, 1.e-4]
-
     wf.connect([
-        (st1,    dti,    [('out_dis_set.dwi', 'inputnode.in_dwi'),
-                          ('out_dis_set.dwi_mask', 'inputnode.in_mask')]),
-        (ds,     dti,    [('bvec', 'inputnode.in_bvec'),
-                          ('bval', 'inputnode.in_bval')]),
-        (dti,    mdti,   [('outputnode.fa', 'in1'),
+        (inputnode, pre, [('subject_id', 'inputnode.subject_id'),
+                          ('data_dir', 'inputnode.data_dir')]),
+        (pre,      rdti, [('outputnode.dwi', 'inputnode.in_dwi'),
+                          ('outputnode.dwi_mask', 'inputnode.in_mask'),
+                          ('outputnode.bvec', 'inputnode.in_bvec'),
+                          ('outputnode.bval', 'inputnode.in_bval')]),
+        (pre,      wdti, [('outputnode.warped_dwi', 'inputnode.in_dwi'),
+                          ('outputnode.warped_msk', 'inputnode.in_mask'),
+                          ('outputnode.bvec', 'inputnode.in_bvec'),
+                          ('outputnode.bval', 'inputnode.in_bval')]),
+        (wdti,     mdti, [('outputnode.fa', 'in1'),
                           ('outputnode.md', 'in2')]),
-        (mdti,   regseg, [('out', 'inputnode.in_fixed')]),
-        (st1,    regseg, [('out_dis_set.tpms', 'inputnode.in_tpms'),
-                          ('out_ref_set.surf', 'inputnode.in_surf'),
-                          ('out_dis_set.dwi_mask', 'inputnode.in_mask')])
     ])
 
-    cmethod0 = sdc_fmb()
-    selbmap = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
-                      name='SelectBmap')
-    dfm = process_vsm()
-    dfm.inputs.inputnode.scaling = 1.0
-    dfm.inputs.inputnode.enc_dir = 'y-'
-    wrpsurf = pe.MapNode(WarpPoints(), iterfield=['points'],
-                         name='UnwarpSurfs')
+    regseg = regseg_wf(usemask=True)
+    regseg.inputs.inputnode.options = data.get('regseg_hcp')
+    exprs = pe.Node(ExportSlices(slices=[38, 48, 57, 67, 76, 86],
+                    axis=['axial', 'sagittal']), name='ExportREGSEG')
+    gridrs = pe.Node(SlicesGridplot(
+        label=['regseg', 'regseg'], slices=[38, 48, 57, 67, 76, 86],
+        view=['axial', 'sagittal']), name='GridPlotREGSEG')
+    meshrs = pe.MapNode(ComputeMeshWarp(),
+                        iterfield=['surface1', 'surface2'],
+                        name='REGSEGSurfDistance')
+    csvrs = pe.Node(AddCSVRow(in_file=settings['out_csv']),
+                    name="REGSEGAddRow")
+    csvrs.inputs.method = 'REGSEG'
 
     wf.connect([
-        (st1,       cmethod0, [('out_dis_set.dwi', 'inputnode.in_file'),
-                               ('out_dis_set.dwi_mask', 'inputnode.in_mask')]),
-        (ds,        cmethod0, [('bval', 'inputnode.in_bval'),
-                               ('mr_param', 'inputnode.settings')]),
-        (bmap_prep,  selbmap, [('outputnode.wrapped', 'inlist')]),
-        (selbmap,   cmethod0, [('out1', 'inputnode.bmap_mag'),
-                               ('out2', 'inputnode.bmap_pha')]),
-        (cmethod0,       dfm, [('outputnode.out_vsm', 'inputnode.vsm')]),
-        (st1,            dfm, [
-            ('out_dis_set.dwi_mask', 'inputnode.reference')]),
-        (dfm,        wrpsurf, [('outputnode.dfm', 'warp')]),
-        (st1,        wrpsurf, [('out_ref_set.surf', 'points')])
+        (mdti,      regseg, [('out', 'inputnode.in_fixed')]),
+        (pre,       regseg, [('outputnode.surf', 'inputnode.in_surf'),
+                             ('outputnode.warped_msk', 'inputnode.in_mask')]),
+        (pre,        exprs, [('outputnode.warped_surf', 'sgreen')]),
+        (regseg,     exprs, [('outputnode.out_surf', 'syellow')]),
+        (wdti,       exprs, [('outputnode.fa', 'reference')]),
+        (exprs,     gridrs, [('out_files', 'in_files')]),
+        (pre,       meshrs, [('outputnode.warped_surf', 'surface1')]),
+        (regseg,    meshrs, [('outputnode.out_surf', 'surface2')]),
+        (inputnode,  csvrs, [('subject_id', 'subject_id')]),
+        (meshrs,     csvrs, [('distance', 'surf_dist')])
     ])
 
-    export0 = pe.Node(ExportSlices(all_axis=True), name='ExportREGSEG')
-    export1 = pe.Node(ExportSlices(all_axis=True), name='ExportFMB')
+    if compute_fmb:
+        cmethod0 = sdc_fmb()
+        selbmap = pe.Node(niu.Split(splits=[1, 1], squeeze=True),
+                          name='SelectBmap')
+        dfm = process_vsm()
+        dfm.inputs.inputnode.scaling = 1.0
+        dfm.inputs.inputnode.enc_dir = 'y-'
+        wrpsurf = pe.MapNode(WarpPoints(), iterfield=['points'],
+                             name='UnwarpSurfs')
+        export0 = pe.Node(ExportSlices(slices=[38, 48, 57, 67, 76, 86],
+                          axis=['axial', 'sagittal']), name='ExportFMB')
+        mesh0 = pe.MapNode(ComputeMeshWarp(),
+                           iterfield=['surface1', 'surface2'],
+                           name='FMBSurfDistance')
+        grid0 = pe.Node(SlicesGridplot(
+            label=['FMB']*2, slices=[38, 48, 57, 67, 76, 86],
+            view=['axial', 'sagittal']), name='GridPlotFMB')
+        csv0 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
+                       name="FMBAddRow")
+        csv0.inputs.method = 'FMB'
 
-    wf.connect([
-        (regseg,   export0, [('outputnode.out_surf', 'surfaces0')]),
-        (st1,      export0, [('out_dis_set.surf', 'surfaces1')]),
-        (dti,      export0, [('outputnode.fa', 'reference')]),
-        (wrpsurf,  export1, [('out_points', 'surfaces0')]),
-        (st1,      export1, [('out_dis_set.surf', 'surfaces1')]),
-        (dti,      export1, [('outputnode.fa', 'reference')])
-    ])
+        wf.connect([
+            (pre,       cmethod0, [
+                ('outputnode.warped_dwi', 'inputnode.in_file'),
+                ('outputnode.warped_msk', 'inputnode.in_mask'),
+                ('outputnode.bval', 'inputnode.in_bval'),
+                ('outputnode.mr_param', 'inputnode.settings')]),
+            (pre,        selbmap, [('outputnode.bmap_wrapped', 'inlist')]),
+            (selbmap,   cmethod0, [('out1', 'inputnode.bmap_mag'),
+                                   ('out2', 'inputnode.bmap_pha')]),
+            (cmethod0,       dfm, [('outputnode.out_vsm', 'inputnode.vsm')]),
+            (pre,            dfm, [
+                ('outputnode.warped_msk', 'inputnode.reference')]),
+            (dfm,        wrpsurf, [('outputnode.dfm', 'warp')]),
+            (pre,        wrpsurf, [('outputnode.surf', 'points')])
+            (wrpsurf,    export0, [('out_points', 'syellow')]),
+            (pre,        export0, [('outputnode.warped_surf', 'sgreen')]),
+            (wdti,       export0, [('outputnode.fa', 'reference')]),
+            (export0,      grid0, [('out_files', 'in_files')]),
+            (pre,          mesh0, [('outputnode.warped_surf', 'surface1')]),
+            (wrpsurf,      mesh0, [('out_points', 'surface2')]),
+            (inputnode,     csv0, [('subject_id', 'subject_id')]),
+            (mesh0,         csv0, [('distance', 'surf_dist')])
+        ])
 
-    mesh0 = pe.MapNode(ComputeMeshWarp(),
-                       iterfield=['surface1', 'surface2'],
-                       name='REGSEGSurfDistance')
-    csv0 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
-                   name="REGSEGAddRow")
-    csv0.inputs.method = 'REGSEG'
-
-    wf.connect([
-        (st1,       mesh0, [('out_dis_set.surf', 'surface1')]),
-        (regseg,    mesh0, [('outputnode.out_surf', 'surface2')]),
-        (inputnode,  csv0, [('subject_id', 'subject_id')]),
-        (mesh0,      csv0, [('distance', 'surf_dist')])
-    ])
-
+    cmethod1 = sdc_t2b(num_threads=settings['nthreads'])
+    export1 = pe.Node(ExportSlices(slices=[38, 48, 57, 67, 76, 86],
+                      axis=['axial', 'sagittal']), name='ExportT2B')
+    grid1 = pe.Node(SlicesGridplot(
+        label=['T2B']*2, slices=[38, 48, 57, 67, 76, 86],
+        view=['axial', 'sagittal']), name='GridPlotT2B')
     mesh1 = pe.MapNode(ComputeMeshWarp(),
                        iterfield=['surface1', 'surface2'],
-                       name='FMBSurfDistance')
+                       name='T2BSurfDistance')
     csv1 = pe.Node(AddCSVRow(in_file=settings['out_csv']),
-                   name="FMBAddRow")
-    csv1.inputs.method = 'FMB'
+                   name="T2BAddRow")
+    csv1.inputs.method = 'T2B'
 
     wf.connect([
-        (st1,       mesh1, [('out_dis_set.surf', 'surface1')]),
-        (wrpsurf,   mesh1, [('out_points', 'surface2')]),
-        (inputnode,  csv1, [('subject_id', 'subject_id')]),
-        (mesh1,      csv1, [('distance', 'surf_dist')])
+        (pre,       cmethod1, [
+            ('outputnode.warped_dwi', 'inputnode.in_dwi'),
+            ('outputnode.warped_msk', 'inputnode.dwi_mask'),
+            ('outputnode.t2w_brain', 'inputnode.in_t2w'),
+            ('outputnode.t1w_mask', 'inputnode.t2w_mask'),
+            ('outputnode.surf', 'inputnode.in_surf'),
+            ('outputnode.bval', 'inputnode.in_bval'),
+            ('outputnode.mr_param', 'inputnode.in_param')]),
+        (cmethod1,   export1, [('outputnode.out_surf', 'syellow')]),
+        (pre,        export1, [('outputnode.warped_surf', 'sgreen')]),
+        (wdti,       export1, [('outputnode.fa', 'reference')]),
+        (export1,      grid1, [('out_files', 'in_files')]),
+        (pre,          mesh1, [('outputnode.warped_surf', 'surface1')]),
+        (cmethod1,     mesh1, [('outputnode.out_surf', 'surface2')]),
+        (inputnode,     csv1, [('subject_id', 'subject_id')]),
+        (mesh1,         csv1, [('distance', 'surf_dist')])
     ])
 
-    mapen = ev.map_energy()
+    tile = pe.Node(TileSlicesGrid(), name='TileGridplots')
+    csvtile = pe.Node(AddCSVRow(
+        in_file=op.join(op.dirname(settings['out_csv']), 'tiles.csv')),
+        name="TileAddRow")
+
     wf.connect([
-        (inputnode, mapen, [('subject_id', 'inputnode.subject_id')]),
-        (regseg,    mapen, [('outputnode.out_enh', 'inputnode.reference'),
-                            ('outputnode.reg_msk', 'inputnode.in_mask')]),
-        (st1,       mapen, [('out_dis_set.surf', 'inputnode.surfaces0'),
-                            ('out_ref_set.surf', 'inputnode.surfaces1')])
+        (inputnode,     tile, [('subject_id', 'out_file')]),
+        (gridrs,        tile, [('out_file', 'in_reference')]),
+        (grid1,         tile, [('out_file', 'in_competing')]),
+        (tile,       csvtile, [('out_file', 'names')])
     ])
+
+    if map_metric:
+        out_csv = op.abspath(op.join(name, 'energiesmapping.csv'))
+        mapen = ev.map_energy(out_csv=out_csv)
+        wf.connect([
+            (inputnode, mapen, [('subject_id', 'inputnode.subject_id')]),
+            (regseg,    mapen, [('outputnode.out_enh', 'inputnode.reference'),
+                                ('outputnode.reg_msk', 'inputnode.in_mask')]),
+            (pre,       mapen, [
+                ('outputnode.warped_surf', 'inputnode.surfaces0'),
+                ('outputnode.surf', 'inputnode.surfaces1')])
+        ])
 
     return wf
