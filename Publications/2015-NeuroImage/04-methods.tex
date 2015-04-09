@@ -173,8 +173,7 @@ Let us assume that anisotropy is aligned with the imaging axes to simplify
 Then, the data and regularization terms are split and discretized to compute their
   derivatives.
 The computation of the explicit shape gradients at each $\vec{v}_i'$ is described in \autoref{fig:method}.
-The intermediate steps to get to \eqref{eq:final_gradient} from \eqref{eq:gradient_descent} are
-  detailed in the \suppl{equations SM6-SM12}:
+Then, \eqref{eq:gradient_descent} can be reformulated as (see \suppl{equations SM6-SM12}):
 
   \begin{align}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
@@ -225,7 +224,7 @@ A set of four binary objects (called ``box'', ``ball'', ``L'',
   and ``gyrus'') are generated combining binarization of
   analytical shapes and mathematical morphology.
 The reference surfaces $\gammaset_R$ are extracted from the binary shapes
-  using \emph{FreeSurfer} tools.
+  using \emph{FreeSurfer} tools \citep{fischl_freesurfer_2012}.
 The ground-truth distortion is generated with a chain of two displacement 
   fields supported by grids of B-Spline basis functions.
 The coefficients of the basis functions are generated randomly for
@@ -244,7 +243,7 @@ Therefore, the control points are separated 25.25mm ($u_d\leq$ 10.10mm).
 Once the ground-truth deformation is generated, the original surfaces
   are warped interpolating the displacements field at each vertex.
 The warped surfaces $\gammaset_\text{true}$ are binarized to generate tissue fractions
-  in low (\isores[mm]{2.0}) and high (\isores[mm]{1.0}).
+  in low (\isores[mm]{2.0}) and high (\isores[mm]{1.0}) resolution.
 Using a \gls*{mr} simulator \citep{caruyer_phantomas_2014}, we synthesize
   \gls*{t1} (TE/TR= 10/1500ms) and \gls*{t2} images (TE/TR= 90/5000ms)
   corresponding to each phantom type, with two resolutions each
@@ -324,14 +323,14 @@ On top and right margins the marginal distributions of $\Omega_i$ are also plott
 Based on our experience \citep{esteban_brain_2012} and previous studies \citep{ennis_orthogonal_2006},
   we define the moving image as a stack of the \gls*{fa} and \gls*{adc} maps derived
   from \gls*{dmri} data.
-After evaluating several alternative models, we empirically defined the partition \omegaset{} 
-  of the reference image $R$ as follows:
-  1) $\Omega_{Tha}$ including the thalamus;
-  2) $\Omega_{VdGM}$ including the ventricular system and deep \gls*{gm} structures;
-  3) $\Omega_{WM}$ including the cerebral \gls*{wm};
-  4) $\Omega_{bst}$ including the brain stem and cerebellar \gls*{wm};
-	5) $\Omega_{cbGM}$ including the cerebellar \gls*{gm}; and
-	6) $\Omega_{GM}$ including the cortical \gls*{gm}.
+After evaluating several alternative models, we empirically defined a partition \omegaset{}
+  into the following six regions:
+  1) the thalamus ($\Omega_{Tha}$);
+  2) the ventricular system and deep \gls*{gm} structures ($\Omega_{VdGM}$);
+  3) the cerebral \gls*{wm} ($\Omega_{WM}$);
+  4) the brain stem and cerebellar \gls*{wm} ($\Omega_{bst}$);
+	5) the cerebellar \gls*{gm} ($\Omega_{cbGM}$); and
+	6) the cortical \gls*{gm} ($\Omega_{GM}$).
 Using tools of \emph{FreeSurfer}, and the appropriate selections of labels in the 
   \emph{aparc} segmentation released with the \gls*{hcp} data, the $\gammaset_R$ set of
   reference surfaces is extracted.
