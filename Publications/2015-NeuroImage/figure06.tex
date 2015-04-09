@@ -1,0 +1,25 @@
+% -*- root: 00-main.tex -*-
+% @Author: Oscar Esteban
+% @Date:   2015-04-09 14:39:30
+% @Last Modified by:   Oscar Esteban
+% @Last Modified time: 2015-04-09 15:54:48
+
+\documentclass[tikz]{standalone}
+
+\thispagestyle{empty}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+
+\usepackage[T1]{fontenc}
+\usepackage{charter}
+
+\begin{document}
+  \begin{tikzpicture}
+    \node[inner sep=15pt, draw=black!40](fig05a) at (0,12.0)
+      {\hspace*{20pt}\includegraphics[width=21cm]{figure06A}};
+    \node[inner sep=15pt, draw=black!40](fig05b) at (0,0)
+      {\hspace*{20pt}\includegraphics[width=21cm]{figure06B}};
+    \node[circle, text=black!75, inner sep=0] at (-10.65,18.6) {\Huge \textbf{A}};
+    \node[circle, text=black!75, inner sep=0] at (-10.65,3.5) {\Huge \textbf{B}};
+  \end{tikzpicture}
+\end{document}
