@@ -10,7 +10,7 @@ We proved that active contours without edges can be used to successfully drive a
   deformation supported by B-Spline basis functions using digital phantoms.
 We randomly deformed 4 different phantom models mimicking three homogeneous regions,
   and use them to simulate \gls*{t1} and \gls*{t2} images at two resolution levels.
-After registration with \emph{regseg} we measured the Hausdorff distance between the
+After registration with \regseg{} we measured the Hausdorff distance between the
   projected contours using the ground-truth warping and our estimation.
 We concluded that errors are significantly lower than voxel resolution.
 We also assessed the 95\% \gls*{ci}, yielding an aggregate interval of
@@ -20,7 +20,7 @@ Therefore, we also conclude that the error is bounded above by the half of the
   voxel spacing.
 
 \paragraph*{Application on real data}
-We designed \emph{regseg} as a method to segment \gls*{dmri} data exploiting the
+We designed \regseg{} as a method to segment \gls*{dmri} data exploiting the
   anatomical information extracted in the corresponding \gls*{t1} image of the subject.
 Applications of whole-brain tractography \citep{smith_tractbased_2006,craddock_imaging_2013}
   usually solve the problem in a two-step approach.
@@ -33,29 +33,29 @@ Second, the segmentation is projected from a reference \gls*{t1} image using lin
   acquisition over the minimal protocol including \gls*{t1} and \gls*{dmri} images only.
 This situation is commonly found in historical datasets.
 
-We evaluated \emph{regseg} in a real environment, using the experimental framework presented
+We evaluated \regseg{} in a real environment, using the experimental framework presented
   in \autoref{fig:evworkflows}.
-We processed 16 subjects from the \gls*{hcp} database with both \emph{regseg}
+We processed 16 subjects from the \gls*{hcp} database with both \regseg{}
   and an in-house replication of the \gls*{t2b} correction method.
 \emph{Regseg} showed very high accuracy, with an aggregate 95\% \gls*{ci} of 0.56-0.66 [mm],
   bellow the pixel size of 1.25mm.
-The misregistration error remaining after \emph{regseg} was significantly lower ($p < 0.01$) than the
+The misregistration error remaining after \regseg{} was significantly lower ($p < 0.01$) than the
   error corresponding to the \gls*{t2b} correction, using Kruskal-Wallis H-tests
   (\autoref{tab:results_real}).
 Visual inspection of all the results (\suppl{section S5}) and the violin plots included in
-  \autoref{fig:results_real} confirmed that \emph{regseg} overperformed the \gls*{t2b} method
+  \autoref{fig:results_real} confirmed that \regseg{} overperformed the \gls*{t2b} method
   in our settings.
 Even though we carefully configured the \gls*{t2b} method by using the same algorithm and
   same settings of a widely used software, cross-comparison experiments are prone to
   the so-called \emph{instrumentation bias} \citep{tustison_instrumentation_2013}.
-Therefore, these results do not prove that the \emph{regseg} software \emph{is better than} the
+Therefore, these results do not prove that the \regseg{} software \emph{is better than} the
   \gls*{t2b} method.
-The results reported let us propose \emph{regseg} as a solid option in the application field.
+The results reported let us propose \regseg{} as a solid option in the application field.
 Additionally, the \gls*{t2b} may introduce an additional (and small) error in the necessary
   registration of \gls*{t2} to \gls*{t1} space.
 
 % \paragraph*{Prospects}
 % First extensions of this work will study more appropriate features to build the energy functional
-%   on, enabling to perform \emph{regseg} directly on the raw \gls*{dmri} data.
+%   on, enabling to perform \regseg{} directly on the raw \gls*{dmri} data.
 % A second outlook covers incorporating knowledge about the distortion by initializing our method
 %   with the theory-based displacement field that can be estimated with fieldmaps.

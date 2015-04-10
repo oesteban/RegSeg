@@ -96,18 +96,18 @@ Finally, \cite{gorthi_active_2011} extended the existing methodologies using a m
 The hypothesis under this research is that the registration and segmentation
   problems in \gls*{dmri} can be solved simultaneously, increasing the geometrical
   accuracy of the process.
-We propose a tool called \emph{regseg} to exploit the prior information of shapes
+We propose a tool called \regseg{} to exploit the prior information of shapes
   extracted on \gls*{t1} images to register the anatomical reference
   to \gls*{dmri} space, implicitly segmenting these data.
 The approach uses active contours without edges \citep{chan_active_2001} that evolve driving a
   free-form deformation field of B-Spline basis functions.
 Optimization is performed using a descent strategy of explicit shape-gradients
   \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
-Hence, unlike the most of presented methods, \emph{regseg} does not implement levelsets.
+Hence, unlike the most of presented methods, \regseg{} does not implement levelsets.
 Since the nonlinear distortion is aligned with one of the imaging axis (see 
-  \autoref{sec:human_connectome}), \emph{regseg} includes an anisotropic regularizer of
+  \autoref{sec:human_connectome}), \regseg{} includes an anisotropic regularizer of
   the displacements field proposed by \cite{nagel_investigation_1986}.
-Finally, we evaluate \emph{regseg} using an extension of our instrumentation framework
+Finally, we evaluate \regseg{} using an extension of our instrumentation framework
   \citep{esteban_simulationbased_2014} that simulates known and realistic distortions
   on \gls*{dmri} data.
 The evaluation includes a comparison to the \gls*{t2b} correction by integrating in the framework

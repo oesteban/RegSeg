@@ -12,18 +12,18 @@ A descent optimization strategy is guided by shape gradients computed on the cur
   of the target image.
 \emph{Regseg} uses active contours without edges, and hence looks for
   homogeneous regions within the image.
-We tested \emph{regseg} on digital phantoms simulating \gls*{t1} and \gls*{t2} \gls*{mri},
+We tested \regseg{} on digital phantoms simulating \gls*{t1} and \gls*{t2} \gls*{mri},
 	warped with smooth random deformations.
 The resulting misregistration of the contours was significantly lower than the image resolution
   of the phantoms.
 
-We propose \emph{regseg} to simultaneously segment \gls*{dmri} data and register them to
+We propose \regseg{} to simultaneously segment \gls*{dmri} data and register them to
   their corresponding \gls*{t1} image of the same subject.
-Visual assessment of \emph{regseg} and cross-comparison with a widely-used technique demonstrated 
+Visual assessment of \regseg{} and cross-comparison with a widely-used technique demonstrated 
   its accuracy.
-Moreover, \emph{regseg} does not require additional images to the minimal acquisition protocol
+Moreover, \regseg{} does not require additional images to the minimal acquisition protocol
   that includes only \gls*{t1} and \gls*{dmri}.
-Beyond the proposed application in \gls*{dmri} data, other potential uses of \emph{regseg} are
+Beyond the proposed application in \gls*{dmri} data, other potential uses of \regseg{} are
   atlas-based segmentation and tracking objects in time-series.
 
 

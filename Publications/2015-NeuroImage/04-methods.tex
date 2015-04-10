@@ -193,7 +193,7 @@ Finally, to descend this gradient we establish a semi-implicit Euler scheme (see
 
 \paragraph*{Implementation details, settings and convergence}
 \label{sec:conv_report}
-The \emph{regseg} tool includes a multiresolution strategy on the free-form deformation field.
+The \regseg{} tool includes a multiresolution strategy on the free-form deformation field.
 Registration pyramids are created by setting the spacing between control points of the B-Spline basis
   functions for each level of the multiresolution.
 This implementation detail, along with other features (as the sparse matrix approach
@@ -203,22 +203,22 @@ This implementation detail, along with other features (as the sparse matrix appr
 The actual choices of parameter settings are publicly distributed with the source code of the experiments.
 These final settings were manually obtained based on the feedback of post-registration convergence
   reports (as the one found in the \suppl{section S1.3}).
-We release \emph{regseg} along with the tool for generating the convergence report.
+We release \regseg{} along with the tool for generating the convergence report.
 
 \subsection{Evaluation protocol}\label{sec:evaluation_protocol}
-In order to assess the performance of \emph{regseg}, we defined a general
+In order to assess the performance of \regseg{}, we defined a general
   evaluation protocol:
 1) Extraction of the set of undistorted surfaces $\gammaset_R$;
 2) computation of a ground-truth field of displacements $U_{true}$ that is applied to
   generate warped images ($M$) to segment;
-3) execution of \emph{regseg} with $\gammaset_R$ and the warped data as inputs; and
+3) execution of \regseg{} with $\gammaset_R$ and the warped data as inputs; and
 4) visual assessment and computation of error metrics.
 How this protocol is adapted to the simulated phantoms and real data is covered in the
   following sections.
 
 \subsection{Simulated phantoms}\label{sec:digital_phantoms}
 The workflow to simulate the digital phantoms and assess
-  \emph{regseg} on them is presented in \autoref{fig:evphantoms}.
+  \regseg{} on them is presented in \autoref{fig:evphantoms}.
 A set of four binary objects (called ``box'', ``ball'', ``L'',
   and ``gyrus'') are generated combining binarization of
   analytical shapes and mathematical morphology.
@@ -248,7 +248,7 @@ Using a \gls*{mr} simulator \citep{caruyer_phantomas_2014}, we synthesize
   corresponding to each phantom type, with two resolutions each
   (1.0mm and 2.0mm isotropic).
 The field of view at both resolutions is \isores[mm]{100}.
-Then, \emph{regseg} is applied to map $\gammaset_R$ into the warped phantoms to
+Then, \regseg{} is applied to map $\gammaset_R$ into the warped phantoms to
   obtain the registered surfaces ($\hat{\gammaset}_{test}$).
 % Simulations were corrupted with rician noise for a \gls*{snr} of 300.0.
 To quantify the misregistration error, we compute the Hausdorff distance between
@@ -256,7 +256,7 @@ To quantify the misregistration error, we compute the Hausdorff distance between
 
 \begin{figure*}
 \includegraphics[width=\linewidth]{figure02}
-\caption{The evaluation of \emph{regseg} on phantom data is performed with the presented instrumental workflow:
+\caption{The evaluation of \regseg{} on phantom data is performed with the presented instrumental workflow:
   1) The reference surfaces $\gammaset_R$ are triangularized meshes extracted from the four binary shapes (``box'', ``ball'', ``L'', ``gyrus'');
   2) A ground-truth displacement field is generated as described in \autoref{sec:digital_phantoms}, and applied to warp
       $\gammaset_R$, obtaining $\gammaset_\text{true}$;
@@ -264,8 +264,8 @@ To quantify the misregistration error, we compute the Hausdorff distance between
      of \isores[mm]{2.0} and \isores[mm]{1.0}, producing sets of tissue fractions maps;
   4) The tissue fractions are fed to an \acrfull*{mr} simulator, generating \acrfull*{t1} and \acrfull*{t2} -like images at the
      two available resolutions;
-  5) The \emph{regseg} is run, using the warped test images as moving multispectral-image and $\gammaset_R$ as shape-priors;
-  6) Assessment of the agreement between the surfaces fitted with \emph{regseg} ($\hat{\gammaset}_{test}$) and $\gammaset_\text{true}$
+  5) The \regseg{} is run, using the warped test images as moving multispectral-image and $\gammaset_R$ as shape-priors;
+  6) Assessment of the agreement between the surfaces fitted with \regseg{} ($\hat{\gammaset}_{test}$) and $\gammaset_\text{true}$
      with automatically generated visual reports and computing the Hausdorff distance between corresponding surfaces.}\label{fig:evphantoms}
 \end{figure*}
 
@@ -286,7 +286,7 @@ It extends our previous work \citep{esteban_simulationbased_2014} evaluating dis
   3) The \gls*{dmri} data are warped using $U_{true}$ to reproduce the effects of real
     susceptibility-derived distortions.
   Target diffusion scalars (\gls*{fa} and \gls*{adc}) are computed on the distorted data and
-    stacked to feed the multivariate input required by \emph{regseg}.
+    stacked to feed the multivariate input required by \regseg{}.
   4) the method is run, obtaining a $U_{test} = \hat{U}_{true}$, the estimation of
     the ground-truth deformation.
   5) Results are visually and quantitatively evaluated.}\label{fig:evworkflows}
@@ -294,7 +294,7 @@ It extends our previous work \citep{esteban_simulationbased_2014} evaluating dis
 
 
 \paragraph*{Data}
-For the evaluation of \emph{regseg} on real \gls*{dmri} data of human brains,
+For the evaluation of \regseg{} on real \gls*{dmri} data of human brains,
   we collected 16 subjects from the \gls*{hcp} database.
 The original acquisitions are released within ``unprocessed'' packages, and
   the ``minimally preprocessed'' are corrected for artifacts, brain-extracted
