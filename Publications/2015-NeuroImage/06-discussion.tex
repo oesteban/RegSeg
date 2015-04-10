@@ -29,7 +29,7 @@ First, images are corrected for nonlinear distortions using auxiliary acquisitio
   etc.
 Second, the segmentation is projected from a reference \gls*{t1} image using linear
   registration \citep{greve_accurate_2009}.
-\emph{Regseg} solves this joint problem in one single step, and it does not require any additional
+\Regseg{} solves this joint problem in one single step, and it does not require any additional
   acquisition over the minimal protocol including \gls*{t1} and \gls*{dmri} images only.
 This situation is commonly found in historical datasets.
 
@@ -37,7 +37,7 @@ We evaluated \regseg{} in a real environment, using the experimental framework p
   in \autoref{fig:evworkflows}.
 We processed 16 subjects from the \gls*{hcp} database with both \regseg{}
   and an in-house replication of the \gls*{t2b} correction method.
-\emph{Regseg} showed very high accuracy, with an aggregate 95\% \gls*{ci} of 0.56-0.66 [mm],
+\Regseg{} showed very high accuracy, with an aggregate 95\% \gls*{ci} of 0.56-0.66 [mm],
   bellow the pixel size of 1.25mm.
 The misregistration error remaining after \regseg{} was significantly lower ($p < 0.01$) than the
   error corresponding to the \gls*{t2b} correction, using Kruskal-Wallis H-tests

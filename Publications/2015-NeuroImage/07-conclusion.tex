@@ -2,7 +2,7 @@
 \section*{Conclusion}
 \label{sec:conclusion}
 
-\emph{Regseg} is a variational framework to simultaneously segment and
+\Regseg{} is a variational framework to simultaneously segment and
   register 3D \gls*{dmri} data of the human brain, using within-subject
   anatomical information as reference.
 The registration method segments the target multivariate image in several competing regions
@@ -10,7 +10,7 @@ The registration method segments the target multivariate image in several compet
 The surfaces are active, and evolve on a free-form deformation field supported by B-Splines.
 A descent optimization strategy is guided by shape gradients computed on the current partition
   of the target image.
-\emph{Regseg} uses active contours without edges, and hence looks for
+\Regseg{} uses active contours without edges, and hence looks for
   homogeneous regions within the image.
 We tested \regseg{} on digital phantoms simulating \gls*{t1} and \gls*{t2} \gls*{mri},
 	warped with smooth random deformations.
@@ -33,7 +33,7 @@ We considered the reproducibility of our results a design requirement.
 Therefore, we used real data fetched from a publicly available repository
   (the Human Connectome Project \citep{essen_human_2012}) and all the software
   involved in this paper is also publicly released.
-\emph{Regseg} is implemented on top of ITK-4.6 (Insight Registration and 
+\Regseg{} is implemented on top of ITK-4.6 (Insight Registration and 
   Segmentation Toolkit, \url{http://www.itk.org}).
 The evaluation instruments (\autoref{fig:evworkflows}), are implemented using
   \emph{nipype} \citep{gorgolewski_nipype_2011} to assess their reproducibility.
