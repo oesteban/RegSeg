@@ -1,5 +1,9 @@
 % -*- root: 00-main.tex -*-
 \section{Introduction}\label{sec:introduction}
+% Current applications to investigate the fiber pathways of the brain
+%   using \gls*{dmri}, such as tract-based spatial statistics \citep{smith_tractbased_2006}
+%   and connectome extraction \citep{craddock_imaging_2013}, critically rely on the fusion of 
+%   prior anatomical information extracted from a \gls*{t1} image of the same subject.
 The accurate delineation of \gls*{wm} in \gls*{dmri} and the fusion of prior
   anatomical information extracted from a \gls*{t1} image of the same subject
   are crucial in a range of applications based on tractography, such as
@@ -7,9 +11,10 @@ The accurate delineation of \gls*{wm} in \gls*{dmri} and the fusion of prior
   tract-based spatial statistics \citep{smith_tractbased_2006}.
 However, segmenting \gls*{dmri} data precisely, and coregistration of anatomical
   images are difficult due to several limitations.
-First, \gls{dmri} images suffer from partial voluming of several tissues in 
-  voxels located at their interfaces due to the low resolution of images
-  (generally around \isores[mm]{2.2}).
+First, \gls{dmri} images present a resolution much higher than the imaged
+  microstructural features \citep{basser_microstructural_1996}.
+Therefore, voxels located at structural discontinuities are affected by partial
+  voluming of sources of signal.
 Second, \gls*{dmri} schemes probe the diffusion process within the brain in 
   many angles called \glspl*{dwi}, completed by one or more baseline (\emph{b0}) 
   volumes without directional gradients.
@@ -31,9 +36,9 @@ Early attempts to delineate the \gls*{wm} proceeded by thresholding the
   \gls*{fa}\footnote{the \gls*{fa} is a scalar parameter of diffusion derived from
   the \gls*{dmri} data.} map.
 However, the mask and subsequent analyses substantially depend on the threshold set
-  \citep{taoka_fractional_2009} owing to the large variability of \gls*{fa} and its
-  decay with the increase of incoherence between fibers.
-\cite{zhukov_level_2003} proposed active contours with edges represented
+  \citep{taoka_fractional_2009}.
+To overcome the unreliability of of \gls*{fa} thresholding,
+  \cite{zhukov_level_2003} proposed active contours with edges represented
   by levelsets, evolving on directionally invariant scalar maps.
 \cite{rousson_level_2004} successfully segmented the corpus callosum with
   region-based levelsets on the eigenvalues of tensors fitted on the
@@ -73,8 +78,9 @@ Further registration of \gls*{t1} and \gls*{t2} images was still required to map
 Therefore, given the described circumstances, a method performing simultaneously
   segmentation in native \gls*{dmri} space and registration of the corresponding \gls*{t1} image
   to the \gls*{dmri} data could provide the optimal solution.
-Previously, joint segmentation and registration has been successfully applied to
-  longitudinal object tracking \citep{paragios_level_2003} and atlas-based
+As far as we know, such strategy has never been proposed for the application at hand.
+Previously, joint segmentation and registration has been successfully applied to other problems.
+For instance, longitudinal object tracking \citep{paragios_level_2003} and atlas-based
   segmentation \citep{gorthi_active_2011}.
 The most extended approach is integrating active contours in image registration 
   methods.
