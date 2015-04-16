@@ -264,7 +264,7 @@ To quantify the misregistration error, we compute the Hausdorff distance between
      of \isores[mm]{2.0} and \isores[mm]{1.0}, producing sets of tissue fractions maps;
   4) The tissue fractions are fed to an \acrfull*{mr} simulator, generating \acrfull*{t1} and \acrfull*{t2} -like images at the
      two available resolutions;
-  5) The \regseg{} is run, using the warped test images as multispectral moving-image and $\gammaset_R$ as shape-priors;
+  5) The \regseg{} tool is run, using the warped test images as multispectral moving-image and $\gammaset_R$ as shape-priors;
   6) Assessment of the agreement between the surfaces fitted with \regseg{} ($\hat{\gammaset}_{test}$) and $\gammaset_\text{true}$
      with automatically generated visual reports and computing the Hausdorff distance between corresponding surfaces.}\label{fig:evphantoms}
 \end{figure*}
@@ -279,7 +279,7 @@ It extends our previous work \citep{esteban_simulationbased_2014} evaluating dis
 
 \begin{figure*}
 \includegraphics[width=\linewidth]{figure03}
-\caption{Experimental workflow real data from the \acrfull*{hcp}.
+\caption{Experimental workflow to process real data from the \acrfull*{hcp}.
   1) $\gammaset_R$ are extracted from the anatomical reference (\gls*{t1} image).
   2) To operate as ground truth, we generate a plausible-synthetic distortion $U_{true}$
     from the fieldmap using \eqref{eq:fieldmap}.

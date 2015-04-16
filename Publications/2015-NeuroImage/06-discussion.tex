@@ -8,9 +8,10 @@ The hypothesis underpinning our research was that image registration can be reli
   from an atlas, or extracted from other image (i.e. a different time step).
 We proved that active contours without edges can be used to successfully drive a
   deformation supported by B-Spline basis functions using digital phantoms.
-We randomly deformed four different phantom models mimicking three homogeneous regions,
-  and use them to simulate \gls*{t1} and \gls*{t2} images at two resolution levels.
-After registration with \regseg{} we measured the Hausdorff distance between the
+We randomly deformed four different phantom models mimicking three homogeneous regions
+  (\gls*{wm}, \gls*{gm}, and \acrlong*{csf}), and use them to simulate \gls*{t1} and \gls*{t2}
+  images at two resolution levels.
+After registration with \regseg{}, we measured the Hausdorff distance between the
   projected contours using the ground-truth warping and our estimation.
 We concluded that errors are significantly lower than voxel resolution.
 We also assessed the 95\% \gls*{ci}, yielding an aggregate interval of

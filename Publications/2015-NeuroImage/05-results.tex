@@ -12,10 +12,10 @@
     ``gyrus'' (top-left), ``L'' (top-right), ``ball'' (bottom-left),
     and ``box'' at (bottom-right).
   In yellow color, the recovered contours after registration are represented.
-  Our method showed high accuracy, as it demonstrates the almost exact location of the registered
+  \Regseg showed high accuracy, as it demonstrates the almost exact location of the registered
     contours with respect to their ground truth position depicted in green.
   Partial volume effect turns segmentation of the sulci a challenging problem with voxel-wise
-    clustering methods, but it is successfully segmented with our method.
+    clustering methods, but it is successfully segmented with \regseg{}.
   B. Quantitative evaluation of registration error in terms of average Hausdorff distance of
     surfaces at low (left) and high (right) resolutions, demonstrating that the error is
     consistently below the voxel size.
@@ -73,7 +73,7 @@ Finally, to statistically compare the results, we performed Kruskal-Wallis H-tes
   ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$).
 All the statistical tests evidenced that error distributions obtained with \regseg{} and
   \gls*{t2b} were significantly different, and using the violin plots in box B of
-  \autoref{fig:results_real} we observed that errors are always larger for \gls*{t2b}.
+  \autoref{fig:results_real} we observed that errors were always larger for \gls*{t2b}.
 We also reported the 95\% CIs of the \gls*{swindex} for those surfaces.
 The aggregate CI for \regseg{} was 1.08 - 1.50 [mm], whereas the \gls*{t2b} method
   yielded an aggregate CI of 2.06 - 2.43 [mm].

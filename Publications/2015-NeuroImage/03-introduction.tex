@@ -37,7 +37,7 @@ Early attempts to delineate the \gls*{wm} proceeded by thresholding the
   the \gls*{dmri} data.} map.
 However, the mask and subsequent analyses substantially depend on the threshold set
   \citep{taoka_fractional_2009}.
-To overcome the unreliability of of \gls*{fa} thresholding,
+To overcome the unreliability of \gls*{fa} thresholding,
   \cite{zhukov_level_2003} proposed active contours with edges represented
   by levelsets, evolving on directionally invariant scalar maps.
 \cite{rousson_level_2004} successfully segmented the corpus callosum with
@@ -52,7 +52,7 @@ Other efforts include mixture models on sets of directionally invariant maps
   and volume fraction modeling \citep{kumazawa_improvement_2013}.
  
 To solve the segmentation problem through registration, \cite{saad_new_2009} 
-  used Pearson correlation to perform linear alignment of the \gls*{t1} and 
+  used Pearson correlation to perform a linear alignment of the \gls*{t1} and 
   the \emph{b0}.
 Similarly, an also linear-registration method is \emph{bbregister} \citep{greve_accurate_2009}.
 It uses active contours with edges to look for intensity boundaries in the \emph{b0}
@@ -66,7 +66,7 @@ Since the \emph{b0} image only presents a detectable frontier for the pial surfa
   application.
 This tool has become the standard method for its proven robustness, despite the 
   distortions found in \gls*{dmri} are nonlinear.
-To overcome this issue, \emph{bbregister} excludes from the boundary search those
+To circumvent this issue, \emph{bbregister} excludes from the boundary search those
   regions typically warped by the artifact.
 As the distortion is not accounted for, it must be addressed separately.
 Nonlinear registration has been successfully performed between \gls*{t2} and \emph{b0}
@@ -93,7 +93,7 @@ The most extended approach is integrating active contours in image registration
   the contours to the whole image definition.
 Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
   registration method in 2D using levelsets and a nonlinear elasticity smoother on the
-  displacement vector field, which preserves topology even with very large deformations.
+  displacement vector field, which preserves the topology even with very large deformations.
 Finally, \cite{gorthi_active_2011} extended the existing methodologies using a multiphase
   levelset function for the registration of several active contours, in the application
   of atlas-based segmentation.
