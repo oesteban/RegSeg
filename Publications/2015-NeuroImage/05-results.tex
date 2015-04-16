@@ -68,10 +68,11 @@ In \autoref{fig:results_real}, box A, the visual report for one subject is suppl
 We computed the \gls*{swindex} \eqref{eq:swindex} of every surface after registration,
   for both \regseg{} and the \gls*{t2b} methods.
 Finally, to statistically compare the results, we performed Kruskal-Wallis H-tests
-  (a non-parametric alternative to ANOVA) on the warping indices for three specific 
-  surfaces of interest selected in \autoref{sec:experiments_evaluation}.
+  (a non-parametric alternative to ANOVA) on the warping indices for the three surfaces of 
+  interest selected in \autoref{sec:experiments_evaluation}
+  ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$).
 All the statistical tests evidenced that error distributions obtained with \regseg{} and
-  the \gls*{t2b} were significantly different, and using the violin plots in box B of
+  \gls*{t2b} were significantly different, and using the violin plots in box B of
   \autoref{fig:results_real} we observed that errors are always larger for \gls*{t2b}.
 We also reported the 95\% CIs of the \gls*{swindex} for those surfaces.
 The aggregate CI for \regseg{} was 1.08 - 1.50 [mm], whereas the \gls*{t2b} method
@@ -85,7 +86,7 @@ The results of the statistical tests and the CIs are summarized in \autoref{tab:
 		\footnotesize
 		\tabcolsep=0.08cm
     \begin{tabular}{cccccc}
-    & & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ & Aggregate \\
+    & & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ & Aggreg. \\
     \hline
     \multirow{2}{*}{CI}
        & \regseg{}        & 0.50 - 0.78 & 0.50 - 0.55 & 0.66 - 0.73 & 0.56 - 0.66 \\
@@ -99,9 +100,9 @@ The results of the statistical tests and the CIs are summarized in \autoref{tab:
     \caption{The statistical analysis of results on real data supported that \regseg{} overperformed
     the alternative \acrfull{t2b} method.
     The distribution of errors computed for the surfaces of interest ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$)
-      and the aggregate of all surfaces presented lower 95\% CIs for \regseg{}.
+      and the aggregate of all surfaces (Aggreg. column) presented lower 95\% CIs for \regseg{}.
     CIs reported in this table were computed using bootstrapping with mean as location statistic and 10$^4$ samples.
-    The Kruskal-Wallis H-tests indicated that there is a significant difference between \regseg{} and
+    The Kruskal-Wallis H-tests indicated that there was a significant difference between \regseg{} and
       the \gls*{t2b} method.
     }\label{tab:results_real}
 \end{table}

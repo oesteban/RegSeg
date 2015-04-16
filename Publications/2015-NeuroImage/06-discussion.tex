@@ -4,11 +4,11 @@
 
 \paragraph*{Accuracy tests}
 The hypothesis underpinning our research was that image registration can be reliably performed
-  by searching for homogeneous regions in the target image that correspond to precise contours
+  by searching for homogeneous regions in a multispectral image that correspond to precise contours
   from an atlas, or extracted from other image (i.e. a different time step).
 We proved that active contours without edges can be used to successfully drive a
   deformation supported by B-Spline basis functions using digital phantoms.
-We randomly deformed 4 different phantom models mimicking three homogeneous regions,
+We randomly deformed four different phantom models mimicking three homogeneous regions,
   and use them to simulate \gls*{t1} and \gls*{t2} images at two resolution levels.
 After registration with \regseg{} we measured the Hausdorff distance between the
   projected contours using the ground-truth warping and our estimation.
@@ -16,7 +16,7 @@ We concluded that errors are significantly lower than voxel resolution.
 We also assessed the 95\% \gls*{ci}, yielding an aggregate interval of
   0.64 - 0.66 [mm] in the low resolution phantoms (2.0mm isotropic voxel) and
   0.34 - 0.38 [mm] in the high resolution phantoms (1.0mm isotropic).
-Therefore, we also conclude that the error is bounded above by the half of the
+Therefore, we also concluded that the error was bounded above by the half of the
   voxel spacing.
 
 \paragraph*{Application on real data}
@@ -36,9 +36,9 @@ This situation is commonly found in historical datasets.
 We evaluated \regseg{} in a real environment, using the experimental framework presented
   in \autoref{fig:evworkflows}.
 We processed 16 subjects from the \gls*{hcp} database with both \regseg{}
-  and an in-house replication of the \gls*{t2b} correction method.
+  and an in-house replication of the \acrfull*{t2b} method.
 \Regseg{} showed very high accuracy, with an aggregate 95\% \gls*{ci} of 0.56-0.66 [mm],
-  bellow the pixel size of 1.25mm.
+  below the pixel size of 1.25mm.
 The misregistration error remaining after \regseg{} was significantly lower ($p < 0.01$) than the
   error corresponding to the \gls*{t2b} correction, using Kruskal-Wallis H-tests
   (\autoref{tab:results_real}).
@@ -48,8 +48,7 @@ Visual inspection of all the results (\suppl{section S5}) and the violin plots i
 Even though we carefully configured the \gls*{t2b} method by using the same algorithm and
   same settings of a widely used software, cross-comparison experiments are prone to
   the so-called \emph{instrumentation bias} \citep{tustison_instrumentation_2013}.
-Therefore, these results do not prove that the \regseg{} software \emph{is better than} the
-  \gls*{t2b} method.
+Therefore, these results do not prove that \regseg{} \emph{is better than} \gls*{t2b}.
 The results reported let us propose \regseg{} as a solid option in the application field.
 Additionally, the \gls*{t2b} may introduce an additional (and small) error in the necessary
   registration of \gls*{t2} to \gls*{t1} space.
