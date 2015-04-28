@@ -1,18 +1,18 @@
 % -*- root: 00-main.tex -*-
-Current applications of whole-brain tractography on \acrlong*{dmri} data require highly precise
-  delineations of anatomical structures, usually projected from anatomical \acrlong*{t1} images
-  through registration.
-We propose \regseg{}, a simultaneous segmentation and registration method
+Current applications of whole-brain tractography to \acrlong*{dmri} data require highly precise
+  delineations of anatomical structures, which are usually projected from anatomical \acrlong*{t1} images
+  by registration.
+In this study, we propose \regseg{}, which is a simultaneous segmentation and registration method
   that uses active contours without edges extracted from structural images.
-The contours evolve through a free-form deformation field supported by B-Spline basis
-  optimally mapping the contours onto the data in the target space.
-We tested the functionality of \regseg{} on four digital phantoms warped with known and
-  randomly generated deformations, to conclude that the accuracy achieved is subvoxel.
-We then apply \regseg{} to perform registration/segmentation task on 16 real diffusion MRI
-  datasets from the \acrlong*{hcp}, warped with realistic and nonlinear distortions typically
+The contours evolve through a free-form deformation field supported by the B-spline basis
+  to optimally map the contours onto the data in the target space.
+We tested the functionality of \regseg{} using four digital phantoms warped with known and
+  randomly generated deformations, where subvoxel accuracy was achieved.
+We then applied \regseg{} to a registration/segmentation task using 16 real diffusion MRI
+  datasets from the \acrlong*{hcp}, which were warped by realistic and nonlinear distortions that are typically
   present in these data.
-We compute the misregistration error of the contours estimated by \regseg{} with respect
-  to their theoretical location using the ground-truth, obtaining a 95\% CI of 0.56 - 0.66 (mm)
-  distance between corresponding mesh vertices, below the 1.25mm isotropic resolution of the images.
-We also compared the performance to a widely-used registration tool, to find out
-  that \regseg{} overperformed the alternate method in our settings.
+We computed the misregistration error of the contours estimated by \regseg{} with respect
+  to their theoretical location using the ground truth, thereby obtaining a 95\% CI of 0.56--0.66 mm
+  distance between corresponding mesh vertices, which was below the 1.25 mm isotropic resolution of the images.
+We also compared the performance of our proposed method with a widely used registration tool, which showed 
+  that \regseg{} outperformed this method in our settings.

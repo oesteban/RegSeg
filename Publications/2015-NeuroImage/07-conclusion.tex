@@ -2,40 +2,40 @@
 \section*{Conclusion}
 \label{sec:conclusion}
 
-\Regseg{} is a variational framework to simultaneously segment and
-  register 3D \gls*{dmri} data of the human brain, using within-subject
-  anatomical information as reference.
-The registration method segments the target multivariate image in several competing regions
+\Regseg{} is a variational framework for the simultaneous segmentation and
+  registration of 3D \gls*{dmri} data obtained from the human brain, where within-subject
+  anatomical information is used as a reference.
+The registration method segments the target multivariate image into several competing regions, which are
   defined explicitly by their limiting surfaces.
-The surfaces are active, and evolve on a free-form deformation field supported by B-Spline basis.
+The surfaces are active and they evolve on a free-form deformation field supported by the B-spline basis.
 A descent optimization strategy is guided by shape gradients computed on the current partition
   of the target image.
-\Regseg{} uses active contours without edges, and hence looks for
+\Regseg{} uses active contours without edges and it searches for
   homogeneous regions within the image.
-We tested \regseg{} on digital phantoms simulating \gls*{t1} and \gls*{t2} \gls*{mri},
-	warped with smooth random deformations.
+We tested \regseg{} using digital phantoms by simulating \gls*{t1} and \gls*{t2} \gls*{mri}
+  warped with smooth random deformations.
 The resulting misregistration of the contours was significantly lower than the image resolution
   of the phantoms.
 
-We propose \regseg{} to simultaneously segment \gls*{dmri} data and register them to
-  their corresponding \gls*{t1} image of the same subject.
-Visual assessment of \regseg{} and cross-comparison with a widely-used technique demonstrated 
-  its accuracy.
-Moreover, \regseg{} does not require additional images to the minimal acquisition protocol
-  that includes only \gls*{t1} and \gls*{dmri}.
-Beyond the proposed application in \gls*{dmri} data, other potential uses of \regseg{} are
+We proposed \regseg{} for simultaneously segmenting \gls*{dmri} data and registering them according to
+  their corresponding \gls*{t1} image from the same subject.
+We demonstrated 
+  the accuracy of the proposed method based on visual assessments of the results obtained by \regseg{} and cross-comparisons with a widely used technique.
+Moreover, \regseg{} does not require any images in addition to the minimal acquisition protocol,
+  which only utilizes \gls*{t1} and \gls*{dmri}.
+As well as the proposed application to \gls*{dmri} data, other potential uses of \regseg{} are
   atlas-based segmentation and tracking objects in time-series.
 
 
 \section*{Availability and reproducibility statement}
 \label{sec:availability}
-We considered the reproducibility of our results a design requirement.
-Therefore, we used real data fetched from a publicly available repository
-  (the Human Connectome Project \citep{essen_human_2012}) and all the software
-  involved in this paper is also publicly released.
-\Regseg{} is implemented on top of ITK-4.6 (Insight Registration and 
+We considered the reproducibility of our results as a design requirement.
+Therefore, we used real data obtained from a publicly available repository
+  (the Human Connectome Project \citep{essen_human_2012}) and all of the software
+  utilized in this study is also publicly available.
+\Regseg{} was implemented on top of ITK-4.6 (Insight Registration and 
   Segmentation Toolkit, \url{http://www.itk.org}).
-The evaluation instruments (\autoref{fig:evworkflows}), are implemented using
+The evaluation instruments (\autoref{fig:evworkflows}) were implemented using
   \emph{nipype} \citep{gorgolewski_nipype_2011} to assess their reproducibility.
-All research elements (data, source code, figures, manuscript sources, etc.) in this paper
-  are made publicly available under a unique package \citep{esteban_acweregistration_2015}.
+All of the research elements (data, source code, figures, manuscript sources, etc.) involved in this study
+  are publicly available under a unique package \citep{esteban_acweregistration_2015}. 

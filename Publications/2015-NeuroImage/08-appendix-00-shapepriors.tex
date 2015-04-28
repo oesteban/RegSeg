@@ -13,18 +13,16 @@ If $\mathbf{M}$ is a $n \times n$ diagonal matrix such that $\mathbf{M} = \vec{m
 \begin{equation*}
 \vec{v}^T \mathbf{M} \vec{v} = \vec{m} \cdot (\vec{v}^T \mathbf{I}_n \vec{v}) = \vec{m} \cdot \vec{v}^{\circ2},
 \end{equation*}
-%
   where we have introduced the Hadamard power notation\footnote{The Hadamard power of a matrix or a vector
   is the power of its elements $\mathbf{M}^{\circ p} = ({m_{ij}}^{p})$}.
 
-Since the anisotropy is generally aligned with the imaging axes, 
+In general, the anisotropy is aligned with the imaging axes, so 
   $\mathbf{A}$ and $\mathbf{B}$ of \eqref{eq:energy} can be simplified to diagonal matrices, such that
   $\mathbf{A}= \, \boldsymbol{\alpha}\,\vec{I}_n$ and
   $\mathbf{B}= \, \boldsymbol{\beta}\,\vec{I}_n$.
-Substituting in the equation \eqref{eq:energy}, we get:
+By substituting into equation \eqref{eq:energy}, we obtain:
 
   \begin{align}
-  E(\vec{u}) &= \const + \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r} + %\notag\\ &+
-  \int_{\Omega} \frac12 \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2} + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r}.
+  E(\vec{u}) &= \const + \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r} +   \int_{\Omega} \frac12 \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2} + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r}.
   \label{eq:app_energy}
-  \end{align}
+  \end{align} 
