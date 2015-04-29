@@ -1,14 +1,14 @@
-%\documentclass[numbers,sort&compress]{elsarticle}
 \documentclass[5p,authoryear]{elsarticle}
-\journal{ArXiv archiving for pre-submission review}
+% \documentclass[authoryear,onecolumn]{elsarticle}
+\journal{ArXiv archiving for pre-publication review}
 
 % *** MISC UTILITY PACKAGES ***
-%
 \usepackage{glossaries}
 \usepackage{booktabs} % to use \toprule
 \usepackage{multirow}
 \usepackage[colorinlistoftodos]{todonotes}
-
+\usepackage{xifthen}
+\usepackage{xspace}
 
 %\usepackage[cmex10,intlimits]{amsmath}
 \usepackage{amsmath}
@@ -22,10 +22,16 @@
 \DeclareMathOperator{\const}{Const.}
 \providecommand{\e}[1]{\ensuremath{\times 10^{#1}}}
 \providecommand{\mdist}[2]{ \mathcal{D}_{#2}^2(\mathbf{#1}) }
+\providecommand{\omegaset}{\ensuremath{\boldsymbol{\Omega}}}
+\providecommand{\gammaset}{\ensuremath{\boldsymbol{\Gamma}}}
+
 \let\oldhat\hat
 \renewcommand{\vec}[1]{\mathbf{#1}}
+
 \providecommand{\nvec}[1]{\hat{\mathbf{#1}}}
-\providecommand{\suppl}{\href{http://dx.doi.org/mydoi}{Supplemental Materials}}
+\providecommand{\suppl}[1]{\href{http://dx.doi.org/mydoi}{Supplemental Materials}, #1}
+\providecommand{\isores}[2][]{#2\ensuremath{\times}#2\ensuremath{\times}#2%
+\ifthenelse{\equal{#1}{}}{}{ [#1]}\xspace}
 
 % *** PDF, URL AND HYPERLINK PACKAGES ***
 %
@@ -35,7 +41,7 @@
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor an-isot-ropy regis-tra-tion iso-tropic Free-Surfer %
-align-ed pre-sent}
+align-ed pre-sent work-flow data-set data-sets}
 
 \input{01-acronyms}
 
@@ -48,31 +54,34 @@ align-ed pre-sent}
 \usepackage{array}
 \newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 
-\begin{document}
 
+% http://tex.stackexchange.com/questions/56105/missing-references-heading
+\def\bibsection{\section*{References}}
+\begin{document}
 \begin{frontmatter}
 
 %% Use \dochead if there is an article header, e.g. \dochead{Short communication}
 % \dochead{Preprint for ArXiv archiving and pre-submission review}
 
-\title{Simultaneous segmentation and registration of diffusion MR images of the brain driven
-by active-contours}
+\title{Active-contours driven registration method for structure-informed segmentation of diffusion MR images}
 
-\author[bit]{Oscar~Esteban\corref{corrauthor}}
+\author[bit,ciber]{Oscar~Esteban\corref{corrauthor}}
 \cortext[corrauthor]{Corresponding author}
 \ead{phd@oscaresteban.es}
 \author[ucla]{Dominique~Zosso}
-\author[lts5]{Alessandro~Daducci}
+\author[scil,lts5]{Alessandro~Daducci}
 \author[chuv,lts5]{Meritxell~Bach-Cuadra}
-\author[bit]{Mar\'ia-J.~Ledesma-Carbayo}
+\author[bit,ciber]{Mar\'ia-J.~Ledesma-Carbayo}
 \author[lts5]{Jean-Philippe~Thiran}
-\author[bit]{Andr\'es~Santos}
+\author[bit,ciber]{Andres~Santos}
 
 
 \address[bit]{Biomedical Image Technologies (BIT), ETSI Telecomunicaci\'on, %
-Universidad Polit\'ecnica de Madrid and CIBER-BBN, Madrid, Spain}
+Universidad Polit\'ecnica de Madrid, Madrid, Spain}
+\address[ciber]{Centro de Investigaci\'on Biom\'edica en Red en Bioingenier\'ia, Biomateriales y Nanomedicina (CIBER-BBN), Zaragoza, Spain}
 \address[ucla]{Department of Mathematics, University of California,
 Los Angeles (UCLA), Los Angeles, CA, US}
+\address[scil]{Computer Science Department, Faculty of Science, Universit\'e de Sherbrooke, 2500 Boulevard Universit\'e, Sherbrooke, QC J1K 2R1, Canada}
 \address[lts5]{Signal Processing Laboratory (LTS5), \'Ecole Polytechnique
 F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland}
 \address[chuv]{Dept. of Radiology, University
@@ -84,8 +93,8 @@ Hospital Center (CHUV) and University of Lausanne (UNIL), Lausanne, Switzerland}
 
 % Note that keywords are not normally used for peerreview papers.
 \begin{keyword}
-diffusion MRI \sep susceptibility~distortion \sep segmentation %
-\sep registration \sep parcellation \sep shape-prior.
+diffusion MRI \sep cortical~parcellation \sep segmentation %
+\sep nonlinear~registration \sep active~contours \sep susceptibility~distortion.
 \end{keyword}
 
 \end{frontmatter}
@@ -102,13 +111,15 @@ diffusion MRI \sep susceptibility~distortion \sep segmentation %
 % ACKs
 \input{08-acknowledgements}
 
+
+% Add appendices
+\appendix
+\numberwithin{equation}{section}
+\input{08-appendix-00-shapepriors}
+
 %\bibliographystyle{plainnat}
 \bibliographystyle{mystyle}
 \bibliography{Remote}
 
-% Add appendices
-\appendix
-%\numberwithin{equation}{section}
-\input{08-appendix-00-shapepriors}
 
 \end{document}

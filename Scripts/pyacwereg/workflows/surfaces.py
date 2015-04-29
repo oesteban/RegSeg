@@ -6,7 +6,7 @@
 # @Author: Oscar Esteban - code@oscaresteban.es
 # @Date:   2014-03-05 15:08:55
 # @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-03 15:40:11
+# @Last Modified time: 2015-04-08 12:23:43
 """
 Surface extraction
 ++++++++++++++++++
@@ -102,7 +102,7 @@ def all_surfaces(name='Surfaces', gen_outer=False):
     tha.inputs.inputnode.name = '%02d.thalamus' % nsurfs
     nsurfs += 1
 
-    csf = extract_surface(name='DarkFASurface')
+    csf = extract_surface(name='VdGMSurface')
     csf.inputs.inputnode.name = '%02d.csf_dgm' % nsurfs
     nsurfs += 1
 
@@ -114,7 +114,7 @@ def all_surfaces(name='Surfaces', gen_outer=False):
     wm.inputs.inputnode.name = '%02d.white' % nsurfs
     nsurfs += 1
 
-    cgm = extract_surface(name='cGMSurface')
+    cgm = extract_surface(name='cbGMSurface')
     cgm.inputs.inputnode.name = '%02d.cgm' % nsurfs
     nsurfs += 1
 

@@ -1,158 +1,144 @@
 % -*- root: 00-main.tex -*-
-\section*{Results}
+\section{Results}
 \label{sec:results}
 
-\subsection*{Proof of concept on digital phantoms}
+\subsection{Proof of concept on digital phantoms}
 \label{sec:results_phantom}
-Using a simplified subset of the experimental instrumentation described in section
-  \nameref{sec:experiments_evaluation}, we collected quantitative results on the digital
-  phantoms.
-To warp the simulated datasets, we randomly generated 150 different realizations of
-  the distortion $U_{true}$.
-Smoothness is introduced using two levels of B-Spline functions, with control points evenly
-  located in isotropic grids covering the full extent of the phantom.
-The first level had $50.5mm$ of separation between control points and the second $25.25mm$.
-The rationale behind this choice is producing large deformations on the contours with
-  the first level, and matching the properties of susceptibility-derived distortions
-  as previously reported by \cite{irfanoglu_susceptibility_2011} with the finer grid.
-Invertibility of $U_{true}$ is ensured by controlling the maximum displacement at each
-  level ($20.2mm$ and $10.1mm$ respectively) as studied in \citep{rueckert_diffeomorphic_2006}.
 
-A total of 1200 registration experiments (4 phantom types $\times$ 150 random warpings
-  $\times$ 2 resolutions) were run.
-Parameter settings of every processing step in the experiments are made available along with
-  the source code.
-For each registration, the averaged Hausdorff distance (see \nameref{sec:experiments_evaluation})
-  of the inner and the outer surfaces was computed.
-The results showed a consistent and high accuracy, below voxel resolution.
-\autoref{fig:phantom} (block C) presents the box plots by model type corresponding
+\begin{figure*}
+    \centering
+    \resizebox{\textwidth}{!}{%
+      \begin{tikzpicture}
+        \node[inner sep=10pt, draw=black!40](fig03b) at (0,7.9)
+          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure05A}};
+        \node[inner sep=10pt, draw=black!40](fig03c) at (0,0)
+          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure05B}};
+        \node[circle, text=black!75] at (-9.4,10.6) {\Huge \textbf{A}};
+        \node[circle, text=black!75] at (-9.4,3.5) {\Huge \textbf{B}};
+      \end{tikzpicture}
+    }%
+  \caption{A. Visual assessment of the results on the low resolution sets:
+    ``gyrus'' (top-left), ``L'' (top-right), ``ball'' (bottom-left),
+    and ``box'' at (bottom-right).
+  In yellow color, the recovered contours after registration are represented.
+  Our method showed high accuracy, as it demonstrates the almost exact location of the registered
+    contours with respect to their ground truth position depicted in green.
+  Partial volume effect turns segmentation of the sulci a challenging problem with voxel-wise
+    clustering methods, but it is successfully segmented with our method.
+  B. Quantitative evaluation of registration error in terms of average Hausdorff distance of
+    surfaces at low (left) and high (right) resolutions, demonstrating that the error is
+    consistently below the voxel size.
+    }\label{fig:phantom}
+\end{figure*}
+A total of 1200 experiments (4 phantom types $\times$ 150 random warpings $\times$ 2 resolutions) were
+  run using the workflow given in \autoref{fig:evphantoms}.
+For each experiment, the misregistration error was measured using the Hausdorff distance
+  (see \autoref{sec:experiments_evaluation}) between the theoretical $\gammaset_\text{true}$ and
+  the estimation done by \emph{regseg} ($\hat{\gammaset}_{test}$).
+The results showed a consistent and high accuracy, below the image resolution.
+\autoref{fig:phantom} (block C) presents the violin plots by model type corresponding
   to the two sets of resolutions of generated phantoms.
-To support that the misregistration errors averaged per experiment was significantly
-  under the resolution of the target image, we proceeded as follows.
-First, we confirmed that the error distributions were skewed using a Shapiro-Wilk test of
+In order to relate average misregistration error to the resolution of the moving image,
+  we proceeded as follows.
+First, we confirmed that the vertex-wise error distributions were skewed using a Shapiro-Wilk test of
   normality.
 All the distributions of errors under test (4 phantom types $\times$ 2 resolutions) resulted
   non-normal with $p<0.001$.
 Consequently, we used the non-parametric Wilcoxon signed-rank test along with Bonferroni
-  correction for multiple comparisons ($N=150$).
-Averaged errors resulted significantly lower than voxel resolution with $p < (0.001 / 150)$
+  correction for multiple comparisons ($N=150$, for each phantom type).
+Averaged errors resulted significantly lower than voxel size with $p < (0.001 / 150)$
   for all the tests (4 phantom types $\times$ 2 resolutions).
-Since statistical tests may not be conclusive enough, we also computed the confidence intervals
-  (\autoref{tab:ci_phantom}).
+Since statistical tests may not be conclusive enough, we also computed the confidence intervals,
+  reported in \autoref{tab:ci_phantom}.
 
 
 \begin{table}
 		\centering
 		\footnotesize
-    \begin{tabular}{llcc}
-    Type      & Low-res.  & Hi-res. \\
-    \hline
-    ``gyrus'' & 0.58-0.60 & 0.18-0.36 \\
-    ``L''     & 0.67-0.73 & 0.35-0.39 \\
-    ``ball''  & 0.66-0.73 & 0.32-0.41 \\
-    ``box''   & 0.68-0.71 & 0.35-0.39 \\
+    \tabcolsep=0.1cm
+    \begin{tabular}{lccccc}
+    Res.   & ``gyrus'' & ``ball''  & ``box''   & ``L''     & Aggreg.    \\\hline
+    1.0mm  & 0.18-0.38 & 0.31-0.45 & 0.34-0.42 & 0.34-0.40 & 0.34-0.38  \\
+    2.0mm  & 0.59-0.60 & 0.65-0.76 & 0.68-0.71 & 0.67-0.77 & 0.64-0.66  \\
     \hline
     \end{tabular}
-    \caption{All the 95\% confidence intervals (CI) were below the corresponding
-      half-voxel resolution in all the phantom types.
-    CIs reported in this table were computed using bootstrapping of $10^4$ samples,
-      for each phantom type and resolution.
-    Taking into account the non-normal distribution of errors, we used the median as location
-  		statistic.}\label{tab:ci_phantom}
+    \caption{The vertex-wise Haussdorf distance between the ground-truth surfaces and their
+    corresponding estimation with \emph{regseg} presented distributions with 95\% CI below
+    the half-voxel size in all the phantom types.
+    CIs were computed using bootstrapping of 10$^4$ samples, and median as location statistic.}\label{tab:ci_phantom}
 \end{table}
 
-\subsection*{Correction of distortions on real datasets}\label{sec:results_hcp}
-
-\paragraph*{Assessing the segmentation model}\label{sec:res_model_and_metric} %
+\subsection{Evaluation on real datasets and cross-comparison}\label{sec:results_hcp}
 %
-Preliminarily, we investigated the aptness of our segmentation model to play as cost function
-  driving the registration process.
-First, we evaluated several alternative models to segment the target bivariate images
-  (\gls*{fa} and \gls*{adc}).
-Based on the observed joint distribution of each (\suppl{}, {\color{red} section S2}),
-  we selected the 6-regions scheme described in \nameref{sec:human_connectome}.
+Finally, we compared the performance of \emph{regseg} and the standard \gls*{t2b}
+  method.
+Visual assessment of the 16 cases is included in the \suppl{section S5}.
+In \autoref{fig:results_real}, box A, the visual report for one subject is supplied.
+We computed the \gls*{swindex} \eqref{eq:swindex} of every surface after registration,
+  for both \emph{regseg} and the \gls*{t2b} methods.
+Finally, to statistically compare the results, we performed Kruskal-Wallis H-tests
+  (a non-parametric alternative to ANOVA) on the warping indices for three specific 
+  surfaces of interest selected in \autoref{sec:experiments_evaluation}.
+All the statistical tests evidenced that error distributions obtained with \emph{regseg} and
+  the \gls*{t2b} were significantly different, and using the violin plots in box B of
+  \autoref{fig:results_real} we observed that errors are always larger for \gls*{t2b}.
+We also reported the 95\% CIs of the \gls*{swindex} for those surfaces.
+The aggregate CI for \emph{regseg} was 1.08 - 1.50 [mm], whereas the \gls*{t2b} method
+  yielded an aggregate CI of 2.06 - 2.43 [mm].
+The results of the statistical tests and the CIs are summarized in \autoref{tab:results_real}.
 
-The distortions follow expression \eqref{eq:fieldmap} and hence, we easily reduced the
-  error space to one dimension as follows.
-The energy functional \eqref{eq:energy} was evaluated for the warpings given by
-  a linearized space of distortions
-  $\hat{U} = \epsilon \cdot U_{true} = \vec{r} + \epsilon \cdot u(\vec{r})$,
-  with $\epsilon \in [-1.1, 1.1]$.
-The results of this experiment are shown in \autoref{fig:energymap}.
-The metric consistently displayed its minimum at $\epsilon=0.0$ (ground-truth location).
 
-\begin{figure}
-	\includegraphics[width=\linewidth]{figures/figure04.pdf}
-	\caption{Assessment of the segmentation model, sampling the value of the energy functional
-	\eqref{eq:energy} versus several registration errors generated as explained in
-	\nameref{sec:res_model_and_metric}.
-	The metric of our registration method displayed a smooth gradient towards the minimum
-	located at the $\epsilon = 0.0$ point.}\label{fig:energymap}
-\end{figure}
-
-\paragraph*{Evaluation \& cross-comparison}\label{sec:res_cc_evaluation}
-%
-Finally, we tested the performance of our registration method, and compared it to a competing
-  method: the \emph{b0}-to-\gls*{t2} registration approach.
-To this end, we integrated the registration software \emph{elastix} \citep{klein_elastix_2010},
-  and reproduced the settings that internally uses \emph{ExploreDTI}
-  \citep{leemans_exploredti_2009}, a widely used toolkit for tractography analysis of
-  \gls*{dti}.
-A dual workflow to the general evaluation framework (\autoref{fig:evworkflows})
-  was also implemented to run the correction experiment with the competing method.
-First, the average \emph{b0} volume is computed using all the \emph{low-b} volumes within
-  the distorted \gls*{dmri} dataset.
-Using the ``preprocessed'' instance of the \gls*{t2} image of the corresponding subject as
-  reference image, and the \emph{b0} image as moving image, we registered both and
-  projected the correct (undistorted) contours to the warped space using the resulting
-  transform.
-For both \emph{regseg} and the competing method, we computed the \gls*{swindex} \eqref{eq:swindex}
-  of every surface.
-Finally, to statistically compare the results from both methods we performed a one-way ANOVA test
-  on the warping indices for three surfaces.
-Following the nomenclature introduced in section \nameref{sec:human_connectome}, we selected
-  $\Gamma_{VdGM}$, $\Gamma_{WM}$, and $\Gamma_{pial}$ as surfaces of interest.
-These interfaces are critical in connectivity analyses, and small errors in their location may
-  lead to discarding fundamental paths between regions.
-We also reported the 95\% CIs of the warping indices for those surfaces.
-The quantitative results of the ANOVA tests and the CIs are presented in \autoref{tab:results_real}.
 
 \begin{table}
 		\centering
 		\footnotesize
-		\tabcolsep=0.05cm
-    \begin{tabular}{L{1.8cm}ccc}
-                            & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ \\
+		\tabcolsep=0.08cm
+    \begin{tabular}{cccccc}
+    & & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ & Aggregate \\
     \hline
-    CI \emph{regseg}        & 0.39 - 0.64 & 0.64 - 0.83 & 0.76 - 0.93 \\
-    CI competing            & 2.36 - 3.37 & 2.65 - 3.19 & 2.82 - 3.40 \\
+    \multirow{2}{*}{CI}
+       & \emph{regseg}        & 0.50 - 0.78 & 0.50 - 0.55 & 0.66 - 0.73 & 0.56 - 0.66 \\
+       & T2B                  & 1.78 - 2.58 & 1.94 - 2.36 & 2.16 - 2.58 & 2.05 - 2.39 \\
     \hline
-    ANOVA (f-stat/p-value)  & (51.81/1.5e-06) & (148.25/8.1e-10) & (143.01/1.1e-09) \\
+    \multirow{2}{*}{H-tests}
+       & p-value  & 4.1$\times$10$^{-6}$& 2.3$\times$10$^{-6}$& 2.3$\times$10$^{-6}$ & 1.8$\times$10$^{-16}$ \\
+       & H-stat   & 21.20               & 22.31               & 22.31                & 67.85              \\
     \hline
     \end{tabular}
-    \caption{All the 95\% CIs of the \gls*{swindex} distributions computed for the
-      surfaces of interest were lower for \emph{regseg} with respect to the competing
-      method.
-    CIs reported in this table were computed using bootstrapping with mean as location
-      statistic and $10^4$ samples.
-    One-way-ANOVA tests indicated that there is a significant difference between our method and
-      the competing method of choice.
+    \caption{The statistical analysis of results on real data supported that \emph{regseg} overperformed
+    the alternative \acrfull{t2b} method.
+    The distribution of errors computed for the surfaces of interest ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$)
+      and the aggregate of all surfaces presented lower 95\% CIs for \emph{regseg}.
+    CIs reported in this table were computed using bootstrapping with mean as location statistic and 10$^4$ samples.
+    The Kruskal-Wallis H-tests indicated that there is a significant difference between \emph{regseg} and
+      the \gls*{t2b} method.
     }\label{tab:results_real}
 \end{table}
 
 \begin{figure*}
-	\includegraphics[width=\linewidth]{figures/figure05.pdf}
-	\caption{The evaluation instrument automatically renders the overlay of the
-	  target \gls*{fa} image and the resulting contours after distortion estimation (yellow color) and
-	  their theoretical location using the ground-truth (green color).
-	The first two rows show several axial slices for \emph{regseg} (``proposed'' row) and the
-	  competing method.
-	The last two rows represent the sagittal view.
-	We intentionally omitted the coronal slicing due to it is the less informative given the properties
-	  of the distortion.
-	Red arrows point to regions where the accuracy of the proposed method more clearly overperformed
-	  the competing method.
-	\todo[inline]{This figure will also have the box-plots of the errors of surfaces for both regseg
-	and the t2b method}
+    \centering
+    \resizebox{\textwidth}{!}{%
+      \begin{tikzpicture}
+        \node[inner sep=15pt, draw=black!40](fig05a) at (0,11)
+          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure06A}};
+        \node[inner sep=15pt, draw=black!40](fig05b) at (0,0)
+          {\hspace*{20pt}\includegraphics[width=\linewidth]{figures/figure06B}};
+        % \node[inner sep=5pt, draw=black!40](fig03c) at (0,0)
+        %   {\includegraphics[width=\linewidth]{figures/figure03-c}};
+        \node[circle, text=black!75] at (-9.5,17) {\Huge \textbf{A}};
+        \node[circle, text=black!75] at (-9.5,3) {\Huge \textbf{B}};
+        % \node[circle, text=black!75] at (-8.8,3.4) {\Huge \textbf{C}};
+      \end{tikzpicture}
+    }%
+	\caption{A. Example of one report for visual assessment, automatically generated by the evaluation instrument.
+    Each view shows one component of the input image (in this case, the \gls*{fa} map), the ground-truth location
+    of the surfaces (green contours), and the resulting surfaces with the method under test (yellow contours).
+  First two rows show axial slices for \emph{regseg} and the \acrfull*{t2b} method, and the last two rows
+    show corresponding sagittal views.
+  Coronal view is omitted since it is the least informative due to the the directional property
+    of distortions.
+	Red arrows point to regions where \emph{regseg} overperformed the \gls*{t2b} method.
+  B. Violin plots of error distributions of each surface, with indication of the voxel size of the \gls*{dmri} images
+    (1.25 mm), and supporting the improved results of \emph{regseg} in the proposed settings.
 	}\label{fig:results_real}
 \end{figure*}

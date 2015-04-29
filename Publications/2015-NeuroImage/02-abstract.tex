@@ -1,20 +1,18 @@
 % -*- root: 00-main.tex -*-
-Integrating information from different images is an ubiquitous necessity
-  in current neuroimage analyses.
-However, oftentimes one of the images is not available or the objective
-  function is not adequate or numerically tractable.
-We propose a surfaces-to-volume registration method called \emph{regseg}
-  that exploits the detailed anatomy extracted from structural images and
-  simultaneously segments the target image with subvoxel precision.
-We use active contours without edges to search for a deformation field
-  of B-Spline functions that optimally maps the surfaces
-  onto the data in the target space.
-We test \emph{regseg} on four digital phantoms warped with random deformations,
-  and conclude that the precision of the method is below the half-voxel spacing.
-Finally, we apply \emph{regseg} in the correction for susceptibility-derived
-  distortions of 16 real diffusion MRI datasets from the \acrlong*{hcp}
-  database.
-The results suggest that \emph{regseg} overperformed an extended competing method.
-\emph{Regseg} showed a consistent error within the 95\% confidence interval of
-  $0.39-0.93mm$ in images of $1.25mm$ isotropic resolution.
-
+Current applications of whole-brain tractography on \acrlong*{dmri} data require highly precise
+  delineations of anatomical structures, usually projected from anatomical \acrlong*{t1} images
+  through registration.
+We propose \emph{regseg}, a simultaneous segmentation and registration method
+  that uses active contours without edges extracted from structural images.
+The contours evolve through a free-form deformation field supported by B-Spline basis
+  optimally mapping the contours onto the data in the target space.
+We tested the functionality of \emph{regseg} on four digital phantoms warped with known and
+  randomly generated deformations, to conclude that the accuracy achieved is subvoxel.
+We then apply \emph{regseg} to perform registration/segmentation task on 16 real diffusion MRI
+  datasets from the \acrlong*{hcp}, warped with realistic and nonlinear distortions typically
+  present in these data.
+We compute the misregistration error of the contours estimated by \emph{regseg} with respect
+  to their theoretical location using the ground-truth, obtaining a 95\% CI of 0.56 - 0.66 (mm)
+  distance between corresponding mesh vertices, below the 1.25mm isotropic resolution of the images.
+We also compared the performance to a widely-used registration tool, to find out
+  that \emph{regseg} overperformed the alternate method in our settings.
