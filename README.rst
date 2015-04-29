@@ -2,11 +2,12 @@
 RegSeg: Active contours-driven registration of brain MRI
 ========================================================
 
+
 RegSeg, is a simultaneous segmentation and registration method that uses
-  active contours without edges (ACWE) extracted from structural images.
+active contours without edges (ACWE) extracted from structural images.
 The contours evolve through a free-form deformation field supported by the
-  B-spline basis to optimally map the contours onto the data in the target
-  space.
+B-spline basis to optimally map the contours onto the data in the target
+space.
 
 
 ----------------------
@@ -17,16 +18,16 @@ RegSeg is distributed along with the software instrumentation to benchmark it.
 The experimental framework is written in Python and uses nipype.
 
 We tested the functionality of regseg using four digital phantoms warped with
-  known and randomly generated deformations, where subvoxel accuracy was achieved.
+known and randomly generated deformations, where subvoxel accuracy was achieved.
 We then applied regseg to a registration/segmentation task using 16 real diffusion MRI
-  datasets from the Human Connectome Project, which were warped by realistic and nonlinear
-  distortions that are typically present in these data.
+datasets from the Human Connectome Project, which were warped by realistic and nonlinear
+distortions that are typically present in these data.
 We computed the misregistration error of the contours estimated by regseg with respect to
-  their theoretical location using the ground truth, thereby obtaining a 95% CI of 0.56–0.66
-  mm distance between corresponding mesh vertices, which was below the 1.25 mm isotropic
-  resolution of the images.
+their theoretical location using the ground truth, thereby obtaining a 95% CI of 0.56–0.66
+mm distance between corresponding mesh vertices, which was below the 1.25 mm isotropic
+resolution of the images.
 We also compared the performance of our proposed method with a widely used registration tool,
-  which showed that regseg outperformed this method in our settings.
+which showed that regseg outperformed this method in our settings.
 
 
 ------------
@@ -63,9 +64,9 @@ Contributions
 
 All the authors contributed to this study.
 OE implemented the method, designed and conducted the experiments, wrote the paper,
-  simulated the phantoms, and prepared the real data.
+simulated the phantoms, and prepared the real data.
 DZ devised and drafted the registration method, generated early phantom datasets,
-  and collaborated in the implementation of the method.
+and collaborated in the implementation of the method.
 AD, MBC, and MJLC interpreted the results.
 AD, MBC, MJLC, JPT, and AS advised on all aspects of the study.
 
