@@ -1,7 +1,7 @@
 % @Author: Oscar Esteban
 % @Date:   2015-02-20 15:40:09
 % @Last Modified by:   Oscar Esteban
-% @Last Modified time: 2015-04-21 13:22:12
+% @Last Modified time: 2015-04-29 17:53:12
 
 \documentclass[a4paper]{report}
 \usepackage{aliascnt}
@@ -165,7 +165,7 @@
 \input{01-acronyms}
 
 \begin{document}
-\title{Supplemental Materials: \\ \emph{Active-contours driven registration method for structure-informed segmentation of diffusion MR images}}
+\title{Supplemental Materials: \\ \emph{Active contours-driven registration method for the structure-informed segmentation of diffusion MR images}}
 \author{Esteban O., Zosso D., Daducci A., Bach-Cuadra M., \\ Ledesma-Carbayo MJ., Thiran JP, and Santos A.}
 \date{April 2015}
 
@@ -182,7 +182,7 @@ We now derive the domain integral w.r.t. $t$:
 
   \begin{equation}
   \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
-  \int_\Omega \frac{\partial}{\partial t}F(\vec{r}) d\vec{r} 
+  \int_\Omega \frac{\partial}{\partial t}F(\vec{r}) d\vec{r}
   - \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
   N_{\Gamma_{l,m}}\right\rangle d\vec{r},
   \end{equation}
@@ -262,7 +262,7 @@ In Eq. (9) we introduced the derivative of \eqref{eq:energy}:
   \end{equation}
 
 We split \eqref{eq:gradient_descent} in the derivatives of its data and regularization terms.
-Let $\frac{\partial E_{data}}{\partial \vec{u}_k} = \vec{g}_k$ for simplicity, 
+Let $\frac{\partial E_{data}}{\partial \vec{u}_k} = \vec{g}_k$ for simplicity,
   we compute the derivative of the data term and discretize the domain $\Omega$ as follows:
 \begin{equation}
   \vec{g}_k =
@@ -278,7 +278,7 @@ Let $\frac{\partial E_{data}}{\partial \vec{u}_k} = \vec{g}_k$ for simplicity,
   \vec{g}_k &= \underset{i}{\sum} \left\langle \frac{\partial \vec{v}_i'}{\partial \vec{u}_k}, \bar{s}_i'\right\rangle, \\
   \text{with }
   \bar{s}_i' &= - w_i \left[ \mdist{f_i'}{out} - \mdist{f_i'}{in} \right] \, \hat{\vec{n}}_i, \\
-  \text{and } 
+  \text{and }
   \frac{\partial \vec{v}_i'}{\partial \vec{u}_k} &=
   \frac{\partial}{\partial \vec{u}_k} \left\{ \vec{v}_i + \sum_k \psi_k(\vec{v}_i) \vec{u}_k \right\} = \psi_k(\vec{v}_i)\, \hat{\vec{e}}.
   \label{eq:gradient_wshape}
@@ -385,7 +385,7 @@ As these weights can be computed once in the beginning of the process and they d
 \subsection{Assessment of the segmentation model}
 \begin{figure}[!ht]
   \floatbox[{\capbeside\thisfloatsetup{capbesideposition={right,top},capbesidewidth=0.5\textwidth}}]{figure}[\FBwidth]
-  {\caption{\textbf{Assessment of the segmentation model}: 
+  {\caption{\textbf{Assessment of the segmentation model}:
   Preliminarily, we investigated the aptness of the segmentation model.
   For five test datasets, we uniformly sampled the space of distortions
     $\hat{U} = \epsilon \cdot U_{true} = \vec{r} + \epsilon \, u_\text{PE}$
@@ -584,12 +584,12 @@ In this section, we review the main elements of the evaluation pipelines.
       % \draw[white, fill=gray,opacity=0.5] (0.55,0.55) rectangle (1,1);
       % \draw let \p1 = (0.55,0)
       % in node[opacity=0.5,text width=\x1,align=center,color=white] at
-      % (0.5, 0) 
+      % (0.5, 0)
       % {\capoverlay};
       \draw let \p1 = (0.45,0)
-      in node[text width=\x1, align=justify] at (0.80, 1.0) 
+      in node[text width=\x1, align=justify] at (0.80, 1.0)
       {\capoverlay};
-    \end{scope}  
+    \end{scope}
   \end{tikzpicture}\label{fig:jointplot}
 \end{figure}
 
