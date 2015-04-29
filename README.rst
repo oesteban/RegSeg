@@ -1,6 +1,6 @@
-========================================================
-RegSeg: Active contours-driven registration of brain MRI
-========================================================
+===========================================================================
+RegSeg: Structure-informed segmentation and registration of brain MR images
+===========================================================================
 
 
 RegSeg is a simultaneous segmentation and registration method that uses
