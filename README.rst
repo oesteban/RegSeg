@@ -3,7 +3,7 @@ RegSeg: Active contours-driven registration of brain MRI
 ========================================================
 
 
-RegSeg, is a simultaneous segmentation and registration method that uses
+RegSeg is a simultaneous segmentation and registration method that uses
 active contours without edges (ACWE) extracted from structural images.
 The contours evolve through a free-form deformation field supported by the
 B-spline basis to optimally map the contours onto the data in the target
