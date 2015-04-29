@@ -1,14 +1,18 @@
-\documentclass[5p,authoryear]{elsarticle}
-% \documentclass[authoryear,onecolumn]{elsarticle}
+% \documentclass[5p,authoryear,fleqn]{elsarticle}
+\documentclass[3p,authoryear,fleqn]{elsarticle}
 \journal{ArXiv archiving for pre-publication review}
 
 % *** MISC UTILITY PACKAGES ***
+\usepackage[mode=buildnew]{standalone}
+\usepackage{gincltex}
 \usepackage{glossaries}
 \usepackage{booktabs} % to use \toprule
 \usepackage{multirow}
 \usepackage[colorinlistoftodos]{todonotes}
 \usepackage{xifthen}
 \usepackage{xspace}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
 
 %\usepackage[cmex10,intlimits]{amsmath}
 \usepackage{amsmath}
@@ -24,12 +28,14 @@
 \providecommand{\mdist}[2]{ \mathcal{D}_{#2}^2(\mathbf{#1}) }
 \providecommand{\omegaset}{\ensuremath{\boldsymbol{\Omega}}}
 \providecommand{\gammaset}{\ensuremath{\boldsymbol{\Gamma}}}
+\providecommand{\regseg}{\emph{regseg}}
+\providecommand{\Regseg}{\emph{Regseg}}
 
 \let\oldhat\hat
 \renewcommand{\vec}[1]{\mathbf{#1}}
 
 \providecommand{\nvec}[1]{\hat{\mathbf{#1}}}
-\providecommand{\suppl}[1]{\href{http://dx.doi.org/mydoi}{Supplemental Materials}, #1}
+\providecommand{\suppl}[1]{\href{http://figshare.com/s/459c26b4ee8211e493b306ec4bbcf141}{Supplemental Materials}, #1}
 \providecommand{\isores}[2][]{#2\ensuremath{\times}#2\ensuremath{\times}#2%
 \ifthenelse{\equal{#1}{}}{}{ [#1]}\xspace}
 
@@ -50,9 +56,23 @@ align-ed pre-sent work-flow data-set data-sets}
 %\usepackage[expert]{mathdesign}
 %\usepackage[libertine,cmintegrals,cmbraces,vvarbb]{newtxmath}
 %\renewcommand*{\familydefault}{\sfdefault}
-\usepackage[switch]{lineno}
+
 \usepackage{array}
 \newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\usepackage{ifpdf}
+
+\ifpdf
+  \usepackage[switch]{lineno}
+  % nothing to do
+\else
+  \makeatletter
+  \def\temp{dvips.def}
+  \ifx\Gin@driver\temp
+  \def\Ginclude@graphics#1{\def\temp{#1}---image \expandafter\strip@prefix\meaning\temp---}
+  \fi
+  \makeatother
+\fi
 
 
 % http://tex.stackexchange.com/questions/56105/missing-references-heading
@@ -63,7 +83,9 @@ align-ed pre-sent work-flow data-set data-sets}
 %% Use \dochead if there is an article header, e.g. \dochead{Short communication}
 % \dochead{Preprint for ArXiv archiving and pre-submission review}
 
-\title{Active-contours driven registration method for structure-informed segmentation of diffusion MR images}
+\title{Active contours-driven registration method for the structure-informed segmentation of diffusion MR images\tnoteref{t1}}
+\tnotetext[t1]{Supplemental materials to this work will be publicly available upon publication with doi:\href{http://figshare.com/s/459c26b4ee8211e493b306ec4bbcf141}{10.6084/m9.figshare.1397502}.
+During the review process, the document is available with the private link.}
 
 \author[bit,ciber]{Oscar~Esteban\corref{corrauthor}}
 \cortext[corrauthor]{Corresponding author}
@@ -76,16 +98,16 @@ align-ed pre-sent work-flow data-set data-sets}
 \author[bit,ciber]{Andres~Santos}
 
 
-\address[bit]{Biomedical Image Technologies (BIT), ETSI Telecomunicaci\'on, %
-Universidad Polit\'ecnica de Madrid, Madrid, Spain}
+\address[bit]{Biomedical Image Technologies (BIT), ETSI Telecomunicaci\'on, Universidad Polit\'ecnica de Madrid, Madrid, Spain}
 \address[ciber]{Centro de Investigaci\'on Biom\'edica en Red en Bioingenier\'ia, Biomateriales y Nanomedicina (CIBER-BBN), Zaragoza, Spain}
 \address[ucla]{Department of Mathematics, University of California,
 Los Angeles (UCLA), Los Angeles, CA, US}
 \address[scil]{Computer Science Department, Faculty of Science, Universit\'e de Sherbrooke, 2500 Boulevard Universit\'e, Sherbrooke, QC J1K 2R1, Canada}
 \address[lts5]{Signal Processing Laboratory (LTS5), \'Ecole Polytechnique
 F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland}
-\address[chuv]{Dept. of Radiology, University
+\address[chuv]{Dept. of Radiology, CIBM, University
 Hospital Center (CHUV) and University of Lausanne (UNIL), Lausanne, Switzerland}
+
 
 \begin{abstract}
 \input{02-abstract}
@@ -93,8 +115,7 @@ Hospital Center (CHUV) and University of Lausanne (UNIL), Lausanne, Switzerland}
 
 % Note that keywords are not normally used for peerreview papers.
 \begin{keyword}
-diffusion MRI \sep cortical~parcellation \sep segmentation %
-\sep nonlinear~registration \sep active~contours \sep susceptibility~distortion.
+active~contours \sep cortical~parcellation \sep diffusion MRI \sep nonlinear~registration \sep segmentation \sep susceptibility~distortion.
 \end{keyword}
 
 \end{frontmatter}

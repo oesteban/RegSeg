@@ -1,13 +1,9 @@
 % @Author: Oscar Esteban
 % @Date:   2015-02-20 15:40:09
 % @Last Modified by:   Oscar Esteban
-% @Last Modified time: 2015-04-08 13:28:07
+% @Last Modified time: 2015-04-21 13:22:12
 
 \documentclass[a4paper]{report}
-
-\usepackage{titlesec}
-\newcommand{\sectionbreak}{\clearpage}
-
 \usepackage{aliascnt}
 \usepackage{relsize}
 %\usepackage{inconsolata}
@@ -71,6 +67,12 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{cancel}
+
+\usepackage{tikz,caption}
+\usetikzlibrary{calc}
+\DeclareCaptionFormat{overlay}{\gdef\capoverlay{#1#2#3\par}}
+\DeclareCaptionStyle{overlay}{format=overlay}
+
 %\usepackage{algorithmic}
 \DeclareMathOperator{\tr}{tr}
 \DeclareMathOperator{\argmax}{argmax}
@@ -158,16 +160,17 @@
 \usepackage[hyphenbreaks]{breakurl} %fixes boxes spanning through pages
 \usepackage[colorlinks=true,citecolor=blue,urlcolor=blue,linkcolor=blue]{hyperref}
 \usepackage{doi}
+\def\bibsection{\section*{References}}
 
 \input{01-acronyms}
 
 \begin{document}
 \title{Supplemental Materials: \\ \emph{Active-contours driven registration method for structure-informed segmentation of diffusion MR images}}
-\author{Oscar Esteban and Dominique Zosso}
-\date{February 2015}
+\author{Esteban O., Zosso D., Daducci A., Bach-Cuadra M., \\ Ledesma-Carbayo MJ., Thiran JP, and Santos A.}
+\date{April 2015}
 
 \maketitle
-\section{Extensions to the mathematical formulation of the methods}
+\section{Extensions to the mathematical formulation of the methods}\label{sec:maths_extension}
 
 \subsection{Computing the gradients of shape-priors}\label{sec:shape_priors}
 The computation of gradients at the locations of the active contours in the
@@ -349,7 +352,7 @@ The remaining transforms are trivial or can be computed using FFT as in \citep{e
 %%
 %  with $\hat{\mathbf{e}}_d$ being the unitary vector along axis $d$.
 
-\newpage
+\clearpage
 \section{Parameter settings and implementation details of \emph{regseg}}
 
 \subsection{Implementation}
@@ -493,7 +496,7 @@ ifresult = report.run()
 Online checking is also possible as the algorithm writes to the standard output as well.
 A sample report is found in \autoref{fig:convreport}.
 
-\begin{figure*}[b]
+\begin{figure}[b]
   \includegraphics[width=\linewidth]{Suppl-figure02.pdf}
   \caption{The evolution of the registration and segmentation process can be
     checked using the \emph{Convergence report},
@@ -501,9 +504,9 @@ A sample report is found in \autoref{fig:convreport}.
   The report comprehends several plots tracking the evolution of the algorithm and several
     features to help researchers tune up the algorithm in their application.}%
     \label{fig:convreport}
-\end{figure*}
+\end{figure}
 
-\newpage
+\clearpage
 \section{Instruments for evaluation}
 
 This work is supported by two \emph{nipype Workflows} in order to ensure the reproducibility
@@ -556,125 +559,55 @@ In this section, we review the main elements of the evaluation pipelines.
   \caption{\textbf{The \emph{nipype} design of the workflow for real data}.}\label{fig:wf_hcp}
 \end{figure}
 
-\newpage
+\clearpage
 \section{Model considerations}
 
-\begin{figure*}[!ht]
-	\includegraphics[width=\linewidth]{Suppl-figure01.pdf}
-	\caption{Evaluating the joint distribution}\label{fig:jointplot}
-\end{figure*}
+% \begin{figure*}
+%   \centering
+%   \includestandalone[width=\linewidth]{figure06}
+%   \caption{}label{fig:results_real}
+% \end{figure*}
 
-\newpage
+\begin{figure}[!ht]
+  \centering
+  \captionsetup{format=overlay}
+  \caption{\textbf{Evaluating the joint distribution}.
+  Using kernel density estimation, the joint distribution of the \gls*{fa} and the \gls{adc}
+    is presented for our selected model (bottom-left).
+  Along with the joint plot, the marginal distributions of each model component
+    are represented below (for the \gls*{fa}) and besides (for the \gls*{adc}) of their corresponding
+    scalar map.}
+  \begin{tikzpicture}
+  \node[anchor=south west, inner sep=0](image) at (0,0)
+	{\includegraphics[width=\linewidth]{Suppl-figure01.pdf}};
+    \begin{scope}[x={(image.north east)},y={(image.south west)}]
+      % \draw[white, fill=gray,opacity=0.5] (0.55,0.55) rectangle (1,1);
+      % \draw let \p1 = (0.55,0)
+      % in node[opacity=0.5,text width=\x1,align=center,color=white] at
+      % (0.5, 0) 
+      % {\capoverlay};
+      \draw let \p1 = (0.45,0)
+      in node[text width=\x1, align=justify] at (0.80, 1.0) 
+      {\capoverlay};
+    \end{scope}  
+  \end{tikzpicture}\label{fig:jointplot}
+\end{figure}
+
+\clearpage
 \section{Extended results on real data}
 
 \immediate\write18{./visual_report.sh}
 \input{suppl-realdata.tex}
+
+\clearpage
+\section*{Author Contributions}
+This report has been drafted and prepared by OE.
+Mathematical formulations in \autoref{sec:maths_extension} were originally devised and drafted
+  by DZ and rewritten for this document by OE.
+All the authors have read and critically contributed to this document.
 
 \bibliographystyle{mystyle}
 \bibliography{Remote}
 
 \end{document}
 
-
-
-
-%{\color{red} {The main diverging points with respect to
-%\citep{gorthi_active_2011} are: 1) there is no need for an explicit level set function
-%$\Phi_G$, as we replace the level set gradient computation $N_{\Phi_G}$ with shape
-%gradients \citep{besson_dream2s_2003,herbulot_segmentation_2006};
-%2) regularization is also based on linear diffusion smoothing \citep{thirion_image_1998},
-%but we replace the Gaussian filtering by other constraints
-%studied in \citep{nagel_investigation_1986} to better the problem;
-%3) optimization is applied in the spectral
-%domain, observing anisotropic and inhomogeneous mappings along each direction.
-%With respect \citep{guyader_combined_2011}, the main differences are
-%the distance function, and the spectral solution to the optimization updates,
-%as we shall cover in \autoref{sec:numerical_implementation}.}}
-
-
-
-%In this paper we formulate the joint registration-segmentation
-%problem as follows.
-%such that the known contours in anatomical space $T$ optimally segment
-%the diffusion space $D$.
-%
-%
-%Whereas related \glspl*{adf} introduced in \autoref{sec:methods_background}
-%make use of explicit level-set formulations to solve \eqref{eq:gradient_descent},
-%we alternatively use \emph{shape-gradients}
-%\cite{besson_dream2s_2003,herbulot_segmentation_2006}.
-
-%
-%Let us denote by $\vec{x}$ the voxel and $F(\vec{x}) = [ f_1, f_2, \ldots, f_N]^T$
-%  its associated feature vector in the following.
-%
-%In our application, these surfaces are precise tissue interfaces of interest extracted
-%  from a high-resolution, anatomically correct reference volume using
-%  the well-established
-%
-%In this paper we propose a novel registration framework to simultaneously
-%solving the segmentation, distortion and cortical parcellation challenges,
-%by exploiting as strong shape-prior the detailed morphology extracted
-%from high-resolution and anatomically correct \gls{mri}.
-%Indeed, hereafter
-%we assume this segmentation problem in anatomical images is reliably and
-%accurately solved with readily available tools (e.g.
-%\citep{fischl_freesurfer_2012}).
-%After global alignment with \gls{t1} using existing approaches, the remaining
-%spatial mismatch between anatomical and diffusion space is due to susceptibility
-%distortions.
-%Finally, we need to establish precise spatial correspondence between the
-%surfaces in both spaces, including the tangential direction for parcellation.
-%Therefore, we can reduce the problem to finding the differences of spatial
-%distortion in between anatomical and \gls{dwi} space.
-%We thus reformulate the segmentation problem as an inverse problem, where we
-%seek for an underlying deformation field (the distortion) mapping
-%from the structural space into the diffusion space, such that the structural
-%contours segment optimally the \gls{dwi} data.
-%In the process, the one-to-one
-%correspondence between the contours in both spaces is guaranteed, and projection
-%of parcellisation to \gls{dwi} space is implicit and consistent.
-%
-%We test our proposed joint segmentation-registration model on two different
-%synthetic examples.
-%The first example is a scalar sulcus model, where the
-%\gls{csf}-\gls{gm} boundary particularly suffers from \gls{pve} and can only be
-%segmented correctly thanks to the shape prior and its coupling with the inner,
-%\gls{gm}-\gls{wm} boundary through the imposed deformation field regularity.
-%The second case deals with more realistic \gls{dwi} data stemming from
-%phantom simulations of a simplistic brain data.
-%Again, we show that the
-%proposed model successfully segments the \gls{dwi} data based on two derived
-%scalar features, namely \gls{fa} and \gls{md}, while establishing an estimate
-%of the dense distortion field.
-%
-%The rest of this paper is organized as follows.
-%First, in \autoref{sec:methods}
-%we introduce our proposed model for joint multivariate segmentation-registration.
-%Then we provide a more detailed description of the data and experimental setup in
-%\autoref{sec:experiments}.
-%We present results in \autoref{sec:results} and conclude
-%in \autoref{sec:conclusion}.
-%
-%
-%The properties of the reconstructed tensors and derived scalar maps have
-%been studied by \cite{ennis_orthogonal_2006}. Based on their
-%findings, \gls{fa}~\eqref{eq:fa} and \gls{md}~\eqref{eq:md} are
-%considered complementary features, and therefore we selected them for the
-%energy model \eqref{eq:complete_energy} in driving the
-%registration-segmentation process.
-%Whereas \gls{fa} informs mainly about the \emph{shape} of diffusion,
-%the \gls{md} is more related to the \emph{magnitude} of the process:
-%
-%\begin{align}
-%\mathrm{FA} &= \sqrt{ \frac{1}{2}}\,\frac{\sqrt{ (\lambda_1 - \lambda_2)^2 + (\lambda_2 - \lambda_3)^2 + (\lambda_3 - \lambda_1)^2}}{\sqrt{ {\lambda_1}^2 + {\lambda_2}^2 + {\lambda_3}^2}} \label{eq:fa} \\
-%\mathrm{MD} &= ( \lambda_1 + \lambda_2 + \lambda_3 ) / 3 \label{eq:md}
-%\end{align}
-%where $\lambda_i$ are the eigenvalues of the diffusion tensor
-%associated with the diffusion signal $S(\vec{q})$. There exist
-%two main reasons to justify their choice.
-%First, they are well-understood and standardized in clinical routine.
-%Second, together they contain most of the information that is
-%usually extracted from the \gls{dwi}-derived scalar maps
-%\cite{ennis_orthogonal_2006}.
-%
