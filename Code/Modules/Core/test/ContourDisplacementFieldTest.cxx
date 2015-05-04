@@ -11,7 +11,7 @@
 // and Biomedical Image Technology, UPM (BIT-UPM)
 // All rights reserved.
 // 
-// This file is part of ACWEReg
+// This file is part of RegSeg
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
