@@ -12,20 +12,20 @@
 // and Biomedical Image Technology, UPM (BIT-UPM)
 // All rights reserved.
 //
-// This file is part of ACWE-Reg
+// This file is part of RegSeg
 //
-// ACWE-Reg is free software: you can redistribute it and/or modify
+// RegSeg is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// ACWE-Reg is distributed in the hope that it will be useful,
+// RegSeg is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with ACWE-Reg.  If not, see <http://www.gnu.org/licenses/>.
+// along with RegSeg.  If not, see <http://www.gnu.org/licenses/>.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT

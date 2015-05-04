@@ -48,7 +48,7 @@ Credits
 Software
 --------
 
-https://github.com/oesteban/ACWE-Registration/graphs/contributors
+https://github.com/oesteban/RegSeg/graphs/contributors
 
 
 Contributions
