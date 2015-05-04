@@ -187,6 +187,8 @@ public:
 	}
 
 	void SetBeta(const InternalComputationValueType v ) {
+		itkExceptionMacro( << "Error: use of beta was broken during refactoring involved in https://github.com/oesteban/RegSeg/issues/228." <<
+				" Bug https://github.com/oesteban/RegSeg/issues/210 has been already reported.	")
 		this->m_Beta.Fill(v);
 		this->Modified();
 	}
