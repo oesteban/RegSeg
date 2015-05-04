@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2012, Oscar Esteban - oesteban@die.upm.es
+ Copyright (c) 2012, Oscar Esteban - code@oscaresteban.es
  with Biomedical Image Technology, UPM (BIT-UPM)
  All rights reserved.
 
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
 
 	// Create the JSON output object
 	Json::Value root;
-	root["description"]["title"] = "ACWE-Reg Summary File";
+	root["description"]["title"] = "RegSeg Summary File";
 	std::time_t rawtime;
 	std::tm* timeinfo;
 	char buffer[40];
