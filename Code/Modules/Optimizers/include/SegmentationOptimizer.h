@@ -2,7 +2,7 @@
 // File:          SegmentationOptimizer.h
 // Date:          Feb 10, 2014
 // Author:        code@oscaresteban.es (Oscar Esteban)
-// Version:       1.0 beta
+// Version:       1.5.5
 // License:       GPLv3 - 29 June 2007
 // Short Summary:
 // --------------------------------------------------------------------------------------
