@@ -1,6 +1,6 @@
 % -*- root: 00-main.tex -*-
 Current applications of whole-brain tractography to \acrlong*{dmri} data require highly precise
-  delineations of anatomical structures, which are usually projected from anatomical \acrlong*{t1} images
+  delineations of anatomical structures, which are usually projected from \acrlong*{t1} images
   by registration.
 In this study, we propose \regseg{}, which is a simultaneous segmentation and registration method
   that uses active contours without edges extracted from structural images.
@@ -14,5 +14,5 @@ We then applied \regseg{} to a registration/segmentation task using 16 real diff
 We computed the misregistration error of the contours estimated by \regseg{} with respect
   to their theoretical location using the ground truth, thereby obtaining a 95\% CI of 0.56--0.66 mm
   distance between corresponding mesh vertices, which was below the 1.25 mm isotropic resolution of the images.
-We also compared the performance of our proposed method with a widely used registration tool, which showed 
+We also compared the performance of our proposed method with a widely used registration tool, which showed
   that \regseg{} outperformed this method in our settings.
