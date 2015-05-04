@@ -12,7 +12,7 @@
     ``gyrus'' (top left), ``L'' (top right), ``ball'' (bottom left),
     and ``box'' at (bottom right).
   The contours recovered after registration are represented in yellow.
-  \Regseg achieved high accuracy because it determined the almost exact locations of the registered
+  \Regseg{} achieved high accuracy because it determined the almost exact locations of the registered
     contours with respect to their ground truth positions (shown in green).
   The partial volume effect makes segmentation of the sulci a challenging problem with voxel-wise
     clustering methods, but they were successfully segmented with \regseg{}.
@@ -31,7 +31,7 @@ The results demonstrated that the accuracy was consistent and high, and below th
   to the two sets of resolutions for the generated phantoms.
 In order to relate the average misregistration error to the resolution of the moving image,
   we proceeded as follows.
-First, we confirmed that the vertex-wise error distributions were skewed by using Shapiro-Wilk’s test of
+First, we confirmed that the vertex-wise error distributions were skewed by using Shapiro-Wilk's test of
   normality.
 All of the distributions of errors in the tests (four phantom types $\times$ two resolutions) were
   non-normal with $p<0.001$.
@@ -53,16 +53,16 @@ Statistical tests might not be sufficiently conclusive, so we also computed the 
     2.0mm  & 0.59-0.60 & 0.65-0.76 & 0.68-0.71 & 0.67-0.77 & 0.64-0.66  \\
     \hline
     \end{tabular}
-    \caption{Vertex-wise Hausdorff distances between the ground-truth surfaces and their
-    corresponding estimates obtained with \regseg{}, where the distributions are shown with the 95\% CI below
-    the half-voxel size for all of the phantom types.
+    \caption{The distributions of vertex-wise Hausdorff distances between the ground-truth surfaces and their
+    corresponding estimates obtained with \regseg{} presented a 95\% CI below the half-voxel size for all of 
+    the phantom types.
     The CIs were computed by bootstrapping using 10$^4$ samples, with the median as the location statistic.}\label{tab:ci_phantom}
 \end{table}
 
 \subsection{Evaluation using real datasets and cross-comparison}\label{sec:results_hcp}
 Finally, we compared the performance of \regseg{} with that of the standard \gls*{t2b}
   method.
-Visual assessments of the 16 cases are described in \suppl{section S5}.
+Summary reports for visual assessment of the 16 cases are included in \suppl{section S5}.
 In \autoref{fig:results_real}, box A, the visual report is shown for one subject.
 We computed the \gls*{swindex} \eqref{eq:swindex} of every surface after registration
   using both the \regseg{} and \gls*{t2b} methods.
@@ -74,8 +74,8 @@ All of the statistical tests showed that the error distributions obtained with \
   \gls*{t2b} were significantly different, and the violin plots in box B of
   \autoref{fig:results_real} demonstrate that the errors were always larger with \gls*{t2b}.
 We also show the 95\% CIs of the \gls*{swindex} for these surfaces.
-The aggregate CI for \regseg{} was 1.08--1.50 [mm], whereas the \gls*{t2b} method
-  yielded an aggregate CI of 2.06--2.43 [mm].
+The aggregate CI for \regseg{} was 0.56--0.66 [mm], whereas the \gls*{t2b} method
+  yielded an aggregate CI of 2.05--2.39 [mm].
 The results of the statistical tests and the CIs are summarized in \autoref{tab:results_real}.
 
 
