@@ -1,7 +1,7 @@
 % -*- root: 00-main.tex -*-
 \section{Methods}
 \label{sec:methods}
-Let $\gammaset_R = \{\Gamma_m: m \in \mathbb{N}, m \leq N_c\}$ be the set of $N_c$ surfaces
+Let $\gammaset_R = \{\Gamma_m: m \in \mathbb{N}, m \leq N_S\}$ be the set of $N_S$ surfaces
   extracted from the undistorted \gls*{t1} image (the reference space $R$).
 We reformulate the segmentation of the distorted \gls*{dmri} images (the moving space $M$)
   as a registration problem where we search for an underlying deformation field $U$ such that 
@@ -34,7 +34,6 @@ Using Bayes' rule, the posterior likelihood is computed as:
   where $P(M \mid U,\omegaset)$ is the data likelihood.
 Because $\omegaset$ are mapped by $U$, then we simplify
   $P(U, \omegaset) = P(U) \implies P(M \mid U,\omegaset) = P(M \mid U)$.
-
 The best estimate $\hat{U}$ then satisfies the maximum a posteriori criterion
   \citep{bishop_pattern_2006} and it aligns $\gammaset_R$ into $M$.
 First, we assume independence between pixels, and thus we break down the
@@ -63,7 +62,7 @@ For convenience and because it has been shown to be an appropriate approximation
   using $\mdist{f}{l}$ to denote the squared \emph{Mahalanobis distance} of $\vec{f}$ with respect
   to the descriptors of region $l$ as
   $\mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
-$C$ is the number of channels in the image $M$.
+$C$ is the number of channels comprised in the image $M$.
 In fact, the projection of $\gammaset_R$ onto $M$ is an implicit segmentation model, for which
   the covariance matrix $\boldsymbol{\Sigma}_l$ of each region is minimized.
 
@@ -80,7 +79,7 @@ The smoothness of the resulting displacements field is induced by a Thikonov reg
  which requires that the distortion and its gradient have zero
   mean and variance governed by the matrices $\mathbf{A}$ and $\mathbf{B}$.
 Finally, the maximum a posteriori problem is adapted to a variational problem where we search for
-  the minimum of an energy functional by applying $E(\vec{u}) = -\log P(U)$:
+  the minimum of an energy functional by applying $E(\vec{u}) = -\log \{P( M \mid U) \, P(U)\}$:
 
   \begin{align}
   E(\vec{u}) &= -\log \underset{l}{\prod}
@@ -91,7 +90,7 @@ Finally, the maximum a posteriori problem is adapted to a variational problem wh
   \end{align}
 This expression is the dual of the Mumford-Shah functional that corresponds
   to the framework of \acrlong*{acwe} \citep{chan_active_2001}
-  with the corresponding anisotropic regularization term of \cite{nagel_investigation_1986}.
+  with the anisotropic regularization term of \cite{nagel_investigation_1986}.
 
 
 \subsection{Numerical Implementation}
@@ -115,7 +114,7 @@ This expression is the dual of the Mumford-Shah functional that corresponds
 \end{figure}
 
 \paragraph*{Deformation model}\label{sec:deformation_model}
-Since the vertices of the surfaces $\{\vec{v}_i: \vec{v}_i \subset \gammaset \}_{i=1 \ldots N_v}$
+Since the vertices of the surfaces $\{\vec{v}_i: \vec{v}_i \subset \gammaset \}_{i=1 \ldots N_V}$
   are probably located off-grid, it is necessary to derive $\vec{u}_i = \vec{u}(\vec{v}_i)$ from a discrete set of parameters
   $\{\vec{u}_k\}_{k=1 \ldots K}$.
 Densification is achieved using a set of associated basis functions $\psi_k$ \eqref{eq:nodes_tfm}.
@@ -245,11 +244,12 @@ To quantify the misregistration error, we computed the Hausdorff distance betwee
       $\gammaset_R$, thereby obtaining $\gammaset_\text{true}$.
   3) After being warped, $\gammaset_\text{true}$ were projected onto the corresponding discrete 3D volume and downsampled to create partial volume effects at two resolutions,
      i.e., \isores[mm]{2.0} and \isores[mm]{1.0}, thereby producing sets of tissue fractions maps.
-  4) The tissue fractions were fed into an \acrfull*{mr} simulator, which generated \acrfull*{t1} and \acrfull*{t2} -like images at the
+  4) The tissue fractions were fed into a \acrfull*{mr} simulator, which generated \acrfull*{t1} and \acrfull*{t2} -like images at the
      two possible resolutions.
   5) The \regseg{} tool was applied using the warped test images as multispectral moving images and $\gammaset_R$ as shape priors.
-  6) The agreement between the surfaces fitted by \regseg{} ($\hat{\gammaset}_{test}$) and $\gammaset_\text{true}$
-     using automatically generated visual reports was assessed by computing the Hausdorff distance between the corresponding surfaces.}\label{fig:evphantoms}
+  6) The agreement between the surfaces fitted by \regseg{} ($\hat{\gammaset}_{test}$) and $\gammaset_\text{true}$ were assessed
+     visually using automatically generated visual reports and quantitativelly with the Hausdorff distance between the 
+     corresponding surfaces.}\label{fig:evphantoms}
 \end{figure*}
 
 
@@ -278,9 +278,9 @@ which extends our previous evaluation \citep{esteban_simulationbased_2014} of di
 To evaluate \regseg{} using real \gls*{dmri} data obtained from human brains,
   we collected 16 subjects from the \gls*{hcp} database.
 The original acquisitions are released within ``unprocessed'' packages, whereas
-  the ``minimally preprocessed'' are corrected for artifacts, brain-extracted,
-  and spatially normalized, while some results have been subjected to the standard processing
-  pipeline of \emph{FreeSurfer}.
+  the ``minimally preprocessed'' packages contain the corresponding images after
+  some processing (correction for several artifacts, brain-extraction, spatial 
+  normalization, etc.).
 We refer the reader to \citep{essen_human_2012} for exact details of the acquisition
   parameters and \citep{glasser_minimal_2013} for the preprocessing issues.
 These datasets comprise a large set of images, including \gls*{t1}, \gls*{t2}, and
@@ -300,7 +300,8 @@ At the top and the right margins, the marginal distributions of $\Omega_i$ are a
 \end{figure}
 
 \paragraph*{Segmentation model}
-Based on our experience \citep{esteban_brain_2012} and previous studies \citep{ennis_orthogonal_2006},
+Based on our experience % \citep{esteban_brain_2012}
+  and previous studies \citep{ennis_orthogonal_2006},
   we defined the moving image as a stack of the \gls*{fa} and \gls*{adc} maps derived
   from \gls*{dmri} data.
 After evaluating several alternative models, we empirically defined a partition \omegaset{}
@@ -333,7 +334,7 @@ Certain \gls*{mr} sequences are designed to estimate $\Delta B_0$, thereby obtai
   the so-called field map.
 We derived the deformation $U_{true}$ from the field map image released with
   the corresponding packages of each dataset in the \gls*{hcp}.
-The field map was unwrapped\footnote{fieldmaps are phase maps, which have been clipped in the interval
+The field map was unwrapped\footnote{fieldmaps are phase maps, which are intrinsically clipped in the interval
   of $[-\pi, \pi)$ [rads] or [rads/s].} and smoothed before applying \eqref{eq:fieldmap}.
 Next, the original \gls*{dmri} was warped using the resulting displacement field and fed into
   a pipeline to process the corresponding \gls*{dti}, thereby computing the derived scalars of
@@ -345,8 +346,8 @@ For five test datasets, we uniformly sampled the space of distortions
   $\hat{U} = \epsilon \cdot U_{true} = \vec{r} + \epsilon \, u_\text{PE}$
   (with $\epsilon \in [-1.1, 1.1]$ and $u_\text{PE}$ from \eqref{eq:fieldmap}),
   and we evaluated the data term of the cost function \eqref{eq:energy}.
-The minimum metric was consistently at the ground-truth location ($\epsilon=0.0$)
-  in all cases (\suppl{Figure S2}).
+The minimum of the cost function (\autoref{sec:methods_map}) was consistently located at 
+  $\epsilon=0.0$ (the ground-truth) for all of the cases (\suppl{Figure S2}).
 
 \paragraph*{Cross-comparison}
 A similar workflow to the general evaluation framework used for \autoref{fig:evworkflows}
