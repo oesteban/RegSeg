@@ -11,7 +11,7 @@
 #include "gtest/gtest.h"
 
 #ifndef TEST_DATA_DIR
-#define TEST_DATA_DIR "/home/oesteban/workspace/ACWE-Reg/Data/Ellipse/"
+#define TEST_DATA_DIR "/home/oesteban/workspace/RegSeg/Data/Ellipse/"
 // data source http://code.google.com/p/v3dsolver/source/browse/data/
 #endif
 
