@@ -771,7 +771,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::SetBackgroundMask (const ProbabilityMapType * _arg) {
 	if ( this->GetDebug() && ::itk::Object::GetGlobalWarningDisplay() ) {
 		std::ostringstream itkmsg;
-		itkmsg << "Debug: In " "/home/oesteban/workspace/ACWE-Reg/Code/Modules/Functional/include/FunctionalBase.h" ", line " << 333 << "\n" \
+		itkmsg << "Debug: In " "/home/oesteban/workspace/RegSeg/Code/Modules/Functional/include/FunctionalBase.h" ", line " << 333 << "\n" \
 				<< this->GetNameOfClass() << " (" << this << "): " "setting " << "BackgroundMask" " to " << _arg       \
 				<< "\n\n";
 		::itk::OutputWindowDisplayDebugText( itkmsg.str().c_str() );

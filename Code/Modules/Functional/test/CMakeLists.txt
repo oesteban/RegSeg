@@ -6,7 +6,7 @@
 
 #ADD_EXECUTABLE(FunctionalBaseTest FunctionalBaseTest.cxx )
 #TARGET_LINK_LIBRARIES(  FunctionalBaseTest gtest ${ITK_LIBRARIES} )
-#ADD_TEST( NAME FunctionalBaseTest COMMAND FunctionalBaseTest WORKING_DIRECTORY "/home/oesteban/workspace/ACWE-Reg/Data/Ellipse")
+#ADD_TEST( NAME FunctionalBaseTest COMMAND FunctionalBaseTest WORKING_DIRECTORY "/home/oesteban/workspace/RegSeg/Data/Ellipse")
 #
 #ADD_EXECUTABLE(MahalanobisFunctionalTest MahalanobisFunctionalTest.cxx ) 
 #TARGET_LINK_LIBRARIES(MahalanobisFunctionalTest ${ITK_LIBRARIES} )
