@@ -12,14 +12,14 @@
 // and Biomedical Image Technology, UPM (BIT-UPM)
 // All rights reserved.
 //
-// This file is part of ACWEReg
+// This file is part of RegSeg
 //
-// ACWEReg is free software: you can redistribute it and/or modify
+// RegSeg is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// ACWEReg is distributed in the hope that it will be useful,
+// RegSeg is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
