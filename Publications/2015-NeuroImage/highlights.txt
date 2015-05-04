@@ -1,4 +1,4 @@
-* Regseg is a segmentation&registration method to fit surfaces onto multivariate gridded-data.
-* Regseg successfully registers and segments spatially distorted diffusion MRI (dMRI) images.
+* We propose a segmentation&registration method to fit surfaces onto gridded-data.
 * Subvoxel accuracy is tested in several digital phantoms with realistic distortions.
-* Aptness in whole-brain dMRI data is demonstrated and compared with another tool.
+* Regseg is applied to the structure-informed segmentation of diffusion MRI of the brain.
+* Aptness in dMRI-derived multivariate-data is demonstrated and overperformed another tool.
