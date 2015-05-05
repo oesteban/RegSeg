@@ -6,6 +6,76 @@
 # @Last Modified time: 2015-03-20 13:18:39
 import os.path as op
 
+def regseg_fig01(in_file, out_file):
+    from matplotlib.path import Path
+    import matplotlib.patches as patches
+    import matplotlib.pyplot as plt
+
+    im = plt.imread(in_file)
+    p1 = (880, 380)
+    p2 = (265, 450)
+    x = [p1[0], p2[0]]
+    y = [p1[1], p2[1]]
+    
+    fig, ax = plt.subplots(figsize=(18,19))
+    implot = ax.imshow(im)
+    
+    plt.xlim((180, 1250))
+    plt.ylim((850, 0))
+    
+    
+    ax.grid(True, color='b', alpha=0.2, linestyle='dashed', linewidth=5)
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    plt.xticks([600, 1150])
+    plt.yticks([100, 650])
+    
+    a1 = ax.arrow(p1[0],p1[1],-70,40, head_width=20, head_length=50, fc='black', ec='black')
+    a2 = ax.arrow(p2[0],p2[1],100,0, head_width=20, head_length=50, fc='black', ec='black')
+    
+    g1 = ax.arrow(p1[0],p1[1],10,-7, head_width=12, head_length=10, fc='r', ec='r')
+    g2 = ax.arrow(p2[0],p2[1],50,0, head_width=12, head_length=10, fc='r', ec='r')
+    
+    ax.annotate(r"$\mathbf{v}_{1}$", xy=(p1[0]- 30, p1[1]+50), color='black', fontsize=60)
+    ax.annotate(r"$\mathbf{v}_{2}$", xy=(p2[0]- 70, p2[1] + 10), color='black', fontsize=60)
+    
+    ax.annotate(r"$\hat{\mathbf{n}}_{1}$", xy=(p1[0]-100, p1[1]+ 110), color='black', fontsize=60)
+    ax.annotate(r"$\hat{\mathbf{n}}_{2}$", xy=(p2[0]+100, p2[1]+80), color='black', fontsize=60)
+    
+    ax.annotate(r"$\bar{s}_{1}$", xy=(p1[0]+30, p1[1]), color='r', fontsize=60)
+    ax.annotate(r"$\bar{s}_{2}$", xy=(p2[0]+10, p2[1]-25), color='r', fontsize=60)
+    
+    ax.annotate(r"$\Omega_{wm}$", xy=(370, 220), color='g', fontsize=90)
+    ax.annotate(r"$\Omega_{gm}$", xy=(750, 220), color='darkblue', fontsize=90)
+    ax.annotate(r"$\Omega_{bg}$", xy=(1100, 220), color='w', fontsize=90)
+    
+    ax.annotate(r"$\Gamma_0$", xy=(920, 610), color='g', fontsize=90)
+    ax.annotate(r"$\Gamma_1$", xy=(1050, 570), color='darkblue', fontsize=90)
+    
+    bbox_props = dict(boxstyle="square", fc="w", ec="black", lw=2, alpha=0.7)
+    ax.annotate(r"$\bar{s}_{1} = w_{0,1} \, \left[ \mathcal{D}^2_{wm} \left(M(\mathbf{v}_1)\right) - \mathcal{D}^2_{gm}\left(M(\mathbf{v}_1)\right)\right]\, \hat{\mathbf{n}}_1$", xy=(270, 800), color='black', fontsize=50, bbox=bbox_props)
+    
+    ax.scatter(x, y, color='black', edgecolor='w', s=150)
+    
+    ukx = [600, 600, 1150, 1150]
+    uky = [100, 650, 100, 650]
+    ax.scatter(ukx, uky, color='b', edgecolor='w', s=250, alpha=0.5)
+    
+    ax.annotate(r"$\mathbf{u}_{30}$", xy=(615, 120), color='b', fontsize=60, alpha=0.6)
+    ax.annotate(r"$\mathbf{u}_{31}$", xy=(615, 670), color='b', fontsize=60, alpha=0.6)
+    
+    verts = [p1, (600, p1[1]), (600, 650)]
+    codes = [ Path.MOVETO, Path.CURVE4, Path.CURVE4,]
+    path = Path(verts, codes)
+    patch = patches.PathPatch(path, facecolor='none', edgecolor='darkcyan', lw=2, alpha=0.4)
+    ax.add_patch(patch)
+    xs, ys = zip(*verts)
+    ax.annotate(r"$\psi_{31}(\mathbf{v}_{1})}$", xy=(615, 590), color='darkcyan', fontsize=60, alpha=0.6)
+    # ax.plot(xs, ys, 'x--', lw=2, color='b', ms=10)
+    plt.savefig(out_file, format='pdf', bbox_inches='tight', pad_inches=0, dpi=300)
+
+    return out_file
+
 
 def add_annotations(values, ax, level, nlevels, color, lastidx, units=''):
     labels = ('%.3g%s' % (values[0], units), '%.2g%s' % (values[1], units))
