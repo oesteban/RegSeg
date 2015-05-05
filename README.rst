@@ -56,13 +56,13 @@ https://github.com/oesteban/RegSeg/graphs/contributors
 Contributions
 -------------
 
-* Oscar Esteban (@oesteban)
-* Dominique Zosso (@zosso)
-* Alessandro Daducci (@daducci)
-* Meritxell Bach-Cuadra (@meribach)
-* Andrés Santos Lleó (@asantos5)
-* Jean-Philippe Thiran (@thiran)
-* M.-J. Ledesma-Carbayo (@mledesmacarbayo)
+* Oscar Esteban (`@oesteban <https://github.com/oesteban>`_)
+* Dominique Zosso (`@zosso <https://github.com/zosso>`_)
+* Alessandro Daducci (`@daducci <https://github.com/daducci>`_)
+* Meritxell Bach-Cuadra (`@meribach <https://github.com/meribach>`_)
+* Andrés Santos Lleó (`@asantos5 <https://github.com/asantos5>`_)
+* Jean-Philippe Thiran (`@thiran <https://github.com/thiran>`_)
+* M.-J. Ledesma-Carbayo (`@mledesmacarbayo <https://github.com/mledesmacarbayo>`_)
 
 All the authors contributed to this study.
 OE implemented the method, designed and conducted the experiments, wrote the paper,
