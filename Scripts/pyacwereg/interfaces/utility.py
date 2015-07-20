@@ -3,7 +3,7 @@
 # @Author: oesteban
 # @Date:   2014-11-19 09:46:07
 # @Last Modified by:   oesteban
-# @Last Modified time: 2015-03-17 13:08:48
+# @Last Modified time: 2015-06-30 11:52:39
 import os
 import os.path as op
 from glob import glob
@@ -160,7 +160,7 @@ class SlicesGridplot(BaseInterface):
         if self.inputs.split:
             self._out_file = []
             for i, v in enumerate(view):
-                o = op.abspath('%s%d.pdf' % (self.inputs.out_file, i))
+                o = op.abspath('%s%04d.pdf' % (self.inputs.out_file, i))
                 viz.slices_gridplot(self.inputs.in_files, view=v,
                                     out_file=o, label=label[i],
                                     slices=slices)
