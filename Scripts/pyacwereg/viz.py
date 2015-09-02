@@ -379,7 +379,7 @@ def jointplot_data(im1data, im2data, in_seg, labels=None, out_file=None,
 
     df = pd.concat(df_pieces)
     sn.set_context("talk", font_scale=1.8)
-    g = sn.JointGrid(f1name, f2name, df, hue='tissue',
+    g = sn.ConditionalJointGrid(f1name, f2name, df, hue='tissue',
                      xlim=f1lims, ylim=f2lims, size=20,
                      inline_labels=True)
     g.plot_joint(sn.kdeplot, linewidths=3.0)
@@ -408,8 +408,8 @@ def jointplot_real(imageX, imageY, segmentation, mask,
     import seaborn as sn
     import pandas as pd
 
-    fa = nb.load(imageX).get_data().reshape(-1)
-    md = nb.load(imageY).get_data().reshape(-1)
+    fa = nb.load(imageX).get_data().astype(np.float32).reshape(-1)
+    md = nb.load(imageY).get_data().astype(np.float32).reshape(-1)
     seg = nb.load(segmentation).get_data().astype(np.uint8).reshape(-1)
     msk = nb.load(mask).get_data().astype(np.uint8).reshape(-1)
 
@@ -436,20 +436,23 @@ def jointplot_real(imageX, imageY, segmentation, mask,
         df_pieces.append(pd.DataFrame(d))
 
     df = pd.concat(df_pieces)
+    # df = df.sample(frac=.01, replace=True)
+
     df = df[df.tissue != 'do-not-show']
     sn.set_context("talk", font_scale=1.8)
 
-    g = sn.JointGrid(xlabel, ylabel, df, hue=huelabel, xlim=xlims, ylim=ylims,
-                     size=20, inline_labels=True)
+    g = sn.ConditionalJointGrid(xlabel, ylabel, df, hue=huelabel, xlim=xlims, ylim=ylims,
+                     size=10, inline_labels=True)
     # g.plot_joint(plt.scatter)
     g.plot_joint(sn.kdeplot, linewidths=3.0)
     g.plot_marginals(sn.distplot)
 
-    plt.setp(g.ax_joint.get_yticklabels(), visible=False)
-    plt.setp(g.ax_joint.get_xticklabels(), visible=False)
+    for ax in g.ax_joint:
+        plt.setp(ax.get_yticklabels(), visible=False)
+        plt.setp(ax.get_xticklabels(), visible=False)
 
     if out_file is not None:
-        plt.savefig(out_file, dpi=300, bbox_inches='tight')
+        plt.savefig(out_file, dpi=200, bbox_inches='tight')
     return g
 
 
