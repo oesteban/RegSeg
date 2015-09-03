@@ -165,11 +165,11 @@ However, we empirically found that the surfaces described in {\color{red} say li
 Actually, this reason may be at basis of the poor performance of most of the methods originally referenced
   in lines 19-28.
 Our segmentation model ensures that pixels belonging to a certain region are ``almost'' identically distributed.
-The bivariate approach using FA and ADC facilitates this, as demonstrated in Figure 3.
+The bivariate approach using FA and ADC facilitates this, as demonstrated in Figure 4.
 \end{enumerate}
 
 Nonetheless, we have specifically introduced this discussion in our manuscript {\color{red} say where}
-  and improved Figure 3 to better describe this point.
+  and improved Figure 4 to better describe this point.
 }
 
 \begin{reviewpoint}
@@ -188,7 +188,15 @@ Some information about the initialization of the distortion map should also be g
 It is not even clear if all experiments have been performed by the same parameter settings.
 A reasonable sensitivity analysis is also missing.
 \end{reviewpoint}
-\reply{}
+\reply{
+We have made a strong effort in providing reproducible experiments using openly available data.
+Therefore, parameter settings are publicly available in GitHub.
+Particularly, under folder \url{https://github.com/oesteban/RegSeg/tree/master/Scripts/pyacwereg/data}
+  there are several configuration files.
+Some parameters are also discussed in the Supplemental Materials, Section S2.
+However, we understand that a better description of the parameter settings should be included within
+  the manuscript and modified it accordingly as follows: {\color{red} say what here}.
+}
 
 \begin{reviewpoint}
 4. I could not understand how the ground truth can be generated for the real datasets.
@@ -196,7 +204,16 @@ As far as I can see, in these cases there is a (probably unknown) distortion bet
   diffusion weighted images.
 How an emulated distortion can get around this fact?
 \end{reviewpoint}
-\reply{}
+\reply{
+As commented in line 160, we are using some ``minimally preprocessed'' images from the database of the
+  Human Connectome Project (HCP).
+Particularly, the dMRI datasets from these preprocessed images are given corrected for distortions
+  and registered in structural space.
+Therefore, there could be a residual misregistration between the T1w and the dMRI data, but it should be
+  very minimal.
+We appreciate the comment, and modified the manuscript to clarify this point {\color{red} say where here}.
+We also modified Figure 3 to reflect this aspect.
+}
 
 \begin{reviewpoint}
 5. The vertex-wise error distributions are not only skewed, but quite clearly structured im many cases
@@ -328,7 +345,17 @@ If not, the added degrees of freedom might result in improved surface segmentati
 Furthermore, the dMRI gradients would have to be re-oriented independently at each voxel, and this is not currently possible in any
   software I know of.
 \end{reviewpoint}
-\reply{}
+\reply{
+The displacements field supporting the deformation model is not restricted to the phase encoding direction by default.
+Therefore, equations in Methods section are presented under such conditions.
+The proof of concept presented in the first experiment with phantoms are conducted without preferential directions
+  for the deformation.
+However, the point raised about the distortions derived from susceptibility inhomogeneity in dMRI data is also true.
+Therefore, experiments with real data mimicking such distortions are performed with the deformation aligned with the phase encoding
+  axis.
+We understand that this point should be clearly stated in the manuscript and modified it as follows:
+{\color{red} say what here}.
+}
 
 \begin{reviewpoint}
 The experiments seem reasonable and clearly presented in general. But far too little detail is given on the B0-T2 comparison method.
@@ -338,12 +365,18 @@ The experiments seem reasonable and clearly presented in general. But far too li
 \begin{reviewpoint}
 Please define the phrase ``active contours without edges''.
 \end{reviewpoint}
-\reply{}
+\reply{We hope this point is answered in \autoref{com:10}.}
 
 \begin{reviewpoint}
 Figure 3: What are the arrows in images 5? DEformations? Indications of important regions?
 \end{reviewpoint}
-\reply{}
+\reply{
+The arrows in Figure 3, panel 5, are intended to show regions subjected to large deformations, where the contours
+  do not fit data before applying \emph{regseg}.
+They also happen to show areas of the forceps minor, one fiber bundle importantly affected
+  by the susceptibility distortions.
+We have modified the caption of Figure 3 to describe the meaning of the arrows correctly.
+}
 
 \bibliographystyle{mystyle}
 \bibliography{Remote}
