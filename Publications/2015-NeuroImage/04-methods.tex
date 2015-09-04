@@ -1,10 +1,32 @@
 % -*- root: 00-main.tex -*-
 \section{Methods}
 \label{sec:methods}
+\subsection{Related work}\label{sec:related_work}
+Previously, joint segmentation and registration have been applied successfully to other problems
+such as longitudinal object tracking \citep{paragios_level_2003} and atlas-based
+  segmentation \citep{gorthi_active_2011}.
+The most thorough approach integrates active contours during image registration
+  methods.
+\cite{unal_coupled_2005}, and later \cite{wang_joint_2006},
+  improved an existing method \citep{yezzi_variational_2003} based on linear registration
+  to the nonlinear case by implementing a free-form deformation field.
+\cite{droske_mumfordshah_2009} reviewed the existing techniques and proposed two different
+  approaches for applying the Mumford-Shah functional \citep{mumford_optimal_1989} during simultaneous
+  registration and segmentation by propagating the deformation field from
+  the contours onto the whole image definition.
+Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
+  registration method in 2D using level sets and a nonlinear elasticity smoother on the
+  displacement vector field, which preserves the topology even with very high deformation.
+Finally, \cite{gorthi_active_2011} extended the existing methodologies using a multiphase
+  level set function to register several active contours during the application
+  of atlas-based segmentation.
+
+
+\subsection{Cost-function derivation}\label{sec:methods_map}
 Let $\gammaset_R = \{\Gamma_m: m \in \mathbb{N}, m \leq N_S\}$ be the set of $N_S$ surfaces
   extracted from the undistorted \gls*{t1} image (the reference space $R$).
 We reformulate the segmentation of the distorted \gls*{dmri} images (the moving space $M$)
-  as a registration problem where we search for an underlying deformation field $U$ such that 
+  as a registration problem where we search for an underlying deformation field $U$ such that
   the structures in $R$ defined by $\gammaset_R$ align optimally with their corresponding
   structures in $M$:
 
@@ -18,7 +40,6 @@ We reformulate the segmentation of the distorted \gls*{dmri} images (the moving 
 Finally, $\vec{u} = \vec{u}(\vec{r})$ is the displacement of every point with respect
   to the reference domain.
 
-\subsection{Cost-function derivation}\label{sec:methods_map}
 In a Bayesian framework for registration \citep{wyatt_map_2003,pohl_bayesian_2006,gass_simultaneous_2014},
   the mappings $U$ in \eqref{eq:transform} are
   evaluated based on their posterior probability given the observed data
@@ -180,7 +201,7 @@ The \regseg{} tool includes a multiresolution strategy on the free-form deformat
 Registration pyramids are created by setting the spacing between the control points of the B-spline basis
   functions for each level of the multiresolution strategy.
 The implementation details as well as other features (such as the sparse matrix approach
-  to fast interpolation) and the main parameters 
+  to fast interpolation) and the main parameters
   (such as $\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$, the B-spline grid resolutions,
  and target image smoothing) are discussed in \suppl{section S1}.
 The actual choices of the parameter settings are publicly distributed with the source code for the experiments.
@@ -207,11 +228,11 @@ A set of four binary objects (i.e., ``box'', ``ball'', ``L'',
   analytical shapes and mathematical morphology.
 The reference surfaces $\gammaset_R$ were extracted from the binary shapes
   using \emph{FreeSurfer} tools \citep{fischl_freesurfer_2012}.
-The ground-truth distortion was generated using a chain of two displacement 
+The ground-truth distortion was generated using a chain of two displacement
   fields supported by grids of B-spline basis functions.
 The coefficients of the basis functions were generated randomly for
   both levels in their three dimensions.
-The three components of the displacements $\vec{u} = (u_d)$ 
+The three components of the displacements $\vec{u} = (u_d)$
   were bounded above by 40\% of the separation between the control points
   at each level to obtain diffeomorphic transforms
   after concatenation \citep{rueckert_diffeomorphic_2006}.
@@ -228,7 +249,7 @@ The warped surfaces $\gammaset_\text{true}$ were binarized to generate tissue fr
   at low (\isores[mm]{2.0}) and high (\isores[mm]{1.0}) resolutions.
 Using a \gls*{mr} simulator \citep{caruyer_phantomas_2014}, we synthesized
   \gls*{t1} (TE/TR= 10/1500 ms) and \gls*{t2} images (TE/TR= 90/5000 ms), which
-  corresponded to each phantom type, with each at two resolutions 
+  corresponded to each phantom type, with each at two resolutions
   (1.0 mm and 2.0 mm isotropic).
 The field of view at both resolutions was \isores[mm]{100}.
 Next, \regseg{} was applied to map $\gammaset_R$ onto the warped phantoms to
@@ -248,7 +269,7 @@ To quantify the misregistration error, we computed the Hausdorff distance betwee
      two possible resolutions.
   5) The \regseg{} tool was applied using the warped test images as multispectral moving images and $\gammaset_R$ as shape priors.
   6) The agreement between the surfaces fitted by \regseg{} ($\hat{\gammaset}_{test}$) and $\gammaset_\text{true}$ were assessed
-     visually using automatically generated visual reports and quantitativelly with the Hausdorff distance between the 
+     visually using automatically generated visual reports and quantitativelly with the Hausdorff distance between the
      corresponding surfaces.}\label{fig:evphantoms}
 \end{figure*}
 
@@ -279,7 +300,7 @@ To evaluate \regseg{} using real \gls*{dmri} data obtained from human brains,
   we collected 16 subjects from the \gls*{hcp} database.
 The original acquisitions are released within ``unprocessed'' packages, whereas
   the ``minimally preprocessed'' packages contain the corresponding images after
-  some processing (correction for several artifacts, brain-extraction, spatial 
+  some processing (correction for several artifacts, brain-extraction, spatial
   normalization, etc.).
 We refer the reader to \citep{essen_human_2012} for exact details of the acquisition
   parameters and \citep{glasser_minimal_2013} for the preprocessing issues.
@@ -289,10 +310,10 @@ These datasets comprise a large set of images, including \gls*{t1}, \gls*{t2}, a
 \begin{figure}
 \includegraphics[width=\linewidth]{figure04}
 \caption{Segmentation model defined by the homogeneous regions $\Omega_i$, where
-  the image for segmentation is partitioned by the theoretical projection 
+  the image for segmentation is partitioned by the theoretical projection
   ($\gammaset_{true}$) of $\gammaset_R$ onto $M$.
 The plot represents a kernel density estimate of the location and spread of
-  each region $\Omega_i$ in the bivariate feature space of $M$, which comprises 
+  each region $\Omega_i$ in the bivariate feature space of $M$, which comprises
   the \gls*{fa} and \gls*{adc} maps.
 At the top and the right margins, the marginal distributions of $\Omega_i$ are also plotted for
   the \gls*{fa} and \gls*{adc}, respectively.
@@ -312,7 +333,7 @@ After evaluating several alternative models, we empirically defined a partition 
   4) brain stem and cerebellar \gls*{wm} ($\Omega_{bst}$);
   5) cerebellar \gls*{gm} ($\Omega_{cbGM}$); and
   6) cortical \gls*{gm} ($\Omega_{GM}$).
-Using tools in \emph{FreeSurfer} and appropriate selections of labels in the 
+Using tools in \emph{FreeSurfer} and appropriate selections of labels in the
   \emph{aparc} segmentation released with the \gls*{hcp} data, we extracted the $\gammaset_R$ set for the
   reference surfaces.
 The segmentation model corresponding to this partition is shown in \autoref{fig:model}
@@ -346,7 +367,7 @@ For five test datasets, we uniformly sampled the space of distortions
   $\hat{U} = \epsilon \cdot U_{true} = \vec{r} + \epsilon \, u_\text{PE}$
   (with $\epsilon \in [-1.1, 1.1]$ and $u_\text{PE}$ from \eqref{eq:fieldmap}),
   and we evaluated the data term of the cost function \eqref{eq:energy}.
-The minimum of the cost function (\autoref{sec:methods_map}) was consistently located at 
+The minimum of the cost function (\autoref{sec:methods_map}) was consistently located at
   $\epsilon=0.0$ (the ground-truth) for all of the cases (\suppl{Figure S2}).
 
 \paragraph*{Cross-comparison}
@@ -360,7 +381,7 @@ We reproduced the solution and settings provided with \emph{ExploreDTI}
 
 \paragraph*{Error measurement}\label{sec:experiments_evaluation}
 Distortion only occurs along the \gls*{pe} axis of the image, so we computed the
-  \gls*{swindex} as the area-weighted distance between the corresponding vertices of 
+  \gls*{swindex} as the area-weighted distance between the corresponding vertices of
   $\gammaset_{true}$ and their estimate obtained by the method under the test $\hat{\gammaset}_{test}$:
 
   \begin{equation}
@@ -373,4 +394,4 @@ Distortion only occurs along the \gls*{pe} axis of the image, so we computed the
   that correspond to $\vec{v}_i$.
 In practice, we only report the \gls*{swindex} for three surfaces of crucial interest in whole-brain
   tractography.
-These three surfaces delineated the following regions in the model: $\Omega_{VdGM}$, $\Omega_{WM}$, and $\Omega_{GM}$. 
+These three surfaces delineated the following regions in the model: $\Omega_{VdGM}$, $\Omega_{WM}$, and $\Omega_{GM}$.
