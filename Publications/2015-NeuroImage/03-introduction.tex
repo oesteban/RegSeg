@@ -1,63 +1,84 @@
 % -*- root: 00-main.tex -*-
 \section{Introduction}\label{sec:introduction}
-The accurate delineation of \gls*{wm} in \gls*{dmri} and the fusion of prior
-  anatomical information extracted from a \gls*{t1} image for the same subject
-  are crucial in a range of applications based on tractography, such as
-  the extraction of structural connectivity \citep{craddock_imaging_2013} or
-  tract-based spatial statistics \citep{smith_tractbased_2006}.
-However, the precise segmentation of \gls*{dmri} data and the coregistration of anatomical
-  images are difficult due to several limitations.
-First, \gls{dmri} images have a resolution that is much higher than that of the imaged
+\Gls*{dmri} enables the mapping of microstructure \citep{basser_microstructural_1996}
+  and connectivity \citep{craddock_imaging_2013} of the human brain \emph{in-vivo}.
+It is generally acquired using \gls*{epi} schemes, since they are very fast at
+  scanning a large sequence of images called \glspl*{dwi}, each sensitized with
+  a gradient to probe proton diffusion in a certain orientation.
+Subsequent processing involves describing local microstructure with one available
+  model, which range from the early \gls*{dti} proposed by \cite{basser_microstructural_1996}
+  to current models such as \citep{daducci_accelerated_2015}.
+The microstructural map is then used to draw the preferential orientations of diffusion
+  across regions using tractography \citep{mori_threedimensional_1999}.
+Finally, the streamlines found are filtered with a cortical parcellation
+  to build the graph representing the corresponding structural
+  network \citep{hagmann_mapping_2008}.
+Since the proposal of the earliest methodologies to solve the three problems,
+  there is a need for precisely identifying the anatomy on the \gls*{dmri} space.
+In fact, current trends in reconstruction \citep{jeurissen_multitissue_2014} and
+  tractography \citep{smith_anatomicallyconstrained_2012} are increasingly using
+  structural information to improve the microstructural mapping and fiber-tracking.
+
+The structural information required by pioneer tractography studies was a simple
+  \gls*{wm} mask to provide with a termination criteria for the streamlines.
+The first attempts to segment the \gls*{wm} in \gls*{dti} involved thresholding the
+  \gls*{fa}\footnote{the \gls*{fa} is a scalar parameter of diffusion derived from
+  the \gls*{dti}.} map.
+However, the mask and subsequent analyses are highly dependent on the threshold set
+  \citep{taoka_fractional_2009}.
+To overcome the unreliability of \gls*{fa} thresholding and broaden \gls*{wm} segmentation
+  to brain tissue segmentation, \cite{zhukov_level_2003} proposed active contours with
+  edges represented by level sets, which evolve on directionally invariant scalar maps
+  computed from \gls*{dti}.
+\cite{rousson_level_2004} successfully segmented the corpus callosum with
+  region-based level sets based on the maps of eigenvalues corresponding to the
+  \gls*{dti}.
+Many studies have addressed the definition of appropriate features for segmenting
+  regions and/or tissues in \gls*{dmri} datasets, such as the 5D representation
+  proposed by \cite{jonasson_segmentation_2005}.
+Other efforts include mixture models based on sets of directionally invariant maps
+  \citep{liu_brain_2007}, iterative clustering of the \lowb{}\footnote{The \lowb{}
+  image is one \gls*{epi} volume acquired as signal reference without sensitizing gradient.}
+  image \citep{hadjiprocopis_unbiased_2005},
+  hierarchical clustering of the \gls*{fa} and \gls*{adc} maps \citep{lu_segmentation_2008},
+  and graph-cuts on combinations of scalar maps \citep{han_experimental_2009}.
+However, the precise segmentation of \gls*{dmri} is difficult for several limitations.
+First, \gls{dmri} images have a resolution that is much lower than that of the imaged
   microstructural features \citep{basser_microstructural_1996}.
 Therefore, voxels located in structural discontinuities are affected by partial
   voluming of the signal sources.
-Second, \gls*{dmri} schemes probe the diffusion process within the brain at
-  many angles to obtain \glspl*{dwi}, which are completed by one or more baseline (\emph{b0})
-  volumes without directional gradients.
-The extremely low \gls*{snr} and the high dimensionality of \glspl*{dwi} prevent their
-  direct use in segmentation.
-The low contrast between \gls*{gm} and \gls*{wm} in the \emph{b0} volumes also makes them unsuitable for
-  segmentation.
-Finally, \gls*{dmri} images are acquired using \gls*{epi} to speed up the acquisition process but
-  at the cost of introducing geometrical distortion, as well as signal degradation and
-  destruction \citep{jezzard_correction_1995}.
-The artifacts generated have major impacts on the anatomy extracted
+Second, the extremely low \gls*{snr} and the high dimensionality of the \glspl*{dwi} prevent
+  their direct use in segmentation.
+Third, the low contrast between \gls*{gm} and \gls*{wm} in the \lowb{} volumes also makes
+  them unsuitable for brain tissue segmentation.
+
+An alternative route to segmentation in native \gls*{dmri} space the mapping of the
+  structural information extracted from anatomical MR images, such as \gls*{t1}, through
+  an image registration process.
+Generally, intra-subject registration of MR images of the brain involves only a linear
+  mapping to compensate for head motion between scans.
+However, \gls*{epi} images speed up the acquisition process at the cost of introducing geometrical
+  distortion, as well as signal degradation and destruction \citep{jezzard_correction_1995}.
+The so-called \emph{\gls*{epi} distortion} have major impacts on the anatomy extracted
   from \gls*{dmri}, particularly in certain fiber bundles \citep{irfanoglu_effects_2012}.
-These limitations prevent segmentation in the native \gls*{dmri} space, including
-  registration-based approaches using anatomical images as the sources of structural
-  information.
-
-
-Early attempts to delineate the \gls*{wm} involved thresholding the
-  \gls*{fa}\footnote{the \gls*{fa} is a scalar parameter of diffusion derived from
-  the \gls*{dmri} data.} map.
-However, the mask and subsequent analyses are highly dependent on the threshold set
-  \citep{taoka_fractional_2009}.
-To overcome the unreliability of \gls*{fa} thresholding,
-  \cite{zhukov_level_2003} proposed active contours with edges represented
-  by level sets, which evolve on directionally invariant scalar maps.
-\cite{rousson_level_2004} successfully segmented the corpus callosum with
-  region-based level sets based on the eigenvalues of tensors fitted using the
-  \gls*{dmri} data.
-Many studies have addressed the definition of appropriate features for clustering,
-  such as the 5D representation proposed by \cite{jonasson_segmentation_2005}.
-Other efforts include mixed models based on sets of directionally invariant maps
-  \citep{liu_brain_2007}, iterative \citep{hadjiprocopis_unbiased_2005} and
-  hierarchical \citep{lu_segmentation_2008} clustering,
-  graph-cuts \citep{han_experimental_2009},
-  and volume fraction modeling \citep{kumazawa_improvement_2013}.
-
-To address the segmentation problem by registration, \cite{saad_new_2009}
-  used the Pearson's correlation coefficient to obtain a linear alignment of the \gls*{t1} and
-  the \emph{b0}.
+To overcome this problem, two broad families of solutions are available.
+First, it is possible to use an existing ``\gls*{epi} distortion correction''
+  method to compensate for the nonlinear part of the misalignment with the structural space, combined
+  with a rigid registration method.
+Second, it is possible to apply a nonlinear registration method with specific constraints
+  related to the theoretical properties of the \gls*{epi} distortion.
+However, both solutions require extra acquisitions included in the \gls*{dmri} scanning protocol,
+  such as fieldmaps \citep{jezzard_correction_1995}, \glspl*{dwi} with a different \gls*{pe}
+  scheme \citep{cordes_geometric_2000,chiou_simple_2000}, or \gls*{t2} images.
+\cite{saad_new_2009} used the Pearson's correlation coefficient to obtain a linear alignment of
+  the \gls*{t1} and the \lowb{}.
 Similarly, a linear registration method was employed by \emph{bbregister} \citep{greve_accurate_2009},
-  which uses active contours with edges to search for intensity boundaries in the \emph{b0}
+  which uses active contours with edges to search for intensity boundaries in the \lowb{}
   image.
-The active contours are initialized using surfaces extracted from the
-  \gls*{t1} using \emph{FreeSurfer} \citep{fischl_freesurfer_2012}:
-  the \emph{pial} surface (exterior of the cortical \gls*{gm}) and the \emph{white}
-  surface (the \gls*{wm}/\gls*{gm} interface).
-The \emph{b0} image only includes a detectable frontier for the pial surface, so
+The active contours are initialized using surfaces extracted from the \gls*{t1} using
+  \emph{FreeSurfer} \citep{fischl_freesurfer_2012}: the \emph{pial} surface (exterior of the
+  cortical \gls*{gm}) and the \emph{white} surface (the \gls*{wm}/\gls*{gm} interface).
+The \lowb{} image only includes a detectable frontier for the pial surface, so
   \emph{bbregister} is limited to aligning the cortical layer in this
   application.
 This tool has become the standard method because of its proven robustness, although the
@@ -65,11 +86,11 @@ This tool has become the standard method because of its proven robustness, altho
 To overcome this issue, \emph{bbregister} excludes the
   regions that are typically warped by artifacts from the boundary search.
 However, because the distortion is not considered, it must be addressed separately.
-Nonlinear registration has been performed successfully between \gls*{t2} and \emph{b0}
+Nonlinear registration has been performed successfully between \gls*{t2} and \lowb{}
   images based on their similarity as a unique method for correcting distortion
   \citep{kybic_unwarping_2000,studholme_accurate_2000,wu_comparison_2008,tao_variational_2009}.
 However, further registration of the \gls*{t1} and \gls*{t2} images is still required to map the anatomical
-  information (and for \gls*{wm} segmentation) into the \gls*{dmri} space.
+  information into the \gls*{dmri} space.
 
 Therefore, given these issues, a method that simultaneously performs
   segmentation in the native \gls*{dmri} space and registration of the corresponding \gls*{t1} image
