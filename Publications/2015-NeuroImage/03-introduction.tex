@@ -61,7 +61,7 @@ However, both solutions require extra acquisitions to be included within the \gl
   protocol, such as fieldmaps \citep{jezzard_correction_1995}, \glspl*{dwi} with a different
   \gls*{pe} scheme \citep{cordes_geometric_2000,chiou_simple_2000}, \gls*{t2} images
   \citep{kybic_unwarping_2000}.
-We will refer to this approach as \gls*{t2b} correction.
+We will refer to this latter approach as \gls*{t2b} correction in the following.
 \Gls*{epi} corrections have been an active field of research, with numerous refinements and
   combinations of the original methods \citep{holland_efficient_2010,andersson_comprehensive_2012,
   irfanoglu_drbuddi_2014}.
@@ -78,22 +78,26 @@ The \lowb{} image only includes a detectable frontier for the pial surface, and 
   \emph{bbregister} is limited to aligning the cortical layer in this
   application.
 To overcome the problem of nonlinear distortions, \emph{bbregister} excludes the
-  regions that are typically warped by artifacts from the boundary search.
+  regions that are typically warped from the boundary search.
 However, because the distortion is not considered, it must be addressed separately.
-The nonlinear registration approach has been successfully solved with \gls*{t2} and \lowb{}
-  images, exploiting their similarity \citep{kybic_unwarping_2000,studholme_accurate_2000}.
-However, further registration of the \gls*{t1} and \gls*{t2} images is still required to map the anatomical
-  information into the \gls*{dmri} space.
+The nonlinear registration approach has been successfully solved with \gls*{t2b} methods,
+  which align the \gls*{t2} and \lowb{} images by exploiting their similarity
+  \citep{kybic_unwarping_2000,studholme_accurate_2000}.
+However, further rigid registration of the \gls*{t1} and \gls*{t2} images is still required to
+  map the anatomical information onto \gls*{dmri}-space.
 
-Here we show a method that simultaneously registers anatomically correct surfaces representing
-  the structure of the subject's brain into the bivariate image comprehending \gls*{fa} and
-  \gls*{adc}, thereby implicitly segmenting the \gls*{dmri} space.
+Here we show a method that registers anatomically-correct surfaces to multivariate images,
+  thereby implicitly segmenting the \gls*{dmri}-space into those structures enclosed by the contours
+  of the subject's brain.
+% It is important that surfaces are defined in the coordinate system of the image used as
+%   source of structural information (typically, but not restricted to, \gls*{t1} images), otherwise segmentation performs
+%   correctly but the mapping found in registration does not represent any valuable information.
 The hypothesis tested in the present study is that the registration and segmentation
   problems in \gls*{dmri} can be solved simultaneously, effectively establishing the
   necessary mapping to project structural information from anatomical images, increasing the
   geometrical accuracy of the overall process, and avoiding data resampling of \gls*{epi}
   correction methods.
-Thus, we propose a tool called \regseg{} that 3D active contours (surfaces) without edges
+Thus, we propose a tool called \regseg{} implementing 3D active contours (surfaces) without edges
   \citep{chan_active_2001}, which evolve to drive a free-form deformation field of B-spline
   basis functions.
 The surfaces are nested and they enclose regions with homogeneous diffusion features
