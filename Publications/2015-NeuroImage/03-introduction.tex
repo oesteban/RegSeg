@@ -59,15 +59,15 @@ Second, to apply a nonlinear registration method with specific constraints deriv
   theoretical properties of the \gls*{epi} distortion.
 However, both solutions require extra acquisitions to be included within the \gls*{dmri} scanning
   protocol, such as fieldmaps \citep{jezzard_correction_1995}, \glspl*{dwi} with a different
-  \gls*{pe} scheme \citep{cordes_geometric_2000,chiou_simple_2000}, \gls*{t2} images
+  \gls*{pe} scheme \citep{cordes_geometric_2000,chiou_simple_2000}, or \gls*{t2} images
   \citep{kybic_unwarping_2000}.
-We will refer to this latter approach as \gls*{t2b} correction in the following.
+In the following, we will refer to this latter approach as \gls*{t2b} correction.
 \Gls*{epi} corrections have been an active field of research, with numerous refinements and
   combinations of the original methods \citep{holland_efficient_2010,andersson_comprehensive_2012,
   irfanoglu_drbuddi_2014}.
 
 The tool \emph{bbregister} \citep{greve_accurate_2009} has become a rather standard linear
-  registration method to be used with \gls*{epi} corrections.
+  registration method to be used along with \gls*{epi} corrections.
 It uses 3D active contours with edges\footnote{A three-dimensional active contour is a surface
   and it is ``with edges'' when the contours evolve in search of abrupt intensity steps (the edges) within
   the target image.} to search for intensity boundaries in the \lowb{} image.
@@ -98,7 +98,7 @@ The hypothesis tested in the present study is that the registration and segmenta
   geometrical accuracy of the overall process, and avoiding data resampling of \gls*{epi}
   correction methods.
 Thus, we propose a tool called \regseg{} implementing 3D active contours (surfaces) without edges
-  \citep{chan_active_2001}, which evolve to drive a free-form deformation field of B-spline
+  \citep{chan_active_2001}, which evolve over a free-form deformation field of B-spline
   basis functions.
 The surfaces are nested and they enclose regions with homogeneous diffusion features
   (the \gls*{fa} and \gls*{adc} maps for the case of \gls*{dmri} data).
