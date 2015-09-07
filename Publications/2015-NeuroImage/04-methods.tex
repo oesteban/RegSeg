@@ -39,6 +39,25 @@ We reformulate the segmentation of the distorted \gls*{dmri} images (the moving 
   its corresponding location in $M$, and $n$ denotes the dimensionality of images.
 Finally, $\vec{u} = \vec{u}(\vec{r})$ is the displacement of every point with respect
   to the reference domain.
+The general overview of how the surfaces interact with the registration framework
+  is presented in \autoref{fig:method}.
+
+\begin{figure}
+  \includegraphics[width=\linewidth]{figure01}
+  \caption{The active contours are defined as the interfacing surfaces of the competing
+    \glspl{roi} $\Omega_i$, which
+  are represented in green and dark blue in this close-up.
+  They evolve iteratively following their inward normals $\hat{n}_i$ at each vertex
+    $\vec{v}_i$ of the mesh.
+  The gradient speeds $\bar{s}_i$ drive registration, which are computed as the disparity of the data
+    energies with respect to the two limiting regions of $M(\vec{v}_i)$, the features of the image
+    $M$ in the location of vertex $\vec{v}_i$ (see \suppl{equation SM5}).
+  In this figure, $\bar{s}_1$ is written in the lower
+    box, with $\Omega_{wm}$ in the inner limiting region, $\Omega_{gm}$ the outer region, and
+    $w_{0,1}$ is the relative area associated with vertex $\vec{v}_1$ with respect to
+    the total area of surface $\Gamma_0$.
+      }\label{fig:method}
+\end{figure}
 
 \paragraph*{Cost-function derivation}
 In a Bayesian framework for registration \citep{wyatt_map_2003,pohl_bayesian_2006,gass_simultaneous_2014},
@@ -149,23 +168,6 @@ This expression is the dual of the Mumford-Shah functional that corresponds
 
 \subsection{Numerical Implementation}
 \label{sec:numerical_implementation}
-
-\begin{figure}
-  \includegraphics[width=\linewidth]{figure01}
-  \caption{The active contours are defined as the interfacing surfaces of the competing
-    \glspl{roi} $\Omega_i$, which
-  are represented in green and dark blue in this close-up.
-  They evolve iteratively following their inward normals $\hat{n}_i$ at each vertex
-    $\vec{v}_i$ of the mesh.
-  The gradient speeds $\bar{s}_i$ drive registration, which are computed as the disparity of the data
-    energies with respect to the two limiting regions of $M(\vec{v}_i)$, the features of the image
-    $M$ in the location of vertex $\vec{v}_i$ (see \suppl{equation SM5}).
-  In this figure, $\bar{s}_1$ is written in the lower
-    box, with $\Omega_{wm}$ in the inner limiting region, $\Omega_{gm}$ the outer region, and
-    $w_{0,1}$ is the relative area associated with vertex $\vec{v}_1$ with respect to
-    the total area of surface $\Gamma_0$.
-      }\label{fig:method}
-\end{figure}
 
 \paragraph*{Deformation model}\label{sec:deformation_model}
 Since the vertices of the surfaces $\{\vec{v}_i: \vec{v}_i \subset \gammaset \}_{i=1 \ldots N_V}$
