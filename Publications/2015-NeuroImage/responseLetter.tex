@@ -236,7 +236,35 @@ It is unclear if the deformation field solution is restricted to the phase encod
 It is possible that this is a very useful method, as the results seem to indicate, but the paper is unfortunately too unclear to
   make a full judgement about the method.
 \end{reviewpoint}
-\reply{}
+\reply{
+We thank the reviewer for pointing out that the overall goal is not clearly explained.
+This paper focuses on segmenting very accuratelly dMRI data, to support the subsequent processing tasks
+  such as image reconstruction (e.g. spherical deconvolution) and tractography.
+Since we are aligning very accurate surfaces representing the anatomical structure of the subject, we
+  implicitly find the mapping between structural and dMRI spaces.
+This mapping is a precious result since all the anatomical information is usually obtained in the structural
+  space (generally from T1w scans).
+
+As the reviewer points out, the misregistration between structural and dMRI spaces is generally two-fold:
+  a linear component because the rigid head-motion inside the scanner between the acquisition of the
+  T1w and the dMRI images; and a nonlinear warping aligned with the phase-encoding direction of dMRI
+  that is intrinsic to the EPI schemes used for acquisition.
+The first component of the misalignment w.r.t. the structural space is usually solved with afine registration, as
+  described in lines 29-38.
+The second component is the nonlinear warping, solved by the so-called ``EPI distortion correction'' methods.
+These methods find the deformation field underlying the distortion, and resample the dMRI dataset on the structural space
+  unwarping the data.
+There are two principal diverging points between \emph{regseg} and standard correction methods:
+  1) we do not resample the dMRI data in the structural space (meaning, we do not actually correct);
+  and 2) EPI-distortion correction methods generally require additional MR acquisitions like fieldmaps, reversed-encoding
+  DWIs, or T2w images.
+We discuss this second advantage in lines 241-243.
+Since our method can be seen as an alternative to EPI distortion correction, we did not aim at comparing with
+  these in this work, and left it for future publications.
+
+We understand that the manuscript did not clearly state the overall goal of the method, and we updated it accordingly: 
+ {\color{red} say what here}.
+}
 
 \begin{reviewpoint}
 abstract: Not immediately clear what this means: ``active contours without edges extracted from structural images''
@@ -249,7 +277,7 @@ As previously described in \autoref{com:1} and \autoref{com:2}, we have made an 
   to our method are a set of nested surfaces and a target multivariate image, that for the case of dMRI data comprehends
   FA and ADC.
 
-However, and for the sake of clarity, we have modified the manuscript as follows:  {\color{red} say what here}.}
+However, and for the sake of clarity, we have modified the manuscript as follows: {\color{red} say what here}.}
 
 \begin{reviewpoint}
 I note that the text in the abstract seems to have no correspondence with the graphical abstract.
@@ -275,7 +303,18 @@ In fact, many methods have been used to segment fiber tracts, then to quantitati
   in the dMRI space.
 It is true the correspondence with T1 is imperfect, but segmentation of fiber tracts is possible.
 \end{reviewpoint}
-\reply{}
+\reply{
+The reviewer is right, we have changed the sentence as follows:
+``These limitations prevent {\color{blue} partitioning the native dMRI space in homogeneous regions 
+  of diffusion features}''.
+We agree with the reviewer that there actually exist many methods to segment fiber tracts.
+However, our method is intended to support fiber tracking methods requiring detailed anatomical
+  information, such as \citep{smith_anatomicallyconstrained_2012}.
+Therefore, we defined our method without the support of a tractogram to evolve the contours.
+This could be a future line to be investigated.
+
+In order to clarify this point, we have modified the manuscript as follows: {\color{red} say what here}.
+}
 
 \begin{reviewpoint}
 Please define what you mean here by segmentation.
@@ -285,12 +324,23 @@ It seems there is an assumption that it means specifically segmentation via regi
 Now on line 19 it seems the goal of the segmentation may simply be the segmentation of the WM.
 So far, I have no idea what the overall goal of the approach is.
 \end{reviewpoint}
-\reply{}
+\reply{
+This comment is very related to \autoref{com:14}. We have made the following amendments to the manuscript:
+{\color{red} say what here}.
+}
 
 \begin{reviewpoint}
 Line 24. clustering of what?
 \end{reviewpoint}
-\reply{}
+\reply{
+This comment is a consequence of the two previous comments.
+The reviewer is right in the sense that we did not clearly state what we are segmenting, and therefore
+  the references in line 24 are a bit orphaned.
+All methods reviewed in lines 19-28 cluster/segment/classify \emph{voxels} in dMRI space based on
+  one or another feature derived from dMRI data.
+We have clarified the manuscript according to \autoref{com:14} and \autoref{com:15}, and specifically
+  rewritten lines 19-28 to explicitly state what those methods are clustering.
+}
 
 \begin{reviewpoint}
 Now in the paragraph beginning on line 29, it seems the segmentation of WM/GM interface is of interest.
@@ -303,11 +353,17 @@ However, I do not know yet what the goal is.
 
 The entire Introduction should be rewritten to improve organization and clearly state the paper's goal much
   earlier (in abstract and introduction).
-  Truly related work should be described in more detail, and all of the unrelated references should be removed.
+Truly related work should be described in more detail, and all of the unrelated references should be removed.
 
 Line 58. It seems the paper goal may be stated here. It is still completely unclear what type of segmentation should be achieved.
 \end{reviewpoint}
-\reply{}
+\reply{
+Again, the reviewer finds that the main goal of the paper is not clearly stated.
+We understand that modifications derived from the previous comments satisfy the answer to the concern,
+  and changes include abstract and introduction.
+We identified and removed some unrelated references {\color{red} say which ones here}, and added
+  some references regarding correction of EPI distortions {\color{red} say which ones here}.
+}
 
 \begin{reviewpoint}
 It seems by line 69 that EPI distortion correction and segmentation by registration are to be performed jointly
@@ -319,7 +375,15 @@ See for example multiple papers by Carlo Pierpaoli's group, including this most 
 Irfanoglu, M. Okan, et al. ``DR-BUDDI (Diffeomorphic Registration for Blip-Up blip-Down Diffusion Imaging) method for correcting echo planar imaging distortions.''
   NeuroImage 106 (2015): 284-299.
 \end{reviewpoint}
-\reply{}
+\reply{
+In \autoref{com:9} we addressed the differences between EPI distortion correction and our method.
+Even though we do not aim at correcting for distortions, we understand that \emph{regseg} can replace
+  this task.
+Therefore, we cannot deny the closeness of EPI distortion correction to our field and added the
+  suggested reference.
+This way, the main three correction methods most widely used are cited in our paper (fielmap based correction \citep{jezzard_correction_1995},
+  blip-up/blip-down correction \citep{irfanoglu_drbuddi_2015}, and T2w-b0 registration \citep{kybic_unwarping_2000}).
+}
 
 \begin{reviewpoint}
 The majority of the EPI distortion correction methods use T2 and B0 due to similar contrast. Why was T1 chosen in this framework?
@@ -328,7 +392,10 @@ Suddenly in Section 2 it becomes clear that there are surfaces being registered.
 Perhaps this should have been obvious from the title, which mentioned active contours, but before line 72 it was not clearly
   stated that the method was posed as a surface registration problem.
 \end{reviewpoint}
-\reply{}
+\reply{
+We have updated the title to represent this aspect.
+We have also included all previous changes to fulfill this request.
+}
 
 \begin{reviewpoint}
 Was the warp restricted to the phase encode direction?
@@ -360,7 +427,15 @@ We understand that this point should be clearly stated in the manuscript and mod
 \begin{reviewpoint}
 The experiments seem reasonable and clearly presented in general. But far too little detail is given on the B0-T2 comparison method.
 \end{reviewpoint}
-\reply{}
+\reply{
+We thank the reviewer for positively weighing our experiments and results.
+As stated in line 189, we use the settings from the \emph{ExploreDTI} software package \citep{leemans_exploredti_2009}, that
+  internally uses \emph{elastix} \citep{klein_elastix_2010} in registration.
+Settings for \emph{elastix} are available in \url{https://github.com/oesteban/RegSeg/tree/master/Scripts/pyacwereg/data},
+  and they are reproduced from the p-code version of \emph{ExploreDTI} handed over by Dr. A. Leemans on May 20th, 2014.
+However, it is possible that the information about the B0-T2 method is very scarce and we introduced
+  further explanations accordingly: {\color{red} say what here}.
+}
 
 \begin{reviewpoint}
 Please define the phrase ``active contours without edges''.
