@@ -886,7 +886,7 @@ FUNCTION {inproceedings}
   format.titlenocase output
   new.block
   crossref missing$
-    { format.in.booktitle "booktitle" output
+    { format.in.ed.booktitle "booktitle" output.check
       format.series output
       format.pages output
       address empty$
