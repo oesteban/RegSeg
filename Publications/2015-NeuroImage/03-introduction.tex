@@ -66,11 +66,11 @@ In the following, we will refer to this latter approach as \gls*{t2b} correction
   combinations of the original methods \citep{holland_efficient_2010,andersson_comprehensive_2012,
   irfanoglu_drbuddi_2015}
 
-The tool \emph{bbregister} \citep{greve_accurate_2009} has become a rather standard linear
-  registration method to be used along with \gls*{epi} corrections.
-It uses 3D active contours with edges\footnote{A three-dimensional active contour is a surface
-  and it is ``with edges'' when the contours evolve in search of abrupt intensity steps (the edges) within
-  the target image.} to search for intensity boundaries in the \lowb{} image.
+The tool \emph{bbregister} \citep{greve_accurate_2009} has been widely adopted as the standard
+  registration method to be used along with the \gls*{epi} correction of choice.
+It implements a linear mapping, and uses 3D active contours with edges\footnote{A three-dimensional active contour
+  is a surface and it is ``with edges'' when the contours evolve in search of abrupt intensity steps
+  (the edges) within the target image.} to search for intensity boundaries in the \lowb{} image.
 The active contours are initialized using surfaces extracted from the \gls*{t1} using
   \emph{FreeSurfer} \citep{fischl_freesurfer_2012}: the \emph{pial} surface (exterior of the
   cortical \gls*{gm}) and the \emph{white} surface (the \gls*{wm}/\gls*{gm} interface).
@@ -92,11 +92,11 @@ Here we show a method that registers anatomically-correct surfaces to multivaria
 % It is important that surfaces are defined in the coordinate system of the image used as
 %   source of structural information (typically, but not restricted to, \gls*{t1} images), otherwise segmentation performs
 %   correctly but the mapping found in registration does not represent any valuable information.
-The hypothesis tested in the present study is that the registration and segmentation
-  problems in \gls*{dmri} can be solved simultaneously, effectively establishing the
-  necessary mapping to project structural information from anatomical images, increasing the
-  geometrical accuracy of the overall process, and avoiding data resampling of \gls*{epi}
-  correction methods.
+The hypothesis underlying is that the registration and segmentation problems in \gls*{dmri}
+  can be solved simultaneously with three key benefits:
+  1) effectively establishing the necessary mapping to project structural information from anatomical images,
+  2) increasing the geometrical accuracy of the overall process,
+  and 3) avoiding data resampling of \gls*{epi} correction methods.
 Thus, we propose a tool called \regseg{} implementing 3D active contours (surfaces) without edges
   \citep{chan_active_2001}, which evolve over a free-form deformation field of B-spline
   basis functions.

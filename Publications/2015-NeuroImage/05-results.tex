@@ -25,7 +25,7 @@ In total, 1200 experiments (four phantom types $\times$ 150 random warpings $\ti
   performed according to the workflow illustrated in \autoref{fig:evphantoms}.
 For each experiment, the misregistration error was measured using the Hausdorff distance
   (see \autoref{sec:experiments_evaluation}) between the theoretical $\gammaset_\text{true}$ and
-  the estimate obtained by \regseg{} ($\hat{\gammaset}_{test}$).
+  the estimate obtained by \regseg{} ($\hat{\gammaset}_\text{test}$).
 The results demonstrated that the accuracy was consistent and high, and below the image resolution.
 \autoref{fig:phantom} (block C) shows the violin plots for each model type corresponding
   to the two sets of resolutions for the generated phantoms.
@@ -54,7 +54,7 @@ Statistical tests might not be sufficiently conclusive, so we also computed the 
     \hline
     \end{tabular}
     \caption{The distributions of vertex-wise Hausdorff distances between the ground-truth surfaces and their
-    corresponding estimates obtained with \regseg{} presented a 95\% CI below the half-voxel size for all of 
+    corresponding estimates obtained with \regseg{} presented a 95\% CI below the half-voxel size for all of
     the phantom types.
     The CIs were computed by bootstrapping using 10$^4$ samples, with the median as the location statistic.}\label{tab:ci_phantom}
 \end{table}
@@ -67,7 +67,7 @@ In \autoref{fig:results_real}, box A, the visual report is shown for one subject
 We computed the \gls*{swindex} \eqref{eq:swindex} of every surface after registration
   using both the \regseg{} and \gls*{t2b} methods.
 Finally, to compare the results, we performed Kruskal-Wallis H-tests
-  (a non-parametric alternative to ANOVA) on the warping indices for the three surfaces of 
+  (a non-parametric alternative to ANOVA) on the warping indices for the three surfaces of
   interest selected in \autoref{sec:experiments_evaluation}
   ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$).
 All of the statistical tests showed that the error distributions obtained with \regseg{} and
@@ -120,4 +120,4 @@ The results of the statistical tests and the CIs are summarized in \autoref{tab:
   B. Violin plots of the error distributions for each surface, which show the voxel size of the \gls*{dmri} images
     (1.25 mm), thereby supporting the improved results obtained by \regseg{} with the proposed settings.
   }\label{fig:results_real}
-\end{figure*} 
+\end{figure*}

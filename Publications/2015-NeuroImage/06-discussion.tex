@@ -19,12 +19,21 @@ We also assessed the 95\% \gls*{ci}, which yielded an aggregate interval of
   0.34--0.38 [mm] for the high resolution phantoms (1.0 mm isotropic).
 Therefore, we also concluded that the error was bounded above by half of the
   voxel spacing.
+The distributions of errors along surfaces vary importantly depending on the shape of the
+  phantom (see \autoref{fig:phantom}B).
+The misregistration error of the ``gyrus'' phantom showed a much lower spread than that
+  for the other shapes.
+We argue that the symmetry of those other shapes posed problem in driving the contours
+  towards the appropriate region and producing some ``sliding'' effect between the
+  faces of the surface and their ground-truth position.
+This effect should not be present in real datasets, thanks to the very convoluted cortical
+  layer, and the directional restriction of distortion.
 
 \paragraph*{Application to real data}
 We designed \regseg{} as a method for segmenting \gls*{dmri} data by exploiting the
-  anatomical information extracted from the corresponding \gls*{t1} image of the subject.
-Applications in whole-brain tractography \citep{smith_tractbased_2006,craddock_imaging_2013}
-  usually solve this problem with a two-step approach.
+  anatomical information extracted from a structural image (typically a \gls*{t1} image)
+  of the subject.
+Current applications based on whole-brain tractography usually solve this problem with a two-step approach.
 First, the images are corrected for nonlinear distortions using auxiliary acquisitions
   such as field maps \citep{jezzard_correction_1995}, \gls*{t2} images \citep{kybic_unwarping_2000}.
 Second, the segmentation is projected from a reference \gls*{t1} image using linear
@@ -45,7 +54,7 @@ The misregistration error that remained after \regseg{} was significantly lower 
 Visual inspections of all the results (\suppl{section S5}) and the violin plots in
   \autoref{fig:results_real} confirmed that \regseg{} performed better than the \gls*{t2b} method
   in our settings.
-We carefully configured the \gls*{t2b} method using the same algorithm and the 
+We carefully configured the \gls*{t2b} method using the same algorithm and the
   same settings employed in a widely-used tool.
 However, cross-comparison experiments are prone to so-called \emph{instrumentation bias}
   \citep{tustison_instrumentation_2013}.

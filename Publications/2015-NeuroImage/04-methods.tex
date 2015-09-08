@@ -22,7 +22,7 @@ Finally, \cite{gorthi_active_2011} extended the existing methodologies using a m
   of atlas-based segmentation.
 
 
-\subsection{Registration framework and segmentation model derivation}\label{sec:methods_map}
+\subsection{Registration framework and segmentation model}\label{sec:methods_map}
 Let $\gammaset_R = \{\Gamma_m: m \in \mathbb{N}, m \leq N_S\}$ be the set of $N_S$ surfaces
   extracted from the undistorted \gls*{t1} image (the reference space $R$).
 We reformulate the segmentation of the distorted \gls*{dmri} images (the moving space $M$)
@@ -114,9 +114,10 @@ In fact, the projection of $\gammaset_R$ onto $M$ is an implicit segmentation mo
   of one subject.
 
 \begin{figure}
-\includegraphics[width=\linewidth]{figure04A}
-\includegraphics[width=\linewidth]{figure04B}
-\includegraphics[width=\linewidth]{figure04C}
+\includestandalone[width=\linewidth]{figure02-model}
+% \includegraphics[width=\linewidth]{figure04A}
+% \includegraphics[width=\linewidth]{figure04B}
+% \includegraphics[width=\linewidth]{figure04C}
 \caption{%
 Evolution of the segmentation model defined by the homogeneous regions $\Omega_i$
   for a real dataset.
@@ -124,7 +125,7 @@ Panel A shows how the \gls*{fa} and the \gls*{adc} are clustered by the surfaces
   $M$ through the ground-truth.
 Panel B shows the same information at the initialization step of \regseg{}.
 Since the surfaces are misaligned in $M$, the spreads of the sampled distribution for
-  each region are large.
+  each region are larger than those in A.
 Panel C, after \regseg{} registration, shows how the covariance matrices $\boldsymbol{\Sigma}_l$
   are minimized with respect to panel B, and the resulting segmentation is close
   to the theoretical situation presented in panel A.
@@ -224,7 +225,8 @@ Finally, to descend this gradient, we establish a semi-implicit Euler scheme (se
   with a step size parameter $\delta$, which we solve in the spectral domain as follows:
 
   \begin{align}
-  \vec{u}_k^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{\delta^{-1} \, \vec{u}_k^t - \vec{g}_k\} }                  {\mathcal{F}\{(\delta^{-1} + \boldsymbol{\alpha})\, I - \boldsymbol{\beta}\Delta\}} \right\},
+  \vec{u}_k^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{\delta^{-1} \, \vec{u}_k^t - \vec{g}_k\} }
+                    {\mathcal{F}\{(\delta^{-1} + \boldsymbol{\alpha})\, I - \boldsymbol{\beta}\Delta\}} \right\},
   \label{eq:update_equation}
   \end{align}
   where $I$ denotes the identity operator.
@@ -239,7 +241,8 @@ The implementation details as well as other features (such as the sparse matrix 
   to fast interpolation) and the main parameters
   (such as $\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$, the B-spline grid resolutions,
  and target image smoothing) are discussed in \suppl{section S1}.
-The actual choices of the parameter settings are publicly distributed with the source code for the experiments.
+The actual choices of the parameter settings are publicly distributed with the source code for the
+  experiments\footnote{\url{https://github.com/oesteban/RegSeg/tree/master/Scripts/pyacwereg/data}}.
 The final settings were obtained manually based on feedback from the post-registration convergence
   reports (such as that found in \suppl{section S1.3}).
 We released \regseg{} along with the tool to generate the convergence report.
@@ -329,9 +332,12 @@ which extends our previous evaluation \citep{esteban_simulationbased_2014} of di
     susceptibility-derived distortions.
   Target diffusion scalars (\gls*{fa} and \gls*{adc}) were computed with the distorted data and
     stacked to feed the multivariate input required by \regseg{}.
-  4) The method was run to obtain $U_{test} = \hat{U}_{true}$, i.e., the estimate of
+  4) The method was run to obtain $U_\text{test} = \hat{U}_\text{true}$, i.e., the estimate of
     the ground-truth deformation.
-  5) The results were evaluated visually and quantitatively.}\label{fig:evworkflows}
+  5) The results were evaluated visually and quantitatively.
+  The arrows point to edges in the target images (yellow arrows for \gls*{fa}, blue for \gls*{adc}) that
+    should be aligned with a surface, showing how distortion breaks the mapping with the structural space in which
+    the contours are defined.}\label{fig:evworkflows}
 \end{figure*}
 
 
@@ -367,10 +373,11 @@ The segmentation model corresponding to this partition is shown in \autoref{fig:
   and discussed in greater detail in \suppl{section S4}.
 
 \paragraph*{Ground-truth generation}
-Realistic deformation is achieved by generating displacements fields that satisfy the theoretical
-  properties of distortion \citep{jezzard_correction_1995}.
+Realistic deformation was achieved by generating displacements fields that satisfy the theoretical
+  properties of distortion.
 The displacements along the \gls*{pe} axis of the \gls*{dmri} image are related to the local
-  deviation of the field $\Delta B_0(\vec{r})$ from its nominal value $B_0$, as follows:
+  deviation of the field $\Delta B_0(\vec{r})$ from its nominal value $B_0$  \citep{jezzard_correction_1995},
+  as follows:
 
   \begin{equation}
   u_\text{PE} = \frac{\gamma \, T_{acq}\, s_\text{PE}}{2\pi}\Delta B_0(\vec{r})\text{ [mm]},
@@ -387,6 +394,9 @@ The field map was unwrapped\footnote{fieldmaps are phase maps, which are intrins
 Next, the original \gls*{dmri} was warped using the resulting displacement field and fed into
   a pipeline to process the corresponding \gls*{dti}, thereby computing the derived scalars of
   interest (\gls*{fa} and \gls*{adc}) using \emph{MRtrix} \citep{tournier_mrtrix_2012}.
+Since the distortion only happens along the \gls*{pe} direction ($y$-axis in our settings),
+  \regseg{} was configured to allow nonzero displacements only on the corresponding axis.
+We also configured the \gls*{t2b} method accordingly.
 
 \paragraph*{Metric assessment}
 Initially, we investigated the appropriateness of the segmentation model.
@@ -405,11 +415,12 @@ We reproduced the solution and settings provided with \emph{ExploreDTI}
   \gls*{dti}.
 \emph{ExploreDTI} internally employs \emph{elastix} \citep{klein_elastix_2010} to
   perform registration.
+Settings used with \emph{elastix} are conveniently available in its format\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/t2b_elastix_y.txt}}.
 
 \paragraph*{Error measurement}\label{sec:experiments_evaluation}
 Distortion only occurs along the \gls*{pe} axis of the image, so we computed the
   \gls*{swindex} as the area-weighted distance between the corresponding vertices of
-  $\gammaset_{true}$ and their estimate obtained by the method under the test $\hat{\gammaset}_\text{test}$:
+  $\gammaset_\text{true}$ and their estimate obtained by the method under the test $\hat{\gammaset}_\text{test}$:
 
   \begin{equation}
   sWI = \frac{1}{\sum_i a_i} \sum\limits_i^{N_V} a_i\,\|

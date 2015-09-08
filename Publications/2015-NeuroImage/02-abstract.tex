@@ -1,18 +1,22 @@
 % -*- root: 00-main.tex -*-
-Current applications of whole-brain tractography to \acrlong*{dmri} data require highly precise
-  delineations of anatomical structures, which are usually projected from \acrlong*{t1} images
-  by registration.
-In this study, we propose \regseg{}, which is a simultaneous segmentation and registration method
-  that uses active contours without edges extracted from structural images.
-The contours evolve through a free-form deformation field supported by the B-spline basis
+Current methods using diffusion MRI to map the microstructure and connectivity of the
+  human brain increasingly require precise delineations of anatomical structures.
+The problem is typically solved by projecting the structural information extracted
+  in T1-weighted images, by means of nonlinear registration since diffusion
+  MRI data present geometrical distortions.
+Here we propose \regseg{}, which segments homogeneous regions within multivariate
+  images by projecting a set of nested surfaces extracted from structural images.
+The surfaces evolve through a free-form deformation field supported by the B-spline basis
   to optimally map the contours onto the data in the target space.
 We tested the functionality of \regseg{} using four digital phantoms warped with known and
   randomly generated deformations, where subvoxel accuracy was achieved.
-We then applied \regseg{} to a registration/segmentation task using 16 real diffusion MRI
-  datasets from the \acrlong*{hcp}, which were warped by realistic and nonlinear distortions that are typically
-  present in these data.
-We computed the misregistration error of the contours estimated by \regseg{} with respect
+We proposed a set of surfaces to segment the fractional anisotropy and the apparent diffusion
+  coefficient maps derived from diffusion MRI datasets.
+These surfaces extracted from the same-subject T1-weighted image successfully segmented 16 real
+  diffusion MRI datasets from the Human Connectome Project that were warped by realistic and nonlinear
+  distortions.
+We computed the misregistration error of the surfaces estimated by \regseg{} with respect
   to their theoretical location using the ground truth, thereby obtaining a 95\% CI of 0.56--0.66 mm
   distance between corresponding mesh vertices, which was below the 1.25 mm isotropic resolution of the images.
-We also compared the performance of our proposed method with a widely used registration tool, which showed
+We also compared the performance of the proposed method with a widely used registration tool, which showed
   that \regseg{} outperformed this method in our settings.
