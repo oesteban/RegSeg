@@ -305,7 +305,10 @@ FUNCTION {format.title}
 }
 
 FUNCTION {format.titlenocase}
-{ title
+{ title empty$
+    'skip$
+    { title "t" }
+  if$
 }
 
 FUNCTION {format.full.names}
@@ -502,13 +505,6 @@ FUNCTION {format.number.series}
 }
 
 
-FUNCTION {format.series}
-{ series empty$
-    { "there's no series in " cite$ * warning$ }
-    { series tie.or.space.connect }
-  if$
-}
-
 FUNCTION {format.edition}
 { edition empty$
     { "" }
@@ -629,12 +625,21 @@ FUNCTION {format.in.ed.booktitle}
   if$
 }
 
-FUNCTION {format.in.booktitle}
+
+FUNCTION {format.series}
+{ series empty$
+    'skip$
+    { series tie.or.space.connect }
+  if$
+}
+
+FUNCTION {format.booktitle}
 { booktitle empty$
-    { "" }
-    { volume empty$
-        { "In " booktitle emphasize * }
-        { "In " volume emphasize * "$^\text{th}$ " * booktitle emphasize *  }
+    'skip$
+    { "In " booktitle emphasize *
+      series empty$
+        'skip$
+        { ", " * series tie.or.space.connect }
       if$
     }
   if$
@@ -740,7 +745,7 @@ FUNCTION {article}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.titlenocase output
+  format.titlenocase output.check
   new.block
   crossref missing$
     { journal emphasize "journal" output.check
@@ -802,7 +807,7 @@ FUNCTION {booklet}
   format.authors output
   author format.key output
   new.block
-  format.titlenocase output
+  format.titlenocase output.check
   howpublished address new.block.checkb
   howpublished output
   address output
@@ -855,10 +860,10 @@ FUNCTION {incollection}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.titlenocase output
+  format.titlenocase output.check
   new.block
   crossref missing$
-    { format.in.booktitle "booktitle" output.check
+    { format.booktitle "booktitle" output.check
       format.number.series output
       format.chapter.pages output
       new.sentence
@@ -883,11 +888,10 @@ FUNCTION {inproceedings}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.titlenocase output
+  format.titlenocase output.check
   new.block
   crossref missing$
-    { format.in.ed.booktitle "booktitle" output.check
-      format.series output
+    { format.booktitle "booktitle" output.check
       format.pages output
       address empty$
         { organization publisher new.sentence.checkb
@@ -936,7 +940,7 @@ FUNCTION {mastersthesis}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.titlenocase output
+  format.titlenocase output.check
   new.block
   "Master's thesis" format.thesis.type output.nonnull
   school "school" output.check
@@ -952,7 +956,7 @@ FUNCTION {misc}
   format.authors output
   author format.key output
   title howpublished new.block.checkb
-  format.titlenocase output
+  format.titlenocase output.check
   howpublished new.block.checka
   howpublished output
   format.date output
@@ -973,7 +977,7 @@ FUNCTION {phdthesis}
   new.block
   format.btitle "title" output.check
   new.block
-  "PhD thesis" format.thesis.type output.nonnull
+  type output
   school "school" output.check
   address output
   format.date "year" output.check
@@ -1006,7 +1010,7 @@ FUNCTION {techreport}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.titlenocase output
+  format.titlenocase output.check
   new.block
   format.tr.number output.nonnull
   institution "institution" output.check
@@ -1022,7 +1026,7 @@ FUNCTION {unpublished}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.titlenocase output
+  format.titlenocase output.check
   new.block
   format.date output
   format.url output
