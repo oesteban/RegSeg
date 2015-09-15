@@ -9,7 +9,7 @@ Subsequent processing involves describing the local microstructure with one avai
   model, which ranges from the early \gls*{dti} proposed by \cite{basser_microstructural_1996}
   to current models such as \citep{daducci_accelerated_2015}.
 The microstructural map is then used to draw the preferential orientations of diffusion
-  across regions using tractography \citep{mori_threedimensional_1999}.
+  across the brain using tractography \citep{mori_threedimensional_1999}.
 Finally, the streamlines found are filtered with a cortical parcellation
   to build the graph representing the corresponding structural
   network \citep{hagmann_mapping_2008}.
@@ -57,34 +57,18 @@ First, it is possible to use an existing ``\gls*{epi} distortion correction''
   combined with a rigid registration method.
 Second, to apply a nonlinear registration method with specific constraints derived from the
   theoretical properties of the \gls*{epi} distortion.
-However, both solutions require extra acquisitions to be included within the \gls*{dmri} scanning
+Both solutions require extra acquisitions to be included within the \gls*{dmri} scanning
   protocol, such as fieldmaps \citep{jezzard_correction_1995}, \glspl*{dwi} with a different
   \gls*{pe} scheme \citep{cordes_geometric_2000,chiou_simple_2000}, or \gls*{t2} images
   \citep{kybic_unwarping_2000}.
-In the following, we will refer to this latter approach as \gls*{t2b} correction.
-\Gls*{epi} corrections have been an active field of research, with numerous refinements and
-  combinations of the original methods \citep{holland_efficient_2010,andersson_comprehensive_2012,
-  irfanoglu_drbuddi_2015}
-
-The tool \emph{bbregister} \citep{greve_accurate_2009} has been widely adopted as the standard
-  registration method to be used along with the \gls*{epi} correction of choice.
-It implements a linear mapping, and uses 3D active contours with edges\footnote{A three-dimensional active contour
-  is a surface and it is ``with edges'' when the contours evolve in search of abrupt intensity steps
-  (the edges) within the target image.} to search for intensity boundaries in the \lowb{} image.
-The active contours are initialized using surfaces extracted from the \gls*{t1} using
-  \emph{FreeSurfer} \citep{fischl_freesurfer_2012}: the \emph{pial} surface (exterior of the
-  cortical \gls*{gm}) and the \emph{white} surface (the \gls*{wm}/\gls*{gm} interface).
-The \lowb{} image only includes a detectable frontier for the pial surface, and thus
-  \emph{bbregister} is limited to aligning the cortical layer in this
-  application.
-To overcome the problem of nonlinear distortions, \emph{bbregister} excludes the
-  regions that are typically warped from the boundary search.
-However, because the distortion is not considered, it must be addressed separately.
 The nonlinear registration approach has been successfully solved with \gls*{t2b} methods,
   which align the \gls*{t2} and \lowb{} images by exploiting their similarity
   \citep{kybic_unwarping_2000,studholme_accurate_2000}.
 However, further rigid registration of the \gls*{t1} and \gls*{t2} images is still required to
   map the anatomical information onto \gls*{dmri}-space.
+\Gls*{epi} corrections have been an active field of research, with numerous refinements and
+  combinations of the original methods \citep{holland_efficient_2010,andersson_comprehensive_2012,
+  irfanoglu_drbuddi_2015}
 
 Here we show a method that registers anatomically-correct surfaces to multivariate images,
   thereby implicitly segmenting the \gls*{dmri}-space into those structures enclosed by the contours
@@ -104,10 +88,6 @@ The surfaces are nested and they enclose regions with homogeneous diffusion feat
   (the \gls*{fa} and \gls*{adc} maps for the case of \gls*{dmri} data).
 Optimization is performed using a descent strategy with explicit shape gradients
   \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
-Therefore, unlike most previous methods, \regseg{} does not implement level sets.
-Since the \gls*{epi} distortion is aligned with the \gls*{pe} axis (see
-  \autoref{sec:human_connectome}), \regseg{} includes an anisotropic regularizer for
-  the displacements field proposed by \cite{nagel_investigation_1986}.
 Finally, we evaluate \regseg{} using an extension of our instrumentation framework
   \citep{esteban_simulationbased_2014}, which simulates known and realistic distortions
   based on \gls*{dmri} data.

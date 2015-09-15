@@ -4,8 +4,10 @@
 
 \paragraph*{Accuracy tests}
 The hypothesis tested in our study was that reliable image registration can be performed
-  by searching for homogeneous regions in a multispectral image, which correspond to precise contours
-  from an atlas, or extracted from another image (i.e., a different time step).
+  by searching for the homogeneous regions defined by a set of nested surfaces in a
+  multispectral image
+The surfaces correspond to precise contours extracted from another image of the same subject
+  (i.e. a \gls*{t1} image, or a different time step).
 We demonstrated that active contours without edges can be used successfully to drive a
   deformation supported by B-spline basis functions with digital phantoms.
 We randomly deformed four different phantom models to mimic three homogeneous regions
@@ -23,9 +25,9 @@ The distributions of errors along surfaces vary importantly depending on the sha
   phantom (see \autoref{fig:phantom}B).
 The misregistration error of the ``gyrus'' phantom showed a much lower spread than that
   for the other shapes.
-We argue that the symmetry of those other shapes posed problem in driving the contours
+We argue that the symmetry of those other shapes posed difficulties in driving the contours
   towards the appropriate region and producing some ``sliding'' effect between the
-  faces of the surface and their ground-truth position.
+  faces of the surfaces and their ground-truth position.
 This effect should not be present in real datasets, thanks to the very convoluted cortical
   layer, and the directional restriction of distortion.
 
@@ -33,14 +35,18 @@ This effect should not be present in real datasets, thanks to the very convolute
 We designed \regseg{} as a method for segmenting \gls*{dmri} data by exploiting the
   anatomical information extracted from a structural image (typically a \gls*{t1} image)
   of the subject.
-Current applications based on whole-brain tractography usually solve this problem with a two-step approach.
+Current pipelines using whole-brain tractography usually solve this problem with a two-step approach.
 First, the images are corrected for nonlinear distortions using auxiliary acquisitions
-  such as field maps \citep{jezzard_correction_1995}, \gls*{t2} images \citep{kybic_unwarping_2000}.
+  such as fieldmaps \citep{jezzard_correction_1995}, \glspl*{dwi} with reversed \gls*{pe}
+  blips \citep{chiou_simple_2000}, or \gls*{t2} images \citep{kybic_unwarping_2000}.
 Second, the segmentation is projected from a reference \gls*{t1} image using linear
   registration \citep{greve_accurate_2009}.
 \Regseg{} addresses this joint problem in a single step and it does not require any additional
   acquisition other than the minimal protocol using only \gls*{t1} and \gls*{dmri} images.
 This situation is found commonly in historical datasets.
+Moreover, since the structural information is projected into the native space of \gls*{dmri}
+  reconstruction and tractography can be performed without resampling data to an undistorted
+  space.
 
 We evaluated \regseg{} in a real environment using the experimental framework presented
   in \autoref{fig:evworkflows}.

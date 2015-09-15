@@ -1,7 +1,7 @@
 % -*- root: 00-main.tex -*-
 \section{Methods}
 \label{sec:methods}
-\subsection{Related work}\label{sec:related_work}
+\subsection{Related work and contributions}\label{sec:related_work}
 Previously, joint segmentation and registration have been applied successfully to other problems
 such as longitudinal object tracking \citep{paragios_level_2003} and atlas-based
   segmentation \citep{gorthi_active_2011}.
@@ -9,7 +9,7 @@ The most common approach to solve the problem simultaneously is optimizing a def
   (registration) that supports the evolution the active contours (segmentation), like
   \citep{paragios_level_2003,yezzi_variational_2003}.
 \cite{unal_coupled_2005}, and later \cite{wang_joint_2006}, replaced the linear registration
-  transform of \citep{yezzi_variational_2003} with a free-form deformation field.
+  transform of \cite{yezzi_variational_2003} with a free-form deformation field.
 \cite{droske_mumfordshah_2009} reviewed the existing techniques and proposed two different
   approaches for applying the Mumford-Shah functional \citep{mumford_optimal_1989} during simultaneous
   registration and segmentation by propagating the deformation field from
@@ -21,6 +21,38 @@ Finally, \cite{gorthi_active_2011} extended the existing methodologies using a m
   level set function to register several active contours during the application
   of atlas-based segmentation.
 
+The tool \emph{bbregister} \citep{greve_accurate_2009} has been widely adopted as the standard
+  registration method to be used along with the \gls*{epi} correction of choice.
+It implements a linear mapping, and uses 3D active contours with edges\footnote{A three-dimensional active contour
+  is a surface and it is ``with edges'' when the contours evolve in search of abrupt intensity steps
+  (the edges) within the target image.} to search for intensity boundaries in the \lowb{} image.
+The active contours are initialized using surfaces extracted from the \gls*{t1} using
+  \emph{FreeSurfer} \citep{fischl_freesurfer_2012}: the \emph{pial} surface (exterior of the
+  cortical \gls*{gm}) and the \emph{white} surface (the \gls*{wm}/\gls*{gm} interface).
+The \lowb{} image only includes a detectable frontier for the pial surface, and thus
+  \emph{bbregister} is limited to aligning the cortical layer in this
+  application.
+To overcome the problem of nonlinear distortions, \emph{bbregister} excludes the
+  regions that are typically warped from the boundary search.
+Indeed, the distortion must be addressed separately because it is not supported by
+  the affine transformation model.
+
+\Regseg{} uses shape-gradients computed on a hierarchical set of explicit surfaces
+  (triangularized meshes), unlike the most of previous registration-and-segmentation
+  methods that implement multiphase level sets.
+\Regseg{} can be seen as a derivative of \emph{bbregister} for the use of active surfaces.
+However, the deformation model is nonlinear and the surfaces in \regseg{} look for the
+  homogeneity within the regions enclosed, instead of image edges.
+\Regseg{} includes an anisotropic regularizer for the displacements field proposed by
+  \cite{nagel_investigation_1986}.
+This regularization strategy conceptually falls in the midway between the Gaussian smoothing
+  generally included in most of the existing methodologies, and the complexity of
+  the elasticity smoother of \cite{guyader_combined_2011}.
+Finally, we also contribute proposing a piecewise smooth segmentation model defined by
+  a selection of nested surfaces to partition the multispectral space
+  comprehending the \gls*{fa} and the \gls*{adc} maps and ultimately identify these
+  structures in \gls*{dmri} space.
+With the definition of appropriate models, \regseg{} may be applied in other fields.
 
 \subsection{Registration framework and segmentation model}\label{sec:methods_map}
 Let $\gammaset_R = \{\Gamma_m: m \in \mathbb{N}, m \leq N_S\}$ be the set of $N_S$ surfaces
@@ -73,7 +105,7 @@ Using Bayes' rule, the posterior likelihood is computed as:
   \label{eq:bayes_rule}
   \end{equation}
   where $P(M \mid U,\omegaset)$ is the data likelihood.
-Because $\omegaset$ are mapped by $U$, then we simplify
+Because $\omegaset$ are mapped by $U$, we simplify
   $P(U, \omegaset) = P(U) \implies P(M \mid U,\omegaset) = P(M \mid U)$.
 The best estimate $\hat{U}$ then satisfies the maximum a posteriori criterion
   \citep{bishop_pattern_2006} and it aligns $\gammaset_R$ into $M$.
@@ -175,8 +207,7 @@ Since the vertices of the surfaces $\{\vec{v}_i: \vec{v}_i \subset \gammaset \}_
   are probably located off-grid, it is necessary to derive $\vec{u}_i = \vec{u}(\vec{v}_i)$ from a discrete set of parameters
   $\{\vec{u}_k\}_{k=1 \ldots K}$.
 Densification is achieved using a set of associated basis functions $\psi_k$ \eqref{eq:nodes_tfm}.
-In our implementation, $\psi_k$ is selected as a tensor-product B-spline kernel
-  of degree three.
+In our implementation, $\psi_k$ is a tensor-product B-spline kernel of degree three.
 
   \begin{equation}
   \vec{v}_i' = \vec{v}_i + \vec{u}_i = \vec{v}_i + \sum_k \psi_k(\vec{r}) \: \vec{u}_k.
@@ -232,7 +263,7 @@ Finally, to descend this gradient, we establish a semi-implicit Euler scheme (se
   where $I$ denotes the identity operator.
 
 
-\paragraph*{Implementation details, settings, and convergence}
+\paragraph*{Implementation details and convergence}
 \label{sec:conv_report}
 The \regseg{} tool includes a multiresolution strategy on the free-form deformation field.
 Registration pyramids are created by setting the spacing between the control points of the B-spline basis
@@ -240,12 +271,7 @@ Registration pyramids are created by setting the spacing between the control poi
 The implementation details as well as other features (such as the sparse matrix approach
   to fast interpolation) and the main parameters
   (such as $\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$, the B-spline grid resolutions,
- and target image smoothing) are discussed in \suppl{section S1}.
-The actual choices of the parameter settings are publicly distributed with the source code for the
-  experiments\footnote{\url{https://github.com/oesteban/RegSeg/tree/master/Scripts/pyacwereg/data}}.
-The final settings were obtained manually based on feedback from the post-registration convergence
-  reports (such as that found in \suppl{section S1.3}).
-We released \regseg{} along with the tool to generate the convergence report.
+  and target image smoothing) are discussed in \suppl{section S1}.
 
 \subsection{Evaluation protocol}\label{sec:evaluation_protocol}
 In order to assess the performance of \regseg{}, we defined the following general
@@ -316,6 +342,13 @@ To quantify the misregistration error, we computed the Hausdorff distance betwee
      corresponding surfaces.}\label{fig:evphantoms}
 \end{figure*}
 
+\paragraph*{Segmentation model and settings}
+The segmentation model of the phantoms is implicitly defined in each shape.
+All phantoms comprehend an inner surface enclosing a uniform \gls*{wm}-like region,
+  and an outer surface wrapping a \gls*{gm}-like layer.
+The outside is filled with uniform background (see \autoref{fig:evphantoms}).
+All the experimental settings used for the phantoms are made available in
+  a unique configuration file\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/regseg_default.json}}.
 
 \subsection{Real datasets} \label{sec:human_connectome}
 The general experimental framework for the real datasets is presented in \autoref{fig:evworkflows},
@@ -352,6 +385,9 @@ We refer the reader to \citep{essen_human_2012} for exact details of the acquisi
   parameters and \citep{glasser_minimal_2013} for the preprocessing issues.
 These datasets comprise a large set of images, including \gls*{t1}, \gls*{t2}, and
   multi-shell \gls*{dmri} images.
+Since we obtained the \gls*{dmri} data from the minimally preprocessed package, these
+  images are corrected for \gls*{epi} distortions and spatially normalized in
+  \gls*{t1} space.
 
 \paragraph*{Segmentation model}
 Based on our experience % \citep{esteban_brain_2012}
@@ -394,9 +430,6 @@ The field map was unwrapped\footnote{fieldmaps are phase maps, which are intrins
 Next, the original \gls*{dmri} was warped using the resulting displacement field and fed into
   a pipeline to process the corresponding \gls*{dti}, thereby computing the derived scalars of
   interest (\gls*{fa} and \gls*{adc}) using \emph{MRtrix} \citep{tournier_mrtrix_2012}.
-Since the distortion only happens along the \gls*{pe} direction ($y$-axis in our settings),
-  \regseg{} was configured to allow nonzero displacements only on the corresponding axis.
-We also configured the \gls*{t2b} method accordingly.
 
 \paragraph*{Metric assessment}
 Initially, we investigated the appropriateness of the segmentation model.
@@ -407,7 +440,22 @@ For five test datasets, we uniformly sampled the space of distortions
 The minimum of the cost function (\autoref{sec:methods_map}) was consistently located at
   $\epsilon=0.0$ (the ground-truth) for all of the cases (\suppl{Figure S2}).
 
-\paragraph*{Cross-comparison}
+\paragraph*{\Regseg{} settings}
+Since the distortion only happens along the \gls*{pe} direction ($y$-axis in our settings),
+  \regseg{} was configured to allow nonzero displacements only on the corresponding direction.
+For the experiments on real data, \regseg{} established a multi-resolution pyramid of
+  B-Spline basis, with control points distributed on grids of the following spacings:
+  40$\times$100$\times$40 [mm] for the first (coarser level), \isores[mm]{30} for the second,
+  and 20$\times$30$\times$10 [mm] in the third.
+Only the first and second levels included Gaussian smoothing of the target image ($\sigma$ = [2.0, 0.5] mm,
+  respectively).
+The actual choices of the parameter settings are publicly distributed with the source code for the
+  experiments\footnote{\url{https://github.com/oesteban/RegSeg/tree/master/Scripts/pyacwereg/data/regseg_hcp.json}}.
+These settings were obtained manually, driven by the feedback obtained from the post-registration
+  convergence reports (like that found in \suppl{section S1.3}).
+We released \regseg{} along with the tool to generate such convergence reports.
+
+\paragraph*{Cross-comparison and settings}
 A similar workflow to the general evaluation framework used for \autoref{fig:evworkflows}
   was employed to integrate the alternate \gls*{t2b} registration scheme.
 We reproduced the solution and settings provided with \emph{ExploreDTI}
@@ -415,6 +463,7 @@ We reproduced the solution and settings provided with \emph{ExploreDTI}
   \gls*{dti}.
 \emph{ExploreDTI} internally employs \emph{elastix} \citep{klein_elastix_2010} to
   perform registration.
+The deformation field is correspondingly restricted to the \gls*{pe} direction.
 Settings used with \emph{elastix} are conveniently available in its format\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/t2b_elastix_y.txt}}.
 
 \paragraph*{Error measurement}\label{sec:experiments_evaluation}
