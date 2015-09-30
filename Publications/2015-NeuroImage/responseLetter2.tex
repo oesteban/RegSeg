@@ -42,7 +42,7 @@
 Original title: \emph{Active contours-driven registration method for the structure-informed segmentation of
   diffusion MR images}.
 
-\noindent New title: \emph{{\color{blue} Surface}-driven registration method for the structure-informed segmentation of
+\noindent New title: \emph{{\color{blue!70} Surface}-driven registration method for the structure-informed segmentation of
   diffusion MR images}.
 
 \bigskip
@@ -50,6 +50,8 @@ Original title: \emph{Active contours-driven registration method for the structu
 We appreciate the comments made by both reviewers, and considered them fully to improve our paper.
 Please, find in the following our point-by-point answer to the concerns raised by the reviewers,
   along with the description of the corresponding changes in the manuscript.
+We have also changed the color of text for the modifications in the manuscript, along with side notes indicating which reviewer
+  and comment suggested the edition.
 
 \bigskip
 \bigskip
@@ -63,32 +65,10 @@ The approach corresponds fully to the usual registration of an atlas to the imag
   they call the method ``simultaneous registration and segmentation''.
 
 \end{reviewpoint}
-\reply{
-The first sentence of the comment is a rather accurate interpretation of our work.
-However, it is important to clarify that our method maps anatomically-correct surfaces of the same subject into dMRI space,
-  thereby segmenting this target space.
-The method works regardless how the surfaces were extracted, or if they were extracted from T2w images or manually delineated.
-In this work, the surfaces are extracted from T1w for two reasons: 1) it is the widely-accepted MR sequence for such extraction,
-  and 2) the structural information used in reconstruction, tractography and network definition of connectivity extraction pipelines
-  is usually defined in T1w-space as well.
-We understand that the manuscript was not clear to this respect, and therefore included the following changes:
-\begin{enumerate}
-\item Changed abstract, more oriented on the problem now.
-\item Re-structured introduction: lines 1-14 state the background and the problem more clearly, lines 15-27 review
-  the literature existing about direct segmentation of dMRI data and lines 28-55 describe the alternative approach
-  by registering structural images and the problem of EPI distortions.
-  The methodological background of active-contours and registration-segmentation methods has been relocated in
-    the beginning of section 2, lines 73-85.
-\end{enumerate}
-
-Our method can be seen as a segmentation framework using active contours without edges in which the evolution
-  of the contours is governed by an elastic registration method;
-or as a nonlinear registration method which cost function is built on top of a segmentation model of active contours
-  without edges.
-In our opinion, the presented approach is mainly a segmentation method.
-However, since the surfaces are supposed to be very accurate and defined in a different coordinate system,
-  the method implicitly registers that space to the target image.
-Some comments of Reviewer \#2 are very similar to this one (particularly \autoref{com:11}).
+\reply{%
+We decided to call the method ``simultaneous registration and segmentation'' because antecedent methods
+  using active contours that evolve driven by the optimization of a deformation field use that nomenclature.
+These methods are now summarized and discussed in lines 234--252 of the current version.
 }
 
 \begin{reviewpoint}
@@ -97,13 +77,10 @@ The paper describes an approach [...] (quite some are listed as possible example
 \end{reviewpoint}
 \reply{
 We have defined clearly that the choice of surfaces to segment the target data is crucial, and define the
-  segmentation model that drives the registration process (lines 110-113 are new).
+  segmentation model that drives the registration process (lines 85--88 are new).
 We have also improved former Figure 4, and brought it earlier in the paper (now it is Figure 2).
-Now, the figure shows how the segmentation model works: A is the ideal segmentation, B shows the model in
-  the initialization settings, and C shows the model after using \emph{regseg}, demonstrating how the covariance
-  matrices for each region are reduced.
-Since the former visualization was a bit clumsy, we have extracted the distribution of diffusion features by region on
-  the right side of each row.
+Since the former visualization of the conditional (region-wise) joint distribution of FA and ADC was a bit clumsy,
+  we have extracted the conditional distributions to the right side of each panel.
 }
 
 \begin{reviewpoint}
@@ -115,24 +92,11 @@ In this respect the novelty of the paper can be questioned, while the applicatio
 \end{reviewpoint}
 \reply{
 We agree with the reviewer on that the novelty of the methodological elements of our approach is limited.
-However, to our knowledge there exists no alternative method with a paired combination of the following elements:
-\begin{itemize}
-\item Region based (i.e. without edges) active contours model
-\item The use of surfaces as prior knowledge to initialize the segmentation model,
-  with property of allowing precise registration if the surface is accurately representative
-  of structures being aligned.
-  Moreover, the multi-phase definition of levelsets is dual to our surface-nesting model.
-\item The anisotropic regularization model of choice, since most of the levelset frameworks
-  use Gaussian smoothing of the deformation field.
-\item Even though the shape-gradients theory was proposed back in the early 2000's, atlas-based
-  registration, and registration-segmentation methods have been generally implemented on levelsets.
-\end{itemize}
-To our knowledge, the application of a framework as such is new and an important contribution is done
-  with the proposed segmentation model of the FA and ADC maps.
-We would have appreciated if the reviewers would have provided specific references being close to our approach
-  beyond those given in lines 43-57 of the original paper, so that we could point to the differences of our
-  method.
-For the sake of clarity, we have removed the methodological background from introduction to section 2, lines 73-85.
+However, to our knowledge there exists no alternative method combining the same elements to segment
+  multivariate data.
+We have moved the related methods and our methodological contributions from the Introduction to a more appropriate
+  place in the Discussion (ll. 234--252), additionally satisfying \autoref{com:9} suggesting to include in the introduction
+  only the references related to the focus of the paper.
 }
 
 \begin{reviewpoint}
@@ -142,11 +106,7 @@ The authors may want to comment on the consequences.
 \end{reviewpoint}
 \reply{
 The reviewer is right, assuming that pixels are i.i.d. is wrong but a widely accepted simplification.
-We have supported the assumptions with new lines 105-107:
-\textit{Even though the features being segmented are not generally i.i.d., the spatial interdependency of voxels is
-implicitly supported by the piecewise smooth partition of the space $\boldsymbol\Omega$.
-In Figure 2 it is shown that marginal distributions of data can be approximated by multivariate normal distributions.}
-}
+We have supported the assumptions inserting the new lines 80--83.}
 
 \begin{reviewpoint}
 2. It is unclear, under which conditions enforcing the optimality condition guarantees that the region identified corresponds
@@ -156,14 +116,25 @@ Figure S1 is not particularly helpful in this respect.
 Some information about the initialization of the distortion map should also be given.
 \end{reviewpoint}
 \reply{
-We have improved former Figure 4 (now, Figure 2) to clarify that the model strongly depends on the choice of surfaces.
-Adding more surfaces makes the model more robust to local minima at the cost of largely increased computation times.
-We agree with the reviewer on that Figure S1 is not illustrative of the metric for free-deformation fields, but
-  our intention was to show the performance of the method in realistic settings.
-This implies distortions with nonzero components on the phase-encoding axis (the $y$-axis in our experiments), and
-  therefore Figure S1 becomes representative since it samples the distortions space covering plausible deformations
-  for both encoding directions (Anterior-to-posterior and posterior-to-anterior).
-We have included information about the maximum distortion for which the metric was sampled.
+We have improved former Figure 4 (now, it is Figure 2) to clarify that the segmentation model is inherently defined by
+  the choice of surfaces and their nesting.
+This is an actual contribution of the work, as stated in ll. 264--266.
+
+The model behaves robustly when a) the target data are simple as in our phantom settings; and b) when the distortion
+  has only one nonzero component like in our real-data settings.
+The analysis of the goal function for the phantoms (without directional restrictions) was not necessary since
+  convergence was straigthforward.
+In the case of real data, since the distortion under investigation is aligned with one axis, the Figure S1 shows
+  that the goal function is well defined.
+
+However, the reviewer is right when raising convergence issues.
+We noticed that, when decimating the meshes in the phantom experiments, the zero of shape-gradients moved away from
+  the minimum of the goal function.
+Since decimation factors applied in this experiment were very large, and it did not affect our results with
+  the meshes directly obtained with \emph{Freesurfer} (in both phantoms and real data), we did include this discussion
+  within the paper.
+
+Finally, we commented on the initialization issue with the insertion of ll. 188--190.
 }
 
 \begin{reviewpoint}
@@ -177,8 +148,9 @@ Therefore, parameter settings are publicly available in GitHub.
 Particularly, under folder \url{https://github.com/oesteban/RegSeg/tree/master/Scripts/pyacwereg/data}
   there are several configuration files.
 Some parameters are also discussed in the Supplemental Materials, Section S2.
+
 However, we understand that a better description of the parameter settings should be included within
-  the manuscript and modified it accordingly as follows: {\color{red} say what here}.
+  the manuscript and modified it accordingly, in ll. 192--196.
 }
 
 \begin{reviewpoint}
@@ -194,7 +166,7 @@ Particularly, the dMRI datasets from these preprocessed images are given correct
   and registered in structural space.
 Therefore, there could be a residual misregistration between the T1w and the dMRI data, but it should be
   very minimal.
-We have modified Figure 3 to reflect this aspect.
+We have modified former Figure 3 (now Fig. 4) to reflect this aspect.
 }
 
 \begin{reviewpoint}
@@ -203,15 +175,7 @@ We have modified Figure 3 to reflect this aspect.
 What is the underlying reason?
 \end{reviewpoint}
 \reply{
-We have added the following in the Discussion section (lines 262-267):
-
-\textit{The distributions of errors along surfaces vary importantly depending on the shape of the
-  phantom (see Figure 5B).
-The misregistration error of the ``gyrus'' phantom showed a much lower spread than that for the other shapes.
-We argue that the symmetry of those other shapes posed problem in driving the contours towards the appropriate
-  region and producing some ``sliding'' effect between the faces of the surface and their ground-truth position.
-This effect should not be present in real datasets, thanks to the very convoluted cortical layer, and the
-  directional restriction of distortion.}
+We have added a discussion on this in the corresponding section, lines 286-291. Thanks for pointing out.
 }
 
 \bigskip
@@ -237,20 +201,15 @@ We have included references of the main EPI distortion corrections (see lines 31
 The \emph{regseg} tool is designed to allow any displacement, as demonstrated with the phantoms.
 However, as the reviewer points out, the deformation field is completelly restricted to the phase-encode direction
   for the real datasets.
-We have added lines 204-206 to clarify this point.
+We have added ll. 125--127 to indicate that the ground-truth in the experiments done with real data is directionally
+  restricted. Then, in lines 190-192 to clarify that \emph{regseg} is configured to fulfill this feature.
 }
 
 \begin{reviewpoint}
 abstract: Not immediately clear what this means: ``active contours without edges extracted from structural images''
   (Where do the edges come from? What modalities are actually input to regseg?)
 \end{reviewpoint}
-\reply{Active contours without edges \citep{chan_active_2001} is a framework for subpixel segmentation of images in
-  which the contours evolve enclosing homogeneous regions inside.
-Region-based active contours is an alternative terminology.
-As previously described in \autoref{com:1} and \autoref{com:2}, we have made an effort to clearly state that the outputs
-  to our method are a set of nested surfaces and a target multivariate image, that for the case of dMRI data comprehends
-  FA and ADC.
-The manuscript has been re-phrased accordingly in the title, abstract and introduction.}
+\reply{The manuscript has been re-phrased accordingly in the title, abstract and introduction.}
 
 \begin{reviewpoint}
 I note that the text in the abstract seems to have no correspondence with the graphical abstract.
@@ -414,11 +373,7 @@ Regarding the ``without edges'' feature, we have clarified how the surfaces encl
 Figure 3: What are the arrows in images 5? DEformations? Indications of important regions?
 \end{reviewpoint}
 \reply{
-The arrows in Figure 3, panel 5, are intended to show regions subjected to large deformations, where the contours
-  do not fit data before applying \emph{regseg}.
-They also happen to show areas of the forceps minor, one fiber bundle importantly affected
-  by the susceptibility distortions.
-We have modified the caption of Figure 3 to describe the meaning of the arrows correctly.
+We have modified the caption of former Figure 3 (now Fig. 4) to describe the meaning of the arrows correctly.
 }
 
 \bibliographystyle{mystyle}

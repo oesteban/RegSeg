@@ -3,13 +3,24 @@
 \journal{NeuroImage}
 \usepackage[utf8]{inputenc}
 
+
 % *** MISC UTILITY PACKAGES ***
 \usepackage[mode=buildnew]{standalone}
 \usepackage{gincltex}
 \usepackage{glossaries}
 \usepackage{booktabs} % to use \toprule
 \usepackage{multirow}
-\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorinlistoftodos,textsize=tiny]{todonotes}
+\setlength{\marginparwidth}{1.5cm}
+
+
+% *** PDF, URL AND HYPERLINK PACKAGES ***
+%
+\usepackage{url}
+\usepackage[colorlinks=true]{hyperref}
+% \usepackage[hyperref]{xcolor}
+\usepackage{doi}
+
 \usepackage{xifthen}
 \usepackage{xspace}
 \usepackage{graphicx}
@@ -25,7 +36,7 @@
 \DeclareMathOperator{\diag}{diag}
 \DeclareMathOperator{\dist}{dist}
 \DeclareMathOperator{\const}{Const.}
-\providecommand{\e}[1]{\ensuremath{\times 10^{#1}}}
+\providecommand{\e}[1]{\ensuremath{\cdot\text{10}^\text{#1}}}
 \providecommand{\mdist}[2]{ \mathcal{D}_{#2}^2(\mathbf{#1}) }
 \providecommand{\omegaset}{\ensuremath{\boldsymbol{\Omega}}}
 \providecommand{\gammaset}{\ensuremath{\boldsymbol{\Gamma}}}
@@ -40,12 +51,6 @@
 \providecommand{\suppl}[1]{\href{http://figshare.com/s/459c26b4ee8211e493b306ec4bbcf141}{Supplemental Materials}, #1}
 \providecommand{\isores}[2][]{#2\ensuremath{\times}#2\ensuremath{\times}#2%
 \ifthenelse{\equal{#1}{}}{}{ [#1]}\xspace}
-
-% *** PDF, URL AND HYPERLINK PACKAGES ***
-%
-\usepackage{url}
-\usepackage[colorlinks=true,linkcolor=black, citecolor=blue, urlcolor=blue]{hyperref}
-\usepackage{doi}
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor an-isot-ropy regis-tra-tion iso-tropic Free-Surfer %
@@ -76,10 +81,23 @@ align-ed pre-sent work-flow data-set data-sets}
   \makeatother
 \fi
 
+% \usepackage{soul}
+% \usepackage{mdframed}
+% \newcommand{\hlc}[2][yellow]{ {\sethlcolor{#1} \hl{#2}} }
+\providecommand{\newcomment}[2][]{\ifthenelse{\equal{#1}{}}{}{\todo{#1}}%
+\bgroup \color{blue!70} #2\egroup}
+% \begin{mdframed}[hidealllines=true,backgroundcolor=blue!10]%
+% \internallinenumbers%
+% #2%
+% \end{mdframed}}
+% \hlc[green]{#2}}
+% \todo[inline]{#2}}
 
 % http://tex.stackexchange.com/questions/56105/missing-references-heading
 \def\bibsection{\section*{References}}
 \begin{document}
+\hypersetup{linkcolor=black!60, citecolor=black!60, urlcolor=black!60}
+
 \begin{frontmatter}
 
 %% Use \dochead if there is an article header, e.g. \dochead{Short communication}
