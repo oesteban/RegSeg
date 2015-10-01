@@ -13,10 +13,10 @@ In order to relate the average misregistration error to the resolution of the mo
 First, we confirmed that the vertex-wise error distributions were skewed by using Shapiro-Wilk's test of
   normality.
 All of the distributions of errors in the tests (four phantom types $\times$ two resolutions) were
-  non-normal with $p<0.001$.
+  non-normal with $p<$ 0.001.
 Consequently, we used the non-parametric Wilcoxon signed-rank test with the Bonferroni
-  correction for multiple comparisons ($N=150$, for each phantom type).
-The average errors were significantly lower than the voxel size with $p < (0.001 / 150)$
+  correction for multiple comparisons ($N$=150, for each phantom type).
+The average errors were significantly lower than the voxel size with $p <$ (0.001 / 150)
   in all tests (four phantom types $\times$ two resolutions).
 Statistical tests might not be sufficiently conclusive, so we also computed the confidence intervals,
   as shown in \autoref{tab:ci_phantom}.
@@ -87,7 +87,7 @@ The results of the statistical tests and the CIs are summarized in \autoref{tab:
     \caption{The distributions of vertex-wise Hausdorff distances between the ground-truth surfaces and their
     corresponding estimates obtained with \regseg{} presented a 95\% CI below the half-voxel size for all of
     the phantom types.
-    The CIs were computed by bootstrapping using 10$^4$ samples, with the median as the location statistic.}\label{tab:ci_phantom}
+    The CIs were computed by bootstrapping using 10$^\text{4}$ samples, with the median as the location statistic.}\label{tab:ci_phantom}
 \end{minipage}
 \hfill
 \begin{minipage}{.48\textwidth}
@@ -107,7 +107,7 @@ The results of the statistical tests and the CIs are summarized in \autoref{tab:
     the alternative \acrfull{t2b} method.
     The distribution of the errors computed for the surfaces of interest ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$)
       and the aggregate of all surfaces (Aggreg. column) had lower 95\% CIs with \regseg{}.
-   The CIs in this table were computed by bootstrapping using the mean as the location statistic and with 10$^4$ samples.
+   The CIs in this table were computed by bootstrapping using the mean as the location statistic and with 10$^\text{4}$ samples.
     The Kruskal-Wallis H-tests indicated that there was a significant difference between the results obtained using \regseg{} and
       the \gls*{t2b} method.
     }\label{tab:results_real}
