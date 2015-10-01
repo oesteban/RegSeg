@@ -123,7 +123,7 @@ This is an actual contribution of the work, as stated in ll. 264--266.
 The model behaves robustly when a) the target data are simple as in our phantom settings; and b) when the distortion
   has only one nonzero component like in our real-data settings.
 The analysis of the goal function for the phantoms (without directional restrictions) was not necessary since
-  convergence was straigthforward.
+  convergence was straightforward.
 In the case of real data, since the distortion under investigation is aligned with one axis, the Figure S1 shows
   that the goal function is well defined.
 
@@ -199,7 +199,7 @@ We have re-organized the introduction fully, as suggested (see reply to \autoref
 We have included references of the main EPI distortion corrections (see lines 31-43).
 
 The \emph{regseg} tool is designed to allow any displacement, as demonstrated with the phantoms.
-However, as the reviewer points out, the deformation field is completelly restricted to the phase-encode direction
+However, as the reviewer points out, the deformation field is completely restricted to the phase-encode direction
   for the real datasets.
 We have added ll. 125--127 to indicate that the ground-truth in the experiments done with real data is directionally
   restricted. Then, in lines 190-192 to clarify that \emph{regseg} is configured to fulfill this feature.
@@ -209,7 +209,16 @@ We have added ll. 125--127 to indicate that the ground-truth in the experiments 
 abstract: Not immediately clear what this means: ``active contours without edges extracted from structural images''
   (Where do the edges come from? What modalities are actually input to regseg?)
 \end{reviewpoint}
-\reply{The manuscript has been re-phrased accordingly in the title, abstract and introduction.}
+\reply{%
+In our adaptation of ``active contours without edges'' \citep{chan_active_2001}, the active contours are
+  ``extracted from structural images''.
+Then, they are ``without edges'' because the target features do not show clear intensity steps
+  where the contours are intended to be finally placed.
+In practice, active contours are ``without edges'' when they look for homogeneous regions enclosed
+  by the contours, as is the case of the FA and ADC.
+We agree with the reviewer on that this phrase is not clear, and therefore reformulated the abstract.
+We have also modified the introduction to state more clearly the actual modalities that input to \emph{regseg}.
+}
 
 \begin{reviewpoint}
 I note that the text in the abstract seems to have no correspondence with the graphical abstract.
@@ -362,7 +371,7 @@ A footnote in line 215 directly links the settings for this method.
 \begin{reviewpoint}
 Please define the phrase ``active contours without edges''.
 \end{reviewpoint}
-\reply{We hope this point is answered in \autoref{com:10}, and tryied to avoid this concept
+\reply{We hope this point is answered in \autoref{com:10}, and tried to avoid this concept
   coming from the 2D processing field.
 Now, we refer to the contours as surfaces whenever possible.
 Regarding the ``without edges'' feature, we have clarified how the surfaces enclose homogeneous
