@@ -1,9 +1,9 @@
 % -*- root: 00-main.tex -*-
 \section{Discussion}
-\label{sec:discussion}
+\label{sec:regseg-discussion}
 
 \newcomment[RV\#1(C.3)]{%
-\paragraph*{Contributions}\label{sec:related_work} %
+\paragraph*{Contributions}\label{sec:regseg-related_work} %
 Previously, joint segmentation and registration have been applied successfully to other problems
 such as longitudinal object tracking \citep{paragios_level_2003} and atlas-based
   segmentation \citep{gorthi_active_2011}.
@@ -83,7 +83,7 @@ Therefore, we also concluded that the error was bounded above by half of the
   voxel spacing.
 \newcomment[RV\#1(C.8)]{%}
 The distributions of errors along surfaces vary importantly depending on the shape of the
-  phantom (see \autoref{fig:phantom}B).
+  phantom (see \autoref{fig:regseg-phantom}B).
 The misregistration error of the ``gyrus'' phantom showed a much lower spread than that
   for the other shapes.
 We argue that the symmetry of those other shapes posed difficulties in driving the contours
@@ -110,7 +110,7 @@ Moreover, since the structural information is projected into the native space of
   space.
 
 We evaluated \regseg{} in a real environment using the experimental framework presented
-  in \autoref{fig:evworkflows}.
+  in \autoref{fig:regseg-evworkflows}.
 We processed 16 subjects from the \gls*{hcp} database using both \regseg{}
   and an in-house replication of the \acrfull*{t2b} method.
 \Regseg{} obtained very high accuracy, with an aggregate 95\% \gls*{ci} of 0.56--0.66 [mm], which was
@@ -119,7 +119,7 @@ The misregistration error that remained after \regseg{} was significantly lower 
   error corresponding to the \gls*{t2b} correction according to Kruskal-Wallis H-tests
   (\autoref{tab:results_real}).
 Visual inspections of all the results (\suppl{section S5}) and the violin plots in
-  \autoref{fig:results_real} confirmed that \regseg{} performed better than the \gls*{t2b} method
+  \autoref{fig:regseg-results_real} confirmed that \regseg{} performed better than the \gls*{t2b} method
   in our settings.
 We carefully configured the \gls*{t2b} method using the same algorithm and the
   same settings employed in a widely-used tool.
