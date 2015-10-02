@@ -88,9 +88,10 @@ In \autoref{fig:regseg-model} it is shown that marginal distributions of data ca
   to the descriptors of region $l$ as
   $\mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
 $C$ is the number of channels comprised in the image $M$.
-\newcomment[RV\#1(C.2)]{%
 In fact, the projection of $\gammaset_R$ onto $M$ is an implicit segmentation model, for which
-  the covariance matrix $\boldsymbol{\Sigma}_l$ of each region is minimized. In \autoref{fig:regseg-model},
+  the covariance matrix $\boldsymbol{\Sigma}_l$ of each region is minimized.
+\newcomment[RV\#1(C.2)]{%
+In \autoref{fig:regseg-model},
   this minimization is illustrated for the segmentation of the \gls*{fa} and the \gls*{adc} maps
   of one subject.}
 
@@ -217,7 +218,7 @@ Finally, to descend this gradient, we establish a semi-implicit Euler scheme (se
   where $I$ denotes the identity operator.
 
 
-\paragraph*{Implementation details and convergence}
+\paragraph*{Implementation details and convergence}%
 \label{sec:regseg-conv_report}
 The \regseg{} tool includes a multiresolution strategy on the free-form deformation field.
 Registration pyramids are created by setting the spacing between the control points of the B-spline basis
@@ -299,13 +300,13 @@ In total, 1200 experiments (four phantom types $\times$ 150 random warpings $\ti
      corresponding surfaces.}\label{fig:regseg-evphantoms}
 \end{figure*}
 
-\paragraph*{Segmentation model and settings}
+\newcomment[RV\#1(C.6)]{\paragraph*{Segmentation model and settings}
 The segmentation model of the phantoms is implicitly defined in each shape.
 All phantoms comprehend an inner surface enclosing a uniform \gls*{wm}-like region,
   and an outer surface wrapping a \gls*{gm}-like layer.
 The outside is filled with uniform background (see \autoref{fig:regseg-evphantoms}).
 All the experimental settings used for the phantoms are made available in
-  a unique configuration file\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/regseg_default.json}}.
+  a unique configuration file\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/regseg_default.json}}.}
 
 \subsection{Real datasets} \label{sec:regseg-human_connectome}
 The general experimental framework for the real datasets is presented in \autoref{fig:regseg-evworkflows},
@@ -344,9 +345,10 @@ We refer the reader to \citep{essen_human_2012} for exact details of the acquisi
   parameters and \citep{glasser_minimal_2013} for the preprocessing issues.
 These datasets comprise a large set of images, including \gls*{t1}, \gls*{t2}, and
   multi-shell \gls*{dmri} images.
+\newcomment[RV\#1(C.7)]{%
 Since we obtained the \gls*{dmri} data from the minimally preprocessed package, these
   images are corrected for \gls*{epi} distortions and spatially normalized in
-  \gls*{t1} space.
+  \gls*{t1} space.}
 
 \paragraph*{Segmentation model}
 Based on our experience % \citep{esteban_brain_2012}
@@ -421,7 +423,6 @@ These settings were obtained manually, driven by the feedback obtained from the 
 We released \regseg{} along with the tool to generate such convergence reports.
 
 \paragraph*{Cross-comparison and settings} %
-\newcomment[RV\#2(C.21)]{%
 A dual workflow to the general evaluation framework used for \regseg{} (\autoref{fig:regseg-evworkflows}),
   was employed to integrate the alternate \gls*{t2b} registration scheme.
 We reproduced the solution and settings provided with \emph{ExploreDTI}
@@ -429,6 +430,7 @@ We reproduced the solution and settings provided with \emph{ExploreDTI}
   \gls*{dti}.
 \emph{ExploreDTI} internally employs \emph{elastix} \citep{klein_elastix_2010} to
   perform registration.
+\newcomment[RV\#2(C.21)]{%
 The deformation field is correspondingly restricted to the \gls*{pe} direction.
 Settings used with \emph{elastix} are conveniently available in its format\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/t2b_elastix_y.txt}}.}
 
