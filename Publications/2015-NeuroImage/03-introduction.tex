@@ -14,17 +14,17 @@ The microstructural map is then used to draw the preferential \newcomment[RV\#2(
 Finally, a graph representing the corresponding structural network is built using
   the regions of a cortical parcellation as nodes and the streamlines of
   tractography as edges \citep{hagmann_mapping_2008}.
-\newcomment[RV\#2(C.17)]{Since the proposal of the earliest methodologies to solve the three problems,
-  there is a need for precisely identifying the anatomy in the \gls*{dmri} space.
-In fact, current trends on reconstruction \citep{jeurissen_multitissue_2014} and
+\newcomment[RV\#2(C.17)]{%
+The methodologies to solve reconstruction, tractography and network building
+  require the delineation of the anatomy in the \gls*{dmri} space.
+Moreover, current trends on reconstruction \citep{jeurissen_multitissue_2014} and
   tractography \citep{smith_anatomicallyconstrained_2012} are increasingly using
   structural information to improve the microstructural mapping and fiber-tracking.}
 
-\newcomment[RV\#2(C.15)]{The structural information required by pioneer tractography studies was a simple
-  \gls*{wm} mask to provide with a termination criteria for the streamlines.
-The first attempts to segment the \gls*{wm} in \gls*{dti} involved thresholding the
-  \gls*{fa}\footnote{the \gls*{fa} is a scalar parameter of diffusion derived from
-  the \gls*{dti}.} map.
+\newcomment[RV\#2(C.15)]{%
+Possibly, the earliest structural information incorporated to aid \gls*{dmri} processing
+  is the \gls*{wm} mask used as a termination criteria for tractography.
+The standardized procedure to obtain this mask was thresholding the \gls*{fa} map.
 However, the mask and subsequent analyses are highly dependent on the threshold set
   \citep{taoka_fractional_2009}.
 \todo{RV\#2(C.16)}
@@ -32,11 +32,12 @@ To overcome the unreliability of \gls*{fa} thresholding, and to broaden
   \gls*{wm} segmentation to brain tissue segmentation, a large number of
   methods have been proposed using \glspl*{dwi}, the \lowb{}, and \gls*{dti}-derived
   scalar maps such as \gls*{fa}, \gls*{adc} and others \citep{zhukov_level_2003,
-  rousson_level_2004,jonasson_segmentation_2005,liu_brain_2007,hadjiprocopis_unbiased_2005,
+  rousson_level_2004,jonasson_segmentation_2005,hadjiprocopis_unbiased_2005,liu_brain_2007,
   lu_segmentation_2008,han_experimental_2009}.}
-\todo{RV\#2(C.14)}However, the precise segmentation of \gls*{dmri} is difficult for several limitations.
-First, \gls{dmri} images have a resolution that is \newcomment[RV\#2(C.12)]{much lower} than that of the imaged
-  microstructural features.
+\todo{RV\#2(C.14)}%
+However, the precise segmentation of \gls*{dmri} is difficult for several reasons.
+First, \gls{dmri} images have a resolution that is \newcomment[RV\#2(C.12)]{much lower}
+  than that of the imaged microstructural features.
 Therefore, voxels located in structural discontinuities are affected by partial
   voluming of the signal sources.
 Second, the extremely low \gls*{snr} and the high dimensionality of the \glspl*{dwi} prevent
@@ -46,53 +47,69 @@ Third, the low contrast between \gls*{gm} and \gls*{wm} in the \lowb{} volumes a
 
 \newcomment[RV\#2(C.9)]{%
 An alternative route to segmentation in native \gls*{dmri} space is the mapping of the
-  structural information extracted from anatomical MR images, such as \gls*{t1}, through
-  an image registration process.
+  structural information extracted from anatomical MR images, such as \gls*{t1}, using
+  image registration techniques.
 Generally, intra-subject registration of MR images of the brain involves only a linear
   mapping to compensate for head motion between scans.
-However, \gls*{epi} images speed up the acquisition process at the cost of introducing geometrical
-  distortion, as well as signal degradation and destruction \citep{jezzard_correction_1995}.
-The so-called \emph{\gls*{epi} distortions} have a major impact on the anatomy extracted
-  from \gls*{dmri}, particularly in certain fiber bundles \citep{irfanoglu_effects_2012}.
-To overcome this problem, two broad families of solutions are available.
-First, it is possible to use an existing ``\gls*{epi} distortion correction''
-  method to compensate for the nonlinear part of the misalignment with the structural space,
-  combined with a rigid registration method.
-Second, to apply a nonlinear registration method with specific constraints derived from the
-  theoretical properties of the \gls*{epi} distortion.
-Both solutions require extra acquisitions to be included within the \gls*{dmri} scanning
-  protocol, such as fieldmaps \citep{jezzard_correction_1995}, \glspl*{dwi} with a different
-  \gls*{pe} scheme \citep{cordes_geometric_2000,chiou_simple_2000}, or \gls*{t2} images
-  \citep{kybic_unwarping_2000}.
-The nonlinear registration approach has been successfully solved with \gls*{t2b} methods,
-  which align the \gls*{t2} and \lowb{} images by exploiting their similarity
-  \citep{kybic_unwarping_2000,studholme_accurate_2000}.
-However, further rigid registration of the \gls*{t1} and \gls*{t2} images is still required to
-  map the anatomical information onto \gls*{dmri}-space.
-\Gls*{epi} corrections have been an active field of research, with numerous refinements and
-  combinations of the original methods \citep{holland_efficient_2010,andersson_comprehensive_2012,
-  irfanoglu_drbuddi_2015}.}\todo{RV\#2(C.18)}
+However, \gls*{epi} introduces a geometrical distortion \citep{jezzard_correction_1995}
+  that impedes the linear mapping from the structural space and warps the anatomy 
+  identified on native \gls*{dmri} space \citep{irfanoglu_effects_2012}.
+Numerous methods have been proposed to overcome this problem by incorporating information
+  from extra MR acquisitions such as fieldmaps \citep{jezzard_correction_1995},
+  \glspl*{dwi} with a different \gls*{pe} scheme \citep{cordes_geometric_2000,chiou_simple_2000},
+  or \gls*{t2} images \citep{kybic_unwarping_2000,studholme_accurate_2000}.
+These methods estimate the deformation field associated to \emph{\gls*{epi} distortions} and
+  resample the \glspl*{dwi} onto a corrected \gls*{dmri} space.
+The retrospective \gls*{epi} correction is an active field of research yielding frequent refinements 
+  and combinations of the original methods, such as
+  \citep{holland_efficient_2010,andersson_comprehensive_2012,
+  irfanoglu_drbuddi_2015}. \todo{RV\#2(C.18)}
+A standardized method to solve the remaining linear mapping between the corrected-\gls*{dmri}
+  and the structural spaces is \emph{bbregister} \citep{greve_accurate_2009}.%
+}
 
-Here we show a method that registers \newcomment[RV\#2(C.10)]{anatomically-correct surfaces to multivariate images},
-  thereby implicitly segmenting the \gls*{dmri}-space into those structures enclosed by the contours
-  of the subject's brain.
-% It is important that surfaces are defined in the coordinate system of the image used as
-%   source of structural information (typically, but not restricted to, \gls*{t1} images), otherwise segmentation performs
-%   correctly but the mapping found in registration does not represent any valuable information.
-The hypothesis underlying is that the registration and segmentation problems in \gls*{dmri}
-  can be solved simultaneously with three key benefits:
-  1) effectively establishing the necessary mapping to project structural information from anatomical images,
-  2) increasing the geometrical accuracy of the overall process,
-  and 3) avoiding data resampling of \gls*{epi} correction methods.
-Thus, we propose a tool called \regseg{} implementing 3D active contours (surfaces) without edges
-  \citep{chan_active_2001}, which evolve over a free-form deformation field of B-spline
-  basis functions.
-The surfaces are nested and they enclose regions with homogeneous diffusion features
-  (the \gls*{fa} and \gls*{adc} maps for the case of \gls*{dmri} data).
-Optimization is performed using a descent strategy with explicit shape gradients
+\newcomment[RV\#2(C.10)]{%
+Here we present a segmentation and surface-to-volume registration method 
+  named \regseg{}, and show its usefulness in incorporating the anatomical
+  information into native \gls*{dmri} space to aid subsequent reconstruction,
+  tractography and network building using a cortical parcellation.
+The hypothesis underlying is that the registration and segmentation problems
+  in \gls*{dmri} can be solved simultaneously.
+To implement \regseg{} we first establish an active-contours without edges
+  \citep{chan_active_2001} segmentation framework.
+Several \emph{anatomically-correct} surfaces of the same subject initialize
+  the 3D active-contours, which evolve searching for homogeneous regions in
+  the multivariate target-image.
+In the presented application to segment \gls*{dmri}, we propose a bivariate 
+  target-volume comprehending the \gls*{fa} and \gls*{adc} maps.
+The active-contours are without edges since the \gls*{fa} and \gls*{adc} maps
+  do not present steep image gradients (edges) but anatomy can be identified
+  by looking for piece-wise smooth homogeneous regions.
+The evolution of the surfaces is supported by a B-spline basis, optimized
+  iteratively using a descent approach driven by shape-gradients
   \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
-Finally, we evaluate \regseg{} using an extension of our instrumentation framework
-  \citep{esteban_simulationbased_2014}, which simulates known and realistic distortions
-  based on \gls*{dmri} data.
-The evaluation includes a comparison of \regseg{} to an in-house implementation of
-  the \gls*{t2b} correction.
+Therefore, \regseg{} establishes a registration framework that actually
+  overcomes the nonlinear warping induced by \gls*{epi} distortions.%
+}
+\Regseg{} integrates the benefits of segmentation and registration methods together and
+  exploits the multivariate nature of \gls*{dmri} data to contribute in the proposed
+  application on three key aspects:
+  1) it avoids the resampling the \glspl*{dwi} introduced by the correction of \gls*{epi}
+    distortions, since processing can be performed on the native \gls*{dmri} space;
+  2) the surfaces are typically extracted from the \gls*{t1} image of the same subject,
+    therefore \regseg{} does not require additional MR acquisitions to the minimal
+    \gls*{dmri} protocol; and
+  3) \regseg{} increases the geometrical accuracy of the overall process.
+In this paper, we first verify the functionality of the method and the \regseg{}
+  implementation using a set of digital phantoms, demonstrating the sub-pixel accuracy
+  of registration.
+We then evaluate \regseg{} on real \gls*{dmri} datasets, using a derivation of our
+  instrumentation framework \citep{esteban_simulationbased_2014} which simulates 
+  known and realistic \gls*{epi} distortions.
+We also compare \regseg{} and a nonlinear registration method to map the \lowb{} to 
+  the corresponding \gls*{t2} image of the same subject.
+This method is a derivation of the \gls*{t2b} correction method, reproducing the settings
+  of an existing implementation included within a widely used diffusion processing software
+  \citep{leemans_exploredti_2009}.
+With this comparison we demonstrate how \regseg{} achieves higher accuracy with the
+  simultaneous registration and segmentation process.
