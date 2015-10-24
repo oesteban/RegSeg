@@ -80,11 +80,8 @@ To implement \regseg{} we first establish an active-contours without edges
 Several \emph{anatomically-correct} surfaces of the same subject initialize
   the 3D active-contours, which evolve searching for homogeneous regions in
   the multivariate target-image.
-In the presented application to segment \gls*{dmri}, we propose a bivariate 
+In the presented application to segment \gls*{dmri} data, we propose a bivariate 
   target-volume comprehending the \gls*{fa} and \gls*{adc} maps.
-The active-contours are without edges since the \gls*{fa} and \gls*{adc} maps
-  do not present steep image gradients (edges) but anatomy can be identified
-  by looking for piece-wise smooth homogeneous regions.
 The evolution of the surfaces is supported by a B-spline basis, optimized
   iteratively using a descent approach driven by shape-gradients
   \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
@@ -102,7 +99,7 @@ Therefore, \regseg{} establishes a registration framework that actually
   3) \regseg{} increases the geometrical accuracy of the overall process.
 In this paper, we first verify the functionality of the method and the \regseg{}
   implementation using a set of digital phantoms, demonstrating the sub-pixel accuracy
-  of registration.
+  in registration.
 We then evaluate \regseg{} on real \gls*{dmri} datasets, using a derivation of our
   instrumentation framework \citep{esteban_simulationbased_2014} which simulates 
   known and realistic \gls*{epi} distortions.

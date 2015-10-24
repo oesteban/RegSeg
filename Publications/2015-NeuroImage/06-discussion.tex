@@ -1,42 +1,32 @@
 % -*- root: 00-main.tex -*-
 \section{Discussion}
 \label{sec:regseg-discussion}
-
-\newcomment[RV\#1(C.3)]{%
-\paragraph*{Contributions}\label{sec:regseg-related_work} %
-Previously, joint segmentation and registration have been applied successfully to other problems
-such as longitudinal object tracking \citep{paragios_level_2003} and atlas-based
-  segmentation \citep{gorthi_active_2011}.
-The most common approach to solve the problem simultaneously is optimizing a deformation model
-  (registration) that supports the evolution the active contours (segmentation), like
-  \citep{paragios_level_2003,yezzi_variational_2003}.
-\cite{unal_coupled_2005}, and later \cite{wang_joint_2006}, replaced the linear registration
-  transform of \cite{yezzi_variational_2003} with a free-form deformation field.
-\cite{droske_mumfordshah_2009} reviewed the existing techniques and proposed two different
-  approaches for applying the Mumford-Shah functional \citep{mumford_optimal_1989} during simultaneous
-  registration and segmentation by propagating the deformation field from
-  the contours onto the whole image definition.
-Finally, \cite{gorthi_active_2011} extended the existing methodologies using a multiphase
-  level set function to register several active contours during the application
-  of atlas-based segmentation.
-Unlike the aforementioned registration-and-segmentation methods, \regseg{} uses shape-gradients
-  \citep{herbulot_segmentation_2006} computed on a hierarchical set of explicit surfaces
-  (triangularized meshes) that substitute the multiphase level sets.
-Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
-  registration method in 2D using level sets and a nonlinear elasticity smoother on the
-  displacement vector field, which preserves the topology even with very large deformations.
-\Regseg{} includes an anisotropic regularizer for the displacements field proposed by
-  \cite{nagel_investigation_1986}.
-This regularization strategy conceptually falls in the midway between the Gaussian smoothing
-  generally included in most of the existing methodologies, and the complexity of
-  the elasticity smoother of \cite{guyader_combined_2011}.
+We present \regseg{}, a simultaneous segmentation and registration method that
+  maps a set of nested surfaces into a multivariate target-image.
+The nonlinear registration process evolves driven by the fitness of the
+  picewise-smooth classification of voxels in the target volume imposed
+  by the current mapping of the surfaces.
+We propose \regseg{} to incorporate anatomical information extracted from \gls*{t1}
+  images into the corresponding \gls*{dmri} of the same subject.
+Previously, joint segmentation and registration have been applied successfully to
+  other problems such as longitudinal object tracking \citep{paragios_level_2003}
+  and atlas-based segmentation \citep{gorthi_active_2011}.
+The most common approach to solve the problem simultaneously is optimizing a deformation
+  model (registration) that supports the evolution the active contours (segmentation),
+  like \cite{paragios_level_2003,yezzi_variational_2003}.
+\Regseg{} can be seen as particular case of atlas-based segmentation, replacing the atlas
+  by the structural image of the subject.
+However, the majority of atlas-based segmentation methods, such as \citep{gorthi_active_2011},
+  use a multiphase level set function to register several active contours.
+Alternatively, \regseg{} implements the active contours with a hierarchical set of explicit
+  surfaces (triangular meshes) that substitute the multiphase level sets, and registration
+  is driven by shape-gradients \citep{herbulot_segmentation_2006}.
 
 An important antecedent of \regseg{} is \emph{bbregister} \citep{greve_accurate_2009}.
 The tool has been widely adopted as the standard registration method to be used along with the \gls*{epi}
   correction of choice.
-It implements a linear mapping, and uses 3D active contours with edges\footnote{A three-dimensional active contour
-  is a surface and it is ``with edges'' when the contours evolve in search of abrupt intensity steps
-  (the edges) within the target image.} to search for intensity boundaries in the \lowb{} image.
+It implements a linear mapping, and uses 3D active contours \emph{with edges} to
+  search for intensity boundaries in the \lowb{} image.
 The active contours are initialized using surfaces extracted from the \gls*{t1} using
   \emph{FreeSurfer} \citep{fischl_freesurfer_2012}: the \emph{pial} surface (exterior of the
   cortical \gls*{gm}) and the \emph{white} surface (the \gls*{wm}/\gls*{gm} interface).
@@ -47,33 +37,30 @@ To overcome the problem of nonlinear distortions, \emph{bbregister} excludes the
   regions that are typically warped from the boundary search.
 Indeed, the distortion must be addressed separately because it is not supported by
   the affine transformation model.
-\Regseg{} can be seen as a derivative of \emph{bbregister} for the use of active surfaces.
-However, the deformation model is nonlinear and the surfaces in \regseg{} look for the
-  homogeneity within the regions enclosed, instead of image edges.}
+The deformation model of \regseg{} is nonlinear and the surfaces are active
+  contours \emph{without edges} \citep{chan_active_2001}.
+The contours are without edges because the \gls*{fa} and \gls*{adc} maps do
+  not present steep image gradients (edges) but the anatomy can be identified
+  by looking for piece-wise smooth homogeneous regions.
 
-\newcomment[RV\#1(C.5)]{%
-Finally, we also contribute proposing a piecewise-smooth segmentation model defined by
-  a selection of nested surfaces to partition the multispectral space
-  comprehending the \gls*{fa} and the \gls*{adc} maps and ultimately identify these
-  structures in \gls*{dmri} space.}
-\newcomment[New]{%
-With the definition of appropriate models, \regseg{} may be applied in other fields like
-  neonatal brain image segmentation in longitudinal \gls*{mri} studies like \citep{shi_neonatal_2010}
-  in which the surfaces obtained in a mature timepoint of the brain can be retrospectively
-  propagated to the initial timepoints, regardless the changes of the contrast and spatial
-  development between timepoints.}
 
-\paragraph*{Accuracy tests}
-The hypothesis tested in our study was that reliable image registration can be performed
-  by searching for the homogeneous regions defined by a set of nested surfaces in a
-  multispectral image
-The surfaces correspond to precise contours extracted from another image of the same subject
-  (i.e. a \gls*{t1} image, or a different time step).
-We demonstrated that active contours without edges can be used successfully to drive a
-  deformation supported by B-spline basis functions with digital phantoms.
+Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
+  registration method in 2D using level sets and a nonlinear elasticity smoother on the
+  displacement vector field, which preserves the topology even with very large deformations.
+\Regseg{} includes an anisotropic regularizer for the displacements field proposed by
+  \cite{nagel_investigation_1986}.
+This regularization strategy conceptually falls in the midway between the Gaussian smoothing
+  generally included in most of the existing methodologies, and the complexity of
+  the elasticity smoother of \cite{guyader_combined_2011}.
+Other minor features that differ from current methods in joint segmentation and registration are
+  the support of multivariate target-images and the efficient computation of the shape-gradients
+  implemented with sparse matrices.
+
+We verified that precise segmentation and registration of a set of surfaces into multivariate
+  data is possible on digital phantoms.
 We randomly deformed four different phantom models to mimic three homogeneous regions
-  (\gls*{wm}, \gls*{gm}, and \acrlong*{csf}) and we used them to simulate \gls*{t1} and \gls*{t2}
-  images at two resolution levels.
+  (\gls*{wm}, \gls*{gm}, and \acrlong*{csf}) and we used them to simulate \gls*{t1} 
+  and \gls*{t2} images at two resolution levels.
 After registration with \regseg{}, we measured the Hausdorff distance between the
   projected contours obtained using the ground-truth warping and our estimates.
 We concluded that the errors were significantly lower than the voxel resolution.
@@ -93,7 +80,21 @@ We argue that the symmetry of those other shapes posed difficulties in driving t
 This effect should not be present in real datasets, thanks to the very convoluted cortical
   layer, and the directional restriction of distortion.}
 
-\paragraph*{Application to real data}
+\todo{real data}
+This application is necessary in the extraction of structural connectivity from
+  \gls*{dmri}, and has been typically solved in a two-step approach.
+First, the \glspl*{dwi} are corrected for \emph{\gls*{epi} distortions} by estimating
+  the nonlinear-deformation field from extra MR acquisitions
+  \citep{jezzard_correction_1995,chiou_simple_2000,cordes_geometric_2000,
+  kybic_unwarping_2000}.
+Second, mapping the structural information from the corresponding \gls*{t1} image
+  using a linear registration tool like \emph{bbregister} \citep{greve_accurate_2009}.
+numerous attempts to delineate the structures of interest in diffusion
+  space have been proposed.
+Current activity on improving correction methods \citep{irfanoglu_drbuddi_2015} and
+  segmenting the \gls*{dmri} in its native space \citep{jeurissen_tissuetype_2015}
+  proofs the open interest of the application.
+\todo{real data old}
 We designed \regseg{} as a method for segmenting \gls*{dmri} data by exploiting the
   anatomical information extracted from a structural image (typically a \gls*{t1} image)
   of the subject.
@@ -130,6 +131,25 @@ Therefore, these results do not prove that \regseg{} \emph{is better than} \gls*
 Our results suggest that \regseg{} is a reliable option in this application field.
 In addition, the \gls*{t2b} may introduce an additional (and small) error during the necessary
   registration of \gls*{t2} in the \gls*{t1} space.
+
+
+
+\newcomment[RV\#1(C.3)]{%
+\paragraph*{Contributions}\label{sec:regseg-related_work} %
+
+}
+
+\newcomment[RV\#1(C.5)]{%
+Finally, we also contribute proposing a piecewise-smooth segmentation model defined by
+  a selection of nested surfaces to partition the multispectral space
+  comprehending the \gls*{fa} and the \gls*{adc} maps and ultimately identify these
+  structures in \gls*{dmri} space.}
+\newcomment[New]{%
+With the definition of appropriate models, \regseg{} may be applied in other fields like
+  neonatal brain image segmentation in longitudinal \gls*{mri} studies like \citep{shi_neonatal_2010}
+  in which the surfaces obtained in a mature timepoint of the brain can be retrospectively
+  propagated to the initial timepoints, regardless the changes of the contrast and spatial
+  development between timepoints.}
 
 % \paragraph*{Prospects}
 % First extensions of this work will study more appropriate features to build the energy functional
