@@ -1,24 +1,23 @@
 % -*- root: 00-main.tex -*-
 \revcomment[RV\#1(C.1)\par RV\#2(C.10)]{%
-Current methods using diffusion MRI to map the microstructure and connectivity of the
-  human brain increasingly require precise delineations of anatomical structures.
-The problem is typically solved by projecting the structural information extracted
-  in T1-weighted images, by means of nonlinear registration since diffusion
-  MRI data present geometrical distortions.
-Here we propose \regseg{}, which segments homogeneous regions within multivariate
-  images by projecting a set of nested surfaces extracted from structural images.}
-The surfaces evolve through a free-form deformation field supported by the B-spline basis
-  to optimally map the contours onto the data in the target space.
-We tested the functionality of \regseg{} using four digital phantoms warped with known and
-  randomly generated deformations, where subvoxel accuracy was achieved.
+Current methods for processing \gls*{dmri} to map the connectivity of the human brain
+  require precise delineations of anatomical structures.
+Image segmentation on the native \gls*{dmri} with sub-pixel accuracy has been unsuccessful,
+  and the projection of the structural information from \gls*{t1} images is challenging
+  since \gls*{dmri} data present geometrical distortions.
+To solve this problem, we propose \regseg{}, a surfaces-to-volume nonlinear registration method
+  that segments homogeneous regions within multivariate images by projecting a set of nested
+  reference-surfaces.}
+We first verify the subpixel accuracy of \regseg{} on digital phantoms,
 \revcomment[RV\#2(C.11)]{%
-We proposed a set of surfaces that define a segmentation model of the fractional anisotropy and
-  the apparent diffusion coefficient maps derived from diffusion MRI datasets.}
-These surfaces extracted from the same-subject T1-weighted image successfully segmented 16 real
-  diffusion MRI datasets from the Human Connectome Project that were warped by realistic and nonlinear
-  distortions.
-We computed the misregistration error of the surfaces estimated by \regseg{} with respect
-  to their theoretical location using the ground truth, thereby obtaining a 95\% CI of 0.56--0.66 mm
-  distance between corresponding mesh vertices, which was below the 1.25 mm isotropic resolution of the images.
-We also compared the performance of the proposed method with a widely used registration tool, which showed
-  that \regseg{} outperformed this method in our settings.
+and then we evaluate the tool in the aforementioned application.
+We propose a set of surfaces extracted from the \gls*{t1} image to successfully segment
+  the bivariate volume comprehending the \gls*{fa} and the \gls*{adc} maps derived from the
+  corresponding \gls*{dmri} dataset of the same subject.}
+We present an evaluation framework, in which the target \gls*{dmri} are deformed with
+  magnetic susceptibility -derived and realistic distortions.
+Using the framework, we analyze the misregistration error of the surfaces estimated by \regseg{}
+  on 16 real datasets of the Human Connectome Project, thereby obtaining an error distribution
+  with 95\% CI of 0.56--0.66 mm, below the \gls*{dmri} resolution (1.25 mm, isotropic).
+Finally, we cross-compare \regseg{} against a widely-used volume-to-volume registration method,
+  and we obtain a significantly lower misregistration error with the proposed tool.
