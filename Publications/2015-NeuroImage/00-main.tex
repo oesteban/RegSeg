@@ -1,8 +1,11 @@
-% \documentclass[5p,authoryear,fleqn]{elsarticle}
+%\documentclass[5p,authoryear,fleqn]{elsarticle}
 \documentclass[3p,authoryear,fleqn]{elsarticle}
 \journal{NeuroImage}
 \usepackage[utf8]{inputenc}
 
+\usepackage{xifthen}
+\newboolean{review}
+\setboolean{review}{true}
 
 % *** MISC UTILITY PACKAGES ***
 \usepackage[mode=buildnew]{standalone}
@@ -10,9 +13,6 @@
 \usepackage{glossaries}
 \usepackage{booktabs} % to use \toprule
 \usepackage{multirow}
-\usepackage[colorinlistoftodos,textsize=tiny, textwidth=1.2cm]{todonotes}
-\setlength{\marginparwidth}{1.5cm}
-\reversemarginpar
 
 % *** PDF, URL AND HYPERLINK PACKAGES ***
 %
@@ -21,7 +21,6 @@
 % \usepackage[hyperref]{xcolor}
 \usepackage{doi}
 
-\usepackage{xifthen}
 \usepackage{xspace}
 \usepackage{graphicx}
 \graphicspath{{figures/}}
@@ -54,7 +53,7 @@
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor an-isot-ropy regis-tra-tion iso-tropic Free-Surfer %
-align-ed pre-sent work-flow data-set data-sets}
+align-ed pre-sent work-flow data-set data-sets micro-struc-tu-re}
 
 \input{01-acronyms}
 
@@ -81,23 +80,26 @@ align-ed pre-sent work-flow data-set data-sets}
   \makeatother
 \fi
 
-% \usepackage{soul}
-% \usepackage{mdframed}
-% \newcommand{\hlc}[2][yellow]{ {\sethlcolor{#1} \hl{#2}} }
-\providecommand{\newcomment}[2][]{\ifthenelse{\equal{#1}{}}{}{\todo{#1}}%
-\bgroup \color{blue!70} #2\egroup}
-% \begin{mdframed}[hidealllines=true,backgroundcolor=blue!10]%
-% \internallinenumbers%
-% #2%
-% \end{mdframed}}
-% \hlc[green]{#2}}
-% \todo[inline]{#2}}
+
+\ifthenelse{\boolean{review}}
+{
+  \usepackage[colorinlistoftodos,textsize=tiny, textwidth=1.2cm]{todonotes}
+  \setlength{\marginparwidth}{1.5cm}
+  \reversemarginpar
+  % \setlength{\marginparwidth}{2.0cm}
+  \newcommand{\revcomment}[2][]{\ifthenelse{\equal{#1}{}}{}{\todo{#1}}%
+  \begingroup \color{blue!70} #2\endgroup}
+}
+{
+  \newcommand{\todo}[2][]{}
+  \newcommand{\revcomment}[2][]{#2}
+}
 
 % http://tex.stackexchange.com/questions/56105/missing-references-heading
 \def\bibsection{\section*{References}}
+
 \begin{document}
 \hypersetup{linkcolor=black!60, citecolor=black!60, urlcolor=black!60}
-
 \begin{frontmatter}
 
 %% Use \dochead if there is an article header, e.g. \dochead{Short communication}

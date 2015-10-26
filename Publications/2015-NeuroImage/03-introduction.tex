@@ -5,23 +5,23 @@
 It is generally acquired using \gls*{epi} schemes, since they are very fast at
   scanning a large sequence of images called \glspl*{dwi}.
 Each \gls*{dwi} is sensitized with a gradient to probe proton diffusion in a certain
-  \newcomment[RV\#2(C.13)]{orientation}.
+  \revcomment[RV\#2(C.13)]{orientation}.
 Subsequent processing involves describing the local microstructure with one available
   model, which ranges from the early \gls*{dti} proposed by \cite{basser_microstructural_1996}
   to current models such as \citep{daducci_accelerated_2015}.
-The microstructural map is then used to draw the preferential \newcomment[RV\#2(C.13)]{orientations} of diffusion
+The microstructural map is then used to draw the preferential \revcomment[RV\#2(C.13)]{orientations} of diffusion
   across the brain using tractography \citep{mori_threedimensional_1999}.
 Finally, a graph representing the corresponding structural network is built using
   the regions of a cortical parcellation as nodes and the streamlines of
   tractography as edges \citep{hagmann_mapping_2008}.
-\newcomment[RV\#2(C.17)]{%
+\revcomment[RV\#2(C.17)]{%
 The methodologies to solve reconstruction, tractography and network building
   require the delineation of the anatomy in the \gls*{dmri} space.
 Moreover, current trends on reconstruction \citep{jeurissen_multitissue_2014} and
   tractography \citep{smith_anatomicallyconstrained_2012} are increasingly using
   structural information to improve the microstructural mapping and fiber-tracking.}
 
-\newcomment[RV\#2(C.15)]{%
+\revcomment[RV\#2(C.15)]{%
 Possibly, the earliest structural information incorporated to aid \gls*{dmri} processing
   is the \gls*{wm} mask used as a termination criteria for tractography.
 The standardized procedure to obtain this mask was thresholding the \gls*{fa} map.
@@ -36,7 +36,7 @@ To overcome the unreliability of \gls*{fa} thresholding, and to broaden
   lu_segmentation_2008,han_experimental_2009}.}
 \todo{RV\#2(C.14)}%
 However, the precise segmentation of \gls*{dmri} is difficult for several reasons.
-First, \gls{dmri} images have a resolution that is \newcomment[RV\#2(C.12)]{much lower}
+First, \gls{dmri} images have a resolution that is \revcomment[RV\#2(C.12)]{much lower}
   than that of the imaged microstructural features.
 Therefore, voxels located in structural discontinuities are affected by partial
   voluming of the signal sources.
@@ -45,7 +45,7 @@ Second, the extremely low \gls*{snr} and the high dimensionality of the \glspl*{
 Third, the low contrast between \gls*{gm} and \gls*{wm} in the \lowb{} volumes also makes
   them unsuitable for brain tissue segmentation.
 
-\newcomment[RV\#2(C.9)]{%
+\revcomment[RV\#2(C.9)]{%
 An alternative route to segmentation in native \gls*{dmri} space is the mapping of the
   structural information extracted from anatomical MR images, such as \gls*{t1}, using
   image registration techniques.
@@ -68,7 +68,7 @@ A standardized method to solve the remaining linear mapping between the correcte
   and the structural spaces is \emph{bbregister} \citep{greve_accurate_2009}.%
 }
 
-\newcomment[RV\#2(C.10)]{%
+\revcomment[RV\#2(C.10)]{%
 Here we present a segmentation and surface-to-volume registration method 
   named \regseg{}, and show its usefulness in incorporating the anatomical
   information into native \gls*{dmri} space to aid subsequent reconstruction,

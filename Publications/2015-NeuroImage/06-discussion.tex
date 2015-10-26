@@ -37,7 +37,7 @@ To overcome the problem of nonlinear distortions, \emph{bbregister} excludes the
   regions that are typically warped from the boundary search.
 Indeed, the distortion must be addressed separately because it is not supported by
   the affine transformation model.
-The deformation model of \regseg{} is nonlinear and the surfaces are active
+Conversely, the deformation model of \regseg{} is nonlinear and the surfaces are active
   contours \emph{without edges} \citep{chan_active_2001}.
 The contours are without edges because the \gls*{fa} and \gls*{adc} maps do
   not present steep image gradients (edges) but the anatomy can be identified
@@ -63,13 +63,13 @@ We randomly deformed four different phantom models to mimic three homogeneous re
   and \gls*{t2} images at two resolution levels.
 After registration with \regseg{}, we measured the Hausdorff distance between the
   projected contours obtained using the ground-truth warping and our estimates.
-We concluded that the errors were significantly lower than the voxel resolution.
+We concluded that the errors were significantly lower than the voxel size.
 We also assessed the 95\% \gls*{ci}, which yielded an aggregate interval of
   0.64--0.66 [mm] for the low resolution phantoms (2.0 mm isotropic voxel) and
   0.34--0.38 [mm] for the high resolution phantoms (1.0 mm isotropic).
 Therefore, we also concluded that the error was bounded above by half of the
-  voxel spacing.
-\newcomment[RV\#1(C.8)]{%}
+  voxel size.
+\revcomment[RV\#1(C.8)]{%}
 The distributions of errors along surfaces vary importantly depending on the shape of the
   phantom (see \autoref{fig:regseg-phantom}B).
 The misregistration error of the ``gyrus'' phantom showed a much lower spread than that
@@ -81,36 +81,34 @@ This effect should not be present in real datasets, thanks to the very convolute
   layer, and the directional restriction of distortion.}
 
 \todo{real data}
-This application is necessary in the extraction of structural connectivity from
-  \gls*{dmri}, and has been typically solved in a two-step approach.
+Once the method was validated, we applied it in the task of identifying or incorporating
+  structural information in 16 real \gls*{dmri} datasets.
+The segmentation of some anatomical structures in the diffusion dataset is necessary in
+  current methods involved in the connectome extraction, such as the structure-informed 
+  reconstruction of \gls*{dmri} data \citep{jeurissen_multitissue_2014,daducci_accelerated_2015},
+  the anatomically constrained tractography \citep{smith_anatomicallyconstrained_2012},
+  and the imposition of the cortical parcellation mapped from the \gls*{t1} image 
+  \citep{hagmann_mapping_2008}.
+The problem was firstly addressed using image segmentation approaches in the native diffusion
+  space, without definitive and compelling results.
+With the introduction of retrospective correction methods for the \emph{\gls*{epi} distortions}
+  and image registration approaches, the task has been typically solved in a two-step approach.
 First, the \glspl*{dwi} are corrected for \emph{\gls*{epi} distortions} by estimating
   the nonlinear-deformation field from extra MR acquisitions
   \citep{jezzard_correction_1995,chiou_simple_2000,cordes_geometric_2000,
   kybic_unwarping_2000}.
 Second, mapping the structural information from the corresponding \gls*{t1} image
   using a linear registration tool like \emph{bbregister} \citep{greve_accurate_2009}.
-numerous attempts to delineate the structures of interest in diffusion
-  space have been proposed.
-Current activity on improving correction methods \citep{irfanoglu_drbuddi_2015} and
-  segmenting the \gls*{dmri} in its native space \citep{jeurissen_tissuetype_2015}
-  proofs the open interest of the application.
-\todo{real data old}
-We designed \regseg{} as a method for segmenting \gls*{dmri} data by exploiting the
-  anatomical information extracted from a structural image (typically a \gls*{t1} image)
-  of the subject.
-Current pipelines using whole-brain tractography usually solve this problem with a two-step approach.
-First, the images are corrected for nonlinear distortions using auxiliary acquisitions
-  such as fieldmaps \citep{jezzard_correction_1995}, \glspl*{dwi} with reversed \gls*{pe}
-  blips \citep{chiou_simple_2000}, or \gls*{t2} images \citep{kybic_unwarping_2000}.
-Second, the segmentation is projected from a reference \gls*{t1} image using linear
-  registration \citep{greve_accurate_2009}.
+The current activity on improving correction methods \citep{irfanoglu_drbuddi_2015} and
+  the comeback of segmentation of \gls*{dmri} in its native space 
+  \citep{jeurissen_tissuetype_2015} proof the open interest of this application.
+
 \Regseg{} addresses this joint problem in a single step and it does not require any additional
   acquisition other than the minimal protocol using only \gls*{t1} and \gls*{dmri} images.
 This situation is found commonly in historical datasets.
-Moreover, since the structural information is projected into the native space of \gls*{dmri}
+Moreover, since the structural information is projected into the native space of \gls*{dmri},
   reconstruction and tractography can be performed without resampling data to an undistorted
   space.
-
 We evaluated \regseg{} in a real environment using the experimental framework presented
   in \autoref{fig:regseg-evworkflows}.
 We processed 16 subjects from the \gls*{hcp} database using both \regseg{}
@@ -121,35 +119,45 @@ The misregistration error that remained after \regseg{} was significantly lower 
   error corresponding to the \gls*{t2b} correction according to Kruskal-Wallis H-tests
   (\autoref{tab:results_real}).
 Visual inspections of all the results (\suppl{section S5}) and the violin plots in
-  \autoref{fig:regseg-results_real} confirmed that \regseg{} performed better than the \gls*{t2b} method
-  in our settings.
+  \autoref{fig:regseg-results_real} confirmed that \regseg{} achieved higher accuracy
+  than the \gls*{t2b} method in our settings.
 We carefully configured the \gls*{t2b} method using the same algorithm and the
-  same settings employed in a widely-used tool.
-However, cross-comparison experiments are prone to so-called \emph{instrumentation bias}
+  same settings employed in a widely-used tool for \gls*{dmri} processing.
+However, cross-comparison experiments are prone to the so-called \emph{instrumentation bias}
   \citep{tustison_instrumentation_2013}.
-Therefore, these results do not prove that \regseg{} \emph{is better than} \gls*{t2b}.
-Our results suggest that \regseg{} is a reliable option in this application field.
-In addition, the \gls*{t2b} may introduce an additional (and small) error during the necessary
-  registration of \gls*{t2} in the \gls*{t1} space.
-
-
-
-\newcomment[RV\#1(C.3)]{%
-\paragraph*{Contributions}\label{sec:regseg-related_work} %
-
-}
-
-\newcomment[RV\#1(C.5)]{%
-Finally, we also contribute proposing a piecewise-smooth segmentation model defined by
+Therefore, these results did not prove that \regseg{} \emph{is better than} \gls*{t2b},
+  but indicated that \regseg{} is a reliable option in this application field.
+\revcomment[RV\#1(C.5)]{%
+Finally, we also contributed proposing a piecewise-smooth segmentation model defined by
   a selection of nested surfaces to partition the multispectral space
   comprehending the \gls*{fa} and the \gls*{adc} maps and ultimately identify these
-  structures in \gls*{dmri} space.}
-\newcomment[New]{%
-With the definition of appropriate models, \regseg{} may be applied in other fields like
-  neonatal brain image segmentation in longitudinal \gls*{mri} studies like \citep{shi_neonatal_2010}
-  in which the surfaces obtained in a mature timepoint of the brain can be retrospectively
+  structures in \gls*{dmri} space.
+We also demonstrated the smoothness of the objective function on five of the real datasets
+  (\suppl{Figure S2}), taking advantage of the directional restriction of possible distortions.
+However, convergence of \regseg{} can be severely affected when surfaces are dense enough.
+Using the digital phantoms, we decimated the surfaces with large factors and
+  effectively displaced the minimum of the shape-gradients from the minimum of the
+  objective function.
+Thus, the surfaces must be densely sampled to enable the use of the presented method.
+}%
+
+Beyond the presented application on \gls*{dmri} data, \regseg{} can be indicated in situations
+  where there are precise surfaces delineating the structure, a target multivariate
+  image in which the surfaces must be fitted, and the mapping between the surfaces and
+  the volume encodes a relevant physiological information, such as the normal/abnormal
+  development or the macroscopic dynamics of organs and tissues.
+For instance, \regseg{} may be applied in fields like neonatal brain image segmentation
+  in longitudinal MRI studies of the early developmental patterns as \citep{shi_neonatal_2010}.
+In these studies, the surfaces obtained in a mature timepoint of the brain are retrospectively
   propagated to the initial timepoints, regardless the changes of the contrast and spatial
-  development between timepoints.}
+  development between them.
+More generally, \regseg{} may also be applied on the personalized study of longitudinal alteration
+  of the brain using multispectral images, for instance in the case of traumatic brain
+  injury \citep{irimia_structural_2014} or in the development of brain tumors
+  \citep{weizman_semiautomatic_2014}.
+
+
+
 
 % \paragraph*{Prospects}
 % First extensions of this work will study more appropriate features to build the energy functional
