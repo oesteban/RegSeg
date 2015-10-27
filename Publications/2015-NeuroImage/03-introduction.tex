@@ -1,6 +1,6 @@
 % -*- root: 00-main.tex -*-
 \section{Introduction}\label{sec:regseg-intro}
-\Gls*{dmri} enables the mapping of microstructure \citep{basser_microstructural_1996}
+\Acrlong*{dmri} enables the mapping of microstructure \citep{basser_microstructural_1996}
   and connectivity \citep{craddock_imaging_2013} of the human brain \emph{in-vivo}.
 It is generally acquired using \gls*{epi} schemes, since they are very fast at
   scanning a large sequence of images called \glspl*{dwi}.
@@ -12,7 +12,7 @@ Subsequent processing involves describing the local microstructure with one avai
 The microstructural map is then used to draw the preferential \revcomment[RV\#2(C.13)]{orientations} of diffusion
   across the brain using tractography \citep{mori_threedimensional_1999}.
 Finally, a graph representing the corresponding structural network is built using
-  the regions of a cortical parcellation as nodes and the streamlines of
+  the regions of a cortical parcellation as nodes and the fiber paths found by
   tractography as edges \citep{hagmann_mapping_2008}.
 \revcomment[RV\#2(C.17)]{%
 The methodologies to solve reconstruction, tractography and network building
@@ -42,8 +42,8 @@ Therefore, voxels located in structural discontinuities are affected by partial
   voluming of the signal sources.
 Second, the extremely low \gls*{snr} and the high dimensionality of the \glspl*{dwi} prevent
   their direct use in segmentation.
-Third, the low contrast between \gls*{gm} and \gls*{wm} in the \lowb{} volumes also makes
-  them unsuitable for brain tissue segmentation.
+Third, the low contrast between \gls*{gm} and \gls*{wm} in the \lowb{} volume also makes
+  it unsuitable for brain tissue segmentation.
 
 \revcomment[RV\#2(C.9)]{%
 An alternative route to segmentation in native \gls*{dmri} space is the mapping of the
@@ -52,7 +52,7 @@ An alternative route to segmentation in native \gls*{dmri} space is the mapping 
 Generally, intra-subject registration of MR images of the brain involves only a linear
   mapping to compensate for head motion between scans.
 However, \gls*{epi} introduces a geometrical distortion \citep{jezzard_correction_1995}
-  that impedes the linear mapping from the structural space and warps the anatomy 
+  that impedes the linear mapping from the structural space and warps the anatomy
   identified on native \gls*{dmri} space \citep{irfanoglu_effects_2012}.
 Numerous methods have been proposed to overcome this problem by incorporating information
   from extra MR acquisitions such as fieldmaps \citep{jezzard_correction_1995},
@@ -60,7 +60,7 @@ Numerous methods have been proposed to overcome this problem by incorporating in
   or \gls*{t2} images \citep{kybic_unwarping_2000,studholme_accurate_2000}.
 These methods estimate the deformation field associated to \emph{\gls*{epi} distortions} and
   resample the \glspl*{dwi} onto a corrected \gls*{dmri} space.
-The retrospective \gls*{epi} correction is an active field of research yielding frequent refinements 
+The retrospective \gls*{epi} correction is an active field of research yielding frequent refinements
   and combinations of the original methods, such as
   \citep{holland_efficient_2010,andersson_comprehensive_2012,
   irfanoglu_drbuddi_2015}. \todo{RV\#2(C.18)}
@@ -69,7 +69,7 @@ A standardized method to solve the remaining linear mapping between the correcte
 }
 
 \revcomment[RV\#2(C.10)]{%
-Here we present a segmentation and surface-to-volume registration method 
+Here we present a segmentation and surface-to-volume registration method
   named \regseg{}, and show its usefulness in incorporating the anatomical
   information into native \gls*{dmri} space to aid subsequent reconstruction,
   tractography and network building using a cortical parcellation.
@@ -80,7 +80,7 @@ To implement \regseg{} we first establish an active-contours without edges
 Several \emph{anatomically-correct} surfaces of the same subject initialize
   the 3D active-contours, which evolve searching for homogeneous regions in
   the multivariate target-image.
-In the presented application to segment \gls*{dmri} data, we propose a bivariate 
+In the presented application to segment \gls*{dmri} data, we propose a bivariate
   target-volume comprehending the \gls*{fa} and \gls*{adc} maps.
 The evolution of the surfaces is supported by a B-spline basis, optimized
   iteratively using a descent approach driven by shape-gradients
@@ -101,12 +101,12 @@ In this paper, we first verify the functionality of the method and the \regseg{}
   implementation using a set of digital phantoms, demonstrating the sub-pixel accuracy
   in registration.
 We then evaluate \regseg{} on real \gls*{dmri} datasets, using a derivation of our
-  instrumentation framework \citep{esteban_simulationbased_2014} which simulates 
+  instrumentation framework \citep{esteban_simulationbased_2014} which simulates
   known and realistic \gls*{epi} distortions.
-We also compare \regseg{} and a nonlinear registration method to map the \lowb{} to 
+We also compare \regseg{} and a nonlinear registration method to map the \lowb{} to
   the corresponding \gls*{t2} image of the same subject.
-This method is a derivation of the \gls*{t2b} correction method, reproducing the settings
-  of an existing implementation included within a widely used diffusion processing software
-  \citep{leemans_exploredti_2009}.
-With this comparison we demonstrate how \regseg{} achieves higher accuracy with the
+This method is a derivation of the \gls*{t2b} correction methods \citep{kybic_unwarping_2000},
+  reproducing the settings of an existing implementation included within a widely used diffusion
+  processing software (\emph{ExploreDTI}, \cite{leemans_exploredti_2009}).
+With this comparison, we demonstrate how \regseg{} achieves higher accuracy with the
   simultaneous registration and segmentation process.
