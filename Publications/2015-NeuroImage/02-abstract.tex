@@ -2,22 +2,24 @@
 \revcomment[RV\#1(C.1)\par RV\#2(C.10)]{%
 Current methods for processing \gls*{dmri} to map the connectivity of the human brain
   require precise delineations of anatomical structures.
-Image segmentation on the native \gls*{dmri} with sub-pixel accuracy has been unsuccessful,
-  and the projection of the structural information from \gls*{t1} images is challenging
-  since \gls*{dmri} data present geometrical distortions.
-To solve this problem, we propose \regseg{}, a surfaces-to-volume nonlinear registration method
-  that segments homogeneous regions within multivariate images by projecting a set of nested
-  reference-surfaces.}
-We first verify the subpixel accuracy of \regseg{} on digital phantoms,
+The requirement has been approached either segmenting the data in native \gls*{dmri} space
+  or projecting the structural information from \gls*{t1} images.
+The characteristic features of diffusion data in terms of \acrlong*{snr}, resolution, etc.
+  and the geometrical distortions caused by the inhomogeneity of magnetic susceptibility
+  across tissues render the problem challenging.
+To solve the problem in a unified approach, we propose \regseg{}, a surface-to-volume nonlinear
+  registration method that segments homogeneous regions within multivariate images by mapping
+  a set of nested reference-surfaces.}
 \revcomment[RV\#2(C.11)]{%
-and then we evaluate the tool in the aforementioned application.
-We propose a set of surfaces extracted from the \gls*{t1} image to successfully segment
-  the bivariate volume comprehending the \gls*{fa} and the \gls*{adc} maps derived from the
-  corresponding \gls*{dmri} dataset of the same subject.}
-We present an evaluation framework, in which the target \gls*{dmri} are deformed with
-  magnetic susceptibility -derived and realistic distortions.
-Using the framework, we analyze the misregistration error of the surfaces estimated by \regseg{}
-  on 16 real datasets of the Human Connectome Project, thereby obtaining an error distribution
-  with 95\% CI of 0.56--0.66 mm, below the \gls*{dmri} resolution (1.25 mm, isotropic).
-Finally, we cross-compare \regseg{} against a widely-used volume-to-volume registration method,
-  and we obtain a significantly lower misregistration error with the proposed tool.
+The surfaces can be extracted from the \gls*{t1} image of the subject, and the target image
+  is the bivariate volume comprehending the \gls*{fa} and the \gls*{adc} maps derived from the
+  \gls*{dmri} dataset.}
+We first verify the subpixel accuracy of \regseg{} on digital phantoms, to then propose an
+  evaluation framework that uses \gls*{dmri} datasets from the \gls*{hcp}.
+In this framework, the undistorted \gls*{dmri} undergo a known distortion derived from real
+  fieldmaps.
+We analyze the misregistration error of the surfaces estimated by \regseg{} on 16 datasets.
+The distribution of errors shows a 95\% CI of 0.56--0.66 mm, below the \gls*{dmri} resolution
+  (1.25 mm, isotropic).
+Finally, we cross-compare the proposed tool against a nonlinear \lowb{}-to-T2w registration
+  method, thereby obtaining a significantly lower misregistration error with \regseg{}.

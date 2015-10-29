@@ -46,14 +46,13 @@ Third, the low contrast between \gls*{gm} and \gls*{wm} in the \lowb{} volume al
   it unsuitable for brain tissue segmentation.
 
 \revcomment[RV\#2(C.9)]{%
-An alternative route to segmentation in native \gls*{dmri} space is the mapping of the
+An alternative route to segmentation in \gls*{dmri} space is the mapping of the
   structural information extracted from anatomical MR images, such as \gls*{t1}, using
   image registration techniques.
 Generally, intra-subject registration of MR images of the brain involves only a linear
   mapping to compensate for head motion between scans.
 However, \gls*{epi} introduces a geometrical distortion \citep{jezzard_correction_1995}
-  that impedes the linear mapping from the structural space and warps the anatomy
-  identified on native \gls*{dmri} space \citep{irfanoglu_effects_2012}.
+  that impedes the linear mapping from the structural space.
 Numerous methods have been proposed to overcome this problem by incorporating information
   from extra MR acquisitions such as fieldmaps \citep{jezzard_correction_1995},
   \glspl*{dwi} with a different \gls*{pe} scheme \citep{cordes_geometric_2000,chiou_simple_2000},
@@ -70,18 +69,18 @@ A standardized method to solve the remaining linear mapping between the correcte
 
 \revcomment[RV\#2(C.10)]{%
 Here we present a segmentation and surface-to-volume registration method
-  named \regseg{}, and show its usefulness in incorporating the anatomical
-  information into native \gls*{dmri} space to aid subsequent reconstruction,
-  tractography and network building using a cortical parcellation.
-The hypothesis underlying is that the registration and segmentation problems
+  named \regseg{}, and show its usefulness in mapping anatomical information from structural
+  into native \gls*{dmri} space to aid subsequent processing steps
+  (reconstruction, tractography and network building using a cortical parcellation).
+The underlying hypothesis is that the registration and segmentation problems
   in \gls*{dmri} can be solved simultaneously.
 To implement \regseg{} we first establish an active-contours without edges
   \citep{chan_active_2001} segmentation framework.
-Several \emph{anatomically-correct} surfaces of the same subject initialize
-  the 3D active-contours, which evolve searching for homogeneous regions in
-  the multivariate target-image.
-In the presented application to segment \gls*{dmri} data, we propose a bivariate
-  target-volume comprehending the \gls*{fa} and \gls*{adc} maps.
+Several reference surfaces of the same subject initialize the 3D active-contours,
+  which evolve searching for homogeneous regions in the multivariate target-image.
+In the presented application to segment \gls*{dmri} data, we propose to use \regseg{}
+  using a set of nested surfaces extracted from a strutrucal image (e.g. \gls*{t1}) and
+  a bivariate target-volume comprehending the \gls*{fa} and \gls*{adc} maps as inputs.
 The evolution of the surfaces is supported by a B-spline basis, optimized
   iteratively using a descent approach driven by shape-gradients
   \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
