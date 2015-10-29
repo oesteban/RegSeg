@@ -5,38 +5,38 @@
 It is generally acquired using \gls*{epi} schemes, since they are very fast at
   scanning a large sequence of images called \glspl*{dwi}.
 Each \gls*{dwi} is sensitized with a gradient to probe proton diffusion in a certain
-  \revcomment[RV\#2(C.13)]{orientation}.
+  \revcomment[C13 (R.2)]{orientation}.
 Subsequent processing involves describing the local microstructure with one available
   model, which ranges from the early \gls*{dti} proposed by \cite{basser_microstructural_1996}
   to current models such as \citep{daducci_accelerated_2015}.
-The microstructural map is then used to draw the preferential \revcomment[RV\#2(C.13)]{orientations} of diffusion
+The microstructural map is then used to draw the preferential \revcomment[C13 (R.2)]{orientations} of diffusion
   across the brain using tractography \citep{mori_threedimensional_1999}.
 Finally, a graph representing the corresponding structural network is built using
   the regions of a cortical parcellation as nodes and the fiber paths found by
   tractography as edges \citep{hagmann_mapping_2008}.
-\revcomment[RV\#2(C.17)]{%
+\revcomment[C9 (R.2) \\ C17 (R.2)]{%
 The methodologies to solve reconstruction, tractography and network building
   require the delineation of the anatomy in the \gls*{dmri} space.
 Moreover, current trends on reconstruction \citep{jeurissen_multitissue_2014} and
   tractography \citep{smith_anatomicallyconstrained_2012} are increasingly using
   structural information to improve the microstructural mapping and fiber-tracking.}
 
-\revcomment[RV\#2(C.15)]{%
+\revcomment[C15 (R.2)]{%
 Possibly, the earliest structural information incorporated to aid \gls*{dmri} processing
   is the \gls*{wm} mask used as a termination criteria for tractography.
 The standardized procedure to obtain this mask was thresholding the \gls*{fa} map.
 However, the mask and subsequent analyses are highly dependent on the threshold set
   \citep{taoka_fractional_2009}.
-\todo{RV\#2(C.16)}
+\todo{C16 (R.2)}
 To overcome the unreliability of \gls*{fa} thresholding, and to broaden
   \gls*{wm} segmentation to brain tissue segmentation, a large number of
   methods have been proposed using \glspl*{dwi}, the \lowb{}, and \gls*{dti}-derived
   scalar maps such as \gls*{fa}, \gls*{adc} and others \citep{zhukov_level_2003,
   rousson_level_2004,jonasson_segmentation_2005,hadjiprocopis_unbiased_2005,liu_brain_2007,
   lu_segmentation_2008,han_experimental_2009}.}
-\todo{RV\#2(C.14)}%
+\todo{C14 (R.2)}%
 However, the precise segmentation of \gls*{dmri} is difficult for several reasons.
-First, \gls{dmri} images have a resolution that is \revcomment[RV\#2(C.12)]{much lower}
+First, \gls{dmri} images have a resolution that is \revcomment[C12 (R.2)]{much lower}
   than that of the imaged microstructural features.
 Therefore, voxels located in structural discontinuities are affected by partial
   voluming of the signal sources.
@@ -45,7 +45,7 @@ Second, the extremely low \gls*{snr} and the high dimensionality of the \glspl*{
 Third, the low contrast between \gls*{gm} and \gls*{wm} in the \lowb{} volume also makes
   it unsuitable for brain tissue segmentation.
 
-\revcomment[RV\#2(C.9)]{%
+\revcomment[C18 (R.2)]{%
 An alternative route to segmentation in \gls*{dmri} space is the mapping of the
   structural information extracted from anatomical MR images, such as \gls*{t1}, using
   image registration techniques.
@@ -62,22 +62,25 @@ These methods estimate the deformation field associated to \emph{\gls*{epi} dist
 The retrospective \gls*{epi} correction is an active field of research yielding frequent refinements
   and combinations of the original methods, such as
   \citep{holland_efficient_2010,andersson_comprehensive_2012,
-  irfanoglu_drbuddi_2015}. \todo{RV\#2(C.18)}
+  irfanoglu_drbuddi_2015}.
 A standardized method to solve the remaining linear mapping between the corrected-\gls*{dmri}
   and the structural spaces is \emph{bbregister} \citep{greve_accurate_2009}.%
 }
 
-\revcomment[RV\#2(C.10)]{%
+\revcomment[rephrased]{%
 Here we present a segmentation and surface-to-volume registration method
   named \regseg{}, and show its usefulness in mapping anatomical information from structural
   into native \gls*{dmri} space to aid subsequent processing steps
   (reconstruction, tractography and network building using a cortical parcellation).
 The underlying hypothesis is that the registration and segmentation problems
-  in \gls*{dmri} can be solved simultaneously.
+  in \gls*{dmri} can be solved simultaneously.}
+\revcomment[C1 (R.1) \\ C10 (R.2)]{%
 To implement \regseg{} we first establish an active-contours without edges
-  \citep{chan_active_2001} segmentation framework.
-Several reference surfaces of the same subject initialize the 3D active-contours,
-  which evolve searching for homogeneous regions in the multivariate target-image.
+  \citep{chan_active_2001} segmentation framework.}
+\revcomment[C2 (R.1)]{%
+A specific set of reference surfaces extracted from the same subject initialize
+  the 3D active-contours, which evolve searching for homogeneous regions in the multivariate
+  target-image.
 In the presented application to segment \gls*{dmri} data, we propose to use \regseg{}
   using a set of nested surfaces extracted from a strutrucal image (e.g. \gls*{t1}) and
   a bivariate target-volume comprehending the \gls*{fa} and \gls*{adc} maps as inputs.

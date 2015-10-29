@@ -1,16 +1,17 @@
 % -*- root: 00-main.tex -*-
-\revcomment[RV\#1(C.1)\par RV\#2(C.10)]{%
 Current methods for processing \gls*{dmri} to map the connectivity of the human brain
   require precise delineations of anatomical structures.
+\revcomment[C1 (R.1)]{%
 The requirement has been approached either segmenting the data in native \gls*{dmri} space
   or projecting the structural information from \gls*{t1} images.
 The characteristic features of diffusion data in terms of \acrlong*{snr}, resolution, etc.
   and the geometrical distortions caused by the inhomogeneity of magnetic susceptibility
-  across tissues render the problem challenging.
+  across tissues render the problem challenging.}
+\revcomment[C10 (R.2)]{%
 To solve the problem in a unified approach, we propose \regseg{}, a surface-to-volume nonlinear
   registration method that segments homogeneous regions within multivariate images by mapping
   a set of nested reference-surfaces.}
-\revcomment[RV\#2(C.11)]{%
+\revcomment[C11 (R.2)]{%
 The surfaces can be extracted from the \gls*{t1} image of the subject, and the target image
   is the bivariate volume comprehending the \gls*{fa} and the \gls*{adc} maps derived from the
   \gls*{dmri} dataset.}
