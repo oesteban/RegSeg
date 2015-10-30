@@ -19,13 +19,20 @@ The most common approach involves optimizing a deformation model (registration)
   like \cite{paragios_level_2003,yezzi_variational_2003}.}
 \revcomment[C1 (R.1)]{%
 \Regseg{} can be seen as a particular case of atlas-based segmentation-registration methods,
-  replacing the atlas by the structural image of the subject (\emph{structure-informed segmentation}).}
+  replacing the atlas by the structural image of the subject (\emph{structure-informed segmentation}).
+In atlas-based segmentation, the origin of the problem is the anatomical variability hindering the
+  atlas matching process.
+Conversely, in structure-informed segmentation, the sources of variability are the geometrical distortions
+  after imaging and the anatomical evolution in longitudinal studies.}
 \revcomment[C3 (R.1)]{%
-\cite{gorthi_active_2011} review the application of joint segmentation and registration in atlas-based
-  segmentation, and propose a multiphase level set function to register several active contours.
+\cite{gorthi_active_2011} review the joint segmentation and registration methods, and propose a multiphase
+  level set function derived from a labeled atlas for active contour-based registration in the atlas-based
+  segmentation problem.
 Alternatively, \regseg{} implements the active contours with a hierarchical set of explicit
   surfaces (triangular meshes) instead of the multiphase level sets, and registration
-  is driven by shape-gradients \citep{herbulot_segmentation_2006}.}
+  is driven by shape-gradients \citep{herbulot_segmentation_2006}.
+This solution is better adapted to the structure-informed segmentation, and it is possibly
+   simpler to implement than the multiphase level set functions.}
 
 \revcomment[C3 (R.1)]{%
 An important antecedent of \regseg{} is \emph{bbregister} \citep{greve_accurate_2009}.
