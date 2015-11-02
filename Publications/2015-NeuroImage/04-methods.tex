@@ -30,7 +30,7 @@ The general overview of how the surfaces interact with the registration framewor
     $\vec{v}_i$ of the mesh.
   The gradient speeds $\bar{s}_i$ drive registration, which are computed as the disparity of the data
     energies with respect to the two limiting regions of $M(\vec{v}_i)$, the features of the image
-    $M$ in the location of vertex $\vec{v}_i$ (see \suppl{equation SM5}).
+    $M$ in the location of vertex $\vec{v}_i$ \citepalias[see][equation SM5]{esteban_useful_2015}.
   In this figure, $\bar{s}_1$ is written in the lower
     box, with $\Omega_{wm}$ in the inner limiting region, $\Omega_{gm}$ the outer region, and
     $w_{0,1}$ is the relative area associated with vertex $\vec{v}_1$ with respect to
@@ -200,7 +200,7 @@ Let us assume that the anisotropy is aligned with the imaging axes to simplify
 Then, the data and regularization terms are split and discretized to compute their
   derivatives.
 The computation of the explicit shape gradients at each $\vec{v}_i'$ is illustrated in \autoref{fig:regseg-method}.
-Then, \eqref{eq:regseg-gradient_descent} can be reformulated as (see \suppl{equations SM6-SM12}):
+Then, \eqref{eq:regseg-gradient_descent} can be reformulated as \citepalias[see][equations SM6-SM12]{esteban_useful_2015}:
 
   \begin{align}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
@@ -208,7 +208,8 @@ Then, \eqref{eq:regseg-gradient_descent} can be reformulated as (see \suppl{equa
   \label{eq:regseg-final_gradient}
   \end{align}
 
-Finally, to descend this gradient, we establish a semi-implicit Euler scheme (see \suppl{section S1.3}),
+Finally, to descend this gradient, we establish a semi-implicit Euler scheme
+  \citepalias[see][section S1.3]{esteban_useful_2015},
   with a step size parameter $\delta$, which we solve in the spectral domain as follows:
 
   \begin{align}
@@ -227,7 +228,7 @@ Registration pyramids are created by setting the spacing between the control poi
 The implementation details as well as other features (such as the sparse matrix approach
   to fast interpolation) and the main parameters
   (such as $\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$, the B-spline grid resolutions,
-  and target image smoothing) are discussed in \suppl{section S1}.
+  and target image smoothing) are discussed in \citepalias[][section S1]{esteban_useful_2015}.
 
 \subsection{Evaluation protocol}\label{sec:regseg-evaluation_protocol}
 In order to assess the performance of \regseg{}, we defined the following general
@@ -369,7 +370,7 @@ Using tools in \emph{FreeSurfer} and appropriate selections of labels in the
   \emph{aparc} segmentation released with the \gls*{hcp} data, we extracted the $\gammaset_R$ set for the
   reference surfaces.
 The segmentation model corresponding to this partition is shown in \autoref{fig:regseg-model}
-  and discussed in greater detail in \suppl{section S4}.
+  and discussed in greater detail in \citepalias[section S4]{esteban_useful_2015}.
 
 \paragraph*{Ground-truth generation}
 Realistic deformation was achieved by generating displacements fields that satisfy the theoretical
@@ -401,7 +402,7 @@ For five test datasets, we uniformly sampled the space of distortions
   (with $\epsilon \in [-1.1, 1.1]$ and $u_\text{PE}$ from \eqref{eq:regseg-fieldmap}),
   and we evaluated the data term of the cost function \eqref{eq:regseg-energy}.
 The minimum of the cost function (\autoref{sec:regseg-methods_map}) was consistently located at
-  $\epsilon=0.0$ (the ground-truth) for all of the cases (\suppl{Figure S2}).
+  $\epsilon=0.0$ (the ground-truth) for all of the cases \citepalias[figure S2]{esteban_useful_2015}.
 
 \paragraph*{Settings} %
 \revcomment[C5 (R.1)]{%
@@ -421,7 +422,7 @@ Only the first and second levels included Gaussian smoothing of the target image
 The actual choices of the parameter settings are publicly distributed with the source code for the
   experiments\footnote{\url{https://github.com/oesteban/RegSeg/tree/master/Scripts/pyacwereg/data/regseg_hcp.json}}.}
 These settings were obtained manually, driven by the feedback obtained from the post-registration
-  convergence reports (like that found in \suppl{section S1.3}).
+  convergence reports \citepalias[like that found in][section S1.3]{esteban_useful_2015}.
 We released \regseg{} along with the tool to generate such convergence reports.
 
 \paragraph*{Cross-comparison} %

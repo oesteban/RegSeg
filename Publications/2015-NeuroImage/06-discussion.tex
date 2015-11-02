@@ -101,7 +101,7 @@ We processed 16 subjects from the \gls*{hcp} database using both \regseg{}
 The misregistration error that remained after \regseg{} was significantly lower ($p <$ 0.01) than the
   error corresponding to the \gls*{t2b} correction according to Kruskal-Wallis H-tests
   (\autoref{tab:results_real}).
-Visual inspections of all the results (\suppl{section S5}) and the violin plots in
+Visual inspections of all the results \citepalias[section S5]{esteban_useful_2015} and the violin plots in
   \autoref{fig:regseg-results_real} confirmed that \regseg{} achieved higher accuracy
   than the \gls*{t2b} method in our settings.
 We carefully configured the \gls*{t2b} method using the same algorithm and the
@@ -116,7 +116,8 @@ Finally, we also contributed proposing a piecewise-smooth segmentation model def
   comprehending the \gls*{fa} and the \gls*{adc} maps and ultimately identify these
   structures in \gls*{dmri} space.
 We also demonstrated the smoothness of the objective function on five of the real datasets
-  (\suppl{Figure S2}), taking advantage of the directional restriction of possible distortions.
+  \citepalias[figure S2]{esteban_useful_2015}, taking advantage of the directional
+  restriction of possible distortions.
 However, convergence of \regseg{} can be severely affected when surfaces are not dense enough.
 Using the digital phantoms, we decimated the surfaces with large factors and
   effectively displaced the minimum of the shape-gradients from the minimum of the
