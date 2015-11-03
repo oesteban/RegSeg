@@ -118,12 +118,10 @@ Finally, we also contributed proposing a piecewise-smooth segmentation model def
 We also demonstrated the smoothness of the objective function on five of the real datasets
   \citepalias[figure S2]{esteban_useful_2015}, taking advantage of the directional
   restriction of possible distortions.
-However, convergence of \regseg{} can be severely affected when surfaces are not dense enough.
-Using the digital phantoms, we decimated the surfaces by large factors.
-Severely decimated surfaces introduced a bias that displaced the zero of the gradients from
-  the minimum of the objective function.
-Thus, the surfaces must be densely sampled to avoid the shape-gradients drive the algorithm
-  in a wrong direction impeding convergence.
+However, \regseg{} requires densely sampled surfaces to ensure the convergence.
+Using the digital phantoms, we severely decimated the surfaces by a large factor.
+These surfaces introduced a bias which displaced the zero of the gradients from the
+  minimum of the objective function impeding the convergence.
 }%
 
 \revcomment[C9 (R.2)]{%
