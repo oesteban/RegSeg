@@ -242,10 +242,13 @@ In order to assess the performance of \regseg{}, we defined the following genera
 The adaptation of this protocol to the simulated phantoms and real data is explained in the
   following sections.
 \revcomment[C20 (R.2)]{%
-A first proof of concept to demonstrate \regseg{} in phantoms with simple
-  geometries is introduced, using $U_\text{true}$ without directional restrictions.
-Then, a more realistic environment with $U_\text{true}$ restricted to the
-  \gls*{pe} axis of real \gls*{dmri} datasets is presented.}
+A first proof of concept is introduced to demonstrate \regseg{} in digital phantoms
+  with simple geometries, using $U_\text{true}$ without directional restrictions.
+Then, \regseg{} is evaluated in a framework using undistorted \gls*{dmri} datasets,
+  and $U_\text{true}$ is derived from the corresponding inhomogeneity fieldmap of
+  the subject.
+Therefore, the deformation field is nonzero only in the \gls*{pe} axis,
+  and resembles a real \gls*{epi} distortion.}
 
 \subsection{Simulated phantoms}\label{sec:regseg-digital_phantoms}
 The workflow required to simulate the digital phantoms and to assess the performance of
@@ -330,9 +333,9 @@ which extends our previous evaluation \citep{esteban_simulationbased_2014} of di
     the ground-truth deformation.
   5) The results were evaluated visually and quantitatively.
   \revcomment{%
-  The arrows point to edges in the target images (yellow arrows for \gls*{fa}, blue for \gls*{adc}) that
-    should be aligned with a surface, showing how distortion breaks the mapping with the structural space in which
-    the contours are defined.}}\label{fig:regseg-evworkflows}
+  The arrows point to edges in the target images (light-yellow arrows for \gls*{fa}, blue for \gls*{adc}) that
+    should be aligned with a surface, showing how distortion limits the direct mapping from the structural space
+    in which the contours are defined.}}\label{fig:regseg-evworkflows}
   \todo[inline]{C7 (R.1) \& C23 (R.2)}%
 \end{figure*}
 
@@ -344,8 +347,8 @@ The original acquisitions are released within ``unprocessed'' packages, whereas
   the ``minimally preprocessed'' packages contain the corresponding images after
   some processing (correction for several artifacts, brain-extraction, spatial
   normalization, etc.).
-We refer the reader to \citep{essen_human_2012} for exact details of the acquisition
-  parameters and \citep{glasser_minimal_2013} for the preprocessing issues.
+We refer the reader to \citet{essen_human_2012} for exact details of the acquisition
+  parameters and \citet{glasser_minimal_2013} for the preprocessing issues.
 These datasets comprise a large set of images, including \gls*{t1}, \gls*{t2}, and
   multi-shell \gls*{dmri} images.
 \revcomment[C7 (R.1)]{%
@@ -414,9 +417,9 @@ Since the distortion $U_\text{true}$ is aligned along the \gls*{pe} direction ($
   \regseg{} was configured to allow nonzero displacements only on that corresponding direction.}
 \revcomment[C6 (R.1)]{%
 For the experiments on real data, \regseg{} established a multi-resolution pyramid of
-  B-Spline basis, with control points distributed on grids of the following spacings:
-  40$\times$100$\times$40 [mm] for the first (coarser level), \isores[mm]{30} for the second,
-  and 20$\times$30$\times$10 [mm] in the third.
+  B-Spline functions, with control points distributed on grids of the following spacings:
+  40$\times$100$\times$40 [mm] for the first (coarser) level, \isores[mm]{30} for the second level,
+  and 20$\times$30$\times$10 [mm] in the third level.
 Only the first and second levels included Gaussian smoothing of the target image ($\sigma$ = [2.0, 0.5] mm,
   respectively).
 The actual choices of the parameter settings are publicly distributed with the source code for the
@@ -435,7 +438,8 @@ We reproduced the solution and settings provided with \emph{ExploreDTI}
   perform registration.
 \revcomment[C21 (R.2)]{%
 The deformation field is correspondingly restricted to the \gls*{pe} direction.
-Settings used with \emph{elastix} are conveniently available in its format\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/t2b_elastix_y.txt}}.}
+The settings file for \emph{elastix} is also
+  available\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/t2b_elastix_y.txt}}.}
 
 \paragraph*{Error measurement}\label{sec:regseg-experiments_evaluation}
 Distortion only occurs along the \gls*{pe} axis of the image, so we computed the

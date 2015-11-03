@@ -17,22 +17,22 @@ Previously, joint segmentation and registration has been applied successfully to
 The most common approach involves optimizing a deformation model (registration)
   that supports the evolution of the active contours (segmentation),
   like \cite{paragios_level_2003,yezzi_variational_2003}.}
-\revcomment[C1 (R.1)]{%
+% Conversely, in structure-informed segmentation, the sources of variability are the geometrical distortions
+%   after imaging and the anatomical evolution in longitudinal studies.}
+\revcomment[C3 (R.1)]{%
 \Regseg{} can be seen as a particular case of atlas-based segmentation-registration methods,
   replacing the atlas by the structural image of the subject (\emph{structure-informed segmentation}).
-In atlas-based segmentation, the origin of the problem is the anatomical variability hindering the
-  atlas matching process.
-Conversely, in structure-informed segmentation, the sources of variability are the geometrical distortions
-  after imaging and the anatomical evolution in longitudinal studies.}
-\revcomment[C3 (R.1)]{%
-\cite{gorthi_active_2011} review the joint segmentation and registration methods, and propose a multiphase
-  level set function derived from a labeled atlas for active contour-based registration in the atlas-based
-  segmentation problem.
+The main difference of atlas-based segmentation and the application at hand is the resolution of the
+  target image.
+Atlas-based segmentation is typically applied on high-resolution images.
+A comprehensive review of joint segmentation and registration methods applied in atlas-based
+  segmentation is found in \citep{gorthi_active_2011}.
+They also propose a multiphase level-set function derived from a labeled atlas to implement the
+  active contours that drive the atlas registration.
 Alternatively, \regseg{} implements the active contours with a hierarchical set of explicit
   surfaces (triangular meshes) instead of the multiphase level sets, and registration
   is driven by shape-gradients \citep{herbulot_segmentation_2006}.
-This solution is better adapted to the structure-informed segmentation, and it is possibly
-   simpler to implement than the multiphase level set functions.}
+The use of explicit surfaces enables segmenting \gls*{dmri} images below pixel resolution.}
 
 \revcomment[C3 (R.1)]{%
 An important antecedent of \regseg{} is \emph{bbregister} \citep{greve_accurate_2009}.
@@ -48,7 +48,7 @@ Indeed, the distortion must be addressed separately because it is not supported 
   the affine transformation model.}
 \revcomment[C22 (R.2)]{%
 Conversely, the deformation model of \regseg{} is nonlinear and the active contours are
-  \emph{without edges} \citep{chan_active_2001} because the \gls*{fa} and \gls*{adc} maps
+  \emph{without edges} \citep{chan_active_2001} since the \gls*{fa} and \gls*{adc} maps
   do not present steep image gradients (edges) but the anatomy can be identified
   by looking for piece-wise smooth homogeneous regions.}
 
@@ -119,10 +119,11 @@ We also demonstrated the smoothness of the objective function on five of the rea
   \citepalias[figure S2]{esteban_useful_2015}, taking advantage of the directional
   restriction of possible distortions.
 However, convergence of \regseg{} can be severely affected when surfaces are not dense enough.
-Using the digital phantoms, we decimated the surfaces with large factors and
-  effectively displaced the minimum of the shape-gradients from the minimum of the
-  objective function.
-Thus, the surfaces must be densely sampled to enable the use of the presented method.
+Using the digital phantoms, we decimated the surfaces by large factors.
+Severely decimated surfaces introduced a bias that displaced the zero of the gradients from
+  the minimum of the objective function.
+Thus, the surfaces must be densely sampled to avoid the shape-gradients drive the algorithm
+  in a wrong direction impeding convergence.
 }%
 
 \revcomment[C9 (R.2)]{%
@@ -158,7 +159,7 @@ Moreover, since the structural information is projected into the native space of
 Beyond the presented application on \gls*{dmri} data, \regseg{} can be indicated in situations
   where there are precise surfaces delineating the structure, a target multivariate
   image in which the surfaces must be fitted, and the mapping between the surfaces and
-  the volume encodes a relevant physiological information, such as the normal/abnormal
+  the volume encodes relevant physiological information, such as the normal/abnormal
   development or the macroscopic dynamics of organs and tissues.
 For instance, \regseg{} may be applied in fields like neonatal brain image segmentation
   in longitudinal MRI studies of the early developmental patterns \citep{shi_neonatal_2010}.
@@ -167,5 +168,5 @@ In these studies, the surfaces obtained in a mature timepoint of the brain are r
   development between them.
 More generally, \regseg{} may also be applied to the personalized study of longitudinal alteration
   of the brain using multispectral images, for instance in the case of traumatic brain
-  injury \citep{irimia_structural_2014} or in the development of brain tumors
+  injury \citep{irimia_structural_2014} or in the monitorization of brain tumors
   \citep{weizman_semiautomatic_2014}.}

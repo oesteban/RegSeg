@@ -70,7 +70,7 @@ A standardized method to solve the remaining linear mapping between the correcte
 \revcomment[rephrased]{%
 Here we present a segmentation and surface-to-volume registration method
   named \regseg{}, and show its usefulness in mapping anatomical information from structural
-  into native \gls*{dmri} space to aid subsequent processing steps
+  space into native \gls*{dmri} space to aid subsequent processing steps
   (reconstruction, tractography and network building using a cortical parcellation).
 The underlying hypothesis is that the registration and segmentation problems
   in \gls*{dmri} can be solved simultaneously.}
@@ -88,7 +88,7 @@ The evolution of the surfaces is supported by a B-spline basis, optimized
   iteratively using a descent approach driven by shape-gradients
   \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
 Therefore, \regseg{} establishes a registration framework that actually
-  overcomes the nonlinear warping induced by \gls*{epi} distortions.%
+  deals with the nonlinear warping induced by \gls*{epi} distortions.%
 }
 \Regseg{} integrates the benefits of segmentation and registration methods together and
   exploits the multivariate nature of \gls*{dmri} data to contribute in the proposed
