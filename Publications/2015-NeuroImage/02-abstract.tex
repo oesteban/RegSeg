@@ -2,25 +2,26 @@
 Current methods for processing \gls*{dmri} to map the connectivity of the human brain
   require precise delineations of anatomical structures.
 \revcomment[C1 (R.1)]{%
-The requirement has been approached either segmenting the data in native \gls*{dmri} space
-  or projecting the structural information from \gls*{t1} images.
-The characteristic features of diffusion data in terms of \acrlong*{snr}, resolution, etc.
-  and the geometrical distortions caused by the inhomogeneity of magnetic susceptibility
-  across tissues render the problem challenging.}
+This requirement has been approached either segmenting the data in native \gls*{dmri} space
+  or mapping the structural information from \gls*{t1} images.
+The characteristic features of diffusion data in terms of \acrlong*{snr}, resolution, as well
+  as the geometrical distortions caused by the inhomogeneity of magnetic susceptibility
+  across tissues hinder both solutions.}
 \revcomment[C10 (R.2)]{%
-To solve the problem in a unified approach, we propose \regseg{}, a surface-to-volume nonlinear
+Unifying the two approaches, we propose \regseg{}, a surface-to-volume nonlinear
   registration method that segments homogeneous regions within multivariate images by mapping
   a set of nested reference-surfaces.}
 \revcomment[C11 (R.2)]{%
-The surfaces can be extracted from the \gls*{t1} image of the subject, and the target image
-  is the bivariate volume comprehending the \gls*{fa} and the \gls*{adc} maps derived from the
+Accurate surfaces are extracted from a \gls*{t1} image of the subject, using as target image
+  the bivariate volume comprehending the \gls*{fa} and the \gls*{adc} maps derived from the
   \gls*{dmri} dataset.}
-We first verify the subpixel accuracy of \regseg{} on digital phantoms, to then propose an
-  evaluation framework that uses \gls*{dmri} datasets from the \gls*{hcp}.
-In this framework, the undistorted \gls*{dmri} undergo a known distortion derived from real
-  fieldmaps.
-We analyze the misregistration error of the surfaces estimated by \regseg{} on 16 datasets.
-The distribution of errors shows a 95\% CI of 0.56--0.66 mm, below the \gls*{dmri} resolution
-  (1.25 mm, isotropic).
+\revcomment[rephrased]{%
+We first verify the accuracy of \regseg{} on a general context using digital phantoms.
+Then we establish an evaluation framework using undistorted \gls*{dmri} data from the \gls*{hcp}
+  and known deformations derived from real inhomogeneity fieldmaps.
+We analyze the performance of \regseg{} computing the misregistration error of the surfaces estimated
+  after being mapped with \regseg{} onto 16 datasets from the \gls*{hcp}.
+The distribution of errors shows a 95\% CI of 0.56--0.66 mm, that is below the \gls*{dmri}
+  resolution (1.25 mm, isotropic).
 Finally, we cross-compare the proposed tool against a nonlinear \lowb{}-to-T2w registration
-  method, thereby obtaining a significantly lower misregistration error with \regseg{}.
+  method, thereby obtaining a significantly lower misregistration error with \regseg{}.}
