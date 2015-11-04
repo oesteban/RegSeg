@@ -52,7 +52,7 @@ Using Bayes' rule, the posterior likelihood is computed as:
   \label{eq:regseg-bayes_rule}
   \end{equation}
   where $P(M \mid U,\omegaset)$ is the data likelihood.
-Because $\omegaset$ are mapped by $U$, we simplify
+Since $\omegaset$ are mapped by $U$, we simplify
   $P(U, \omegaset) = P(U) \implies P(M \mid U,\omegaset) = P(M \mid U)$.
 The best estimate $\hat{U}$ then satisfies the maximum a posteriori criterion
   and it aligns $\gammaset_R$ into $M$.
@@ -228,7 +228,7 @@ Registration pyramids are created by setting the spacing between the control poi
 The implementation details as well as other features (such as the sparse matrix approach
   to fast interpolation) and the main parameters
   (such as $\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$, the B-spline grid resolutions,
-  and target image smoothing) are discussed in \citepalias[][section S1]{esteban_useful_2015}.
+  and target image smoothing) are discussed in the \citetalias[][section S1]{esteban_useful_2015}.
 
 \subsection{Evaluation protocol}\label{sec:regseg-evaluation_protocol}
 In order to assess the performance of \regseg{}, we defined the following general
@@ -239,8 +239,6 @@ In order to assess the performance of \regseg{}, we defined the following genera
 3) Execute \regseg{} with $\gammaset_R$ and use the warped data as inputs; and
 4) Perform a visual assessment and compute the error metrics.
 
-The adaptation of this protocol to the simulated phantoms and real data is explained in the
-  following sections.
 \revcomment[C20 (R.2)]{%
 A first proof of concept is introduced to demonstrate \regseg{} in digital phantoms
   with simple geometries, using $U_\text{true}$ without directional restrictions.
@@ -249,6 +247,8 @@ Then, \regseg{} is evaluated in a framework using undistorted \gls*{dmri} datase
   the subject.
 Therefore, the deformation field is nonzero only in the \gls*{pe} axis,
   and resembles a real \gls*{epi} distortion.}
+The adaptation of the evaluation protocol to the simulated phantoms and the real data is
+  explained in the following sections.
 
 \subsection{Simulated phantoms}\label{sec:regseg-digital_phantoms}
 The workflow required to simulate the digital phantoms and to assess the performance of
@@ -307,15 +307,15 @@ In total, 1200 experiments (four phantom types $\times$ 150 random warpings $\ti
 
 \paragraph*{Segmentation model and settings}
 \revcomment[C6 (R.2)]{%
-The segmentation model of the phantoms is implicitly defined in each shape.
-All phantoms comprehend an inner surface enclosing a uniform \gls*{wm}-like region,
+The segmentation model of the phantoms is implicitly defined:
+  all phantoms comprehend an inner surface enclosing a uniform \gls*{wm}-like region,
   and an outer surface wrapping a \gls*{gm}-like layer.
 The outside is filled with uniform background (see \autoref{fig:regseg-evphantoms}).
 All the experimental settings used for the phantoms are made available in
   a unique configuration file\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/regseg_default.json}}.}
 
 \subsection{Real datasets} \label{sec:regseg-human_connectome}
-The general experimental framework for the real datasets is presented in \autoref{fig:regseg-evworkflows},
+The experimental framework for the real datasets is presented in \autoref{fig:regseg-evworkflows},
 which extends our previous evaluation \citep{esteban_simulationbased_2014} of distortions
   using \gls*{dmri} phantoms.
 
@@ -324,7 +324,7 @@ which extends our previous evaluation \citep{esteban_simulationbased_2014} of di
 \caption{Experimental workflow employed to process real data from the \acrfull*{hcp}.
   1) $\gammaset_R$ were extracted from the anatomical reference (\gls*{t1} image).
   2) For use as the ground truth, we generated a plausible synthetic distortion $U_\text{true}$
-    from the field map with \eqref{eq:regseg-fieldmap}.
+    from the fieldmap with \eqref{eq:regseg-fieldmap}.
   3) The \gls*{dmri} data were warped using $U_\text{true}$ to reproduce the effects of real
     susceptibility-derived distortions.
   Target diffusion scalars (\gls*{fa} and \gls*{adc}) were computed with the distorted data and
@@ -373,7 +373,7 @@ Using tools in \emph{FreeSurfer} and appropriate selections of labels in the
   \emph{aparc} segmentation released with the \gls*{hcp} data, we extracted the $\gammaset_R$ set for the
   reference surfaces.
 The segmentation model corresponding to this partition is shown in \autoref{fig:regseg-model}
-  and discussed in greater detail in \citepalias[section S4]{esteban_useful_2015}.
+  and discussed in greater detail in the \citetalias[section S4]{esteban_useful_2015}.
 
 \paragraph*{Ground-truth generation}
 Realistic deformation was achieved by generating displacements fields that satisfy the theoretical
@@ -389,10 +389,10 @@ The displacements along the \gls*{pe} axis of the \gls*{dmri} image are related 
 where $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time, and
   $s_\text{PE}$ is the pixel size along \gls*{pe}.
 Certain \gls*{mr} sequences are designed to estimate $\Delta B_0$, thereby obtaining
-  the so-called field map.
-We derived the deformation $U_\text{true}$ from the field map image released with
+  the so-called fieldmap.
+We derived the deformation $U_\text{true}$ from the fieldmap image released with
   the corresponding packages of each dataset in the \gls*{hcp}.
-The field map was unwrapped\footnote{fieldmaps are phase maps, which are intrinsically clipped in the interval
+The fieldmap was unwrapped\footnote{fieldmaps are phase maps, which are intrinsically clipped in the interval
   of $[-\pi, \pi)$ [rads] or [rads/s].} and smoothed before applying \eqref{eq:regseg-fieldmap}.
 Next, the original \gls*{dmri} was warped using the resulting displacement field and fed into
   a pipeline to process the corresponding \gls*{dti}, thereby computing the derived scalars of
@@ -429,7 +429,7 @@ These settings were obtained manually, driven by the feedback obtained from the 
 We released \regseg{} along with the tool to generate such convergence reports.
 
 \paragraph*{Cross-comparison} %
-A dual workflow to the general evaluation framework used for \regseg{} (\autoref{fig:regseg-evworkflows}),
+A dual workflow to the general evaluation used for \regseg{} (\autoref{fig:regseg-evworkflows}),
   was employed to integrate the alternate \gls*{t2b} registration scheme.
 We reproduced the solution and settings provided with \emph{ExploreDTI}
   \citep{leemans_exploredti_2009}, which is a widely used toolkit for tractography analysis of

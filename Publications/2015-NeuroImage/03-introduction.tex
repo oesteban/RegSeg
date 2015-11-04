@@ -82,7 +82,7 @@ A specific set of reference surfaces extracted from the same subject initialize
   the 3D active-contours, which evolve searching for homogeneous regions in the multivariate
   target-image.
 In the presented application to segment \gls*{dmri} data, we propose to use \regseg{}
-  using a set of nested surfaces extracted from a strutrucal image (e.g. \gls*{t1}) and
+  using a set of nested surfaces extracted from a structural image (e.g. \gls*{t1}) and
   a bivariate target-volume comprehending the \gls*{fa} and \gls*{adc} maps as inputs.
 The evolution of the surfaces is supported by a B-spline basis, optimized
   iteratively using a descent approach driven by shape-gradients
@@ -109,6 +109,6 @@ We also compare \regseg{} and a nonlinear registration method to map the \lowb{}
   the corresponding \gls*{t2} image of the same subject.
 This method is a derivation of the \gls*{t2b} correction methods \citep{kybic_unwarping_2000},
   reproducing the settings of an existing implementation included within a widely used diffusion
-  processing software (\emph{ExploreDTI}, \cite{leemans_exploredti_2009}).
+  processing software \citep[\emph{ExploreDTI},][]{leemans_exploredti_2009}.
 With this comparison, we demonstrate how \regseg{} achieves higher accuracy with the
   simultaneous registration and segmentation process.
