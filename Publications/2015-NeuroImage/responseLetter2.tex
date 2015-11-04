@@ -8,7 +8,7 @@
 \usepackage{xcite}
 \externalcitedocument{00-main}
 
-\usepackage[hidelinks]{hyperref}
+\usepackage[colorlinks=true]{hyperref}
 \usepackage{nameref}
 
 \usepackage{amsmath}
@@ -36,6 +36,7 @@
 \checkandfixthelayout
 
 \begin{document}
+\hypersetup{linkcolor=black!60, citecolor=black!60, urlcolor=black!60}
 
 \section*{Response letter to the manuscript no. NIMG-15-1151}
 \medskip
@@ -51,7 +52,7 @@ We appreciate the comments made by both reviewers, and considered them fully to 
 Please, find in the following paragraphs our point-by-point answer to the concerns raised by the reviewers,
   along with the description of the corresponding changes in the manuscript.
 Text modifications in the manuscript are highlighted with a new font color, and attached notes indicate which reviewer comment
-  the corresponding change is addressing.
+  the corresponding change is addressing to.
 
 \bigskip
 \bigskip
@@ -66,16 +67,16 @@ The approach corresponds fully to the usual registration of an atlas to the imag
 
 \end{reviewpoint}
 \reply{%
-The description of the method given by both reviewers (see \autoref{com:10}) lead us to think that the paper
-  does not describe correctly the actual inputs of the method.
+The description of the method given by both reviewers (see \autoref{com:10}, Reviewer \#2) lead us to think that the paper
+  did not properly describe the actual inputs and outputs the proposed methodology.
 In general, we have almost-completely reformulated the abstract, introduction and discussion to define this
   point clearly.
-Particularly, the following sections have been introduced give an answer to this particular comment:
+Particularly, the following sections have been introduced to give an answer to this particular comment:
 \begin{itemize}
 \item Lines 45--53 (p. 2).
-\item Lines 245--246 (p. 13), here we introduce the previously missing discussion to call the
+\item Lines 244--246 (p. 13), here we introduce the previously missing discussion to call the
   method ``simultaneous registration and segmentation''.
-\item Lines 251--253 (p. 13), we comment here on the similarity of \emph{regseg} to the atlas-based segmentation
+\item Lines 250--252 (p. 13), we comment here on the similarity of \emph{regseg} to the atlas-based segmentation
   using joint registration and segmentation methods.
 \end{itemize}
 }
@@ -85,13 +86,15 @@ The paper describes an approach [...] (quite some are listed as possible example
   deep gray matter and the pial surface) in multi-shell [...].
 \end{reviewpoint}
 \reply{
-We have stated more clearly that the choice of surfaces to segment the target data is crucial (lines 46--47, p.2).
-We have better defined the segmentation model that drives the registration process (lines 94--95, p. 3).
-We have also improved former Figure 4, and brought it earlier in the paper (now it is Figure 2, page 5).
+To clarify this point, we have stated more clearly that the choice of surfaces to segment the target data is
+  crucial (lines 46--47, p.2).
+We have better defined the segmentation model that drives the registration process (lines 94--95, p. 5).
+We have also improved the former Figure 4 (now it is Figure 2, page 5), and brought it earlier in the paper to
+  illustrate earlier the segmentation model.
 Since the former visualization of the conditional (region-wise) joint distribution of FA and ADC was a bit clumsy,
   we have extracted the conditional distributions to the right side of each panel.
 We expect these modifications make clear the difference between the surfaces involved in driving the registration
-  process and the surfaces in which we evaluate the error of the method (lines 218--219, p. 10) are a subset of the
+  process and the surfaces in which we evaluate the error of the method (lines 217--218, p. 10) are a subset of the
   former.
 }
 
@@ -107,17 +110,17 @@ We agree with the reviewer on that the novelty of the methodological elements of
 However, to our knowledge there exists no alternative method combining the same elements to segment
   multivariate data.
 We have moved the related methods and our methodological contributions from the Introduction to a more appropriate
-  place in the Discussion (lines 248--275), additionally satisfying \autoref{com:9} suggesting to include in the introduction
-  only the references related to the focus of the paper.
+  place in the Discussion (lines 248--275), additionally satisfying \autoref{com:9} (Reviewer \#2) suggesting to include
+  in the introduction only the references related to the focus of the paper.
 The particular changes can be listed as follows:
 \begin{itemize}
-  \item Lines 253--257 (p. 13), we describe the methodological differences w.r.t. \cite{gorthi_active_2011},
+  \item Lines 252--260 (p. 13), we describe the methodological differences w.r.t. \cite{gorthi_active_2011},
     one of the latest atlas-based segmentation methods using simultaneous registration and segmentation.
-  \item Lines 258--266 (p. 13), we compare the methodological features of our method and \emph{bbregister},
+  \item Lines 261--270 (p. 13), we compare the methodological features of our method and \emph{bbregister},
     an antecedent and standardized tool used on the same application.
-  \item Lines 268--273 (p. 13), we introduce the methodological differences with a recent alternative method in
+  \item Lines 271--273 (p. 13), we introduce the methodological differences with a recent alternative method in
     terms of regularization.
-  \item Lines 273--275 (p. 13) mention some other minor methodological contributions.
+  \item Lines 273--278 (p. 13) mention some other minor methodological contributions.
 \end{itemize}
 }
 
@@ -140,8 +143,8 @@ Some information about the initialization of the distortion map should also be g
 \reply{
 We have improved former Figure 4 (now, it is Figure 2, page 5) to clarify that the segmentation model is inherently defined by
   the choice of surfaces and their nesting.
-This is an actual contribution of the work, as stated in lines 301--304 (p. 14).
-A comment on the convergence issues follows in lines 304--309 (p. 14).
+This is an actual contribution of the work, as stated in lines 304--307 (p. 14).
+A comment on the convergence issues follows in lines 307--311 (p. 14).
 Finally, we described the initialization of the surfaces with the insertion of lines 196--198 (p. 10).
 }
 
@@ -179,7 +182,8 @@ We have clarified this point with the following edits:
 What is the underlying reason?
 \end{reviewpoint}
 \reply{
-We have added a discussion on this in the corresponding section, lines 284-290. Thanks for pointing out.
+We have added a discussion on this in the corresponding section, lines 287-293 (p. 14).
+Thanks for pointing this systematic error out.
 }
 
 \bigskip
@@ -202,8 +206,8 @@ We have rewritten the abstract, introduction and discussion sections almost full
 Particular comments included within this general comment are addressed later: \autoref{com:18}
   as regards EPI distortions, and \autoref{com:20} for the phase-encoding direction point.
 In order to better focus the application field, we have introduced lines 11--14 (p. 2) and lines
-  310--317 (p. 14).
-We have also added potential applications in the new lines 329--338 (pp. 14-15) to better illustrate
+  312--317 (p. 14).
+We have also added potential applications in the new lines 331--340 (p. 15) to better illustrate
   the method.
 }
 
@@ -216,8 +220,8 @@ In our adaptation of ``active contours without edges'' \citep{chan_active_2001},
   ``extracted from structural images''.
 The particular sentence has been removed from the abstract, and we expect that the comprehensive reformulation
   of the descriptive sections of the paper give a successful answer to this issue.
-Regarding the actual inputs of \emph{regseg}, we have introduce modifications in the abstract, lines 45--50 (p. 2), and
-  lines 244--245 (p. 13).
+Regarding the actual inputs of \emph{regseg}, we have introduced modifications in the abstract, in lines 45--50 (p. 2), and
+  in lines 243--243 (p. 13).
 }
 
 \begin{reviewpoint}
@@ -274,7 +278,7 @@ This comment is a consequence of the two previous comments.
 The reviewer is right in the sense that we did not clearly state what we are segmenting, and therefore
   the references in line 24 are a bit orphaned.
 All methods reviewed in lines 15--27 cluster/segment/classify \emph{voxels} in dMRI space based on
-  one or another feature derived from dMRI data.
+  one or another feature derived from dMRI data (lines 18--20, p. 2).
 We have clarified the manuscript according to \autoref{com:14} and \autoref{com:15} and this comment.
 }
 
@@ -313,7 +317,7 @@ Irfanoglu, M. Okan, et al. ``DR-BUDDI (Diffeomorphic Registration for Blip-Up bl
   NeuroImage 106 (2015): 284-299.
 \end{reviewpoint}
 \reply{
-Effectively, the simulataneous registration and segmentation enables \emph{regseg}
+Effectively, the simultaneous registration and segmentation enables \emph{regseg}
   to overcome the nonlinear warping introduced by EPI distortion.
 We have introduced the following changes:
 \begin{itemize}
@@ -321,7 +325,7 @@ We have introduced the following changes:
     \citep{jezzard_correction_1995,chiou_simple_2000,kybic_unwarping_2000,studholme_accurate_2000,cordes_geometric_2000} about EPI distortion.
   \item Lines 36--38 (p. 2): Added the suggested reference \citep{irfanoglu_drbuddi_2015} with other
     two relevant citations \citep{holland_efficient_2010,andersson_comprehensive_2012}.
-  \item Lines 317--328 (p. 14): we discuss our method as regards EPI correction.
+  \item Lines 319--330 (p. 14): we discuss our method as regards EPI correction.
 \end{itemize}
 }
 
@@ -359,7 +363,7 @@ For the experiments on real data, the ground-truth deformations and the deformat
   are restricted to be nonzero only in the phase-encoding direction.
 To make this more clear, we have introduced the following edits:
 \begin{itemize}
-  \item Lines 132--134 (p. 7).
+  \item Lines 131--134 (p. 7).
   \item Lines 198--199 (p. 10).
 \end{itemize}
 }
@@ -379,7 +383,7 @@ Please define the phrase ``active contours without edges''.
 \end{reviewpoint}
 \reply{
 Additionally to the edits in \autoref{com:10}, we have more clearly defined the concept with the discussion
-  introduced in lines 265--266 (p. 13).
+  introduced in lines 267--268 (p. 13).
 }
 
 \begin{reviewpoint}
