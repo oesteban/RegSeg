@@ -24,15 +24,16 @@ The most common approach involves optimizing a deformation model (registration)
   replacing the atlas by the structural image of the subject (\emph{structure-informed segmentation}).
 The main difference of atlas-based segmentation and the application at hand is the resolution of the
   target image.
-Atlas-based segmentation is typically applied on high-resolution images.
+Atlas-based segmentation is typically applied on structural and high-resolution images.
 A comprehensive review of joint segmentation and registration methods applied in atlas-based
   segmentation is found in \citep{gorthi_active_2011}.
-They also propose a multiphase level-set function derived from a labeled atlas to implement the
-  active contours that drive the atlas registration.
+They also propose a multiphase level-set function initialized from a labeled atlas to implement
+  the active contours that drive the atlas registration.
 Alternatively, \regseg{} implements the active contours with a hierarchical set of explicit
   surfaces (triangular meshes) instead of the multiphase level sets, and registration
   is driven by shape-gradients \citep{herbulot_segmentation_2006}.
-The use of explicit surfaces enables segmenting \gls*{dmri} images below pixel resolution.}
+As an advantage, the use of explicit surfaces enables segmenting \gls*{dmri} images
+  with accuracy below pixel size.}
 
 \revcomment[C3 (R.1)]{%
 An important antecedent of \regseg{} is \emph{bbregister} \citep{greve_accurate_2009}.
@@ -150,8 +151,8 @@ The current activity on improving correction methods \citep{irfanoglu_drbuddi_20
   acquisition other than the minimal protocol comprehending only \gls*{t1} and \gls*{dmri} images.
 This situation is found commonly in historical datasets.
 Moreover, since the structural information is projected into the native space of \gls*{dmri},
-  the whole connectome extraction process can be performed without resampling data to an
-  undistorted space.}
+  the whole connectome extraction process can be performed on the unaltered \gls*{dmri}
+  signal (i.e. without resampling data to an undistorted space).}
 
 \revcomment[C9 (R.2)]{%
 Beyond the presented application on \gls*{dmri} data, \regseg{} can be indicated in situations

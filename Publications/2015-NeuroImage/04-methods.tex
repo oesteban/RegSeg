@@ -105,24 +105,24 @@ In \autoref{fig:regseg-model},
 \revcomment{%
 Evolution of the segmentation model defined by the homogeneous regions $\Omega_l$
   for a real dataset.
+The left plot in each panel represents a kernel density estimate of the location and spread of
+  each region $\Omega_l$ in the bivariate feature space of $M$, which comprises
+  the \gls*{fa} and \gls*{adc} maps.
+At the top and the right margins, the marginal distributions of $\Omega_l$ on the \gls*{fa} and
+  \gls*{adc} are respectively displayed.
+On the right side, the sampled distribution of each region is shown in small scatter plot, in contrast to
+  the complete bivariate data.
 A) shows the initialization of the model, when the anatomically-correct surfaces are not
   mapped into the \gls*{dmri} space.
 The panel shows the resulting conditional distributions of segmenting the (distorted) \gls*{fa} and
   \gls*{adc} maps with the original (undistorted) surfaces.
-Panel B shows the equivalent information, using the surfaces with perfect matching with the distorted space
-  of \gls*{dmri}.
+Panel B shows the equivalent information, using the surfaces that are perfectly mapped into the
+  distorted \gls*{dmri} space.
 Since the surfaces are now aligned in $M$, the spreads of the conditional distributions for each region are
   reduced with respect to those in A.
 Panel C, after \regseg{} registration, shows how the covariance matrices $\boldsymbol{\Sigma}_l$
   are minimized with respect to panel A, and the resulting segmentation is close
-  to the theoretical situation presented in panel B.
-The left (large) plot in each panel represents a kernel density estimate of the location and spread of
-  each region $\Omega_l$ in the bivariate feature space of $M$, which comprises
-  the \gls*{fa} and \gls*{adc} maps.
-At the top and the right margins, the marginal distributions of $\Omega_l$ are also plotted for
-  the \gls*{fa} and \gls*{adc}, respectively.
-On the right, the sampled distribution of each region is shown in small scatter plot, in contrast to
-  the complete bivariate data.}
+  to the theoretical situation presented in panel B.}
 }\label{fig:regseg-model}
 \todo[inline]{C5 (R.1)}
 \end{figure*}
