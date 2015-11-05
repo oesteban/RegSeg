@@ -1,5 +1,5 @@
 \documentclass[3p,authoryear,fleqn]{elsarticle}
-\journal{ArXiv archiving for pre-publication review}
+\journal{NeuroImage}
 
 \usepackage[mode=buildnew]{standalone}
 \usepackage{gincltex}
@@ -25,12 +25,13 @@
 \providecommand{\gammaset}{\ensuremath{\boldsymbol{\Gamma}}}
 \providecommand{\regseg}{\emph{regseg}}
 \providecommand{\Regseg}{\emph{Regseg}}
+\providecommand{\lowb}{\textit{b0}}
 
 \let\oldhat\hat
 \renewcommand{\vec}[1]{\mathbf{#1}}
 
 \providecommand{\nvec}[1]{\hat{\mathbf{#1}}}
-\providecommand{\suppl}[1]{\href{http://dx.doi.org/mydoi}{Supplemental Materials}, #1}
+\providecommand{\suppl}[1]{\href{http://figshare.com/s/459c26b4ee8211e493b306ec4bbcf141}{Supplemental Materials}, #1}
 \providecommand{\isores}[2][]{#2\ensuremath{\times}#2\ensuremath{\times}#2\ifthenelse{\equal{#1}{}}{}{ [#1]}\xspace}
 
 \usepackage{url}
@@ -101,13 +102,15 @@
 \begin{frontmatter}
 
 
-\title{Active contours-driven registration method for the structure-informed segmentation of diffusion MR images}
+\title{Active contours-driven registration method for the structure-informed segmentation of diffusion MR images\tnoteref{t1}}
+\tnotetext[t1]{Supplemental materials to this work will be publicly available upon publication with doi:\href{http://figshare.com/s/459c26b4ee8211e493b306ec4bbcf141}{10.6084/m9.figshare.1397502}.
+During the review process, the document is available with the private link.}
 
 \author[bit,ciber]{Oscar~Esteban\corref{corrauthor}}
 \cortext[corrauthor]{Corresponding author}
 \ead{phd@oscaresteban.es}
 \author[ucla]{Dominique~Zosso}
-\author[scil,lts5]{Alessandro~Daducci}
+\author[lts5]{Alessandro~Daducci}
 \author[chuv,lts5]{Meritxell~Bach-Cuadra}
 \author[bit,ciber]{Mar\'ia-J.~Ledesma-Carbayo}
 \author[lts5]{Jean-Philippe~Thiran}
@@ -115,18 +118,18 @@
 
 
 \address[bit]{Biomedical Image Technologies (BIT), ETSI Telecomunicaci\'on, Universidad Polit\'ecnica de Madrid, Madrid, Spain}
-\address[ciber]{Centro de Investigaci\'on Biom\'edica en Red en Bioingenier\'ia, Biomateriales y Nanomedicina (CIBER-BBN), Zaragoza, Spain}
+\address[ciber]{Centro de Investigaci\'on Biom\'edica en Red en Bioingenier\'ia, Biomateriales y Nanomedicina (CIBER-BBN), Spain}
 \address[ucla]{Department of Mathematics, University of California,
 Los Angeles (UCLA), Los Angeles, CA, US}
-\address[scil]{Computer Science Department, Faculty of Science, Universit\'e de Sherbrooke, 2500 Boulevard Universit\'e, Sherbrooke, QC J1K 2R1, Canada}
 \address[lts5]{Signal Processing Laboratory (LTS5), \'Ecole Polytechnique
 F\'ed\'erale de Lausanne (EPFL), Lausanne, Switzerland}
 \address[chuv]{Dept. of Radiology, CIBM, University
 Hospital Center (CHUV) and University of Lausanne (UNIL), Lausanne, Switzerland}
 
+
 \begin{abstract}
 \makeatletter{}Current applications of whole-brain tractography to \acrlong*{dmri} data require highly precise
-  delineations of anatomical structures, which are usually projected from anatomical \acrlong*{t1} images
+  delineations of anatomical structures, which are usually projected from \acrlong*{t1} images
   by registration.
 In this study, we propose \regseg{}, which is a simultaneous segmentation and registration method
   that uses active contours without edges extracted from structural images.
@@ -140,9 +143,8 @@ We then applied \regseg{} to a registration/segmentation task using 16 real diff
 We computed the misregistration error of the contours estimated by \regseg{} with respect
   to their theoretical location using the ground truth, thereby obtaining a 95\% CI of 0.56--0.66 mm
   distance between corresponding mesh vertices, which was below the 1.25 mm isotropic resolution of the images.
-We also compared the performance of our proposed method with a widely used registration tool, which showed 
-  that \regseg{} outperformed this method in our settings.
- 
+We also compared the performance of our proposed method with a widely used registration tool, which showed
+  that \regseg{} outperformed this method in our settings. 
 \end{abstract}
 
 \begin{keyword}
@@ -153,126 +155,145 @@ active~contours \sep cortical~parcellation \sep diffusion MRI \sep nonlinear~reg
 
 \linenumbers
 \makeatletter{}\section{Introduction}\label{sec:regseg-introduction}
-The accurate delineation of \gls*{wm} in \gls*{dmri} and the fusion of prior
-  anatomical information extracted from a \gls*{t1} image for the same subject
-  are crucial in a range of applications based on tractography, such as
-  the extraction of structural connectivity \citep{craddock_imaging_2013} or
-  tract-based spatial statistics \citep{smith_tractbased_2006}.
-However, the precise segmentation of \gls*{dmri} data and the coregistration of anatomical
-  images are difficult due to several limitations.
-First, \gls{dmri} images have a resolution that is much higher than that of the imaged
-  microstructural features \citep{basser_microstructural_1996}.
-Therefore, voxels located in structural discontinuities are affected by partial
-  voluming of the signal sources.
-Second, \gls*{dmri} schemes probe the diffusion process within the brain at 
-  many angles to obtain \glspl*{dwi}, which are completed by one or more baseline (\emph{b0}) 
-  volumes without directional gradients.
-The extremely low \gls*{snr} and the high dimensionality of \glspl*{dwi} prevent their
-  direct use in segmentation.
-The low contrast between \gls*{gm} and \gls*{wm} in the \emph{b0} volumes also makes them unsuitable for 
-  segmentation.
-Finally, \gls*{dmri} images are acquired using \gls*{epi} to speed up the acquisition process but
-  at the cost of introducing geometrical distortion, as well as signal degradation and
-  destruction \citep{jezzard_correction_1995}.
-The artifacts generated have major impacts on the anatomy extracted
-  from \gls*{dmri}, particularly in certain fiber bundles \citep{irfanoglu_effects_2012}.
-These limitations prevent segmentation in the native \gls*{dmri} space, including
-  registration-based approaches using anatomical images as the sources of structural
-  information.
+\Gls*{dmri} enables the mapping of microstructure \citep{basser_microstructural_1996}
+  and connectivity \citep{craddock_imaging_2013} of the human brain \emph{in-vivo}.
+It is generally acquired using \gls*{epi} schemes, since they are very fast at
+  scanning a large sequence of images called \glspl*{dwi}, each sensitized with
+  a gradient to probe proton diffusion in a certain orientation.
+Subsequent processing involves describing the local microstructure with one available
+  model, which ranges from the early \gls*{dti} proposed by \cite{basser_microstructural_1996}
+  to current models such as \citep{daducci_accelerated_2015}.
+The microstructural map is then used to draw the preferential orientations of diffusion
+  across regions using tractography \citep{mori_threedimensional_1999}.
+Finally, the streamlines found are filtered with a cortical parcellation
+  to build the graph representing the corresponding structural
+  network \citep{hagmann_mapping_2008}.
+Since the proposal of the earliest methodologies to solve the three problems,
+  there is a need for precisely identifying the anatomy on the \gls*{dmri} space.
+In fact, current trends in reconstruction \citep{jeurissen_multitissue_2014} and
+  tractography \citep{smith_anatomicallyconstrained_2012} are increasingly using
+  structural information to improve the microstructural mapping and fiber-tracking.
 
-
-Early attempts to delineate the \gls*{wm} involved thresholding the 
+The structural information required by pioneer tractography studies was a simple
+  \gls*{wm} mask to provide with a termination criteria for the streamlines.
+The first attempts to segment the \gls*{wm} in \gls*{dti} involved thresholding the
   \gls*{fa}\footnote{the \gls*{fa} is a scalar parameter of diffusion derived from
-  the \gls*{dmri} data.} map.
+  the \gls*{dti}.} map.
 However, the mask and subsequent analyses are highly dependent on the threshold set
   \citep{taoka_fractional_2009}.
-To overcome the unreliability of \gls*{fa} thresholding,
-  \cite{zhukov_level_2003} proposed active contours with edges represented
-  by level sets, which evolve on directionally invariant scalar maps.
-\cite{rousson_level_2004} successfully segmented the corpus callosum with
-  region-based level sets based on the eigenvalues of tensors fitted using the
-  \gls*{dmri} data.
-Many studies have addressed the definition of appropriate features for clustering,
-  such as the 5D[A1] representation proposed by \cite{jonasson_segmentation_2005}.
-Other efforts include mixed models based on sets of directionally invariant maps
-  \citep{liu_brain_2007}, iterative \citep{hadjiprocopis_unbiased_2005} and
-  hierarchical \citep{lu_segmentation_2008} clustering,
-  graph-cuts \citep{han_experimental_2009},
-  and volume fraction modeling \citep{kumazawa_improvement_2013}.
- 
-To address the segmentation problem by registration, \cite{saad_new_2009} 
-  used Pearson’s correlation coefficient to obtain a linear alignment of the \gls*{t1} and 
-  the \emph{b0}.
-Similarly, a linear registration method was employed by \emph{bbregister} \citep{greve_accurate_2009},
-which uses active contours with edges to search for intensity boundaries in the \emph{b0}
-  image.
-The active contours are initialized using surfaces extracted from the 
-  \gls*{t1} using \emph{FreeSurfer} \citep{fischl_freesurfer_2012}:
-  the \emph{pial} surface (exterior of the cortical \gls*{gm}) and the \emph{white}
-  surface (the \gls*{wm}/\gls*{gm} interface). 
-The \emph{b0} image only includes a detectable frontier for the pial surface, so 
+To overcome the unreliability of \gls*{fa} thresholding, and to broaden
+  \gls*{wm} segmentation to brain tissue segmentation, a large number of
+  methods have been proposed using \glspl*{dwi}, the \lowb{}, and \gls*{dti}-derived
+  scalar maps such as \gls*{fa}, \gls*{adc} and others \citep{zhukov_level_2003,
+  rousson_level_2004,jonasson_segmentation_2005,liu_brain_2007,hadjiprocopis_unbiased_2005,
+  lu_segmentation_2008,han_experimental_2009}.
+However, the precise segmentation of \gls*{dmri} is difficult for several limitations.
+First, \gls{dmri} images have a resolution that is much lower than that of the imaged
+  microstructural features.
+Therefore, voxels located in structural discontinuities are affected by partial
+  voluming of the signal sources.
+Second, the extremely low \gls*{snr} and the high dimensionality of the \glspl*{dwi} prevent
+  their direct use in segmentation.
+Third, the low contrast between \gls*{gm} and \gls*{wm} in the \lowb{} volumes also makes
+  them unsuitable for brain tissue segmentation.
+
+An alternative route to segmentation in native \gls*{dmri} space is the mapping of the
+  structural information extracted from anatomical MR images, such as \gls*{t1}, through
+  an image registration process.
+Generally, intra-subject registration of MR images of the brain involves only a linear
+  mapping to compensate for head motion between scans.
+However, \gls*{epi} images speed up the acquisition process at the cost of introducing geometrical
+  distortion, as well as signal degradation and destruction \citep{jezzard_correction_1995}.
+The so-called \emph{\gls*{epi} distortions} have a major impact on the anatomy extracted
+  from \gls*{dmri}, particularly in certain fiber bundles \citep{irfanoglu_effects_2012}.
+To overcome this problem, two broad families of solutions are available.
+First, it is possible to use an existing ``\gls*{epi} distortion correction''
+  method to compensate for the nonlinear part of the misalignment with the structural space,
+  combined with a rigid registration method.
+Second, to apply a nonlinear registration method with specific constraints derived from the
+  theoretical properties of the \gls*{epi} distortion.
+However, both solutions require extra acquisitions to be included within the \gls*{dmri} scanning
+  protocol, such as fieldmaps \citep{jezzard_correction_1995}, \glspl*{dwi} with a different
+  \gls*{pe} scheme \citep{cordes_geometric_2000,chiou_simple_2000}, or \gls*{t2} images
+  \citep{kybic_unwarping_2000}.
+In the following, we will refer to this latter approach as \gls*{t2b} correction.
+\Gls*{epi} corrections have been an active field of research, with numerous refinements and
+  combinations of the original methods \citep{holland_efficient_2010,andersson_comprehensive_2012,
+  irfanoglu_drbuddi_2014}.
+
+The tool \emph{bbregister} \citep{greve_accurate_2009} has become a rather standard linear
+  registration method to be used along with \gls*{epi} corrections.
+It uses 3D active contours with edges\footnote{A three-dimensional active contour is a surface
+  and it is ``with edges'' when the contours evolve in search of abrupt intensity steps (the edges) within
+  the target image.} to search for intensity boundaries in the \lowb{} image.
+The active contours are initialized using surfaces extracted from the \gls*{t1} using
+  \emph{FreeSurfer} \citep{fischl_freesurfer_2012}: the \emph{pial} surface (exterior of the
+  cortical \gls*{gm}) and the \emph{white} surface (the \gls*{wm}/\gls*{gm} interface).
+The \lowb{} image only includes a detectable frontier for the pial surface, and thus
   \emph{bbregister} is limited to aligning the cortical layer in this
   application.
-This tool has become the standard method because of its proven robustness, although the 
-  distortions found in \gls*{dmri} are nonlinear.
-To overcome this issue, \emph{bbregister} excludes the
-  regions that are typically warped by artifacts from the boundary search.
+To overcome the problem of nonlinear distortions, \emph{bbregister} excludes the
+  regions that are typically warped from the boundary search.
 However, because the distortion is not considered, it must be addressed separately.
-Nonlinear registration has been performed successfully between \gls*{t2} and \emph{b0}
-  images based on their similarity as a unique method for correcting distortion
-  \citep{kybic_unwarping_2000,studholme_accurate_2000,wu_comparison_2008,tao_variational_2009}.
-However, further registration of the \gls*{t1} and \gls*{t2} images is still required to map the anatomical
-  information (and for \gls*{wm} segmentation) into the \gls*{dmri} space.
+The nonlinear registration approach has been successfully solved with \gls*{t2b} methods,
+  which align the \gls*{t2} and \lowb{} images by exploiting their similarity
+  \citep{kybic_unwarping_2000,studholme_accurate_2000}.
+However, further rigid registration of the \gls*{t1} and \gls*{t2} images is still required to
+  map the anatomical information onto \gls*{dmri}-space.
 
-Therefore, given these issues, a method that simultaneously performs
-  segmentation in the native \gls*{dmri} space and registration of the corresponding \gls*{t1} image
-  onto the \gls*{dmri} data could provide the optimal solution.
-To the best of our knowledge, this strategy has never been proposed for the application described above.
+Here we show a method that registers anatomically-correct surfaces to multivariate images,
+  thereby implicitly segmenting the \gls*{dmri}-space into those structures enclosed by the contours
+  of the subject's brain.
+The hypothesis tested in the present study is that the registration and segmentation
+  problems in \gls*{dmri} can be solved simultaneously, effectively establishing the
+  necessary mapping to project structural information from anatomical images, increasing the
+  geometrical accuracy of the overall process, and avoiding data resampling of \gls*{epi}
+  correction methods.
+Thus, we propose a tool called \regseg{} implementing 3D active contours (surfaces) without edges
+  \citep{chan_active_2001}, which evolve over a free-form deformation field of B-spline
+  basis functions.
+The surfaces are nested and they enclose regions with homogeneous diffusion features
+  (the \gls*{fa} and \gls*{adc} maps for the case of \gls*{dmri} data).
+Optimization is performed using a descent strategy with explicit shape gradients
+  \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
+Therefore, unlike most previous methods, \regseg{} does not implement level sets.
+Since the \gls*{epi} distortion is aligned with the \gls*{pe} axis (see
+  \autoref{sec:regseg-human_connectome}), \regseg{} includes an anisotropic regularizer for
+  the displacements field proposed by \cite{nagel_investigation_1986}.
+Finally, we evaluate \regseg{} using an extension of our instrumentation framework
+  \citep{esteban_simulationbased_2014}, which simulates known and realistic distortions
+  based on \gls*{dmri} data.
+The evaluation includes a comparison of \regseg{} to an in-house implementation of
+  the \gls*{t2b} correction.
+ 
+\makeatletter{}\section{Methods}
+\label{sec:regseg-methods}
+\subsection{Related work}\label{sec:regseg-related_work}
 Previously, joint segmentation and registration have been applied successfully to other problems
 such as longitudinal object tracking \citep{paragios_level_2003} and atlas-based
   segmentation \citep{gorthi_active_2011}.
-The most thorough approach integrates active contours during image registration 
-  methods.
-\cite{unal_coupled_2005}, and later \cite{wang_joint_2006},
-  improved an existing method \citep{yezzi_variational_2003} based on linear registration
-  to the nonlinear case by implementing a free-form deformation field.
+The most common approach to solve the problem simultaneously is optimizing a deformation model
+  (registration) that supports the evolution the active contours (segmentation), like
+  \citep{paragios_level_2003,yezzi_variational_2003}.
+\cite{unal_coupled_2005}, and later \cite{wang_joint_2006}, replaced the linear registration
+  transform of \citep{yezzi_variational_2003} with a free-form deformation field.
 \cite{droske_mumfordshah_2009} reviewed the existing techniques and proposed two different
   approaches for applying the Mumford-Shah functional \citep{mumford_optimal_1989} during simultaneous
   registration and segmentation by propagating the deformation field from
   the contours onto the whole image definition.
 Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
   registration method in 2D using level sets and a nonlinear elasticity smoother on the
-  displacement vector field, which preserves the topology even with very high deformation.
+  displacement vector field, which preserves the topology even with very large deformations.
 Finally, \cite{gorthi_active_2011} extended the existing methodologies using a multiphase
   level set function to register several active contours during the application
   of atlas-based segmentation.
-  
-The hypothesis tested in the present study is that registration and segmentation
-  problems in \gls*{dmri} can be solved simultaneously, thereby increasing the geometrical
-  accuracy of the process.
-Thus, we propose a tool called \regseg{} that exploits the prior information of shapes
-  extracted using \gls*{t1} images to register the anatomical reference
-  to \gls*{dmri} space, thereby implicitly segmenting these data.
-The proposed approach uses active contours without edges \citep{chan_active_2001}, which evolve to drive a
-  free-form deformation field of B-spline basis functions.
-Optimization is performed using a descent strategy with explicit shape gradients
-  \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
-Therefore, unlike most previous methods, \regseg{} does not implement level sets.
-The nonlinear distortion is aligned with one of the imaging axes (see 
-  \autoref{sec:regseg-human_connectome}), so \regseg{} includes an anisotropic regularizer for
-  the displacements field proposed by \cite{nagel_investigation_1986}.
-Finally, we evaluated \regseg{} using an extension of our instrumentation framework
-  \citep{esteban_simulationbased_2014}, which simulates known and realistic distortions
-  based on \gls*{dmri} data.
-The evaluation included a comparison with \gls*{t2b} correction by integrating it within the framework
-  of an in-house implementation of the method.
- 
-\makeatletter{}\section{Methods}
-\label{sec:regseg-methods}
-Let $\gammaset_R = \{\Gamma_m: m \in \mathbb{N}, m \leq N_c\}$ be the set of $N_c$ surfaces
+
+
+\subsection{Registration framework and segmentation model derivation}\label{sec:regseg-methods_map}
+Let $\gammaset_R = \{\Gamma_m: m \in \mathbb{N}, m \leq N_S\}$ be the set of $N_S$ surfaces
   extracted from the undistorted \gls*{t1} image (the reference space $R$).
 We reformulate the segmentation of the distorted \gls*{dmri} images (the moving space $M$)
-  as a registration problem where we search for an underlying deformation field $U$ such that 
+  as a registration problem where we search for an underlying deformation field $U$ such that
   the structures in $R$ defined by $\gammaset_R$ align optimally with their corresponding
   structures in $M$:
 
@@ -286,7 +307,7 @@ We reformulate the segmentation of the distorted \gls*{dmri} images (the moving 
 Finally, $\vec{u} = \vec{u}(\vec{r})$ is the displacement of every point with respect
   to the reference domain.
 
-\subsection{Cost-function derivation}\label{sec:regseg-methods_map}
+\paragraph*{Cost-function derivation}
 In a Bayesian framework for registration \citep{wyatt_map_2003,pohl_bayesian_2006,gass_simultaneous_2014},
   the mappings $U$ in \eqref{eq:regseg-transform} are
   evaluated based on their posterior probability given the observed data
@@ -302,7 +323,6 @@ Using Bayes' rule, the posterior likelihood is computed as:
   where $P(M \mid U,\omegaset)$ is the data likelihood.
 Because $\omegaset$ are mapped by $U$, then we simplify
   $P(U, \omegaset) = P(U) \implies P(M \mid U,\omegaset) = P(M \mid U)$.
-
 The best estimate $\hat{U}$ then satisfies the maximum a posteriori criterion
   \citep{bishop_pattern_2006} and it aligns $\gammaset_R$ into $M$.
 First, we assume independence between pixels, and thus we break down the
@@ -320,9 +340,13 @@ For convenience and because it has been shown to be an appropriate approximation
   region $\Omega_l$:
   1) the features are i.i.d.; and 2) they can be modeled by multivariate normal
   distributions with the parameters $\lbrace \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} \rbrace$
-  for each region $\Omega_l$:
+  for each region $\Omega_l$.
+Even though the features being segmented are not generally i.i.d., the spatial interdependency of
+  voxels is implicitly supported by the piecewise smooth partition of the space \omegaset{}.
+In \autoref{fig:regseg-model} it is shown that marginal distributions of data can be approximated by
+  multivariate normal distributions. Therefore,
 
- 	\begin{align}
+  \begin{align}
   P( M \mid U) &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod}
   \mathcal{N} ( \vec{f} \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} ) =   \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod} \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}
   \mdist{f'}{l} \right)}},
@@ -331,10 +355,34 @@ For convenience and because it has been shown to be an appropriate approximation
   using $\mdist{f}{l}$ to denote the squared \emph{Mahalanobis distance} of $\vec{f}$ with respect
   to the descriptors of region $l$ as
   $\mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
-$C$ is the number of channels in the image $M$.
+$C$ is the number of channels comprised in the image $M$.
 In fact, the projection of $\gammaset_R$ onto $M$ is an implicit segmentation model, for which
-  the covariance matrix $\boldsymbol{\Sigma}_l$ of each region is minimized.
+  the covariance matrix $\boldsymbol{\Sigma}_l$ of each region is minimized. In \autoref{fig:regseg-model},
+  this minimization is illustrated for the segmentation of the \gls*{fa} and the \gls*{adc} maps
+  of one subject.
 
+\begin{figure}
+\caption{Evolution of the segmentation model defined by the homogeneous regions $\Omega_i$
+  for a real dataset.
+Panel A shows how the \gls*{fa} and the \gls*{adc} are clustered by the surfaces mapped to
+  $M$ through the ground-truth.
+Panel B shows the same information at the initialization step of \regseg{}.
+Since the surfaces are misaligned in $M$, the spreads of the sampled distribution for
+  each region are large.
+Panel C, after \regseg{} registration, shows how the covariance matrices $\boldsymbol{\Sigma}_l$ 
+  are minimized with respect to panel B, and the resulting segmentation is close
+  to the theoretical situation presented in panel A.
+The left (large) plot in each panel represents a kernel density estimate of the location and spread of
+  each region $\Omega_i$ in the bivariate feature space of $M$, which comprises
+  the \gls*{fa} and \gls*{adc} maps.
+At the top and the right margins, the marginal distributions of $\Omega_i$ are also plotted for
+  the \gls*{fa} and \gls*{adc}, respectively.
+On the right, the sampled distribution of each region is shown in small scatter plot, in contrast to
+  the complete bivariate data.
+}\label{fig:regseg-model}
+\end{figure}
+
+\paragraph*{Regularization}
 The smoothness of the resulting displacements field is induced by a Thikonov regularization
   prior:
 
@@ -348,7 +396,7 @@ The smoothness of the resulting displacements field is induced by a Thikonov reg
  which requires that the distortion and its gradient have zero
   mean and variance governed by the matrices $\mathbf{A}$ and $\mathbf{B}$.
 Finally, the maximum a posteriori problem is adapted to a variational problem where we search for
-  the minimum of an energy functional by applying $E(\vec{u}) = -\log P(U)$:
+  the minimum of an energy functional by applying $E(\vec{u}) = -\log \{P( M \mid U) \, P(U)\}$:
 
   \begin{align}
   E(\vec{u}) &= -\log \underset{l}{\prod}
@@ -359,31 +407,31 @@ Finally, the maximum a posteriori problem is adapted to a variational problem wh
   \end{align}
 This expression is the dual of the Mumford-Shah functional that corresponds
   to the framework of \acrlong*{acwe} \citep{chan_active_2001}
-  with the corresponding anisotropic regularization term of \cite{nagel_investigation_1986}.
+  with the anisotropic regularization term of \cite{nagel_investigation_1986}.
 
 
 \subsection{Numerical Implementation}
 \label{sec:regseg-numerical_implementation}
 
 \begin{figure}
-	\includegraphics[width=\linewidth]{figure01}
-	\caption{The active contours are defined as the interfacing surfaces of the competing
-	  \glspl{roi} $\Omega_i$, which
-	are represented in green and dark blue in this close-up.
-	They evolve iteratively following their inward normals $\hat{n}_i$ at each vertex
-	  $\vec{v}_i$ of the mesh.
-	The gradient speeds $\bar{s}_i$ drive registration, which are computed as the disparity of the data
+  \includegraphics[width=\linewidth]{figure01}
+  \caption{The active contours are defined as the interfacing surfaces of the competing
+    \glspl{roi} $\Omega_i$, which
+  are represented in green and dark blue in this close-up.
+  They evolve iteratively following their inward normals $\hat{n}_i$ at each vertex
+    $\vec{v}_i$ of the mesh.
+  The gradient speeds $\bar{s}_i$ drive registration, which are computed as the disparity of the data
     energies with respect to the two limiting regions of $M(\vec{v}_i)$, the features of the image
     $M$ in the location of vertex $\vec{v}_i$ (see \suppl{equation SM5}).
-	In this figure, $\bar{s}_1$ is written in the lower
-	  box, with $\Omega_{wm}$ in the inner limiting region, $\Omega_{gm}$ the outer region, and
+  In this figure, $\bar{s}_1$ is written in the lower
+    box, with $\Omega_{wm}$ in the inner limiting region, $\Omega_{gm}$ the outer region, and
     $w_{0,1}$ is the relative area associated with vertex $\vec{v}_1$ with respect to
     the total area of surface $\Gamma_0$.
-			}\label{fig:regseg-method}
+      }\label{fig:regseg-method}
 \end{figure}
 
 \paragraph*{Deformation model}\label{sec:regseg-deformation_model}
-Since the vertices of the surfaces $\{\vec{v}_i: \vec{v}_i \subset \gammaset \}_{i=1 \ldots N_v}$
+Since the vertices of the surfaces $\{\vec{v}_i: \vec{v}_i \subset \gammaset \}_{i=1 \ldots N_V}$
   are probably located off-grid, it is necessary to derive $\vec{u}_i = \vec{u}(\vec{v}_i)$ from a discrete set of parameters
   $\{\vec{u}_k\}_{k=1 \ldots K}$.
 Densification is achieved using a set of associated basis functions $\psi_k$ \eqref{eq:regseg-nodes_tfm}.
@@ -449,7 +497,7 @@ The \regseg{} tool includes a multiresolution strategy on the free-form deformat
 Registration pyramids are created by setting the spacing between the control points of the B-spline basis
   functions for each level of the multiresolution strategy.
 The implementation details as well as other features (such as the sparse matrix approach
-  to fast interpolation) and the main parameters 
+  to fast interpolation) and the main parameters
   (such as $\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$, the B-spline grid resolutions,
  and target image smoothing) are discussed in \suppl{section S1}.
 The actual choices of the parameter settings are publicly distributed with the source code for the experiments.
@@ -461,12 +509,17 @@ We released \regseg{} along with the tool to generate the convergence report.
 In order to assess the performance of \regseg{}, we defined the following general
   evaluation protocol:
 1) Extract the set of undistorted surfaces $\gammaset_R$;
-2) Compute a ground-truth field of displacements $U_{true}$, which is applied to
+2) Compute a ground-truth field of displacements $U_\text{true}$, which is applied to
   generate warped images ($M$) for segmentation;
 3) Execute \regseg{} with $\gammaset_R$ and use the warped data as inputs; and
 4) Perform a visual assessment and compute the error metrics.
+
 The adaptation of this protocol to the simulated phantoms and real data is explained in the
   following sections.
+A first proof of concept to demonstrate \regseg{} in phantoms with simple
+  geometries is introduced, using $U_\text{true}$ without directional restrictions.
+Then, a more realistic environment with $U_\text{true}$ restricted to the
+  \gls*{pe} axis of real \gls*{dmri} datasets is presented.
 
 \subsection{Simulated phantoms}\label{sec:regseg-digital_phantoms}
 The workflow required to simulate the digital phantoms and to assess the performance of
@@ -476,11 +529,11 @@ A set of four binary objects (i.e., ``box'', ``ball'', ``L'',
   analytical shapes and mathematical morphology.
 The reference surfaces $\gammaset_R$ were extracted from the binary shapes
   using \emph{FreeSurfer} tools \citep{fischl_freesurfer_2012}.
-The ground-truth distortion was generated using a chain of two displacement 
+The ground-truth distortion was generated using a chain of two displacement
   fields supported by grids of B-spline basis functions.
 The coefficients of the basis functions were generated randomly for
   both levels in their three dimensions.
-The three components of the displacements $\vec{u} = (u_d)$ 
+The three components of the displacements $\vec{u} = (u_d)$
   were bounded above by 40\% of the separation between the control points
   at each level to obtain diffeomorphic transforms
   after concatenation \citep{rueckert_diffeomorphic_2006}.
@@ -497,13 +550,13 @@ The warped surfaces $\gammaset_\text{true}$ were binarized to generate tissue fr
   at low (\isores[mm]{2.0}) and high (\isores[mm]{1.0}) resolutions.
 Using a \gls*{mr} simulator \citep{caruyer_phantomas_2014}, we synthesized
   \gls*{t1} (TE/TR= 10/1500 ms) and \gls*{t2} images (TE/TR= 90/5000 ms), which
-  corresponded to each phantom type, with each at two resolutions 
+  corresponded to each phantom type, with each at two resolutions
   (1.0 mm and 2.0 mm isotropic).
 The field of view at both resolutions was \isores[mm]{100}.
 Next, \regseg{} was applied to map $\gammaset_R$ onto the warped phantoms to
-  obtain the registered surfaces ($\hat{\gammaset}_{test}$).
+  obtain the registered surfaces ($\hat{\gammaset}_\text{test}$).
 To quantify the misregistration error, we computed the Hausdorff distance between
- $\hat{\gammaset}_{test}$ and $\gammaset_\text{true}$ using \citep{commandeur_vtk_2011}.
+ $\hat{\gammaset}_\text{test}$ and $\gammaset_\text{true}$ using \citep{commandeur_vtk_2011}.
 
 \begin{figure*}
 \includegraphics[width=\linewidth]{figure02}
@@ -513,11 +566,12 @@ To quantify the misregistration error, we computed the Hausdorff distance betwee
       $\gammaset_R$, thereby obtaining $\gammaset_\text{true}$.
   3) After being warped, $\gammaset_\text{true}$ were projected onto the corresponding discrete 3D volume and downsampled to create partial volume effects at two resolutions,
      i.e., \isores[mm]{2.0} and \isores[mm]{1.0}, thereby producing sets of tissue fractions maps.
-  4) The tissue fractions were fed into an \acrfull*{mr} simulator, which generated \acrfull*{t1} and \acrfull*{t2} -like images at the
+  4) The tissue fractions were fed into a \acrfull*{mr} simulator, which generated \acrfull*{t1} and \acrfull*{t2} -like images at the
      two possible resolutions.
   5) The \regseg{} tool was applied using the warped test images as multispectral moving images and $\gammaset_R$ as shape priors.
-  6) The agreement between the surfaces fitted by \regseg{} ($\hat{\gammaset}_{test}$) and $\gammaset_\text{true}$
-     using automatically generated visual reports was assessed by computing the Hausdorff distance between the corresponding surfaces.}\label{fig:regseg-evphantoms}
+  6) The agreement between the surfaces fitted by \regseg{} ($\hat{\gammaset}_\text{test}$) and $\gammaset_\text{true}$ were assessed
+     visually using automatically generated visual reports and quantitativelly with the Hausdorff distance between the
+     corresponding surfaces.}\label{fig:regseg-evphantoms}
 \end{figure*}
 
 
@@ -530,9 +584,9 @@ which extends our previous evaluation \citep{esteban_simulationbased_2014} of di
 \includegraphics[width=\linewidth]{figure03}
 \caption{Experimental workflow employed to process real data from the \acrfull*{hcp}.
   1) $\gammaset_R$ were extracted from the anatomical reference (\gls*{t1} image).
-  2) For use as the ground truth, we generated a plausible synthetic distortion $U_{true}$
+  2) For use as the ground truth, we generated a plausible synthetic distortion $U_\text{true}$
     from the field map with \eqref{eq:regseg-fieldmap}.
-  3) The \gls*{dmri} data were warped using $U_{true}$ to reproduce the effects of real
+  3) The \gls*{dmri} data were warped using $U_\text{true}$ to reproduce the effects of real
     susceptibility-derived distortions.
   Target diffusion scalars (\gls*{fa} and \gls*{adc}) were computed with the distorted data and
     stacked to feed the multivariate input required by \regseg{}.
@@ -546,29 +600,16 @@ which extends our previous evaluation \citep{esteban_simulationbased_2014} of di
 To evaluate \regseg{} using real \gls*{dmri} data obtained from human brains,
   we collected 16 subjects from the \gls*{hcp} database.
 The original acquisitions are released within ``unprocessed'' packages, whereas
-  the ``minimally preprocessed'' are corrected for artifacts, brain-extracted,
-  and spatially normalized, while some results have been subjected to the standard processing
-  pipeline of \emph{FreeSurfer}.
+  the ``minimally preprocessed'' packages contain the corresponding images after
+  some processing (correction for several artifacts, brain-extraction, spatial
+  normalization, etc.).
 We refer the reader to \citep{essen_human_2012} for exact details of the acquisition
   parameters and \citep{glasser_minimal_2013} for the preprocessing issues.
 These datasets comprise a large set of images, including \gls*{t1}, \gls*{t2}, and
   multi-shell \gls*{dmri} images.
 
-\begin{figure}
-\includegraphics[width=\linewidth]{figure04}
-\caption{Segmentation model defined by the homogeneous regions $\Omega_i$, where
-  the image for segmentation is partitioned by the theoretical projection 
-  ($\gammaset_{true}$) of $\gammaset_R$ onto $M$.
-The plot represents a kernel density estimate of the location and spread of
-  each region $\Omega_i$ in the bivariate feature space of $M$, which comprises 
-  the \gls*{fa} and \gls*{adc} maps.
-At the top and the right margins, the marginal distributions of $\Omega_i$ are also plotted for
-  the \gls*{fa} and \gls*{adc}, respectively.
-}\label{fig:regseg-model}
-\end{figure}
-
 \paragraph*{Segmentation model}
-Based on our experience \citep{esteban_brain_2012} and previous studies \citep{ennis_orthogonal_2006},
+Based on our experience   and previous studies \citep{ennis_orthogonal_2006},
   we defined the moving image as a stack of the \gls*{fa} and \gls*{adc} maps derived
   from \gls*{dmri} data.
 After evaluating several alternative models, we empirically defined a partition \omegaset{}
@@ -577,9 +618,9 @@ After evaluating several alternative models, we empirically defined a partition 
   2) ventricular system and deep \gls*{gm} structures ($\Omega_{VdGM}$);
   3) cerebral \gls*{wm} ($\Omega_{WM}$);
   4) brain stem and cerebellar \gls*{wm} ($\Omega_{bst}$);
-	5) cerebellar \gls*{gm} ($\Omega_{cbGM}$); and
-	6) cortical \gls*{gm} ($\Omega_{GM}$).
-Using tools in \emph{FreeSurfer} and appropriate selections of labels in the 
+  5) cerebellar \gls*{gm} ($\Omega_{cbGM}$); and
+  6) cortical \gls*{gm} ($\Omega_{GM}$).
+Using tools in \emph{FreeSurfer} and appropriate selections of labels in the
   \emph{aparc} segmentation released with the \gls*{hcp} data, we extracted the $\gammaset_R$ set for the
   reference surfaces.
 The segmentation model corresponding to this partition is shown in \autoref{fig:regseg-model}
@@ -599,9 +640,9 @@ where $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time, and
   $s_\text{PE}$ is the pixel size along \gls*{pe}.
 Certain \gls*{mr} sequences are designed to estimate $\Delta B_0$, thereby obtaining
   the so-called field map.
-We derived the deformation $U_{true}$ from the field map image released with
+We derived the deformation $U_\text{true}$ from the field map image released with
   the corresponding packages of each dataset in the \gls*{hcp}.
-The field map was unwrapped\footnote{fieldmaps are phase maps, which have been clipped in the interval
+The field map was unwrapped\footnote{fieldmaps are phase maps, which are intrinsically clipped in the interval
   of $[-\pi, \pi)$ [rads] or [rads/s].} and smoothed before applying \eqref{eq:regseg-fieldmap}.
 Next, the original \gls*{dmri} was warped using the resulting displacement field and fed into
   a pipeline to process the corresponding \gls*{dti}, thereby computing the derived scalars of
@@ -610,11 +651,11 @@ Next, the original \gls*{dmri} was warped using the resulting displacement field
 \paragraph*{Metric assessment}
 Initially, we investigated the appropriateness of the segmentation model.
 For five test datasets, we uniformly sampled the space of distortions
-  $\hat{U} = \epsilon \cdot U_{true} = \vec{r} + \epsilon \, u_\text{PE}$
+  $\hat{U} = \epsilon \cdot U_\text{true} = \vec{r} + \epsilon \, u_\text{PE}$
   (with $\epsilon \in [-1.1, 1.1]$ and $u_\text{PE}$ from \eqref{eq:regseg-fieldmap}),
   and we evaluated the data term of the cost function \eqref{eq:regseg-energy}.
-The minimum metric was consistently at the ground-truth location ($\epsilon=0.0$)
-  in all cases (\suppl{Figure S2}).
+The minimum of the cost function (\autoref{sec:regseg-methods_map}) was consistently located at
+  $\epsilon=0.0$ (the ground-truth) for all of the cases (\suppl{Figure S2}).
 
 \paragraph*{Cross-comparison}
 A similar workflow to the general evaluation framework used for \autoref{fig:regseg-evworkflows}
@@ -627,8 +668,8 @@ We reproduced the solution and settings provided with \emph{ExploreDTI}
 
 \paragraph*{Error measurement}\label{sec:regseg-experiments_evaluation}
 Distortion only occurs along the \gls*{pe} axis of the image, so we computed the
-  \gls*{swindex} as the area-weighted distance between the corresponding vertices of 
-  $\gammaset_{true}$ and their estimate obtained by the method under the test $\hat{\gammaset}_{test}$:
+  \gls*{swindex} as the area-weighted distance between the corresponding vertices of
+  $\gammaset_{true}$ and their estimate obtained by the method under the test $\hat{\gammaset}_\text{test}$:
 
   \begin{equation}
   sWI = \frac{1}{\sum_i a_i} \sum\limits_i^{N_V} a_i\,\|
@@ -636,7 +677,7 @@ Distortion only occurs along the \gls*{pe} axis of the image, so we computed the
   \label{eq:regseg-swindex}
   \end{equation}
   where $\vec{v}_i \subset \gammaset_\text{true}$ are the locations of the total $N_V$ vertices
-  and $\hat{\vec{v}}_i \subset \hat{\gammaset}_{test}$ are the recovered locations
+  and $\hat{\vec{v}}_i \subset \hat{\gammaset}_\text{test}$ are the recovered locations
   that correspond to $\vec{v}_i$.
 In practice, we only report the \gls*{swindex} for three surfaces of crucial interest in whole-brain
   tractography.
@@ -654,7 +695,7 @@ These three surfaces delineated the following regions in the model: $\Omega_{VdG
     ``gyrus'' (top left), ``L'' (top right), ``ball'' (bottom left),
     and ``box'' at (bottom right).
   The contours recovered after registration are represented in yellow.
-  \Regseg achieved high accuracy because it determined the almost exact locations of the registered
+  \Regseg{} achieved high accuracy because it determined the almost exact locations of the registered
     contours with respect to their ground truth positions (shown in green).
   The partial volume effect makes segmentation of the sulci a challenging problem with voxel-wise
     clustering methods, but they were successfully segmented with \regseg{}.
@@ -673,7 +714,7 @@ The results demonstrated that the accuracy was consistent and high, and below th
   to the two sets of resolutions for the generated phantoms.
 In order to relate the average misregistration error to the resolution of the moving image,
   we proceeded as follows.
-First, we confirmed that the vertex-wise error distributions were skewed by using Shapiro-Wilk’s test of
+First, we confirmed that the vertex-wise error distributions were skewed by using Shapiro-Wilk's test of
   normality.
 All of the distributions of errors in the tests (four phantom types $\times$ two resolutions) were
   non-normal with $p<0.001$.
@@ -686,8 +727,8 @@ Statistical tests might not be sufficiently conclusive, so we also computed the 
 
 
 \begin{table}
-		\centering
-		\footnotesize
+    \centering
+    \footnotesize
     \tabcolsep=0.1cm
     \begin{tabular}{lccccc}
     Res.   & ``gyrus'' & ``ball''  & ``box''   & ``L''     & Aggreg.    \\\hline
@@ -695,16 +736,16 @@ Statistical tests might not be sufficiently conclusive, so we also computed the 
     2.0mm  & 0.59-0.60 & 0.65-0.76 & 0.68-0.71 & 0.67-0.77 & 0.64-0.66  \\
     \hline
     \end{tabular}
-    \caption{Vertex-wise Hausdorff distances between the ground-truth surfaces and their
-    corresponding estimates obtained with \regseg{}, where the distributions are shown with the 95\% CI below
-    the half-voxel size for all of the phantom types.
+    \caption{The distributions of vertex-wise Hausdorff distances between the ground-truth surfaces and their
+    corresponding estimates obtained with \regseg{} presented a 95\% CI below the half-voxel size for all of 
+    the phantom types.
     The CIs were computed by bootstrapping using 10$^4$ samples, with the median as the location statistic.}\label{tab:ci_phantom}
 \end{table}
 
 \subsection{Evaluation using real datasets and cross-comparison}\label{sec:regseg-results_hcp}
 Finally, we compared the performance of \regseg{} with that of the standard \gls*{t2b}
   method.
-Visual assessments of the 16 cases are described in \suppl{section S5}.
+Summary reports for visual assessment of the 16 cases are included in \suppl{section S5}.
 In \autoref{fig:regseg-results_real}, box A, the visual report is shown for one subject.
 We computed the \gls*{swindex} \eqref{eq:regseg-swindex} of every surface after registration
   using both the \regseg{} and \gls*{t2b} methods.
@@ -716,16 +757,16 @@ All of the statistical tests showed that the error distributions obtained with \
   \gls*{t2b} were significantly different, and the violin plots in box B of
   \autoref{fig:regseg-results_real} demonstrate that the errors were always larger with \gls*{t2b}.
 We also show the 95\% CIs of the \gls*{swindex} for these surfaces.
-The aggregate CI for \regseg{} was 1.08--1.50 [mm], whereas the \gls*{t2b} method
-  yielded an aggregate CI of 2.06--2.43 [mm].
+The aggregate CI for \regseg{} was 0.56--0.66 [mm], whereas the \gls*{t2b} method
+  yielded an aggregate CI of 2.05--2.39 [mm].
 The results of the statistical tests and the CIs are summarized in \autoref{tab:results_real}.
 
 
 
 \begin{table}
-		\centering
-		\footnotesize
-		\tabcolsep=0.08cm
+    \centering
+    \footnotesize
+    \tabcolsep=0.08cm
     \begin{tabular}{cccccc}
     & & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ & Aggreg. \\
     \hline
@@ -761,8 +802,8 @@ The results of the statistical tests and the CIs are summarized in \autoref{tab:
   Specific regions where \regseg{} outperformed \gls*{t2b} are enlarged.
   B. Violin plots of the error distributions for each surface, which show the voxel size of the \gls*{dmri} images
     (1.25 mm), thereby supporting the improved results obtained by \regseg{} with the proposed settings.
-	}\label{fig:regseg-results_real}
-\end{figure*} 
+  }\label{fig:regseg-results_real}
+\end{figure*}  
 \makeatletter{}\section{Discussion}
 \label{sec:regseg-discussion}
 
@@ -810,10 +851,11 @@ Visual inspections of all the results (\suppl{section S5}) and the violin plots 
   \autoref{fig:regseg-results_real} confirmed that \regseg{} performed better than the \gls*{t2b} method
   in our settings.
 We carefully configured the \gls*{t2b} method using the same algorithm and the 
-  same settings employed widely in software, but cross-comparison experiments are prone to
-  so-called \emph{instrumentation bias} \citep{tustison_instrumentation_2013}.
+  same settings employed in a widely-used tool.
+However, cross-comparison experiments are prone to so-called \emph{instrumentation bias}
+  \citep{tustison_instrumentation_2013}.
 Therefore, these results do not prove that \regseg{} \emph{is better than} \gls*{t2b}.
-However, our results suggest that \regseg{} is a reliable option in this application field.
+Our results suggest that \regseg{} is a reliable option in this application field.
 In addition, the \gls*{t2b} may introduce an additional (and small) error during the necessary
   registration of \gls*{t2} in the \gls*{t1} space.
 
@@ -834,14 +876,14 @@ A descent optimization strategy is guided by shape gradients computed on the cur
 \Regseg{} uses active contours without edges and it searches for
   homogeneous regions within the image.
 We tested \regseg{} using digital phantoms by simulating \gls*{t1} and \gls*{t2} \gls*{mri}
-	warped with smooth random deformations.
+  warped with smooth random deformations.
 The resulting misregistration of the contours was significantly lower than the image resolution
   of the phantoms.
 
-We proposed \regseg{} for simultaneously segmenting \gls*{dmri} data and registering them according to
+We proposed \regseg{} for simultaneously segmenting and registering \gls*{dmri} data to
   their corresponding \gls*{t1} image from the same subject.
-We demonstrated 
-  the accuracy of the proposed method based on visual assessments of the results obtained by \regseg{} and cross-comparisons with a widely used technique.
+We demonstrated the accuracy of the proposed method based on visual assessments of the results
+  obtained by \regseg{} and cross-comparisons with a widely used technique.
 Moreover, \regseg{} does not require any images in addition to the minimal acquisition protocol,
   which only utilizes \gls*{t1} and \gls*{dmri}.
 As well as the proposed application to \gls*{dmri} data, other potential uses of \regseg{} are
@@ -859,7 +901,7 @@ Therefore, we used real data obtained from a publicly available repository
 The evaluation instruments (\autoref{fig:regseg-evworkflows}) were implemented using
   \emph{nipype} \citep{gorgolewski_nipype_2011} to assess their reproducibility.
 All of the research elements (data, source code, figures, manuscript sources, etc.) involved in this study
-  are publicly available under a unique package \citep{esteban_regseg_2015}. 
+  are publicly available under a unique package \citep{esteban_regseg_2015}.  
 
 \makeatletter{}\section*{Author contributions}
 All the authors contributed to this study.
@@ -878,13 +920,12 @@ We also thank A. Leemans for kindly sharing a p-code version of \emph{ExploreDTI
   which the settings for \emph{elastix} could be extracted.
 
 DZ was supported by the Swiss National Science Foundation under grants PBELP2-137727, 
-  P300P2-147778, and NSF-DMS 1418812
+  P300P2-147778, and NSF-DMS 1418812.
 This study was supported by the Spanish Ministry of Science and Innovation
   (projects TEC-2013-48251-C2-2-R and INNPACTO XIORT), Comunidad de Madrid (TOPUS) and
   European Regional Development Funds, the Center for Biomedical Imaging
   (CIBM) of the Geneva and Lausanne Universities and the EPFL, as well as the
-  Leenaards and Louis Jeantet Foundations.
- 
+  Leenaards and Louis Jeantet Foundations. 
 
 
 \appendix
@@ -915,23 +956,10 @@ By substituting into equation \eqref{eq:regseg-energy}, we obtain:
   \begin{align}
   E(\vec{u}) &= \const + \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r} +   \int_{\Omega} \frac12 \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2} + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r}.
   \label{eq:regseg-app_energy}
-  \end{align} 
+  \end{align}  
 
 \bibliographystyle{mystyle}
 \bibliography{Remote}
 
 
 \end{document}
-[A1]I understand that many of the abbreviations in this manuscript may be common abbreviations, however, depending on the journal to which you are submitting, it may be necessary to provide definitions in accordance with your target journal author abbreviation guidelines.
-
-
-
-
-
-
-
-
-
-
-
-

@@ -170,9 +170,9 @@
 \date{April 2015}
 
 \maketitle
-\section{Extensions to the mathematical formulation of the methods}\label{sec:maths_extension}
+\section{Extensions to the mathematical formulation of the methods}\label{sec:regseg-maths_extension}
 
-\subsection{Computing the gradients of shape-priors}\label{sec:shape_priors}
+\subsection{Computing the gradients of shape-priors}\label{sec:regseg-shape_priors}
 The computation of gradients at the locations of the active contours in the
   instant $t$ is based on the work of \cite{herbulot_segmentation_2006}.
 Let $F(\vec{r})$ be an ``arbitrary'' function over the image domain
@@ -196,10 +196,10 @@ Assuming that the region descriptors $\{\boldsymbol{\mu}_l, \boldsymbol{\Sigma}_
   \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
   - \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
   N_{\Gamma_{l,m}}\right\rangle d\vec{r}.
-  \label{eq:shape_gradients}
+  \label{eq:regseg-shape_gradients}
   \end{equation}
 
-The equation \eqref{eq:shape_gradients} is discretized as follows.
+The equation \eqref{eq:regseg-shape_gradients} is discretized as follows.
 First, the surface between limiting regions $\{l, m\}$, $\Gamma_{l,m}$ is explicitly represented by
   a discrete set of vertices $\vec{v}_i$, with $i \in \{0, \ldots, N_p -1 \}$.
 Consequently, the inwards normal of the surface $N_{\Gamma_{l,m}}$ is represented by the discrete
@@ -212,7 +212,7 @@ The resulting summation is, therefore, discrete and the integral operator is rep
   N_{\Gamma_{l,m}}\right\rangle d\vec{r}}_{\text{Shape's evolution}} \notag \\
   & = - \underset{p}{\sum} \frac{1}{A_p} \underset{i}{\sum} \, a_i \, F(\vec{v}_i) \left\langle \underbracket{\frac{\partial \vec{v}_i}{\partial t}}_{\text{speed of }\vec{v}_i},
   \hat{\vec{n}}_{i}\right\rangle.
-  \label{eq:shape_gradient_orig}
+  \label{eq:regseg-shape_gradient_orig}
   \end{align}
 where $a_i$ is the area corresponding to vertex $\vec{v}_i$, and $A_p = \sum_i a_i$ is the total area of surface $p$.
 In the following, we will refer as $w_{p,i} = a_i / A_p $ to the area contribution of $\vec{v}_i$ to the
@@ -224,7 +224,7 @@ Then, the speed of $\vec{v}_i$ is discretized using the artificial time-step par
   \begin{equation}
   \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) \, d\vec{r} =
   - \underset{i}{\sum} w_{p,i} F(\vec{v}_i) \frac{\partial \vec{v}_i}{\partial t} \cdot \hat{\vec{n}}_i.
-  \label{eq:shape_gradient_disc1}
+  \label{eq:regseg-shape_gradient_disc1}
   \end{equation}
 
 Since the energy functional is defined over competing regions, the displacement of $\vec{v}_i$ will cause
@@ -234,10 +234,10 @@ Since the energy functional is defined over competing regions, the displacement 
   \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) \, d\vec{r} =
   - \underset{i}{\sum} \, \frac{\partial \vec{v}_i}{\partial t} \cdot
   \underbracket{w_{p,i} \, \Big[ F_{out}(\vec{v}_i) - F_{in}(\vec{v}_i) \Big] \hat{\vec{n}}_i}_{\bar{s}_i \text{ in Figure 1}}.
-  \label{eq:shape_gradient_disc2}
+  \label{eq:regseg-shape_gradient_disc2}
   \end{equation}
 
-\subsection{Gradient-descent optimization}\label{sec:gradient_descent}
+\subsection{Gradient-descent optimization}\label{sec:regseg-gradient_descent}
 The energy functional to be optimized in \emph{regseg} is presented in Eq. 7.
 After the simplifications described in equation (A.1) of Appendix 1, we obtain the
   following energy functional:
@@ -246,11 +246,11 @@ After the simplifications described in equation (A.1) of Appendix 1, we obtain t
   \mdist{f'}{l} \,d\vec{r}}_{\text{Data term } (E_{data})}
   + \underbracket{\underset{\Omega}{\int} \left[ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
   + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} \right] \,d\vec{r}}_{\text{Regularization term } (E_{reg})}.
-  \label{eq:energy}
+  \label{eq:regseg-energy}
   \end{equation}
 
 To search for the minimum of $E(\vec{u})$ w.r.t. the coefficients $\vec{u}_k$, we use a gradient descent strategy.
-In Eq. (9) we introduced the derivative of \eqref{eq:energy}:
+In Eq. (9) we introduced the derivative of \eqref{eq:regseg-energy}:
   \begin{equation}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} =
   \frac{ \partial }{\partial \vec{u}_k} \Big\{
@@ -258,10 +258,10 @@ In Eq. (9) we introduced the derivative of \eqref{eq:energy}:
   + \int_{\Omega} \frac12 [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
   + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}
   \Big\}.
-  \label{eq:gradient_descent}
+  \label{eq:regseg-gradient_descent}
   \end{equation}
 
-We split \eqref{eq:gradient_descent} in the derivatives of its data and regularization terms.
+We split \eqref{eq:regseg-gradient_descent} in the derivatives of its data and regularization terms.
 Let $\frac{\partial E_{data}}{\partial \vec{u}_k} = \vec{g}_k$ for simplicity,
   we compute the derivative of the data term and discretize the domain $\Omega$ as follows:
 \begin{equation}
@@ -269,10 +269,10 @@ Let $\frac{\partial E_{data}}{\partial \vec{u}_k} = \vec{g}_k$ for simplicity,
   \frac{ \partial }{\partial \vec{u}_k} \Big\{
   \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \Big\} =
   \frac{ \partial }{\partial \vec{u}_k} \Big\{ \underset{l}{\sum} \underset{\vec{x} \in \Omega_l}{\sum} \, \mdist{f'}{l} \Big\},
-  \label{eq:data_derivative}
+  \label{eq:regseg-data_derivative}
 \end{equation}
-  where we can apply the shape-gradients \eqref{eq:shape_gradient_disc2} introduced
-  in \autoref{sec:shape_priors}, and ultimately avoid implementing level sets:
+  where we can apply the shape-gradients \eqref{eq:regseg-shape_gradient_disc2} introduced
+  in \autoref{sec:regseg-shape_priors}, and ultimately avoid implementing level sets:
 
   \begin{align}
   \vec{g}_k &= \underset{i}{\sum} \left\langle \frac{\partial \vec{v}_i'}{\partial \vec{u}_k}, \bar{s}_i'\right\rangle, \\
@@ -281,40 +281,40 @@ Let $\frac{\partial E_{data}}{\partial \vec{u}_k} = \vec{g}_k$ for simplicity,
   \text{and }
   \frac{\partial \vec{v}_i'}{\partial \vec{u}_k} &=
   \frac{\partial}{\partial \vec{u}_k} \left\{ \vec{v}_i + \sum_k \psi_k(\vec{v}_i) \vec{u}_k \right\} = \psi_k(\vec{v}_i)\, \hat{\vec{e}}.
-  \label{eq:gradient_wshape}
+  \label{eq:regseg-gradient_wshape}
   \end{align}%
   where $\hat{\vec{e}}$ is the coordinates system's unit vector.
 Therefore, the shape gradients projected to the grid of B-Spline control points is:
 \begin{equation}
   \vec{g}_k = - \underset{i}{\sum} \bar{s}_i \cdot \psi_k(\vec{v}_i) \, \hat{\vec{e}} = - \underset{i}{\sum} \vec{g}_{i,k}.
-  \label{eq:shape_gradient_final}
+  \label{eq:regseg-shape_gradient_final}
 \end{equation}
 
-It is also necessary to obtain and discretize the derivatives of the regularization term of \eqref{eq:gradient_descent}:
+It is also necessary to obtain and discretize the derivatives of the regularization term of \eqref{eq:regseg-gradient_descent}:
   \begin{equation}
   \frac{\partial E_{reg}(\vec{u})}{\partial \vec{u}_k} = \frac{ \partial }{\partial \vec{u}_k} \Big\{
   \int_{\Omega} \frac12 [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
   + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}
   \Big\} = \boldsymbol{\alpha} \cdot \vec{u}_k - \boldsymbol{\beta} \cdot \Delta \vec{u}_k.
-  \label{eq:gradient_regterm}
+  \label{eq:regseg-gradient_regterm}
   \end{equation}
 
-Inserting \eqref{eq:shape_gradient_final} and \eqref{eq:gradient_regterm} into \eqref{eq:gradient_descent} we get the
+Inserting \eqref{eq:regseg-shape_gradient_final} and \eqref{eq:regseg-gradient_regterm} into \eqref{eq:regseg-gradient_descent} we get the
   final evolution equation:
   \begin{align}
   \frac{\partial \vec{u}}{\partial t} &\propto - \frac{\partial E(\vec{u})}{\partial \vec{u}_k}, \notag\\
   \frac{\partial \vec{u}}{\partial t} &\propto - \Big( \vec{g}_k - \boldsymbol{\alpha} \cdot \vec{u}_k + \boldsymbol{\beta} \cdot \Delta \vec{u}_k \Big).
-  \label{eq:gradient_final}
+  \label{eq:regseg-gradient_final}
   \end{align}
 
 
-\subsection{Obtaining the update equation} To solve the differential equation in \eqref{eq:gradient_final},
+\subsection{Obtaining the update equation} To solve the differential equation in \eqref{eq:regseg-gradient_final},
   we use a semi-implicit Euler scheme, referring to the discrete step size as $\delta$ and where the
   shape-gradients $\vec{g}_k$ are explicit:
 \begin{align}
   \vec{u}_k^{t+1} &= \vec{u}_k^{t} + \delta \, \Big( - \vec{g}_k^{t} - ( \boldsymbol{\alpha} - \boldsymbol{\beta} \Delta) \, \vec{u}_k^{t+1} \Big) \notag \\
   (1 + \delta \, \boldsymbol{\alpha} - \delta \, \boldsymbol{\beta} \Delta)\, \vec{u}_k^{t+1} &= \vec{u}_k^{t} - \delta\, \vec{g}_k^{t}
-  \label{eq:discrete_derivative}
+  \label{eq:regseg-discrete_derivative}
 \end{align}
 
 This expression is easily translated into Fourier domain as follows:
@@ -322,7 +322,7 @@ This expression is easily translated into Fourier domain as follows:
   \begin{align}
   \vec{u}_k^{t+1} = \mathcal{F}^{-1}\left\{ \frac{\mathcal{F}\{\delta^{-1} \, \vec{u}_k^t - \vec{g}_k^t\} }%
                   {\mathcal{F}\{(\delta^{-1} + \boldsymbol{\alpha})\, I-\boldsymbol{\beta}\Delta\}} \right\},
-  \label{eq:update_equation}
+  \label{eq:regseg-update_equation}
   \end{align}
   where $I$ denotes the identity operator.
 Here, we rewrite the Laplacian as a linear combination of the identity and shift operators:
@@ -341,13 +341,13 @@ Accordingly, the Fourier transform of the discrete Laplacian is found as
 
 The remaining transforms are trivial or can be computed using FFT as in \citep{estellers_efficient_2012}.
 
-%Then, introducing \eqref{eq:intp_kernel} into \eqref{eq:nodes_tfm} and replacing
+%Then, introducing \eqref{eq:regseg-intp_kernel} into \eqref{eq:regseg-nodes_tfm} and replacing
 %  $\psi$ by the actual kernel function, the transformation writes:
 %
 %  \begin{equation}
 %    \vec{v}_i' = \vec{v}_i + \sum_k \left[ \vec{u}_k \, \underset{d}{\prod}
 %      \beta_3( (\vec{v}_i - \vec{r}_k) \cdot \hat{\mathbf{e}}_d ) \right],
-%  \label{eq:transformation}
+%  \label{eq:regseg-transformation}
 %  \end{equation}
 %%
 %  with $\hat{\mathbf{e}}_d$ being the unitary vector along axis $d$.
@@ -361,14 +361,14 @@ The remaining transforms are trivial or can be computed using FFT as in \citep{e
 We designed a modular implementation, enabling multithreading in several pieces of the software,
   as the process is computationally expensive.
 The tool generates a log-file in JSON format to easily inter-operate with secondary tools (such
-  as the convergence report generation, \autoref{sec:convergence_evidence}).
+  as the convergence report generation, \autoref{sec:regseg-convergence_evidence}).
 The evaluation workflow is independent, and implemented using \emph{nipype} \citep{gorgolewski_nipype_2011}.
 
 \subsection{Efficient interpolation using sparse matrices}
 During the registration process, every iteration requires computing the product of all the gradients
   $\vec{g}_k$ associated to the control point $k$, and computed at the current position
   $\vec{v}_i$ by the corresponding weights $\psi_{ik} = \psi_k(\mathbf{v}_i)$ of interpolating functions
-  \eqref{eq:shape_gradient_final}.
+  \eqref{eq:regseg-shape_gradient_final}.
 In order to optimize multiplications and summations, all the $\psi_{ik}$ are collected in a
   matrix $\boldsymbol{\Psi} = (\psi_{ik})$.
 Given the limited support of the basis function $\psi$, $\boldsymbol{\Psi}$ will hold the property
@@ -376,7 +376,7 @@ Given the limited support of the basis function $\psi$, $\boldsymbol{\Psi}$ will
 Then, the gradients $\vec{g}_k$ are easily computed using the matrix product:
 \begin{equation}
   \big(\vec{g}_k \big) = \boldsymbol{\Psi} \cdot \big( w_i \, \bar{s}_i \big)^T
-  \label{eq:sparse_matrix}
+  \label{eq:regseg-sparse_matrix}
 \end{equation}
 
 As these weights can be computed once in the beginning of the process and they do not change along
@@ -390,15 +390,15 @@ As these weights can be computed once in the beginning of the process and they d
   For five test datasets, we uniformly sampled the space of distortions
     $\hat{U} = \epsilon \cdot U_{true} = \vec{r} + \epsilon \, u_\text{PE}$
     (with $\epsilon \in [-1.1, 1.1]$ and $u_\text{PE}$ from Equation 13 in the
-    paper), and evaluated the data-term of the cost function \eqref{eq:energy}.
+    paper), and evaluated the data-term of the cost function \eqref{eq:regseg-energy}.
   The metric consistently displayed its minimum at the ground-truth location ($\epsilon=0.0$)
     for all the cases, indicating that the segmentation model is appropriate for
     registration.}}
   {\includegraphics[width=\linewidth]{Suppl-figure04.pdf}}
-  \label{fig:energymap}
+  \label{fig:regseg-energymap}
 \end{figure}
 
-\subsection{Interface and Settings}\label{sec:interface_settings}
+\subsection{Interface and Settings}\label{sec:regseg-interface_settings}
 
 \paragraph{Command-line interface}
 The command line interface of \emph{regseg} supports general settings and level-wise settings.
@@ -479,7 +479,7 @@ ifresult = regseg.run()
 \end{pythoncode}
 
 
-\subsection{Convergence evidencing}\label{sec:convergence_evidence}
+\subsection{Convergence evidencing}\label{sec:regseg-convergence_evidence}
 
 In order to track the evolution of the registration process, several internal variables
   are saved in the JSON log-file.
@@ -494,7 +494,7 @@ ifresult = report.run()
 \end{pythoncode}
 
 Online checking is also possible as the algorithm writes to the standard output as well.
-A sample report is found in \autoref{fig:convreport}.
+A sample report is found in \autoref{fig:regseg-convreport}.
 
 \begin{figure}[b]
   \includegraphics[width=\linewidth]{Suppl-figure02.pdf}
@@ -503,7 +503,7 @@ A sample report is found in \autoref{fig:convreport}.
     easily generated using the appropriate \emph{nipype Interface}.
   The report comprehends several plots tracking the evolution of the algorithm and several
     features to help researchers tune up the algorithm in their application.}%
-    \label{fig:convreport}
+    \label{fig:regseg-convreport}
 \end{figure}
 
 \clearpage
@@ -512,7 +512,7 @@ A sample report is found in \autoref{fig:convreport}.
 This work is supported by two \emph{nipype Workflows} in order to ensure the reproducibility
   of the results.
 All the intermediate results and figures in this paper have been encapsulated into
-  the workflows and are available in \citep{esteban_acweregistration_2015}.
+  the workflows and are available in \citep{esteban_regseg_2015}.
 
 An overview of the workflow applied in phantoms is presented in the Figure 2 of the paper.
 Subsequently, Figure 3 reproduces the evaluation on real data.
@@ -527,8 +527,8 @@ In this section, we review the main elements of the evaluation pipelines.
     (in both phantoms and real datasets) is obtained with a unitary pipeline,
     for instance, the \emph{PialSurface} block.
   In this figure, the composite workflow to extract the six surfaces that define the
-    segmentation model (\autoref{fig:jointplot}) is represented.
-  }\label{fig:wf_surfaces}
+    segmentation model (\autoref{fig:regseg-jointplot}) is represented.
+  }\label{fig:regseg-wf_surfaces}
 \end{figure}
 
 \subsection{Processing diffusion MRI data}
@@ -538,7 +538,7 @@ In this section, we review the main elements of the evaluation pipelines.
   {\caption{\textbf{Workflow to generate \gls*{fa} and \gls*{adc} maps from \gls*{dmri} data}.
     We use \emph{MRtrix} \citep{tournier_mrtrix_2012} to generate a \gls*{dti} from data and
       computing the two feature maps of interest (\gls*{fa} and \gls*{adc}).
-    This workflow is performed in both undistorted and warped data.}\label{fig:wf_dti}}
+    This workflow is performed in both undistorted and warped data.}\label{fig:regseg-wf_dti}}
 \end{figure}
 
 \subsection{T2-weighted registration to \emph{b0} -based (T2B) method}
@@ -550,13 +550,13 @@ In this section, we review the main elements of the evaluation pipelines.
       (in both phantoms and real datasets) is obtained with a unitary pipeline,
       for instance, the \emph{PialSurface} block.
     In this figure, the composite workflow to extract the six surfaces that define the
-      segmentation model (\autoref{fig:jointplot}) is represented.}\label{fig:wf_t2b}}
+      segmentation model (\autoref{fig:regseg-jointplot}) is represented.}\label{fig:regseg-wf_t2b}}
 \end{figure}
 
 \subsection{Complete workflow for evaluation on real data}
 \begin{figure}[!ht]
   \includegraphics[width=\linewidth]{hcp_wf.pdf}
-  \caption{\textbf{The \emph{nipype} design of the workflow for real data}.}\label{fig:wf_hcp}
+  \caption{\textbf{The \emph{nipype} design of the workflow for real data}.}\label{fig:regseg-wf_hcp}
 \end{figure}
 
 \clearpage
@@ -565,7 +565,7 @@ In this section, we review the main elements of the evaluation pipelines.
 % \begin{figure*}
 %   \centering
 %   \includestandalone[width=\linewidth]{figure06}
-%   \caption{}label{fig:results_real}
+%   \caption{}label{fig:regseg-results_real}
 % \end{figure*}
 
 \begin{figure}[!ht]
@@ -590,7 +590,7 @@ In this section, we review the main elements of the evaluation pipelines.
       in node[text width=\x1, align=justify] at (0.80, 1.0)
       {\capoverlay};
     \end{scope}
-  \end{tikzpicture}\label{fig:jointplot}
+  \end{tikzpicture}\label{fig:regseg-jointplot}
 \end{figure}
 
 \clearpage
@@ -602,7 +602,7 @@ In this section, we review the main elements of the evaluation pipelines.
 \clearpage
 \section*{Author Contributions}
 This report has been drafted and prepared by OE.
-Mathematical formulations in \autoref{sec:maths_extension} were originally devised and drafted
+Mathematical formulations in \autoref{sec:regseg-maths_extension} were originally devised and drafted
   by DZ and rewritten for this document by OE.
 All the authors have read and critically contributed to this document.
 

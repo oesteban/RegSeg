@@ -1,11 +1,28 @@
 % -*- root: 00-main.tex -*-
 \section{Results}
-\label{sec:results}
+\label{sec:regseg-results}
 
-\subsection{Proof of concept using digital phantoms}
-\label{sec:results_phantom}
+\subsection{Verification and validation using digital phantoms}
+\label{sec:regseg-results_phantom}
 
-\begin{figure*}
+The results summarized in \autoref{fig:regseg-phantom} demonstrated that the accuracy was
+  high and below the image resolution.
+Panel B on \autoref{fig:regseg-phantom} shows the violin plots for each model type corresponding
+  to the two sets of resolutions for the generated phantoms.
+In order to relate the average misregistration error to the resolution of the moving image,
+  we proceeded as follows.
+First, we confirmed that the vertex-wise error distributions were skewed by using Shapiro-Wilk's test of
+  normality.
+All of the distributions of errors in the tests (four phantom types $\times$ two resolutions) were
+  non-normal with $p<$ 0.001.
+Consequently, we used the non-parametric Wilcoxon signed-rank test with the Bonferroni
+  correction for multiple comparisons ($N$=150, for each phantom type).
+The average errors were significantly lower than the voxel size with $p <$ (0.001 / 150)
+  in all tests (four phantom types $\times$ two resolutions).
+Statistical tests might not be sufficiently conclusive, so we also computed the confidence intervals,
+  as shown in \autoref{tab:ci_phantom}.
+
+\begin{figure*}[!h]
   \centering
   \includestandalone[width=\linewidth]{figure05}
   \caption{A. Visual assessment of the results obtained with the low resolution sets:
@@ -19,97 +36,12 @@
   B. Quantitative evaluation of registration errors in terms of the average Hausdorff distances between
     surfaces at low (left) and high (right) resolutions, which demonstrate that the errors were
     consistently below the size of the voxels.
-    }\label{fig:phantom}
+    }\label{fig:regseg-phantom}
 \end{figure*}
-In total, 1200 experiments (four phantom types $\times$ 150 random warpings $\times$ two resolutions) were
-  performed according to the workflow illustrated in \autoref{fig:evphantoms}.
-For each experiment, the misregistration error was measured using the Hausdorff distance
-  (see \autoref{sec:experiments_evaluation}) between the theoretical $\gammaset_\text{true}$ and
-  the estimate obtained by \regseg{} ($\hat{\gammaset}_{test}$).
-The results demonstrated that the accuracy was consistent and high, and below the image resolution.
-\autoref{fig:phantom} (block C) shows the violin plots for each model type corresponding
-  to the two sets of resolutions for the generated phantoms.
-In order to relate the average misregistration error to the resolution of the moving image,
-  we proceeded as follows.
-First, we confirmed that the vertex-wise error distributions were skewed by using Shapiro-Wilk's test of
-  normality.
-All of the distributions of errors in the tests (four phantom types $\times$ two resolutions) were
-  non-normal with $p<0.001$.
-Consequently, we used the non-parametric Wilcoxon signed-rank test with the Bonferroni
-  correction for multiple comparisons ($N=150$, for each phantom type).
-The average errors were significantly lower than the voxel size with $p < (0.001 / 150)$
-  in all tests (four phantom types $\times$ two resolutions).
-Statistical tests might not be sufficiently conclusive, so we also computed the confidence intervals,
-  as shown in \autoref{tab:ci_phantom}.
-
-
-\begin{table}
-    \centering
-    \footnotesize
-    \tabcolsep=0.1cm
-    \begin{tabular}{lccccc}
-    Res.   & ``gyrus'' & ``ball''  & ``box''   & ``L''     & Aggreg.    \\\hline
-    1.0mm  & 0.18-0.38 & 0.31-0.45 & 0.34-0.42 & 0.34-0.40 & 0.34-0.38  \\
-    2.0mm  & 0.59-0.60 & 0.65-0.76 & 0.68-0.71 & 0.67-0.77 & 0.64-0.66  \\
-    \hline
-    \end{tabular}
-    \caption{The distributions of vertex-wise Hausdorff distances between the ground-truth surfaces and their
-    corresponding estimates obtained with \regseg{} presented a 95\% CI below the half-voxel size for all of 
-    the phantom types.
-    The CIs were computed by bootstrapping using 10$^4$ samples, with the median as the location statistic.}\label{tab:ci_phantom}
-\end{table}
-
-\subsection{Evaluation using real datasets and cross-comparison}\label{sec:results_hcp}
-Finally, we compared the performance of \regseg{} with that of the standard \gls*{t2b}
-  method.
-Summary reports for visual assessment of the 16 cases are included in \suppl{section S5}.
-In \autoref{fig:results_real}, box A, the visual report is shown for one subject.
-We computed the \gls*{swindex} \eqref{eq:swindex} of every surface after registration
-  using both the \regseg{} and \gls*{t2b} methods.
-Finally, to compare the results, we performed Kruskal-Wallis H-tests
-  (a non-parametric alternative to ANOVA) on the warping indices for the three surfaces of 
-  interest selected in \autoref{sec:experiments_evaluation}
-  ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$).
-All of the statistical tests showed that the error distributions obtained with \regseg{} and
-  \gls*{t2b} were significantly different, and the violin plots in box B of
-  \autoref{fig:results_real} demonstrate that the errors were always larger with \gls*{t2b}.
-We also show the 95\% CIs of the \gls*{swindex} for these surfaces.
-The aggregate CI for \regseg{} was 0.56--0.66 [mm], whereas the \gls*{t2b} method
-  yielded an aggregate CI of 2.05--2.39 [mm].
-The results of the statistical tests and the CIs are summarized in \autoref{tab:results_real}.
-
-
-
-\begin{table}
-    \centering
-    \footnotesize
-    \tabcolsep=0.08cm
-    \begin{tabular}{cccccc}
-    & & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ & Aggreg. \\
-    \hline
-    \multirow{2}{*}{CI}
-       & \regseg{}        & 0.50 - 0.78 & 0.50 - 0.55 & 0.66 - 0.73 & 0.56 - 0.66 \\
-       & T2B                  & 1.78 - 2.58 & 1.94 - 2.36 & 2.16 - 2.58 & 2.05 - 2.39 \\
-    \hline
-    \multirow{2}{*}{H-tests}
-       & p-value  & 4.1$\times$10$^{-6}$& 2.3$\times$10$^{-6}$& 2.3$\times$10$^{-6}$ & 1.8$\times$10$^{-16}$ \\
-       & H-stat   & 21.20               & 22.31               & 22.31                & 67.85              \\
-    \hline
-    \end{tabular}
-    \caption{Statistical analysis of results obtained using real data, which show that \regseg{} performed better than
-    the alternative \acrfull{t2b} method.
-    The distribution of the errors computed for the surfaces of interest ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$)
-      and the aggregate of all surfaces (Aggreg. column) had lower 95\% CIs with \regseg{}.
-   The CIs in this table were computed by bootstrapping using the mean as the location statistic and with 10$^4$ samples.
-    The Kruskal-Wallis H-tests indicated that there was a significant difference between the results obtained using \regseg{} and
-      the \gls*{t2b} method.
-    }\label{tab:results_real}
-\end{table}
-
-\begin{figure*}
+\begin{figure*}[!h]
   \centering
   \includestandalone[width=\linewidth]{figure06}
-  \caption{A. Example of a visual assessment report, which was generated automatically by the evaluation tool.
+  \caption{A. Example of a visual assessment report, which was automatically generated by the evaluation tool.
     Each view shows one component of the input image (in this case, the \gls*{fa} map), the ground-truth locations
     of the surfaces (green contours), and the resulting surfaces obtained with the test method (yellow contours).
   The first two rows show axial slices for \regseg{} and the \acrfull*{t2b} method, while the last two rows
@@ -119,5 +51,67 @@ The results of the statistical tests and the CIs are summarized in \autoref{tab:
   Specific regions where \regseg{} outperformed \gls*{t2b} are enlarged.
   B. Violin plots of the error distributions for each surface, which show the voxel size of the \gls*{dmri} images
     (1.25 mm), thereby supporting the improved results obtained by \regseg{} with the proposed settings.
-  }\label{fig:results_real}
-\end{figure*} 
+  }\label{fig:regseg-results_real}
+\end{figure*}
+
+\subsection{Evaluation using real datasets and cross-comparison}\label{sec:regseg-results_hcp}
+Finally, we compared the performance of \regseg{} with that of the standard \gls*{t2b}
+  method.
+Summary reports for visual assessment of the 16 cases are included in the
+  \citetalias[section S5]{esteban_useful_2015}.
+In \autoref{fig:regseg-results_real}, box A, the visual report is shown for one subject.
+We computed the \gls*{swindex} \eqref{eq:regseg-swindex} of every surface after registration
+  using both the \regseg{} and \gls*{t2b} methods.
+Finally, to compare the results, we performed Kruskal-Wallis H-tests
+  (a non-parametric alternative to ANOVA) on the warping indices for the three surfaces of
+  interest selected in \autoref{sec:regseg-experiments_evaluation}
+  ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$).
+All of the statistical tests showed that the error distributions obtained with \regseg{} and
+  \gls*{t2b} were significantly different, and the violin plots in box B of
+  \autoref{fig:regseg-results_real} demonstrate that the errors were always larger with \gls*{t2b}.
+We also show the 95\% CIs of the \gls*{swindex} for these surfaces.
+The aggregate CI for \regseg{} was 0.56--0.66 [mm], whereas the \gls*{t2b} method
+  yielded an aggregate CI of 2.05--2.39 [mm].
+The results of the statistical tests and the CIs are summarized in \autoref{tab:results_real}.
+
+\begin{table}
+\centering
+\footnotesize
+\tabcolsep=0.1cm
+\begin{minipage}{.48\textwidth}
+    \vskip-4.7ex
+    \begin{tabular}{lccccc}
+    Res.   & ``gyrus'' & ``ball''  & ``box''   & ``L''     & Aggreg.    \\\hline
+    1.0mm  & 0.18--0.38 & 0.31--0.45 & 0.34--0.42 & 0.34--0.40 & 0.34--0.38  \\
+    2.0mm  & 0.59--0.60 & 0.65--0.76 & 0.68--0.71 & 0.67--0.77 & 0.64--0.66  \\
+    \hline
+    \end{tabular}
+    \caption{The distributions of vertex-wise Hausdorff distances between the ground-truth surfaces and their
+    corresponding estimates obtained with \regseg{} presented a 95\% CI below the half-voxel size for all of
+    the phantom types.
+    The CIs were computed by bootstrapping using 10$^\text{4}$ samples, with the median as the location statistic.}\label{tab:ci_phantom}
+\end{minipage}
+\hfill
+\begin{minipage}{.48\textwidth}
+    \begin{tabular}{cccccc}
+    & & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ & Aggreg. \\
+    \hline
+    \multirow{2}{*}{CI}
+       & \regseg{} & 0.50--0.78 & 0.50--0.55 & 0.66--0.73 & 0.56--0.66 \\
+       & T2B       & 1.78--2.58 & 1.94--2.36 & 2.16--2.58 & 2.05--2.39 \\
+    \hline
+    \multirow{2}{*}{H-tests}
+       & p-value  & 4.1\e{-6} & 2.3\e{-6} & 2.3\e{-6} & 1.8\e{-16} \\
+       & H-stat   & 21.20 & 22.31 & 22.31 & 67.85 \\
+    \hline
+    \end{tabular}
+    \caption{Statistical analysis of results obtained using real data, which show that \regseg{} performed better than
+    the alternative \acrfull{t2b} method.
+    The distribution of the errors computed for the surfaces of interest ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$)
+      and the aggregate of all surfaces (Aggreg. column) had lower 95\% CIs with \regseg{}.
+   The CIs in this table were computed by bootstrapping using the mean as the location statistic and with 10$^\text{4}$ samples.
+    The Kruskal-Wallis H-tests indicated that there was a significant difference between the results obtained using \regseg{} and
+      the \gls*{t2b} method.
+    }\label{tab:results_real}
+\end{minipage}
+\end{table}
