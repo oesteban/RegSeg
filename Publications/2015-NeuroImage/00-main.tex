@@ -16,9 +16,9 @@
 
 % *** PDF, URL AND HYPERLINK PACKAGES ***
 %
+\usepackage{xcolor}
 \usepackage{url}
 \usepackage[colorlinks=true]{hyperref}
-% \usepackage[hyperref]{xcolor}
 \usepackage{doi}
 
 \usepackage{xspace}
@@ -54,7 +54,8 @@
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor an-isot-ropy regis-tra-tion iso-tropic Free-Surfer %
-align-ed pre-sent work-flow data-set data-sets micro-struc-tu-re}
+align-ed pre-sent work-flow data-set data-sets micro-struc-tu-re Ma-drid non-linear de-for-ma-tion
+an-iso-tro-pic Stud-holme seg-ment-a-tion re-gis-tra-tion map-ped achiev-ed}
 
 \input{01-acronyms}
 
@@ -144,7 +145,7 @@ active~surfaces \sep cortical~parcellation \sep diffusion MRI \sep nonlinear~reg
 
 \end{frontmatter}
 
-\linenumbers
+\ifthenelse{\boolean{review}}{\linenumbers}{}
 \input{03-introduction}
 \input{04-methods}
 \input{05-results}
