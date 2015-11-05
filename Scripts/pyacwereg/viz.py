@@ -399,7 +399,7 @@ def jointplot_data(im1data, im2data, in_seg, labels=None, out_file=None,
 
 def jointplot_real(imageX, imageY, segmentation, mask,
                    labels=None, xlabel='X', ylabel='Y',
-                   huelabel='tissue',
+                   huelabel='tissue', size=8, dpi=100, subsample=1.0,
                    xlims=None, ylims=None, out_file=None):
     import os.path as op
     import nibabel as nb
@@ -436,13 +436,15 @@ def jointplot_real(imageX, imageY, segmentation, mask,
         df_pieces.append(pd.DataFrame(d))
 
     df = pd.concat(df_pieces)
-    # df = df.sample(frac=.01, replace=True)
+
+    if subsample < 1.0:
+        df = df.sample(frac=subsample, replace=True)
 
     df = df[df.tissue != 'do-not-show']
-    sn.set_context("talk", font_scale=1.8)
+    sn.set_context("talk", font_scale=1. + 0.1*size)
 
     g = sn.ConditionalJointGrid(xlabel, ylabel, df, hue=huelabel, xlim=xlims, ylim=ylims,
-                     size=10, inline_labels=True)
+                     size=size, inline_labels=True)
     # g.plot_joint(plt.scatter)
     g.plot_joint(sn.kdeplot, linewidths=3.0)
     g.plot_marginals(sn.distplot)
@@ -452,7 +454,7 @@ def jointplot_real(imageX, imageY, segmentation, mask,
         plt.setp(ax.get_xticklabels(), visible=False)
 
     if out_file is not None:
-        plt.savefig(out_file, dpi=200, bbox_inches='tight')
+        plt.savefig(out_file, dpi=dpi, bbox_inches='tight')
     return g
 
 
