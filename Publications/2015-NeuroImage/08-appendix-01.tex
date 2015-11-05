@@ -74,11 +74,11 @@ E(K) = \sum\limits_k \int_{\Omega_k} \left( \frac{1}{2} \log{ \left( (2\pi)^{C}\
 E(K) = \sum\limits_k \left( \frac{ V_k }{2} \log{ \left( (2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{k}\right| \right)}+ \frac{1}{2} \int_{\Omega_k} \Delta^2_k (\mathbf{s}) \,d\mathbf{x}+\nu_B \left|K\right| \right)
 \end{equation}
 
-{\color{red} {Using the region descriptors derived in \autoref{sec:methods_map}, we propose
+{\color{red} {Using the region descriptors derived in \autoref{sec:regseg-methods_map}, we propose
 an \gls{adf}-like, \gls{acwe}-based, piece-wise constant, image segmentation
 model (where the unknown is the deformation field)
 \cite{chan_active_2001} with the energy functional obtained in
-\eqref{eq:final_map_energy}. This inverse problem is ill-posed
+\eqref{eq:regseg-final_map_energy}. This inverse problem is ill-posed
 \cite{bertero_illposed_1988,hadamard_sur_1902}.
 In order to account for deformation field regularity and to render the
 problem well-posed, we include limiting and regularization terms into
@@ -87,7 +87,7 @@ the energy functional \cite{morozov_linear_1975,tichonov_solution_1963}:
 \begin{multline}
 E(u) = \sum\limits_l \int_{\Omega'_l} \mdist{f}{l} \,d\vec{x} \\
 + \int \vec{u}^T \, A \, \vec{u} \, d\vec{x} + \int \tr\{(\nabla \vec{u}^T)^T B (\nabla \vec{u}^T)\} d\vec{x}
-\label{eq:complete_energy}
+\label{eq:regseg-complete_energy}
 \end{multline}
 %
 These regularity terms ensure that the segmenting contours in
@@ -104,7 +104,7 @@ the continuous version of the energy functional}
 
 \subsubsection{Semi-implicit Euler-forward optimization}
 It is necessary to discretize $t$ in order to obtain a numerical
-implementation of the equation \eqref{eq:gradient_final}:
+implementation of the equation \eqref{eq:regseg-gradient_final}:
 \begin{align}
 \frac{\vec{u}_k^{t+1}-\vec{u}_k^t}{\tau} =
 &- \underset{l,m}{\sum} \underset{i}{\sum}

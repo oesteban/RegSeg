@@ -1,6 +1,11 @@
-% \documentclass[5p,authoryear,fleqn]{elsarticle}
+%\documentclass[5p,authoryear,fleqn]{elsarticle}
 \documentclass[3p,authoryear,fleqn]{elsarticle}
 \journal{NeuroImage}
+\usepackage[utf8]{inputenc}
+\defcitealias{esteban_useful_2015}{Supplemental Materials}
+\usepackage{xifthen}
+\newboolean{review}
+\setboolean{review}{true}
 
 % *** MISC UTILITY PACKAGES ***
 \usepackage[mode=buildnew]{standalone}
@@ -8,8 +13,14 @@
 \usepackage{glossaries}
 \usepackage{booktabs} % to use \toprule
 \usepackage{multirow}
-\usepackage[colorinlistoftodos]{todonotes}
-\usepackage{xifthen}
+
+% *** PDF, URL AND HYPERLINK PACKAGES ***
+%
+\usepackage{url}
+\usepackage[colorlinks=true]{hyperref}
+% \usepackage[hyperref]{xcolor}
+\usepackage{doi}
+
 \usepackage{xspace}
 \usepackage{graphicx}
 \graphicspath{{figures/}}
@@ -24,30 +35,26 @@
 \DeclareMathOperator{\diag}{diag}
 \DeclareMathOperator{\dist}{dist}
 \DeclareMathOperator{\const}{Const.}
-\providecommand{\e}[1]{\ensuremath{\times 10^{#1}}}
+\providecommand{\e}[1]{\ensuremath{\cdot\text{10}^\text{#1}}}
 \providecommand{\mdist}[2]{ \mathcal{D}_{#2}^2(\mathbf{#1}) }
 \providecommand{\omegaset}{\ensuremath{\boldsymbol{\Omega}}}
 \providecommand{\gammaset}{\ensuremath{\boldsymbol{\Gamma}}}
 \providecommand{\regseg}{\emph{regseg}}
 \providecommand{\Regseg}{\emph{Regseg}}
+\providecommand{\lowb}{\textit{b0}}
 
 \let\oldhat\hat
 \renewcommand{\vec}[1]{\mathbf{#1}}
 
 \providecommand{\nvec}[1]{\hat{\mathbf{#1}}}
-\providecommand{\suppl}[1]{\href{http://figshare.com/s/459c26b4ee8211e493b306ec4bbcf141}{Supplemental Materials}, #1}
+
+% \providecommand{\suppl}[1]{\citepalias{esteban_useful_2015}  \href{http://figshare.com/s/459c26b4ee8211e493b306ec4bbcf141}{Supplemental Materials}, #1}
 \providecommand{\isores}[2][]{#2\ensuremath{\times}#2\ensuremath{\times}#2%
 \ifthenelse{\equal{#1}{}}{}{ [#1]}\xspace}
 
-% *** PDF, URL AND HYPERLINK PACKAGES ***
-%
-\usepackage{url}
-\usepackage[colorlinks=true,linkcolor=black, citecolor=blue, urlcolor=blue]{hyperref}
-\usepackage{doi}
-
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor an-isot-ropy regis-tra-tion iso-tropic Free-Surfer %
-align-ed pre-sent work-flow data-set data-sets}
+align-ed pre-sent work-flow data-set data-sets micro-struc-tu-re}
 
 \input{01-acronyms}
 
@@ -75,17 +82,33 @@ align-ed pre-sent work-flow data-set data-sets}
 \fi
 
 
+\ifthenelse{\boolean{review}}
+{
+  \usepackage[colorinlistoftodos,textsize=tiny, textwidth=1.2cm]{todonotes}
+  \setlength{\marginparwidth}{1.5cm}
+  \reversemarginpar
+  % \setlength{\marginparwidth}{2.0cm}
+  \newcommand{\revcomment}[2][]{\ifthenelse{\equal{#1}{}}{}{\todo{#1}}%
+  \begingroup \color{blue!70} #2\endgroup}
+}
+{
+  \newcommand{\todo}[2][]{}
+  \newcommand{\revcomment}[2][]{#2}
+}
+
 % http://tex.stackexchange.com/questions/56105/missing-references-heading
 \def\bibsection{\section*{References}}
+
 \begin{document}
+\hypersetup{linkcolor=black!60, citecolor=black!60, urlcolor=black!60}
 \begin{frontmatter}
 
 %% Use \dochead if there is an article header, e.g. \dochead{Short communication}
 % \dochead{Preprint for ArXiv archiving and pre-submission review}
 
-\title{Active contours-driven registration method for the structure-informed segmentation of diffusion MR images\tnoteref{t1}}
-\tnotetext[t1]{Supplemental materials to this work will be publicly available upon publication with doi:\href{http://figshare.com/s/459c26b4ee8211e493b306ec4bbcf141}{10.6084/m9.figshare.1397502}.
-During the review process, the document is available with the private link.}
+\title{Surface-driven registration method for the structure-informed segmentation of diffusion MR images\tnoteref{t1}}
+\tnotetext[t1]{Supplemental materials to this work have been submitted to Data in Brief \citep{esteban_useful_2015}.
+During the review process, the document is available in doi:\href{http://figshare.com/s/459c26b4ee8211e493b306ec4bbcf141}{10.6084/m9.figshare.1397502}.}
 
 \author[bit,ciber]{Oscar~Esteban\corref{corrauthor}}
 \cortext[corrauthor]{Corresponding author}
@@ -113,9 +136,10 @@ Hospital Center (CHUV) and University of Lausanne (UNIL), Lausanne, Switzerland}
 \input{02-abstract}
 \end{abstract}
 
+
 % Note that keywords are not normally used for peerreview papers.
 \begin{keyword}
-active~contours \sep cortical~parcellation \sep diffusion MRI \sep nonlinear~registration \sep segmentation \sep susceptibility~distortion.
+active~surfaces \sep cortical~parcellation \sep diffusion MRI \sep nonlinear~registration \sep segmentation \sep susceptibility~distortion.
 \end{keyword}
 
 \end{frontmatter}

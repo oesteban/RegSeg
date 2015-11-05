@@ -1,5 +1,5 @@
-%% File: `abbrvnat.bst'
-%% A modification of `abbrv.bst' for use with natbib package 
+%% File: `plainnat.bst'
+%% A modification of `plain.bst' for use with natbib package
 %%
 %% Copyright 1993-2007 Patrick W Daly
 %% Max-Planck-Institut f\"ur Sonnensystemforschung
@@ -70,6 +70,7 @@ ENTRY
     title
     type
     url
+    urldate
     volume
     year
   }
@@ -285,14 +286,13 @@ FUNCTION {format.issn}
 FUNCTION {format.url}
 { url empty$
     { "" }
-    { new.block "URL \url{" url * "}" * }
+    { new.block "[online] \url{" url * "}" * }
   if$
 }
 
 FUNCTION {format.doi}
 { doi empty$
     { "" }
-    %{ new.block "doi:\href{http://dx.doi.org/" doi * "}{description}" * }
     { new.block "\doi{" doi * "}" * }
   if$
 }
@@ -301,6 +301,13 @@ FUNCTION {format.title}
 { title empty$
     { "" }
     { title "t" change.case$ }
+  if$
+}
+
+FUNCTION {format.titlenocase}
+{ title empty$
+    'skip$
+    { title "t" }
   if$
 }
 
@@ -421,6 +428,14 @@ FUNCTION {format.date}
        pop$ "" }
     'skip$
   if$
+}
+
+FUNCTION {format.datebak}
+{ year duplicate$ empty$
+    { "empty year in " cite$ * warning$
+       pop$ "" }
+    'skip$
+  if$
   month empty$
     'skip$
     { month
@@ -452,13 +467,20 @@ FUNCTION {either.or.check}
 FUNCTION {format.bvolume}
 { volume empty$
     { "" }
-    { "vol." volume tie.or.space.connect
+    { "volume" volume tie.or.space.connect
       series empty$
         'skip$
         { " of " * series emphasize * }
       if$
       "volume and number" number either.or.check
     }
+  if$
+}
+
+FUNCTION {format.cvolume}
+{ volume empty$
+    { "" }
+    { volume "$^\text{th}$" }
   if$
 }
 
@@ -481,6 +503,7 @@ FUNCTION {format.number.series}
     { "" }
   if$
 }
+
 
 FUNCTION {format.edition}
 { edition empty$
@@ -602,6 +625,26 @@ FUNCTION {format.in.ed.booktitle}
   if$
 }
 
+
+FUNCTION {format.series}
+{ series empty$
+    'skip$
+    { series tie.or.space.connect }
+  if$
+}
+
+FUNCTION {format.booktitle}
+{ booktitle empty$
+    'skip$
+    { "In " booktitle emphasize *
+      series empty$
+        'skip$
+        { ", " * series tie.or.space.connect }
+      if$
+    }
+  if$
+}
+
 FUNCTION {empty.misc.check}
 { author empty$ title empty$ howpublished empty$
   month empty$ year empty$ note empty$
@@ -652,7 +695,7 @@ FUNCTION {format.book.crossref}
     { "empty volume in " cite$ * "'s crossref of " * crossref * warning$
       "In "
     }
-    { "volume" volume tie.or.space.connect
+    { "Volume" volume tie.or.space.connect
       " of " *
     }
   if$
@@ -702,7 +745,7 @@ FUNCTION {article}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.title "title" output.check
+  format.titlenocase output.check
   new.block
   crossref missing$
     { journal emphasize "journal" output.check
@@ -719,11 +762,9 @@ FUNCTION {article}
       if$
     }
   if$
-  %format.issn output
+  new.block
   format.doi output
-  %format.url output
-  %new.block
-  %note output
+  new.block
   fin.entry
 }
 
@@ -756,11 +797,8 @@ FUNCTION {book}
   if$
   format.edition output
   format.date "year" output.check
-  %format.isbn output
-  format.doi output
-  %format.url output
-  %new.block
-  %note output
+  format.isbn output
+  new.block
   fin.entry
 }
 
@@ -769,16 +807,13 @@ FUNCTION {booklet}
   format.authors output
   author format.key output
   new.block
-  format.title "title" output.check
+  format.titlenocase output.check
   howpublished address new.block.checkb
   howpublished output
   address output
   format.date output
-  %format.isbn output
-  format.doi output
-  %format.url output
-  %new.block
-  %note output
+  format.isbn output
+  new.block
   fin.entry
 }
 
@@ -813,11 +848,10 @@ FUNCTION {inbook}
   if$
   format.edition output
   format.date "year" output.check
-  %format.isbn output
+  format.isbn output
+  new.block
   format.doi output
-  %format.url output
-  %new.block
-  %note output
+  new.block
   fin.entry
 }
 
@@ -826,11 +860,10 @@ FUNCTION {incollection}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.title "title" output.check
+  format.titlenocase output.check
   new.block
   crossref missing$
-    { format.in.ed.booktitle "booktitle" output.check
-      format.bvolume output
+    { format.booktitle "booktitle" output.check
       format.number.series output
       format.chapter.pages output
       new.sentence
@@ -843,11 +876,10 @@ FUNCTION {incollection}
       format.chapter.pages output
     }
   if$
-  %format.isbn output
-  format.doi output
-  %format.url output
+  format.isbn output
   new.block
-  %note output
+  format.doi output
+  new.block
   fin.entry
 }
 
@@ -856,12 +888,10 @@ FUNCTION {inproceedings}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.title "title" output.check
+  format.titlenocase output.check
   new.block
   crossref missing$
-    { format.in.ed.booktitle "booktitle" output.check
-      format.bvolume output
-      format.number.series output
+    { format.booktitle "booktitle" output.check
       format.pages output
       address empty$
         { organization publisher new.sentence.checkb
@@ -881,11 +911,9 @@ FUNCTION {inproceedings}
       format.pages output
     }
   if$
-  %format.isbn output
+  new.block
   format.doi output
-  %format.url output
-  %new.block
-  %note output
+  new.block
   fin.entry
 }
 
@@ -902,9 +930,8 @@ FUNCTION {manual}
   address output
   format.edition output
   format.date output
-  %format.url output
+  format.url output
   new.block
-  %note output
   fin.entry
 }
 
@@ -913,15 +940,14 @@ FUNCTION {mastersthesis}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.title "title" output.check
+  format.titlenocase output.check
   new.block
   "Master's thesis" format.thesis.type output.nonnull
   school "school" output.check
   address output
   format.date "year" output.check
-  %format.url output
+  format.url output
   new.block
-  %note output
   fin.entry
 }
 
@@ -930,14 +956,16 @@ FUNCTION {misc}
   format.authors output
   author format.key output
   title howpublished new.block.checkb
-  format.title output
+  format.titlenocase output.check
   howpublished new.block.checka
   howpublished output
   format.date output
-  %format.issn output
+  format.issn output
   format.url output
   new.block
   note output
+  new.block
+  format.doi output
   fin.entry
   empty.misc.check
 }
@@ -949,14 +977,11 @@ FUNCTION {phdthesis}
   new.block
   format.btitle "title" output.check
   new.block
-  "PhD thesis" format.thesis.type output.nonnull
+  type output
   school "school" output.check
   address output
   format.date "year" output.check
-  %format.url output
-  format.doi output
   new.block
-  %note output
   fin.entry
 }
 
@@ -973,11 +998,10 @@ FUNCTION {proceedings}
   new.sentence
   organization output
   publisher output
-  %format.isbn output
-  format.doi output
-  %format.url output
+  format.isbn output
   new.block
-  %note output
+  format.doi output
+  new.block
   fin.entry
 }
 
@@ -986,15 +1010,14 @@ FUNCTION {techreport}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.title "title" output.check
+  format.titlenocase output.check
   new.block
   format.tr.number output.nonnull
   institution "institution" output.check
   address output
   format.date "year" output.check
-  %format.url output
+  format.url output
   new.block
-  %note output
   fin.entry
 }
 
@@ -1003,24 +1026,25 @@ FUNCTION {unpublished}
   format.authors "author" output.check
   author format.key output
   new.block
-  format.title "title" output.check
+  format.titlenocase output.check
   new.block
-  %note "note" output.check
   format.date output
   format.url output
+  new.block
+  format.doi output
   fin.entry
 }
 
 FUNCTION {default.type} { misc }
 
 
-MACRO {jan} {"Jan."}
+MACRO {jan} {"January"}
 
-MACRO {feb} {"Feb."}
+MACRO {feb} {"February"}
 
-MACRO {mar} {"Mar."}
+MACRO {mar} {"March"}
 
-MACRO {apr} {"Apr."}
+MACRO {apr} {"April"}
 
 MACRO {may} {"May"}
 
@@ -1028,58 +1052,58 @@ MACRO {jun} {"June"}
 
 MACRO {jul} {"July"}
 
-MACRO {aug} {"Aug."}
+MACRO {aug} {"August"}
 
-MACRO {sep} {"Sept."}
+MACRO {sep} {"September"}
 
-MACRO {oct} {"Oct."}
+MACRO {oct} {"October"}
 
-MACRO {nov} {"Nov."}
+MACRO {nov} {"November"}
 
-MACRO {dec} {"Dec."}
+MACRO {dec} {"December"}
 
 
 
-MACRO {acmcs} {"ACM Comput. Surv."}
+MACRO {acmcs} {"ACM Computing Surveys"}
 
-MACRO {acta} {"Acta Inf."}
+MACRO {acta} {"Acta Informatica"}
 
-MACRO {cacm} {"Commun. ACM"}
+MACRO {cacm} {"Communications of the ACM"}
 
-MACRO {ibmjrd} {"IBM J. Res. Dev."}
+MACRO {ibmjrd} {"IBM Journal of Research and Development"}
 
-MACRO {ibmsj} {"IBM Syst.~J."}
+MACRO {ibmsj} {"IBM Systems Journal"}
 
-MACRO {ieeese} {"IEEE Trans. Softw. Eng."}
+MACRO {ieeese} {"IEEE Transactions on Software Engineering"}
 
-MACRO {ieeetc} {"IEEE Trans. Comput."}
+MACRO {ieeetc} {"IEEE Transactions on Computers"}
 
 MACRO {ieeetcad}
- {"IEEE Trans. Comput.-Aided Design Integrated Circuits"}
+ {"IEEE Transactions on Computer-Aided Design of Integrated Circuits"}
 
-MACRO {ipl} {"Inf. Process. Lett."}
+MACRO {ipl} {"Information Processing Letters"}
 
-MACRO {jacm} {"J.~ACM"}
+MACRO {jacm} {"Journal of the ACM"}
 
-MACRO {jcss} {"J.~Comput. Syst. Sci."}
+MACRO {jcss} {"Journal of Computer and System Sciences"}
 
-MACRO {scp} {"Sci. Comput. Programming"}
+MACRO {scp} {"Science of Computer Programming"}
 
-MACRO {sicomp} {"SIAM J. Comput."}
+MACRO {sicomp} {"SIAM Journal on Computing"}
 
-MACRO {tocs} {"ACM Trans. Comput. Syst."}
+MACRO {tocs} {"ACM Transactions on Computer Systems"}
 
-MACRO {tods} {"ACM Trans. Database Syst."}
+MACRO {tods} {"ACM Transactions on Database Systems"}
 
-MACRO {tog} {"ACM Trans. Gr."}
+MACRO {tog} {"ACM Transactions on Graphics"}
 
-MACRO {toms} {"ACM Trans. Math. Softw."}
+MACRO {toms} {"ACM Transactions on Mathematical Software"}
 
-MACRO {toois} {"ACM Trans. Office Inf. Syst."}
+MACRO {toois} {"ACM Transactions on Office Information Systems"}
 
-MACRO {toplas} {"ACM Trans. Prog. Lang. Syst."}
+MACRO {toplas} {"ACM Transactions on Programming Languages and Systems"}
 
-MACRO {tcs} {"Theoretical Comput. Sci."}
+MACRO {tcs} {"Theoretical Computer Science"}
 
 
 READ
@@ -1214,7 +1238,7 @@ FUNCTION {sort.format.names}
   numnames 'namesleft :=
     { namesleft #0 > }
     {
-      s nameptr "{vv{ } }{ll{ }}{  f{ }}{  jj{ }}" format.name$ 't :=
+      s nameptr "{vv{ } }{ll{ }}{  ff{ }}{  jj{ }}" format.name$ 't :=
       nameptr #1 >
         {
           "   "  *

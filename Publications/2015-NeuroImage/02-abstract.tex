@@ -1,18 +1,32 @@
 % -*- root: 00-main.tex -*-
-Current applications of whole-brain tractography to \acrlong*{dmri} data require highly precise
-  delineations of anatomical structures, which are usually projected from \acrlong*{t1} images
-  by registration.
-In this study, we propose \regseg{}, which is a simultaneous segmentation and registration method
-  that uses active contours without edges extracted from structural images.
-The contours evolve through a free-form deformation field supported by the B-spline basis
-  to optimally map the contours onto the data in the target space.
-We tested the functionality of \regseg{} using four digital phantoms warped with known and
-  randomly generated deformations, where subvoxel accuracy was achieved.
-We then applied \regseg{} to a registration/segmentation task using 16 real diffusion MRI
-  datasets from the \acrlong*{hcp}, which were warped by realistic and nonlinear distortions that are typically
-  present in these data.
-We computed the misregistration error of the contours estimated by \regseg{} with respect
-  to their theoretical location using the ground truth, thereby obtaining a 95\% CI of 0.56--0.66 mm
-  distance between corresponding mesh vertices, which was below the 1.25 mm isotropic resolution of the images.
-We also compared the performance of our proposed method with a widely used registration tool, which showed
-  that \regseg{} outperformed this method in our settings.
+Current methods for processing \gls*{dmri} to map the connectivity of the human brain
+  require precise delineations of anatomical structures.
+\revcomment[C1 (R.1)]{%
+This requirement has been approached either segmenting the data in native \gls*{dmri} space
+  or mapping the structural information from \gls*{t1} images.
+The characteristic features of diffusion data in terms of \acrlong*{snr}, resolution, as well
+  as the geometrical distortions caused by the inhomogeneity of magnetic susceptibility
+  across tissues hinder both solutions.}
+\revcomment[C10 (R.2)]{%
+Unifying the two approaches, we propose \regseg{}, a surface-to-volume nonlinear
+  registration method that segments homogeneous regions within multivariate images by mapping
+  a set of nested reference-surfaces.}
+\revcomment[C11 (R.2)]{%
+Accurate surfaces are extracted from a \gls*{t1} image of the subject, using as target image
+  the bivariate volume comprehending the \gls*{fa} and the \gls*{adc} maps derived from the
+  \gls*{dmri} dataset.}
+\revcomment[rephrased]{%
+We first verify the accuracy of \regseg{} on a general context using digital phantoms.
+Then we establish an evaluation framework using undistorted \gls*{dmri} data from the \gls*{hcp}
+  and known deformations derived from real inhomogeneity fieldmaps.
+We analyze the performance of \regseg{} computing the misregistration error of the surfaces estimated
+  after being mapped with \regseg{} onto 16 datasets from the \gls*{hcp}.
+The distribution of errors shows a 95\% CI of 0.56--0.66 mm, that is below the \gls*{dmri}
+  resolution (1.25 mm, isotropic).
+Finally, we cross-compare the proposed tool against a nonlinear \lowb{}-to-T2w registration
+  method, thereby obtaining a significantly lower misregistration error with \regseg{}.}
+\revcomment[C10 (R.2)]{%
+Therefore, we demonstrate that \regseg{} allows the accurate mapping of structural information
+  in \gls*{dmri} space, enabling the application of new structure-informed techniques in
+  the connectome extraction.
+}
