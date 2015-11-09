@@ -6,8 +6,8 @@ It is generally acquired using \gls*{epi} schemes, since they are very fast at
   scanning a large sequence of images called \glspl*{dwi}.
 Each \gls*{dwi} is sensitized with a gradient to probe proton diffusion in a certain
   \revcomment[C13 (R.2)]{orientation}.
-Subsequent processing involves describing the local microstructure with one available
-  model, which ranges from the early \gls*{dti} proposed by \cite{basser_microstructural_1996}
+Subsequent processing involves describing the local microstructure with one of the available
+  models, which range from the early \gls*{dti} proposed by \cite{basser_microstructural_1996}
   to current models such as \citep{daducci_accelerated_2015}.
 The microstructural map is then used to draw the preferential \revcomment[C13 (R.2)]{orientations} of diffusion
   across the brain using tractography \citep{mori_threedimensional_1999}.
@@ -68,18 +68,18 @@ A standardized method to solve the remaining linear mapping between the correcte
 }
 
 \revcomment[rephrased]{%
-Here we present a segmentation and surface-to-volume registration method
+Here, we present a segmentation and surface-to-volume registration method
   named \regseg{}, and show its usefulness in mapping anatomical information from structural
   space into native \gls*{dmri} space to aid subsequent processing steps
   (reconstruction, tractography and network building using a cortical parcellation).
 The underlying hypothesis is that the registration and segmentation problems
   in \gls*{dmri} can be solved simultaneously.}
 \revcomment[C1 (R.1) \\ C10 (R.2)]{%
-To implement \regseg{} we first establish an active-contours without edges
+To implement \regseg{} we first establish an active contours without edges
   \citep{chan_active_2001} segmentation framework.}
 \revcomment[C2 (R.1)]{%
 A specific set of reference surfaces extracted from the same subject initialize
-  the 3D active-contours, which evolve searching for homogeneous regions in the multivariate
+  the 3D active contours, which evolve searching for homogeneous regions in the multivariate
   target-image.
 In the presented application to segment \gls*{dmri} data, we propose to use \regseg{}
   using a set of nested surfaces extracted from a structural image (e.g. \gls*{t1}) and
