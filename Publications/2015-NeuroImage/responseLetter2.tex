@@ -1,6 +1,6 @@
 \documentclass[9pt]{memoir}
 
-\usepackage[numbers,sort&compress]{natbib}
+\usepackage[sort&compress]{natbib}
 \usepackage{xcolor}
 \usepackage[T1]{fontenc}
 \usepackage{charter}
@@ -87,13 +87,13 @@ The paper describes an approach [...] (quite some are listed as possible example
 \end{reviewpoint}
 \reply{
 To clarify this point, we have stated more clearly that the choice of surfaces to segment the target data is
-  crucial (lines 46--47, p.2).
+  crucial (lines 46--50, p.2).
 We have better defined the segmentation model that drives the registration process (lines 94--95, p. 5).
 We have also improved the former Figure 4 (now it is Figure 2, page 5), and brought it earlier in the paper to
   illustrate earlier the segmentation model.
 Since the former visualization of the conditional (region-wise) joint distribution of FA and ADC was a bit clumsy,
   we have extracted the conditional distributions to the right side of each panel.
-We expect these modifications make clear the difference between the surfaces involved in driving the registration
+We expect that these modifications make clear the difference between the surfaces involved in driving the registration
   process and the surfaces in which we evaluate the error of the method (lines 217--218, p. 10) are a subset of the
   former.
 }
@@ -110,7 +110,7 @@ We agree with the reviewer on that the novelty of the methodological elements of
 However, to our knowledge there exists no alternative method combining the same elements to segment
   multivariate data.
 We have moved the related methods and our methodological contributions from the Introduction to a more appropriate
-  place in the Discussion (lines 248--275), additionally satisfying \autoref{com:9} (Reviewer \#2) suggesting to include
+  place in the Discussion (lines 261--278), additionally satisfying \autoref{com:9} (Reviewer \#2) suggesting to include
   in the introduction only the references related to the focus of the paper.
 The particular changes can be listed as follows:
 \begin{itemize}
@@ -220,8 +220,8 @@ In our adaptation of ``active contours without edges'' \citep{chan_active_2001},
   ``extracted from structural images''.
 The particular sentence has been removed from the abstract, and we expect that the comprehensive reformulation
   of the descriptive sections of the paper give a successful answer to this issue.
-Regarding the actual inputs of \emph{regseg}, we have introduced modifications in the abstract, in lines 45--50 (p. 2), and
-  in lines 243--243 (p. 13).
+Regarding the actual inputs of \emph{regseg}, we have introduced modifications in the abstract, and in lines
+  45--50 (p. 2) and lines 243--244 (p. 13).
 }
 
 \begin{reviewpoint}
@@ -276,7 +276,7 @@ Line 24. clustering of what?
 \reply{
 This comment is a consequence of the two previous comments.
 The reviewer is right in the sense that we did not clearly state what we are segmenting, and therefore
-  the references in line 24 are a bit orphaned.
+  the references in the former line 24 were a bit orphaned.
 All methods reviewed in lines 15--27 cluster/segment/classify \emph{voxels} in dMRI space based on
   one or another feature derived from dMRI data (lines 18--20, p. 2).
 We have clarified the manuscript according to \autoref{com:14} and \autoref{com:15} and this comment.
@@ -375,7 +375,7 @@ The experiments seem reasonable and clearly presented in general. But far too li
 We thank the reviewer for positively weighing our experiments and results.
 As stated in line 211 (p. 10), we use the settings from the \emph{ExploreDTI} software package \citep{leemans_exploredti_2009}, that
   internally uses \emph{elastix} \citep{klein_elastix_2010} in registration.
-A footnote in line 213 (p. 10) directly links the settings for this method.
+A footnote in line 212 (p. 10) directly links the settings for this method.
 }
 
 \begin{reviewpoint}
@@ -383,7 +383,7 @@ Please define the phrase ``active contours without edges''.
 \end{reviewpoint}
 \reply{
 Additionally to the edits in \autoref{com:10}, we have more clearly defined the concept with the discussion
-  introduced in lines 267--268 (p. 13).
+  introduced in lines 267--270 (p. 13).
 }
 
 \begin{reviewpoint}
