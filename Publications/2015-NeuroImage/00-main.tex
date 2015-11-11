@@ -69,19 +69,7 @@ an-iso-tro-pic Stud-holme seg-ment-a-tion re-gis-tra-tion map-ped achiev-ed}
 \newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 
 \usepackage{ifpdf}
-
-\ifpdf
-  \usepackage[switch]{lineno}
-  % nothing to do
-\else
-  \makeatletter
-  \def\temp{dvips.def}
-  \ifx\Gin@driver\temp
-  \def\Ginclude@graphics#1{\def\temp{#1}---image \expandafter\strip@prefix\meaning\temp---}
-  \fi
-  \makeatother
-\fi
-
+\usepackage[switch]{lineno}
 
 \ifthenelse{\boolean{review}}
 {
