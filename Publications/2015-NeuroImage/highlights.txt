@@ -1,4 +1,4 @@
-* We propose a segmentation&registration method to fit surfaces onto gridded-data.
-* Subvoxel accuracy is tested in several digital phantoms with realistic distortions.
-* Regseg is applied to the structure-informed segmentation of diffusion MRI of the brain.
-* Aptness in dMRI-derived multivariate-data is demonstrated and overperformed another tool.
+* Regseg is a surface-to-volume registration&segmentation method with subvoxel accuracy.
+* Regseg is applied in segmentation of dMRI scalars, jointly tackling EPI distortion.
+* Regseg enables structure-informed methods in connectome extraction pipelines.
+* Evaluated on dMRI multivariate-data, regseg overperformed b0-to-T2w registration.

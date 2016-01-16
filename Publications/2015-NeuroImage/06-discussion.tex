@@ -4,7 +4,7 @@
 We present \regseg{}, a simultaneous segmentation and registration method that
   maps a set of nested surfaces into a multivariate target-image.
 The nonlinear registration process evolves driven by the fitness of the
-  picewise-smooth classification of voxels in the target volume imposed
+  piecewise-smooth classification of voxels in the target volume imposed
   by the current mapping of the surfaces.
 We propose \regseg{} to map anatomical information extracted from \gls*{t1}
   images into the corresponding \gls*{dmri} of the same subject.
@@ -102,7 +102,7 @@ However, cross-comparison experiments are prone to the so-called \emph{instrumen
   \citep{tustison_instrumentation_2013}.
 Therefore, these results did not prove that \regseg{} \emph{is better than} \gls*{t2b},
   but indicated that \regseg{} is a reliable option in this application field.
-Finally, we also contributed proposing a piecewise-smooth segmentation model defined by
+Finally, we also proposed a piecewise-smooth segmentation model defined by
   a selection of nested surfaces to partition the multispectral space
   comprehending the \gls*{fa} and the \gls*{adc} maps and ultimately identify anatomical
   structures in \gls*{dmri} space.
@@ -127,7 +127,7 @@ The problem was firstly addressed using image segmentation approaches in the nat
 With the introduction of retrospective correction methods for the \emph{\gls*{epi} distortions}
   and image registration approaches, the task has been typically solved in a two-step approach.
 First, the \glspl*{dwi} are corrected for \emph{\gls*{epi} distortions} by estimating
-  the nonlinear-deformation field from extra MR acquisitions
+  the nonlinear deformation field from extra MR acquisitions
   \citep{jezzard_correction_1995,chiou_simple_2000,cordes_geometric_2000,kybic_unwarping_2000}.
 Second, mapping the structural information from the corresponding \gls*{t1} image
   using a linear registration tool like \emph{bbregister} \citep{greve_accurate_2009}.
@@ -149,7 +149,7 @@ Beyond the presented application on \gls*{dmri} data, \regseg{} can be indicated
 For instance, \regseg{} may be applied in fields like neonatal brain image segmentation
   in longitudinal MRI studies of the early developmental patterns \citep{shi_neonatal_2010}.
 In these studies, the surfaces obtained in a mature timepoint of the brain are retrospectively
-  propagated to the initial timepoints, regardless the changes of the contrast and spatial
+  propagated to the initial timepoints, regardless of the changes in the contrast and spatial
   development between them.
 More generally, \regseg{} may also be applied to the personalized study of longitudinal alteration
   of the brain using multispectral images, for instance in the case of traumatic brain
