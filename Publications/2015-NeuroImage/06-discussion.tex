@@ -1,14 +1,11 @@
 % -*- root: 00-main.tex -*-
 \section{Discussion}
 \label{sec:regseg-discussion}
-\revcomment[C10 (R.2)]{%
 We present \regseg{}, a simultaneous segmentation and registration method that
-  maps a set of nested surfaces into a multivariate target-image.}
-\revcomment[C1 (R.1)]{%
+  maps a set of nested surfaces into a multivariate target-image.
 The nonlinear registration process evolves driven by the fitness of the
   picewise-smooth classification of voxels in the target volume imposed
-  by the current mapping of the surfaces.}
-\revcomment[moved]{%
+  by the current mapping of the surfaces.
 We propose \regseg{} to map anatomical information extracted from \gls*{t1}
   images into the corresponding \gls*{dmri} of the same subject.
 Previously, joint segmentation and registration has been applied successfully to
@@ -16,13 +13,11 @@ Previously, joint segmentation and registration has been applied successfully to
   and atlas-based segmentation \citep{gorthi_active_2011}.
 The most common approach involves optimizing a deformation model (registration)
   that supports the evolution of the active contours (segmentation),
-  like \cite{paragios_level_2003,yezzi_variational_2003}.}
+  like \cite{paragios_level_2003,yezzi_variational_2003}.
 % Conversely, in structure-informed segmentation, the sources of variability are the geometrical distortions
 %   after imaging and the anatomical evolution in longitudinal studies.}
-\revcomment[C1 (R.1)]{%
 \Regseg{} can be seen as a particular case of atlas-based segmentation-registration methods,
-  replacing the atlas by the structural image of the subject (\emph{structure-informed segmentation}).}
-\revcomment[C3 (R.1)]{%
+  replacing the atlas by the structural image of the subject (\emph{structure-informed segmentation}).
 The main difference of atlas-based segmentation and the application at hand is the resolution of the
   target image.
 Atlas-based segmentation is typically applied on structural and high-resolution images.
@@ -34,9 +29,8 @@ Alternatively, \regseg{} implements the active contours with a hierarchical set 
   surfaces (triangular meshes) instead of the multiphase level sets, and registration
   is driven by shape-gradients \citep{herbulot_segmentation_2006}.
 As an advantage, the use of explicit surfaces enables segmenting \gls*{dmri} images
-  with accuracy below pixel size.}
+  with accuracy below pixel size.
 
-\revcomment[C3 (R.1)]{%
 An important antecedent of \regseg{} is \emph{bbregister} \citep{greve_accurate_2009}.
 The tool has been widely adopted as the standard registration method to be used along with the \gls*{epi}
   correction of choice.
@@ -47,14 +41,12 @@ The active contours are initialized using surfaces extracted from the \gls*{t1} 
 To overcome the problem of nonlinear distortions, \emph{bbregister} excludes from the
   boundary search those regions that are typically warped.
 Indeed, the distortion must be addressed separately because it is not supported by
-  the affine transformation model.}
-\revcomment[C22 (R.2)]{%
+  the affine transformation model.
 Conversely, the deformation model of \regseg{} is nonlinear and the active contours are
   \emph{without edges} \citep{chan_active_2001} since the \gls*{fa} and \gls*{adc} maps
   do not present steep image gradients (edges) but the anatomy can be identified
-  by looking for piece-wise smooth homogeneous regions.}
+  by looking for piece-wise smooth homogeneous regions.
 
-\revcomment[C3 (R.1)]{%
 Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
   registration method in 2D using level sets and a nonlinear elasticity smoother on the
   displacement vector field, which preserves the topology even with very large deformations.
@@ -62,11 +54,10 @@ Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
   \cite{nagel_investigation_1986}.
 This regularization strategy conceptually falls in the midway between the Gaussian smoothing
   generally included in most of the existing methodologies, and the complexity of
-  the elasticity smoother of \cite{guyader_combined_2011}.}
-\revcomment[C3 (R.1)]{%
+  the elasticity smoother of \cite{guyader_combined_2011}.
 Other minor features that differ from current methods in joint segmentation and registration are
   the support of multivariate target-images and the efficient computation of the shape-gradients
-  implemented with sparse matrices.}
+  implemented with sparse matrices.
 
 We verified that precise segmentation and registration of a set of surfaces into multivariate
   data is possible on digital phantoms.
@@ -80,7 +71,6 @@ We also assessed the 95\% \gls*{ci}, which yielded an aggregate interval of
   0.64--0.66 [mm] for the low resolution phantoms (2.0 mm isotropic voxel) and
   0.34--0.38 [mm] for the high resolution phantoms (1.0 mm isotropic).
 Therefore, the error was bounded above by half of the voxel size.
-\revcomment[C8 (R.1)]{%}
 The distributions of errors along surfaces varied importantly depending on the shape of the
   phantom (see \autoref{fig:regseg-phantom}B).
 The misregistration error of the ``gyrus'' phantom showed a much lower spread than that
@@ -92,7 +82,7 @@ The effect is not detectable by the active contours framework, but it is control
   increasing the regularization constraints.
 When \regseg{} is applied on real datasets, this surface sliding is negligible for the
   convoluted nature of cortical surfaces and the directional restriction of the
-  distortion.}
+  distortion.
 
 We evaluated \regseg{} in a real environment using the experimental framework presented
   in \autoref{fig:regseg-evworkflows}.
@@ -112,7 +102,6 @@ However, cross-comparison experiments are prone to the so-called \emph{instrumen
   \citep{tustison_instrumentation_2013}.
 Therefore, these results did not prove that \regseg{} \emph{is better than} \gls*{t2b},
   but indicated that \regseg{} is a reliable option in this application field.
-\revcomment[C5 (R.1)]{%
 Finally, we also contributed proposing a piecewise-smooth segmentation model defined by
   a selection of nested surfaces to partition the multispectral space
   comprehending the \gls*{fa} and the \gls*{adc} maps and ultimately identify anatomical
@@ -124,9 +113,7 @@ However, \regseg{} requires densely sampled surfaces to ensure the convergence.
 Using the digital phantoms, we severely decimated the surfaces by a large factor.
 These surfaces introduced a bias which displaced the zero of the gradients from the
   minimum of the objective function impeding the convergence.
-}%
 
-\revcomment[C9 (R.2)]{%
 The proposed application of the method in the task of identifying structural information
   in \gls*{dmri} images is an active field of research \citep{jeurissen_tissuetype_2015}.
 Current processing steps involved in the connectome extraction require a precise segmentation
@@ -136,8 +123,7 @@ Some examples of these processing tasks are the structure-informed reconstructio
   tractography \citep{smith_anatomicallyconstrained_2012}, and the imposition of the cortical
   parcellation mapped from the \gls*{t1} image \citep{hagmann_mapping_2008}.
 The problem was firstly addressed using image segmentation approaches in the native diffusion
-  space, without definite and compelling results.}
-\revcomment[C18 (R.2)]{%
+  space, without definite and compelling results.
 With the introduction of retrospective correction methods for the \emph{\gls*{epi} distortions}
   and image registration approaches, the task has been typically solved in a two-step approach.
 First, the \glspl*{dwi} are corrected for \emph{\gls*{epi} distortions} by estimating
@@ -153,9 +139,8 @@ The current activity on improving correction methods \citep{irfanoglu_drbuddi_20
 This situation is found commonly in historical datasets.
 Moreover, since the structural information is projected into the native space of \gls*{dmri},
   the whole connectome extraction process can be performed on the unaltered \gls*{dmri}
-  signal (i.e. without resampling data to an undistorted space).}
+  signal (i.e. without resampling data to an undistorted space).
 
-\revcomment[C9 (R.2)]{%
 Beyond the presented application on \gls*{dmri} data, \regseg{} can be indicated in situations
   where there are precise surfaces delineating the structure, a target multivariate
   image in which the surfaces must be fitted, and the mapping between the surfaces and
@@ -169,4 +154,4 @@ In these studies, the surfaces obtained in a mature timepoint of the brain are r
 More generally, \regseg{} may also be applied to the personalized study of longitudinal alteration
   of the brain using multispectral images, for instance in the case of traumatic brain
   injury \citep{irimia_structural_2014} or in the monitorization of brain tumors
-  \citep{weizman_semiautomatic_2014}.}
+  \citep{weizman_semiautomatic_2014}.

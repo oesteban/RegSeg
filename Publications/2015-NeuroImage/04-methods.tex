@@ -73,11 +73,10 @@ For convenience and because it has been shown to be an appropriate approximation
   distributions \citep{esteban_mbis_2014} with parameters
   $\lbrace \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} \rbrace$
   for each region $\Omega_l$.
-\revcomment[C4 (R.1)]{%
 Even though the features being segmented are not generally i.i.d., the spatial interdependency of
   voxels is implicitly supported by the piecewise smooth partition of the space \omegaset{}.
 In \autoref{fig:regseg-model} it is shown that marginal distributions of data can be approximated by
-  multivariate normal distributions.} Therefore,
+  multivariate normal distributions. Therefore,
 
   \begin{align}
   P( M \mid U) &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod}
@@ -91,10 +90,9 @@ In \autoref{fig:regseg-model} it is shown that marginal distributions of data ca
 $C$ is the number of channels comprised in the image $M$.
 In fact, the projection of $\gammaset_R$ onto $M$ is an implicit segmentation model, for which
   the covariance matrix $\boldsymbol{\Sigma}_l$ of each region is minimized.
-\revcomment[C2 (R.1)]{%
 In \autoref{fig:regseg-model},
   this minimization is illustrated for the segmentation of the \gls*{fa} and the \gls*{adc} maps
-  of one subject.}
+  of one subject.
 
 \begin{figure*}
 \includestandalone[width=\linewidth]{figure02-model}
@@ -102,7 +100,6 @@ In \autoref{fig:regseg-model},
 % \includegraphics[width=\linewidth]{figure04B}
 % \includegraphics[width=\linewidth]{figure04C}
 \caption{%
-\revcomment{%
 Evolution of the segmentation model defined by the homogeneous regions $\Omega_l$
   for a real dataset.
 The left plot in each panel represents a kernel density estimate of the location and spread of
@@ -122,9 +119,7 @@ Since the surfaces are now aligned in $M$, the spreads of the conditional distri
   reduced with respect to those in A.
 Panel C, after \regseg{} registration, shows how the covariance matrices $\boldsymbol{\Sigma}_l$
   are minimized with respect to panel A, and the resulting segmentation is close
-  to the theoretical situation presented in panel B.}
-}\label{fig:regseg-model}
-\todo[inline]{C5 (R.1)}
+  to the theoretical situation presented in panel B.}\label{fig:regseg-model}
 \end{figure*}
 
 \paragraph*{Regularization}
@@ -239,14 +234,13 @@ In order to assess the performance of \regseg{}, we defined the following genera
 3) Execute \regseg{} with $\gammaset_R$ and use the warped data as inputs; and
 4) Perform a visual assessment and compute the error metrics.
 
-\revcomment[C20 (R.2)]{%
 A first proof of concept is introduced to demonstrate \regseg{} in digital phantoms
   with simple geometries, using $U_\text{true}$ without directional restrictions.
 Then, \regseg{} is evaluated in a framework using undistorted \gls*{dmri} datasets,
   and $U_\text{true}$ is derived from the corresponding inhomogeneity fieldmap of
   the subject.
 Therefore, the deformation field is nonzero only in the \gls*{pe} axis,
-  and resembles a real \gls*{epi} distortion.}
+  and resembles a real \gls*{epi} distortion.
 The adaptation of the evaluation protocol to the simulated phantoms and the real data is
   explained in the following sections.
 
@@ -306,13 +300,12 @@ In total, 1200 experiments (four phantom types $\times$ 150 random warpings $\ti
 \end{figure*}
 
 \paragraph*{Segmentation model and settings}
-\revcomment[C6 (R.2)]{%
 The segmentation model of the phantoms is implicitly defined:
   all phantoms comprehend an inner surface enclosing a uniform \gls*{wm}-like region,
   and an outer surface wrapping a \gls*{gm}-like layer.
 The outside is filled with uniform background (see \autoref{fig:regseg-evphantoms}).
 All the experimental settings used for the phantoms are made available in
-  a unique configuration file\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/regseg_default.json}}.}
+  a unique configuration file\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/regseg_default.json}}.
 
 \subsection{Real datasets} \label{sec:regseg-human_connectome}
 The experimental framework for the real datasets is presented in \autoref{fig:regseg-evworkflows},
@@ -332,11 +325,9 @@ which extends our previous evaluation \citep{esteban_simulationbased_2014} of di
   4) The method was run to obtain $U_\text{test} = \hat{U}_\text{true}$, i.e., the estimate of
     the ground-truth deformation.
   5) The results were evaluated visually and quantitatively.
-  \revcomment{%
   The arrows point to edges in the target images (light-yellow arrows for \gls*{fa}, blue for \gls*{adc}) that
     should be aligned with a surface, showing how distortion limits the direct mapping from the structural space
-    in which the contours are defined.}}\label{fig:regseg-evworkflows}
-  \todo[inline]{C7 (R.1) \& C23 (R.2)}%
+    in which the contours are defined.}\label{fig:regseg-evworkflows}
 \end{figure*}
 
 
@@ -351,10 +342,9 @@ We refer the reader to \citet{essen_human_2012} for exact details of the acquisi
   parameters and \citet{glasser_minimal_2013} for the preprocessing issues.
 These datasets comprise a large set of images, including \gls*{t1}, \gls*{t2}, and
   multi-shell \gls*{dmri} images.
-\revcomment[C7 (R.1)]{%
 Since we obtained the \gls*{dmri} data from the minimally preprocessed package, these
   images are corrected for \gls*{epi} distortions and spatially normalized in
-  \gls*{t1} space.}
+  \gls*{t1} space.
 
 \paragraph*{Segmentation model}
 Based on our experience % \citep{esteban_brain_2012}
@@ -408,14 +398,11 @@ The minimum of the cost function (\autoref{sec:regseg-methods_map}) was consiste
   $\epsilon=0.0$ (the ground-truth) for all of the cases \citepalias[figure S2]{esteban_useful_2015}.
 
 \paragraph*{Settings} %
-\revcomment[C5 (R.1)]{%
 \Regseg{} accepts an affine mapping from surface-space to the \gls*{dmri} data as initialization.
 However, the images provided by the \gls*{hcp} are already spatially normalized.
-Therefore, the initial estimation of distortion is zero in this experiment.}
-\revcomment[C20 (R.2)]{%
+Therefore, the initial estimation of distortion is zero in this experiment.
 Since the distortion $U_\text{true}$ is aligned along the \gls*{pe} direction ($y$-axis in our settings),
-  \regseg{} was configured to allow nonzero displacements only on that corresponding direction.}
-\revcomment[C6 (R.1)]{%
+  \regseg{} was configured to allow nonzero displacements only on that corresponding direction.
 For the experiments on real data, \regseg{} established a multi-resolution pyramid of
   B-Spline functions, with control points distributed on grids of the following spacings:
   40$\times$100$\times$40 [mm] for the first (coarser) level, \isores[mm]{30} for the second level,
@@ -423,7 +410,7 @@ For the experiments on real data, \regseg{} established a multi-resolution pyram
 Only the first and second levels included Gaussian smoothing of the target image ($\sigma$ = [2.0, 0.5] mm,
   respectively).
 The actual choices of the parameter settings are publicly distributed with the source code for the
-  experiments\footnote{\url{https://github.com/oesteban/RegSeg/tree/master/Scripts/pyacwereg/data/regseg_hcp.json}}.}
+  experiments\footnote{\url{https://github.com/oesteban/RegSeg/tree/master/Scripts/pyacwereg/data/regseg_hcp.json}}.
 These settings were obtained manually, driven by the feedback obtained from the post-registration
   convergence reports \citepalias[like that found in][section S1.3]{esteban_useful_2015}.
 We released \regseg{} along with the tool to generate such convergence reports.
@@ -436,10 +423,9 @@ We reproduced the solution and settings provided with \emph{ExploreDTI}
   \gls*{dti}.
 \emph{ExploreDTI} internally employs \emph{elastix} \citep{klein_elastix_2010} to
   perform registration.
-\revcomment[C21 (R.2)]{%
 The deformation field is correspondingly restricted to the \gls*{pe} direction.
 The settings file for \emph{elastix} is also
-  available\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/t2b_elastix_y.txt}}.}
+  available\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/t2b_elastix_y.txt}}.
 
 \paragraph*{Error measurement}\label{sec:regseg-experiments_evaluation}
 Distortion only occurs along the \gls*{pe} axis of the image, so we computed the
@@ -454,6 +440,5 @@ Distortion only occurs along the \gls*{pe} axis of the image, so we computed the
   where $\vec{v}_i \subset \gammaset_\text{true}$ are the locations of the total $N_V$ vertices
   and $\hat{\vec{v}}_i \subset \hat{\gammaset}_\text{test}$ are the recovered locations
   that correspond to $\vec{v}_i$.
-\revcomment[C2 (R.1)]{%
 In practice, we only report the \gls*{swindex} for three surfaces (\{$\Gamma_{VdGM}, \Gamma_{WM}, \Gamma_{pial}$\})
-  of crucial interest in whole-brain tractography.}
+  of crucial interest in whole-brain tractography.
