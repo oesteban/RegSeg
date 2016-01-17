@@ -137,9 +137,15 @@ The current activity on improving correction methods \citep{irfanoglu_drbuddi_20
 \Regseg{} addresses this joint problem in a single step and it does not require any additional
   acquisition other than the minimal protocol comprehending only \gls*{t1} and \gls*{dmri} images.
 This situation is found commonly in historical datasets.
-Moreover, since the structural information is projected into the native space of \gls*{dmri},
-  the whole connectome extraction process can be performed on the unaltered \gls*{dmri}
-  signal (i.e. without resampling data to an undistorted space).
+\revcomment[R\#1-C.2]{%
+We envision \regseg{} to be integrated in diffusion processing pipelines, after a preliminary
+  \gls*{dti} computation and before anatomically-informed reconstruction and tractography
+  methods.
+Since the structural information is projected into the native space of \gls*{dmri},
+  these two processes and the matrix building task can be performed on the unaltered
+  \gls*{dmri} signal (i.e. without resampling data to an undistorted space).
+For analyses other than connectivity, like \gls*{tbss}, the deformation estimated by \regseg{}
+  can be used to map the tracts into reference space.}
 
 Beyond the presented application on \gls*{dmri} data, \regseg{} can be indicated in situations
   where there are precise surfaces delineating the structure, a target multivariate

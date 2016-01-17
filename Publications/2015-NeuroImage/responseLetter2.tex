@@ -71,14 +71,81 @@ My main concerns lie with whether the results in the paper prove what the author
 Society of Magnetic Resonance in Medicine. Vol. 11. 2004.
 \end{reviewpoint}
 \reply{%
+We apologize since the paper could be misleading in its former version, driving
+  the reader to identify its goal restricted to support anatomically constrained
+  tractography.
+We have modified certain points in the abstract, introduction and discussion to
+  clarify that this method is intended to support any diffusion processing task that
+  requires a precise delineation of the anatomy in the diffusion space.
+
+In the field of connectivity analysis, this need has posed important problems in the
+  standard methodologies to build the connectivity network\footnote{generally imposing
+  a parcellation mapped from T1-space}.
+With the emergence of novel reconstruction and tractography methods (see lines ),
+  these tasks may also be improved with the application of more accurate registration
+  methods like \emph{regseg}.
+
+Regarding the given references, [1] is structured in a list of common pitfalls in the
+  analysis of dMRI.
+Particularly, pitfalls \#1, \#2, and \#14 apply to our work.
+Pitfall \#1 points out the problem of modulation in the unwrapped signal.
+Since we promote analysis in the original space, this problem does not apply in practice.
+Pitfall \#2 particularly points out the problem of misplaced tracks (and cites
+  the other two references [2, 3]).
+As we have included in the discussion (see line XXX), the tracks may be unwarped using
+  the deformation found with \emph{regseg} since it is revertible.
+Checking the correctness of tracks computed on unwarped dMRI data vs. tracks computed
+  on the original dMRI data and then unwarped with \emph{regseg} or whatever other
+  technique is out of the scope of the paper, but a very interesting lead for
+  future research.
+Finally, pitfall \#14 has side relationships with our method, since \emph{regseg} is
+  definitely intended to increase the accuracy of the ROIs imposed on the dMRI data.
+In this case, Jones et al. blame it on the misregistration of the \emph{b0} and the
+  diffusion weighted volumes, but the problem applies equally when the ROIs are
+  not correctly aligned with the \emph{b0} itself.
 }
 
 \begin{reviewpoint}
-I also have some concern that the method is not applied to real distortions nor compared to stateoftheart correction methods such as EDDY [4]. This was used for the HCP corrections therefore it might provide a good basis comparison basis on real rather than modeled distortions for brain data. If this could not be done for some reason I feel it should be discussed explicitly. It should be possible to compare to bbregister for the unwarped data. Why is this not done?
+I also have some concern that the method is not applied to real distortions nor compared to state of the art correction methods such as EDDY [4]. This was used for the HCP corrections therefore it might provide a good basis comparison basis on real rather than modeled distortions for brain data. If this could not be done for some reason I feel it should be discussed explicitly. It should be possible to compare to bbregister for the unwarped data. Why is this not done?
 
 [4] A comprehensive Gaussian Process framework for correcting distortions and movements in diffusion images Jesper L. R. Andersson et al ISMRM
 \end{reviewpoint}
 \reply{%
+As mentioned in \autoref{com:1}, the method is actually applied on real distortions.
+
+Regarding the proposed (and also some other possible) comparisons:
+\begin{itemize}
+\item \emph{Eddy} [4] is a software tool in FSL that simultaneously corrects for
+    head motion artifacts and Eddy currents -derived distortions.
+  Regarding susceptibility-derived distortions, it accepts the output of the tool 
+    \emph{topup} to reduce the number of resamplings to just one, but it does not
+    actually perform any correction for this artifact.
+  The missing comparison to \emph{topup} follows.
+\item \emph{topup} is effectively the tool used to correct diffusion images for the
+  susceptibility artifact in the HCP pipeline.
+  This tool uses one image with a certain phase-encoding scheme and a second image
+    (typically only one \emph{b0} volume) with different phase-encoding scheme (typically
+    reversed encoding blips in the same encoding axis).
+  As it is shown in Fig. 4, the \emph{b0} warped with reversed encoding blips is not
+    computed, and thus this comparison is not possible.
+  Adding this experiment would include a significant overhead that may displace the focus
+    of the paper from ``an accurate nonlinear registration method'' to ``yet another 
+    correction method for susceptibility-derived distortions''.
+  For these two reasons, we disregarded the implementation of such experiment.
+\item \emph{fieldmap-based correction strategies}, since we use the theoretical basis of these
+  methods to generate our realistic distortions, comparison to these methods is not specially
+  interesting.
+\item \emph{bbregister} is an affine registration method intended to be used with diffusion
+  data.
+  However, the ``minimally preprocessed'' datasets from the HCP that we use here are already
+  spatially normalized.
+  \emph{bbregister} is designed to find the normalization, and thus it is not applicable
+  here.
+\end{itemize}
+For all these reasons, we understood that a fair and interesting comparison would include
+  another registration method.
+The closest nonlinear registration method that is widely used in this framework happens
+  to be the \emph{b0}-to-T2w registration, as included in the experiments of the paper.
 }
 
 \begin{reviewpoint}
