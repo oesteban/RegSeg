@@ -78,17 +78,19 @@ Even though the features being segmented are not generally i.i.d., the spatial i
 In \autoref{fig:regseg-model} it is shown that marginal distributions of data can be approximated by
   multivariate normal distributions. Therefore,
 
+\revcomment[R\#3-C.15]{%
   \begin{align}
   P( M \mid U) &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod}
-  \mathcal{N} ( \vec{f} \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} )
+  \mathcal{N} (\vec{f}' \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} )
   \ifthenelse{\boolean{review}}{=}{= \notag\\ &=}
   \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod} \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}
   \mdist{f'}{l} \right)}},
   \label{eq:regseg-pdf}
-  \end{align}
-  using $\mdist{f}{l}$ to denote the squared \emph{Mahalanobis distance} of $\vec{f}$ with respect
+  \end{align}%
+  }%
+  using $\mdist{f'}{l}$ to denote the squared \emph{Mahalanobis distance} of $\vec{f}'$ with respect
   to the descriptors of region $l$ as
-  $\mdist{f}{l} = (\vec{f} - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f} - \boldsymbol{\mu}_l)$.
+  $\mdist{f'}{l} = (\vec{f}' - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f}' - \boldsymbol{\mu}_l)$.
 $C$ is the number of channels comprised in the image $M$.
 In fact, the projection of $\gammaset_R$ onto $M$ is an implicit segmentation model, for which
   the covariance matrix $\boldsymbol{\Sigma}_l$ of each region is minimized.
@@ -125,8 +127,8 @@ Panel C, after \regseg{} registration, shows how the covariance matrices $\bolds
 \end{figure*}
 
 \paragraph*{Regularization}
-The smoothness of the resulting displacements field is induced by a Thikonov regularization
-  prior:
+The smoothness of the resulting \revcomment[R\#3-C.33]{displacement field} is induced
+  by a Thikonov regularization prior:
 
   \begin{align}
   P(U) = \underset{\vec{r}}{\prod}\, p(\vec{u}) &=

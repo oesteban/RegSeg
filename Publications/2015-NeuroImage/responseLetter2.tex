@@ -38,16 +38,10 @@
 \begin{document}
 \hypersetup{linkcolor=black!60, citecolor=black!60, urlcolor=black!60}
 
-\section*{Response letter to the manuscript no. NIMG-15-1151}
-\medskip
-Original title: \emph{Active contours-driven registration method for the structure-informed segmentation of
-  diffusion MR images}.
-
-\noindent New title: \emph{{\color{blue!70} Surface}-driven registration method for the structure-informed segmentation of
-  diffusion MR images}.
+\section*{Response letter to the manuscript no. NIMG-15-2877}
 
 \bigskip
-\noindent We thank the editors and the reviewers for revising our manuscript no. NIMG-15-1151 submitted to NeuroImage.
+\noindent We thank the editors and the reviewers for revising our manuscript no. NIMG-15-2877 submitted to NeuroImage.
 We appreciate the comments made by both reviewers, and considered them fully to improve our paper.
 Please, find in the following paragraphs our point-by-point answer to the concerns raised by the reviewers,
   along with the description of the corresponding changes in the manuscript.
@@ -58,61 +52,234 @@ Text modifications in the manuscript are highlighted with a new font color, and 
 \bigskip
 \subsection*{Reviewer \#1:}
 \begin{reviewpoint}
-This paper presents a method for simultaneous registration and segmentation of diffusion images in the presence of geometric distortions. The method uses an anisotropically regularised active contour method to co­align tissue segmentations generated from T1 images to distorted multi­channel diffusion data. It has the advantage that it has no requirements for extra scans to be acquired for correction of the distortion. The method demonstrates improved performance over a previous b0­T2 registration approach for the alignment of tissue segmentation maps. Improvements are demonstrated on simulated data, and real data with simulated distortions. The advantage of these results is that the ground truth is known.
+This paper presents a method for simultaneous registration and segmentation of diffusion images in the presence of geometric distortions. The method uses an anisotropically regularised active contour method to coalign tissue segmentations generated from T1 images to distorted multichannel diffusion data. It has the advantage that it has no requirements for extra scans to be acquired for correction of the distortion. The method demonstrates improved performance over a previous b0T2 registration approach for the alignment of tissue segmentation maps. Improvements are demonstrated on simulated data, and real data with simulated distortions. The advantage of these results is that the ground truth is known.
+
+
 I am satisfied that the active contour alignment approach used to align the surfaces is sound, and that the results show theoretic improvements over the T2B method. I am convinced that the method approach is effective for the alignment task. In general the methods are well explained with the exception of a few minor points (below).
-My main concerns lie with whether the results in the paper prove what the authors set out in their abstract. Specifically, a stated goal is for the use of anatomically constrained tractography. However, there are no results that show this method would improve connectome extraction. In particular, the authors state that ``this method avoids any requirement for collecting additional scans nor resampling for diffusion unwarping''. I see this has advantages, but what about the consequences of not unwarping on the diffusion tracts themselves see [1][2][3]. In my opinion the authors should address this point possibly with additional results to show how they intend this to be used within a tracking framework.
-I also have some concern that the method is not applied to real distortions nor compared to state­of­the­art correction methods such as EDDY [4]. This was used for the HCP corrections therefore it might provide a good basis comparison basis on real rather than modeled distortions for brain data. If this could not be done for some reason I feel it should be discussed explicitly. It should be possible to compare to bbregister for the unwarped data. Why is this not done?
-[1] Jones, Derek K., and Mara Cercignani. ``Twenty‐five pitfalls in the analysis of diffusion MRI data.'' NMR in Biomedicine 23.7 (2010): 803­820.
-[2] Lee, J., et al. ``Correction of Bo EPI distortions in diffusion tensor imaging and white matter tractography.'' Proc. Int. Soc. Magn. Reson. Med. Vol. 11. 2004.
-[3] Andersson, J. L., et al. ``Effects of susceptibility distortions on tractography.''Proceedings of International Society of Magnetic Resonance in Medicine. Vol. 11. 2004.
-[4] A comprehensive Gaussian Process framework for correcting distortions and movements in diffusion images Jesper L. R. Andersson et al ISMRM
-Minor points:
-Pg 5 regularisation: `` requires that the distortion and its gradient have zero mean and variance governed by the matrices A and B'' suggest adding a comma here for easier interpretation i.e. ``requires that the distortion and its gradient have zero mean, and variance governed by the matrices A and B''
-Pg 7, line 4 `` anisotropy is aligned''. What is meant by anisotropy in this context, the anisotropy of the deformation gradient.
-Figure 2. This looks nice, but its not easy to interpret. I can't see a clear improvement through A­C. I think there needs to be direct comparisons between the conditions represented by A­C on one plot. Why not have 6 plots for each tissue class comparing distributions for each condition.
 \end{reviewpoint}
 \reply{%
+}
 
+\begin{reviewpoint}
+My main concerns lie with whether the results in the paper prove what the authors set out in their abstract. Specifically, a stated goal is for the use of anatomically constrained tractography. However, there are no results that show this method would improve connectome extraction. In particular, the authors state that ``this method avoids any requirement for collecting additional scans nor resampling for diffusion unwarping''. I see this has advantages, but what about the consequences of not unwarping on the diffusion tracts themselves see [1][2][3]. In my opinion the authors should address this point possibly with additional results to show how they intend this to be used within a tracking framework.
+
+[1] Jones, Derek K., and Mara Cercignani. ``Twentyfive pitfalls in the analysis of diffusion MRI data.'' NMR in Biomedicine 23.7 (2010): 803820.
+
+[2] Lee, J., et al. ``Correction of Bo EPI distortions in diffusion tensor imaging and white matter tractography.'' Proc. Int. Soc. Magn. Reson. Med. Vol. 11. 2004.
+
+[3] Andersson, J. L., et al. ``Effects of susceptibility distortions on tractography.''Proceedings of International 
+Society of Magnetic Resonance in Medicine. Vol. 11. 2004.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
+I also have some concern that the method is not applied to real distortions nor compared to stateoftheart correction methods such as EDDY [4]. This was used for the HCP corrections therefore it might provide a good basis comparison basis on real rather than modeled distortions for brain data. If this could not be done for some reason I feel it should be discussed explicitly. It should be possible to compare to bbregister for the unwarped data. Why is this not done?
+
+[4] A comprehensive Gaussian Process framework for correcting distortions and movements in diffusion images Jesper L. R. Andersson et al ISMRM
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
+Pg 5 regularisation: `` requires that the distortion and its gradient have zero mean and variance governed by the matrices A and B'' suggest adding a comma here for easier interpretation i.e. ``requires that the distortion and its gradient have zero mean, and variance governed by the matrices A and B''
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
+Pg 7, line 4 `` anisotropy is aligned''. What is meant by anisotropy in this context, the anisotropy of the deformation gradient.
+\end{reviewpoint}
+\reply{%
+The reviewer is totally right. We have modified the text accordingly.
+This comment is also made by the reviewer \#3 in the \autoref{com:31}.
+We refer the reader to this comment for the listing of actual changes in the paper.
+}
+
+\begin{reviewpoint}
+Figure 2. This looks nice, but its not easy to interpret. I can't see a clear improvement through AC. I think there needs to be direct comparisons between the conditions represented by AC on one plot. Why not have 6 plots for each tissue class comparing distributions for each condition.
+\end{reviewpoint}
+\reply{%
 }
 % ------------------------------------------------------------------- Reviewer 3
 \bigskip
 \bigskip
 \subsection*{Reviewer \#3:}
 \begin{reviewpoint}
-This paper presents a new method for correction of EPI distortion in diffusion MRI data by performing simultaneous registration and segmentation of a set of nested surfaces, using a multi­channel FA/MD image with a registration target of an undistorted T1 image. The primary advantage over other methods is that cortical surfaces and white­gray matter boundaries are apparently aligned well by this method. Results show that it outperforms one implementation of the more standard baseline to T2 registration. Overall this is a quite interesting work, and it will be a good addition to the literature and also to the body of open­source code for diffusion MRI.
+This paper presents a new method for correction of EPI distortion in diffusion MRI data by performing simultaneous registration and segmentation of a set of nested surfaces, using a multichannel FA/MD image with a registration target of an undistorted T1 image. The primary advantage over other methods is that cortical surfaces and whitegray matter boundaries are apparently aligned well by this method. Results show that it outperforms one implementation of the more standard baseline to T2 registration. Overall this is a quite interesting work, and it will be a good addition to the literature and also to the body of opensource code for diffusion MRI.
+
 I have some comments for clarification of the paper.
-Overall, I am slightly confused by some aspects of the equations, and I think that some information from the supplement (which I have not had time to read) should be moved into the paper to clarify missing points. The paper should be able to be read independently of the supplement, which does not seem to be the case currently. Specifically, the relationship of the b­spline registration framework to the evolution of the active contours is a bit confusing, with a main equation given inside Figure 1, and apparently all other detail in the supplement. This could be as simple as an additional paragraph or two.
-Please state that the goal of the paper is to improve connectome­based diffusion MRI research. The processing description on pages 1­2 assumes that the connectome­based approach is the only approach to analysis of diffusion MRI. But this is clearly not the case (surgical planning, TBSS, etc).
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
+Overall, I am slightly confused by some aspects of the equations, and I think that some information from the supplement (which I have not had time to read) should be moved into the paper to clarify missing points. The paper should be able to be read independently of the supplement, which does not seem to be the case currently. Specifically, the relationship of the bspline registration framework to the evolution of the active contours is a bit confusing, with a main equation given inside Figure 1, and apparently all other detail in the supplement. This could be as simple as an additional paragraph or two.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
+Please state that the goal of the paper is to improve connectomebased diffusion MRI research. The processing description on pages 12 assumes that the connectomebased approach is the only approach to analysis of diffusion MRI. But this is clearly not the case (surgical planning, TBSS, etc).
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 ``to current models such as (Dadicci et al)'' is confusing. Please give the name(s) of the current model(s).
-￼￼On page 3, please define N (section 2.1)
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
+On page 3, please define N (section 2.1)
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 In Figure 1, it is a bit confusing that active contours appear, because the abstract did not mention active contours directly, and the evolution following the inward normals at each vertex is not explicit in the equations of the paper.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 It seems the evolution at $s_1$ is in the direction opposite the inward normal, so the caption of Figure 1 is a bit confusing, since it directly states the inward normals are followed, rather than just the normal to the curve.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 I recommend adding a little bit of text to unify figure 1 and the surface evolution framework with the concepts presented in the registration equations section. I think this information may be in the supplement.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 On page 5, equation (4), I think f should be f prime on the first line.
+\end{reviewpoint}
+\reply{%
+The reviewer is right. We have fixed the manuscript accordingly.
+}
+
+\begin{reviewpoint}
 Please describe A and B in a sentence after equation 5. It is not clear how these were chosen (or at least refer to the appendix).
-On page 5, equation (7), the ­log is removed from the second line. I would expect a sum of log probabilities, with the log preserved, rather than removing the log altogether. It seems this is an oversight. Or do the authors mean to use a proportional symbol instead of an equals symbol? Please clarify.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
+On page 5, equation (7), the log is removed from the second line. I would expect a sum of log probabilities, with the log preserved, rather than removing the log altogether. It seems this is an oversight. Or do the authors mean to use a proportional symbol instead of an equals symbol? Please clarify.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 In equation (7), the equation that is split onto two lines (why?) has two plus symbols in a row, one on each line. In equation (7), the second integral is over omega, while the first is over $omega_l$. Why?
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 In equation (7) please clarify with brackets what the sum over l is applied to.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 The two pluses are present again in equation (10).
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 Please explain in a sentence what alpha and beta are in equation (10) (expected variances along each axis of the coordinate system, or something).
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 $g_k$ is completely undefined in equation (11). I see there is information in a supplement but at a minimum each variable should be defined in a sentence in the main paper.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 pg 7. Please define PE acronym or write out phase encoding.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 eq (14). Please define what is $a_i$.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 Figure 5. What are the little numbers (26, 30, 33) in the lower left corner of the phantom images? Figure 5. Please state clearly in the caption that this is digital phantom data, to help the reader.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 Figure 5. Over what is the average error of surfaces computed? Average over the surface? Then the variability in the plot is across experiments? Or the other way around with the average at each surface point across experiments?? It is not clear.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 Figure 5 A. Why are there so many phantom images shown? They all look the same to me. Please explain and/or remove the duplicates.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 Figure 6. Are the plots in B from one or many subjects? Please state in the caption.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 In Table 2 caption how many subjects were input to this experiment? This is given as 16 in the abstract, but that info is not very near the actual results and would increase their impact.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 pg 13. ``We also show the 95\% CIs of the sWI for these surfaces.'' sounds like it is referring to Figure 6. However it is apparently in Table 2, which should be referenced in this sentence. Or the sentences about Table 2 should be reorganized to sound separate from Figure 6.
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 in Appendix (and also elsewhere): ``the anisotropy is aligned with the imaging axes'' is quite confusing. Usually anisotropy refers to FA or similar. I believe this is the anisotropy of the covariance matrices, really that their eigenvectors are assumed aligned with the voxel coordinate system. Please clarify the usage of ``anisotropy'' in the registration framework.
-Close
+\end{reviewpoint}
+\reply{%
+The reviewer is totally right. We have modified the text accordingly.
+This comment is also made by the reviewer \#1 in the \autoref{com:5}.
+}
+
+\begin{reviewpoint}
 What values are used for alpha and beta in the appendix?
+\end{reviewpoint}
+\reply{%
+}
+
+\begin{reviewpoint}
 minor grammatical issues:
-abstract: ``approached either segmenting'' ­> ``approached by either segmenting'' pg 2: ``threshold set'' sounds like a mathematical set ­> ``threshold that is chosen'' pg 5. ``displacements field'' ­> ``displacement field''
-pg. 15 ``monitorization'' is not a word ­> monitoring
+
+abstract: ``approached either segmenting'' > ``approached by either segmenting''
+
+pg 2: ``threshold set'' sounds like a mathematical set > ``threshold that is chosen''
+
+pg 5. ``displacements field'' > ``displacement field''
+
+pg. 15 ``monitorization'' is not a word > monitoring
 
 \end{reviewpoint}
 \reply{%
+All the issues have been corrected following the suggestions of the reviewer.
 }
 
 \bibliographystyle{mystyle}
