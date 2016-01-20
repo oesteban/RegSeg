@@ -58,6 +58,11 @@ This paper presents a method for simultaneous registration and segmentation of d
 I am satisfied that the active contour alignment approach used to align the surfaces is sound, and that the results show theoretic improvements over the T2B method. I am convinced that the method approach is effective for the alignment task. In general the methods are well explained with the exception of a few minor points (below).
 \end{reviewpoint}
 \reply{%
+We thank the reviewer for the time dedicated in his/her review and these positive comments.
+We are pleased that this summary of the paper matches the idea we want to transmit.
+
+We have modified the paper to clarify the nature of the distortions we use to generate the
+  ground truth (see \autoref{com:3}).
 }
 
 \begin{reviewpoint}
@@ -111,7 +116,16 @@ I also have some concern that the method is not applied to real distortions nor 
 [4] A comprehensive Gaussian Process framework for correcting distortions and movements in diffusion images Jesper L. R. Andersson et al ISMRM
 \end{reviewpoint}
 \reply{%
-As mentioned in \autoref{com:1}, the method is actually applied on real distortions.
+We have modified the paper to clearly reflect that the method is actually applied
+  on realistic distortions (comes from \autoref{com:1}).
+For the phantoms, as the reviewer mentions, the distortion maps are synthetic and
+  generated with random coefficients.
+For the real datasets, however, we use realistic distortions derived from the real fieldmap
+  corresponding to each dataset.
+The fieldmaps are processed to remove the noise present in the air cavities and the background,
+  and are applied low-pass filtering to remove abrupt gradients in the resulting deformation
+  field.
+
 
 Regarding the proposed (and also some other possible) comparisons:
 \begin{itemize}

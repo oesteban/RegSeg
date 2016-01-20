@@ -12,15 +12,18 @@ Unifying the two approaches, we propose \regseg{}, a surface-to-volume nonlinear
 Accurate surfaces are extracted from a \gls*{t1} image of the subject, using as target image
   the bivariate volume comprehending the \gls*{fa} and the \gls*{adc} maps derived from the
   \gls*{dmri} dataset.
-We first verify the accuracy of \regseg{} on a general context using digital phantoms.
+We first verify the accuracy of \regseg{} on a general context using digital phantoms 
+  \revcomment[R\#1-C1]{distorted with synthetic and random deformations}.
 Then we establish an evaluation framework using undistorted \gls*{dmri} data from the \gls*{hcp}
-  and known deformations derived from real inhomogeneity fieldmaps.
+  and \revcomment[R\#1-C1]{realistic} deformations derived from 
+  \revcomment[R\#1-C1]{the inhomogeneity fieldmap corresponding to each subject}.
 We analyze the performance of \regseg{} computing the misregistration error of the surfaces estimated
   after being mapped with \regseg{} onto 16 datasets from the \gls*{hcp}.
 The distribution of errors shows a 95\% CI of 0.56--0.66 mm, that is below the \gls*{dmri}
   resolution (1.25 mm, isotropic).
 Finally, we cross-compare the proposed tool against a nonlinear \lowb{}-to-T2w registration
   method, thereby obtaining a significantly lower misregistration error with \regseg{}.
-Therefore, we demonstrate that \regseg{} allows the accurate mapping of structural information
-  in \gls*{dmri} space, enabling the application of new structure-informed techniques in
-  the connectome extraction.
+The accurate mapping of structural information in \gls*{dmri} space 
+  \revcomment[R\#1-C2]{is fundamental to increase the reliability of network building
+  in connectivity analyses, and to improve the performance the emerging structure-informed
+  techniques for \gls*{dmri} data processing}.
