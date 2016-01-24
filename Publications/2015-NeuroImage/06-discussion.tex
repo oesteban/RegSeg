@@ -116,8 +116,10 @@ These surfaces introduced a bias which displaced the zero of the gradients from 
 
 The proposed application of the method in the task of identifying structural information
   in \gls*{dmri} images is an active field of research \citep{jeurissen_tissuetype_2015}.
-Current processing steps involved in the connectome extraction require a precise segmentation
-  of anatomical structures in the diffusion space.
+\revcomment[R\#3-C.9]{%
+Current processing of \gls{dmri} involved in the connectome extraction and other applications
+  (such as \gls*{tbss} or surgical planning)} require a precise segmentation
+  of the anatomical structures in the diffusion space.
 Some examples of these processing tasks are the structure-informed reconstruction of \gls*{dmri}
   data \citep{jeurissen_multitissue_2014,daducci_accelerated_2015}, the anatomically constrained
   tractography \citep{smith_anatomicallyconstrained_2012}, and the imposition of the cortical
@@ -143,7 +145,8 @@ We envision \regseg{} to be integrated in diffusion processing pipelines, after 
   methods.
 Since the structural information is projected into the native space of \gls*{dmri},
   these two processes and the matrix building task can be performed on the unaltered
-  \gls*{dmri} signal (i.e. without resampling data to an undistorted space).
+  \gls*{dmri} signal (i.e. without resampling data to an undistorted space).}
+\revcomment[R\#3-C.9]{%
 For analyses other than connectivity, like \gls*{tbss}, the deformation estimated by \regseg{}
   can be used to map the tracts into reference space.}
 

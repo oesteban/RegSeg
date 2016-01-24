@@ -1,14 +1,16 @@
 \documentclass[9pt]{memoir}
 
-\usepackage[numbers,sort&compress]{natbib}
+\usepackage[sort&compress]{natbib}
 \usepackage{xcolor}
 \usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
 \usepackage{charter}
 
 \usepackage{xcite}
 \externalcitedocument{00-main}
 
 \usepackage[colorlinks=true]{hyperref}
+\usepackage{doi}
 \usepackage{nameref}
 
 \usepackage{amsmath}
@@ -45,14 +47,14 @@
 We appreciate the comments made by both reviewers, and considered them fully to improve our paper.
 Please, find in the following paragraphs our point-by-point answer to the concerns raised by the reviewers,
   along with the description of the corresponding changes in the manuscript.
-Text modifications in the manuscript are highlighted with a new font color, and attached notes indicate which reviewer comment
-  the corresponding change is addressing to.
+Text modifications in the manuscript are highlighted with a new font color, and attached notes indicate 
+  which reviewer and comment the corresponding change is addressing to.
 
 \bigskip
 \bigskip
 \subsection*{Reviewer \#1:}
 \begin{reviewpoint}
-This paper presents a method for simultaneous registration and segmentation of diffusion images in the presence of geometric distortions. The method uses an anisotropically regularised active contour method to coalign tissue segmentations generated from T1 images to distorted multichannel diffusion data. It has the advantage that it has no requirements for extra scans to be acquired for correction of the distortion. The method demonstrates improved performance over a previous b0T2 registration approach for the alignment of tissue segmentation maps. Improvements are demonstrated on simulated data, and real data with simulated distortions. The advantage of these results is that the ground truth is known.
+This paper presents a method for simultaneous registration and segmentation of diffusion images in the presence of geometric distortions. The method uses an anisotropically regularised active contour method to coalign tissue segmentations generated from T1 images to distorted multichannel diffusion data. It has the advantage that it has no requirements for extra scans to be acquired for correction of the distortion. The method demonstrates improved performance over a previous b0--T2 registration approach for the alignment of tissue segmentation maps. Improvements are demonstrated on simulated data, and real data with simulated distortions. The advantage of these results is that the ground truth is known.
 
 
 I am satisfied that the active contour alignment approach used to align the surfaces is sound, and that the results show theoretic improvements over the T2B method. I am convinced that the method approach is effective for the alignment task. In general the methods are well explained with the exception of a few minor points (below).
@@ -61,8 +63,10 @@ I am satisfied that the active contour alignment approach used to align the surf
 We thank the reviewer for the time dedicated in his/her review and these positive comments.
 We are pleased that this summary of the paper matches the idea we want to transmit.
 
-We have modified the paper to clarify the nature of the distortions we use to generate the
-  ground truth (see \autoref{com:3}).
+We would like to point out that the distortions applied to the real datasets are derived from
+  real fieldmaps, and therefore they are not ``modeled'' in a strict sense.
+We have modified the paper to clarify the nature of these distortions (see \autoref{com:3}) in
+  both experiments (simulated and real datasets).
 }
 
 \begin{reviewpoint}
@@ -82,6 +86,9 @@ We apologize since the paper could be misleading in its former version, driving
 We have modified certain points in the abstract, introduction and discussion to
   clarify that this method is intended to support any diffusion processing task that
   requires a precise delineation of the anatomy in the diffusion space.
+We have also looked for the phrase cited by the reviewer\footnote{``this method avoids any
+ requirement for collecting additional scans nor resampling for diffusion unwarping''}
+ to reformulate it, however we did not found such exact statement in the paper.
 
 In the field of connectivity analysis, this need has posed important problems in the
   standard methodologies to build the connectivity network\footnote{generally imposing
@@ -90,24 +97,34 @@ With the emergence of novel reconstruction and tractography methods (see lines )
   these tasks may also be improved with the application of more accurate registration
   methods like \emph{regseg}.
 
-Regarding the given references, [1] is structured in a list of common pitfalls in the
+The given references are relevant to the domain of diffusion image processing,
+  specially that provided as [1], and propose the following discussion that
+  is very interesting but goes beyond the objectives of this paper.
+\cite{jones_twentyfive_2010} present a list of common pitfalls in the
   analysis of dMRI.
-Particularly, pitfalls \#1, \#2, and \#14 apply to our work.
-Pitfall \#1 points out the problem of modulation in the unwrapped signal.
-Since we promote analysis in the original space, this problem does not apply in practice.
-Pitfall \#2 particularly points out the problem of misplaced tracks (and cites
-  the other two references [2, 3]).
-As we have included in the discussion (see line XXX), the tracks may be unwarped using
-  the deformation found with \emph{regseg} since it is revertible.
-Checking the correctness of tracks computed on unwarped dMRI data vs. tracks computed
+Particularly, pitfalls \#1, \#2, and \#14 apply to our work:
+\begin{itemize}
+\item Pitfall \#1 points to the problem of modulation in the unwrapped signal and the
+  appearance of unrealistic structures due to interpolation.
+Since we promote to perform the analysis in the original space, this problem does not 
+  apply in practice.
+\item Closely related, pitfall \#2 raises the problem of misplaced tracks (and cites
+  the other two references given [2, 3]).
+We have included in the discussion (see line XXX) some text indicating that the tracks
+  can be unwarped using the deformation found with \emph{regseg} since it is revertible.
+However, checking the correctness of tracks computed on unwarped dMRI data vs. tracks computed
   on the original dMRI data and then unwarped with \emph{regseg} or whatever other
   technique is out of the scope of the paper, but a very interesting lead for
   future research.
-Finally, pitfall \#14 has side relationships with our method, since \emph{regseg} is
+As a matter of fact, we have recently published a whole-brain digital phantom of dMRI 
+  data \citep{esteban_diffantom_2016} to perform evaluations like the one suggested 
+  here \citep[for instance, please see][Chapter 5]{esteban_image_2015}.
+\item Finally, pitfall \#14 has side relationships with our method, since \emph{regseg} is
   definitely intended to increase the accuracy of the ROIs imposed on the dMRI data.
 In this case, Jones et al. blame it on the misregistration of the \emph{b0} and the
   diffusion weighted volumes, but the problem applies equally when the ROIs are
   not correctly aligned with the \emph{b0} itself.
+\end{itemize}
 }
 
 \begin{reviewpoint}
@@ -123,11 +140,14 @@ For the phantoms, as the reviewer mentions, the distortion maps are synthetic an
 For the real datasets, however, we use realistic distortions derived from the real fieldmap
   corresponding to each dataset.
 The fieldmaps are processed to remove the noise present in the air cavities and the background,
-  and are applied low-pass filtering to remove abrupt gradients in the resulting deformation
+  and undergo a low-pass filtering to remove abrupt gradients in the resulting deformation
   field.
+But they essentially reproduce the original (and real) distortion.
 
+\bigskip
 
-Regarding the proposed (and also some other possible) comparisons:
+About the proposed (and also some other possible) comparisons, we analyzed them before
+  the original submission, concluding the following:
 \begin{itemize}
 \item \emph{Eddy} [4] is a software tool in FSL that simultaneously corrects for
     head motion artifacts and Eddy currents -derived distortions.
@@ -136,7 +156,7 @@ Regarding the proposed (and also some other possible) comparisons:
     actually perform any correction for this artifact.
   The missing comparison to \emph{topup} follows.
 \item \emph{topup} is effectively the tool used to correct diffusion images for the
-  susceptibility artifact in the HCP pipeline.
+  susceptibility artifact in the HCP pipeline \citep{glasser_minimal_2013}.
   This tool uses one image with a certain phase-encoding scheme and a second image
     (typically only one \emph{b0} volume) with different phase-encoding scheme (typically
     reversed encoding blips in the same encoding axis).
@@ -147,14 +167,13 @@ Regarding the proposed (and also some other possible) comparisons:
     correction method for susceptibility-derived distortions''.
   For these two reasons, we disregarded the implementation of such experiment.
 \item \emph{fieldmap-based correction strategies}, since we use the theoretical basis of these
-  methods to generate our realistic distortions, comparison to these methods is not specially
-  interesting.
+  methods to generate our realistic distortions from real inhomogeneity fieldmaps, 
+  the comparison to these methods is not interesting/fair.
 \item \emph{bbregister} is an affine registration method intended to be used with diffusion
-  data.
+  data in the spatial normalization to the anatomical space of the T1w image.
   However, the ``minimally preprocessed'' datasets from the HCP that we use here are already
   spatially normalized.
-  \emph{bbregister} is designed to find the normalization, and thus it is not applicable
-  here.
+  Therefore \emph{bbregister} is not applicable here.
 \end{itemize}
 For all these reasons, we understood that a fair and interesting comparison would include
   another registration method.
@@ -166,6 +185,7 @@ The closest nonlinear registration method that is widely used in this framework 
 Pg 5 regularisation: `` requires that the distortion and its gradient have zero mean and variance governed by the matrices A and B'' suggest adding a comma here for easier interpretation i.e. ``requires that the distortion and its gradient have zero mean, and variance governed by the matrices A and B''
 \end{reviewpoint}
 \reply{%
+We appreciate the suggestion and introduced the comma accordingly.
 }
 
 \begin{reviewpoint}
@@ -173,7 +193,7 @@ Pg 7, line 4 `` anisotropy is aligned''. What is meant by anisotropy in this con
 \end{reviewpoint}
 \reply{%
 The reviewer is totally right. We have modified the text accordingly.
-This comment is also made by the reviewer \#3 in the \autoref{com:31}.
+This comment is similar to one made by the reviewer \#3 in the \autoref{com:31}.
 We refer the reader to this comment for the listing of actual changes in the paper.
 }
 
@@ -181,6 +201,7 @@ We refer the reader to this comment for the listing of actual changes in the pap
 Figure 2. This looks nice, but its not easy to interpret. I can't see a clear improvement through AC. I think there needs to be direct comparisons between the conditions represented by AC on one plot. Why not have 6 plots for each tissue class comparing distributions for each condition.
 \end{reviewpoint}
 \reply{%
+We have modified the figure as suggested.
 }
 % ------------------------------------------------------------------- Reviewer 3
 \bigskip
@@ -192,48 +213,68 @@ This paper presents a new method for correction of EPI distortion in diffusion M
 I have some comments for clarification of the paper.
 \end{reviewpoint}
 \reply{%
+We thank the reviewer for the time dedicated in his/her review and these positive comments.
+Again, we are pleased to confirm that the summary of the reviewer agrees with our objectives in this
+  work.
 }
 
 \begin{reviewpoint}
 Overall, I am slightly confused by some aspects of the equations, and I think that some information from the supplement (which I have not had time to read) should be moved into the paper to clarify missing points. The paper should be able to be read independently of the supplement, which does not seem to be the case currently. Specifically, the relationship of the bspline registration framework to the evolution of the active contours is a bit confusing, with a main equation given inside Figure 1, and apparently all other detail in the supplement. This could be as simple as an additional paragraph or two.
 \end{reviewpoint}
 \reply{%
+We have introduced one Appendix explaining how the shape-gradients are applied and how the equation given
+  in the Figure 1 relates to the registration framework.
+As the reviewer suggests, this text was part of the Supplemental Materials.
 }
 
 \begin{reviewpoint}
 Please state that the goal of the paper is to improve connectomebased diffusion MRI research. The processing description on pages 12 assumes that the connectomebased approach is the only approach to analysis of diffusion MRI. But this is clearly not the case (surgical planning, TBSS, etc).
 \end{reviewpoint}
 \reply{%
+The reviewer is right in the sense that our method was devised for its application on the extraction of
+  the human connectome from dMRI data.
+However, and with certain adaptations, the registration method is also useful in other approaches such those
+  suggested.
+Therefore, we have relaxed those statements restricting the use of this method to the connectome
+  extraction.
 }
 
 \begin{reviewpoint}
 ``to current models such as (Dadicci et al)'' is confusing. Please give the name(s) of the current model(s).
 \end{reviewpoint}
 \reply{%
+We have introduced the name of the model referred to.
 }
 
 \begin{reviewpoint}
 On page 3, please define N (section 2.1)
 \end{reviewpoint}
 \reply{%
+We have introduced the symbol $\mathcal{N}$ before eq. (4) in which it appears for first time.
 }
 
 \begin{reviewpoint}
 In Figure 1, it is a bit confusing that active contours appear, because the abstract did not mention active contours directly, and the evolution following the inward normals at each vertex is not explicit in the equations of the paper.
 \end{reviewpoint}
 \reply{%
+The direction of the normals is explicitly described in the new Appendix 1.
 }
 
 \begin{reviewpoint}
 It seems the evolution at $s_1$ is in the direction opposite the inward normal, so the caption of Figure 1 is a bit confusing, since it directly states the inward normals are followed, rather than just the normal to the curve.
 \end{reviewpoint}
 \reply{%
+The evolution at $s_1$ can be in either direction, depending on the direction of the gradient.
+Again, with the insertion of Appendix 1 we understand that this issue is clarified.
 }
 
 \begin{reviewpoint}
 I recommend adding a little bit of text to unify figure 1 and the surface evolution framework with the concepts presented in the registration equations section. I think this information may be in the supplement.
 \end{reviewpoint}
 \reply{%
+We have included two equations (A.6, A.7) from the Supplemental Materials in the new Appendix 1.
+Additionally, some text has been added to grant the necessary consistency and connect the formulations in
+  the manuscript to the Figure 1.
 }
 
 \begin{reviewpoint}
@@ -247,22 +288,23 @@ The reviewer is right. We have fixed the manuscript accordingly.
 Please describe A and B in a sentence after equation 5. It is not clear how these were chosen (or at least refer to the appendix).
 \end{reviewpoint}
 \reply{%
+Added a sentence describing A and B.
 }
 
 \begin{reviewpoint}
 On page 5, equation (7), the log is removed from the second line. I would expect a sum of log probabilities, with the log preserved, rather than removing the log altogether. It seems this is an oversight. Or do the authors mean to use a proportional symbol instead of an equals symbol? Please clarify.
 \end{reviewpoint}
 \reply{%
+We have introduced an intermediate expression to clarify the derivation of the energy functional.
 }
 
 \begin{reviewpoint}
 In equation (7), the equation that is split onto two lines (why?) has two plus symbols in a row, one on each line. In equation (7), the second integral is over omega, while the first is over $omega_l$. Why?
 \end{reviewpoint}
 \reply{%
-The equation (7) was splited in two lines because in just one line it exceeded the paper margins, and we
-  considered the equal sign the most convenient point to break it.
-Unfortunatelly, we could not interpret what the reviewer means with ``has two plus symbols in a row,
-  one on each line''.
+The eq. (7) was split thinking of the final two-column format of the journal.
+We have removed the line break and also the duplicated plus symbols.
+
 Regarding the last part of the question, the second integral is defined directly along the whole image
   domain $\Omega$ because it does not depend on the corresponding partition $\{\Omega_l\}$.
 This integral corresponds to the regularization term.
@@ -274,42 +316,49 @@ The first integral is computed region-wise, since the energy functional has diff
 In equation (7) please clarify with brackets what the sum over l is applied to.
 \end{reviewpoint}
 \reply{%
+Added large braces.
 }
 
 \begin{reviewpoint}
 The two pluses are present again in equation (10).
 \end{reviewpoint}
 \reply{%
+Added brackets as in \autoref{com:19} and fixed two pluses as in \autoref{com:18}.
 }
 
 \begin{reviewpoint}
 Please explain in a sentence what alpha and beta are in equation (10) (expected variances along each axis of the coordinate system, or something).
 \end{reviewpoint}
 \reply{%
+Added explanation.
 }
 
 \begin{reviewpoint}
-$g_k$ is completely undefined in equation (11). I see there is information in a supplement but at a minimum each variable should be defined in a sentence in the main paper.
+$\mathbf{g}_k$ is completely undefined in equation (11). I see there is information in a supplement but at a minimum each variable should be defined in a sentence in the main paper.
 \end{reviewpoint}
 \reply{%
+Equations (A.6) and (A.7) introduced in the new Appendix 1 define $\mathbf{g}_k$.
 }
 
 \begin{reviewpoint}
 pg 7. Please define PE acronym or write out phase encoding.
 \end{reviewpoint}
 \reply{%
+Although it was defined in pg. 2, we have introduced the long form again to make the text more readable.
 }
 
 \begin{reviewpoint}
 eq (14). Please define what is $a_i$.
 \end{reviewpoint}
 \reply{%
+A bit of text has been added defining $a_i$.
 }
 
 \begin{reviewpoint}
 Figure 5. What are the little numbers (26, 30, 33) in the lower left corner of the phantom images? Figure 5. Please state clearly in the caption that this is digital phantom data, to help the reader.
 \end{reviewpoint}
 \reply{%
+We have modified the caption accordingly.
 }
 
 \begin{reviewpoint}
@@ -322,24 +371,28 @@ Figure 5. Over what is the average error of surfaces computed? Average over the 
 Figure 5 A. Why are there so many phantom images shown? They all look the same to me. Please explain and/or remove the duplicates.
 \end{reviewpoint}
 \reply{%
+We have modified the caption to clarify this point (also related to \autoref{com:25}).
 }
 
 \begin{reviewpoint}
 Figure 6. Are the plots in B from one or many subjects? Please state in the caption.
 \end{reviewpoint}
 \reply{%
+We have updated the caption accordingly.
 }
 
 \begin{reviewpoint}
 In Table 2 caption how many subjects were input to this experiment? This is given as 16 in the abstract, but that info is not very near the actual results and would increase their impact.
 \end{reviewpoint}
 \reply{%
+We have updated the caption accordingly.
 }
 
 \begin{reviewpoint}
 pg 13. ``We also show the 95\% CIs of the sWI for these surfaces.'' sounds like it is referring to Figure 6. However it is apparently in Table 2, which should be referenced in this sentence. Or the sentences about Table 2 should be reorganized to sound separate from Figure 6.
 \end{reviewpoint}
 \reply{%
+Reference added to that sentence.
 }
 
 \begin{reviewpoint}
@@ -354,6 +407,9 @@ This comment is also made by the reviewer \#1 in the \autoref{com:5}.
 What values are used for alpha and beta in the appendix?
 \end{reviewpoint}
 \reply{%
+In order to ensure the reproducibility of the presented experiments, the actual values
+  used in the experiments are provided in the open source repository in the 
+  human-readable JSON file format.
 }
 
 \begin{reviewpoint}

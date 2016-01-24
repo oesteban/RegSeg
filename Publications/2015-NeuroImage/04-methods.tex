@@ -21,23 +21,6 @@ Finally, $\vec{u} = \vec{u}(\vec{r})$ is the displacement of every point with re
 The general overview of how the surfaces interact with the registration framework
   is presented in \autoref{fig:regseg-method}.
 
-\begin{figure}
-  \includegraphics[width=\linewidth]{figure01}
-  \caption{The active contours are defined as the interfacing surfaces of the competing
-    \glspl{roi} $\Omega_l$, which
-  are represented in green and dark blue in this close-up.
-  They evolve iteratively following their inward normals $\hat{n}_i$ at each vertex
-    $\vec{v}_i$ of the mesh.
-  The gradient speeds $\bar{s}_i$ drive registration, which are computed as the disparity of the data
-    energies with respect to the two limiting regions of $M(\vec{v}_i)$, the features of the image
-    $M$ in the location of vertex $\vec{v}_i$ \citepalias[see][equation SM5]{esteban_useful_2015}.
-  In this figure, $\bar{s}_1$ is written in the lower
-    box, with $\Omega_{wm}$ in the inner limiting region, $\Omega_{gm}$ the outer region, and
-    $w_{0,1}$ is the relative area associated with vertex $\vec{v}_1$ with respect to
-    the total area of surface $\Gamma_0$.
-      }\label{fig:regseg-method}
-\end{figure}
-
 \paragraph*{Cost-function derivation}
 In a Bayesian framework for registration \citep{wyatt_map_2003,pohl_bayesian_2006,gass_simultaneous_2014},
   the mappings $U$ in \eqref{eq:regseg-transform} are
@@ -70,13 +53,11 @@ For convenience and because it has been shown to be an appropriate approximation
   \citep{leemput_automated_1999,cuadra_comparison_2005}, we introduce two assumptions for each
   region $\Omega_l$:
   1) the features are i.i.d.; and 2) they can be modeled by multivariate normal
-  distributions \citep{esteban_mbis_2014} with parameters
+  distributions 
+\revcomment[R\#3-C.11]{%
+  $\mathcal{N} (\vec{f}' \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} )$}, with parameters
   $\lbrace \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} \rbrace$
-  for each region $\Omega_l$.
-Even though the features being segmented are not generally i.i.d., the spatial interdependency of
-  voxels is implicitly supported by the piecewise smooth partition of the space \omegaset{}.
-In \autoref{fig:regseg-model} it is shown that marginal distributions of data can be approximated by
-  multivariate normal distributions. Therefore,
+  for each region $\Omega_l$ \citep{esteban_mbis_2014}:
 
 \revcomment[R\#3-C.15]{%
   \begin{align}
@@ -92,11 +73,33 @@ In \autoref{fig:regseg-model} it is shown that marginal distributions of data ca
   to the descriptors of region $l$ as
   $\mdist{f'}{l} = (\vec{f}' - \boldsymbol{\mu}_l)^T \, {\boldsymbol{\Sigma}_l}^{-1} \, (\vec{f}' - \boldsymbol{\mu}_l)$.
 $C$ is the number of channels comprised in the image $M$.
+\todo{ordering} Even though the features being segmented are not generally i.i.d., the 
+  spatial interdependency of voxels is implicitly supported by the piecewise smooth
+  partition of the space \omegaset{}.
 In fact, the projection of $\gammaset_R$ onto $M$ is an implicit segmentation model, for which
   the covariance matrix $\boldsymbol{\Sigma}_l$ of each region is minimized.
-In \autoref{fig:regseg-model},
-  this minimization is illustrated for the segmentation of the \gls*{fa} and the \gls*{adc} maps
+The \autoref{fig:regseg-model} shows \revcomment[authors]{how the joint distribution of 
+  the input images} is approximated with a mixture of multivariate normal distributions,
+  and this minimization is illustrated for the segmentation of the \gls*{fa} and the \gls*{adc} maps
   of one subject.
+
+
+\begin{figure}
+  \includegraphics[width=\linewidth]{figure01}
+  \caption{The {\color{blue} interfacing surfaces $\Gamma_m$ between the competing \glspl{roi} $\Omega_l$,
+  play the role of active contours which drive the registration process.}
+  They evolve iteratively following {\color{blue} the normal $\hat{\mathbf{n}}_i$ of the surface} at each vertex
+    $\vec{v}_i$ of the mesh.
+  The gradient speeds $\bar{s}_i$ drive registration, which are computed as the disparity of the data
+    energies with respect to the two limiting regions of $M(\vec{v}_i)$, the features of the image
+    $M$ in the location of vertex $\vec{v}_i$.
+  {\color{blue} The computation of shape-gradients is developed in \ref{app:shape_gradients}.}
+  In this figure, the $\bar{s}_1$ derivated from \autoref{eq:regseg-shape_gradient_disc2} is 
+    written in the lower box, with $\Omega_{wm}$ in the inner limiting region, $\Omega_{gm}$
+    the outer region, and $w_{0,1}$ is the relative area associated with vertex $\vec{v}_1$
+    with respect to the total area of surface $\Gamma_0$.
+  }\label{fig:regseg-method}
+\end{figure}
 
 \begin{figure*}
 \includestandalone[width=\linewidth]{figure02-model}
@@ -137,20 +140,26 @@ The smoothness of the resulting \revcomment[R\#3-C.33]{displacement field} is in
   p_1(\vec{u}) &= \mathcal{N}(  \nabla \vec{u} \mid 0, \mathbf{B}^{-1}),
   \label{eq:regseg-thikonov}
   \end{align}
- which requires that the distortion and its gradient have zero
-  mean and variance governed by the matrices $\mathbf{A}$ and $\mathbf{B}$.
+ which requires that the distortion and its gradient have zero mean\revcomment[R\#1-C4]{,}
+   and variance governed by the matrices $\mathbf{A}$ and $\mathbf{B}$.
+\revcomment[R\#3-C.16]{%
+Therefore, $\mathbf{A}$ and $\mathbf{B}$ are tensors that modulate the regularization, and
+  produce deformations with preferential directions}.
 Finally, the maximum a posteriori problem is adapted to a variational problem where we search for
   the minimum of an energy functional by applying $E(\vec{u}) = -\log \{P( M \mid U) \, P(U)\}$:
 
+\revcomment[R\#3\\C.17--C.19]{%
   \begin{align}
   E(\vec{u}) &= -\log \underset{l}{\prod}
   \underset{\vec{r} \in \Omega_l}{\prod}
-  \mathcal{N} \left( \vec{f}' \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_l \right)\,p_0( \vec{u})\,p_1( \vec{u}) = \notag\\ &=
-  \const + \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r} \,
-  \ifthenelse{\boolean{review}}{+}{+ \notag\\ &+}
-  \int_{\Omega} \frac12 \left[ \vec{u}^T \mathbf{A} \vec{u} + (\nabla \vec{u})^T \mathbf{B} (\nabla \vec{u}) \right] \,d\vec{r}.
+  \mathcal{N} \left( \vec{f}' \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_l \right)\,p_0( \vec{u})\,p_1( \vec{u}) =
+\notag\\ &= - \underset{l}{\sum} \int_{\Omega_l} \Big\{ \log \left[ \mathcal{N} \left( \vec{f}' \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_l \right) \right] \, + \log \left[ p_0( \vec{u})\,p_1( \vec{u}) \right] \Big\} \, d\vec{r}
+   = \notag\\ &=
+  \const + \underset{l}{\sum} \Big\{ \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r} \Big\} \,
+  + \int_{\Omega} \frac12 \left[ \vec{u}^T \mathbf{A} \vec{u} + (\nabla \vec{u})^T \mathbf{B} (\nabla \vec{u}) \right] \,d\vec{r}.
   \label{eq:regseg-energy}
-  \end{align}
+  \end{align}%
+}
 This expression is the dual of the Mumford-Shah functional that corresponds
   to the framework of \acrlong*{acwe} \citep{chan_active_2001}
   with the anisotropic regularization term of \cite{nagel_investigation_1986}.
@@ -185,25 +194,35 @@ To find the minimum of the energy functional \eqref{eq:regseg-energy},
   where $t$ is an artificial time parameter of the contour
   evolution and $\vec{u}_k$ are the parameters that support the estimate
   $\hat{U}$ of the transformation at the current time point.
-Let us assume that the anisotropy is aligned with the imaging axes to simplify
-  \eqref{eq:regseg-energy} as expression \eqref{eq:regseg-app_energy} in \ref{app:reg_term},
-  and thus to compute its derivative \eqref{eq:regseg-general_gradient_descent}:
+Let us assume that \revcomment[R\#1-C.5\\R\#3-C.31]{the preferential directions of
+  the displacement are aligned} with the imaging axes to simplify \eqref{eq:regseg-energy} as expression 
+  \eqref{eq:regseg-app_energy} in \ref{app:reg_term}, and thus to compute its
+  derivative \eqref{eq:regseg-general_gradient_descent}:
 
+\revcomment[R\#3-C.20]{%
   \begin{align}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
   \frac{ \partial }{\partial \vec{u}_k} \Big\{
-  \underset{l}{\sum} \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r} \,
-  \ifthenelse{\boolean{review}}{+}{+ \notag\\ &+}
-  \int_{\Omega} \frac12 [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
+  \underset{l}{\sum} \big[ \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r} \big] \,
+  + \int_{\Omega} \frac12 [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
   + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}
   \Big\},
   \label{eq:regseg-gradient_descent}
-  \end{align}
-  where $\vec{u}^{\circ2} = \vec{u}^T \cdot \vec{u}$.
+  \end{align}}
+  where $\vec{u}^{\circ2} = \vec{u}^T \cdot \vec{u}$, \revcomment[R\#3-C.21]{%
+  and $\{\boldsymbol{\alpha}, \boldsymbol{\beta}\}$ are the expected variances along
+  the imaging axes of the displacements field and its gradient, respectively.}.
 Then, the data and regularization terms are split and discretized to compute their
   derivatives.
-The computation of the explicit shape gradients at each $\vec{v}_i'$ is illustrated in \autoref{fig:regseg-method}.
-Then, \eqref{eq:regseg-gradient_descent} can be reformulated as \citepalias[see][equations SM6-SM12]{esteban_useful_2015}:
+\revcomment[R\#3-C.14]{%
+The derivative of the data term is computed using explicit shape gradients (see \ref{app:shape_gradients}),
+  that finally lead to obtain vertex-wise speeds of the gradient $\bar{s}_i$ as}
+  illustrated in \autoref{fig:regseg-method}.
+\revcomment[R\#3-C.14]{%
+Using the expressions \eqref{eq:regseg-gradient_wshape} and 
+  \eqref{eq:regseg-shape_gradient_final} given in \ref{app:shape_gradients}
+  and introducing the analytical derivative of the regularization term, then
+  the \autoref{eq:regseg-gradient_descent} is reformulated as:}
 
   \begin{align}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
@@ -247,7 +266,7 @@ A first proof of concept is introduced to demonstrate \regseg{} in digital phant
 Then, \regseg{} is evaluated in a framework using undistorted \gls*{dmri} datasets,
   and $U_\text{true}$ is derived from the corresponding inhomogeneity fieldmap of
   the subject.
-Therefore, the deformation field is nonzero only in the \gls*{pe} axis,
+Therefore, the deformation field is nonzero only in the \revcomment[R\#3-C.23]{\acrfull*{pe}} axis,
   and resembles a real \gls*{epi} distortion.
 The adaptation of the evaluation protocol to the simulated phantoms and the real data is
   explained in the following sections.
@@ -445,7 +464,8 @@ Distortion only occurs along the \gls*{pe} axis of the image, so we computed the
   \vec{v}_i - \hat{\vec{v}}_i \|,
   \label{eq:regseg-swindex}
   \end{equation}
-  where $\vec{v}_i \subset \gammaset_\text{true}$ are the locations of the total $N_V$ vertices
+  where $\vec{v}_i \subset \gammaset_\text{true}$ are the locations of the total $N_V$ vertices,
+  \revcomment[R\#3-C.24]{$a_i$ is the area corresponding to each vertex $\vec{v}_i$},
   and $\hat{\vec{v}}_i \subset \hat{\gammaset}_\text{test}$ are the recovered locations
   that correspond to $\vec{v}_i$.
 In practice, we only report the \gls*{swindex} for three surfaces (\{$\Gamma_{VdGM}, \Gamma_{WM}, \Gamma_{pial}$\})

@@ -4,6 +4,94 @@
 
 \section*{Appendix}
 
+\subsection{Application of the shape-gradients}\label{app:shape_gradients}
+\revcomment[R\#3-C.8]{%
+The computation of gradients at the locations of the active contours in the
+  instant $t$ is based on the work of \cite{herbulot_segmentation_2006}.
+Let $F(\vec{r})$ be an ``arbitrary'' function over the image domain
+  $\Omega = \Omega_l \cup \Omega_m$ split in two regions $l$ and
+  $m$, and $\Gamma_{l,m}$ a closed boundary between them.
+We now derive the domain integral w.r.t. $t$:
+
+  \begin{equation}
+  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
+  \int_\Omega \frac{\partial}{\partial t}F(\vec{r}) d\vec{r}
+  - \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
+  N_{\Gamma_{l,m}}\right\rangle d\vec{r},
+  \end{equation}
+%
+  where $\left\langle\frac{\partial\Gamma_{l,m}}{\partial t}, N_{\Gamma_{l,m}}\right\rangle$ is
+  the projection of the boundary movement on the unit inward normal $N_{\Gamma_{l,m}}$.
+Assuming that the region descriptors $\{\boldsymbol{\mu}_l, \boldsymbol{\Sigma}_l\}$ vary slowly enough, we can consider
+  that $\frac{\partial}{\partial t} F(\vec{r}) = 0$ and thus:
+
+  \begin{equation}
+  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} =
+  - \int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m} }{\partial t},
+  N_{\Gamma_{l,m}}\right\rangle d\vec{r}.
+  \label{eq:regseg-shape_gradients}
+  \end{equation}
+
+The equation \eqref{eq:regseg-shape_gradients} is discretized as follows.
+First, the surface between limiting regions $\{l, m\}$, $\Gamma_{l,m}$ is explicitly represented by
+  a discrete set of vertices $\vec{v}_i$, with $i \in \{0, \ldots, N_p -1 \}$.
+Consequently, the inwards normal of the surface $N_{\Gamma_{l,m}}$ is represented by the discrete
+  set of normals $\hat{\vec{n}}_i$ at each vertex of the mesh.
+The resulting summation is, therefore, discrete and the integral operator is replaced by the sum:
+  \begin{align}
+  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) d\vec{r} &=
+  \underbracket{\cancel{\int_\Omega \frac{\partial}{\partial t}F(\vec{r}) d\vec{r} }}_{\text{Functional's evolution}}
+  - \underbracket{\int_{\Gamma_{l,m}} F(\vec{r}) \left\langle \frac{\partial \Gamma_{l,m}}{\partial t},
+  N_{\Gamma_{l,m}}\right\rangle d\vec{r}}_{\text{Shape's evolution}} \notag \\
+  & = - \underset{p}{\sum} \frac{1}{A_p} \underset{i}{\sum} \, a_i \, F(\vec{v}_i) \left\langle \underbracket{\frac{\partial \vec{v}_i}{\partial t}}_{\text{speed of }\vec{v}_i},
+  \hat{\vec{n}}_{i}\right\rangle.
+  \label{eq:regseg-shape_gradient_orig}
+  \end{align}
+where $a_i$ is the area corresponding to vertex $\vec{v}_i$, and $A_p = \sum_i a_i$ is the total area of surface $p$.
+In the following, we will refer as $w_{p,i} = a_i / A_p $ to the area contribution of $\vec{v}_i$ to the
+  total area of the surface it belongs to.
+For simplicity, the sum over $p$ can be also removed, as the vertices belong to only one of the total $P$ contours.
+
+Then, the speed of $\vec{v}_i$ is discretized using the artificial time-step parameter $\delta$, as the displacement
+  $\frac{\partial \vec{v}_i}{\partial t} = \vec{v}_i(\delta = t+1) - \vec{v}_i(\delta = t)$:
+  \begin{equation}
+  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) \, d\vec{r} =
+  - \underset{i}{\sum} w_{p,i} F(\vec{v}_i) \frac{\partial \vec{v}_i}{\partial t} \cdot \hat{\vec{n}}_i.
+  \label{eq:regseg-shape_gradient_disc1}
+  \end{equation}
+
+Since the energy functional is defined over competing regions, the displacement of $\vec{v}_i$ will cause
+  an energy exchange between the limiting regions, and therefore $F(\vec{r})$ must be split in
+  two terms, $F_{in}(\vec{r})$ corresponding to the interior region and $F_{out}(\vec{r})$ to the exterior:
+  \begin{equation}
+  \frac{\partial}{\partial t} \int_\Omega F(\vec{r}) \, d\vec{r} =
+  - \underset{i}{\sum} \, \frac{\partial \vec{v}_i}{\partial t} \cdot
+  \underbracket{w_{p,i} \, \Big[ F_{out}(\vec{v}_i) - F_{in}(\vec{v}_i) \Big] \hat{\vec{n}}_i}_{\bar{s}_i \text{ in Figure 1}}.
+  \label{eq:regseg-shape_gradient_disc2}
+  \end{equation}}
+
+\revcomment[R\#3-C.22]{%
+Then, we identify the shape gradient contribution $\vec{g}_k$ on the coefficients $\vec{u}_k$ of the B-Spline grid:
+  \begin{equation}
+  \label{eq:regseg-gradient_wshape}
+  \begin{split}
+  \vec{g}_k &= - \underset{i}{\sum} \left\langle \frac{\partial \vec{v}_i'}{\partial \vec{u}_k}, \bar{s}_i'\right\rangle \\
+  \text{with }
+  \bar{s}_i' &= w_i \left[ \mdist{f_i'}{out} - \mdist{f_i'}{in} \right] \, \hat{\vec{n}}_i, \\
+  \text{and }
+  \frac{\partial \vec{v}_i'}{\partial \vec{u}_k} &=
+  \frac{\partial}{\partial \vec{u}_k} \left\{ \vec{v}_i + \sum_k \psi_k(\vec{v}_i) \vec{u}_k \right\} = \psi_k(\vec{v}_i)\, \hat{\vec{e}},
+  \end{split}
+  \end{equation}%
+  where $\hat{\vec{e}}$ is the coordinates system's unit vector.
+Therefore, the shape gradients projected to the grid of B-Spline control points is:
+\begin{equation}
+  \vec{g}_k = - \underset{i}{\sum} \bar{s}_i \cdot \psi_k(\vec{v}_i) \, \hat{\vec{e}}.
+  \label{eq:regseg-shape_gradient_final}
+\end{equation}}
+
+
+
 \subsection{Simplifying the regularization term}\label{app:reg_term}
 The exponentials of the Thikonov regularization prior \eqref{eq:regseg-thikonov} have the general form
   $\vec{v}^T \mathbf{M} \vec{v}$.
@@ -16,8 +104,10 @@ If $\mathbf{M}$ is a $n \times n$ diagonal matrix such that $\mathbf{M} = \vec{m
   where we have introduced the Hadamard power notation\footnote{The Hadamard power of a matrix or a vector
   is the power of its elements $\mathbf{M}^{\circ p} = ({m_{ij}}^{p})$}.
 
-In general, the anisotropy is aligned with the imaging axes, so
-  $\mathbf{A}$ and $\mathbf{B}$ of \eqref{eq:regseg-energy} can be simplified to diagonal matrices, such that
+In general, the anisotropy \revcomment[R\#3-C.31]{of the distortion field} is aligned with the 
+  \revcomment[R\#3-C.31]{voxel coordinate system}, so
+  $\mathbf{A}$ and $\mathbf{B}$ of \eqref{eq:regseg-energy} can be simplified to diagonal matrices
+  \revcomment[R\#3-C.31]{to regularize the regitration process}, such that
   $\mathbf{A}= \, \boldsymbol{\alpha}\,\vec{I}_n$ and
   $\mathbf{B}= \, \boldsymbol{\beta}\,\vec{I}_n$.
 By substituting into equation \eqref{eq:regseg-energy}, we obtain:
