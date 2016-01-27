@@ -398,7 +398,7 @@ def jointplot_data(im1data, im2data, in_seg, labels=None, out_file=None,
     sn.set_context("talk", font_scale=1.8)
     g = sn.ConditionalJointGrid(f1name, f2name, df, hue='tissue',
                                 xlim=f1lims, ylim=f2lims, size=20,
-                                inline_labels=True)
+                                inline_labels=True, splitgrid=splitgrid)
     g.plot_joint(sn.kdeplot, linewidths=3.0)
     g.plot_marginals(sn.distplot)
 
@@ -417,7 +417,7 @@ def jointplot_data(im1data, im2data, in_seg, labels=None, out_file=None,
 def jointplot_compare(
         imageX, imageY, segmentation, mask, imrefX, imrefY, refsegm, refmask,
         labels=None, xlabel='X', ylabel='Y', tlabel=None, huelabel='tissue', size=8, dpi=100,
-        subsample=.2, xlims=None, ylims=None, out_file=None):
+        subsample=.2, xlims=None, ylims=None, out_prefix=None):
     import os.path as op
     import nibabel as nb
     import numpy as np
@@ -437,6 +437,9 @@ def jointplot_compare(
     if ylims is None:
         ylims = (md.min(), md.max())
 
+    fa_m = np.median(fa[np.where((fa > xlims[0]) & (fa < xlims[1]))])
+    md_m = np.median(md[np.where((md > ylims[0]) & (md < ylims[1]))])
+
     md[md < ylims[0]] = np.nan
     md[md > ylims[1]] = np.nan
 
@@ -445,6 +448,9 @@ def jointplot_compare(
     md_ref = nb.load(imrefY).get_data().astype(np.float32).reshape(-1)
     seg_ref = nb.load(refsegm).get_data().astype(np.uint8).reshape(-1)
     msk_ref = nb.load(refmask).get_data().astype(np.uint8).reshape(-1)
+
+    fa_ref += fa_m - np.median(fa_ref[np.where((fa_ref > xlims[0]) & (fa_ref < xlims[1]))])
+    md_ref += md_m - np.median(md_ref[np.where((md_ref > ylims[0]) & (md_ref < ylims[1]))])
 
     md_ref[md_ref < ylims[0]] = np.nan
     md_ref[md_ref > ylims[1]] = np.nan
@@ -481,23 +487,26 @@ def jointplot_compare(
     dfref = dfref[dfref.tissue != 'do-not-show']
     sn.set_context("talk", font_scale=1. + 0.1*size)
 
-    g = sn.CompareJointGrid(xlabel, ylabel, df, dfref, tlabel=tlabel, hue=huelabel, xlim=xlims,
-                            ylim=ylims, size=size, inline_labels=True)
-    # g.plot_joint(plt.scatter)
-    g.plot_joint(sn.kdeplot, linewidths=3.0)
-    g.plot_marginals(sn.distplot)
+    for tlabel in range(len(labels) - 1):
+        g = sn.CompareJointGrid(xlabel, ylabel, df, dfref, tlabel=tlabel, hue=huelabel, xlim=xlims,
+                                ylim=ylims, size=size, inline_labels=True)
+        # g.plot_joint(plt.scatter)
+        g.plot_joint(sn.kdeplot, linewidths=3.0)
+        g.plot_marginals(sn.distplot)
 
-    for ax in g.ax_joint:
-        plt.setp(ax.get_yticklabels(), visible=False)
-        plt.setp(ax.get_xticklabels(), visible=False)
+        for ax in g.ax_joint:
+            plt.setp(ax.get_yticklabels(), visible=False)
+            plt.setp(ax.get_xticklabels(), visible=False)
 
-    if out_file is not None:
-        plt.savefig(out_file, dpi=dpi, bbox_inches='tight')
+        if out_prefix is not None:
+            fname, ext = op.splitext(out_prefix)
+            out_file = fname + '%02d' % tlabel + ext
+            plt.savefig(out_file, dpi=dpi, bbox_inches='tight')
     return g
 
 
 def jointplot_real(imageX, imageY, segmentation, mask,
-                   labels=None, xlabel='X', ylabel='Y',
+                   labels=None, xlabel='X', ylabel='Y', splitgrid=False,
                    huelabel='tissue', size=8, dpi=100, subsample=1.0,
                    xlims=None, ylims=None, out_file=None):
     import os.path as op
@@ -540,10 +549,10 @@ def jointplot_real(imageX, imageY, segmentation, mask,
         df = df.sample(frac=subsample, replace=True)
 
     df = df[df.tissue != 'do-not-show']
-    sn.set_context("talk", font_scale=1. + 0.1*size)
+    sn.set_context("talk", font_scale=1. + 0.02*size)
 
     g = sn.ConditionalJointGrid(xlabel, ylabel, df, hue=huelabel, xlim=xlims,
-                                ylim=ylims, size=size, inline_labels=True)
+                                ylim=ylims, size=size, inline_labels=True, splitgrid=splitgrid)
     # g.plot_joint(plt.scatter)
     g.plot_joint(sn.kdeplot, linewidths=3.0)
     g.plot_marginals(sn.distplot)
