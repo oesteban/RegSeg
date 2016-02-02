@@ -83,11 +83,13 @@ Therefore, \regseg{} establishes a registration framework that actually
 \Regseg{} integrates the benefits of segmentation and registration methods together and
   exploits the multivariate nature of \gls*{dmri} data to contribute in the proposed
   application on three key aspects:
-  1) it avoids the resampling the \glspl*{dwi} introduced by the correction of \gls*{epi}
-    distortions, since processing can be performed on the native \gls*{dmri} space;
-  2) the surfaces are typically extracted from the \gls*{t1} image of the same subject,
+  1) the surfaces are typically extracted from the \gls*{t1} image of the same subject,
     therefore \regseg{} does not require additional MR acquisitions to the minimal
-    \gls*{dmri} protocol; and
+    \gls*{dmri} protocol \revcomment[R\#1-C.2]{in order to estimate the deformation field};
+  2) \revcomment[R\#1-C.2]{depending on the application, the resampling of the \glspl*{dwi}
+    introduced by the correction method can be avoided, either by performing the posterior
+    processing on the native \gls*{dmri} space or applying the unwarping on the tractography
+    itself}; and
   3) \regseg{} increases the geometrical accuracy of the overall process.
 In this paper, we first verify the functionality of the method and the \regseg{}
   implementation using a set of digital phantoms, demonstrating the sub-pixel accuracy

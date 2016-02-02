@@ -26,8 +26,8 @@ Statistical tests might not be sufficiently conclusive, so we also computed the 
   \centering
   \includestandalone[width=\linewidth]{figure05}
   \caption{A. Visual assessment of the results obtained on the {\color{blue} digital phantoms.
-    The panel shows three coronal slices corresponding to the small numbers annotated on the lower
-      left corner of each cut, for} the low resolution sets:
+    The panel shows three coronal slices (indices indicated on the lower left corner) of each phantom
+    volume at low resolution}:
     ``gyrus'' (top left), ``L'' (top right), ``ball'' (bottom left),
     and ``box'' at (bottom right).
   The contours recovered after registration are represented in yellow.
@@ -35,9 +35,10 @@ Statistical tests might not be sufficiently conclusive, so we also computed the 
     contours with respect to their ground truth positions (shown in green).
   The partial volume effect makes segmentation of the sulci a challenging problem with voxel-wise
     clustering methods, but they were successfully segmented with \regseg{}.
-  B. Quantitative evaluation of registration errors in terms of the average Hausdorff distances between
-    surfaces at low (left) and high (right) resolutions, which demonstrate that the errors were
-    consistently below the size of the voxels.
+  B. Quantitative evaluation: {\color{blue} the violin plot shows the variability across experiments
+    of the average Hausdorff distance measured in each vertex of the corresponding surface, for the}
+    low (left) and high (right) resolutions. 
+    {\color{blue} Error averages were} consistently below the size of the voxel.
     }\label{fig:regseg-phantom}
 \end{figure*}
 \begin{figure*}[!h]

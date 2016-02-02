@@ -94,7 +94,7 @@ The \autoref{fig:regseg-model} shows \revcomment[authors]{how the joint distribu
     energies with respect to the two limiting regions of $M(\vec{v}_i)$, the features of the image
     $M$ in the location of vertex $\vec{v}_i$.
   {\color{blue} The computation of shape-gradients is developed in \ref{app:shape_gradients}.}
-  In this figure, the $\bar{s}_1$ derivated from \autoref{eq:regseg-shape_gradient_disc2} is 
+  In this figure, the $\bar{s}_1$ derived from \autoref{eq:regseg-shape_gradient_disc2} is 
     written in the lower box, with $\Omega_{wm}$ in the inner limiting region, $\Omega_{gm}$
     the outer region, and $w_{0,1}$ is the relative area associated with vertex $\vec{v}_1$
     with respect to the total area of surface $\Gamma_0$.
@@ -103,7 +103,11 @@ The \autoref{fig:regseg-model} shows \revcomment[authors]{how the joint distribu
 
 \begin{figure*}
 % \includestandalone[width=\linewidth]{figure02-model}
-\includegraphics[width=\linewidth]{figure02}
+\begin{minipage}{\textwidth}
+\includegraphics[width=\linewidth]{figure02}\\%
+\vskip-2.0em
+\includegraphics[width=\linewidth]{legend}%x
+\end{minipage}
 % \includegraphics[width=\linewidth]{figure04B}
 % \includegraphics[width=\linewidth]{figure04C}
 \caption{%
@@ -236,7 +240,7 @@ Let us assume that \revcomment[R\#1-C.5\\R\#3-C.31]{the preferential directions 
   \end{align}}
   where $\vec{u}^{\circ2} = \vec{u}^T \cdot \vec{u}$, \revcomment[R\#3-C.21]{%
   and $\{\boldsymbol{\alpha}, \boldsymbol{\beta}\}$ are the expected variances along
-  the imaging axes of the displacements field and its gradient, respectively.}.
+  the imaging axes of the displacements field and its gradient, respectively.}
 Then, the data and regularization terms are split and discretized to compute their
   derivatives.
 \revcomment[R\#3-C.14]{%
@@ -251,10 +255,11 @@ Using the expressions \eqref{eq:regseg-gradient_wshape} and
 
   \begin{align}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
-  \vec{g}_k  + \boldsymbol{\alpha} \cdot \vec{u}_k - \boldsymbol{\beta} \cdot (\Delta \vec{u}_k).
+  \vec{g}_k  + \boldsymbol{\alpha} \cdot \vec{u}_k - \boldsymbol{\beta} \cdot (\Delta \vec{u}_k),
   \label{eq:regseg-final_gradient}
   \end{align}
-
+\revcomment[R\#3-C22]{%
+where $\vec{g}_k$ are the shape-gradient contributions on the coefficients $\vec{u}_k$ of the B-spline grid.}
 Finally, to descend this gradient, we establish a semi-implicit Euler scheme
   \citepalias[see][section S1.3]{esteban_useful_2015},
   with a step size parameter $\delta$, which we solve in the spectral domain as follows:
@@ -272,9 +277,11 @@ Finally, to descend this gradient, we establish a semi-implicit Euler scheme
 The \regseg{} tool includes a multiresolution strategy on the free-form deformation field.
 Registration pyramids are created by setting the spacing between the control points of the B-spline basis
   functions for each level of the multiresolution strategy.
+\revcomment[R\#3-C32]{As a rule of thumb, for a $\delta =$ 1.0 both $\boldsymbol{\alpha}$
+  and $\boldsymbol{\beta}$ will typically be in the range [0.0, 1.0].}
 The implementation details as well as other features (such as the sparse matrix approach
   to fast interpolation) and the main parameters
-  (such as $\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$, the B-spline grid resolutions,
+  ($\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$, the B-spline grid resolutions,
   and target image smoothing) are discussed in the \citetalias[][section S1]{esteban_useful_2015}.
 
 \subsection{Evaluation protocol}\label{sec:regseg-evaluation_protocol}
@@ -338,7 +345,7 @@ In total, 1200 experiments (four phantom types $\times$ 150 random warpings $\ti
 \begin{figure*}
 \includegraphics[width=\linewidth]{figure03}
 \caption{Evaluation of \regseg{} using phantom data according to the following instrumental workflow.
-  1) The reference surfaces $\gammaset_R$ are triangularized meshes extracted from the four binary shapes (i.e., ``box'', ``ball'', ``L'', ``gyrus'').
+  1) The reference surfaces $\gammaset_R$ are triangle meshes extracted from the four binary shapes (i.e., ``box'', ``ball'', ``L'', ``gyrus'').
   2) A ground-truth displacement field was generated as described in \autoref{sec:regseg-digital_phantoms}, and applied to warp
       $\gammaset_R$, thereby obtaining $\gammaset_\text{true}$.
   3) After being warped, $\gammaset_\text{true}$ were projected onto the corresponding discrete 3D volume and downsampled to create partial volume effects at two resolutions,
@@ -456,7 +463,7 @@ Therefore, the initial estimation of distortion is zero in this experiment.
 Since the distortion $U_\text{true}$ is aligned along the \gls*{pe} direction ($y$-axis in our settings),
   \regseg{} was configured to allow nonzero displacements only on that corresponding direction.
 For the experiments on real data, \regseg{} established a multi-resolution pyramid of
-  B-Spline functions, with control points distributed on grids of the following spacings:
+  B-spline functions, with control points distributed on grids of the following spacings:
   40$\times$100$\times$40 [mm] for the first (coarser) level, \isores[mm]{30} for the second level,
   and 20$\times$30$\times$10 [mm] in the third level.
 Only the first and second levels included Gaussian smoothing of the target image ($\sigma$ = [2.0, 0.5] mm,

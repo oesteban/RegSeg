@@ -1,0 +1,50 @@
+\documentclass[class=scrreprt]{standalone}
+
+% \usepackage[left=0cm,top=0cm,right=0cm,textwidth=10in,nohead,nofoot]{geometry}
+\usepackage[pass]{geometry}
+
+\usepackage[most]{tcolorbox}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage{charter}
+
+\KOMAoptions{fontsize=9}
+
+% [(0.9677975592919913, 0.44127456009157356, 0.5358103155058701),
+%  (0.7350228985632719, 0.5952719904750953, 0.1944419133847522),
+%  (0.3126890019504329, 0.6928754610296064, 0.1923704830330379),
+%  (0.21044753832183283, 0.6773105080456748, 0.6433941168468681),
+%  (0.23299120924703914, 0.639586552066035, 0.9260706093977744),
+%  (0.9082572436765556, 0.40195790729656516, 0.9576909250290225)
+
+\definecolor{gm}{rgb}{0.9677975592919913, 0.44127456009157356, 0.5358103155058701}
+\definecolor{thalamus}{rgb}{0.7350228985632719, 0.5952719904750953, 0.1944419133847522}
+\definecolor{ventricles_gm}{rgb}{0.3126890019504329, 0.6928754610296064, 0.1923704830330379}
+\definecolor{wm}{rgb}{0.21044753832183283, 0.6773105080456748, 0.6433941168468681}
+\definecolor{brainstem}{rgb}{0.23299120924703914, 0.639586552066035, 0.9260706093977744}
+\definecolor{cerebellar_gm}{rgb}{0.9082572436765556, 0.40195790729656516, 0.9576909250290225}
+
+% \DeclareTotalTCBox{\mytcbox}{  O{} O{} }
+% {nobeforeafter,tcbox raise base,arc=4pt,
+% top=0pt,bottom=0pt,left=0mm,right=0mm, boxrule=0mm,boxsep=0.5mm, left=6pt,right=6pt,top=6pt,bottom=6pt,
+% colback=#1,colframe=white}{#2}
+
+\tcbset{colframe=white,boxrule=0pt,arc=3pt,left=4pt,right=4pt,top=4pt,bottom=4pt,boxsep=0pt,nobeforeafter}
+
+\makeatletter
+\newcommand{\mytcbox}[2][]{\tcbox[tcbox raise base,colback=#1]{\color{white} #2}}
+\makeatother
+
+\linespread{1.3}
+\begin{document}
+\begin{minipage}{10.2in}
+\uppercase{\textbf{The proposed segmentation model}}
+  comprehends the following six homogeneous regions, in hierarchical order:
+  1) thalamus \mytcbox[thalamus]{$\Omega_{Tha}$};
+  2) ventricular system and deep gray matter structures \mytcbox[ventricles_gm]{$\Omega_{VdGM}$};
+  3) cerebral white matter \mytcbox[wm]{$\Omega_{WM}$};
+  4) brain stem and cerebellar white matter \mytcbox[brainstem]{$\Omega_{bst}$};
+  5) cerebellar gray matter \mytcbox[cerebellar_gm]{$\Omega_{cbGM}$}; and
+  6) cortical gray matter \mytcbox[gm]{$\Omega_{GM}$}.
+\end{minipage}
+\end{document}

@@ -71,7 +71,7 @@ Since the energy functional is defined over competing regions, the displacement 
   \end{equation}}
 
 \revcomment[R\#3-C.22]{%
-Then, we identify the shape gradient contribution $\vec{g}_k$ on the coefficients $\vec{u}_k$ of the B-Spline grid:
+Then, we identify the shape gradient contribution $\vec{g}_k$ on the coefficients $\vec{u}_k$ of the B-spline grid:
   \begin{equation}
   \label{eq:regseg-gradient_wshape}
   \begin{split}
@@ -84,7 +84,7 @@ Then, we identify the shape gradient contribution $\vec{g}_k$ on the coefficient
   \end{split}
   \end{equation}%
   where $\hat{\vec{e}}$ is the coordinates system's unit vector.
-Therefore, the shape gradients projected to the grid of B-Spline control points is:
+Therefore, the shape gradients projected to the grid of B-spline control points is:
 \begin{equation}
   \vec{g}_k = - \underset{i}{\sum} \bar{s}_i \cdot \psi_k(\vec{v}_i) \, \hat{\vec{e}}.
   \label{eq:regseg-shape_gradient_final}
@@ -107,7 +107,7 @@ If $\mathbf{M}$ is a $n \times n$ diagonal matrix such that $\mathbf{M} = \vec{m
 In general, the anisotropy \revcomment[R\#3-C.31]{of the distortion field} is aligned with the 
   \revcomment[R\#3-C.31]{voxel coordinate system}, so
   $\mathbf{A}$ and $\mathbf{B}$ of \eqref{eq:regseg-energy} can be simplified to diagonal matrices
-  \revcomment[R\#3-C.31]{to regularize the regitration process}, such that
+  \revcomment[R\#3-C.31]{to regularize the registration process}, such that
   $\mathbf{A}= \, \boldsymbol{\alpha}\,\vec{I}_n$ and
   $\mathbf{B}= \, \boldsymbol{\beta}\,\vec{I}_n$.
 By substituting into equation \eqref{eq:regseg-energy}, we obtain:
