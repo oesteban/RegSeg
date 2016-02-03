@@ -43,7 +43,7 @@ First, we assume independence between pixels, and thus we break down the
   global data likelihood into a product of pixel-wise conditional probabilities:
 
   \begin{equation}
-  P(M \mid U) = \underset{l}{\prod} \underset{\vec{r}\in \Omega_l}{\prod}
+  P(M \mid U) = \underset{l}{\prod} \underset{\vec{r}'\in \Omega_l}{\prod}
     P\left( \vec{f}' \mid U \right),
   \label{eq:regseg-bayes_aposteriori}
   \end{equation}
@@ -61,10 +61,10 @@ For convenience and because it has been shown to be an appropriate approximation
 
 \revcomment[R\#3-C.15]{%
   \begin{align}
-  P( M \mid U) &= \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod}
+  P( M \mid U) &= \underset{l}{\prod} \underset{\vec{r}' \in \Omega_l}{\prod}
   \mathcal{N} (\vec{f}' \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_{l} )
   \ifthenelse{\boolean{review}}{=}{= \notag\\ &=}
-  \underset{l}{\prod} \underset{\vec{r} \in \Omega_l}{\prod} \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}
+  \underset{l}{\prod} \underset{\vec{r}' \in \Omega_l}{\prod} \frac{1}{ \sqrt{(2\pi)^{C}\,\left|\boldsymbol{\Sigma}_{l}\right|}}\,{e^{\left(-\frac{1}{2}
   \mdist{f'}{l} \right)}},
   \label{eq:regseg-pdf}
   \end{align}%
@@ -88,7 +88,7 @@ The \autoref{fig:regseg-model} shows \revcomment[authors]{how the joint distribu
   \includegraphics[width=\linewidth]{figure01}
   \caption{The {\color{blue} interfacing surfaces $\Gamma_m$ between the competing \glspl{roi} $\Omega_l$,
   play the role of active contours which drive the registration process.}
-  They evolve iteratively following {\color{blue} the normal $\hat{\mathbf{n}}_i$ of the surface} at each vertex
+  They evolve iteratively {\color{blue} along the normal $\hat{\mathbf{n}}_i$ of the surface} at each vertex
     $\vec{v}_i$ of the mesh.
   The gradient speeds $\bar{s}_i$ drive registration, which are computed as the disparity of the data
     energies with respect to the two limiting regions of $M(\vec{v}_i)$, the features of the image
@@ -180,12 +180,12 @@ Finally, the maximum a posteriori problem is adapted to a variational problem wh
 \revcomment[R\#3\\C.17--C.19]{%
   \begin{align}
   E(\vec{u}) &= -\log \underset{l}{\prod}
-  \underset{\vec{r} \in \Omega_l}{\prod}
+  \underset{\vec{r}' \in \Omega_l}{\prod}
   \mathcal{N} \left( \vec{f}' \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_l \right)\,p_0( \vec{u})\,p_1( \vec{u}) =
-\notag\\ &= - \underset{l}{\sum} \int_{\Omega_l} \Big\{ \log \left[ \mathcal{N} \left( \vec{f}' \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_l \right) \right] \, + \log \left[ p_0( \vec{u})\,p_1( \vec{u}) \right] \Big\} \, d\vec{r}
+\notag\\ &= - \underset{l}{\sum} \int_{\Omega_l} \Big\{ \log \left[ \mathcal{N} \left( \vec{f}' \mid \boldsymbol{\mu}_l, \boldsymbol{\Sigma}_l \right) \right] \, + \log \left[ p_0( \vec{u})\,p_1( \vec{u}) \right] \Big\} \, d\vec{r}'
    = \notag\\ &=
   \const + \underset{l}{\sum} \Big\{ \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r} \Big\} \,
-  + \int_{\Omega} \frac12 \left[ \vec{u}^T \mathbf{A} \vec{u} + (\nabla \vec{u})^T \mathbf{B} (\nabla \vec{u}) \right] \,d\vec{r}.
+  + \int_{\Omega} \frac12 \left[ \vec{u}^T \mathbf{A} \vec{u} + (\nabla \vec{u})^T \mathbf{B} (\nabla \vec{u}) \right] \,d\vec{r}'.
   \label{eq:regseg-energy}
   \end{align}%
 }
@@ -232,20 +232,20 @@ Let us assume that \revcomment[R\#1-C.5\\R\#3-C.31]{the preferential directions 
   \begin{align}
   \frac{\partial E(\vec{u})}{\partial \vec{u}_k} &=
   \frac{ \partial }{\partial \vec{u}_k} \Big\{
-  \underset{l}{\sum} \big[ \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r} \big] \,
+  \underset{l}{\sum} \big[ \int_{\Omega_l} \mdist{f'}{l} \,d\vec{r}' \big] \,
   + \int_{\Omega} \frac12 [ \boldsymbol{\alpha} \cdot \vec{u}^{\circ2}
-  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}
+  + \boldsymbol{\beta} \cdot (\nabla \vec{u})^{\circ2} ] \,d\vec{r}'
   \Big\},
   \label{eq:regseg-gradient_descent}
   \end{align}}
   where $\vec{u}^{\circ2} = \vec{u}^T \cdot \vec{u}$, \revcomment[R\#3-C.21]{%
   and $\{\boldsymbol{\alpha}, \boldsymbol{\beta}\}$ are the expected variances along
-  the imaging axes of the displacements field and its gradient, respectively.}
+  the imaging axes of the displacement field and its gradient, respectively.}
 Then, the data and regularization terms are split and discretized to compute their
   derivatives.
 \revcomment[R\#3-C.14]{%
 The derivative of the data term is computed using explicit shape gradients (see \ref{app:shape_gradients}),
-  that finally lead to obtain vertex-wise speeds of the gradient $\bar{s}_i$ as}
+  which finally lead to obtain vertex-wise speeds of the gradient $\bar{s}_i$ as}
   illustrated in \autoref{fig:regseg-method}.
 \revcomment[R\#3-C.14]{%
 Using the expressions \eqref{eq:regseg-gradient_wshape} and 
@@ -277,12 +277,11 @@ Finally, to descend this gradient, we establish a semi-implicit Euler scheme
 The \regseg{} tool includes a multiresolution strategy on the free-form deformation field.
 Registration pyramids are created by setting the spacing between the control points of the B-spline basis
   functions for each level of the multiresolution strategy.
-\revcomment[R\#3-C32]{As a rule of thumb, for a $\delta =$ 1.0 both $\boldsymbol{\alpha}$
-  and $\boldsymbol{\beta}$ will typically be in the range [0.0, 1.0].}
-The implementation details as well as other features (such as the sparse matrix approach
-  to fast interpolation) and the main parameters
-  ($\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$, the B-spline grid resolutions,
-  and target image smoothing) are discussed in the \citetalias[][section S1]{esteban_useful_2015}.
+\revcomment[R\#3-C32]{As a rule of thumb, for a $\delta =$ 1.0, both $\boldsymbol{\alpha}$
+  and $\boldsymbol{\beta}$ will typically be in the range [0.0, 1.0].
+The parameters used ($\delta$, $\boldsymbol{\alpha}$, $\boldsymbol{\beta}$, the B-spline grid resolutions,
+  and target image smoothing), the implementation details, and other features such as the sparse matrix
+  approach to fast interpolation} are discussed in the \citetalias[][section S1]{esteban_useful_2015}.
 
 \subsection{Evaluation protocol}\label{sec:regseg-evaluation_protocol}
 In order to assess the performance of \regseg{}, we defined the following general
@@ -299,7 +298,7 @@ Then, \regseg{} is evaluated in a framework using undistorted \gls*{dmri} datase
   and $U_\text{true}$ is derived from the corresponding inhomogeneity fieldmap of
   the subject.
 Therefore, the deformation field is nonzero only in the \revcomment[R\#3-C.23]{\acrfull*{pe}} axis,
-  and resembles a real \gls*{epi} distortion.
+  and \revcomment[R\#1-C3]{reproduces a} real \gls*{epi} distortion.
 The adaptation of the evaluation protocol to the simulated phantoms and the real data is
   explained in the following sections.
 
@@ -327,10 +326,10 @@ With the second warping, we aimed to obtain a field with smoothness
   \citep{irfanoglu_susceptibility_2011}.
 Therefore, the control points were separated by 25.25 mm ($u_d\leq$ 10.10 mm).
 After generating the ground-truth deformation, the original surfaces
-  were warped by interpolating the displacements field at each vertex.
+  were warped by interpolating the displacement field at each vertex.
 The warped surfaces $\gammaset_\text{true}$ were binarized to generate tissue fractions
   at low (\isores[mm]{2.0}) and high (\isores[mm]{1.0}) resolutions.
-Using a \gls*{mr} simulator \citep{caruyer_phantomas_2014}, we synthesized
+Using an \acrshort*{mri} simulator \citep{caruyer_phantomas_2014}, we synthesized
   \gls*{t1} (TE/TR= 10/1500 ms) and \gls*{t2} images (TE/TR= 90/5000 ms), which
   corresponded to each phantom type, with each at two resolutions
   (1.0 mm and 2.0 mm isotropic).
@@ -350,7 +349,7 @@ In total, 1200 experiments (four phantom types $\times$ 150 random warpings $\ti
       $\gammaset_R$, thereby obtaining $\gammaset_\text{true}$.
   3) After being warped, $\gammaset_\text{true}$ were projected onto the corresponding discrete 3D volume and downsampled to create partial volume effects at two resolutions,
      i.e., \isores[mm]{2.0} and \isores[mm]{1.0}, thereby producing sets of tissue fractions maps.
-  4) The tissue fractions were fed into a \acrfull*{mr} simulator, which generated \acrfull*{t1} and \acrfull*{t2} -like images at the
+  4) The tissue fractions were fed into an \acrshort*{mri} simulator, which generated \acrfull*{t1} and \acrfull*{t2} -like images at the
      two possible resolutions.
   5) The \regseg{} tool was applied using the warped test images as multispectral moving images and $\gammaset_R$ as shape priors.
   6) The agreement between the surfaces fitted by \regseg{} ($\hat{\gammaset}_\text{test}$) and $\gammaset_\text{true}$ were assessed
@@ -425,7 +424,7 @@ The segmentation model corresponding to this partition is shown in \autoref{fig:
   and discussed in greater detail in the \citetalias[section S4]{esteban_useful_2015}.
 
 \paragraph*{Ground-truth generation}
-Realistic deformation was achieved by generating displacements fields that satisfy the theoretical
+Realistic deformation was achieved by generating displacement fields that satisfy the theoretical
   properties of distortion.
 The displacements along the \gls*{pe} axis of the \gls*{dmri} image are related to the local
   deviation of the field $\Delta B_0(\vec{r})$ from its nominal value $B_0$  \citep{jezzard_correction_1995},
@@ -437,7 +436,7 @@ The displacements along the \gls*{pe} axis of the \gls*{dmri} image are related 
   \end{equation}
 where $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time, and
   $s_\text{PE}$ is the pixel size along \gls*{pe}.
-Certain \gls*{mr} sequences are designed to estimate $\Delta B_0$, thereby obtaining
+Certain \acrshort*{mri} sequences are designed to estimate $\Delta B_0$, thereby obtaining
   the so-called fieldmap.
 We derived the deformation $U_\text{true}$ from the fieldmap image released with
   the corresponding packages of each dataset in the \gls*{hcp}.

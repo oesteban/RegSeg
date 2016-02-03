@@ -50,7 +50,7 @@ Conversely, the deformation model of \regseg{} is nonlinear and the active conto
 Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
   registration method in 2D using level sets and a nonlinear elasticity smoother on the
   displacement vector field, which preserves the topology even with very large deformations.
-\Regseg{} includes an anisotropic regularizer for the displacements field proposed by
+\Regseg{} includes an anisotropic regularizer for the displacement field proposed by
   \cite{nagel_investigation_1986}.
 This regularization strategy conceptually falls in the midway between the Gaussian smoothing
   generally included in most of the existing methodologies, and the complexity of
@@ -140,7 +140,7 @@ The current activity on improving correction methods \citep{irfanoglu_drbuddi_20
   acquisition other than the minimal protocol comprehending only \gls*{t1} and \gls*{dmri} images.
 This situation is found commonly in historical datasets.
 \revcomment[R\#1-C.2]{%
-We envision \regseg{} to be integrated in diffusion processing pipelines, after a preliminary
+We envision \regseg{} to be integrated in diffusion processing pipelines, after a preliminar
   \gls*{dti} computation and before anatomically-informed reconstruction and tractography
   methods.
 Since the structural information is projected into the native space of \gls*{dmri},

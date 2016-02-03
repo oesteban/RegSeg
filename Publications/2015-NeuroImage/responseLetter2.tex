@@ -61,7 +61,7 @@ I am satisfied that the active contour alignment approach used to align the surf
 \end{reviewpoint}
 \reply{%
 We thank the reviewer for the time dedicated in his/her review and these positive comments.
-We are pleased that this summary of the paper matches the idea we want to transmit.
+We are pleased to confirm that this summary of the paper matches the idea we want to transmit.
 
 We would like to point out that the distortions applied to the real datasets are derived from
   real fieldmaps, and therefore they are not ``modeled'' in a strict sense.
@@ -84,12 +84,13 @@ Society of Magnetic Resonance in Medicine. Vol. 11. 2004.
 We apologize since the paper could be misleading in its former version, driving
   the reader to identify its goal restricted to support anatomically constrained
   tractography.
-We have modified the last sentence in the abstract and lines 339--344 in the discussion to
+We have modified the last sentence in the abstract and lines 57--58 (introduction) to
   clarify that this method is intended to support any diffusion processing task that
   requires a precise delineation of the anatomy in the diffusion space.
-Although we have not found the exact phrase cited by the reviewer\footnote{``this method avoids any
+In particular, although we have not found the exact phrase cited by the
+ reviewer\footnote{``this method avoids any
  requirement for collecting additional scans nor resampling for diffusion unwarping''},
- we have modified our close statements in lines 55--60 to clarify both features
+ we have revised our close statements in lines 55--60 to clarify both features
  of the method.
 
 In the field of connectivity analysis, the issue of distortion has posed important problems in the
@@ -126,6 +127,9 @@ As a matter of fact, we have recently published a whole-brain digital phantom of
 In this case, Jones et al. blame it on the misregistration of the \emph{b0} and the
   diffusion weighted volumes, but the problem applies equally when the ROIs are
   not correctly aligned with the \emph{b0} itself.
+
+Regarding how the method integrates within the diffusion processing pipeline,
+  we have included the new lines 339--344.
 \end{itemize}
 }
 
@@ -197,8 +201,8 @@ We appreciate the suggestion and introduced the comma accordingly.
 Pg 7, line 4 `` anisotropy is aligned''. What is meant by anisotropy in this context, the anisotropy of the deformation gradient.
 \end{reviewpoint}
 \reply{%
-The reviewer is totally right. We have modified the text accordingly (lines 117--118,
-  and lines 412--414 in the Appendix). 
+The reviewer is totally right. We have modified the text accordingly (lines 116--117,
+  and lines 400--402 in the Appendix 1). 
 This comment is close and consistent with \autoref{com:31}.
 }
 
@@ -227,7 +231,8 @@ Again, we are pleased to confirm that the summary of the reviewer agrees with ou
 Overall, I am slightly confused by some aspects of the equations, and I think that some information from the supplement (which I have not had time to read) should be moved into the paper to clarify missing points. The paper should be able to be read independently of the supplement, which does not seem to be the case currently. Specifically, the relationship of the bspline registration framework to the evolution of the active contours is a bit confusing, with a main equation given inside Figure 1, and apparently all other detail in the supplement. This could be as simple as an additional paragraph or two.
 \end{reviewpoint}
 \reply{%
-We have introduced one Appendix (starting by line 396) explaining how the shape-gradients are applied and how the equation given
+We have introduced one Appendix (\emph{Appendix 2. Application of the shape-gradients}, starting by line 402) to
+  show how the shape-gradients are applied and how the equation given
   in the Figure 1 relates to the registration framework.
 As the reviewer indicated, this text was part of the Supplemental Materials.
 }
@@ -256,7 +261,7 @@ We have introduced the name of the model referred to (line 8).
 On page 3, please define N (section 2.1)
 \end{reviewpoint}
 \reply{%
-We have introduced the symbol $\mathcal{N}$ before eq. (4) in which it appears for first time (line 90).
+We have introduced the symbol $\mathcal{N}$ before eq. (4) in which it appears for first time (line 89).
 }
 
 \begin{reviewpoint}
@@ -266,7 +271,8 @@ In Figure 1, it is a bit confusing that active contours appear, because the abst
 The active contours are explicitly introduced in line 46, and an implicit reference to this methodological foundation
 is found in the abstract: ``\emph{we propose regseg, a surface-to-volume nonlinear registration method that segments homogeneous regions within multivariate images by mapping a set of nested reference-surfaces}''.
 The reviewer is right regarding the missing details about the direction of normals.
-In the revised manuscript, this is described in the new Appendix 1 (equations A.1--4).
+In the revised manuscript, this is described in the new Appendix 1 (equations A.1--4), and the caption of
+  Figure 1 has been also modified.
 }
 
 \begin{reviewpoint}
@@ -274,7 +280,7 @@ It seems the evolution at $s_1$ is in the direction opposite the inward normal, 
 \end{reviewpoint}
 \reply{%
 The evolution at $s_1$ can be in either direction, depending on the direction of the gradient.
-Again, with the insertion of Appendix 1 we understand that this issue is clarified.
+Again, with modification of the caption of Fig. 1 and the insertion of Appendix 1 we understand that this issue is clarified.
 }
 
 \begin{reviewpoint}
@@ -297,7 +303,7 @@ The reviewer is right. We have fixed the manuscript accordingly.
 Please describe A and B in a sentence after equation 5. It is not clear how these were chosen (or at least refer to the appendix).
 \end{reviewpoint}
 \reply{%
-Added a sentence describing A and B (lines 103--104).
+Added a sentence describing A and B (lines 102--103).
 }
 
 \begin{reviewpoint}
@@ -339,16 +345,16 @@ Added brackets as in \autoref{com:19} and fixed two pluses as in \autoref{com:18
 Please explain in a sentence what alpha and beta are in equation (10) (expected variances along each axis of the coordinate system, or something).
 \end{reviewpoint}
 \reply{%
-Added explanation in lines 120--121.
+Added explanation in lines 119--120.
 }
 
 \begin{reviewpoint}
 $\mathbf{g}_k$ is completely undefined in equation (11). I see there is information in a supplement but at a minimum each variable should be defined in a sentence in the main paper.
 \end{reviewpoint}
 \reply{%
-Equations (A.6) and (A.7) introduced in the new Appendix 1 define $\mathbf{g}_k$ (starts by line 406).
-Additionally, a reference to the Appendix and corresponding equations (lines 124--125) and a brief
-  explanation of $\mathbf{g}_k$ (line 126) have been added.
+Equations (A.6) and (A.7) introduced in the new Appendix 2 define $\mathbf{g}_k$ (starts by line 423).
+Additionally, a reference to the Appendix and corresponding equations (lines 123--124) and a brief
+  explanation of $\mathbf{g}_k$ (line 125) have been added.
 }
 
 \begin{reviewpoint}
@@ -413,8 +419,8 @@ The reference to Table 2 has been added to that sentence (line 249).
 in Appendix (and also elsewhere): ``the anisotropy is aligned with the imaging axes'' is quite confusing. Usually anisotropy refers to FA or similar. I believe this is the anisotropy of the covariance matrices, really that their eigenvectors are assumed aligned with the voxel coordinate system. Please clarify the usage of ``anisotropy'' in the registration framework.
 \end{reviewpoint}
 \reply{%
-The reviewer is totally right. We have modified the text accordingly (lines 117--118,
-  and lines 412--414 in the Appendix).
+The reviewer is totally right. We have modified the text accordingly (lines 116--117,
+  and lines 400--402 in the Appendix 1).
 This comment is also made by the reviewer \#1 in the \autoref{com:5}.
 }
 
@@ -424,11 +430,11 @@ What values are used for alpha and beta in the appendix?
 \reply{%
 We agree with the reviewer on the interest of the actual values for $\boldsymbol{\alpha}$
   and $\boldsymbol{\beta}$ to replicate our experiments or derive new works.
+We have included the typical range for these parameters in lines 131--133.
 In order to ensure the reproducibility of the presented experiments, the values
   used in the experiments are provided in the open source repository in the 
   human-readable JSON file format.
 Please find the references to the parameters files in the footnotes of pages 9 and 10.
-We also have included typical ranges for these values in lines 132--133.
 }
 
 \begin{reviewpoint}
@@ -445,6 +451,7 @@ pg. 15 ``monitorization'' is not a word > monitoring
 \end{reviewpoint}
 \reply{%
 All the issues have been corrected following the suggestions of the reviewer.
+In particular, som additional appearances of ``displacements field'' have been corrected.
 }
 
 \bibliographystyle{mystyle}

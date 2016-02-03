@@ -62,7 +62,7 @@ A standardized method to solve the remaining linear mapping between the correcte
   and the structural spaces is \emph{bbregister} \citep{greve_accurate_2009}.
 
 Here, we present a segmentation and surface-to-volume registration method
-  named \regseg{}, and show its usefulness in mapping anatomical information from structural
+  called \regseg{}, and show its usefulness in mapping anatomical information from structural
   space into native \gls*{dmri} space to aid subsequent processing steps
   (reconstruction, tractography and network building using a cortical parcellation).
 The underlying hypothesis is that the registration and segmentation problems
@@ -72,9 +72,9 @@ To implement \regseg{} we first establish an active-contours without edges
 A specific set of reference surfaces extracted from the same subject initialize
   the 3D active contours, which evolve searching for homogeneous regions in the multivariate
   target-image.
-In the presented application to segment \gls*{dmri} data, we propose to use \regseg{}
-  using a set of nested surfaces extracted from a structural image (e.g. \gls*{t1}) and
-  a bivariate target-volume comprehending the \gls*{fa} and \gls*{adc} maps as inputs.
+\revcomment[authors]{We apply \regseg{} to segment \gls*{dmri} data by mapping
+  a} set of nested surfaces extracted from a structural image (e.g. \gls*{t1}) to
+  a bivariate target-volume comprehending the \gls*{fa} and \gls*{adc} maps.
 The evolution of the surfaces is supported by a B-spline basis, optimized
   iteratively using a descent approach driven by shape-gradients
   \citep{besson_dream2s_2003,herbulot_segmentation_2006}.
@@ -94,13 +94,14 @@ Therefore, \regseg{} establishes a registration framework that actually
 In this paper, we first verify the functionality of the method and the \regseg{}
   implementation using a set of digital phantoms, demonstrating the sub-pixel accuracy
   in registration.
-We then evaluate \regseg{} on real \gls*{dmri} datasets, using a derivation of our
+Then, we evaluate \regseg{} on real \gls*{dmri} datasets, using a derivation of our
   instrumentation framework \citep{esteban_simulationbased_2014} which simulates
   known and realistic \gls*{epi} distortions.
 We also compare \regseg{} and a nonlinear registration method to map the \lowb{} to
   the corresponding \gls*{t2} image of the same subject.
-This method is a derivation of the \gls*{t2b} correction methods \citep{kybic_unwarping_2000},
-  reproducing the settings of an existing implementation included within a widely used diffusion
+\revcomment[authors]{This approach is the first step of the} \gls*{t2b} correction
+  methods \citep{kybic_unwarping_2000}.
+\revcomment[authors]{We reproduce the settings and implementation of a} widely used diffusion
   processing software \citep[\emph{ExploreDTI},][]{leemans_exploredti_2009}.
 With this comparison, we demonstrate how \regseg{} achieves higher accuracy with the
   simultaneous registration and segmentation process.
