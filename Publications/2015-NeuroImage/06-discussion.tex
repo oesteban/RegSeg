@@ -116,9 +116,8 @@ These surfaces introduced a bias which displaced the zero of the gradients from 
 
 The proposed application of the method in the task of identifying structural information
   in \gls*{dmri} images is an active field of research \citep{jeurissen_tissuetype_2015}.
-\revcomment[R\#3-C.9]{%
 Current processing of \gls{dmri} involved in the connectome extraction and other applications
-  (such as \gls*{tbss} or surgical planning)} require a precise segmentation
+  (such as \gls*{tbss} or surgical planning) require a precise segmentation
   of the anatomical structures in the diffusion space.
 Some examples of these processing tasks are the structure-informed reconstruction of \gls*{dmri}
   data \citep{jeurissen_multitissue_2014,daducci_accelerated_2015}, the anatomically constrained
@@ -139,16 +138,14 @@ The current activity on improving correction methods \citep{irfanoglu_drbuddi_20
 \Regseg{} addresses this joint problem in a single step and it does not require any additional
   acquisition other than the minimal protocol comprehending only \gls*{t1} and \gls*{dmri} images.
 This situation is found commonly in historical datasets.
-\revcomment[R\#1-C.2]{%
 We envision \regseg{} to be integrated in diffusion processing pipelines, after a preliminar
   \gls*{dti} computation and before anatomically-informed reconstruction and tractography
   methods.
 Since the structural information is projected into the native space of \gls*{dmri},
   these two processes and the matrix building task can be performed on the unaltered
-  \gls*{dmri} signal (i.e. without resampling data to an undistorted space).}
-\revcomment[R\#3-C.9]{%
+  \gls*{dmri} signal (i.e. without resampling data to an undistorted space).
 For analyses other than connectivity, like \gls*{tbss}, the deformation estimated by \regseg{}
-  can be used to map the tracts into structural space.}
+  can be used to map the tracts into structural space.
 
 Beyond the presented application on \gls*{dmri} data, \regseg{} can be indicated in situations
   where there are precise surfaces delineating the structure, a target multivariate
@@ -162,5 +159,5 @@ In these studies, the surfaces obtained in a mature timepoint of the brain are r
   development between them.
 More generally, \regseg{} may also be applied to the personalized study of longitudinal alteration
   of the brain using multispectral images, for instance in the case of traumatic brain
-  injury \citep{irimia_structural_2014} or in \revcomment[R\#3-C.33]{monitoring} brain tumors
+  injury \citep{irimia_structural_2014} or in monitoring brain tumors
   \citep{weizman_semiautomatic_2014}.

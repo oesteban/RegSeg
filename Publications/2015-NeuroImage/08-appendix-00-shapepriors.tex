@@ -17,10 +17,10 @@ If $\mathbf{M}$ is a $n \times n$ diagonal matrix such that $\mathbf{M} = \vec{m
   where we have introduced the Hadamard power notation\footnote{The Hadamard power of a matrix or a vector
   is the power of its elements $\mathbf{M}^{\circ p} = ({m_{ij}}^{p})$}.
 
-In general, the anisotropy \revcomment[R\#3-C.31]{of the distortion field} is aligned with the 
-  \revcomment[R\#3-C.31]{voxel coordinate system}, so
+In general, the anisotropy of the distortion field is aligned with the 
+  voxel coordinate system, so
   $\mathbf{A}$ and $\mathbf{B}$ of \eqref{eq:regseg-energy} can be simplified to diagonal matrices
-  \revcomment[R\#3-C.31]{to regularize the registration process}, such that
+  to regularize the registration process, such that
   $\mathbf{A}= \, \boldsymbol{\alpha}\,\vec{I}_n$ and
   $\mathbf{B}= \, \boldsymbol{\beta}\,\vec{I}_n$.
 By substituting into equation \eqref{eq:regseg-energy}, we obtain:
@@ -33,7 +33,6 @@ By substituting into equation \eqref{eq:regseg-energy}, we obtain:
   \end{align}
 
 \subsection{Application of the shape-gradients}\label{app:shape_gradients}
-\revcomment[R\#3-C.8]{%
 The computation of gradients at the locations of the active contours in the
   instant $t$ is based on the work of \cite{herbulot_segmentation_2006}.
 Let $F(\vec{r})$ be an ``arbitrary'' function over the image domain
@@ -99,9 +98,8 @@ Since the energy functional is defined over competing regions, the displacement 
   - \underset{i}{\sum} \, \frac{\partial \vec{v}_i}{\partial t} \cdot
   \underbracket{w_{p,i} \, \Big[ F_{out}(\vec{v}_i) - F_{in}(\vec{v}_i) \Big] \hat{\vec{n}}_i}_{\bar{s}_i \text{ in Figure 1}}.
   \label{eq:regseg-shape_gradient_disc2}
-  \end{equation}}
+  \end{equation}
 
-\revcomment[R\#3-C.22]{%
 Then, we identify the shape gradient contribution $\vec{g}_k$ on the coefficients $\vec{u}_k$ of the B-spline grid:
 
   \begin{equation}
@@ -121,4 +119,4 @@ Therefore, the shape gradients projected to the grid of B-spline control points 
 \begin{equation}
   \vec{g}_k = - \underset{i}{\sum} \bar{s}_i \cdot \psi_k(\vec{v}_i) \, \hat{\vec{e}}.
   \label{eq:regseg-shape_gradient_final}
-\end{equation}}
+\end{equation}

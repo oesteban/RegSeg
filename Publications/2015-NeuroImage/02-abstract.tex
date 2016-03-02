@@ -1,7 +1,7 @@
 % -*- root: 00-main.tex -*-
 Current methods for processing \gls*{dmri} to map the connectivity of the human brain
   require precise delineations of anatomical structures.
-This requirement has been approached \revcomment[R\#3-C.33]{by} either segmenting the data in
+This requirement has been approached by either segmenting the data in
   native \gls*{dmri} space or mapping the structural information from \gls*{t1} images.
 The characteristic features of diffusion data in terms of \acrlong*{snr}, resolution, as well
   as the geometrical distortions caused by the inhomogeneity of magnetic susceptibility
@@ -13,10 +13,10 @@ Accurate surfaces are extracted from a \gls*{t1} image of the subject, using as 
   the bivariate volume comprehending the \gls*{fa} and the \gls*{adc} maps derived from the
   \gls*{dmri} dataset.
 We first verify the accuracy of \regseg{} on a general context using digital phantoms 
-  \revcomment[R\#1-C1]{distorted with synthetic and random deformations}.
+  distorted with synthetic and random deformations.
 Then we establish an evaluation framework using undistorted \gls*{dmri} data from the \gls*{hcp}
-  and \revcomment[R\#1-C1]{realistic} deformations derived from 
-  \revcomment[R\#1-C1]{the inhomogeneity fieldmap corresponding to each subject}.
+  and realistic deformations derived from 
+  the inhomogeneity fieldmap corresponding to each subject.
 We analyze the performance of \regseg{} computing the misregistration error of the surfaces estimated
   after being mapped with \regseg{} onto 16 datasets from the \gls*{hcp}.
 The distribution of errors shows a 95\% CI of 0.56--0.66 mm, that is below the \gls*{dmri}
@@ -24,6 +24,6 @@ The distribution of errors shows a 95\% CI of 0.56--0.66 mm, that is below the \
 Finally, we cross-compare the proposed tool against a nonlinear \lowb{}-to-T2w registration
   method, thereby obtaining a significantly lower misregistration error with \regseg{}.
 The accurate mapping of structural information in \gls*{dmri} space 
-  \revcomment[R\#1-C2]{is fundamental to increase the reliability of network building
+  is fundamental to increase the reliability of network building
   in connectivity analyses, and to improve the performance of the emerging structure-informed
-  techniques for \gls*{dmri} data processing}.
+  techniques for \gls*{dmri} data processing.

@@ -1,11 +1,11 @@
-\documentclass[5p,authoryear,fleqn]{elsarticle}
-%\documentclass[3p,authoryear,fleqn]{elsarticle}
+% \documentclass[5p,authoryear,fleqn]{elsarticle}
+\documentclass[3p,authoryear,fleqn]{elsarticle}
 \journal{NeuroImage}
 \usepackage[utf8]{inputenc}
 \defcitealias{esteban_useful_2015}{Supplemental Materials}
 \usepackage{xifthen}
 \newboolean{review}
-\setboolean{review}{false}
+\setboolean{review}{true}
 
 \usepackage{tikz}
 % *** MISC UTILITY PACKAGES ***
@@ -156,7 +156,9 @@ active~surfaces \sep cortical~parcellation \sep diffusion MRI \sep nonlinear~reg
 \appendix
 \numberwithin{equation}{section}
 \input{08-appendix-00-shapepriors}
-\twocolumn
+\ifthenelse{\boolean{review}}
+{}
+{\twocolumn}
 
 %\bibliographystyle{plainnat}
 \bibliographystyle{mystyle}

@@ -8,7 +8,7 @@ Each \gls*{dwi} is sensitized with a gradient to probe proton diffusion in a cer
   orientation.
 Subsequent processing involves describing the local microstructure with one of the available
   models, which range from the early \gls*{dti} proposed by \cite{basser_microstructural_1996}
-  to current models such as \revcomment[R\#3-C.10]{\gls*{amico}}.
+  to current models such as \gls*{amico}.
 The microstructural map is then used to draw the preferential orientations of diffusion
   across the brain using tractography \citep{mori_threedimensional_1999}.
 Finally, a graph representing the corresponding structural network is built using
@@ -24,7 +24,7 @@ Possibly, the earliest structural information incorporated to aid \gls*{dmri} pr
   is the \gls*{wm} mask used as a termination criteria for tractography.
 The standardized procedure to obtain this mask was thresholding the \gls*{fa} map.
 However, the mask and subsequent analyses are highly dependent on the 
-  \revcomment[R\#3-C.33]{threshold that is chosen} \citep{taoka_fractional_2009}.
+  threshold that is chosen \citep{taoka_fractional_2009}.
 To overcome the unreliability of \gls*{fa} thresholding, and to broaden
   \gls*{wm} segmentation to brain tissue segmentation, a large number of
   methods have been proposed using \glspl*{dwi}, the \lowb{}, and \gls*{dti}-derived
@@ -72,8 +72,8 @@ To implement \regseg{} we first establish an active-contours without edges
 A specific set of reference surfaces extracted from the same subject initialize
   the 3D active contours, which evolve searching for homogeneous regions in the multivariate
   target-image.
-\revcomment[authors]{We apply \regseg{} to segment \gls*{dmri} data by mapping
-  a} set of nested surfaces extracted from a structural image (e.g. \gls*{t1}) to
+We apply \regseg{} to segment \gls*{dmri} data by mapping
+  a set of nested surfaces extracted from a structural image (e.g. \gls*{t1}) to
   a bivariate target-volume comprehending the \gls*{fa} and \gls*{adc} maps.
 The evolution of the surfaces is supported by a B-spline basis, optimized
   iteratively using a descent approach driven by shape-gradients
@@ -85,11 +85,11 @@ Therefore, \regseg{} establishes a registration framework that actually
   application on three key aspects:
   1) the surfaces are typically extracted from the \gls*{t1} image of the same subject,
     therefore \regseg{} does not require additional MR acquisitions to the minimal
-    \gls*{dmri} protocol \revcomment[R\#1-C.2]{in order to estimate the deformation field};
-  2) \revcomment[R\#1-C.2]{depending on the application, the resampling of the \glspl*{dwi}
+    \gls*{dmri} protocol in order to estimate the deformation field;
+  2) depending on the application, the resampling of the \glspl*{dwi}
     introduced by the correction method can be avoided, either by performing the posterior
     processing on the native \gls*{dmri} space or applying the unwarping on the tractography
-    itself}; and
+    itself; and
   3) \regseg{} increases the geometrical accuracy of the overall process.
 In this paper, we first verify the functionality of the method and the \regseg{}
   implementation using a set of digital phantoms, demonstrating the sub-pixel accuracy
@@ -99,9 +99,9 @@ Then, we evaluate \regseg{} on real \gls*{dmri} datasets, using a derivation of 
   known and realistic \gls*{epi} distortions.
 We also compare \regseg{} and a nonlinear registration method to map the \lowb{} to
   the corresponding \gls*{t2} image of the same subject.
-\revcomment[authors]{This approach is the first step of the} \gls*{t2b} correction
+This approach is the first step of the \gls*{t2b} correction
   methods \citep{kybic_unwarping_2000}.
-\revcomment[authors]{We reproduce the settings and implementation of a} widely used diffusion
+We reproduce the settings and implementation of a widely used diffusion
   processing software \citep[\emph{ExploreDTI},][]{leemans_exploredti_2009}.
 With this comparison, we demonstrate how \regseg{} achieves higher accuracy with the
   simultaneous registration and segmentation process.
