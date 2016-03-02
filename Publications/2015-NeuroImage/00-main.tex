@@ -1,12 +1,13 @@
-%\documentclass[5p,authoryear,fleqn]{elsarticle}
-\documentclass[3p,authoryear,fleqn]{elsarticle}
+\documentclass[5p,authoryear,fleqn]{elsarticle}
+%\documentclass[3p,authoryear,fleqn]{elsarticle}
 \journal{NeuroImage}
 \usepackage[utf8]{inputenc}
 \defcitealias{esteban_useful_2015}{Supplemental Materials}
 \usepackage{xifthen}
 \newboolean{review}
-\setboolean{review}{true}
+\setboolean{review}{false}
 
+\usepackage{tikz}
 % *** MISC UTILITY PACKAGES ***
 \usepackage[mode=buildnew]{standalone}
 \usepackage{gincltex}
@@ -76,13 +77,15 @@ an-iso-tro-pic Stud-holme seg-ment-a-tion re-gis-tra-tion map-ped achiev-ed}
 \ifthenelse{\boolean{review}}
 {
   \usepackage[colorinlistoftodos,textsize=tiny, textwidth=1.2cm]{todonotes}
+  \colorlet{revcolor}{blue!70}
   \setlength{\marginparwidth}{1.5cm}
   \reversemarginpar
   % \setlength{\marginparwidth}{2.0cm}
   \newcommand{\revcomment}[2][]{\ifthenelse{\equal{#1}{}}{}{\todo{#1}}%
-  \begingroup \color{blue!70} #2\endgroup}
+  \begingroup \color{revcolor} #2\endgroup}
 }
 {
+  \definecolor{revcolor}{gray}{0.0}
   \newcommand{\todo}[2][]{}
   \newcommand{\revcomment}[2][]{#2}
 }
@@ -149,9 +152,11 @@ active~surfaces \sep cortical~parcellation \sep diffusion MRI \sep nonlinear~reg
 
 
 % Add appendices
+\onecolumn
 \appendix
 \numberwithin{equation}{section}
 \input{08-appendix-00-shapepriors}
+\twocolumn
 
 %\bibliographystyle{plainnat}
 \bibliographystyle{mystyle}

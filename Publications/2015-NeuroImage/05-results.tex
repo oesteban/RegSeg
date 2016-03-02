@@ -25,7 +25,7 @@ Statistical tests might not be sufficiently conclusive, so we also computed the 
 \begin{figure*}[!h]
   \centering
   \includestandalone[width=\linewidth]{figure05}
-  \caption{A. Visual assessment of the results obtained on the {\color{blue} digital phantoms.
+  \caption{A. Visual assessment of the results obtained on the {\color{revcolor} digital phantoms.
     The panel shows three coronal slices (indices indicated on the lower left corner) of each phantom
     volume at low resolution}:
     ``gyrus'' (top left), ``L'' (top right), ``ball'' (bottom left),
@@ -35,10 +35,10 @@ Statistical tests might not be sufficiently conclusive, so we also computed the 
     contours with respect to their ground truth positions (shown in green).
   The partial volume effect makes segmentation of the sulci a challenging problem with voxel-wise
     clustering methods, but they were successfully segmented with \regseg{}.
-  B. Quantitative evaluation: {\color{blue} the violin plot shows the variability across experiments
+  B. Quantitative evaluation: {\color{revcolor} the violin plot shows the variability across experiments
     of the average Hausdorff distance measured in each vertex of the corresponding surface, for the}
     low (left) and high (right) resolutions. 
-    {\color{blue} Error averages were} consistently below the size of the voxel.
+    {\color{revcolor} Error averages were} consistently below the size of the voxel.
     }\label{fig:regseg-phantom}
 \end{figure*}
 \begin{figure*}[!h]
@@ -52,7 +52,7 @@ Statistical tests might not be sufficiently conclusive, so we also computed the 
   The coronal view is omitted because it was the least informative due to the directional property
     of the distortions.
   Specific regions where \regseg{} outperformed \gls*{t2b} are enlarged.
-  B. Violin plots of the error distributions for each surface {\color{blue} across the 16 subjects}, which show the 
+  B. Violin plots of the error distributions for each surface {\color{revcolor} across the 16 subjects}, which show the 
     voxel size of the \gls*{dmri} images (1.25 mm), thereby supporting the improved results obtained
     by \regseg{} with the proposed settings.
   }\label{fig:regseg-results_real}
@@ -110,7 +110,7 @@ The results of the statistical tests and the CIs are summarized in \autoref{tab:
        & H-stat   & 21.20 & 22.31 & 22.31 & 67.85 \\
     \hline
     \end{tabular}
-    \caption{Statistical analysis of results obtained using {\color{blue} 16 real datasets from 
+    \caption{Statistical analysis of results obtained using {\color{revcolor} 16 real datasets from 
     the \gls*{hcp}}, which show that \regseg{} performed better than the alternative \acrfull{t2b} method.
     The distribution of the errors computed for the surfaces of interest ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$)
       and the aggregate of all surfaces (Aggreg. column) had lower 95\% CIs with \regseg{}.

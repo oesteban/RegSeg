@@ -86,14 +86,14 @@ The \autoref{fig:regseg-model} shows \revcomment[authors]{how the joint distribu
 
 \begin{figure}
   \includegraphics[width=\linewidth]{figure01}
-  \caption{The {\color{blue} interfacing surfaces $\Gamma_m$ between the competing \glspl{roi} $\Omega_l$,
+  \caption{The {\color{revcolor} interfacing surfaces $\Gamma_m$ between the competing \glspl{roi} $\Omega_l$,
   play the role of active contours which drive the registration process.}
-  They evolve iteratively {\color{blue} along the normal $\hat{\mathbf{n}}_i$ of the surface} at each vertex
+  They evolve iteratively {\color{revcolor} along the normal $\hat{\mathbf{n}}_i$ of the surface} at each vertex
     $\vec{v}_i$ of the mesh.
   The gradient speeds $\bar{s}_i$ drive registration, which are computed as the disparity of the data
     energies with respect to the two limiting regions of $M(\vec{v}_i)$, the features of the image
     $M$ in the location of vertex $\vec{v}_i$.
-  {\color{blue} The computation of shape-gradients is developed in \ref{app:shape_gradients}.}
+  {\color{revcolor} The computation of shape-gradients is developed in \ref{app:shape_gradients}.}
   In this figure, the $\bar{s}_1$ derived from \autoref{eq:regseg-shape_gradient_disc2} is 
     written in the lower box, with $\Omega_{wm}$ in the inner limiting region, $\Omega_{gm}$
     the outer region, and $w_{0,1}$ is the relative area associated with vertex $\vec{v}_1$
@@ -106,14 +106,14 @@ The \autoref{fig:regseg-model} shows \revcomment[authors]{how the joint distribu
 \begin{minipage}{\textwidth}
 \includegraphics[width=\linewidth]{figure02}\\%
 \vskip-2.0em
-\includegraphics[width=\linewidth]{legend}%x
+\includegraphics[width=\linewidth]{legend}%
 \end{minipage}
 % \includegraphics[width=\linewidth]{figure04B}
 % \includegraphics[width=\linewidth]{figure04C}
 \caption{%
 Evolution of the segmentation model defined by the homogeneous regions $\Omega_l$,
   for one real dataset.
-{\color{blue}%
+{\color{revcolor}%
 Panel (A, left) shows the joint distribution of the \gls*{fa} and \gls*{adc} conditioned to
   the segmentation \omegaset{} defined by the surfaces $\gammaset_R$ extracted from
   the \gls*{t1} image.
