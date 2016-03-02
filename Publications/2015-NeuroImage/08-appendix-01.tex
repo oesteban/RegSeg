@@ -1,26 +1,8 @@
-% if have a single appendix:
-%\appendix[Proof of the Zonklar Equations]
-% or
-%\appendix  % for no appendix heading
-% do not use \section anymore after \appendix, only \section*
-% is possibly needed
-
-% use appendices with more than one appendix
-% then use \section to start each appendix
-% you must declare a \section before using any
-% \subsection or using \label (\appendices by itself
-% starts a section numbered zero.)
-%
+% -*- root: 00-main.tex -*-
 \onecolumn
 \appendix
 
 \section{Proof of duality between the probabilistic and the presented frameworks}
-Here the demonstration that we are preparing.
-
-% you can choose not to have a title for an appendix
-% if you want by leaving the argument blank
-%\section{}
-%Appendix two text goes here.
 
 In the probabilistic approach to image segmentation, the smoothness constraints
 can be introduced into the \gls{map} criterion as a \gls{mrf}. Accordingly to the
@@ -34,7 +16,7 @@ and we draw the equivalence with the \gls{mrf} modeling, for $U(\mathbf{x}_i \mi
 being the Potts model.
 
 In the probabilistic approach, the underlying concept to segmenting an image is the
-Bayes' rule. For a discrete image of $N$ pixels indexed by $i$, this rule reads as
+Bayes' rule. For a discrete image of $N$ \revcomment[R\#3-C10]{voxel}s indexed by $i$, this rule reads as
 follows:
 \begin{equation}
 P(K|I)=P(I \mid K)\, P(K)=\underset{i}{\prod} p (\mathbf{x}_i | K ) \, p_i(K).
@@ -47,7 +29,7 @@ the \textit{log}-likelihood is computed:
 E(K)= -\log( P(K|I) ) = \sum\limits_k \int_{\Omega_k} -\log p_k(I(\mathbf{x}),\mathbf{x}) \,d\mathbf{x}+\nu_B \left|K\right|,
 \end{equation}
 where $\mathbf{s} = I(\mathbf{x})$, $\mathbf{s} \in \mathbb{R}^C$ (a vector of $C$ scalar features).
-Additionally, the discrete grid of $N$ pixels has been converted to a continuous space by assuming
+Additionally, the discrete grid of $N$ \revcomment[R\#3-C10]{voxel}s has been converted to a continuous space by assuming
 $d\mathbf{x}$ as infinitesimal bin size.
 
 To explicitly define the likelihood, we firstly define the squared \textit{Mahalanobis distance} that

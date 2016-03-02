@@ -39,8 +39,8 @@ Since $\omegaset$ are mapped by $U$, we simplify
   $P(U, \omegaset) = P(U) \implies P(M \mid U,\omegaset) = P(M \mid U)$.
 The best estimate $\hat{U}$ then satisfies the maximum a posteriori criterion
   and it aligns $\gammaset_R$ into $M$.
-First, we assume independence between pixels, and thus we break down the
-  global data likelihood into a product of pixel-wise conditional probabilities:
+First, we assume independence between \revcomment[R\#3-C10]{voxel}s, and thus we break down the
+  global data likelihood into a product of \revcomment[R\#3-C10]{voxel}-wise conditional probabilities:
 
   \begin{equation}
   P(M \mid U) = \underset{l}{\prod} \underset{\vec{r}'\in \Omega_l}{\prod}
@@ -238,9 +238,12 @@ Then, the data and regularization terms are split and discretized to compute the
 The derivative of the data term is computed using explicit shape gradients (see \ref{app:shape_gradients}),
   which finally lead to obtain vertex-wise speeds of the gradient $\bar{s}_i$ as
   illustrated in \autoref{fig:regseg-method}.
-Using the expressions \eqref{eq:regseg-gradient_wshape} and 
-  \eqref{eq:regseg-shape_gradient_final} given in \ref{app:shape_gradients}
-  and introducing the analytical derivative of the regularization term, then
+\revcomment[R\#1-C4]{%
+The shape gradient contributions $\vec{g}_k$ on the field coefficients $\vec{u}_k$
+  can then be computed }%
+using the expressions \eqref{eq:regseg-gradient_wshape} and 
+  \eqref{eq:regseg-shape_gradient_final} given in \ref{app:shape_gradients}.
+Finally, introducing the analytical derivative of the regularization term,
   the \autoref{eq:regseg-gradient_descent} is reformulated as:
 
   \begin{align}
@@ -380,7 +383,8 @@ which extends our previous evaluation \citep{esteban_simulationbased_2014} of di
 
 \paragraph*{Data}
 To evaluate \regseg{} using real \gls*{dmri} data obtained from human brains,
-  we collected 16 subjects from the \gls*{hcp} database.
+  we collected 16 subjects from the \revcomment[R\#3-C9]{Q3 Release of the}
+  \gls*{hcp} database.
 The original acquisitions are released within ``unprocessed'' packages, whereas
   the ``minimally preprocessed'' packages contain the corresponding images after
   some processing (correction for several artifacts, brain-extraction, spatial
@@ -392,6 +396,12 @@ These datasets comprise a large set of images, including \gls*{t1}, \gls*{t2}, a
 Since we obtained the \gls*{dmri} data from the minimally preprocessed package, these
   images are corrected for \gls*{epi} distortions and spatially normalized in
   \gls*{t1} space.
+\revcomment[R\#3-C9]{In the Q3 Release of the \gls*{hcp}, the \gls*{dmri} session includes
+  six runs, two runs for each of three different gradient tables, and each table is acquired
+  once with right-to-left and left-to-right encoding polarities, respectively.
+Then, the diffusion datasets with opposed polarities are corrected for susceptibility
+  distortions using the \emph{TOPUP} tool \citep{andersson_how_2003}
+  before producing the released ``minimally preprocessed'' data.}.
 
 \paragraph*{Segmentation model}
 Based on our experience % \citep{esteban_brain_2012}
@@ -424,7 +434,7 @@ The displacements along the \gls*{pe} axis of the \gls*{dmri} image are related 
   \label{eq:regseg-fieldmap}
   \end{equation}
 where $\gamma$ is the gyromagnetic ratio, $T_{acq}$ is the readout time, and
-  $s_\text{PE}$ is the pixel size along \gls*{pe}.
+  $s_\text{PE}$ is the \revcomment[R\#3-C10]{voxel} size along \gls*{pe}.
 Certain \acrshort*{mri} sequences are designed to estimate $\Delta B_0$, thereby obtaining
   the so-called fieldmap.
 We derived the deformation $U_\text{true}$ from the fieldmap image released with
@@ -473,6 +483,16 @@ We reproduced the solution and settings provided with \emph{ExploreDTI}
 The deformation field is correspondingly restricted to the \gls*{pe} direction.
 The settings file for \emph{elastix} is also
   available\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/t2b_elastix_y.txt}}.
+\revcomment[R\#3-C7\\R\#3-C7]{%
+In this registration scheme, the \gls*{t2} image is the \emph{reference} and
+  the \lowb{} plays the role of \emph{moving} image.
+Therefore, the transform is defined in the coordinate system of the \gls*{t2} image,
+  and for each point in this space provides the location of the corresponding feature
+  in the \lowb{} image.
+Since the surfaces are defined in the \gls*{t2} --\emph{reference}-- space, their coordinates
+  can be mapped to the \lowb{} space using this transform, obtaining the 
+  \emph{distorted surfaces} corresponding to the \lowb{}-to-\gls*{t2} registration.}
+
 
 \paragraph*{Error measurement}\label{sec:regseg-experiments_evaluation}
 Distortion only occurs along the \gls*{pe} axis of the image, so we computed the

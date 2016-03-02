@@ -1,0 +1,150 @@
+\documentclass[9pt]{memoir}
+
+\usepackage[sort&compress]{natbib}
+\usepackage{xcolor}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{charter}
+
+\usepackage{xcite}
+\externalcitedocument{00-main}
+
+\usepackage[colorlinks=true]{hyperref}
+\usepackage{doi}
+\usepackage{nameref}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\newcounter{reviewpoint}
+\makeatletter
+\newenvironment{reviewintro}%
+{\begingroup%
+ \color{black!60}
+ \fontshape{it}\selectfont %
+}
+{\endgroup\par\medskip}
+
+
+\newenvironment{reviewpoint}%
+{\refstepcounter{reviewpoint}\par\medskip\vspace{3ex}\hrule\vspace{1.5ex}\par\noindent%
+   {\fontseries{b}\selectfont Comment \arabic{reviewpoint}:}
+   \begingroup%
+   \color{black!60}
+   \fontshape{it}\selectfont %
+
+}
+{\endgroup\label{com:\thereviewpoint}\par\medskip}
+\def\reviewpointautorefname{Comment}
+\makeatother
+
+
+\newcommand{\reply}{\par\fontshape{n}\selectfont \noindent \textbf{Reply}:\ }
+
+\setlrmarginsandblock{3cm}{2.5cm}{*}
+\setulmarginsandblock{2.5cm}{2.5cm}{*}
+\checkandfixthelayout
+
+\begin{document}
+\hypersetup{linkcolor=black!60, citecolor=black!60, urlcolor=black!60}
+
+\section*{Response letter to the manuscript no. NIMG-15-2877R1}
+
+\bigskip
+\noindent We thank the editors and the reviewers for revising our manuscript no. NIMG-15-2877R1 submitted to NeuroImage.
+We appreciate the comments made by both reviewers, and considered them fully to improve our paper.
+Please, find in the following paragraphs our point-by-point answer to the concerns raised by the reviewers,
+  along with the description of the corresponding changes in the manuscript.
+Text modifications in the manuscript are highlighted with a new font color, and attached notes indicate 
+  which reviewer and comment the corresponding change is addressing to.
+
+\bigskip
+\bigskip
+\subsection*{Reviewer \#1:}
+\begin{reviewintro}
+In general, I think the authors have done a good job of restructuring the paper to qualify the goals and implementation of the method. I have a few points.
+\end{reviewintro}
+\begin{reviewpoint}
+The authors suggest that diffusion tractography is typically performed by mapping segmentations to the data. This is becoming less true. The HCP for one performs whole brain connectivity analysis. Nevertheless, these frameworks still require registration to structural space for projection to surface mesh representations and/or coaligning data. This may be worth mentioning or clarifying.
+\end{reviewpoint}
+\reply{%
+We have introduced this discussion in lines 351--355.
+}
+\begin{reviewpoint}
+I still find figure 2 really difficult to read anything from. It's not easy to read the labels in the coloured text, nor see the different histograms in figure 2 A. This is partly because many of the colours are light very similar i.e. for WM and bst. It does occur to me that not all distributions change that greatly with registration. Maybe stripping back figure A to only include WM, GM and possibly VdGM might help?
+\end{reviewpoint}
+\reply{%
+We have made editions in this figure to make it more clear.
+}
+\begin{reviewpoint}
+I find the clarification of how tratography might be unwarped in the response very helpful, but some clarification of the manuscript might be helpful. What do the authors mean by ``the resampling of the DWIs introduced by the correction method can be avoided, either by performing the posterior processing on the native dMRI space''. How does the native dMRI space differ from the DWIs here, or what is meant by posterior processing.
+\end{reviewpoint}
+\reply{%
+We have reformulated that particular sentence (lines 57--59) and added a corresponding discussion in lines 348--356.
+These editions are highly related to Comments \ref{com:1}, \ref{com:5} and \ref{com:6}.
+}
+\begin{reviewpoint}
+In the appendix I think the B-spline variable (Eqs A.7 A.8)  should be defined in the text again
+\end{reviewpoint}
+\reply{%
+We have defined introduced the definition of $\mathbf{g}_k$ in lines 122--123, right before the
+  reference to the mentioned equations.
+}
+
+
+% ------------------------------------------------------------------- Reviewer 3
+\bigskip
+\bigskip
+\subsection*{Reviewer \#3:}
+
+\begin{reviewintro}
+This manuscript is much improved, in my opinion. However, there are some high-level clarifications that are present in the author response letter, but that are not clear to the reader in the manuscript. I also noticed a few small things to fix. My suggestions follow.
+\end{reviewintro}
+
+\begin{reviewpoint}
+Please clarify that the authors do not consider this to be an EPI distortion correction method, but rather a surface alignment method or similar. This was not clear to me from reading the paper the first time. I assumed EPI distortion correction was a primary goal, but it seems rather that the primary goal is to accurately segment the distorted diffusion images. In fact, the distortions are not corrected in the EPI data.
+\end{reviewpoint}
+\reply{%
+We have explicitly stated this in a new sentence (lines 348--349).
+}
+\begin{reviewpoint}
+Please discuss the fact that when this method is applied, the tractography is done using data that have not been corrected for EPI distortions.
+\end{reviewpoint}
+\reply{%
+Right after the previous edition, in lines 349--350 we introduce the proposal of this methodological variation.
+The discussion and proposal of a future research line is then done in lines 355--356, after some further details added
+  to address the \autoref{com:1}.
+}
+\begin{reviewpoint}
+For the reader, the overall comparison between the two methods is confusing in the introduction, where it is proposed to register surfaces to diffusion image space, yet the comparison is b0 to T2. A more appropriate way to present this comparison is t2 to b0, so that the result is also in the diffusion image space, if this is what was done. This is in fact a common processing step, so I assume this is how the experiments were performed. Please clarify.
+\end{reviewpoint}
+\reply{%
+}
+\begin{reviewpoint}
+In Figure 6 A, is this output coordinate system the diffusion coordinate system as expected from the description of the method? So then the output in T2B is T2 to b0?
+\end{reviewpoint}
+\reply{%
+}
+\begin{reviewpoint}
+The ``undistorted'' HCP data is not fully defined in the ``Real datasets'' section. Because this undistortion method serves as the ground truth for the presented experiments, it should be explained briefly how the undistortion was done for the HCP data. One sentence is sufficient, and will allow the reader better understand the results of this paper.
+\end{reviewpoint}
+\reply{%
+We have introduced this description in lines 183--187, along with including the detail of the actual HCP release of the data used in l. 177.
+}
+\begin{reviewpoint}
+Minor points:
+
+The graphical abstract says subpixel accuracy. I think you mean subvoxel (there are no pixels really in 3D MRI images).
+
+``preliminar DTI'' -> preliminary
+\end{reviewpoint}
+\reply{%
+We have updated the graphical abstract with the term ``subvoxel''.
+We have replaced the six appearances of the term ``pixel'' by ``voxel'', including the ``subpixel'' present in line 61.
+We also have fixed the misspelling of ``preliminar'' of line 339.
+}
+
+\bibliographystyle{mystyle}
+\bibliography{Remote}
+
+\end{document}

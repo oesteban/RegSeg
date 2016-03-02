@@ -29,7 +29,7 @@ Alternatively, \regseg{} implements the active contours with a hierarchical set 
   surfaces (triangular meshes) instead of the multiphase level sets, and registration
   is driven by shape-gradients \citep{herbulot_segmentation_2006}.
 As an advantage, the use of explicit surfaces enables segmenting \gls*{dmri} images
-  with accuracy below pixel size.
+  with accuracy below \revcomment[R\#3-C10]{voxel} size.
 
 An important antecedent of \regseg{} is \emph{bbregister} \citep{greve_accurate_2009}.
 The tool has been widely adopted as the standard registration method to be used along with the \gls*{epi}
@@ -89,7 +89,7 @@ We evaluated \regseg{} in a real environment using the experimental framework pr
 We processed 16 subjects from the \gls*{hcp} database using both \regseg{}
   and an in-house replication of the \acrfull*{t2b} method.
 \Regseg{} obtained a high accuracy, with an aggregate 95\% \gls*{ci} of 0.56--0.66 [mm], which was
-  below the pixel size of 1.25 mm.
+  below the \revcomment[R\#3-C10]{voxel} size of 1.25 mm.
 The misregistration error that remained after \regseg{} was significantly lower ($p <$ 0.01) than the
   error corresponding to the \gls*{t2b} correction according to Kruskal-Wallis H-tests
   (\autoref{tab:results_real}).
@@ -138,7 +138,8 @@ The current activity on improving correction methods \citep{irfanoglu_drbuddi_20
 \Regseg{} addresses this joint problem in a single step and it does not require any additional
   acquisition other than the minimal protocol comprehending only \gls*{t1} and \gls*{dmri} images.
 This situation is found commonly in historical datasets.
-We envision \regseg{} to be integrated in diffusion processing pipelines, after a preliminar
+We envision \regseg{} to be integrated in diffusion processing pipelines, after a 
+  \revcomment[R\#3-C10]{preliminary}
   \gls*{dti} computation and before anatomically-informed reconstruction and tractography
   methods.
 Since the structural information is projected into the native space of \gls*{dmri},
@@ -146,6 +147,22 @@ Since the structural information is projected into the native space of \gls*{dmr
   \gls*{dmri} signal (i.e. without resampling data to an undistorted space).
 For analyses other than connectivity, like \gls*{tbss}, the deformation estimated by \regseg{}
   can be used to map the tracts into structural space.
+\revcomment[R\#3-C5]{%
+Even though we apply \regseg{} to the problem of susceptibility distortion,
+  \emph{it is not a distortion correction method}, but rather a surface alignment method.
+In fact, the distortions are not corrected in the \gls*{epi} data.}
+\revcomment[R\#3-C6]{%
+Therefore, we propose here to perform the reconstruction and tractography processes in the
+  original (distorted) diffusion data.}
+\revcomment[R\#1-C1]{%
+Depending on the application (like \gls*{tbss}, or connectivity analyses that do not build the
+  network matrix upon anatomical information mapped from a reference image), the obtained tracks
+  may be geometrically unwarped using the estimation of the deformation found by \regseg{}.
+Conversely, when the information necessary in the diffusion analysis is projected from the reference
+  space, \regseg{} allows to avoid resampling and/or unwarping.}
+\revcomment[R\#3-C6]{%
+This methodological variation should be further investigated, to ensure which processing design
+  yields the most accurate tractography results.}
 
 Beyond the presented application on \gls*{dmri} data, \regseg{} can be indicated in situations
   where there are precise surfaces delineating the structure, a target multivariate
