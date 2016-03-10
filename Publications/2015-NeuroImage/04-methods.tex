@@ -483,7 +483,7 @@ We reproduced the solution and settings provided with \emph{ExploreDTI}
 The deformation field is correspondingly restricted to the \gls*{pe} direction.
 The settings file for \emph{elastix} is also
   available\footnote{\url{https://github.com/oesteban/RegSeg/blob/master/Scripts/pyacwereg/data/t2b_elastix_y.txt}}.
-\revcomment[R\#3-C7\\R\#3-C7]{%
+\revcomment[R\#3-C7\\R\#3-C8]{%
 In this registration scheme, the \gls*{t2} image is the \emph{reference} and
   the \lowb{} plays the role of \emph{moving} image.
 Therefore, the transform is defined in the coordinate system of the \gls*{t2} image,
@@ -510,3 +510,5 @@ Distortion only occurs along the \gls*{pe} axis of the image, so we computed the
   that correspond to $\vec{v}_i$.
 In practice, we only report the \gls*{swindex} for three surfaces (\{$\Gamma_{VdGM}, \Gamma_{WM}, \Gamma_{pial}$\})
   of crucial interest in whole-brain tractography.
+\revcomment[R\#3-C7\\R\#3-C8]{%
+The \gls*{swindex} is always computed on the \gls*{dmri} space.}

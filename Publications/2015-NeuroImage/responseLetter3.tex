@@ -119,11 +119,40 @@ The discussion and proposal of a future research line is then done in lines 355-
 For the reader, the overall comparison between the two methods is confusing in the introduction, where it is proposed to register surfaces to diffusion image space, yet the comparison is b0 to T2. A more appropriate way to present this comparison is t2 to b0, so that the result is also in the diffusion image space, if this is what was done. This is in fact a common processing step, so I assume this is how the experiments were performed. Please clarify.
 \end{reviewpoint}
 \reply{%
+The reviewer is right, we may have oversimplified the details about the 
+  \emph{b0}-to-T2w registration.
+We have added the text in lines 227--232 to describe how the registration works.
+The direction of the transform is \emph{b0}-to-T2w (as implemented in \emph{ExploreDTI})
+  and therefore, the result is a mathematical transformation which maps the coordinates
+  of the T2w image to coordinates in the \emph{b0}.
+This way, it is possible to obtain the corresponding intensity of the \emph{b0} and
+  resample it in the reference space of the T2w.
+Since the surfaces are defined by their vertices in reference space, the transform
+  obtained in the \emph{b0}-to-T2w direction of mapping can be used to warp the
+  locations of the vertices into \emph{b0} space.
+Therefore, we have the surfaces on reference (undistorted) space, and we warp them
+  into diffusion space using three transforms: 1) the ground truth given by the realistic
+  fieldmaps, 2) \emph{regseg} and 3) the \emph{b0}-to-T2w registration method.
+The error computations are done in diffusion space, 2) and 3) against 1).
+This detail of which coordinate system supports the error measurement is included
+  in the new version in lines 238--239.
 }
 \begin{reviewpoint}
 In Figure 6 A, is this output coordinate system the diffusion coordinate system as expected from the description of the method? So then the output in T2B is T2 to b0?
 \end{reviewpoint}
 \reply{%
+As described in \autoref{com:7}, yes, the coordinate system in which the surfaces are
+  compared is the diffusion space.
+Generally, when we speak of \emph{b0}-to-T2w registration, we identify the direction of
+  the mapping with the displacement of the information of the \emph{b0} image into the
+  T2w-image grid.
+However, the transformation underlying works in the opposite way: for each point in
+  the reference space computes the corresponding point in the moving image.
+The objects defined explicitly, like the surfaces, in the reference space can be directly
+  mapped to moving space using this transform.
+This gives the impression that the transform goes in the opposite direction, and we
+  understand that this is potentially what was not completely clear in the former
+  version of the manuscript.
 }
 \begin{reviewpoint}
 The ``undistorted'' HCP data is not fully defined in the ``Real datasets'' section. Because this undistortion method serves as the ground truth for the presented experiments, it should be explained briefly how the undistortion was done for the HCP data. One sentence is sufficient, and will allow the reader better understand the results of this paper.
@@ -144,7 +173,7 @@ We have replaced the six appearances of the term ``pixel'' by ``voxel'', includi
 We also have fixed the misspelling of ``preliminar'' of line 339.
 }
 
-\bibliographystyle{mystyle}
-\bibliography{Remote}
+%\bibliographystyle{mystyle}
+%\bibliography{Remote}
 
 \end{document}
