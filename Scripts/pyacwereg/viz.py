@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: oesteban
 # @Date:   2014-12-11 15:08:23
-# @Last Modified by:   Oscar Esteban
-# @Last Modified time: 2015-03-20 13:18:39
+# @Last Modified by:   oesteban
+# @Last Modified time: 2016-03-09 13:43:27
 import os.path as op
 
 
@@ -509,10 +509,12 @@ def jointplot_real(imageX, imageY, segmentation, mask,
                    labels=None, xlabel='X', ylabel='Y', splitgrid=False,
                    huelabel='tissue', size=8, dpi=100, subsample=1.0,
                    xlims=None, ylims=None, out_file=None):
+    import os
     import os.path as op
     import nibabel as nb
     import numpy as np
     import matplotlib.pyplot as plt
+    from matplotlib import font_manager as fm
     import seaborn as sn
     import pandas as pd
 
@@ -549,17 +551,22 @@ def jointplot_real(imageX, imageY, segmentation, mask,
         df = df.sample(frac=subsample, replace=True)
 
     df = df[df.tissue != 'do-not-show']
-    sn.set_context("talk", font_scale=1. + 0.02*size)
-
     g = sn.ConditionalJointGrid(xlabel, ylabel, df, hue=huelabel, xlim=xlims,
                                 ylim=ylims, size=size, inline_labels=True, splitgrid=splitgrid)
     # g.plot_joint(plt.scatter)
-    g.plot_joint(sn.kdeplot, linewidths=3.0)
-    g.plot_marginals(sn.distplot)
+    g.plot_joint(sn.kdeplot, linewidths=1.0)
+    g.plot_marginals(sn.distplot, kde_kws={'lw': .8})
 
     for ax in g.ax_joint:
         plt.setp(ax.get_yticklabels(), visible=False)
         plt.setp(ax.get_xticklabels(), visible=False)
+
+
+    if xlabel is not None and ylabel is not None:
+        fontprops = fm.FontProperties(fname='/home/oesteban/.fonts/charter/ttf/Charter.ttf',
+                                      size=25)
+        g.ax_joint[0].set_xlabel(xlabel, fontproperties=fontprops)
+        g.ax_joint[0].set_ylabel(ylabel, fontproperties=fontprops)
 
     if out_file is not None:
         plt.savefig(out_file, dpi=dpi, bbox_inches='tight')
@@ -749,19 +756,18 @@ def phantom_errors(in_csv, size=(80, 30), out_file=None):
     plot0.set_xlabel('Model Type')
     plot0.set_ylabel('Averaged error of surfaces (mm)')
     plot0.set_ylim([0.0, 2.25])
-    plot0.set_title(
-        r'Registration error @ $%.1f \times %.1f \times %.1fmm^3$' %
-        tuple([2.0] * 3))
+    titlef = r'Registration error @ {res[0]:.1f} $\times$ {res[1]:.1f} $\times$ {res[2]:.1f} [mm]'
+    plot0.set_title(titlef.format(res=[2.0] * 3))
 
     l = plot0.axhline(y=2.0, lw=15, xmin=0.07, xmax=0.93,
                       color='gray', alpha=.4)
     plot0.annotate(
-        "voxel size", xy=(2.5, 2.0), xytext=(100, -150),
-        xycoords='data', textcoords='offset points', va='center',
+        "voxel size", xy=(2.65, 2.0), xytext=(2.35, 1.85),
+        xycoords='data', textcoords='data', va='center',
         color='w', fontsize=80,
         bbox=dict(boxstyle='round', fc='gray', ec='none', color='w'),
         arrowprops=dict(arrowstyle='wedge,tail_width=.7',
-                        fc='gray', ec='none',
+                        fc='gray', ec='none', patchA=None, patchB=l,
                         ))
 
     frame = plot0.legend(loc=2, fancybox=True).get_frame()
@@ -775,18 +781,16 @@ def phantom_errors(in_csv, size=(80, 30), out_file=None):
     plot1.set_xlabel('Model Type')
     plot1.set_ylabel('')
     plot1.set_ylim([0.0, 1.15])
-    plot1.set_title(
-        r'Registration error @ $%.1f \times %.1f \times %.1fmm^3$' %
-        tuple([1.0] * 3))
+    plot1.set_title(titlef.format(res=[1.0] * 3))
     l = plot1.axhline(y=1.0, lw=15, xmin=0.07, xmax=0.93,
                       color='gray', alpha=.4)
     plot1.annotate(
-        "voxel size", xy=(0.1, 1.0), xytext=(-200, -120),
-        xycoords='data', textcoords='offset points', va='center',
+        "voxel size", xy=(0.1, 1.0), xytext=(-.3, 0.92),
+        xycoords='data', textcoords='data', va='center',
         color='w', fontsize=80,
         bbox=dict(boxstyle='round', fc='gray', ec='none', color='w'),
         arrowprops=dict(arrowstyle='wedge,tail_width=.7',
-                        fc='gray', ec='none',
+                        fc='gray', ec='none', patchA=None, patchB=l,
                         ))
     plot1.legend_.remove()
 
@@ -838,20 +842,22 @@ def realdata_errors(in_csv, size=(80, 25), out_file=None,
 
     ymax = plot0.get_ylim()[1]
     plot0.set_ylim([0.0, 4.0])
+    ylabels = [r'$\text{%.1f}$' % y for y in np.linspace(0.0, 4.0, len(plot0.get_yticklabels()))]
+    plot0.set_yticklabels(ylabels)
 
-    plot0.set_xticklabels([r'$\Gamma_{VdGM}$', r'$\Gamma_{WM}$',
-                           r'$\Gamma_{pial}$', 'Aggregated'])
+    plot0.set_xticklabels([r'$\Gamma_\text{VdGM}$', r'$\Gamma_\text{WM}$',
+                           r'$\Gamma_\text{pial}$', 'Aggregated'])
     plot0.set_xlabel('Surface')
     plot0.set_ylabel('Surface warping index ($sWI$, mm)')
-    l = plot0.axhline(y=1.25, lw=15, xmin=0.07, xmax=0.93,
+    l = plot0.axhline(y=1.25, lw=15, xmin=0.00, xmax=1.00,
                       color='gray', alpha=.4)
     plot0.annotate(
-        "voxel size", xy=(-0.15, 1.25), xytext=(-250, 105),
-        xycoords='data', textcoords='offset points', va='center',
+        "voxel size", xy=(-0.5, 1.25), xytext=(-0.45, 2.10),
+        xycoords='data', textcoords='data', va='center',
         color='w', fontsize=80,
         bbox=dict(boxstyle='round', fc='gray', ec='none', color='w'),
         arrowprops=dict(arrowstyle='wedge,tail_width=.7',
-                        fc='gray', ec='none',
+                        fc='gray', ec='none', patchA=None, patchB=l,
                         ))
 
     plot0.set_title('Comparison in real data experiments')
