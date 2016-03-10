@@ -74,7 +74,15 @@ We have introduced this discussion in lines 351--355.
 I still find figure 2 really difficult to read anything from. It's not easy to read the labels in the coloured text, nor see the different histograms in figure 2 A. This is partly because many of the colours are light very similar i.e. for WM and bst. It does occur to me that not all distributions change that greatly with registration. Maybe stripping back figure A to only include WM, GM and possibly VdGM might help?
 \end{reviewpoint}
 \reply{%
-We have made editions in this figure to make it more clear.
+We have made the following editions in this figure to make it more clear:
+\begin{itemize}
+\item Changed color palette to the ``Set1'' palette of the ColorBrewer tool\footnote{\url{http://colorbrewer2.org/}}, which has
+  darker colors.
+\item The darker colors allowed for thiner lines to represent the contours of the joint density plot in panel A, improving
+  readability.
+\item Better positioned labels in the panel A of this figure, using the Fruchterman-Reingold force-directed algorithm.
+\item Matched the fonts of axis labels with the font used in the NeuroImage journal.
+\end{itemize}
 }
 \begin{reviewpoint}
 I find the clarification of how tratography might be unwarped in the response very helpful, but some clarification of the manuscript might be helpful. What do the authors mean by ``the resampling of the DWIs introduced by the correction method can be avoided, either by performing the posterior processing on the native dMRI space''. How does the native dMRI space differ from the DWIs here, or what is meant by posterior processing.
@@ -144,7 +152,7 @@ We have replaced the six appearances of the term ``pixel'' by ``voxel'', includi
 We also have fixed the misspelling of ``preliminar'' of line 339.
 }
 
-\bibliographystyle{mystyle}
-\bibliography{Remote}
+% \bibliographystyle{mystyle}
+% \bibliography{Remote}
 
 \end{document}

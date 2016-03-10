@@ -1,0 +1,115 @@
+% @Author: Oscar Esteban
+% @Date:   2015-04-09 13:06:32
+% @Last Modified by:   oesteban
+% @Last Modified time: 2016-03-09 16:30:39
+
+\documentclass[tikz]{standalone}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+
+\usepackage[T1]{fontenc}
+\usepackage{charter}
+
+\begin{document}
+\noindent
+\begin{minipage}[t]{14in}
+\noindent
+\begin{tikzpicture}[block/.style={}]
+  \node[inner sep=0pt](fig02a) at (0,14)
+    {%
+    \noindent
+    \begin{minipage}[t]{.2\textwidth}
+    \centering
+	\vskip 20pt
+    \includegraphics[width=\textwidth]{figure02A-1}
+    \vskip 10pt
+    \parbox{.9\textwidth}{%
+    \textbf{Reference}: segmentation by the surfaces
+    extracted in T1w and original (undistorted)
+    diffusion data.}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{.2\textwidth}
+	\vskip 20pt
+    \centering
+    \includegraphics[width=\textwidth]{figure02A-2}
+    \vskip 10pt
+    \parbox{.9\textwidth}{%
+    \textbf{Before registration}, the
+	contours from the T1w are
+	not aligned with the
+	distorted diffusion data.}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{.2\textwidth}
+	\vskip 20pt
+    \centering
+    \includegraphics[width=\textwidth]{figure02A-3}
+    \vskip 10pt
+    \parbox{.9\textwidth}{%
+    \textbf{After registration}, the
+	contours are now aligned
+	with the distorted diffusion
+	data.}
+    \end{minipage}};
+  \node[text=black!75, inner sep=0] at (-4.7,18.7) {\Large \textbf{A. OPTIMIZATION OF THE SEGMENTATION MODEL}};
+  % \node[inner sep=10pt, draw=black!40](fig05c) at (8.,0)
+  %   {\hspace*{20pt}};
+  % \node[circle, text=black!75, inner sep=0] at (-10.65,4.05) {\Huge \textbf{B}};
+  %
+  %
+  %
+  %
+  \node[inner sep=0pt](fig02b) at (0,0)
+    {%
+    	\begin{minipage}[t]{.095\textwidth}
+    	\centering
+    	\includegraphics[width=\textwidth]{figure02B-100}
+    	\includegraphics[width=\textwidth]{figure02B-101}
+    	\includegraphics[width=\textwidth]{figure02B-102}
+    	\end{minipage}
+    	\begin{minipage}[t]{.095\textwidth}
+    	\centering
+    	\includegraphics[width=\textwidth]{figure02B-200}
+    	\includegraphics[width=\textwidth]{figure02B-201}
+    	\includegraphics[width=\textwidth]{figure02B-202}
+    	\end{minipage}
+    	\begin{minipage}[t]{.095\textwidth}
+    	\centering
+    	\includegraphics[width=\textwidth]{figure02B-300}
+    	\includegraphics[width=\textwidth]{figure02B-301}
+    	\includegraphics[width=\textwidth]{figure02B-302}
+    	\end{minipage}
+	    \hskip 15pt
+    	\begin{minipage}[t]{.095\textwidth}
+    	\centering
+    	\includegraphics[width=\textwidth]{figure02B-103}
+    	\includegraphics[width=\textwidth]{figure02B-104}
+    	\includegraphics[width=\textwidth]{figure02B-105}
+    	\end{minipage}
+    	\begin{minipage}[t]{.095\textwidth}
+    	\centering
+    	\includegraphics[width=\textwidth]{figure02B-203}
+    	\includegraphics[width=\textwidth]{figure02B-204}
+    	\includegraphics[width=\textwidth]{figure02B-205}
+    	\end{minipage}
+    	\hfill
+    	\begin{minipage}[t]{.095\textwidth}
+    	\centering
+		\includegraphics[width=\textwidth]{figure02B-303}
+    	\includegraphics[width=\textwidth]{figure02B-304}
+    	\includegraphics[width=\textwidth]{figure02B-305}
+    	\end{minipage}%
+	};
+  \node[inner sep=3pt, draw=black!20](fig02c) at (0,-6.4)
+    {\includegraphics[width=.57\textwidth]{legend}};
+  \node[text=black!75, inner sep=0] at (-4.7,7.0) {\Large \textbf{B. DETAIL OF TISSUE-WISE JOINT-DISTRIBUTIONS}};
+  \node[text=black!75, inner sep=0] at (-9.0,6.3) {\textbf{Reference}};
+  \node[text=black!75, inner sep=0] at (-5.5,6.3) {\textbf{Pre-registration}};
+  \node[text=black!75, inner sep=0] at (-2.0,6.3) {\textbf{Post-registration}};
+  \node[text=black!75, inner sep=0] at (1.8,6.3) {\textbf{Reference}};
+  \node[text=black!75, inner sep=0] at (5.4,6.3) {\textbf{Pre-registration}};
+  \node[text=black!75, inner sep=0] at (8.8,6.3) {\textbf{Post-registration}};
+\end{tikzpicture}
+\end{minipage}
+\end{document}
