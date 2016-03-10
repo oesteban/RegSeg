@@ -1,7 +1,7 @@
 % @Author: Oscar Esteban
 % @Date:   2015-04-09 13:06:32
 % @Last Modified by:   oesteban
-% @Last Modified time: 2016-03-09 16:30:39
+% @Last Modified time: 2016-03-10 09:23:55
 
 \documentclass[tikz]{standalone}
 \usepackage{graphicx}
@@ -64,41 +64,40 @@
     {%
     	\begin{minipage}[t]{.095\textwidth}
     	\centering
-    	\includegraphics[width=\textwidth]{figure02B-100}
     	\includegraphics[width=\textwidth]{figure02B-101}
     	\includegraphics[width=\textwidth]{figure02B-102}
+    	\includegraphics[width=\textwidth]{figure02B-103}
     	\end{minipage}
     	\begin{minipage}[t]{.095\textwidth}
     	\centering
-    	\includegraphics[width=\textwidth]{figure02B-200}
     	\includegraphics[width=\textwidth]{figure02B-201}
     	\includegraphics[width=\textwidth]{figure02B-202}
+    	\includegraphics[width=\textwidth]{figure02B-203}
     	\end{minipage}
     	\begin{minipage}[t]{.095\textwidth}
     	\centering
-    	\includegraphics[width=\textwidth]{figure02B-300}
     	\includegraphics[width=\textwidth]{figure02B-301}
     	\includegraphics[width=\textwidth]{figure02B-302}
+    	\includegraphics[width=\textwidth]{figure02B-303}
     	\end{minipage}
 	    \hskip 15pt
     	\begin{minipage}[t]{.095\textwidth}
     	\centering
-    	\includegraphics[width=\textwidth]{figure02B-103}
     	\includegraphics[width=\textwidth]{figure02B-104}
     	\includegraphics[width=\textwidth]{figure02B-105}
+    	\includegraphics[width=\textwidth]{figure02B-100}
     	\end{minipage}
     	\begin{minipage}[t]{.095\textwidth}
     	\centering
-    	\includegraphics[width=\textwidth]{figure02B-203}
     	\includegraphics[width=\textwidth]{figure02B-204}
     	\includegraphics[width=\textwidth]{figure02B-205}
+    	\includegraphics[width=\textwidth]{figure02B-200}
     	\end{minipage}
-    	\hfill
     	\begin{minipage}[t]{.095\textwidth}
     	\centering
-		\includegraphics[width=\textwidth]{figure02B-303}
     	\includegraphics[width=\textwidth]{figure02B-304}
     	\includegraphics[width=\textwidth]{figure02B-305}
+		\includegraphics[width=\textwidth]{figure02B-300}
     	\end{minipage}%
 	};
   \node[inner sep=3pt, draw=black!20](fig02c) at (0,-6.4)
@@ -110,6 +109,26 @@
   \node[text=black!75, inner sep=0] at (1.8,6.3) {\textbf{Reference}};
   \node[text=black!75, inner sep=0] at (5.4,6.3) {\textbf{Pre-registration}};
   \node[text=black!75, inner sep=0] at (8.8,6.3) {\textbf{Post-registration}};
+
+  
+  \node[anchor=west,text width=1.4cm, text centered, fill=white, draw=black!70,row sep=0.1, inner sep=1, rounded corners=5, scale=0.8] (newmode0) at (4.8, 4.0) {New mode};
+  \node[anchor=west,text width=1.4cm, text centered, fill=white, draw=black!70,row sep=0.1, inner sep=1, rounded corners=5, scale=0.8] (newmode1) at (-5.6, -4.0) {New mode};
+  \node[anchor=west,text width=1.4cm, text centered, fill=white, draw=black!70,row sep=0.1, inner sep=1, rounded corners=5, scale=0.8] (spread0) at (4.0, -5.1) {Larger spread};
+  \node[anchor=west,text width=1.4cm, text centered, fill=white, draw=black!70,row sep=0.1, inner sep=1, rounded corners=5, scale=0.8] (spread1) at (-5.6, 0.0) {Larger spread};
+  \node[anchor=west,text width=1.4cm, text centered, fill=white, draw=black!70,row sep=0.1, inner sep=1, rounded corners=5, scale=0.8] (spread2) at (-5.6, 4.0) {Larger spread};
+
+    \draw[-stealth, line width=2pt, black]
+    (newmode0.south) -- ++(-0.85, -0.5);
+    \draw[-stealth, line width=2pt, black]
+    (newmode1.west) -- ++(-1.1, 0.6);
+    \draw[-stealth, line width=2pt, black]
+    (spread0.north east) -- ++(.2, .2);
+    \draw[-stealth, line width=2pt, black]
+    (spread1.south) -- ++(-0.7, -0.8);
+    \draw[-stealth, line width=2pt, black]
+    (spread2.south) -- ++(0, -1.25);
+    \draw[-stealth, line width=2pt, black]
+    (spread2.west) -- ++(-1.25, -0.1);
 \end{tikzpicture}
 \end{minipage}
 \end{document}
