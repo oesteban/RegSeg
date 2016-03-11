@@ -69,7 +69,7 @@ We computed the \gls*{swindex} \eqref{eq:regseg-swindex} of every surface after 
 Finally, to compare the results, we performed Kruskal-Wallis H-tests
   (a nonparametric alternative to ANOVA) on the warping indices for the three surfaces of
   interest selected in \autoref{sec:regseg-experiments_evaluation}
-  ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$).
+  ($\Gamma_\text{VdGM}$, $\Gamma_\text{WM}$, $\Gamma_\text{pial}$).
 All of the statistical tests showed that the error distributions obtained with \regseg{} and
   \gls*{t2b} were significantly different, and the violin plots in box B of
   \autoref{fig:regseg-results_real} demonstrate that the errors were always larger with \gls*{t2b}.
@@ -99,7 +99,7 @@ The results of the statistical tests and the CIs are summarized in \autoref{tab:
 \hfill
 \begin{minipage}{.48\textwidth}
     \begin{tabular}{cccccc}
-    & & $\Gamma_{VdGM}$  & $\Gamma_{WM}$ & $\Gamma_{pial}$ & Aggreg. \\
+    & & $\Gamma_\text{VdGM}$  & $\Gamma_\text{WM}$ & $\Gamma_\text{pial}$ & Aggreg. \\
     \hline
     \multirow{2}{*}{CI}
        & \regseg{} & 0.50--0.78 & 0.50--0.55 & 0.66--0.73 & 0.56--0.66 \\
@@ -112,7 +112,7 @@ The results of the statistical tests and the CIs are summarized in \autoref{tab:
     \end{tabular}
     \caption{Statistical analysis of results obtained using 16 real datasets from 
     the \gls*{hcp}, which show that \regseg{} performed better than the alternative \acrfull{t2b} method.
-    The distribution of the errors computed for the surfaces of interest ($\Gamma_{VdGM}$, $\Gamma_{WM}$, $\Gamma_{pial}$)
+    The distribution of the errors computed for the surfaces of interest ($\Gamma_\text{VdGM}$, $\Gamma_\text{WM}$, $\Gamma_\text{pial}$)
       and the aggregate of all surfaces (Aggreg. column) had lower 95\% CIs with \regseg{}.
    The CIs in this table were computed by bootstrapping using the mean as the location statistic and with 10$^\text{4}$ samples.
     The Kruskal-Wallis H-tests indicated that there was a significant difference between the results obtained using \regseg{} and
