@@ -154,12 +154,15 @@ In fact, the distortions are not corrected in the \gls*{epi} data.}
 \revcomment[R\#3-C6]{%
 Therefore, we propose here to perform the reconstruction and tractography processes in the
   original (distorted) diffusion data.}
+\revcomment[R\#1-C3]{%
+\Regseg{} allows to avoid resampling and/or unwarping because the information necessary in the diffusion analysis is projected
+  from the reference space.}
 \revcomment[R\#1-C1]{%
-Depending on the application (like \gls*{tbss}, or connectivity analyses that do not build the
-  network matrix upon anatomical information mapped from a reference image), the obtained tracks
-  may be geometrically unwarped using the estimation of the deformation found by \regseg{}.
-Conversely, when the information necessary in the diffusion analysis is projected from the reference
-  space, \regseg{} allows to avoid resampling and/or unwarping.}
+Certain applications (like \gls*{tbss}) and methodologies (like building the connectivity matrix
+  by clustering the tracks) may not perform on the native (distorted) diffusion space correctly,
+  but they still need a mapping to the reference space.
+Using \regseg{}, the tracks obtained in native space can be unwarped using the resulting estimation
+  of the deformation field.}
 \revcomment[R\#3-C6]{%
 This methodological variation should be further investigated, to ensure which processing design
   yields the most accurate tractography results.}

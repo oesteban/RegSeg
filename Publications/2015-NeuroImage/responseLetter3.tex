@@ -68,7 +68,9 @@ In general, I think the authors have done a good job of restructuring the paper 
 The authors suggest that diffusion tractography is typically performed by mapping segmentations to the data. This is becoming less true. The HCP for one performs whole brain connectivity analysis. Nevertheless, these frameworks still require registration to structural space for projection to surface mesh representations and/or coaligning data. This may be worth mentioning or clarifying.
 \end{reviewpoint}
 \reply{%
-We have introduced this discussion in lines 351--355.
+The reviewer is right: despite new whole-brain connectivity strategies, registration from/to structural space is still required.
+We have added this clarification in lines 359--363, in the
+  discussion section.
 }
 \begin{reviewpoint}
 I still find figure 2 really difficult to read anything from. It's not easy to read the labels in the coloured text, nor see the different histograms in figure 2 A. This is partly because many of the colours are light very similar i.e. for WM and bst. It does occur to me that not all distributions change that greatly with registration. Maybe stripping back figure A to only include WM, GM and possibly VdGM might help?
@@ -83,16 +85,20 @@ We have made the following editions in this figure to make it more clear:
 \item Better positioned labels in the panel A of this figure, using the Fruchterman-Reingold force-directed algorithm.
 \item Matched the fonts of axis labels with the font used in the NeuroImage journal.
 \item Rearranged the tissues in panel B to match the hierarchical ordering of tissues.
-\item Added annotations to capture the reader's attention and point it to those significant areas of the plot.
+\item Added annotations to capture the reader's attention and point it to those significant areas of the plot, highlighting the
+effects of misregistration in each tissue distribution.
 \end{itemize}
 }
 \begin{reviewpoint}
 I find the clarification of how tratography might be unwarped in the response very helpful, but some clarification of the manuscript might be helpful. What do the authors mean by ``the resampling of the DWIs introduced by the correction method can be avoided, either by performing the posterior processing on the native dMRI space''. How does the native dMRI space differ from the DWIs here, or what is meant by posterior processing.
 \end{reviewpoint}
 \reply{%
-We have reformulated that particular sentence (lines 57--59) and added a corresponding discussion in lines 348--356.
-These editions are highly related to Comments \ref{com:1}, \ref{com:5} and \ref{com:6}.
+We have reformulated that particular sentence (lines 57--59), in a way that
+  it avoids mentioning posterior processing.
+How this methodological variation would affect posterior processing (analyzing tracks, interpolating FA on them, building the connectivity matrix, etc.) is discussed in the paragraph containing lines 358--359.
+Particularly, these lines 358--359 were inserted to address this comment, which is highly related to Comments \ref{com:1}, \ref{com:5} and \ref{com:6}.
 }
+\newpage
 \begin{reviewpoint}
 In the appendix I think the B-spline variable (Eqs A.7 A.8)  should be defined in the text again
 \end{reviewpoint}
@@ -115,14 +121,14 @@ This manuscript is much improved, in my opinion. However, there are some high-le
 Please clarify that the authors do not consider this to be an EPI distortion correction method, but rather a surface alignment method or similar. This was not clear to me from reading the paper the first time. I assumed EPI distortion correction was a primary goal, but it seems rather that the primary goal is to accurately segment the distorted diffusion images. In fact, the distortions are not corrected in the EPI data.
 \end{reviewpoint}
 \reply{%
-We have explicitly stated this in a new sentence (lines 348--349).
+We have explicitly stated this in a new sentence (lines 355--357).
 }
 \begin{reviewpoint}
 Please discuss the fact that when this method is applied, the tractography is done using data that have not been corrected for EPI distortions.
 \end{reviewpoint}
 \reply{%
-Right after the previous edition, in lines 349--350 we introduce the proposal of this methodological variation.
-The discussion and proposal of a future research line is then done in lines 355--356, after some further details added
+Right after the previous edition, in lines 356--357 we introduce the proposal of this methodological variation.
+The discussion and proposal of a future research line is then done in lines 363--364, after some further details added
   to address the \autoref{com:1}.
 }
 \begin{reviewpoint}
@@ -164,11 +170,12 @@ This gives the impression that the transform goes in the opposite direction, and
   understand that this is potentially what was not completely clear in the former
   version of the manuscript.
 }
+\newpage
 \begin{reviewpoint}
 The ``undistorted'' HCP data is not fully defined in the ``Real datasets'' section. Because this undistortion method serves as the ground truth for the presented experiments, it should be explained briefly how the undistortion was done for the HCP data. One sentence is sufficient, and will allow the reader better understand the results of this paper.
 \end{reviewpoint}
 \reply{%
-We have introduced this description in lines 183--187, along with including the detail of the actual HCP release of the data used in l. 177.
+We have introduced this description in lines 184--188, along with including the detail of the actual HCP release of the data used in l. 178.
 }
 \begin{reviewpoint}
 Minor points:
@@ -180,7 +187,7 @@ The graphical abstract says subpixel accuracy. I think you mean subvoxel (there 
 \reply{%
 We have updated the graphical abstract with the term ``subvoxel''.
 We have replaced the six appearances of the term ``pixel'' by ``voxel'', including the ``subpixel'' present in line 61.
-We also have fixed the misspelling of ``preliminar'' of line 339.
+We also have fixed the misspelling of ``preliminar'' of line 350.
 }
 
 %\bibliographystyle{mystyle}
