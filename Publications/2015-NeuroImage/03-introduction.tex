@@ -88,7 +88,7 @@ Therefore, \regseg{} establishes a registration framework that actually
     \gls*{dmri} protocol in order to estimate the deformation field;
   2) \revcomment[R\#1-C2]{%
     alternatively to the typical design of the processing flow, the information from the
-    reference \gls*{t1} can precisely be mapped onto the distorted \gls*{dmri} space,
+    reference \gls*{t1} can be precisely mapped onto the distorted \gls*{dmri} space,
     avoiding the interpolation of the \glspl*{dwi} required by unwarping the diffusion data; and} 
 %    depending on the application, the resampling of the \glspl*{dwi}
 %    introduced by the correction method can be avoided, either by performing the posterior
@@ -103,8 +103,8 @@ Then, we evaluate \regseg{} on real \gls*{dmri} datasets, using a derivation of 
   known and realistic \gls*{epi} distortions.
 We also compare \regseg{} and a nonlinear registration method to map the \lowb{} to
   the corresponding \gls*{t2} image of the same subject.
-This approach is the first step of the \gls*{t2b} correction
-  methods \citep{kybic_unwarping_2000}.
+This approach is the first step of the above-mentioned \gls*{t2b} correction
+  methods.
 We reproduce the settings and implementation of a widely used diffusion
   processing software \citep[\emph{ExploreDTI},][]{leemans_exploredti_2009}.
 With this comparison, we demonstrate how \regseg{} achieves higher accuracy with the

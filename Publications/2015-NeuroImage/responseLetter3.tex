@@ -69,7 +69,7 @@ The authors suggest that diffusion tractography is typically performed by mappin
 \end{reviewpoint}
 \reply{%
 The reviewer is right: despite new whole-brain connectivity strategies, registration from/to structural space is still required.
-We have added this clarification in lines 359--363, in the
+We have added this clarification in lines 361--364, in the
   discussion section.
 }
 \begin{reviewpoint}
@@ -83,11 +83,14 @@ We have made the following editions in this figure to make it more clear:
 \item The darker colors allowed for thiner lines to represent the contours of the joint density plot in panel A, improving
   readability.
 \item Better positioned labels in the panel A of this figure, using the Fruchterman-Reingold force-directed algorithm.
+  This functionality has been included in the code release of the paper.
 \item Matched the fonts of axis labels with the font used in the NeuroImage journal.
 \item Rearranged the tissues in panel B to match the hierarchical ordering of tissues.
 \item Added annotations to capture the reader's attention and point it to those significant areas of the plot, highlighting the
 effects of misregistration in each tissue distribution.
 \end{itemize}
+Additionally, we have included in the Supplemental Materials (new figures S8 and S9) zoomed versions of all the joint plots for
+  a better interpretation.
 }
 \begin{reviewpoint}
 I find the clarification of how tratography might be unwarped in the response very helpful, but some clarification of the manuscript might be helpful. What do the authors mean by ``the resampling of the DWIs introduced by the correction method can be avoided, either by performing the posterior processing on the native dMRI space''. How does the native dMRI space differ from the DWIs here, or what is meant by posterior processing.
@@ -95,16 +98,17 @@ I find the clarification of how tratography might be unwarped in the response ve
 \reply{%
 We have reformulated that particular sentence (lines 57--59), in a way that
   it avoids mentioning posterior processing.
-How this methodological variation would affect posterior processing (analyzing tracks, interpolating FA on them, building the connectivity matrix, etc.) is discussed in the paragraph containing lines 358--359.
-Particularly, these lines 358--359 were inserted to address this comment, which is highly related to Comments \ref{com:1}, \ref{com:5} and \ref{com:6}.
+How this methodological variation would affect posterior processing (analyzing tracks, interpolating FA on them, building the connectivity matrix, etc.) is discussed in the paragraph containing lines 359--360.
+Particularly, these lines 359--360 were inserted to address this comment, which is highly related to Comments \ref{com:1} (Reviewer \#1), \ref{com:5} (R\#3) and \ref{com:6} (R\#3).
 }
 \newpage
 \begin{reviewpoint}
 In the appendix I think the B-spline variable (Eqs A.7 A.8)  should be defined in the text again
 \end{reviewpoint}
 \reply{%
-We have defined introduced the definition of $\mathbf{g}_k$ in lines 122--123, right before the
-  reference to the mentioned equations.
+We have introduced the definition of $\mathbf{g}_k$ in lines 122--125, introducing the former Eq. (A.8) defining the
+gradients in the text as new Equation (11).
+Also, a clarification has been added in the appendix itself (lines 443--445).
 }
 
 
@@ -121,15 +125,17 @@ This manuscript is much improved, in my opinion. However, there are some high-le
 Please clarify that the authors do not consider this to be an EPI distortion correction method, but rather a surface alignment method or similar. This was not clear to me from reading the paper the first time. I assumed EPI distortion correction was a primary goal, but it seems rather that the primary goal is to accurately segment the distorted diffusion images. In fact, the distortions are not corrected in the EPI data.
 \end{reviewpoint}
 \reply{%
-We have explicitly stated this in a new sentence (lines 355--357).
+To strongly support the focus of the paper defined in lines 42--43, we have explicitly stated this in a new sentence (lines 356--358).
+Additionally, the edits in lines 57--59 introduced in response to \autoref{com:2} also contribute to clarify the primary goal of
+  image registration.
 }
 \begin{reviewpoint}
 Please discuss the fact that when this method is applied, the tractography is done using data that have not been corrected for EPI distortions.
 \end{reviewpoint}
 \reply{%
-Right after the previous edition, in lines 356--357 we introduce the proposal of this methodological variation.
-The discussion and proposal of a future research line is then done in lines 363--364, after some further details added
-  to address the \autoref{com:1}.
+Right after the previous edition, in lines 358--359 we introduce the proposal of this methodological variation.
+The discussion and proposal of a future research line is then done in lines 364--365.
+Some other details are added to cover Comments \ref{com:1} and \ref{com:2} (R\#1) as well.
 }
 \begin{reviewpoint}
 For the reader, the overall comparison between the two methods is confusing in the introduction, where it is proposed to register surfaces to diffusion image space, yet the comparison is b0 to T2. A more appropriate way to present this comparison is t2 to b0, so that the result is also in the diffusion image space, if this is what was done. This is in fact a common processing step, so I assume this is how the experiments were performed. Please clarify.
@@ -157,25 +163,26 @@ This detail of which coordinate system supports the error measurement is include
 In Figure 6 A, is this output coordinate system the diffusion coordinate system as expected from the description of the method? So then the output in T2B is T2 to b0?
 \end{reviewpoint}
 \reply{%
-As described in \autoref{com:7}, yes, the coordinate system in which the surfaces are
+As described in \autoref{com:7} (R\#3), yes, the coordinate system in which the surfaces are
   compared is the diffusion space.
 Generally, when we speak of \emph{b0}-to-T2w registration, we identify the direction of
   the mapping with the displacement of the information of the \emph{b0} image into the
   T2w-image grid.
-However, the transformation underlying works in the opposite way: for each point in
-  the reference space computes the corresponding point in the moving image.
+However, the underlying transformation works in the opposite way: for each point in
+  the reference space (T2w) computes the corresponding point in the moving image (\emph{b0}).
 The objects defined explicitly, like the surfaces, in the reference space can be directly
   mapped to moving space using this transform.
 This gives the impression that the transform goes in the opposite direction, and we
   understand that this is potentially what was not completely clear in the former
   version of the manuscript.
+New text (lines 227--232) in response to \autoref{com:7} was also included to clarify this point.
 }
 \newpage
 \begin{reviewpoint}
 The ``undistorted'' HCP data is not fully defined in the ``Real datasets'' section. Because this undistortion method serves as the ground truth for the presented experiments, it should be explained briefly how the undistortion was done for the HCP data. One sentence is sufficient, and will allow the reader better understand the results of this paper.
 \end{reviewpoint}
 \reply{%
-We have introduced this description in lines 184--188, along with including the detail of the actual HCP release of the data used in l. 178.
+We have introduced this description in lines 184--188, along with including the detail of the actual HCP release of the data used in line 178.
 }
 \begin{reviewpoint}
 Minor points:
@@ -187,7 +194,7 @@ The graphical abstract says subpixel accuracy. I think you mean subvoxel (there 
 \reply{%
 We have updated the graphical abstract with the term ``subvoxel''.
 We have replaced the six appearances of the term ``pixel'' by ``voxel'', including the ``subpixel'' present in line 61.
-We also have fixed the misspelling of ``preliminar'' of line 350.
+We also have fixed the misspelling of ``preliminar'' of line 351.
 }
 
 %\bibliographystyle{mystyle}

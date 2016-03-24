@@ -50,7 +50,7 @@ Conversely, the deformation model of \regseg{} is nonlinear and the active conto
 Recently, \cite{guyader_combined_2011} proposed a simultaneous segmentation and
   registration method in 2D using level sets and a nonlinear elasticity smoother on the
   displacement vector field, which preserves the topology even with very large deformations.
-\Regseg{} includes an anisotropic regularizer for the displacement field proposed by
+\Regseg{} includes an anisotropic regularizer for the displacement field described by
   \cite{nagel_investigation_1986}.
 This regularization strategy conceptually falls in the midway between the Gaussian smoothing
   generally included in most of the existing methodologies, and the complexity of
@@ -91,9 +91,9 @@ We processed 16 subjects from the \gls*{hcp} database using both \regseg{}
 \Regseg{} obtained a high accuracy, with an aggregate 95\% \gls*{ci} of 0.56--0.66 [mm], which was
   below the \revcomment[R\#3-C10]{voxel} size of 1.25 mm.
 The misregistration error that remained after \regseg{} was significantly lower ($p <$ 0.01) than the
-  error corresponding to the \gls*{t2b} correction according to Kruskal-Wallis H-tests
+  error corresponding to the \gls*{t2b} method according to Kruskal-Wallis H-tests
   (\autoref{tab:results_real}).
-Visual inspections of all the results \citepalias[section S5]{esteban_useful_2015} and the violin plots in
+Visual inspections of all the results \citepalias[section S5]{esteban_useful_2016} and the violin plots in
   \autoref{fig:regseg-results_real} confirmed that \regseg{} achieved higher accuracy
   than the \gls*{t2b} method in our settings.
 We carefully configured the \gls*{t2b} method using the same algorithm and the
@@ -107,7 +107,7 @@ Finally, we also proposed a piecewise-smooth segmentation model defined by
   comprehending the \gls*{fa} and the \gls*{adc} maps and ultimately identify anatomical
   structures in \gls*{dmri} space.
 We also demonstrated the smoothness of the objective function on five of the real datasets
-  \citepalias[figure S2]{esteban_useful_2015}, taking advantage of the directional
+  \citepalias[figure S2]{esteban_useful_2016}, taking advantage of the directional
   restriction of possible distortions.
 However, \regseg{} requires densely sampled surfaces to ensure the convergence.
 Using the digital phantoms, we severely decimated the surfaces by a large factor.
@@ -137,7 +137,8 @@ The current activity on improving correction methods \citep{irfanoglu_drbuddi_20
   \citep{jeurissen_tissuetype_2015} proof the open interest of this application.
 \Regseg{} addresses this joint problem in a single step and it does not require any additional
   acquisition other than the minimal protocol comprehending only \gls*{t1} and \gls*{dmri} images.
-This situation is found commonly in historical datasets.
+This situation is commonly found in historical datasets.
+
 We envision \regseg{} to be integrated in diffusion processing pipelines, after a 
   \revcomment[R\#3-C10]{preliminary}
   \gls*{dti} computation and before anatomically-informed reconstruction and tractography
@@ -152,19 +153,20 @@ Even though we apply \regseg{} to the problem of susceptibility distortion,
   \emph{it is not a distortion correction method}, but rather a surface alignment method.
 In fact, the distortions are not corrected in the \gls*{epi} data.}
 \revcomment[R\#3-C6]{%
-Therefore, we propose here to perform the reconstruction and tractography processes in the
+Therefore, we suggest here to perform the reconstruction and tractography processes in the
   original (distorted) diffusion data.}
 \revcomment[R\#1-C3]{%
-\Regseg{} allows to avoid resampling and/or unwarping because the information necessary in the diffusion analysis is projected
-  from the reference space.}
+\Regseg{} allows to avoid resampling and/or unwarping of the diffusion signal because the 
+  structural information necessary in the diffusion analysis is mapped from the
+  reference space.}
 \revcomment[R\#1-C1]{%
 Certain applications (like \gls*{tbss}) and methodologies (like building the connectivity matrix
-  by clustering the tracks) may not perform on the native (distorted) diffusion space correctly,
-  but they still need a mapping to the reference space.
+  by clustering the tracks) may not be performed correctly on the native (distorted) diffusion space
+  because they still need a mapping to the undistorted space.
 Using \regseg{}, the tracks obtained in native space can be unwarped using the resulting estimation
   of the deformation field.}
 \revcomment[R\#3-C6]{%
-This methodological variation should be further investigated, to ensure which processing design
+This methodological variation will be further investigated, to ensure which processing design
   yields the most accurate tractography results.}
 
 Beyond the presented application on \gls*{dmri} data, \regseg{} can be indicated in situations
@@ -174,8 +176,8 @@ Beyond the presented application on \gls*{dmri} data, \regseg{} can be indicated
   development or the macroscopic dynamics of organs and tissues.
 For instance, \regseg{} may be applied in fields like neonatal brain image segmentation
   in longitudinal MRI studies of the early developmental patterns \citep{shi_neonatal_2010}.
-In these studies, the surfaces obtained in a mature timepoint of the brain are retrospectively
-  propagated to the initial timepoints, regardless of the changes in the contrast and spatial
+In these studies, the surfaces obtained in a mature time point of the brain are retrospectively
+  propagated to the initial time points, regardless of the changes in the contrast and spatial
   development between them.
 More generally, \regseg{} may also be applied to the personalized study of longitudinal alteration
   of the brain using multispectral images, for instance in the case of traumatic brain

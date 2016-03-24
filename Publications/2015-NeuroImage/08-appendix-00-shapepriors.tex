@@ -75,7 +75,7 @@ The resulting summation is, therefore, discrete and the integral operator is rep
   \hat{\vec{n}}_{i}\right\rangle.
   \label{eq:regseg-shape_gradient_orig}
   \end{align}
-where $a_i$ is the area corresponding to vertex $\vec{v}_i$, and $A_p = \sum_i a_i$ is the total area of surface $p$.
+where $a_i$ is the area corresponding to vertex $\vec{v}_i$, and $A_p = \sum_i a_i$ is the total area of the surface $p$.
 In the following, we will refer as $w_{p,i} = a_i / A_p $ to the area contribution of $\vec{v}_i$ to the
   total area of the surface it belongs to.
 For simplicity, the sum over $p$ can be also removed, as the vertices belong to only one of the total $P$ contours.
@@ -100,7 +100,8 @@ Since the energy functional is defined over competing regions, the displacement 
   \label{eq:regseg-shape_gradient_disc2}
   \end{equation}
 
-Then, we identify the shape gradient contribution $\vec{g}_k$ on the coefficients $\vec{u}_k$ of the B-spline grid:
+Then, we identify the shape gradient contribution $\vec{g}_k$ on the coefficients $\vec{u}_k$ of the B-spline grid 
+\revcomment[R\#1-C4]{to obtain the definition of $\vec{g}_k$ given in \eqref{eq:regseg-final_gradient}}:
 
   \begin{equation}
   \label{eq:regseg-gradient_wshape}
@@ -113,10 +114,7 @@ Then, we identify the shape gradient contribution $\vec{g}_k$ on the coefficient
   \frac{\partial}{\partial \vec{u}_k} \left\{ \vec{v}_i + \sum_k \psi_k(\vec{v}_i) \vec{u}_k \right\} = \psi_k(\vec{v}_i)\, \hat{\vec{e}},
   \end{split}
   \end{equation}%
-  where $\hat{\vec{e}}$ is the coordinates system's unit vector.
-Therefore, the shape gradients projected to the grid of B-spline control points read:
+\revcomment[R\#1-C4]{where $\psi_k$ and $\vec{u}_k$ define our B-spline deformation model (\autoref{eq:regseg-nodes_tfm})} and
+  $\hat{\vec{e}}$ is the coordinates system's unit vector.
 
-\begin{equation}
-  \vec{g}_k = - \underset{i}{\sum} \bar{s}_i \cdot \psi_k(\vec{v}_i) \, \hat{\vec{e}}.
-  \label{eq:regseg-shape_gradient_final}
-\end{equation}
+
