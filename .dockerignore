@@ -1,0 +1,31 @@
+# git
+.gitignore
+.git/**/*
+.git
+
+# CircleCI venv
+venv/**/*
+venv/
+
+# python cache
+__pycache__/**/*
+__pycache__
+*.pyc
+
+# python distribution
+build/**/*
+build
+dist/**/*
+dist
+.eggs/**/*
+.eggs
+src/**/*
+src/
+
+# releasing
+Makefile
+
+
+# other
+agave/**/*
+agave
