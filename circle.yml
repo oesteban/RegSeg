@@ -30,7 +30,7 @@ dependencies:
         timeout: 3200
     - ? |
         e=1 && for i in {1..5}; do
-            docker build --rm=false -t ${DOCKER_IMAGE}:${DOCKER_TAG} --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` --build-arg VCS_REF=`git rev-parse --short HEAD` --build-arg VERSION="${CIRCLE_TAG:-$CIRCLE_SHA1}" . && e=0 && break || sleep 15
+            docker build --rm=false -t ${DOCKER_IMAGE}:${DOCKER_TAG} . && e=0 && break || sleep 15
         done && [ "$e" -eq "0" ]
       :
         timeout: 3200
@@ -39,6 +39,7 @@ dependencies:
 test:
   override:
     - docker run --rm=false ${DOCKER_IMAGE}:${DOCKER_TAG} -h || true
+    - docker run --rm=false --entrypoint=python ${DOCKER_IMAGE}:${DOCKER_TAG} -c 'import pyacwereg; print pyacwereg.__version__'
 
 general:
   artifacts:
