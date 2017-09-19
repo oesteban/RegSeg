@@ -13,6 +13,8 @@ The contours evolve through a free-form deformation field supported by the
 B-spline basis to optimally map the contours onto the data in the target
 space.
 
+.. image :: docs/static/graphical-abstract.png
+
 
 .. topic:: **When using this software in your research, please credit the authors referencing the following paper:**
 
