@@ -5,8 +5,8 @@ RegSeg: Structure-informed segmentation and registration of brain MR images
 .. image:: https://img.shields.io/badge/Citation-NeuroImage-blue.svg
   :target: https://doi.org/10.1016/j.neuroimage.2016.05.011
   
-.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.17348.svg
-  :target: https://doi.org/10.5281/zenodo.17348
+.. image:: https://img.shields.io/badge/DOI-10.1016%2Fj.neuroimage.2016.05.011-blue.svg
+  :target: https://doi.org/10.1016/j.neuroimage.2016.05.011
 
 
 RegSeg is a simultaneous segmentation and registration method that uses
