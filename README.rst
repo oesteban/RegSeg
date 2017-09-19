@@ -3,14 +3,24 @@ RegSeg: Structure-informed segmentation and registration of brain MR images
 ===========================================================================
 
 
+.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.17348.svg
+  :target: http://dx.doi.org/10.5281/zenodo.17348
+  
+
 RegSeg is a simultaneous segmentation and registration method that uses
 active contours without edges (ACWE) extracted from structural images.
 The contours evolve through a free-form deformation field supported by the
 B-spline basis to optimally map the contours onto the data in the target
 space.
 
-.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.17348.svg
-  :target: http://dx.doi.org/10.5281/zenodo.17348
+
+.. topic:: **When using this software in your research, please credit the authors referencing the following paper:**
+
+    Esteban O, Zosso D, Daducci A, Bach-Cuadra M, Ledesma-Carbayo MJ, Thiran JP, Santos A;
+    *Surface-driven registration method for the structure-informed segmentation of diffusion MR images*;
+    NeuroImage 139:450-461; 1 October 2016;
+    doi:`10.1016/j.neuroimage.2016.05.011 <https://doi.org/10.1016/j.neuroimage.2016.05.011>`_.
+
 
 ----------------------
 Experimental framework
@@ -40,37 +50,6 @@ Installation
   mkdir Release
   cd Release
   ccmake ../Code/ -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DITK_DIR=/usr/local/lib/cmake/ITK-4.7/
-
-
--------
-Credits
--------
-
-
-Software
---------
-
-https://github.com/oesteban/RegSeg/graphs/contributors
-
-
-Contributions
--------------
-
-* Oscar Esteban (`@oesteban <https://github.com/oesteban>`_)
-* Dominique Zosso (`@zosso <https://github.com/zosso>`_)
-* Alessandro Daducci (`@daducci <https://github.com/daducci>`_)
-* Meritxell Bach-Cuadra (`@meribach <https://github.com/meribach>`_)
-* Andrés Santos Lleó (`@asantos5 <https://github.com/asantos5>`_)
-* Jean-Philippe Thiran (`@thiran <https://github.com/thiran>`_)
-* M.-J. Ledesma-Carbayo (`@mledesmacarbayo <https://github.com/mledesmacarbayo>`_)
-
-All the authors contributed to this study.
-OE implemented the method, designed and conducted the experiments, wrote the paper,
-simulated the phantoms, and prepared the real data.
-DZ devised and drafted the registration method, generated early phantom datasets,
-and collaborated in the implementation of the method.
-AD, MBC, and MJLC interpreted the results.
-AD, MBC, MJLC, JPT, and AS advised on all aspects of the study.
 
 
 -------
