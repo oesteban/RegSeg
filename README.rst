@@ -2,16 +2,19 @@
 RegSeg: Structure-informed segmentation and registration of brain MR images
 ===========================================================================
 
+.. image:: https://img.shields.io/badge/Citation-NeuroImage%20doi%3A10.1016%2Fj.neuroimage.2016.05.011-blue.svg
+  :target: https://doi.org/10.1016/j.neuroimage.2016.05.011
 
-.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.17348.svg
-  :target: http://dx.doi.org/10.5281/zenodo.17348
-  
+.. image:: https://img.shields.io/badge/License-GPL%20v3-blue.svg
+  :target: https://www.gnu.org/licenses/gpl-3.0
 
 RegSeg is a simultaneous segmentation and registration method that uses
 active contours without edges (ACWE) extracted from structural images.
 The contours evolve through a free-form deformation field supported by the
 B-spline basis to optimally map the contours onto the data in the target
 space.
+
+.. image :: docs/static/graphical-abstract.png
 
 
 .. topic:: **When using this software in your research, please credit the authors referencing the following paper:**
