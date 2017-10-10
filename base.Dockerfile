@@ -35,7 +35,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 COPY ./Code /root/regseg/src
 RUN mkdir /root/regseg/Release && \
     cd /root/regseg/Release && \
-    cmake ../src/ -G"Unix Makefiles"  -DCMAKE_BUILD_TYPE=Release -DITK_DIR=/usr/local/lib/cmake/ITK-4.7/ && \
+    cmake ../src/ -G"Unix Makefiles"  -DCMAKE_BUILD_TYPE=Release -DITK_DIR=/usr/local/lib/cmake/ITK-4.7/ -DVTK_DIR=/usr/lib/cmake/vtk-6.0/ && \
     make -j$( grep -c ^processor /proc/cpuinfo ) && \
     make install
 
