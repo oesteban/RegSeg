@@ -35,10 +35,11 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 
 COPY ./Code /src/regseg
 
-WORKDIR /src/Release
-RUN cmake ../src/ -G"Unix Makefiles"  -DCMAKE_BUILD_TYPE=Release -DITK_DIR=/usr/local/lib/cmake/ITK-4.7/ -DVTK_DIR=/usr/lib/cmake/vtk-6.0/ && \
+WORKDIR /usr/local/build/regseg/
+RUN cmake /src/regseg/ -G"Unix Makefiles"  -DCMAKE_BUILD_TYPE=Release -DITK_DIR=/usr/local/lib/cmake/ITK-4.7/ -DVTK_DIR=/usr/lib/cmake/vtk-6.0/ && \
     make -j$( grep -c ^processor /proc/cpuinfo ) && \
-    make install
+    make install && \
+    rm -rf /src/regseg/ /usr/local/build/regseg/
 
 ENTRYPOINT ["/usr/local/bin/regseg"]
 
