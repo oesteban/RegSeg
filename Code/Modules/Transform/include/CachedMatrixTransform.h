@@ -1,44 +1,27 @@
-// --------------------------------------------------------------------------------------
-// File:          CachedMatrixTransform.h
-// Date:          Nov 25, 2014
-// Author:        code@oscaresteban.es (Oscar Esteban)
-// Version:       1.5.5
-// License:       GPLv3 - 29 June 2007
-// Short Summary:
-// --------------------------------------------------------------------------------------
-//
-// Copyright (c) 2013, code@oscaresteban.es (Oscar Esteban)
-// with Signal Processing Lab 5, EPFL (LTS5-EPFL)
-// and Biomedical Image Technology, UPM (BIT-UPM)
-// All rights reserved.
-//
 // This file is part of RegSeg
 //
-// RegSeg is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright 2014-2017, Oscar Esteban <code@oscaresteban.es>
 //
-// RegSeg is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
 //
-// You should have received a copy of the GNU General Public License
-// along with RegSeg.  If not, see <http://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
 
 #ifndef CACHEDMATRIXTRANSFORM_H_
 #define CACHEDMATRIXTRANSFORM_H_
@@ -76,17 +59,17 @@ public:
     typedef RBFFieldTransform< TScalar, NDimensions > Superclass;
     typedef itk::SmartPointer< Self >                 Pointer;
     typedef itk::SmartPointer< const Self >           ConstPointer;
-    
+
     itkTypeMacro( CachedMatrixTransform, RBFFieldTransform );
     itkStaticConstMacro( Dimension, unsigned int, NDimensions );
-    
+
     typedef enum {
       UNKNOWN,
       GRID_MODE,
       POINTS_MODE
     } InterpolateModeType;
 
-    
+
     typedef typename Superclass::ScalarType                                     ScalarType;
     typedef itk::Point< ScalarType, Dimension >                                 PointType;
     typedef itk::Vector< ScalarType, Dimension >                                VectorType;
@@ -108,7 +91,7 @@ public:
     typedef itk::FixedArray< DimensionVector*, NDimensions >                    DimensionParametersContainer;
 
     typedef itk::Matrix< ScalarType, Dimension, Dimension >                     JacobianType;
-    
+
     // typedef itk::DefaultStaticMeshTraits
     // 		              <TScalar, NDimensions, NDimensions, TScalar, TScalar> PointSetTraitsType;
     // typedef itk::PointSet<PointType, NDimensions, PointSetTraitsType>           PointSetType;

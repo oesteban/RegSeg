@@ -55,17 +55,8 @@ Installation
   ccmake ../Code/ -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DITK_DIR=/usr/local/lib/cmake/ITK-4.7/
 
 
--------
-License
--------
+-----------
+MIT License
+-----------
 
-RegSeg is free software: you can redistribute it and/or modify it under the terms of the
-`GNU General Public License <http://www.gnu.org/copyleft/gpl.html>`_ as published by the
-`Free Software Foundation <http://www.fsf.org/>`_, either version 3 of the License, or
-(at your option) any later version.
-
-RegSeg is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-See the `GNU General Public License <http://www.gnu.org/copyleft/gpl.html>`_ for more details.
-You should have received a copy of `GNU General Public License <http://www.gnu.org/copyleft/gpl.html>`_
-along with RegSeg. If not, see http://www.gnu.org/licenses/.
+.. include LICENSE
