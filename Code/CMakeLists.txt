@@ -86,9 +86,6 @@ ENABLE_TESTING()
 
 ADD_SUBDIRECTORY( Modules/Core )
 
-#find_package(GTest REQUIRED)
-ADD_SUBDIRECTORY( GTest/ )
-
 ADD_SUBDIRECTORY( ThirdParty/Hausdorff )
 SET( VTKHAUSDORFF_LIB "vtkHausdorffDistance" )
 
