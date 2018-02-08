@@ -227,7 +227,7 @@ public:
 	void Stop(void);
 
 	/** Get the reason for termination */
-	const StopConditionReturnStringType GetStopConditionDescription() const;
+	const StopConditionReturnStringType GetStopConditionDescription() const override;
 
 	void Resume();
 
@@ -238,8 +238,8 @@ public:
 protected:
 	OptimizerBase();
 	~OptimizerBase() {}
-	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
-	virtual void ParseSettings();
+	void PrintSelf( std::ostream &os, itk::Indent indent ) const override;
+	virtual void ParseSettings() override;
 
 	virtual void InitializeParameters() = 0;
 	virtual void InitializeAuxiliarParameters() = 0;

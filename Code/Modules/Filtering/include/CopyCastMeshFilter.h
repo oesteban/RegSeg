@@ -87,7 +87,7 @@ protected:
 	CopyCastMeshFilter() {}
 	~CopyCastMeshFilter() {}
 
-	void GenerateData() {
+	void GenerateData() override {
 		const InputMeshType *in = this->GetInput();
 		OutputMeshType *     out = this->GetOutput();
 		// Copy points

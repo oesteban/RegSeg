@@ -82,6 +82,9 @@ public:
 	typedef typename Superclass::AltCoeffPointer                     AltCoeffPointer;
 
 	using typename SparseMatrixTransform< TScalar, NDimensions >::InterpolateModeType;
+
+	virtual void SetFixedParameters(const typename Superclass::FixedParametersType &) override
+	{}
 protected:
 	BSplineSparseMatrixTransform(): Superclass() {
 		this->m_KernelFunction = dynamic_cast< KernelFunctionType * >(

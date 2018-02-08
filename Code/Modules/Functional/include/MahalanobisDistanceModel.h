@@ -102,10 +102,10 @@ public:
 
 	itkGetConstMacro(RegionOffsetContainer, MeasureTypeContainer);
 
-	std::string PrintFormattedDescriptors();
-	virtual void ReadDescriptorsFromFile(std::string filename);
+	std::string PrintFormattedDescriptors() override;
+	virtual void ReadDescriptorsFromFile(std::string filename) override;
 
-	inline double Evaluate(const MeasurementVectorType & x, const RegionIdentifier roi) const {
+	inline double Evaluate(const MeasurementVectorType & x, const RegionIdentifier roi) const override {
 		if( x == m_InvalidValue )
 			return 0.0;
 		return this->m_Memberships[roi]->Evaluate(x);
@@ -114,17 +114,17 @@ public:
 protected:
 	MahalanobisDistanceModel();
 	virtual ~MahalanobisDistanceModel() {}
-	virtual void PrintSelf(std::ostream & os, itk::Indent indent) const;
+	virtual void PrintSelf(std::ostream & os, itk::Indent indent) const override;
 
-	void GenerateData();
+	void GenerateData() override;
 	void PostGenerateData();
 	//void BeforeThreadedGenerateData();
 	//void ThreadedGenerateData(const RegionType & inputRegionForThread, ThreadIdType threadId);
 	//void AfterThreadedGenerateData();
 
-	virtual void InitializeMemberships();
+	virtual void InitializeMemberships() override;
 
-	MembershipFunctionType* GetNewFunction() {
+	MembershipFunctionType* GetNewFunction() override {
 		return dynamic_cast<MembershipFunctionType*>(InternalFunctionType::New().GetPointer());
 	}
 

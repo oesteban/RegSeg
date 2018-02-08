@@ -97,7 +97,7 @@ protected:
 	ComponentsFileWriter(){}
 	~ComponentsFileWriter(){}
 
-	void PrintSelf( std::ostream& os, itk::Indent indent) const {
+	void PrintSelf( std::ostream& os, itk::Indent indent) const override {
 		Superclass::Print(os, indent);
 	}
 

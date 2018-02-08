@@ -511,7 +511,7 @@ void RBFFieldTransform<TScalar, NDimensions>::SetInverseInterpolator(
 
 template<typename TScalar, unsigned int NDimensions>
 void RBFFieldTransform<TScalar, NDimensions>::SetFixedParameters(
-		const ParametersType & fixedParameters) {
+	const typename RBFFieldTransform<TScalar, NDimensions>::Superclass::FixedParametersType & fixedParameters) {
 	SizeValueType elems = this->GetNumberOfFieldParameters();
 
 	if (fixedParameters.Size() != elems * 2) {

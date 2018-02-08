@@ -101,7 +101,7 @@ protected:
 	std::string m_FileName;
 	InputMeshPointer m_Input;
 
-	void PrintSelf(std::ostream & os, itk::Indent indent) const {
+	void PrintSelf(std::ostream & os, itk::Indent indent) const override {
 		Superclass::PrintSelf(os, indent);
 		os << indent << "FileName: " << this->m_FileName << std::endl;
 	}

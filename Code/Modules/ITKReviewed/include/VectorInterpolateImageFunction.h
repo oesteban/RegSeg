@@ -100,7 +100,7 @@ public:
    * The point is assume to lie within the image buffer.
    * ImageFunction::IsInsideBuffer() can be used to check bounds before
    * calling the method. */
-  virtual OutputType Evaluate(const PointType & point) const
+  virtual OutputType Evaluate(const PointType & point) const override
   {
     ContinuousIndexType index;
 
@@ -119,7 +119,7 @@ public:
    * ImageFunction::IsInsideBuffer() can be used to check bounds before
    * calling the method. */
   virtual OutputType EvaluateAtContinuousIndex(
-    const ContinuousIndexType & index) const = 0;
+    const ContinuousIndexType & index) const override = 0;
 
   /** Interpolate the image at an index position.
    * Simply returns the image value at the
@@ -128,7 +128,7 @@ public:
    *
    * ImageFunction::IsInsideBuffer() can be used to check bounds before
    * calling the method. */
-  virtual OutputType EvaluateAtIndex(const IndexType & index) const
+  virtual OutputType EvaluateAtIndex(const IndexType & index) const override
   {
     OutputType output;
     PixelType  input = this->GetInputImage()->GetPixel(index);
@@ -144,7 +144,7 @@ public:
 protected:
   VectorInterpolateImageFunction() {}
   ~VectorInterpolateImageFunction() {}
-  void PrintSelf(std::ostream & os, itk::Indent indent) const
+  void PrintSelf(std::ostream & os, itk::Indent indent) const override
   { Superclass::PrintSelf(os, indent); }
 
 private:

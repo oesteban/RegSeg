@@ -131,13 +131,13 @@ protected:
 	ModelBase();
 	virtual ~ModelBase() {}
 
-	virtual void PrintSelf(std::ostream & os, itk::Indent indent) const {
+	virtual void PrintSelf(std::ostream & os, itk::Indent indent) const override {
 		Superclass::PrintSelf(os, indent);
 		os << indent << "Length of measurement vectors: "
 				<< m_MeasurementVectorSize << std::endl;
 	}
 
-	void GenerateInputRequestedRegion() {};
+	void GenerateInputRequestedRegion() override {};
 	virtual void InitializeMemberships() = 0;
 
 	void SetMembership(const MembershipFunctionType* m, size_t i) {
@@ -154,7 +154,7 @@ protected:
 	/** Method that construct the outputs */
 	typedef itk::ProcessObject::DataObjectPointerArraySizeType DataObjectPointerArraySizeType;
 	using Superclass::MakeOutput;
-	DataObjectPointer MakeOutput(DataObjectPointerArraySizeType);
+	DataObjectPointer MakeOutput(DataObjectPointerArraySizeType) override;
 
 	MeasurementVectorSizeType   m_MeasurementVectorSize;
 	RegionIdentifier            m_NumberOfRegions;

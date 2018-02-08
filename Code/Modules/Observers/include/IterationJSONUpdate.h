@@ -50,7 +50,7 @@ public:
 	itkTypeMacro( IterationJSONUpdate, IterationUpdate ); // Run-time type information (and related methods)
 	itkNewMacro( Self );
 
-    void Execute(const itk::Object * object, const itk::EventObject & event) {
+    void Execute(const itk::Object * object, const itk::EventObject & event) override {
 		size_t it = this->m_Optimizer->GetCurrentIteration();
     	Json::Value itnode;
 

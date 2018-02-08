@@ -576,7 +576,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 				ROIPixelType inner = interp->Evaluate( ci + ni );
 				ROIPixelType outer = interp->Evaluate( ci - ni );
 
-				if ((inner == contid)) {
+				if (inner == contid) {
 					while (outer==inner) {
 						outer = interp->Evaluate( ci - (ni * step * 0.1) );
 						if (step == 9)

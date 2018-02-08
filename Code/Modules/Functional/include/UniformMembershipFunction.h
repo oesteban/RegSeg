@@ -67,7 +67,7 @@ public:
    * prescribed mean and covariance. Note that the Mahalanobis
    * distance is not a probability density. The square of the
    * distance is returned. */
-  double Evaluate(const MeasurementVectorType & measurement) const { return m_Value; }
+  double Evaluate(const MeasurementVectorType & measurement) const override { return m_Value; }
 
   itkSetMacro(Value, double);
   itkGetMacro(Value, double);
@@ -77,7 +77,7 @@ public:
 protected:
   UniformMembershipFunction(void): m_Value(0.0), Superclass() {}
   virtual ~UniformMembershipFunction(void) {}
-  void PrintSelf(std::ostream & os, itk::Indent indent) const { Superclass::PrintSelf(os, indent); }
+  void PrintSelf(std::ostream & os, itk::Indent indent) const override { Superclass::PrintSelf(os, indent); }
 
 private:
   double  m_Value;

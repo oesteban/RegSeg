@@ -134,7 +134,7 @@ WeightedCovarianceSampleFilter< TSample >
     itkDynamicCastInDebugMode< MeasurementVectorDecoratedType * >( this->ProcessObject::GetOutput(1) );
 
   WeightArrayType weightsArray(this->GetWeights());
-  std::vector<MeasurementType> sampleComponents[measurementVectorSize];
+  std::vector<std::vector<MeasurementType>> sampleComponents(measurementVectorSize);
 
   typename SampleType::ConstIterator iter =      input->Begin();
   const typename SampleType::ConstIterator end = input->End();

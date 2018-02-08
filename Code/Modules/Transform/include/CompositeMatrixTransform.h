@@ -114,12 +114,12 @@ public:
     void PushBackCoefficients(const CoefficientsImageArray & images);
     void PushBackCoefficients(const FieldType* field);
 
-    void Interpolate();
-    void ComputeInverse(){};
+    void Interpolate() override;
+    void ComputeInverse() override {};
 protected:
     CompositeMatrixTransform();
 	~CompositeMatrixTransform(){};
-    void PrintSelf( std::ostream& os, itk::Indent indent ) const;
+    void PrintSelf( std::ostream& os, itk::Indent indent ) const override;
 
 private:
 	CompositeMatrixTransform( const Self & );

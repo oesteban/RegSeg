@@ -58,11 +58,11 @@ public:
 	itkTypeMacro( LevelObserver, itk::CommandIterationUpdate ); // Run-time type information (and related methods)
 	itkNewMacro( Self );
 
-    void Execute(itk::Object *caller, const itk::EventObject & event) {
+    void Execute(itk::Object *caller, const itk::EventObject & event) override {
         Execute( (const itk::Object *)caller, event);
     }
 
-    void Execute(const itk::Object * object, const itk::EventObject & event) {
+    void Execute(const itk::Object * object, const itk::EventObject & event) override {
     	if (m_RegistrationMethod->GetVerbosity()==0) return;
 
     	std::stringstream ss;

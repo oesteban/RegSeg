@@ -90,7 +90,7 @@ public:
       m_Optimizer->AddObserver( FunctionalModifiedEvent(), this );
     }
 
-    void Execute(const itk::Object * object, const itk::EventObject & event) {
+    void Execute(const itk::Object * object, const itk::EventObject & event) override {
     	if (this->m_Verbosity == 0 ) return;
     	std::stringstream ss;
 

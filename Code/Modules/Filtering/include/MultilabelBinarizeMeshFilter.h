@@ -127,9 +127,9 @@ public:
 	  struct ThreadStruct { Pointer Filter; };
 	  itk::MultiThreader * GetPreMultiThreader() const { return m_PreThreader; }
 protected:
-	  void BeforeThreadedGenerateData();
-	  void ThreadedGenerateData(const RegionType & inputRegionForThread, itk::ThreadIdType threadId);
-	  virtual void GenerateOutputInformation();
+	  void BeforeThreadedGenerateData() override;
+	  void ThreadedGenerateData(const RegionType & inputRegionForThread, itk::ThreadIdType threadId) override;
+	  virtual void GenerateOutputInformation() override;
 
 	  static ITK_THREAD_RETURN_TYPE BinarizeThreaderCallback(void *arg);
 	  void BinarizeThreaded(size_t num);
@@ -137,7 +137,8 @@ protected:
 
 	  MultilabelBinarizeMeshFilter();
 	  ~MultilabelBinarizeMeshFilter() {}
-	  virtual void PrintSelf(std::ostream & os, itk::Indent indent) const { Superclass::PrintSelf(os, indent); }
+	  virtual void PrintSelf(std::ostream & os, itk::Indent indent) const override
+	  { Superclass::PrintSelf(os, indent); }
 
 		/** Support processing data in multiple threads. */
 		itk::MultiThreader::Pointer m_PreThreader;

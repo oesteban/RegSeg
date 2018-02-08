@@ -80,7 +80,7 @@ public:
 	typedef std::vector< MeasureArrayType >      ThreadMeasureArrayType;
 	typedef std::vector< TotalVolumeContainer >  ThreadVolumeArrayType;
 
-    void SetInput(const InputImageType *input) {
+    void SetInput(const InputImageType *input) override {
     	this->SetNthInput(0, const_cast<InputImageType *>(input));
     }
 
@@ -121,17 +121,17 @@ public:
 protected:
 	EnergyCalculatorFilter();
 	virtual ~EnergyCalculatorFilter() {}
-	void PrintSelf(std::ostream & os, itk::Indent indent) const;
+	void PrintSelf(std::ostream & os, itk::Indent indent) const override;
 
-	void GenerateInputRequestedRegion();
-	void BeforeThreadedGenerateData();
-	void ThreadedGenerateData(const RegionType & inputRegionForThread, ThreadIdType threadId);
-	void AfterThreadedGenerateData();
+	void GenerateInputRequestedRegion() override;
+	void BeforeThreadedGenerateData() override;
+	void ThreadedGenerateData(const RegionType & inputRegionForThread, ThreadIdType threadId) override;
+	void AfterThreadedGenerateData() override;
 
 	  /** Method that construct the outputs */
 	typedef ProcessObject::DataObjectPointerArraySizeType DataObjectPointerArraySizeType;
 	using Superclass::MakeOutput;
-	DataObjectPointer MakeOutput(DataObjectPointerArraySizeType);
+	DataObjectPointer MakeOutput(DataObjectPointerArraySizeType) override;
 
 private:
 	EnergyCalculatorFilter(const Self &); //purposely not implemented

@@ -118,12 +118,12 @@ public:
    * prescribed mean and covariance. Note that the Mahalanobis
    * distance is not a probability density. The square of the
    * distance is returned. */
-  double Evaluate(const MeasurementVectorType & measurement) const;
+  double Evaluate(const MeasurementVectorType & measurement) const override;
 
   /** Method to clone a membership function, i.e. create a new instance of
    * the same type of membership function and configure its ivars to
    * match. */
-  virtual typename itk::LightObject::Pointer InternalClone() const;
+  virtual typename itk::LightObject::Pointer InternalClone() const override;
 
   void SetRange(const MeanVectorType & lower, const MeanVectorType & upper);
   itkGetConstReferenceMacro(RangeMax, MeanVectorType);
@@ -135,7 +135,7 @@ public:
   virtual void UpdateVectorSize();
   virtual void Initialize();
 
-  virtual void SetMeasurementVectorSize(MeasurementVectorSizeType s) {
+  virtual void SetMeasurementVectorSize(MeasurementVectorSizeType s) override {
 	  Superclass::SetMeasurementVectorSize(s);
 	  UpdateVectorSize();
   }
@@ -143,7 +143,7 @@ public:
 protected:
   MahalanobisDistanceMembershipFunction(void);
   virtual ~MahalanobisDistanceMembershipFunction(void) {}
-  void PrintSelf(std::ostream & os, itk::Indent indent) const;
+  void PrintSelf(std::ostream & os, itk::Indent indent) const override;
 
 private:
   MeanVectorType       m_Mean;               // mean
