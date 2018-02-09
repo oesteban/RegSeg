@@ -52,7 +52,7 @@ public:
     itkNewMacro( Self );
     itkStaticConstMacro( Dimension, unsigned int, NDimensions );
 
-    using Superclass::InterpolateModeType;
+    using typename Superclass::InterpolateModeType;
 
     typedef typename Superclass::ScalarType                          ScalarType;
     typedef typename Superclass::PointType                           PointType;

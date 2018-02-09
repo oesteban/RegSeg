@@ -66,7 +66,7 @@ public:
     itkTypeMacro( SparseMatrixTransform, CachedMatrixTransform );
     itkNewMacro( Self );
 
-    using Superclass::InterpolateModeType;
+    using typename rstk::CachedMatrixTransform< TScalar, NDimensions >::InterpolateModeType;
 
     typedef typename Superclass::ScalarType                        ScalarType;
     typedef typename Superclass::PointType                         PointType;
