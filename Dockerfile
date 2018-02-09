@@ -1,5 +1,5 @@
-# Use Ubuntu Trusty LTS
-FROM ubuntu:trusty-20170330
+# Use Ubuntu Artful LTS
+FROM ubuntu:artful-20180123
 
 # Pre-cache neurodebian key
 COPY .docker/neurodebian.gpg /etc/.neurodebian.gpg
@@ -19,8 +19,8 @@ RUN apt-get update && \
 
 # Installing Ubuntu packages and cleaning up
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-                    libinsighttoolkit4-dev=4.7.0-1~nd14.04+1 \
-                    cmake=2.8.12.2-0ubuntu3 \
+                    libinsighttoolkit4-dev \
+                    cmake \
                     g++ \
                     build-essential \
                     libjsoncpp-dev \

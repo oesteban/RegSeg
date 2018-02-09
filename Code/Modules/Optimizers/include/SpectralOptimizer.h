@@ -86,7 +86,7 @@ public:
 	itkStaticConstMacro( Dimension, unsigned int, FunctionalType::Dimension );
 
 	/** Codes of stopping conditions. */
-	using Superclass::StopConditionType;
+	using typename Superclass::StopConditionType;
 
 	/** Inherited definitions */
 	typedef typename Superclass::StopConditionReturnStringType  StopConditionReturnStringType;
@@ -180,12 +180,12 @@ public:
 	itkSetMacro( GridSpacing, ControlPointsGridSpacingType );
 
 	void ComputeIterationSpeed();
-	MeasureType GetCurrentRegularizationEnergy();
-	MeasureType GetCurrentEnergy();
+	MeasureType GetCurrentRegularizationEnergy() override;
+	MeasureType GetCurrentEnergy() override;
 
 	itkGetConstObjectMacro(CurrentCoefficients, FieldType);
 
-	const FieldType * GetCurrentCoefficientsField () const {
+	const FieldType * GetCurrentCoefficientsField () const override {
 		return this->m_Transform->GetCoefficientsField();
 	}
 
@@ -193,14 +193,14 @@ public:
 protected:
 	SpectralOptimizer();
 	~SpectralOptimizer() {}
-	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
+	void PrintSelf( std::ostream &os, itk::Indent indent ) const override;
 
 	/* Inherited from OptimizerBase */
-	virtual void ComputeDerivative();
-	virtual void Iterate() = 0;
-	virtual void PostIteration();
-	void InitializeParameters();
-	virtual void InitializeAuxiliarParameters() = 0;
+	virtual void ComputeDerivative() override;
+	virtual void Iterate() override = 0;
+	virtual void PostIteration() override;
+	void InitializeParameters() override;
+	virtual void InitializeAuxiliarParameters() override = 0;
 
 	/* SpectralOptimizer specific members */
 	void ComputeUpdate(CoefficientsImageArray uk,
@@ -214,7 +214,7 @@ protected:
 
 	virtual void SetUpdate() = 0;
 
-	virtual void ParseSettings();
+	virtual void ParseSettings() override;
 
 	/* Common variables for optimization control and reporting */
 	bool                          m_DenominatorCached;

@@ -43,7 +43,7 @@ protected:
     CopyQuadEdgeMeshFilter(){}
     ~CopyQuadEdgeMeshFilter(){}
 
-    void GenerateData() {
+    void GenerateData() override {
         this->CopyInputMeshToOutputMesh();
     }
 };

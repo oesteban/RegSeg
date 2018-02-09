@@ -81,8 +81,8 @@ protected:
   VTKPolyDataWriter(): Superclass(){}
   virtual ~VTKPolyDataWriter(){}
 
-  virtual void GenerateData();
-  void PrintSelf(std::ostream & os, itk::Indent indent) const {
+  virtual void GenerateData() override;
+  void PrintSelf(std::ostream & os, itk::Indent indent) const override {
 	  Superclass::PrintSelf( os, indent );
   }
 

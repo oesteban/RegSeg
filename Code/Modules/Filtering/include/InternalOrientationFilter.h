@@ -204,7 +204,7 @@ public:
    * execution model.  The original documentation of this method is
    * below.
    * \sa ProcessObject::GenerateOutputInformaton() */
-  virtual void GenerateOutputInformation();
+  virtual void GenerateOutputInformation() override;
 
 #ifdef ITK_USE_CONCEPT_CHECKING
   // Begin concept checking
@@ -221,15 +221,15 @@ public:
 protected:
   InternalOrientationFilter();
   ~InternalOrientationFilter() {}
-  void PrintSelf(std::ostream & os, itk::Indent indent) const;
+  void PrintSelf(std::ostream & os, itk::Indent indent) const override;
 
   /** InternalOrientationFilter needs the entire input be
    * available. Thus, it needs to provide an implementation of
    * GenerateInputRequestedRegion(). */
-  void GenerateInputRequestedRegion();
+  void GenerateInputRequestedRegion() override;
 
   /** InternalOrientationFilter will produce the entire output. */
-  void EnlargeOutputRequestedRegion( itk::DataObject *itkNotUsed(output) );
+  void EnlargeOutputRequestedRegion( itk::DataObject *itkNotUsed(output) ) override;
 
   /*** Member functions used by GenerateData: */
   void DeterminePermutationsAndFlips(const itk::SpatialOrientation::ValidCoordinateOrientationFlags fixed_orient,
@@ -241,7 +241,7 @@ protected:
 
   /** Single-threaded version of GenerateData.  This filter delegates
    * to PermuteAxesImageFilter and FlipImageFilter. */
-  void GenerateData();
+  void GenerateData() override;
 
 private:
   InternalOrientationFilter(const Self &); //purposely not implemented

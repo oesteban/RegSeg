@@ -104,11 +104,11 @@ protected:
 	SpectralGradientDescentOptimizer();
 	~SpectralGradientDescentOptimizer() {}
 
-	void PrintSelf( std::ostream &os, itk::Indent indent ) const;
+	void PrintSelf( std::ostream &os, itk::Indent indent ) const override;
 
-	void InitializeAuxiliarParameters( void ) {}
-	void Iterate(void);
-	void SetUpdate();
+	void InitializeAuxiliarParameters( void ) override {}
+	void Iterate(void) override;
+	void SetUpdate() override;
 
 private:
 	SpectralGradientDescentOptimizer( const Self & ); // purposely not implemented

@@ -193,25 +193,25 @@ public:
    * for GenerateOutputInformation() in order to inform the pipeline
    * execution model.  The original documentation of this method is
    * below. \sa ProcessObject::GenerateOutputInformaton() */
-  virtual void GenerateOutputInformation();
+  virtual void GenerateOutputInformation() override;
 
   /** DownsampleAveragingFilter needs a different input requested region than
    * the output requested region.  As such, DownsampleAveragingFilter needs
    * to provide an implementation for GenerateInputRequestedRegion()
    * in order to inform the pipeline execution model.
    * \sa ProcessObject::GenerateInputRequestedRegion() */
-  virtual void GenerateInputRequestedRegion();
+  virtual void GenerateInputRequestedRegion() override;
 
   /** This method is used to set the state of the filter before
    * multi-threading. */
-  virtual void BeforeThreadedGenerateData();
+  virtual void BeforeThreadedGenerateData() override;
 
   /** This method is used to set the state of the filter after
    * multi-threading. */
-  virtual void AfterThreadedGenerateData();
+  virtual void AfterThreadedGenerateData() override;
 
   /** Method Compute the Modified Time based on changed to the components. */
-  itk::ModifiedTimeType GetMTime(void) const;
+  itk::ModifiedTimeType GetMTime(void) const override;
 
 #ifdef ITK_USE_CONCEPT_CHECKING
   /** Begin concept checking */
@@ -224,15 +224,14 @@ protected:
   DownsampleAveragingFilter();
   ~DownsampleAveragingFilter() {
   }
-  void PrintSelf(std::ostream & os, itk::Indent indent) const;
+  void PrintSelf(std::ostream & os, itk::Indent indent) const override;
 
   /** Override VeriyInputInformation() since this filter's inputs do
    * not need to occoupy the same physical space.
    *
    * \sa ProcessObject::VerifyInputInformation
    */
-  virtual void VerifyInputInformation() {
-  }
+  virtual void VerifyInputInformation() override {}
 
   /** DownsampleAveragingFilter can be implemented as a multithreaded filter.
    * Therefore, this implementation provides a ThreadedGenerateData()
@@ -244,7 +243,7 @@ protected:
    * \sa ImageToImageFilter::ThreadedGenerateData(),
    *     ImageToImageFilter::GenerateData() */
   virtual void ThreadedGenerateData(const OutputImageRegionType & outputRegionForThread,
-		  itk::ThreadIdType threadId);
+		  itk::ThreadIdType threadId) override;
 
 private:
   DownsampleAveragingFilter(const Self &); //purposely not implemented

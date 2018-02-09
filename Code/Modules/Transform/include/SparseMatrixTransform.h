@@ -212,7 +212,7 @@ public:
 
     void InterpolateGradient() { this->Interpolate( this->VectorizeDerivatives() ); };
     void UpdateField() { this->UpdateField( this->VectorizeCoefficients() ); }
-    void ComputeInverse();
+    void ComputeInverse() override;
 
     //void ComputeCoeffDerivatives( void );
     void ComputeGradientField();
@@ -234,10 +234,14 @@ public:
 
 	void Initialize();
 
-	void Interpolate() { this->InterpolatePoints(); this->InterpolateField(); }
+	void Interpolate() override
+    { this->InterpolatePoints(); this->InterpolateField(); }
 	void InterpolatePoints();
 	void InterpolateField();
 	AltCoeffPointer GetFlatParameters();
+
+    virtual void SetFixedParameters(const typename Superclass::FixedParametersType &) override
+    {}
 
     /** Return the multithreader used by this class. */
     itk::MultiThreader * GetMultiThreader() const { return m_Threader; }

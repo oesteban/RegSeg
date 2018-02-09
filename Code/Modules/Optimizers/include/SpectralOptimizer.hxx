@@ -446,7 +446,7 @@ SpectralOptimizer<TFunctional>::ComputeIterationSpeed() {
 
 			if ( fabs(t1[d]) > this->m_MaxDisplacement[d] ) {
 				if (this->m_ForceDiffeomorphic) {
-					t1[d] = this->m_MaxDisplacement[d] * (t1[d]>0)?1.0:-1.0;
+					t1[d] = this->m_MaxDisplacement[d] * ((t1[d]>0)?1.0:-1.0);
 					this->m_DiffeomorphismForced = true;
 					*(fnextBuffer[d]+pix) = t1[d];
 				} else {

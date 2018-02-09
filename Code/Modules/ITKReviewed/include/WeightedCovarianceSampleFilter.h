@@ -111,7 +111,7 @@ public:
 protected:
   WeightedCovarianceSampleFilter();
   virtual ~WeightedCovarianceSampleFilter();
-  void PrintSelf(std::ostream & os, itk::Indent indent) const;
+  void PrintSelf(std::ostream & os, itk::Indent indent) const override;
 
   /** DataObject pointer */
   typedef itk::DataObject::Pointer DataObjectPointer;
@@ -120,7 +120,7 @@ protected:
   using Superclass::MakeOutput;
   virtual DataObjectPointer MakeOutput(DataObjectPointerArraySizeType idx) ITK_OVERRIDE;
 
-  void GenerateData();
+  void GenerateData() override;
 
   /** Compute covariance matrix with weights computed from a function */
   void ComputeCovarianceMatrixWithWeightingFunction();

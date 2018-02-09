@@ -256,8 +256,8 @@ protected:
 	ACWERegistrationMethod();
 	~ACWERegistrationMethod() {}
 
-	virtual void PrintSelf( std::ostream &os, itk::Indent indent ) const;
-	virtual void GenerateData();
+	virtual void PrintSelf( std::ostream &os, itk::Indent indent ) const override;
+	virtual void GenerateData() override;
 
 	void Initialize();
 	void GenerateSchedule();
@@ -266,7 +266,7 @@ protected:
 	void SetUpLevel( size_t level );
 	void Stop( StopConditionType code, std::string msg );
 
-	virtual void ParseSettings() {};
+	virtual void ParseSettings() override {};
 private:
 	ACWERegistrationMethod( const Self & );
 	void operator=( const Self & );

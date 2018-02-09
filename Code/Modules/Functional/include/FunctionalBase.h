@@ -432,7 +432,7 @@ protected:
 	FunctionalBase();
 	virtual ~FunctionalBase() {}
 
-	void PrintSelf(std::ostream & os, itk::Indent indent) const {
+	void PrintSelf(std::ostream & os, itk::Indent indent) const override {
 		Superclass::PrintSelf(os, indent);
 		os << indent << "Value: " << m_Value << std::endl;
 		os << std::endl;
@@ -446,7 +446,7 @@ protected:
 	inline MeasureType EvaluateGradient( const PointType& point, size_t outer_roi, size_t inner_roi ) const;
 
 	inline bool CheckExtent( VectorContourPointType& p, ContinuousIndex& idx ) const;
-	virtual void ParseSettings();
+	virtual void ParseSettings() override;
 	//virtual MeasureType GetEnergyOffset(size_t roi) const = 0;
 
 	// Methods for multithreading
