@@ -161,14 +161,16 @@ WeightedCovarianceSampleFilter< TSample >
 
 	  itk::NumericTraits<MeasurementVectorType>::SetLength( median, measurementVectorSize );
 
-	  size_t sampleSize = sampleComponents[0].size() - 1;
-	  for(size_t c = 0; c < measurementVectorSize; c++) {
-		  std::sort(sampleComponents[c].begin(), sampleComponents[c].end());
-	  	  pbottom[c] = sampleComponents[c][int(0.02 * sampleSize)];
-	  	  ptop[c] = sampleComponents[c][int(0.98 * sampleSize)];
-	  	  median[c] = sampleComponents[c][int(0.50 * sampleSize)];
+	  size_t sampleSize = sampleComponents[0].size();
+	  if (sampleSize > 0) {
+		  for(size_t c = 0; c < measurementVectorSize; c++) {
+			  std::sort(sampleComponents[c].begin(), sampleComponents[c].end());
+			  pbottom[c] = sampleComponents[c][int(0.02 * sampleSize)];
+			  ptop[c] = sampleComponents[c][int(0.98 * sampleSize)];
+			  median[c] = sampleComponents[c][int(0.50 * sampleSize)];
+		  }
+		  // mean = median;
 	  }
-	  // mean = median;
   }
 
   MeasurementVectorDecoratedType *decoratedRangeMaxOutput =

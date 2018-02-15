@@ -538,70 +538,63 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_CurrentDisplacements = PointDataContainer::New();
 	this->m_CurrentDisplacements->Reserve( this->m_NumberOfVertices );
 
-	if( this->m_NumberOfRegions > 3 ) {
-		// Set up ROI interpolator
-		typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
-		interp->SetInputImage( this->m_CurrentRegions );
+    // Set up ROI interpolator
+    typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
+    interp->SetInputImage( this->m_CurrentRegions );
 
-		PointIdentifier tpid = 0;
+    PointIdentifier tpid = 0;
 
-		// Set up outer regions
-		for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
-			NormalFilterPointer nfilter = NormalFilterType::New();
-			nfilter->SetWeight(NormalFilterType::AREA);
-			nfilter->SetInput(this->m_CurrentContours[contid]);
-			nfilter->Update();
-			PointDataContainer* normals = nfilter->GetOutput()->GetPointData();
-			PointsConstIterator c_it  = this->m_CurrentContours[contid]->GetPoints()->Begin();
-			PointsConstIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
+    // Set up outer regions
+    for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
+    	NormalFilterPointer nfilter = NormalFilterType::New();
+    	nfilter->SetWeight(NormalFilterType::AREA);
+    	nfilter->SetInput(this->m_CurrentContours[contid]);
+    	nfilter->Update();
+    	PointDataContainer* normals = nfilter->GetOutput()->GetPointData();
+    	PointsConstIterator c_it  = this->m_CurrentContours[contid]->GetPoints()->Begin();
+    	PointsConstIterator c_end = this->m_CurrentContours[contid]->GetPoints()->End();
 
-			PointType ci;
-			VectorType v;
-			VectorType ni;
-			size_t pid;
-			float step = 1;
-			while( c_it != c_end ) {
+    	PointType ci;
+    	VectorType v;
+    	VectorType ni;
+    	size_t pid;
+    	float step = 1;
+    	while( c_it != c_end ) {
 
-				pid = c_it.Index();
-				ci = c_it.Value();
+    		pid = c_it.Index();
+    		ci = c_it.Value();
 
-				this->m_Vertices.push_back( ci );
-				this->m_CurrentDisplacements->SetElement(tpid, zerov);
+    		this->m_Vertices.push_back( ci );
+    		this->m_CurrentDisplacements->SetElement(tpid, zerov);
 
-				if ( (1.0 - this->m_MaskInterp->Evaluate(ci)) < 1.0e-5 ) {
-					this->m_OffMaskVertices[contid]++;
-				}
+    		if ( (1.0 - this->m_MaskInterp->Evaluate(ci)) < 1.0e-5 ) {
+    			this->m_OffMaskVertices[contid]++;
+    		}
 
-				ni = normals->GetElement( pid );
-				ROIPixelType inner = interp->Evaluate( ci + ni );
-				ROIPixelType outer = interp->Evaluate( ci - ni );
+    		ni = normals->GetElement( pid );
+    		ROIPixelType inner = interp->Evaluate( ci + ni );
+    		ROIPixelType outer = interp->Evaluate( ci - ni );
 
-				if (inner == contid) {
-					while (outer==inner) {
-						outer = interp->Evaluate( ci - (ni * step * 0.1) );
-						if (step == 9)
-							break;
-						step++;
-					}
+    		if (inner == contid) {
+    			while (outer==inner) {
+    				outer = interp->Evaluate( ci - (ni * step * 0.1) );
+    				if (step == 9)
+    					break;
+    				step++;
+    			}
 
-					if(outer!=inner) {
-						this->m_ValidVertices.push_back(tpid);
-						this->m_OuterRegion.push_back(outer);
-						this->m_InnerRegion.push_back(inner);
-					}
-				}
+    			if(outer!=inner) {
+    				this->m_ValidVertices.push_back(tpid);
+    				this->m_OuterRegion.push_back(outer);
+    				this->m_InnerRegion.push_back(inner);
+    			}
+    		}
 
-				++c_it;
-				tpid++;
-			}
-		}
-	} else {
-		this->m_InnerRegion.resize(this->m_NumberOfVertices);
-		std::fill(this->m_InnerRegion.begin(), this->m_InnerRegion.end(), 0);
-		this->m_OuterRegion.resize(this->m_NumberOfVertices);
-		std::fill(this->m_OuterRegion.begin(), this->m_OuterRegion.end(), 1);
-	}
-	std::cout << "Valid vertices: " << this->m_ValidVertices.size() << " of " << this->m_Vertices.size() << "." << std::endl;
+    		++c_it;
+    		tpid++;
+    	}
+    }
+    std::cout << "Valid vertices: " << this->m_ValidVertices.size() << " of " << this->m_Vertices.size() << "." << std::endl;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -729,15 +722,17 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	}
 
 	comb->Update();
-	typedef InternalOrientationFilter< ReferenceImageType, ReferenceImageType >  InternalOrienter;
-	typename InternalOrienter::Pointer orient = InternalOrienter::New();
-	orient->SetInput(comb->GetOutput());
-	orient->Update();
+	this->SetReferenceImage(comb->GetOutput());
 
-	this->SetReferenceImage(orient->GetOutput());
+	// Fix ITK's LPS default orientation
+	DirectionType orient; orient.SetIdentity();
+	orient[0][0] = -1;
+	orient[1][1] = -1;
+	this->m_ReferenceImage->SetDirection(orient * this->m_ReferenceImage->GetDirection());
+	this->m_ReferenceImage->SetOrigin(orient * this->m_ReferenceImage->GetOrigin());
 
 	// Cache image properties
-	this->m_FirstPixelCenter  = this->m_ReferenceImage->GetOrigin();
+	this->m_FirstPixelCenter = this->m_ReferenceImage->GetOrigin();
 	this->m_Direction = this->m_ReferenceImage->GetDirection();
 	this->m_ReferenceSize = this->m_ReferenceImage->GetLargestPossibleRegion().GetSize();
 	this->m_ReferenceSpacing = this->m_ReferenceImage->GetSpacing();
@@ -751,6 +746,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]- 0.5;
 	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_End );
+
+//	std::cout << this->m_FirstPixelCenter << std::endl;
+//	std::cout << this->m_LastPixelCenter << std::endl;
+//	std::cout << this->m_Direction << std::endl;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
