@@ -43,6 +43,7 @@
 #include <itkIntensityWindowingImageFilter.h>
 #include <itkInvertIntensityImageFilter.h>
 #include <itkMeshFileWriter.h>
+#include <itkImageFileWriter.h>
 
 #include "ComponentsFileWriter.h"
 
@@ -173,6 +174,27 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	copy->SetInput( prior );
 	copy->Update();
 	this->m_CurrentContours.push_back(copy->GetOutput());
+
+	typename ScalarContourType::PointsContainerConstIterator p_it = prior->GetPoints()->Begin();
+	typename ScalarContourType::PointsContainerConstIterator p_end = prior->GetPoints()->End();
+
+	size_t vertex_off = 0;
+	// For all the points in the mesh
+	VectorContourPointType ci;
+	while ( p_it != p_end ) {
+		ci = p_it.Value();
+		for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++) {
+			if(ci[dim] < this->m_PhyExtentMin[dim] || ci[dim] > this->m_PhyExtentMax[dim]) {
+				vertex_off++;
+				continue;
+			}
+		}
+		p_it++;
+	}
+
+	if (vertex_off > 0) {
+		std::cout << "A total of " << vertex_off << " surface vertices fall outside the image extent." << std::endl;
+	}
 
 	// Increase number of off-grid nodes to set into the sparse-dense interpolator
 	this->m_NumberOfVertices+= prior->GetNumberOfPoints();
@@ -463,9 +485,16 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeCurrentRegions() {
 	BinarizeMeshFilterPointer newp = BinarizeMeshFilterType::New();
 	newp->SetInputs( this->m_CurrentContours );
-	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
+//	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
+	newp->SetOutputReference( this->m_ReferenceImage );
 	newp->Update();
 	this->m_CurrentRegions = newp->GetOutputSegmentation();
+
+	typedef typename itk::ImageFileWriter<ROIType> W;
+	typename W::Pointer w = W::New();
+	w->SetFileName("rois.nii.gz");
+	w->SetInput(this->m_CurrentRegions);
+	w->Update();
 
 	DownsamplePointer p = DownsampleFilter::New();
 	p->SetInput(newp->GetOutput());
@@ -720,16 +749,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		r->Update();
 		comb->SetInput(i,r->GetOutput());
 	}
-
 	comb->Update();
 	this->SetReferenceImage(comb->GetOutput());
-
-	// Fix ITK's LPS default orientation
-	DirectionType orient; orient.SetIdentity();
-	orient[0][0] = -1;
-	orient[1][1] = -1;
-	this->m_ReferenceImage->SetDirection(orient * this->m_ReferenceImage->GetDirection());
-	this->m_ReferenceImage->SetOrigin(orient * this->m_ReferenceImage->GetOrigin());
 
 	// Cache image properties
 	this->m_FirstPixelCenter = this->m_ReferenceImage->GetOrigin();
@@ -747,8 +768,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]- 0.5;
 	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_End );
 
-//	std::cout << this->m_FirstPixelCenter << std::endl;
-//	std::cout << this->m_LastPixelCenter << std::endl;
+	for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++) {
+		this->m_PhyExtentMin[dim] = (this->m_End[dim] > this->m_Origin[dim])?this->m_Origin[dim]:this->m_End[dim];
+		this->m_PhyExtentMax[dim] = (this->m_End[dim] < this->m_Origin[dim])?this->m_Origin[dim]:this->m_End[dim];
+		this->m_ITKOrientOffset[dim] = this->m_LastPixelCenter[dim] + this->m_FirstPixelCenter[dim];
+	}
+
+	std::cout << this->m_ITKOrientOffset << std::endl;
+//	std::cout << this->m_PhyExtentMax << std::endl;
 //	std::cout << this->m_Direction << std::endl;
 }
 
