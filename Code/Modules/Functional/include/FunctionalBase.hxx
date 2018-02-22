@@ -58,7 +58,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
  m_NumberOfContours(0),
  m_NumberOfRegions(2),
  m_NumberOfVertices(0),
- m_SamplingFactor(2),
+ m_SamplingFactor(4),
  m_DecileThreshold(0.05),
  m_DisplacementsUpdated(true),
  m_EnergyUpdated(false),
@@ -100,7 +100,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		p->SetRegions(this->m_ReferenceImage->GetLargestPossibleRegion());
 		p->SetSpacing(this->m_ReferenceImage->GetSpacing());
 		p->SetOrigin(this->m_ReferenceImage->GetOrigin());
-		p->SetDirection(this->m_ReferenceImage->GetDirection());
+		p->SetDirection(this->m_Direction);
 		p->Allocate();
 		p->FillBuffer(0.0);
 		this->m_BackgroundMask = p;
@@ -456,23 +456,15 @@ void
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::InitializeSamplingGrid() {
 	typename FieldType::SizeType exp_size;
-
-	for (size_t i = 0; i<Dimension; i++ ){
-		exp_size[i] = (unsigned int) (this->m_ReferenceSize[i]*this->m_SamplingFactor);
-	}
-
-	PointType firstPixelCenter;
-	VectorType step;
 	typename FieldType::SpacingType spacing;
 
 	for (size_t i = 0; i<Dimension; i++ ){
-		step[i] = (this->m_End[i] - this->m_Origin[i]) / (1.0*exp_size[i]);
-		spacing[i]= fabs( step[i] );
-		firstPixelCenter[i] = this->m_Origin[i] + 0.5 * step[i];
+		exp_size[i] = (unsigned int) (this->m_ReferenceSize[i] * this->m_SamplingFactor);
+		spacing[i] = this->m_ReferenceSpacing[i] / this->m_SamplingFactor;
 	}
 
 	this->m_ReferenceSamplingGrid = FieldType::New();
-	this->m_ReferenceSamplingGrid->SetOrigin( firstPixelCenter );
+	this->m_ReferenceSamplingGrid->SetOrigin( this->m_FirstPixelCenter );
 	this->m_ReferenceSamplingGrid->SetDirection( this->m_Direction );
 	this->m_ReferenceSamplingGrid->SetRegions( exp_size );
 	this->m_ReferenceSamplingGrid->SetSpacing( spacing );
@@ -485,16 +477,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 ::ComputeCurrentRegions() {
 	BinarizeMeshFilterPointer newp = BinarizeMeshFilterType::New();
 	newp->SetInputs( this->m_CurrentContours );
-//	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
-	newp->SetOutputReference( this->m_ReferenceImage );
+	newp->SetOutputReference( this->m_ReferenceSamplingGrid );
 	newp->Update();
 	this->m_CurrentRegions = newp->GetOutputSegmentation();
-
-	typedef typename itk::ImageFileWriter<ROIType> W;
-	typename W::Pointer w = W::New();
-	w->SetFileName("rois.nii.gz");
-	w->SetInput(this->m_CurrentRegions);
-	w->Update();
 
 	DownsamplePointer p = DownsampleFilter::New();
 	p->SetInput(newp->GetOutput());
@@ -572,6 +557,8 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
     interp->SetInputImage( this->m_CurrentRegions );
 
     PointIdentifier tpid = 0;
+    ROIPixelType inner = 0;
+    ROIPixelType outer;
 
     // Set up outer regions
     for ( size_t contid = 0; contid < this->m_NumberOfContours; contid ++) {
@@ -601,8 +588,12 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
     		}
 
     		ni = normals->GetElement( pid );
-    		ROIPixelType inner = interp->Evaluate( ci + ni );
-    		ROIPixelType outer = interp->Evaluate( ci - ni );
+
+    		// No nested surface inside contid == 0
+    		if (contid > 0) {
+    		    inner = interp->Evaluate( ci - ni );
+    		}
+    		outer = interp->Evaluate( ci + ni );
 
     		if (inner == contid) {
     			while (outer==inner) {
@@ -771,12 +762,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++) {
 		this->m_PhyExtentMin[dim] = (this->m_End[dim] > this->m_Origin[dim])?this->m_Origin[dim]:this->m_End[dim];
 		this->m_PhyExtentMax[dim] = (this->m_End[dim] < this->m_Origin[dim])?this->m_Origin[dim]:this->m_End[dim];
-		this->m_ITKOrientOffset[dim] = this->m_LastPixelCenter[dim] + this->m_FirstPixelCenter[dim];
 	}
-
-	std::cout << this->m_ITKOrientOffset << std::endl;
-//	std::cout << this->m_PhyExtentMax << std::endl;
-//	std::cout << this->m_Direction << std::endl;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -791,26 +777,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 		::itk::OutputWindowDisplayDebugText( itkmsg.str().c_str() );
 	}
 	if ( this->m_BackgroundMask != _arg ) {
-		typedef itk::OrientImageFilter< ProbabilityMapType, ProbabilityMapType >  Orienter;
-		typename Orienter::Pointer orient = Orienter::New();
-		orient->UseImageDirectionOn();
-		orient->SetDesiredCoordinateOrientation(itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_LPI);
-		orient->SetInput(_arg);
-		orient->Update();
-		ProbabilityMapPointer msk = orient->GetOutput();
-		ReferenceSizeType size = msk->GetLargestPossibleRegion().GetSize();
-
-		DirectionType idmat; idmat.SetIdentity();
-		DirectionType itk; itk.SetIdentity();
-		itk(0,0) = -1.0; itk(1,1) = -1.0;
-
-		PointType neworig = itk * msk->GetOrigin();
-		msk->SetDirection(idmat);
-		msk->SetOrigin(neworig);
-
 		typedef itk::IntensityWindowingImageFilter< ProbabilityMapType, ProbabilityMapType > WindowFilter;
 		typename WindowFilter::Pointer mskwindow = WindowFilter::New();
-		mskwindow->SetInput(msk);
+		mskwindow->SetInput(_arg);
 		mskwindow->SetOutputMinimum(0.0);
 		mskwindow->SetOutputMaximum(1.0);
 		mskwindow->SetWindowMinimum(0.0);
