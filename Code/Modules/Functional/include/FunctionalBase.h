@@ -497,11 +497,10 @@ protected:
 	ROIPointer m_CurrentRegions;
 	ReferenceImageConstPointer m_ReferenceImage;
 	ReferencePointType m_Origin, m_End, m_FirstPixelCenter, m_LastPixelCenter;
-	ReferencePointType m_OldOrigin;
+	ReferencePointType m_PhyExtentMin, m_PhyExtentMax;
 	ReferenceSizeType m_ReferenceSize;
 	ReferenceSpacingType m_ReferenceSpacing;
 	DirectionType m_Direction;
-	DirectionType m_OldDirection;
 	//VectorInterpolatorPointer m_LinearInterpolator;
 	//WarpContourFilterList m_WarpContourFilter;
 

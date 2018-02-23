@@ -113,6 +113,10 @@ protected:
 
 			while (inIt != inEnd) {
 				pOut.CastFrom(inIt.Value());
+
+				// Fix ITK's LPS default orientation
+				pOut[0] = -1.0 * pOut[0];
+				pOut[1] = -1.0 * pOut[1];
 				oPoints->InsertElement(inIt.Index(), pOut);
 				++inIt;
 			}
