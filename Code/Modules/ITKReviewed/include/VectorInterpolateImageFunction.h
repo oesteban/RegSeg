@@ -103,9 +103,19 @@ public:
   virtual OutputType Evaluate(const PointType & point) const override
   {
     ContinuousIndexType index;
-
     this->GetInputImage()->TransformPhysicalPointToContinuousIndex(point, index);
     return ( this->EvaluateAtContinuousIndex(index) );
+  }
+
+
+  bool SafeEvaluate(const PointType & point, OutputType & evaluated)
+  {
+    ContinuousIndexType index;
+    if(this->GetInputImage()->TransformPhysicalPointToContinuousIndex(point, index)) {
+    	evaluated = this->EvaluateAtContinuousIndex(index);
+    	return true;
+    };
+    return false;
   }
 
   /** Interpolate the image at a continuous index position

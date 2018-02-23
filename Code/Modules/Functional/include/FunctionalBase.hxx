@@ -179,24 +179,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	typename ScalarContourType::PointsContainerConstIterator p_it = prior->GetPoints()->Begin();
 	typename ScalarContourType::PointsContainerConstIterator p_end = prior->GetPoints()->End();
 
-	size_t vertex_off = 0;
-	// For all the points in the mesh
-	VectorContourPointType ci;
-	while ( p_it != p_end ) {
-		ci = p_it.Value();
-		for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++) {
-			if(ci[dim] < this->m_PhyExtentMin[dim] || ci[dim] > this->m_PhyExtentMax[dim]) {
-				vertex_off++;
-				continue;
-			}
-		}
-		p_it++;
-	}
-
-	if (vertex_off > 0) {
-		std::cout << "A total of " << vertex_off << " surface vertices fall outside the image extent." << std::endl;
-	}
-
 	// Increase number of off-grid nodes to set into the sparse-dense interpolator
 	this->m_NumberOfVertices+= prior->GetNumberOfPoints();
 	this->m_NumberOfContours++;
@@ -558,7 +540,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
     ivox.Fill(0);
     ContinuousIndex cvox;
 
-    PointIdentifier tpid = 0;
+    PointIdentifier uvid = 0; // Universal vertex id
     ROIPixelType inner = 0;
     ROIPixelType outer;
 
@@ -581,10 +563,14 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
     		pid = c_it.Index();
     		ci = c_it.Value();
 
+    		// Initialize this vertex and its displacement
+    		this->m_CurrentDisplacements->SetElement(uvid, zerov);
+    		this->m_Vertices.push_back(ci);
+
     		// Vertex is outside the image
     		if (! this->m_CurrentRegions->TransformPhysicalPointToContinuousIndex(ci, cvox)) {
         		++c_it;
-        		tpid++;
+        		uvid++;
     			continue;
     		}
     		vox.CopyWithRound(cvox);  // Round continuous index
@@ -604,7 +590,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
     		if (contid > 0) {
     			if(! this->m_CurrentRegions->TransformPhysicalPointToContinuousIndex(ci - ni, cvox)){
     	    		++c_it;
-    	    		tpid++;
+    	    		uvid++;
     				continue;
     			}
     			ivox.CopyWithRound(cvox);  // Round continuous index
@@ -619,7 +605,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
        				} else {
        					step = 10;
        				}
-       				// std::cout << "Inner: "<< ivox << "(" << vox << ")" << std::endl;
        				step++;
        			}
     		    assert(inner <= this->m_NumberOfContours);
@@ -628,7 +613,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
     		// Vertex is outside the image
     		if (!this->m_CurrentRegions->TransformPhysicalPointToContinuousIndex(ci + ni, cvox)) {
     			++c_it;
-    		    tpid++;
+    		    uvid++;
     		    continue;
     		}
 
@@ -647,23 +632,18 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
    				}
    				step++;
    			}
-   			// std::cout << "Inner/Outer/Vox: "<< ivox << "/" << ovox << "/" << vox << std::endl;
-
-    		// Initialize this vertex and its displacement
-    		this->m_Vertices.push_back( ci );
-    		this->m_CurrentDisplacements->SetElement(tpid, zerov);
 
    			if(outer!=inner) {
-   				this->m_ValidVertices.push_back(tpid);
+   				this->m_ValidVertices.push_back(uvid);
    				this->m_OuterRegion.push_back(outer);
    				this->m_InnerRegion.push_back(inner);
    			}
 
     		++c_it;
-    		tpid++;
+    		uvid++;
     	}
     }
-    std::cout << "Valid vertices: " << this->m_ValidVertices.size() << " of " << this->m_Vertices.size() << "." << std::endl;
+    std::cout << "Valid vertices: " << this->m_ValidVertices.size() << " of " << this->m_NumberOfVertices << "." << std::endl;
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -807,11 +787,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++)  tmp_idx[dim]= this->m_ReferenceSize[dim]- 0.5;
 	this->m_ReferenceImage->TransformContinuousIndexToPhysicalPoint( tmp_idx, this->m_End );
-
-	for ( size_t dim = 0; dim<FieldType::ImageDimension; dim++) {
-		this->m_PhyExtentMin[dim] = (this->m_End[dim] > this->m_Origin[dim])?this->m_Origin[dim]:this->m_End[dim];
-		this->m_PhyExtentMax[dim] = (this->m_End[dim] < this->m_Origin[dim])?this->m_Origin[dim]:this->m_End[dim];
-	}
 }
 
 template< typename TReferenceImageType, typename TCoordRepType >
@@ -867,16 +842,16 @@ inline typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::EvaluateGradient( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point,
 		size_t outer_roi, size_t inner_roi ) const {
-	if ( outer_roi == inner_roi ) {
-		return 0.0;
+	// std::cout << point << std::endl;
+	typename InterpolatorType::OutputType value;
+	if(outer_roi != inner_roi && this->m_Interp->SafeEvaluate( point, value )) {
+		MeasureType gin  = this->m_Model->Evaluate( value, inner_roi );
+		MeasureType gout = this->m_Model->Evaluate( value, outer_roi );
+		MeasureType grad = gin - gout;
+		grad = (fabs(grad)>MIN_GRADIENT)?grad:0.0;
+		return grad;
 	}
-	ReferencePixelType value = this->m_Interp->Evaluate( point );
-	MeasureType gin  = this->m_Model->Evaluate( value, inner_roi );
-	MeasureType gout = this->m_Model->Evaluate( value, outer_roi );
-
-	MeasureType grad = gin - gout;
-	grad = (fabs(grad)>MIN_GRADIENT)?grad:0.0;
-	return grad;
+	return 0.0;
 }
 
 

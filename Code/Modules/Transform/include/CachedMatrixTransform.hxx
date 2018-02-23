@@ -177,7 +177,7 @@ template< class TScalar, unsigned int NDimensions >
 void CachedMatrixTransform<TScalar,NDimensions>
 ::SetOutputPoints( const PointsList points ){
 	if( this->m_InterpolationMode ==  GRID_MODE) {
-		itkExceptionMacro(<< "trying to change iterpolation mode from regular to scattered.");
+		itkExceptionMacro(<< "trying to change interpolation mode from regular to scattered.");
 	} else {
 		this->m_InterpolationMode = POINTS_MODE;
 	}
