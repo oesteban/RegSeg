@@ -33,6 +33,7 @@
 #include <math.h>
 #include <memory>
 #include <numeric>
+#include <assert.h>
 #include <vnl/vnl_random.h>
 #include <itkImageAlgorithm.h>
 #include <itkOrientImageFilter.h>
@@ -326,22 +327,22 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	size_t nvertices = stop - start;
 	size_t fullsize = nvertices * Dimension;
 
-	PointIdentifier pid;      // universal id of vertex
-	PointIdentifier cpid;     // id of vertex in its contour
+	PointIdentifier uvid;      // universal id of vertex
+	PointIdentifier cvid;     // id of vertex in its contour
 
 	VectorContourPointType ci_prime;
 	PointValuesVector sample;
-	ROIPixelType ocid;
+	ROIPixelType ocid = 0;
 	ROIPixelType icid = 0;
 	double wi = 0.0;
 
 	for(size_t vvid = start; vvid <= stop; vvid++ ) {
 		icid = this->m_InnerRegion[vvid];
 		ocid = this->m_OuterRegion[vvid];
-		pid = this->m_ValidVertices[vvid];
-		cpid = pid - this->m_Offsets[icid];
-		ci_prime = points[icid]->ElementAt(cpid); // Get c'_i
-		wi = areas[icid][cpid] / totalAreas[icid];
+		uvid = this->m_ValidVertices[vvid];
+		cvid = uvid - this->m_Offsets[icid];
+		ci_prime = points[icid]->ElementAt(cvid); // Get c'_i
+		wi = areas[icid][cvid] / totalAreas[icid];
 		sample.push_back(this->EvaluateGradient( ci_prime, ocid, icid )  * wi);
 	}
 
@@ -552,9 +553,10 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	this->m_CurrentDisplacements = PointDataContainer::New();
 	this->m_CurrentDisplacements->Reserve( this->m_NumberOfVertices );
 
-    // Set up ROI interpolator
-    typename ROIInterpolatorType::Pointer interp = ROIInterpolatorType::New();
-    interp->SetInputImage( this->m_CurrentRegions );
+    ReferenceSpacingType sp = this->m_ReferenceSamplingGrid->GetSpacing();
+    ReferenceIndexType vox, ivox, ovox;
+    ivox.Fill(0);
+    ContinuousIndex cvox;
 
     PointIdentifier tpid = 0;
     ROIPixelType inner = 0;
@@ -576,39 +578,86 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
     	size_t pid;
     	float step = 1;
     	while( c_it != c_end ) {
-
     		pid = c_it.Index();
     		ci = c_it.Value();
 
-    		this->m_Vertices.push_back( ci );
-    		this->m_CurrentDisplacements->SetElement(tpid, zerov);
+    		// Vertex is outside the image
+    		if (! this->m_CurrentRegions->TransformPhysicalPointToContinuousIndex(ci, cvox)) {
+        		++c_it;
+        		tpid++;
+    			continue;
+    		}
+    		vox.CopyWithRound(cvox);  // Round continuous index
 
-    		if ( (1.0 - this->m_MaskInterp->Evaluate(ci)) < 1.0e-5 ) {
+    		if (this->m_BackgroundMask->GetPixel(vox) > 1.0e-5 ) {
     			this->m_OffMaskVertices[contid]++;
     		}
 
+    		// Get normal
     		ni = normals->GetElement( pid );
+    		ni[0] *= sp[0];
+    		ni[1] *= sp[1];
+    		ni[2] *= sp[2];
 
     		// No nested surface inside contid == 0
+    		inner = contid;
     		if (contid > 0) {
-    		    inner = interp->Evaluate( ci - ni );
-    		}
-    		outer = interp->Evaluate( ci + ni );
-
-    		if (inner == contid) {
-    			while (outer==inner) {
-    				outer = interp->Evaluate( ci - (ni * step * 0.1) );
-    				if (step == 9)
-    					break;
-    				step++;
+    			if(! this->m_CurrentRegions->TransformPhysicalPointToContinuousIndex(ci - ni, cvox)){
+    	    		++c_it;
+    	    		tpid++;
+    				continue;
     			}
+    			ivox.CopyWithRound(cvox);  // Round continuous index
+    			inner = this->m_CurrentRegions->GetPixel(ivox);
 
-    			if(outer!=inner) {
-    				this->m_ValidVertices.push_back(tpid);
-    				this->m_OuterRegion.push_back(outer);
-    				this->m_InnerRegion.push_back(inner);
-    			}
+    			// Prevent digitization errors
+    			step = 1;
+    			while ((inner!=contid && ivox == vox) && step < 3) {
+       				if( this->m_CurrentRegions->TransformPhysicalPointToContinuousIndex(ci - ni * (1 + step * 0.1), cvox)){
+       					ivox.CopyWithRound(cvox);  // Round continuous index
+       					inner = this->m_CurrentRegions->GetPixel(ivox);
+       				} else {
+       					step = 10;
+       				}
+       				// std::cout << "Inner: "<< ivox << "(" << vox << ")" << std::endl;
+       				step++;
+       			}
+    		    assert(inner <= this->m_NumberOfContours);
     		}
+
+    		// Vertex is outside the image
+    		if (!this->m_CurrentRegions->TransformPhysicalPointToContinuousIndex(ci + ni, cvox)) {
+    			++c_it;
+    		    tpid++;
+    		    continue;
+    		}
+
+			ovox.CopyWithRound(cvox);  // Round continuous index
+			outer = this->m_CurrentRegions->GetPixel(ovox);
+    		assert(outer <= this->m_NumberOfContours);
+
+    		step = 1;
+   			while (ovox==vox && step < 3) {
+   				if(this->m_CurrentRegions->TransformPhysicalPointToContinuousIndex(ci + ni * (1 + step * 0.1), cvox)) {
+   	   				ovox.CopyWithRound(cvox);  // Round continuous index
+   	   				outer = this->m_CurrentRegions->GetPixel(ovox);
+   	   				assert(outer <= this->m_NumberOfContours);
+   				} else {
+   					step = 10;
+   				}
+   				step++;
+   			}
+   			// std::cout << "Inner/Outer/Vox: "<< ivox << "/" << ovox << "/" << vox << std::endl;
+
+    		// Initialize this vertex and its displacement
+    		this->m_Vertices.push_back( ci );
+    		this->m_CurrentDisplacements->SetElement(tpid, zerov);
+
+   			if(outer!=inner) {
+   				this->m_ValidVertices.push_back(tpid);
+   				this->m_OuterRegion.push_back(outer);
+   				this->m_InnerRegion.push_back(inner);
+   			}
 
     		++c_it;
     		tpid++;
