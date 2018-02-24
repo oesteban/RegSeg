@@ -238,13 +238,15 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 
 	VectorType ni, v;
 	PointValueType g;
-	PointIdentifier pid, cpid;     // id of vertex in its contour
-	ROIPixelType icid = 0;
+	PointIdentifier uvid;  // universal vertex-id
+	PointIdentifier svid;  // surface vertex-id
+	PointIdentifier sid;   // surface id
+
 	for(size_t vvid = 0; vvid < nvertices; vvid++ ) {
-		pid = this->m_ValidVertices[vvid];
-		icid = this->m_InnerRegion[vvid];
-		cpid = pid - this->m_Offsets[icid];
-		ni = normals[icid]->ElementAt(cpid);
+		uvid = this->m_ValidVertices[vvid];
+		sid = this->m_ContainerId[uvid];
+		svid = uvid - this->m_Offsets[sid];
+		ni = normals[sid]->ElementAt(svid);
 		g = gradients[vvid];
 		if ( g > this->m_GradientStatistics[5] ) g = this->m_GradientStatistics[5];
 		if ( g < this->m_GradientStatistics[1] ) g = this->m_GradientStatistics[1];
@@ -259,7 +261,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 			}
 		}
 
-		this->m_CurrentContours[icid]->GetPointData()->SetElement( cpid, v );
+		this->m_CurrentContours[sid]->GetPointData()->SetElement( svid, v );
 	}
 }
 
@@ -310,22 +312,21 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
 	size_t fullsize = nvertices * Dimension;
 
 	PointIdentifier uvid;      // universal id of vertex
-	PointIdentifier cvid;     // id of vertex in its contour
+	PointIdentifier svid;      // id of vertex in its contour
+	PointIdentifier sid;       // surface id
 
 	VectorContourPointType ci_prime;
 	PointValuesVector sample;
-	ROIPixelType ocid = 0;
-	ROIPixelType icid = 0;
 	double wi = 0.0;
 
 	for(size_t vvid = start; vvid <= stop; vvid++ ) {
-		icid = this->m_InnerRegion[vvid];
-		ocid = this->m_OuterRegion[vvid];
 		uvid = this->m_ValidVertices[vvid];
-		cvid = uvid - this->m_Offsets[icid];
-		ci_prime = points[icid]->ElementAt(cvid); // Get c'_i
-		wi = areas[icid][cvid] / totalAreas[icid];
-		sample.push_back(this->EvaluateGradient( ci_prime, ocid, icid )  * wi);
+		sid = this->m_ContainerId[uvid];
+		svid = uvid - this->m_Offsets[sid];
+		ci_prime = points[sid]->ElementAt(svid); // Get c'_i
+		wi = areas[sid][svid] / totalAreas[sid];
+		sample.push_back(this->EvaluateGradient( ci_prime,
+				this->m_OuterRegion[vvid], this->m_InnerRegion[vvid] )  * wi);
 	}
 
 	return sample;
@@ -566,6 +567,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
     		// Initialize this vertex and its displacement
     		this->m_CurrentDisplacements->SetElement(uvid, zerov);
     		this->m_Vertices.push_back(ci);
+    		this->m_ContainerId.push_back(contid);
 
     		// Vertex is outside the image
     		if (! this->m_CurrentRegions->TransformPhysicalPointToContinuousIndex(ci, cvox)) {
