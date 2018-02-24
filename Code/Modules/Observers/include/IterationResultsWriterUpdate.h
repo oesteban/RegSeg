@@ -72,6 +72,7 @@ public:
     typedef typename itk::ImageFileWriter< CoefficientsImageType > CoefficientsWriter;
     typedef rstk::ComponentsFileWriter<ReferenceImageType>       ReferenceWriter;
     typedef rstk::ComponentsFileWriter<ProbabilityMapType>       MapWriter;
+    typedef itk::ImageFileWriter< ROIType >                      WriteROI;
 
     itkTypeMacro( IterationResultWriterUpdate, IterationUpdate ); // Run-time type information (and related methods)
     itkNewMacro( Self );
@@ -147,10 +148,20 @@ public:
                 }
             }
 
-            if ( this->m_Verbosity > 2 ) {
+            if ( this->m_Verbosity > 1 ) {
+                typename WriteROI::Pointer w = WriteROI::New();
+                std::stringstream ss;
+                ss << this->m_Prefix << "rois_lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
+                w->SetFileName( ss.str().c_str() );
+                w->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentRegions() );
+                w->Update();
+
+            }
+
+            if ( this->m_Verbosity > 5 ) {
                 std::cout << "Writing current maps" << std::endl;
                 ss.str("");
-                ss << this->m_Prefix << "regions_lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
+                ss << this->m_Prefix << "maps_lev" << this->m_Level << "_it" << std::setfill('0')<<std::setw(3) << this->m_Optimizer->GetCurrentIteration() << ".nii.gz";
                 typename MapWriter::Pointer wr = MapWriter::New();
                 wr->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentMaps());
                 wr->SetFileName(ss.str().c_str() );
@@ -162,10 +173,9 @@ public:
 
         if (typeid( event ) == typeid( itk::StartEvent )) {
             if ( this->m_Verbosity > 0 ) {
-                typedef itk::ImageFileWriter< ROIType > WriteROI;
                 typename WriteROI::Pointer w = WriteROI::New();
                 std::stringstream ss;
-                ss << this->m_Prefix << "initial_seg_" << this->m_Level << ".nii.gz";
+                ss << this->m_Prefix << "rois_init_lev" << this->m_Level << ".nii.gz";
                 w->SetFileName( ss.str().c_str() );
                 w->SetInput( this->m_Optimizer->GetFunctional()->GetCurrentRegions() );
                 w->Update();

@@ -37,7 +37,6 @@
 #include <vnl/vnl_random.h>
 #include <itkImageAlgorithm.h>
 #include <itkOrientImageFilter.h>
-#include "InternalOrientationFilter.h"
 #include <itkContinuousIndex.h>
 #include <itkComposeImageFilter.h>
 
@@ -610,38 +609,37 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
         return;
     }
 
+    VectorContourPointType ci;
     MeasureType norm;
     ContinuousIndex point_idx;
     size_t changed = 0;
-    size_t gpid = 0;
+    size_t uvid = 0;
     std::vector< size_t > invalid;
 
     std::fill(this->m_OffMaskVertices.begin(), this->m_OffMaskVertices.end(), 0);
 
     for( size_t contid = 0; contid < this->m_NumberOfContours; contid++ ) {
-        typename VectorContourType::PointsContainerConstIterator p_it = this->m_Priors[contid]->GetPoints()->Begin();
-        typename VectorContourType::PointsContainerConstIterator p_end = this->m_Priors[contid]->GetPoints()->End();
         PointsContainerPointer curPoints = this->m_CurrentContours[contid]->GetPoints();
+        PointsIterator p_it = curPoints->Begin();
+        PointsConstIterator p_end = curPoints->End();
 
-        VectorContourPointType ci, ci_prime;
+        VectorContourPointType ci_prime;
         VectorType disp;
         size_t pid;
 
         // For all the points in the mesh
         while ( p_it != p_end ) {
-            ci = p_it.Value();
-            pid = p_it.Index();
-            disp = this->m_CurrentDisplacements->GetElement( gpid ); // Get the interpolated value of the field in the point
+            ci = this->m_Vertices[uvid];
+            disp = this->m_CurrentDisplacements->GetElement( uvid ); // Get the interpolated value of the field in the point
             norm = disp.GetNorm();
 
             if( norm > 1.0e-8 ) {
                 ci_prime = ci + disp; // Add displacement vector to the point
-                std::cout << "before/after=" << ci << "/" << ci_prime << std::endl;
                 if( ! this->CheckExtent(ci_prime,point_idx) ) {
-                    invalid.push_back( gpid );
+                    invalid.push_back( uvid );
                     this->InvokeEvent( WarningEvent() );
                 }
-                curPoints->SetElement( pid, ci_prime );
+                curPoints->SetElement( p_it.Index(), ci_prime );
                 changed++;
             }
 
@@ -650,7 +648,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
             }
 
             ++p_it;
-            gpid++;
+            uvid++;
         }
     }
 
@@ -681,7 +679,6 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
     p->SetMaskImage(m_BackgroundMask);
     p->Update();
 
-    std::cout << "Updated current maps" << std::endl;
     this->m_CurrentMaps = p->GetOutput();
     this->m_RegionsUpdated = true;
 }
