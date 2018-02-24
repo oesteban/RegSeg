@@ -59,7 +59,8 @@ public:
             }
             std::cout << "." << std::endl;
 
-            std::cout << "iter  " << std::setw(11) << "OV" << " " << std::setw(11) << "MG" << " " << std::setw(11) << "SS" << "  OC" << " || ";
+            std::cout << "iter  " << std::setw(11) << "OV" << " " << std::setw(11) << "MG" << " " << std::setw(11) << "SS";
+            std::cout << " " << std::setw(11) << "OC" << " || ";
             if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
                 std::cout << std::setw(11) << "CE" << " " << std::setw(11) << "FV" << " " << std::setw(11) << "RE" << " || ";
                 std::cout << "Region-wise energy values                                || ";
@@ -71,7 +72,7 @@ public:
             std::cout << "[" << std::setw(3) << it << "] " << std::setw(11) << this->m_Optimizer->GetCurrentValue();
             std::cout << " "  << std::setw(11) <<  this->m_Optimizer->GetMaximumGradient();
             std::cout << " "  << std::setw(11) <<  this->m_Optimizer->GetStepSize();
-            std::cout << " " << this->m_Optimizer->GetConvergenceValue();
+            std::cout << " "  << std::setw(11) << this->m_Optimizer->GetConvergenceValue();
             std::cout << " ||";
             if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
                 std::cout << " " << std::setw(11) << this->m_Optimizer->GetCurrentEnergy();
