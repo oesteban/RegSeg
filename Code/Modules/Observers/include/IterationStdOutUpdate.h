@@ -37,89 +37,89 @@ template< typename TOptimizer >
 class IterationStdOutUpdate: public IterationUpdate<TOptimizer>
 {
 public:
-	typedef IterationStdOutUpdate                       Self;
-	typedef TOptimizer                                OptimizerType;
-	typedef typename itk::WeakPointer<OptimizerType>  OptimizerPointer;
-	typedef IterationUpdate<TOptimizer>               Superclass;
-	typedef itk::SmartPointer<Self>                   Pointer;
-	typedef itk::SmartPointer< const Self >           ConstPointer;
+    typedef IterationStdOutUpdate                       Self;
+    typedef TOptimizer                                OptimizerType;
+    typedef typename itk::WeakPointer<OptimizerType>  OptimizerPointer;
+    typedef IterationUpdate<TOptimizer>               Superclass;
+    typedef itk::SmartPointer<Self>                   Pointer;
+    typedef itk::SmartPointer< const Self >           ConstPointer;
 
-	itkTypeMacro( IterationStdOutUpdate, IterationUpdate ); // Run-time type information (and related methods)
-	itkNewMacro( Self );
+    itkTypeMacro( IterationStdOutUpdate, IterationUpdate ); // Run-time type information (and related methods)
+    itkNewMacro( Self );
 
     void Execute(const itk::Object * object, const itk::EventObject & event) override {
-		size_t it = this->m_Optimizer->GetCurrentIteration();
+        size_t it = this->m_Optimizer->GetCurrentIteration();
 
-    	if( typeid( event ) == typeid( itk::StartEvent ) ) {
-    		m_StartTime = clock();
+        if( typeid( event ) == typeid( itk::StartEvent ) ) {
+            m_StartTime = clock();
 
-    		std::cout << "[ini] " << std::setw(8) << "     N/A";
-    		if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
-    			std::cout << " " << this->m_Optimizer->GetCurrentEnergy();
-				std::cout << " " << this->m_Optimizer->GetFunctional()->GetValue();
-				std::cout << " " << this->m_Optimizer->GetCurrentRegularizationEnergy();
-				std::cout << " ||";
+            std::cout << "OV: optimizer value; MG: maximum gradient value; SS: step size; OC: optimizer convergence";
+            if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
+                std::cout << "; CE: current energy; FV: functional value; RE: regularization energy";
+            }
+            std::cout << "." << std::endl;
 
-				typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
-				for (size_t r = 0; r < es.Size(); r++) {
-					std::cout << " " << es[r];
-				}
-    		}
-    		std::cout << "." << std::endl;
-    	}
+            std::cout << "iter  " << std::setw(11) << "OV" << " " << std::setw(11) << "MG" << " " << std::setw(11) << "SS" << "  OC" << " || ";
+            if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
+                std::cout << std::setw(11) << "CE" << " " << std::setw(11) << "FV" << " " << std::setw(11) << "RE" << " || ";
+                std::cout << "Region-wise energy values                                || ";
+            }
+            std::cout << "OffMask Vertices" << std::endl;
+        }
 
-		if( typeid( event ) == typeid( itk::IterationEvent ) ) {
-			std::cout << "[" << std::setw(3) << it << "] " << std::setw(8) << this->m_Optimizer->GetCurrentValue();
-			std::cout << " " << this->m_Optimizer->GetMaximumGradient();
-			std::cout << " " << this->m_Optimizer->GetConvergenceValue();
-			std::cout << " ||";
-			if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
-    			std::cout << " " << this->m_Optimizer->GetCurrentEnergy();
-				std::cout << " " << this->m_Optimizer->GetFunctional()->GetValue();
-				std::cout << " " << this->m_Optimizer->GetCurrentRegularizationEnergy();
-				std::cout << " ||";
+        if( typeid( event ) == typeid( itk::IterationEvent ) ) {
+            std::cout << "[" << std::setw(3) << it << "] " << std::setw(11) << this->m_Optimizer->GetCurrentValue();
+            std::cout << " "  << std::setw(11) <<  this->m_Optimizer->GetMaximumGradient();
+            std::cout << " "  << std::setw(11) <<  this->m_Optimizer->GetStepSize();
+            std::cout << " " << this->m_Optimizer->GetConvergenceValue();
+            std::cout << " ||";
+            if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
+                std::cout << " " << std::setw(11) << this->m_Optimizer->GetCurrentEnergy();
+                std::cout << " " << std::setw(11) << this->m_Optimizer->GetFunctional()->GetValue();
+                std::cout << " " << std::setw(11) << this->m_Optimizer->GetCurrentRegularizationEnergy();
+                std::cout << " ||";
 
-				typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
-				for (size_t r = 0; r < es.Size(); r++) {
-					std::cout << " " << es[r];
-				}
+                typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
+                for (size_t r = 0; r < es.Size(); r++) {
+                    std::cout << " " << es[r];
+                }
 
-				std::cout << " ||";
-    		}
+                std::cout << " ||";
+            }
 
-			const std::vector< size_t > off = this->m_Optimizer->GetFunctional()->GetOffMaskVertices();
-			std::cout << " OffMask=(";
-			for (size_t c = 0; c<off.size(); c++) {
-				std::cout << off[c] << ", ";
-			}
-			std::cout << ")";
+            const std::vector< size_t > off = this->m_Optimizer->GetFunctional()->GetOffMaskVertices();
+            std::cout << " OffMask=(";
+            for (size_t c = 0; c<off.size(); c++) {
+                std::cout << off[c] << ", ";
+            }
+            std::cout << ")";
 
-    		std::cout << "." << std::endl;
-		}
+            std::cout << "." << std::endl;
+        }
 
-		if( typeid( event ) == typeid( FunctionalModifiedEvent ) )  {
-			std::cout << "[" << std::setw(3) << it << "] Descriptors updated." << std::endl;
-		}
+        if( typeid( event ) == typeid( FunctionalModifiedEvent ) )  {
+            std::cout << "[" << std::setw(3) << it << "] Descriptors updated." << std::endl;
+        }
 
-		if( typeid( event ) == typeid( itk::EndEvent ) ) {
-			std::cout << "[end] " << std::setw(8) << this->m_Optimizer->GetCurrentValue();
-			if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
-				std::cout << " " << this->m_Optimizer->GetCurrentEnergy();
-				std::cout << " " << this->m_Optimizer->GetFunctional()->GetValue();
-				std::cout << " " << this->m_Optimizer->GetCurrentRegularizationEnergy();
-				std::cout << " ||";
+        if( typeid( event ) == typeid( itk::EndEvent ) ) {
+            std::cout << "[end] " << std::setw(8) << this->m_Optimizer->GetCurrentValue();
+            if( !this->m_Optimizer->GetUseLightWeightConvergenceChecking() ) {
+                std::cout << " " << this->m_Optimizer->GetCurrentEnergy();
+                std::cout << " " << this->m_Optimizer->GetFunctional()->GetValue();
+                std::cout << " " << this->m_Optimizer->GetCurrentRegularizationEnergy();
+                std::cout << " ||";
 
-				typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
-				for (size_t r = 0; r < es.Size(); r++) {
-					std::cout << " " << es[r];
-				}
-			}
-			std::cout << "." << std::endl;
+                typename OptimizerType::FunctionalType::MeasureArray es = this->m_Optimizer->GetFunctional()->GetRegionValue();
+                for (size_t r = 0; r < es.Size(); r++) {
+                    std::cout << " " << es[r];
+                }
+            }
+            std::cout << "." << std::endl;
 
-			m_StopTime = clock();
-			float tot = (float) (((double) (m_StopTime - m_StartTime)) / CLOCKS_PER_SEC);
-			std::cout << "Elapsed time: " << tot << "s." << std::endl;
-		}
+            m_StopTime = clock();
+            float tot = (float) (((double) (m_StopTime - m_StartTime)) / CLOCKS_PER_SEC);
+            std::cout << "Elapsed time: " << tot << "s." << std::endl;
+        }
     }
 
     void SetOptimizer( OptimizerType * optimizer ) {
@@ -137,11 +137,11 @@ protected:
 
 private:
     IterationStdOutUpdate( const Self & ); // purposely not implemented
-	void operator=( const Self & ); // purposely not implemented
+    void operator=( const Self & ); // purposely not implemented
 
-	OptimizerPointer   m_Optimizer;
-	clock_t m_StartTime;
-	clock_t m_StopTime;
+    OptimizerPointer   m_Optimizer;
+    clock_t m_StartTime;
+    clock_t m_StopTime;
 };
 
 } // end namespace rstk

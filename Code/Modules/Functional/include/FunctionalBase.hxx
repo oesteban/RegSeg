@@ -504,6 +504,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
     this->m_GradientStatistics[5] = sample[int(0.95 * (sample.size()-1))];
     this->m_GradientStatistics[6] = sample.back();
 
+//    std::cout << this->m_GradientStatistics << std::endl;
     VectorType ni, v;
     PointValueType g;
     PointIdentifier uvid;  // universal vertex-id
@@ -522,7 +523,7 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
         v.Fill(0.0);
         for( size_t i = 0; i < Dimension; i++ ) {
             if( scales[i] > 1.0e-8 ) {
-                v[i] = scales[i] * g * ni[i];
+                v[i] = -1.0 * scales[i] * g * ni[i];
                 grad[vvid + i * nvertices] = static_cast<float>(v[i]);
             } else {
                 grad[vvid + i * nvertices] = 0.0;
@@ -652,9 +653,9 @@ FunctionalBase<TReferenceImageType, TCoordRepType>
         }
     }
 
-    if ( invalid.size() > 0 ) {
-        itkWarningMacro(<< "a total of " << invalid.size() << " mesh nodes were to be moved off the image domain." );
-    }
+//    if ( invalid.size() > 0 ) {
+//        itkWarningMacro(<< "a total of " << invalid.size() << " mesh nodes were to be moved off the image domain." );
+//    }
 
     this->m_DisplacementsUpdated = true;
     this->m_RegionsUpdated = (changed==0);
@@ -744,14 +745,12 @@ inline typename FunctionalBase<TReferenceImageType, TCoordRepType>::MeasureType
 FunctionalBase<TReferenceImageType, TCoordRepType>
 ::EvaluateGradient( const typename FunctionalBase<TReferenceImageType, TCoordRepType>::PointType & point,
         size_t outer_roi, size_t inner_roi ) const {
-    // std::cout << point << std::endl;
     typename InterpolatorType::OutputType value;
     if(outer_roi != inner_roi && this->m_Interp->SafeEvaluate( point, value )) {
         MeasureType gin  = this->m_Model->Evaluate( value, inner_roi );
         MeasureType gout = this->m_Model->Evaluate( value, outer_roi );
         MeasureType grad = gin - gout;
-        grad = (fabs(grad)>MIN_GRADIENT)?grad:0.0;
-        return grad;
+        return (fabs(grad)>MIN_GRADIENT)?grad:0.0;
     }
     return 0.0;
 }
